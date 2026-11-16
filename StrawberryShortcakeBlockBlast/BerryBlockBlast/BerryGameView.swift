@@ -81,6 +81,7 @@ struct BerryGameView: View {
     @State private var blitzRemaining = 120
     @State private var blitzRunning = false
     @State private var blitzDeadline: Date?
+    private let blitzDeadlineKey = "berryblockblast.blitz.deadline.v053"
     @State private var isPaused = false
     @Environment(\.scenePhase) private var scenePhase
     private var canManuallyPause: Bool { mode != .challenge }
@@ -255,7 +256,14 @@ struct BerryGameView: View {
             BerryAudio.shared.setMusic(music)
             session.selectMode(mode)
             blitzRunning = mode == .challenge
-            if mode == .challenge { blitzDeadline = Date().addingTimeInterval(TimeInterval(blitzRemaining)) }
+            if mode == .challenge {
+                if let saved = UserDefaults.standard.object(forKey: blitzDeadlineKey) as? Date { blitzDeadline = saved }
+                else {
+                    blitzDeadline = Date().addingTimeInterval(TimeInterval(blitzRemaining))
+                    UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey)
+                }
+                refreshBlitzClock()
+            }
             showGameOver = session.gameOver
             if !welcomed { showWelcome = true }
         }
@@ -301,7 +309,7 @@ struct BerryGameView: View {
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
                         Button(showVictory ? "🍓 Another Sweet Adventure" : "🍓 Plant a Fresh Garden") {
                             showVictory = false; showGameOver = false; confirmRestart = false
-                            session.newGame(); selectedSlot = nil; drag = nil; blitzRemaining = 120; blitzRunning = mode == .challenge; blitzDeadline = mode == .challenge ? Date().addingTimeInterval(120) : nil
+                            session.newGame(); selectedSlot = nil; drag = nil; blitzRemaining = 120; blitzRunning = mode == .challenge; blitzDeadline = mode == .challenge ? Date().addingTimeInterval(120) : nil; if mode == .challenge { UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey) }
                         }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
                         Button("🏡 Return to Strawberry Village") { onExit() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
@@ -482,6 +490,7 @@ struct BerryGameView: View {
         }
         if mode == .challenge && session.lastClearedLines > 0 {
             blitzDeadline = blitzDeadline?.addingTimeInterval(TimeInterval(min(15, session.lastClearedLines * 5)))
+            UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey)
             refreshBlitzClock()
         }
         if haptics { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
