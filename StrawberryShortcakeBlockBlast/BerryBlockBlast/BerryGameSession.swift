@@ -36,12 +36,18 @@ final class BerryGameSession: ObservableObject {
                let snapshot = try? JSONDecoder().decode(Save.self, from: data) { engine = snapshot.engine }
         } else if let data = UserDefaults.standard.data(forKey: modeKey(mode)),
                   let restored = try? JSONDecoder().decode(BerryEngine.self, from: data) { engine = restored }
-        else { engine = BerryEngine() }
+        else { engine = freshEngine() }
         previous = nil
         gameOver = !engine.hasMove()
         lastMessage = nil
     }
 
+    private func freshEngine() -> BerryEngine {
+        guard activeMode == .daily else { return BerryEngine() }
+        let components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        let number = (components.year ?? 2026) * 10000 + (components.month ?? 1) * 100 + (components.day ?? 1)
+        return BerryEngine(seed: UInt64(number))
+    }
     private let saveKey = "berryblockblast.saved-game.v3"
     private let bestKey = "berryblockblast.best-score.v1"
     private let inventoryKey = "berryblockblast.inventory.v3"
@@ -183,7 +189,7 @@ final class BerryGameSession: ObservableObject {
     var canUndo: Bool { undos > 0 && previous != nil }
 
     func newGame() {
-        engine = BerryEngine()
+        engine = freshEngine()
         previous = nil
         gameOver = false
         lastMessage = nil
