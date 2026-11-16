@@ -102,29 +102,54 @@ def patch(root: Path, upstream_sha: str) -> Path:
 
 
 def verify_ipa(path: Path) -> dict:
+    import io
     import zipfile
+
     if not path.exists():
         raise FileNotFoundError(path)
+    main_path = "Payload/SideStore.app/Info.plist"
+    widget_path = "Payload/SideStore.app/PlugIns/AltWidgetExtension.appex/Info.plist"
+    backup_path = "Payload/SideStore.app/SideBackup.ipa"
+    nested_path = "Payload/SideBackup.app/Info.plist"
+
     with zipfile.ZipFile(path) as archive:
-        plist_names = [
-            x for x in archive.namelist()
-            if x == "Payload/SideStore.app/Info.plist"
-        ]
-        if len(plist_names) != 1:
-            raise RuntimeError("Expected exactly one primary SideStore app in the IPA")
-        info = plistlib.loads(archive.read(plist_names[0]))
+        if archive.namelist().count(main_path) != 1:
+            raise RuntimeError("Expected exactly one primary app in the IPA")
+        info = plistlib.loads(archive.read(main_path))
+        if widget_path not in archive.namelist():
+            raise RuntimeError("Missing the expected widget extension Info.plist")
+        widget = plistlib.loads(archive.read(widget_path))
+        if backup_path not in archive.namelist():
+            raise RuntimeError("Missing the nested SideBackup IPA")
+        with zipfile.ZipFile(io.BytesIO(archive.read(backup_path))) as backup:
+            if nested_path not in backup.namelist():
+                raise RuntimeError("Missing nested backup app Info.plist")
+            backup_info = plistlib.loads(backup.read(nested_path))
+
     if info.get("CFBundleDisplayName") != DISPLAY_NAME:
         raise RuntimeError("Packaged IPA lost DaySix Signer Lab label")
     if not info.get("DaySixSignerLabPreview"):
         raise RuntimeError("Packaged IPA missing its experimental marker")
-    bundle_id = info.get("CFBundleIdentifier", "")
-    if not bundle_id or "$(" in bundle_id:
-        raise RuntimeError("Bundle ID is absent or unresolved")
-    if bundle_id != PREVIEW_BUNDLE_ID:
-        raise RuntimeError(
-            f"Unexpected bundle ID {bundle_id!r}; expected {PREVIEW_BUNDLE_ID!r}. Refuse packaging.")
+
+    expected_ids = {
+        "main": PREVIEW_BUNDLE_ID,
+        "widget": PREVIEW_BUNDLE_ID + ".AltWidget",
+        "backup": PREVIEW_BUNDLE_ID + ".SideBackup",
+    }
+    actual_ids = {
+        "main": info.get("CFBundleIdentifier", ""),
+        "widget": widget.get("CFBundleIdentifier", ""),
+        "backup": backup_info.get("CFBundleIdentifier", ""),
+    }
+    for key, expected in expected_ids.items():
+        actual = actual_ids[key]
+        if actual != expected:
+            raise RuntimeError(
+                f"{key} bundle ID {actual!r}; expected {expected!r}. Refuse packaging.")
+
     return {
-        "bundle_id": bundle_id,
+        "bundle_id": actual_ids["main"],
+        "embedded_bundle_ids": actual_ids,
         "display_name": info.get("CFBundleDisplayName"),
         "version": info.get("CFBundleShortVersionString"),
         "note": "Packaged successfully; actual signing and installation are untested",
