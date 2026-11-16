@@ -53,21 +53,37 @@ jobs:
             --sha "$(cat daysix-upstream-sha.txt)"
           command -v ldid || brew install ldid
 
-      - name: Compile actual SideStore signing engine (separate test bundle ID)
+      - name: Compile SideStore-derived engine under patched DaySix identity
         working-directory: upstream-sidestore
         shell: bash
-        env:
-          BUNDLE_ID_SUFFIX: DAY6LAB001
         run: |
           set -o pipefail
+          # Build.xcconfig and Makefile were patched and audited above.
+          # BUNDLE_ID_SUFFIX is intentionally NOT used: upstream Release
+          # ignores it, which caused the previous identity collision.
           make build fakesign ipa 2>&1 | tee ../daysix-upstream-build.log
 
       - name: Confirm distinct bundle ID and experimental preview label
         working-directory: upstream-sidestore
         shell: bash
         run: |
+          set -euo pipefail
           python3 ../DaySix/SignerLab/preview_brand.py --verify-ipa SideStore.ipa \
             | tee ../daysix-preview-inspection.json
+          # Check the actual ad-hoc entitlements embedded in the executable.
+          # They must use our lab identity, not the original SideStore app group.
+          for app in SideStore.xcarchive/Products/Applications/SideStore.app/SideStore \
+                     SideStore.xcarchive/Products/Applications/SideStore.app/PlugIns/AltWidgetExtension.appex/AltWidgetExtension; do
+            ldid -e "$app" | tee -a ../daysix-signerlab-entitlements.txt
+          done
+          if grep -q 'group.com.SideStore.SideStore' ../daysix-signerlab-entitlements.txt; then
+            echo 'ERROR: original SideStore app group in packaged binary' >&2
+            exit 1
+          fi
+          if ! grep -q 'group.com.valentinebsaa.daysix.signerlab' ../daysix-signerlab-entitlements.txt; then
+            echo 'ERROR: missing isolated signing app group' >&2
+            exit 1
+          fi
           cp SideStore.ipa ../DaySix-Signer-Lab-unsigned.ipa
 
       - name: Collect build outputs
@@ -77,7 +93,7 @@ jobs:
           mkdir -p upstream-probe-outputs
           cp -f daysix-upstream-*.txt upstream-probe-outputs/ 2>/dev/null || true
           cp -f daysix-upstream-build.log upstream-probe-outputs/ 2>/dev/null || true
-          cp -f daysix-signerlab-provenance.json daysix-preview-inspection.json upstream-probe-outputs/ 2>/dev/null || true
+          cp -f daysix-signerlab-provenance.json daysix-preview-inspection.json daysix-signerlab-entitlements.txt upstream-probe-outputs/ 2>/dev/null || true
           test ! -f DaySix-Signer-Lab-unsigned.ipa || cp -f DaySix-Signer-Lab-unsigned.ipa upstream-probe-outputs/
           # Never publish unverified SideStore.ipa or embedded signing material.
 
