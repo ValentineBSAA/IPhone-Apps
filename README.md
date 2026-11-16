@@ -57,3 +57,10 @@ Source reference: the user's Repo Pulse 0.8.3 Decky plugin ZIP. This is a native
 - Actual Repo Pulse Decky cube icon artwork is bundled through macOS AppKit icon generation. The original iPhone bundle identifier and local watchlist storage key remain unchanged.
 
 **Honest limitations:** This release fetches up to 100 releases per public GitHub repository, rather than Decky's paginated 2,000-release authenticated scan, and has no automatic push-notification server, full settings backup/restore or complete third-party project artwork discovery. iOS may suspend the app when closed. Therefore native alerts are created when an active refresh discovers real changes; guaranteed instant notifications with the app terminated would require APNs and a backend. GitHub REST unauthenticated quotas apply. Foreground polling is intentionally conservative at 15 minutes. Device verification still required.
+
+### Visual fix v1.3.1 (build 5)
+- Replaced the broken embedded JPEG/Base64 icon pipeline with deterministic native vector illustration. The real AppIcon PNG and the in-app RepoPulseMark PNG are independently generated and validated.
+- Replaced duplicated app-brand thumbnail on every repository card with distinct SF Symbols, preserving the current colors and counts.
+- Clipped scrolling content beneath the iOS status bar and shortened the truncated header subtitle.
+- Existing native notification banners and sounds are unchanged.
+- Output: **RepoPulse-DECK-EDITION-v1.3.1-BUILD5-VISUAL-FIX-UNSIGNED.ipa**; the same iOS bundle identifier is preserved.

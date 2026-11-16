@@ -52,6 +52,15 @@ private func kindColor(_ repo: String) -> Color {
     return DeckLook.cyan
 }
 
+private func repoSymbol(_ name: String,other: Bool) -> String {
+    let repo=name.lowercased()
+    if repo.contains("game-theme-music") { return "music.note.list" }
+    if repo.contains("titledeck") { return "textformat.abc" }
+    if repo.contains("resonadeck") { return "waveform" }
+    if repo.contains("xnfs") { return "steeringwheel" }
+    return other ? "folder.fill" : "gamecontroller.fill"
+}
+
 private struct DeckHeader: View {
     let title: String
     let subtitle: String
@@ -61,10 +70,10 @@ private struct DeckHeader: View {
 
     var body: some View {
         HStack(spacing: 11) {
-            Image("DeckCube")
+            Image("RepoPulseMark")
                 .resizable()
+                .interpolation(.high)
                 .scaledToFit()
-                .foregroundStyle(DeckLook.gradient)
                 .frame(width: 47, height: 47)
                 .background(DeckLook.raised, in: RoundedRectangle(cornerRadius: 14))
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(DeckLook.cyan.opacity(0.28)))
@@ -206,7 +215,7 @@ struct DeckPulseHome: View {
     private var homePage: some View {
         NavigationStack {
             pageScroll {
-                header("Repo Pulse", "Steam Deck analytics, now native on iPhone")
+                header("Repo Pulse", "Deck companion • iPhone")
                 HStack {
                     Label("DECK EDITION · 0.8.3 DNA", systemImage: "checkmark.seal.fill")
                         .font(.system(size: 10, weight: .heavy, design: .rounded))
@@ -619,6 +628,10 @@ struct DeckPulseHome: View {
                 .padding(.top,13)
                 .padding(.bottom,28)
             }
+            .clipped()
+            .safeAreaInset(edge:.top,spacing:0) {
+                DeckLook.bg.frame(height:8)
+            }
         }
         .toolbar(.hidden,for:.navigationBar)
     }
@@ -637,9 +650,8 @@ private struct DeckRepoTile: View {
         let measured = stats?.measure(mode,asset:asset)
         VStack(alignment:.leading,spacing:9) {
             HStack {
-                Image("DeckCube")
-                    .resizable()
-                    .scaledToFit()
+                Image(systemName: repoSymbol(repo.id,other:other))
+                    .font(.system(size:23,weight:.semibold))
                     .foregroundStyle(kindColor(repo.id))
                     .frame(width:42,height:42)
                     .background(kindColor(repo.id).opacity(0.12),in:RoundedRectangle(cornerRadius:12))
@@ -868,8 +880,11 @@ private struct DeckRepoDetails: View {
                 ScrollView {
                     VStack(alignment:.leading,spacing:18) {
                         HStack(spacing:11) {
-                            Image("DeckCube").resizable().scaledToFit().frame(width:52,height:52)
+                            Image(systemName:repoSymbol(stats.id,other:stats.id.lowercased().contains("xnfs")))
+                                .font(.system(size:28,weight:.semibold))
                                 .foregroundStyle(kindColor(stats.id))
+                                .frame(width:52,height:52)
+                                .background(kindColor(stats.id).opacity(0.10),in:RoundedRectangle(cornerRadius:14))
                             VStack(alignment:.leading,spacing:5) {
                                 Text(stats.identity.name).font(.title2.bold()).lineLimit(1).minimumScaleFactor(0.7)
                                 Text(stats.identity.owner).font(.caption).foregroundStyle(DeckLook.dim)
