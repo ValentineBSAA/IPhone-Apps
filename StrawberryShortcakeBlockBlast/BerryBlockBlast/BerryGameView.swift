@@ -218,10 +218,6 @@ struct BerryGameView: View {
         .sheet(isPresented: $showShop) { shopSheet }
         .sheet(isPresented: $showStats) { statsSheet }
         .sheet(isPresented: $showWelcome) { welcomeSheet }
-        .confirmationDialog("Start a fresh berry garden?", isPresented: $confirmRestart) {
-            Button("Start New Game", role: .destructive) { session.newGame(); selectedSlot = nil; drag = nil }
-            Button("Keep Playing", role: .cancel) { }
-        } message: { Text("Your best score and earned berries stay saved.") }
         .onChange(of: session.gameOver) { _, ended in showGameOver = ended && !showVictory }
         .onAppear {
             BerryAudio.shared.setMusic(music)
@@ -236,20 +232,43 @@ struct BerryGameView: View {
             if mode == .daily { session.rewardDaily(); dailyCompleted = Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)) }
             showVictory = true
         }
-        .alert("Strawberry Spectacular! 🍰", isPresented: $showVictory) {
-            Button(mode == .story ? "Next Chapter" : "Another Harvest") { session.newGame() }
-            Button("Main Menu") { onExit() }
-        } message: {
-            Text(mode == .story ? "Your strawberry star is earned! The next chapter has blossomed." : "Today's sweet challenge is complete. Come back for another harvest!")
-        }
-        .alert("No More Room in the Berry Patch! 🌱", isPresented: $showGameOver) {
-            Button("Plant a Fresh Garden") { session.newGame(); selectedSlot = nil }
-            Button("Return to Strawberry Village") { onExit() }
-            if session.shuffles > 0 {
-                Button("Use Shuffle (\(session.shuffles) left)") { session.shuffle() }
+        .overlay {
+            if showVictory || showGameOver || confirmRestart {
+                ZStack {
+                    BerryStyle.chocolate.opacity(0.42).ignoresSafeArea()
+                    VStack(spacing: 16) {
+                        Text(showVictory ? "🍰 ✨ 🍓" : confirmRestart ? "🌱 🍓 🌱" : "🍓 🌸 🧺")
+                            .font(.system(size: 38))
+                        Text(showVictory ? "Strawberry Spectacular!" : confirmRestart ? "Plant a Fresh Garden?" : "Our Berry Patch Is Full!")
+                            .font(.system(size: 25, weight: .black, design: .rounded))
+                            .foregroundStyle(BerryStyle.strawberry).multilineTextAlignment(.center)
+                        Text(showVictory ? "Your strawberry star has blossomed!" : confirmRestart ? "Your best score and earned berries stay safe." : "You harvested \(session.engine.score) sweet points and cleared \(session.engine.totalLines) lines. Every garden deserves another season!")
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                            .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
+                        Button(showVictory ? "🍓 Another Sweet Adventure" : "🍓 Plant a Fresh Garden") {
+                            showVictory = false; showGameOver = false; confirmRestart = false
+                            session.newGame(); selectedSlot = nil; drag = nil
+                        }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
+                        Button("🏡 Return to Strawberry Village") { onExit() }
+                            .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
+                        if showGameOver && session.shuffles > 0 {
+                            Button("✨ Use Shuffle (\(session.shuffles) left)") { session.shuffle(); showGameOver = session.gameOver }
+                                .foregroundStyle(BerryStyle.strawberry)
+                        }
+                        if confirmRestart {
+                            Button("Keep Playing") { confirmRestart = false }.foregroundStyle(BerryStyle.chocolate)
+                        }
+                    }
+                    .padding(25).frame(maxWidth: 350)
+                    .background(
+                        LinearGradient(colors: [BerryStyle.cream, Color(red: 1, green: 0.85, blue: 0.9)],
+                            startPoint: .topLeading, endPoint: .bottomTrailing),
+                        in: RoundedRectangle(cornerRadius: 30))
+                    .overlay(RoundedRectangle(cornerRadius: 30).stroke(.white, lineWidth: 3))
+                    .shadow(color: BerryStyle.strawberry.opacity(0.28), radius: 22, y: 12)
+                    .padding(22)
+                }.transition(.opacity)
             }
-        } message: {
-            Text("No more pieces fit. You harvested \(session.engine.score) points and cleared \(session.engine.totalLines) lines. Every garden deserves another season! 🍓")
         }
     }
 
