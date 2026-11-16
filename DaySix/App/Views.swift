@@ -504,6 +504,24 @@ struct MoreView: View {
                             }
                         }
                         NavigationLink {
+                            ReliabilityCenterView()
+                        } label: {
+                            GlassCard {
+                                HStack(spacing: 13) {
+                                    Image(systemName: "lifepreserver.fill")
+                                        .font(.title2).foregroundStyle(DS.mint)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Reliability Lab").font(.headline)
+                                        Text("Background checks, automation backups and rescue steps.")
+                                            .font(.caption).foregroundStyle(DS.muted)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right").foregroundStyle(DS.muted)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        NavigationLink {
                             RenewalHistoryView()
                         } label: {
                             GlassCard {
