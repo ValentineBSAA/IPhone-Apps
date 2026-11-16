@@ -2,6 +2,12 @@
 // Embedded into the pinned SideStore TabBarController.swift at build time.
 // This view uses the REAL SideStore install and refresh actions from the
 // controller that embeds it. No separate installer or credentials are needed.
+// A projection of SideStore's own local records, not a guessed install status.
+private struct DaySixSigningSnapshot {
+    let renewableAppCount: Int
+    let selfExpiry: Date?
+}
+
 private struct DaySixSignerHomeView: View {
     let importIPA: () -> Void
     let showApps: () -> Void
