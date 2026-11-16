@@ -170,8 +170,14 @@ struct BerryGameView: View {
                         .onTapGesture { location in
                             guard canMakeMove, let slot = selectedSlot, session.engine.tray.indices.contains(slot), let piece = session.engine.tray[slot] else { return }
                             let step = cell + 3
-                            let col = Int(floor((location.x - 7) / step))
-                            let row = Int(floor((location.y - 7) / step))
+                            // Tap-to-place centers the chosen piece on the touched
+                            // square, matching the drag preview's placement logic.
+                            let minCol = piece.points.map(\.col).min() ?? 0
+                            let maxCol = piece.points.map(\.col).max() ?? 0
+                            let minRow = piece.points.map(\.row).min() ?? 0
+                            let maxRow = piece.points.map(\.row).max() ?? 0
+                            let col = Int(floor((location.x - 7) / step - CGFloat(minCol + maxCol + 1) / 2 + 0.5))
+                            let row = Int(floor((location.y - 7) / step - CGFloat(minRow + maxRow + 1) / 2 + 0.5))
                             if session.drop(slot: slot, row: row, col: col) {
                                 selectedSlot = nil
                                 successFeedback()
