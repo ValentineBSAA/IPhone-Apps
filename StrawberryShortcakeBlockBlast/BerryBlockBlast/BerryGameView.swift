@@ -312,7 +312,7 @@ struct BerryGameView: View {
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
                         Button(showVictory ? "🍓 Another Sweet Adventure" : "🍓 Plant a Fresh Garden") {
                             showVictory = false; showGameOver = false; confirmRestart = false
-                            completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil; blitzRemaining = 120; blitzRunning = mode == .challenge; blitzDeadline = mode == .challenge ? Date().addingTimeInterval(120) : nil; if mode == .challenge { UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey) }
+                            completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil; lastBlitzTimeBonus = 0; blitzRemaining = 120; blitzRunning = mode == .challenge; blitzDeadline = mode == .challenge ? Date().addingTimeInterval(120) : nil; if mode == .challenge { UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey) }
                         }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
                         Button("🏡 Return to Strawberry Village") { onExit() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
@@ -416,7 +416,7 @@ struct BerryGameView: View {
         HStack(spacing: 7) {
             toolButton("Undo", icon: "arrow.uturn.backward", count: session.undos, enabled: session.canUndo) {
                 if session.canUndo {
-                    let revertedLines = max(0, session.engine.totalLines - (session.engine.totalLines - session.lastClearedLines))
+                    let revertedLines = session.lastClearedLines
                     session.undo()
                     lifetimeLines = max(0, lifetimeLines - revertedLines)
                     if mode == .challenge && lastBlitzTimeBonus > 0 {
