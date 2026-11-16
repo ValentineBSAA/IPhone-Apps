@@ -39,6 +39,14 @@ enum RenewalPolicy {
         expiration.addingTimeInterval(-Double(hoursBeforeExpiry) * 60 * 60)
     }
 
+    /// Day-five preflight with the default 24-hour refresh window. Longer
+    /// windows get an earlier readiness reminder so an Apple account issue
+    /// can be fixed before attempting the actual renewal.
+    static func preflightAt(expiration: Date) -> Date {
+        let leadHours = max(48, hoursBeforeExpiry + 12)
+        return expiration.addingTimeInterval(-Double(leadHours) * 60 * 60)
+    }
+
     static func isDue(expiration: Date, now: Date = .now) -> Bool {
         now >= renewAt(expiration: expiration)
     }
