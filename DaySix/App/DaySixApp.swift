@@ -144,10 +144,32 @@ final class DaySixStore: ObservableObject {
         let center = UNUserNotificationCenter.current()
         center.getPendingNotificationRequests { pending in
             let ours = pending.map(\.identifier).filter { $0.hasPrefix("daysix.") }
-            center.removePendingNotificationRequests(withIdentifiers: ours)
             guard UserDefaults.standard.object(forKey: DaySixStorage.remindersKey) == nil
                     || UserDefaults.standard.bool(forKey: DaySixStorage.remindersKey) else {
+                center.removePendingNotificationRequests(withIdentifiers: ours)
                 return
+            }
+
+            // Keep already-pending due warnings intact. Removing all
+            // requests on every foreground transition could silently erase
+            // the 90-second immediate alert after a due threshold passed.
+            let activeApps = DaySixStorage.read().prefix(24)
+            var desiredIDs = Set<String>()
+            if let selfExpiry = SelfProvisioning.effectiveExpiry,
+               selfExpiry > Date.now {
+                desiredIDs.formUnion([
+                    "daysix.self.preflight",
+                    "daysix.self.due",
+                    "daysix.self.critical"
+                ])
+            }
+            for app in activeApps where app.expiresAt > Date.now {
+                desiredIDs.insert("daysix.\(app.id.uuidString).preflight")
+                desiredIDs.insert("daysix.\(app.id.uuidString).due")
+            }
+            let staleIDs = ours.filter { !desiredIDs.contains($0) }
+            if !staleIDs.isEmpty {
+                center.removePendingNotificationRequests(withIdentifiers: staleIDs)
             }
             // Reminders are scheduled at their actual time whenever possible.
             // For an already-passed due threshold, use a persisted expiry token
