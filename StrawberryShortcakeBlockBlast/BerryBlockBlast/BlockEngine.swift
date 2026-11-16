@@ -34,8 +34,22 @@ struct BerryEngine: Codable {
     private(set) var bestCombo = 0
     private(set) var dryMoves = 0
     private(set) var boardClears = 0
+    private var randomState: UInt64? = nil
 
     init() { refill() }
+    init(seed: UInt64) {
+        randomState = seed == 0 ? 0x9E3779B97F4A7C15 : seed
+        refill()
+    }
+    private mutating func nextRandom(_ upperBound: Int) -> Int {
+        guard upperBound > 0 else { return 0 }
+        guard var state = randomState else { return Int.random(in: 0..<upperBound) }
+        state ^= state >> 12
+        state ^= state << 25
+        state ^= state >> 27
+        randomState = state
+        return Int((state &* 2685821657736338717) % UInt64(upperBound))
+    }
 
     // Explicit initial state is useful for deterministic puzzle-rule tests.
     init(board: [[Int?]], tray: [BerryPiece?], score: Int = 0) {
@@ -130,8 +144,9 @@ struct BerryEngine: Codable {
             }
         }
         tray = (0..<3).map { index in
-            let pool = !viable.isEmpty && (index < 2 || Bool.random()) ? viable : catalog
-            return BerryPiece(points: pool.randomElement() ?? [BerryPoint(0,0)], tint: Int.random(in: 0..<6))
+            let pool = !viable.isEmpty && (index < 2 || nextRandom(2) == 0) ? viable : catalog
+            let shape = pool[nextRandom(pool.count)]
+            return BerryPiece(points: shape, tint: nextRandom(6))
         }
     }
 }
