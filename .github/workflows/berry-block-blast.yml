@@ -39,6 +39,17 @@ jobs:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             build
+      - name: Compile iOS simulator unit tests
+        run: |
+          set -o pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj \\
+            -scheme BerryBlockBlast \\
+            -configuration Debug \\
+            -sdk iphonesimulator \\
+            -destination 'generic/platform=iOS Simulator' \\
+            -derivedDataPath build-simulator \\
+            CODE_SIGNING_ALLOWED=NO \\
+            build-for-testing
       - name: Package clearly versioned IPA
         run: |
           set -eu
