@@ -33,4 +33,20 @@ noExpiration.append(contentsOf: [0x00, 0x01])
 expect(SelfProvisioning.expirationDate(in: noExpiration) == nil,
        "Profiles without ExpirationDate must yield unknown")
 
+if SelfProvisioning.expiresAt == nil {
+    let future = Date.now.addingTimeInterval(3 * 86_400)
+    SelfProvisioning.setManualExpiry(future)
+    expect(SelfProvisioning.effectiveExpiry != nil,
+           "Manual fallback must provide the expiry when the embedded profile is absent")
+    expect(!SelfProvisioning.isDue,
+           "Manual fallback with three days remaining must not trigger refresh yet")
+    SelfProvisioning.setManualExpiry(Date.now.addingTimeInterval(12 * 3_600))
+    expect(SelfProvisioning.isDue,
+           "Manual fallback must trigger refresh with less than 24 hours remaining")
+    SelfProvisioning.setManualExpiry(Date.now.addingTimeInterval(-3_600))
+    expect(SelfProvisioning.isExpired,
+           "Expired manual fallback must indicate expiration")
+    UserDefaults.standard.removeObject(forKey: "daysix.self.manuallyEnteredExpiry.v1")
+}
+
 print("DaySix self-provisioning smoke tests PASSED")
