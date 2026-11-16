@@ -98,6 +98,12 @@ def patch_build_identifiers(root: Path) -> None:
     with backup_plist.open("wb") as stream:
         plistlib.dump(backup_info, stream, sort_keys=False)
 
+    # The Makefile uses ldid -S directly, so Xcode cannot expand this variable.
+    replace_exact(
+        root / "SideBackup" / "SideBackup.entitlements",
+        "group.$(APP_GROUP_IDENTIFIER)",
+        f"group.{PREVIEW_BUNDLE_ID}")
+
     # The real signing engine already asks iOS for alert, badge and sound
     # authorization. Rename the messages it sends so a user running both
     # the official SideStore and lab can identify the correct native banner.
@@ -216,6 +222,7 @@ def verify_ipa(path: Path) -> dict:
     widget_path = "Payload/SideStore.app/PlugIns/AltWidgetExtension.appex/Info.plist"
     backup_path = "Payload/SideStore.app/SideBackup.ipa"
     nested_path = "Payload/SideBackup.app/Info.plist"
+    nested_executable = "Payload/SideBackup.app/SideBackup"
 
     with zipfile.ZipFile(path) as archive:
         if archive.namelist().count(main_path) != 1:
@@ -230,6 +237,9 @@ def verify_ipa(path: Path) -> dict:
             if nested_path not in backup.namelist():
                 raise RuntimeError("Missing nested backup app Info.plist")
             backup_info = plistlib.loads(backup.read(nested_path))
+            if nested_executable not in backup.namelist():
+                raise RuntimeError("Nested backup executable missing")
+            backup_binary = backup.read(nested_executable)
 
     if info.get("CFBundleDisplayName") != DISPLAY_NAME:
         raise RuntimeError("Packaged IPA lost DaySix Signer Lab label")
@@ -276,6 +286,13 @@ def verify_ipa(path: Path) -> dict:
     ]
     if "daysixbackup" not in backup_schemes or "sidebackup" in backup_schemes:
         raise RuntimeError("Packaged backup helper has a conflicting URL scheme")
+
+    expected_group = ("group." + PREVIEW_BUNDLE_ID).encode("utf-8")
+    if (expected_group not in backup_binary
+            or b"APP_GROUP_IDENTIFIER" in backup_binary
+            or b"group.com.SideStore.SideStore" in backup_binary):
+        raise RuntimeError(
+            "Nested SideBackup executable has invalid app-group entitlements")
 
     return {
         "bundle_id": actual_ids["main"],
