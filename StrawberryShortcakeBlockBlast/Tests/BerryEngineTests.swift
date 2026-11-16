@@ -93,6 +93,26 @@ final class BerryEngineTests: XCTestCase {
         XCTAssertTrue(game.hasMove())
     }
 
+    func testNightmareStartsWithTwelveByTwelveBoardAndHardPieces() {
+        let game = BerryEngine(side: 12, hard: true)
+        XCTAssertEqual(game.side, 12)
+        XCTAssertEqual(game.board.count, 12)
+        XCTAssertTrue(game.board.allSatisfy { $0.count == 12 })
+        XCTAssertEqual(game.tray.compactMap { $0 }.count, 3)
+        XCTAssertTrue(game.tray.compactMap { $0 }.allSatisfy { $0.points.count >= 4 })
+        XCTAssertTrue(game.hasMove())
+    }
+
+    func testNightmareRejectsOutOfBoundsAndPersistsDimensions() throws {
+        var game = BerryEngine(side: 12, hard: true)
+        let piece = try XCTUnwrap(game.tray[0])
+        XCTAssertFalse(game.canPlace(piece, row: 12, col: 12))
+        XCTAssertNotNil(game.place(slot: 0, row: 0, col: 0))
+        let restored = try JSONDecoder().decode(BerryEngine.self, from: JSONEncoder().encode(game))
+        XCTAssertEqual(restored.side, 12)
+        XCTAssertEqual(restored.board, game.board)
+    }
+
     private func emptyBoard() -> [[Int?]] {
         Array(repeating: Array(repeating: nil, count: 8), count: 8)
     }
