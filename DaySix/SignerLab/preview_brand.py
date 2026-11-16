@@ -156,6 +156,15 @@ def patch(root: Path, upstream_sha: str) -> Path:
     if general_count != 1:
         raise RuntimeError(
             f"Expected exactly one public SideStore URL scheme, got {general_count}")
+    # The visible name and internal bundle name should both identify DaySix.
+    # Xcode otherwise retains "SideStore" under CFBundleName in the IPA.
+    info["CFBundleName"] = DISPLAY_NAME
+    for entry in types:
+        schemes = entry.get("CFBundleURLSchemes", [])
+        if PREVIEW_URL_SCHEME in schemes:
+            entry["CFBundleURLName"] = "DaySix Signer Lab General"
+        elif any(scheme.startswith("sidestore-") for scheme in schemes):
+            entry["CFBundleURLName"] = "DaySix Signer Lab Backup"
     info["CFBundleDisplayName"] = DISPLAY_NAME
     # This marker is informational, not a security or entitlement claim.
     info["DaySixSignerLabPreview"] = True
@@ -224,6 +233,14 @@ def verify_ipa(path: Path) -> dict:
 
     if info.get("CFBundleDisplayName") != DISPLAY_NAME:
         raise RuntimeError("Packaged IPA lost DaySix Signer Lab label")
+    if info.get("CFBundleName") != DISPLAY_NAME:
+        raise RuntimeError("Packaged IPA retained its old internal SideStore name")
+    url_names = [
+        entry.get("CFBundleURLName")
+        for entry in info.get("CFBundleURLTypes", [])
+    ]
+    if "DaySix Signer Lab General" not in url_names or "DaySix Signer Lab Backup" not in url_names:
+        raise RuntimeError("Packaged IPA retained old URL handler labels")
     primary_schemes = [
         scheme
         for entry in info.get("CFBundleURLTypes", [])
