@@ -486,6 +486,24 @@ struct MoreView: View {
                                 }
                             }
                         }
+                        NavigationLink {
+                            RenewalHistoryView()
+                        } label: {
+                            GlassCard {
+                                HStack {
+                                    Image(systemName: "clock.arrow.circlepath")
+                                        .font(.title2).foregroundStyle(DS.violet)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Renewal History").font(.headline)
+                                        Text("See actual signing changes and Shortcuts attempts.")
+                                            .font(.caption).foregroundStyle(DS.muted)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right").foregroundStyle(DS.muted)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
                         GlassCard {
                             VStack(alignment: .leading, spacing: 12) {
                                 Toggle(isOn: $store.remindersEnabled) {
