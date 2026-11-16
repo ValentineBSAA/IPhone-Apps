@@ -66,8 +66,8 @@ struct SelfSignatureCard: View {
                         .font(.footnote).foregroundStyle(DS.amber)
                 }
 
-                Button(action: openSigningApp) {
-                    Label("Open SideStore to refresh", systemImage: "arrow.clockwise.shield")
+                Button(action: { RefreshLauncher.runConfiguredShortcut() }) {
+                    Label("Run DaySix Refresh", systemImage: "arrow.clockwise")
                         .font(.subheadline.bold())
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
@@ -76,7 +76,9 @@ struct SelfSignatureCard: View {
                 }
                 .buttonStyle(.plain)
 
-                Text("For automatic self-renewal, install or reinstall DaySix from inside SideStore so SideStore manages it. Signing once through an unrelated installer does not automatically enroll DaySix.")
+                Button("Open SideStore manually") { RefreshLauncher.openSideStore() }
+                    .font(.footnote.bold()).foregroundStyle(DS.mint)
+                Text("Create the named 'DaySix Refresh' Shortcut under More first. Install DaySix from inside SideStore so SideStore can renew it. Shortcut execution is never proof that signing succeeded.")
                     .font(.caption).foregroundStyle(DS.muted)
             }
         }
@@ -91,8 +93,5 @@ struct SelfSignatureCard: View {
         return "\(days)d left"
     }
 
-    private func openSigningApp() {
-        guard let url = URL(string: "sidestore://") else { return }
-        UIApplication.shared.open(url)
-    }
+
 }
