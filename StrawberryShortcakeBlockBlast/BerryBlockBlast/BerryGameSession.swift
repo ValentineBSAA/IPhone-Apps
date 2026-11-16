@@ -12,6 +12,7 @@ final class BerryGameSession: ObservableObject {
     @Published private(set) var undos = 2
     @Published private(set) var shuffles = 2
     @Published private(set) var totalEarnedBerries = 0
+    @Published private(set) var rewardsLog: [String] = UserDefaults.standard.stringArray(forKey: "berryblockblast.rewards.v1") ?? []
     private var previous: BerryEngine?
     private var activeMode: BerryMode = .endless
     private func modeKey(_ mode: BerryMode) -> String {
@@ -81,8 +82,7 @@ final class BerryGameSession: ObservableObject {
         lastEarned = outcome.earned
         if outcome.clearedLines > 0 {
             let gained = outcome.clearedLines * 3 + (outcome.streak > 1 ? outcome.streak : 0) + (outcome.boardClear ? 25 : 0)
-            berries += gained
-            totalEarnedBerries += gained
+            earn(gained, reason: "Completed berry lines")
             celebration += 1
             lastMessage = outcome.boardClear ? "PERFECT GARDEN! +300 ✨" :
                 outcome.clearedLines >= 3 ? "BERRY SPECTACULAR! ✨" :
@@ -113,6 +113,29 @@ final class BerryGameSession: ObservableObject {
         save()
     }
 
+    func earn(_ amount: Int, reason: String) {
+        guard amount > 0 else { return }
+        berries += amount
+        totalEarnedBerries += amount
+        rewardsLog.insert("🍓 +\(amount) • \(reason)", at: 0)
+        rewardsLog = Array(rewardsLog.prefix(20))
+        UserDefaults.standard.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
+        save()
+    }
+    func awardOnce(_ name: String, amount: Int, reason: String) {
+        let key = "berryblockblast.award." + name
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        UserDefaults.standard.set(true, forKey: key)
+        earn(amount, reason: reason)
+    }
+    func rewardTutorial() { awardOnce("tutorial", amount: 25, reason: "Strawberry School") }
+    func rewardDaily() {
+        let day = Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash))
+        awardOnce("daily-" + day, amount: 30, reason: "Daily Harvest")
+    }
+    func rewardStory(_ chapter: Int) {
+        awardOnce("chapter-" + String(chapter), amount: 15 + min(35, chapter * 5), reason: "Story chapter")
+    }
     func buyUndo() {
         guard berries >= 25 else { return }
         berries -= 25
