@@ -41,6 +41,12 @@ class PreviewSafetyTests(unittest.TestCase):
         (self.root / "Makefile").write_text(
             "COMMON_BUILD_SETTINGS = ORG_IDENTIFIER=com.SideStore\n",
             encoding="utf-8")
+        runtime_bundle = self.root / "Shared" / "Extensions" / "Bundle+AltStore.swift"
+        runtime_bundle.parent.mkdir(parents=True, exist_ok=True)
+        runtime_bundle.write_text(
+            '    @objc dynamic static let storeAppBundleIdentifier = "com.SideStore.SideStore"\n'
+            '    @objc dynamic static let appbundleIdentifier = "com.SideStore.SideStore"\n',
+            encoding="utf-8")
         for name, extension in [
             ("AltStore", ""),
             ("AltWidget", ".AltWidget"),
@@ -99,6 +105,11 @@ class PreviewSafetyTests(unittest.TestCase):
             (self.root / "Build.xcconfig").read_text())
         self.assertIn("ORG_IDENTIFIER=com.valentinebsaa.daysix",
                       (self.root / "Makefile").read_text())
+        runtime_helper = (
+            self.root / "Shared" / "Extensions" / "Bundle+AltStore.swift"
+        ).read_text()
+        self.assertEqual(runtime_helper.count(preview.PREVIEW_BUNDLE_ID), 2)
+        self.assertNotIn("com.SideStore.SideStore", runtime_helper)
         for relative in [
             "AltStore/Resources/ReleaseEntitlements.plist",
             "AltWidget/Resources/ReleaseEntitlements.plist",
