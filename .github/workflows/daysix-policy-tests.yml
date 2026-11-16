@@ -36,6 +36,7 @@ jobs:
       - name: Compile policy and signature parsing tests
         run: |
           swiftc DaySix/App/RenewalPolicy.swift \
+            DaySix/App/SigningReadiness.swift \
             DaySix/App/SelfProvisioning.swift \
             DaySix/Tests/main.swift \
             -o /tmp/daysix-policy-tests
