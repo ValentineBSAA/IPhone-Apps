@@ -80,11 +80,13 @@ struct BerryGameView: View {
     @State private var showVictory = false
     @State private var blitzRemaining = 120
     @State private var blitzRunning = false
-    private var goal: Int { mode == .story ? 100 + storyLevel * 80 : mode == .challenge ? 250 : 120 }
+    private var goal: Int { mode == .story ? 100 + storyLevel * 55 : mode == .challenge ? 250 : 120 }
+    private var storyTargetLines: Int { 2 + (storyLevel / 2) }
+    private var storyIsLineQuest: Bool { storyLevel % 2 == 0 }
     private var objective: String {
         switch mode {
         case .endless: "Fill a row or column. Grow your berry garden!"
-        case .story: "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
+        case .story: storyIsLineQuest ? "CHAPTER \(storyLevel) • Clear \(storyTargetLines) lines to bloom!" : "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
         case .daily: "DAILY HARVEST • Gather \(goal) points!"
         case .cozy: "COZY COTTAGE • \(session.cottageDecorations) decorations • Grow at your pace!"
         case .challenge: "⚡ BERRY BLITZ • \(blitzRemaining)s left • Reach \(goal)!"
