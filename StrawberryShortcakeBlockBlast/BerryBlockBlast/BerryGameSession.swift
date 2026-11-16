@@ -38,7 +38,8 @@ final class BerryGameSession: ObservableObject {
         bestScore = UserDefaults.standard.integer(forKey: mode == .superHard ? nightmareBestKey : bestKey)
         if mode == .endless {
             if let data = UserDefaults.standard.data(forKey: saveKey),
-               let snapshot = try? JSONDecoder().decode(Save.self, from: data) { engine = snapshot.engine }
+               let snapshot = try? JSONDecoder().decode(Save.self, from: data),
+               snapshot.engine.side == 8 { engine = snapshot.engine }
             else { engine = freshEngine() }
         } else if let data = UserDefaults.standard.data(forKey: modeKey(mode)),
                   let restored = try? JSONDecoder().decode(BerryEngine.self, from: data),
