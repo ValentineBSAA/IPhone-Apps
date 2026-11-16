@@ -19,6 +19,8 @@ final class BerryGameSession: ObservableObject {
         case .endless: saveKey
         case .story: "berryblockblast.story.engine.v1"
         case .daily: "berryblockblast.daily.engine." + Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash))
+        case .cozy: "berryblockblast.cozy.engine.v1"
+        case .challenge: "berryblockblast.blitz.engine.v1"
         }
     }
     func selectMode(_ mode: BerryMode) {
