@@ -45,6 +45,7 @@ final class BerryGameSession: ObservableObject {
     }
 
     private func freshEngine() -> BerryEngine {
+        if activeMode == .cozy { return BerryEngine(cozy: true) }
         guard activeMode == .daily else { return BerryEngine() }
         let components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
         let number = (components.year ?? 2026) * 10000 + (components.month ?? 1) * 100 + (components.day ?? 1)
