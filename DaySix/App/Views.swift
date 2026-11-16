@@ -461,7 +461,7 @@ struct IPAInstallView: View {
 
 struct MoreView: View {
     @EnvironmentObject private var store: DaySixStore
-    private let recipe = "Shortcuts → Automation → Time of Day → Daily → Run Immediately.\n1. DaySix: Check DaySix Refresh\n2. If result is True\n3. Connect LocalDevVPN\n4. SideStore: Refresh All Apps\n5. DaySix: Record Refresh Attempt\n6. End If\nConfirm expiry in SideStore when possible. iOS and SideStore may fail or delay background signing."
+    private let recipe = "FIRST: In Shortcuts, create a shortcut named DaySix Refresh.\n1. Set VPN: Connect LocalDevVPN\n2. DaySix: Record Refresh Attempt\n3. SideStore: Refresh All Apps\n\nTHEN: In Shortcuts → Automation → Time of Day → Daily → Run Immediately:\n1. DaySix: Check DaySix Refresh\n2. If result is True\n3. Run Shortcut: DaySix Refresh\n4. End If\n\nThe one-tap button in DaySix also runs this shortcut. No success is assumed until the expiry changes."
     var body: some View {
         NavigationStack {
             DaySixBackground {
@@ -472,8 +472,23 @@ struct MoreView: View {
                             VStack(alignment: .leading, spacing: 13) {
                                 Label("Day-six automation", systemImage: "clock.arrow.2.circlepath")
                                     .font(.headline).foregroundStyle(DS.mint)
-                                Text("The daily automation checks DaySix's own signing profile and your tracked apps. When either reaches day six, Shortcuts asks SideStore to refresh every app SideStore manages, including DaySix if you installed it through SideStore.")
+                                Text("Use a named 'DaySix Refresh' Shortcut for one-tap manual renewal and a separate daily automation that calls it only when DaySix detects a due signature. SideStore still performs signing, including DaySix itself if SideStore manages the installation.")
                                     .font(.subheadline).foregroundStyle(DS.muted)
+                                HStack(spacing: 10) {
+                                    Button {
+                                        RefreshLauncher.runConfiguredShortcut()
+                                    } label: {
+                                        Label("Run Refresh", systemImage: "arrow.clockwise")
+                                            .font(.subheadline.bold())
+                                    }
+                                    Button {
+                                        RefreshLauncher.openShortcutEditor()
+                                    } label: {
+                                        Label("New Shortcut", systemImage: "plus")
+                                            .font(.subheadline.bold())
+                                    }
+                                }
+                                .tint(DS.mint)
                                 Text(recipe).font(.footnote).foregroundStyle(.white.opacity(0.9))
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(13)
