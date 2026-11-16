@@ -56,6 +56,8 @@ struct DaySixRootView: View {
                 .tabItem { Label("Home", systemImage: "square.grid.2x2.fill") }
             ManagedAppsView()
                 .tabItem { Label("My Apps", systemImage: "square.stack.3d.up.fill") }
+            RenewalCenterView()
+                .tabItem { Label("Renew", systemImage: "arrow.triangle.2.circlepath") }
             IPAInstallView()
                 .tabItem { Label("Install", systemImage: "square.and.arrow.down.fill") }
             MoreView()
