@@ -6,13 +6,13 @@ struct DaySixOnboardingView: View {
 
     private let pages: [(symbol: String, title: String, message: String)] = [
         ("checkmark.shield.fill", "Welcome to DaySix",
-         "A calm home for seven-day app signing. Track the expiry, refresh on day six, and never mistake an attempt for a confirmed renewal."),
+         "DaySix monitors its own signature as well as your other apps. It checks for day-six renewal and never mistakes an attempt for a successful refresh."),
         ("iphone.gen3.radiowaves.left.and.right", "Connect your signer",
-         "SideStore handles Apple signing and installation on your iPhone. DaySix never asks for your Apple password."),
+         "SideStore handles signing. To renew DaySix itself, install or reinstall DaySix through SideStore so it appears under SideStore's My Apps. DaySix never requests your Apple password."),
         ("clock.arrow.2.circlepath", "Build the automation",
          "In Shortcuts, create a daily Run Immediately automation. Check DaySix's due flag, then run SideStore's Refresh All Apps only when needed."),
         ("square.stack.3d.up.fill", "Add and verify",
-         "Track your apps with the last successfully verified signing date. DaySix alerts you on day six. Confirm the refreshed date after SideStore succeeds.")
+         "DaySix reads its own provisioning expiration automatically. Add other apps manually, and confirm those apps' renewed dates after SideStore succeeds.")
     ]
 
     var body: some View {
