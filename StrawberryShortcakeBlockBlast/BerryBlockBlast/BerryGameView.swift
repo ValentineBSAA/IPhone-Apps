@@ -405,11 +405,7 @@ struct BerryGameView: View {
     }
 
     private func successFeedback() {
-        let key = "berryblockblast.lines-seen." + mode.rawValue
-        let previous = UserDefaults.standard.integer(forKey: key)
-        let current = session.engine.totalLines
-        if current > previous { lifetimeLines += current - previous }
-        UserDefaults.standard.set(current, forKey: key)
+        lifetimeLines += session.lastClearedLines
         if lifetimeLines >= 10 && !strawberryUnlocked {
             strawberryUnlocked = true
             showUnlock = true
