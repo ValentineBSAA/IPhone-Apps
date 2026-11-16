@@ -421,8 +421,7 @@ struct BerryGameView: View {
         HStack(spacing: 7) {
             toolButton("Undo", icon: "arrow.uturn.backward", count: session.undos, enabled: session.canUndo) {
                 if session.canUndo {
-                    let revertedLines = session.lastClearedLines
-                    session.undo()
+                    let revertedLines = session.undo()
                     lifetimeLines = max(0, lifetimeLines - revertedLines)
                     if mode == .challenge && lastBlitzTimeBonus > 0 {
                         blitzDeadline = blitzDeadline?.addingTimeInterval(TimeInterval(-lastBlitzTimeBonus))
