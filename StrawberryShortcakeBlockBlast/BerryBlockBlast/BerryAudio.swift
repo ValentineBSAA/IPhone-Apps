@@ -10,6 +10,12 @@ final class BerryAudio {
     private var musicPlayer: AVAudioPlayer?
     private var musicEnabled = false
     private init() {}
+    private func activateAudio() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch { }
+    }
 
     private func wav(_ notes: [(Double, Double)], volume: Double) -> Data {
         let rate = 22050
@@ -48,6 +54,7 @@ final class BerryAudio {
         case .clear: notes = [(523.25, 0.10), (659.25, 0.10), (783.99, 0.12), (1046.50, 0.18)]
         case .invalid: notes = [(246.94, 0.12), (196.0, 0.15)]
         }
+        activateAudio()
         do {
             effectPlayer = try AVAudioPlayer(data: wav(notes, volume: 0.23))
             effectPlayer?.prepareToPlay()
@@ -59,6 +66,7 @@ final class BerryAudio {
         guard enabled != musicEnabled else { return }
         musicEnabled = enabled
         if !enabled { musicPlayer?.stop(); musicPlayer = nil; return }
+        activateAudio()
         let melody: [(Double, Double)] = [
             (523.25, 0.22), (659.25, 0.22), (783.99, 0.22), (659.25, 0.22),
             (587.33, 0.22), (698.46, 0.22), (880.0, 0.22), (698.46, 0.22),
