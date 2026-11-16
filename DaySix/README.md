@@ -3,6 +3,18 @@
 
 A dark glass, teal-and-violet iOS dashboard inspired by ReProvision for the seven-day personal-development provisioning cycle. DaySix automatically checks **its own installed Apple provisioning-profile expiration**, tracks other apps you explicitly add, and gates SideStore's **Refresh All Apps** Shortcuts action at **day six**, with local reminders as a fallback.
 
+## Native iPhone Notifications: real Settings integration
+
+DaySix now uses Apple's **UserNotifications** permission system and presents an explicit permission request during first-run onboarding. After the user has responded to the iOS prompt, the installed app can be managed in **iPhone Settings → Apps → DaySix → Notifications** (also discoverable through Settings → Notifications on supported iOS versions). **These are actual OS controls**, not DaySix-branded replacements:
+
+- Allow Notifications, Lock Screen, Notification Center, banners, sounds, badges and delivery preferences remain under Apple's control.
+- **More → iPhone Notifications** displays Apple's real authorization, alert, sound and badge statuses and links straight to `UIApplication.openNotificationSettingsURLString`.
+- DaySix has individual in-app switches for early health checks, day-six due warnings and six-hour critical warnings. These switches adjust scheduled `UNNotificationRequest` entries, not iOS system permissions.
+- **Send Test Notification** schedules a real five-second local banner with the system's default notification sound. A foreground notification delegate allows banners while DaySix is open; Focus, Silent Mode and system settings can still suppress presentation.
+- DaySix does not claim APNs remote push support, emergency/critical-alert privileges, guaranteed background execution, or a confirmed on-device signing operation.
+
+The **Signer Lab** build separately inherits SideStore's own iOS authorization and foreground-banner handling. Its expiration notifications are branded **DaySix Signer Lab** so users can distinguish the experimental signer from the DaySix SwiftUI companion. The lab is **not device-approved or ready to install** until its real unsigned IPA passes packaging and physical iOS testing.
+
 ## Signer Lab: a real engine technical preview, not a finished DaySix signer
 
 We now have a **reproducible SideStore-derived unsigned IPA build recipe** in
