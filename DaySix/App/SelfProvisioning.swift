@@ -18,8 +18,23 @@ enum SelfProvisioning {
         return nil
     }
 
+    /// Fallback when a compatible signing profile is not embedded in the
+    /// installed app. The user must enter the actual expiration from SideStore.
+    /// This manual value is NEVER treated as a verified signature.
+    private static let fallbackExpiryKey = "daysix.self.manuallyEnteredExpiry.v1"
+
+    static var manualExpiry: Date? {
+        UserDefaults.standard.object(forKey: fallbackExpiryKey) as? Date
+    }
+
+    static func setManualExpiry(_ date: Date) {
+        UserDefaults.standard.set(date, forKey: fallbackExpiryKey)
+    }
+
+    static var effectiveExpiry: Date? { expiresAt ?? manualExpiry }
+
     static var refreshDueAt: Date? {
-        expiresAt?.addingTimeInterval(-24 * 60 * 60)
+        effectiveExpiry?.addingTimeInterval(-24 * 60 * 60)
     }
 
     static var isDue: Bool {
@@ -28,8 +43,8 @@ enum SelfProvisioning {
     }
 
     static var isExpired: Bool {
-        guard let expiresAt else { return false }
-        return Date.now >= expiresAt
+        guard let expiry = effectiveExpiry else { return false }
+        return Date.now >= expiry
     }
 
     static func expirationDate(in signedCMSData: Data) -> Date? {
