@@ -19,6 +19,10 @@ on:
       - ".github/workflows/daysix-policy-tests.yml"
   workflow_dispatch:
 
+concurrency:
+  group: daysix-policy-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
