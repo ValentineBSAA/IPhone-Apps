@@ -2,10 +2,6 @@ name: Berry Block Blast iPhone IPA
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'StrawberryShortcakeBlockBlast/**'
-      - '.github/workflows/berry-block-blast.yml'
 
 concurrency:
   group: berry-block-blast-${{ github.ref }}
