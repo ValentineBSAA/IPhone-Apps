@@ -1,9 +1,15 @@
 import SwiftUI
 
-/// An original berry-garden mascot illustration. No externally sourced character art is bundled.
+/// Uses the supplied BerryMascot image when installed; retains the geometric mascot as a safe fallback.
 struct BerryGirlView: View {
     var body: some View {
-        GeometryReader { geo in
+        Group {
+            if UIImage(named: "BerryMascot") != nil {
+                Image("BerryMascot")
+                    .resizable()
+                    .scaledToFit()
+            } else {
+                GeometryReader { geo in
             let s = min(geo.size.width / 180, geo.size.height / 220)
             ZStack {
                 Circle()
@@ -90,6 +96,8 @@ struct BerryGirlView: View {
             .frame(width: 180, height: 220)
             .scaleEffect(s)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+            }
         }
         .accessibilityLabel("Smiling berry-garden girl wearing a pink strawberry hat")
     }
