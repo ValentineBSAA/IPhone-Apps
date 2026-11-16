@@ -96,6 +96,7 @@ struct BerryGameView: View {
     @State private var showWelcome = false
     @AppStorage("berryblockblast.haptics") private var haptics = true
     @AppStorage("berryblockblast.sound") private var sound = true
+    @AppStorage("berryblockblast.music") private var music = false
     @AppStorage("berryblockblast.welcomed.v3") private var welcomed = false
 
     var body: some View {
@@ -208,6 +209,7 @@ struct BerryGameView: View {
         } message: { Text("Your best score and earned berries stay saved.") }
         .onChange(of: session.gameOver) { _, ended in showGameOver = ended }
         .onAppear {
+            BerryAudio.shared.setMusic(music)
             session.selectMode(mode)
             showGameOver = session.gameOver
             if !welcomed { showWelcome = true }
@@ -226,6 +228,7 @@ struct BerryGameView: View {
         }
         .alert("No More Room in the Berry Patch! 🌱", isPresented: $showGameOver) {
             Button("Plant a Fresh Garden") { session.newGame(); selectedSlot = nil }
+            Button("Return to Strawberry Village") { onExit() }
             if session.shuffles > 0 {
                 Button("Use Shuffle (\(session.shuffles) left)") { session.shuffle() }
             }
@@ -354,14 +357,14 @@ struct BerryGameView: View {
 
     private func successFeedback() {
         if haptics { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
-        if sound { AudioServicesPlaySystemSound(1104) }
+        if sound { BerryAudio.shared.play(session.lastEarned > 10 ? .clear : .place) }
     }
     private func warningFeedback() {
         if haptics { UINotificationFeedbackGenerator().notificationOccurred(.warning) }
     }
 
     private var welcomeSheet: some View {
-        sheetBase("Welcome to Berry Garden!", icon: "🍓") {
+        sheetBase("Welcome to Strawberry Village!", icon: "🍓") {
             Text("Make the sweetest garden one block at a time. Place berry pieces, complete rows and columns, and earn strawberries to stock your basket.")
             Text("No timer, no pressure. Every three placed pieces bring a new batch. Your progress saves automatically.")
             primaryButton("Let's Grow!") { welcomed = true; showWelcome = false }
@@ -379,9 +382,11 @@ struct BerryGameView: View {
         sheetBase("Berry Settings", icon: "⚙️") {
             Toggle("Haptic feedback", isOn: $haptics)
             Toggle("Sweet sound effects", isOn: $sound)
+            Toggle("Strawberry music box", isOn: $music)
+                .onChange(of: music) { _, enabled in BerryAudio.shared.setMusic(enabled) }
             Text("Your game is saved automatically. The display uses the full iPhone screen.").font(.footnote)
             Button("Start a New Garden", role: .destructive) { showSettings = false; confirmRestart = true }
-            Text("Berry Block Blast • 0.3.1 • Original strawberry-inspired puzzle").font(.footnote).foregroundStyle(.secondary)
+            Text("Berry Block Blast • 0.4.0 • Strawberry Village Edition").font(.footnote).foregroundStyle(.secondary)
             primaryButton("Done") { showSettings = false }
         }
     }
