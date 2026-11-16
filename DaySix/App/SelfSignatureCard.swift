@@ -4,7 +4,11 @@ import UIKit
 /// The self card is always present. It is never added to the user-managed
 /// app list, and it reads the renewed profile again after reinstall/refresh.
 struct SelfSignatureCard: View {
-    private var expiry: Date? { SelfProvisioning.expiresAt }
+    @EnvironmentObject private var store: DaySixStore
+    @State private var editingExpiry = false
+    @State private var editedExpiry = Date.now.addingTimeInterval(7 * 86_400)
+    private var verifiedExpiry: Date? { SelfProvisioning.expiresAt }
+    private var expiry: Date? { SelfProvisioning.effectiveExpiry }
     private var isDue: Bool { SelfProvisioning.isDue }
 
     private var attempt: Date? {
@@ -22,24 +26,24 @@ struct SelfSignatureCard: View {
                                     in: RoundedRectangle(cornerRadius: 14))
                     VStack(alignment: .leading, spacing: 3) {
                         Text("DaySix").font(.headline)
-                        Text("This app · automatic monitoring")
+                        Text(verifiedExpiry == nil ? "This app · manual expiry fallback" : "This app · verified profile date")
                             .font(.caption).foregroundStyle(DS.muted)
                     }
                     Spacer()
                     Text(status)
                         .font(.caption.bold())
-                        .foregroundStyle(isDue ? DS.amber : expiry == nil ? DS.muted : DS.mint)
+                        .foregroundStyle(isDue ? DS.amber : verifiedExpiry == nil ? DS.amber : DS.mint)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 7)
                         .background(
-                            (isDue ? DS.amber : expiry == nil ? DS.muted : DS.mint).opacity(0.11),
+                            (isDue ? DS.amber : verifiedExpiry == nil ? DS.amber : DS.mint).opacity(0.11),
                             in: Capsule())
                 }
 
                 if let expiry {
                     HStack(spacing: 7) {
                         Image(systemName: "calendar.badge.clock")
-                        Text("Signed until \(expiry.formatted(date: .abbreviated, time: .shortened))")
+                        Text(verifiedExpiry == nil ? "Manually entered expiry: \(expiry.formatted(date: .abbreviated, time: .shortened))" : "Signed until \(expiry.formatted(date: .abbreviated, time: .shortened))")
                     }
                     .font(.subheadline).foregroundStyle(DS.muted)
 
@@ -52,8 +56,20 @@ struct SelfSignatureCard: View {
                             .font(.footnote).foregroundStyle(DS.muted)
                     }
                 } else {
-                    Text("Signing expiry unavailable. DaySix could not read an embedded Apple provisioning profile. Check the actual expiration in SideStore.")
+                    Text("Signing expiry unavailable. DaySix could not read an embedded Apple provisioning profile. Enter the actual expiration shown in SideStore so day-six scheduling still works.")
                         .font(.footnote).foregroundStyle(DS.amber)
+                }
+
+                if verifiedExpiry == nil {
+                    Button {
+                        editedExpiry = SelfProvisioning.manualExpiry ?? Date.now.addingTimeInterval(7 * 86_400)
+                        editingExpiry = true
+                    } label: {
+                        Label("Enter SideStore expiration", systemImage: "calendar.badge.clock")
+                            .font(.footnote.bold()).foregroundStyle(DS.mint)
+                    }
+                    Text("Manual dates trigger reminders, but do not count as verified signing evidence.")
+                        .font(.caption2).foregroundStyle(DS.muted)
                 }
 
                 if let renewed = RenewalAudit.lastVerifiedSelfRenewal {
@@ -82,6 +98,31 @@ struct SelfSignatureCard: View {
                     .font(.caption).foregroundStyle(DS.muted)
             }
         }
+        .sheet(isPresented: $editingExpiry) {
+            NavigationStack {
+                Form {
+                    Section("DaySix expiration") {
+                        DatePicker("Expires", selection: $editedExpiry,
+                                   displayedComponents: [.date, .hourAndMinute])
+                        Text("Use the exact expiration date shown in SideStore. This is a manual fallback only, not proof that signing succeeded.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+                .navigationTitle("Signing Expiration")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { editingExpiry = false }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") {
+                            SelfProvisioning.setManualExpiry(editedExpiry)
+                            editingExpiry = false
+                            store.reload()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private var status: String {
@@ -90,7 +131,7 @@ struct SelfSignatureCard: View {
         if isDue { return "Day 6 · Due" }
         let days = max(0, Calendar.current.dateComponents(
             [.day], from: Date.now, to: expiry).day ?? 0)
-        return "\(days)d left"
+        return verifiedExpiry == nil ? "Manual · \(days)d" : "\(days)d left"
     }
 
 
