@@ -26,21 +26,22 @@ private struct BerryBoard: View {
     private let gap: CGFloat = 3
 
     var body: some View {
-        let unit = (size - 7 * gap) / 8
+        let side = engine.side
+        let unit = (size - CGFloat(side - 1) * gap) / CGFloat(side)
         ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: 22)
                 .fill(Color(red: 0.98, green: 0.71, blue: 0.79))
                 .overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(.white.opacity(0.8), lineWidth: 3) }
                 .padding(-7)
                 .shadow(color: BerryStyle.strawberry.opacity(0.22), radius: 15, y: 8)
-            ForEach(0..<64, id: \.self) { i in
-                let r = i / 8
-                let c = i % 8
+            ForEach(0..<(side * side), id: \.self) { i in
+                let r = i / side
+                let c = i % side
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: side == 12 ? 4 : 8)
                         .fill(Color.white.opacity(0.76))
                         .overlay(alignment: .topLeading) {
-                            RoundedRectangle(cornerRadius: 8).strokeBorder(.white.opacity(0.58), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: side == 12 ? 4 : 8).strokeBorder(.white.opacity(0.58), lineWidth: 1)
                         }
                     if let tint = engine.board[r][c] { BerryTile(tint: tint, mode: mode, strawberryUnlocked: strawberryUnlocked) }
                 }
@@ -51,10 +52,10 @@ private struct BerryBoard: View {
                 ForEach(preview.piece.points, id: \.self) { p in
                     let r = preview.row + p.row
                     let c = preview.col + p.col
-                    if (0..<8).contains(r), (0..<8).contains(c) {
+                    if (0..<side).contains(r), (0..<side).contains(c) {
                         BerryTile(tint: preview.piece.tint, preview: true, mode: mode, strawberryUnlocked: strawberryUnlocked)
                             .opacity(previewStyle == "outline" ? 0.18 : 0.56)
-                            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(preview.allowed ? Color.green : Color.red, lineWidth: 2) }
+                            .overlay { RoundedRectangle(cornerRadius: side == 12 ? 4 : 8).strokeBorder(preview.allowed ? Color.green : Color.red, lineWidth: 2) }
                             .frame(width: unit, height: unit)
                             .offset(x: CGFloat(c) * (unit + gap), y: CGFloat(r) * (unit + gap))
                     }
@@ -68,7 +69,7 @@ private struct BerryBoard: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Berry garden, eight by eight puzzle board")
+        .accessibilityLabel("Berry garden, \(engine.side) by \(engine.side) puzzle board")
     }
 }
 
@@ -101,6 +102,7 @@ struct BerryGameView: View {
         case .daily: "DAILY HARVEST • Gather \(goal) points!"
         case .cozy: "COZY COTTAGE • \(session.cottageDecorations) decorations • Grow at your pace!"
         case .challenge: "⚡ BERRY BLITZ • \(blitzRemaining)s left • Reach \(goal)!"
+        case .superHard: "🍓 STRAWBERRY NIGHTMARE • 12 × 12 • Bigger pieces!"
         }
     }
 
@@ -146,7 +148,7 @@ struct BerryGameView: View {
             let bottom = geo.safeAreaInsets.bottom
             let compact = height < 740
             let boardSize = max(185, min(width - 42, height - top - bottom - (compact ? 248 : 282), 475))
-            let cell = (boardSize - 21) / 8
+            let cell = (boardSize - CGFloat(session.engine.side - 1) * 3) / CGFloat(session.engine.side)
             ZStack {
                 background
                 VStack(spacing: compact ? 5 : 8) {
@@ -208,7 +210,7 @@ struct BerryGameView: View {
                             .contentShape(Rectangle())
                             .onTapGesture { if !isPaused && piece != nil { selectedSlot = selectedSlot == slot ? nil : slot } }
                             .gesture(
-                                DragGesture(minimumDistance: 5, coordinateSpace: .named("berry-screen"))
+                                DragGesture(minimumDistance: 2, coordinateSpace: .named("berry-screen"))
                                     .onChanged { value in updateDrag(slot: slot, finger: value.location, cell: cell) }
                                     .onEnded { value in
                                         updateDrag(slot: slot, finger: value.location, cell: cell)
@@ -480,7 +482,7 @@ struct BerryGameView: View {
         let maxRow = piece.points.map(\.row).max() ?? 0
         let col = Int(floor(localX / step - CGFloat(minCol + maxCol + 1) / 2 + 0.5))
         let row = Int(floor(localY / step - CGFloat(minRow + maxRow + 1) / 2 + 0.5))
-        let touchingBoard = boardRect.insetBy(dx: -12, dy: -12).contains(finger)
+        let touchingBoard = boardRect.insetBy(dx: -max(12, step * 0.6), dy: -max(12, step * 0.6)).contains(finger)
         drag = BerryDragState(slot: slot, piece: piece, row: row, col: col,
                               allowed: touchingBoard && session.engine.canPlace(piece, row: row, col: col))
     }
@@ -515,6 +517,7 @@ struct BerryGameView: View {
         case .story: completed = storyIsLineQuest ? session.engine.totalLines >= storyTargetLines : session.engine.score >= goal
         case .daily: completed = session.engine.score >= goal
         case .challenge: completed = session.engine.score >= goal && blitzRemaining > 0
+        case .superHard: completed = false
         default: completed = false
         }
         guard completed else { return }
@@ -557,7 +560,7 @@ struct BerryGameView: View {
     }
     private var helpSheet: some View {
         sheetBase("How to Play", icon: "🍰") {
-            Text("Touch a piece and slide it onto the 8 × 8 board, then release. Or tap a piece and tap the board to place it. Complete full rows or columns to clear them.")
+            Text("Touch a piece and slide it onto the \(session.engine.side) × \(session.engine.side) board, then release. Or tap a piece and tap the board to place it. Complete full rows or columns to clear them.")
             Text("Clear multiple lines together for bonus points. Keep clearing to grow your combo. Clear the entire board for +300!")
             Text("Earn strawberries for line clears. Spend them in the basket on extra Undos and Shuffles. Keep playing until nothing fits.")
             primaryButton("Got It!") { showHelp = false }
