@@ -34,7 +34,7 @@ enum SelfProvisioning {
     static var effectiveExpiry: Date? { expiresAt ?? manualExpiry }
 
     static var refreshDueAt: Date? {
-        effectiveExpiry?.addingTimeInterval(-24 * 60 * 60)
+        effectiveExpiry.map { RenewalPolicy.renewAt(expiration: $0) }
     }
 
     static var isDue: Bool {
