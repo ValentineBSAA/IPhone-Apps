@@ -24,11 +24,10 @@ dashboard. That UI integration is a separate, subsequent engineering step.
 
 The isolated GitHub Actions workflow:
 
-1. Checks out the **official SideStore/SideStore develop tree**, including submodules.
+1. Checks out the **pinned official SideStore/SideStore source commit** (currently `4f3d18d98c5fbee72c80f787ceb2e8e09ded60a6`), including submodules.
 2. Prints the exact upstream Git commit used. Never accepts a random third-party pre-signed binary.
 3. Reads the upstream AGPLv3 license, then attempts the officially documented unsigned-IPA Makefile build (`make build fakesign ipa`) with no Apple ID and no signing secrets.
-4. Applies the audited `preview_brand.py` change (display name and preview
-   marker) and compiles with an explicit experimental bundle-ID suffix.
+4. Applies the audited `preview_brand.py` changes: the real Xcode bundle-ID configuration, runtime self-recognition, main/widget/backup entitlements, `daysixlab://` callback, separate `daysixbackup://` helper URL, a clear preview display name, and native expiration-notification text.
 5. Inspects the produced IPA to reject official SideStore bundle IDs or
    missing experimental markers, then uploads only inspected artifacts and
    the build log.
@@ -37,14 +36,22 @@ The safety checks are run on Linux by
 `DaySix/SignerLab/Tests/test_preview_brand.py` as well as before the real
 macOS IPA artifact is uploaded. This test is independent of Apple credentials.
 
-**Do not install this preview alongside a working SideStore** until we also
-audit its URL schemes, app groups, system callback identifiers, pairing,
-self-renewal identity, and Apple account interaction. A distinct bundle ID
-alone does not eliminate all conflicts; both apps may still register the
-`sidestore://` URL scheme. The preview intentionally does **not** claim
-that an iPhone would run it safely today.
+**Do not install this preview alongside a working SideStore** until the actual IPA's nested identities, URL schemes, helper callbacks, pairing, self-renewal and Apple account handling have all passed physical-device testing. The lab source now isolates the public `daysixlab://` and `daysixbackup://` URLs, but code review alone does not prove coexistence. The preview intentionally does **not** claim that an iPhone would run it safely today.
 
 A successful upstream build would prove only that the signing-capable SideStore code can be compiled in our CI environment. **It does not create a DaySix-branded integrated signer, and does not prove real device signing or self-refresh.** There is no credential collection, account login, or physical-device access in GitHub Actions.
+
+### Native iPhone notification verification
+
+The pinned SideStore app already asks for iOS `UNUserNotificationCenter` authorization
+(`[.alert, .badge, .sound]`) and presents actual system banners/sounds while foregrounded.
+The DaySix preview retains this, and the build patch renames its 24-hour,
+six-hour and expired-profile warnings to **DaySix Signer Lab**.
+
+When a package is verified and physical iPhone testing is authorized, confirm
+**iPhone Settings → Apps → DaySix Signer Lab → Notifications** shows the native
+system permission controls. Also verify a real expiry reminder and its sound.
+A successful Swift compilation does not prove that the iPhone settings entry
+or notifications work in the installed app.
 
 ### Next after a successful probe
 
