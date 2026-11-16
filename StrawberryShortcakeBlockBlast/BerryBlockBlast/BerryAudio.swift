@@ -18,7 +18,7 @@ final class BerryAudio {
     }
 
     private func wav(_ notes: [(Double, Double)], volume: Double, arranged: Bool = false) -> Data {
-        let rate = 22050
+        let rate = 11025
         let frames = notes.reduce(0) { $0 + Int($1.1 * Double(rate)) }
         // Reserve PCM capacity up front: appending millions of individual Data values
         // made long tracks stall the main thread and caused avoidable reallocations.
@@ -83,7 +83,6 @@ final class BerryAudio {
     private var musicTimer: Timer?
     private var shuffleEnabled = true
     private var history: [Int] = []
-    private var generationTask: Task<Void, Never>?
     static let trackNames = [
         "Good Morning, Strawberry Village", "A Picnic in the Sunshine", "Berry Blossom Waltz",
         "The Little Pink Bakery", "Blueberry Skies", "Custard's Cozy Afternoon",
@@ -97,7 +96,7 @@ final class BerryAudio {
     func toggleShuffle() { shuffleEnabled.toggle() }
     func previousTrack() {
         guard musicEnabled else { return }
-        if history.count >= 2 { history.removeLast(); playTrack(history.removeLast()) }
+        if history.count >= 2 { history.removeLast(); let previous = history.removeLast(); playTrack(previous) }
         else { playTrack((max(0, trackIndex) + Self.trackNames.count - 1) % Self.trackNames.count) }
     }
     func selectTrack(_ index: Int) {
@@ -165,7 +164,6 @@ final class BerryAudio {
         guard enabled != musicEnabled else { return }
         musicEnabled = enabled
         if !enabled {
-            generationTask?.cancel()
             musicTimer?.invalidate()
             musicTimer = nil
             musicPlayer?.stop()
