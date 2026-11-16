@@ -24,7 +24,7 @@ struct BerryPlacement: Equatable {
 }
 
 struct BerryEngine: Codable {
-    static let side = 8
+    static let classicSide = 8
     private(set) var side: Int = 8
     private(set) var board: [[Int?]] = Array(repeating: Array(repeating: nil, count: 8), count: 8)
     private(set) var tray: [BerryPiece?] = []
@@ -96,10 +96,10 @@ struct BerryEngine: Codable {
 
     // Explicit initial state is useful for deterministic puzzle-rule tests.
     init(board: [[Int?]], tray: [BerryPiece?], score: Int = 0) {
-        precondition(board.count == Self.side && board.allSatisfy { $0.count == Self.side })
+        precondition(board.count == Self.classicSide && board.allSatisfy { $0.count == Self.classicSide })
         precondition(tray.count == 3)
         self.board = board
-        self.side = Self.side
+        self.side = Self.classicSide
         self.tray = tray
         self.score = score
     }
