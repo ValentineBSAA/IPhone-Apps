@@ -1,7 +1,19 @@
 # DaySix 🍃
-**Native iPhone signing companion · v0.1.4**
+**Native iPhone signing companion · v0.1.5**
 
 A dark glass, teal-and-violet iOS dashboard inspired by ReProvision for the seven-day personal-development provisioning cycle. DaySix automatically checks **its own installed Apple provisioning-profile expiration**, tracks other apps you explicitly add, and gates SideStore's **Refresh All Apps** Shortcuts action at **day six**, with local reminders as a fallback.
+
+## New in v0.1.5: Apple-permitted reliability safeguards
+
+- **Opportunistic BGAppRefreshTask watchdog:** DaySix registers a permitted Background App Refresh task and requests periodic iOS-granted wakeups to recheck expiration and issue a warning. It does **not** execute signing in the background. Apple can delay, deny or skip it, especially after force-quit, with Low Power Mode, or when Background App Refresh is restricted.
+- **Reliability Lab:** New More-screen guide for checking SideStore detection, Background App Refresh availability, notification authorization, and low-power mode, plus a last-check timestamp.
+- **Multiple Shortcuts triggers:** Daily and optional charger-connected automations can both request the same named DaySix Refresh shortcut. A shared per-app **six-hour cooldown** prevents accidental rapid repeat signing requests; manual rescue is never blocked.
+- **Independent lifeboat:** An optional second personal automation can call SideStore directly without any DaySix App Intent, so it can still run if DaySix's own signature expires. Daily direct signing can increase Apple provisioning traffic, so this is an opt-in fallback, not enabled by DaySix.
+- **Early preflight alert:** Default 48 hours before expiry, or earlier for users choosing a longer renewal window. Day-six reminders and a six-hour final warning still apply.
+- **Alert preservation fix:** Reopening DaySix no longer cancels a pending alert and then suppresses its replacement, preventing silent missed expiry notifications.
+- **Emergency CTA:** Home dashboard offers a one-tap renewal shortcut when an expiration is due.
+
+**No guaranteed always-on execution:** The added background task is an advisory deadline check only. Only the installed signer (SideStore in this version) can attempt re-signing; even its Shortcut may fail on iOS 27. Neither this task nor an extra Shortcut can run a completely expired DaySix executable.
 
 ## New in v0.1.4: ReProvision-style Renewal Center
 
@@ -67,10 +79,12 @@ DaySix does **not** collect Apple IDs, passwords, anisette tokens, pairing recor
 - [SideStore URL scheme](https://docs.sidestore.io/docs/advanced/url-schema)
 - [SideStore GitHub](https://github.com/SideStore/SideStore)
 - [SideInstaller GitHub](https://github.com/FrizzleM/SideInstaller)
+- [Apple background task guidance](https://developer.apple.com/documentation/backgroundtasks/choosing-background-strategies-for-your-app)
+- [Apple personal automation triggers](https://support.apple.com/guide/shortcuts/add-automations-apdfbdbd7123/ios)
 
-**Planned next stage**: an audited, in-app signing/refresh engine using an appropriately licensed signing core. This version **uses SideStore for signing including DaySix itself**; it does not independently sign, install, or refresh apps. No guarantee of exact background execution.
+**Planned next stage**: an audited, in-app signing/refresh engine using an appropriately licensed signing core. A user-initiated signing session could also explore iOS 26+ continued background processing, but it does not replace timed self-renewal. This version **uses SideStore for signing including DaySix itself**; it does not independently sign, install, or refresh apps. No guarantee of exact background execution.
 
 ### Build/compatibility testing
-The macOS GitHub Actions workflow compiles the RenewalPolicy and SelfProvisioning models, runs Foundation-only smoke tests for profile parsing, manual fallback and configurable day-six scheduling, then builds an unsigned IPA. The workflow passing **does not** prove on-device SideStore integration. Current iOS 27 reports include failed SideStore Shortcuts refreshes when its process is not alive even though manual refreshing works. Opening `sidestore://` before the refresh can improve some setups, but often requires the phone to be unlocked; it is NOT a guaranteed locked-screen daemon. If the shortcut fails, open SideStore manually and refresh before expiration.
+The macOS GitHub Actions workflow compiles the RenewalPolicy and SelfProvisioning models, runs Foundation-only smoke tests for profile parsing, manual fallback, preflight warnings, cooldown and configurable day-six scheduling, then builds an unsigned IPA. Actual iOS BGTaskScheduler execution still requires physical-device testing. The workflow passing **does not** prove on-device SideStore integration. Current iOS 27 reports include failed SideStore Shortcuts refreshes when its process is not alive even though manual refreshing works. Opening `sidestore://` before the refresh can improve some setups, but often requires the phone to be unlocked; it is NOT a guaranteed locked-screen daemon. If the shortcut fails, open SideStore manually and refresh before expiration.
 
 **iPhone test checklist**: install via SideStore; verify DaySix appears in SideStore's managed list; check DaySix's embedded expiry; run the named shortcut; verify a new embedded expiry and audit entry; leave iPhone locked overnight; observe the day-six reminder and daily automation without assuming success.
