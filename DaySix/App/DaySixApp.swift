@@ -34,10 +34,7 @@ struct TrackedApp: Identifiable, Codable, Hashable {
     var sourceURL: String = ""
     var lastAttempt: Date? = nil
 
-    var refreshDueAt: Date {
-        Calendar.current.date(byAdding: .day, value: 6, to: lastVerifiedRenewal)
-            ?? lastVerifiedRenewal.addingTimeInterval(6 * 86_400)
-    }
+    var refreshDueAt: Date { RenewalPolicy.renewAt(expiration: expiresAt) }
     var expiresAt: Date {
         Calendar.current.date(byAdding: .day, value: 7, to: lastVerifiedRenewal)
             ?? lastVerifiedRenewal.addingTimeInterval(7 * 86_400)
