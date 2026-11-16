@@ -2,9 +2,9 @@
 
 This repository hosts experiments in genuinely native iPhone apps. No websites or PWAs.
 
-## Repo Pulse iOS · prototype
+## Repo Pulse iOS · Pocket Premium
 
-Native SwiftUI dashboard for public GitHub repositories. No subscription, backend, API key, or third-party dependencies.
+Native SwiftUI dashboard for public GitHub repositories, with a premium teal/navy home dashboard, richer release cards, a custom reproducible app icon, and detailed release history. No subscription, backend, API key, or third-party dependencies.
 
 - Watch repositories and inspect GitHub stars, forks and open issues.
 - Show download totals from GitHub release assets and the most recent release.
@@ -32,8 +32,10 @@ For a Mac build: install Xcode and XcodeGen, run xcodegen generate, then build t
 ### Development checkpoints
 
 - [x] Create the native project structure and CI recipe.
-- [ ] Confirm the unsigned build actually succeeds in GitHub Actions.
-- [ ] Install and verify the signed IPA on the physical iPhone.
+- [x] Confirm the original unsigned build succeeds in GitHub Actions.
+- [ ] Confirm the Premium pass unsigned build succeeds in GitHub Actions.
+- [x] Install and launch the original signed IPA on the physical iPhone.
+- [ ] Install and verify the Premium update on physical iPhone.
 - [ ] Compare release totals with GitHub and test a rate-limited response.
 - [ ] Consider caching, downloads history, repository search, and secure optional sign-in.
 

@@ -19,6 +19,10 @@ jobs:
           persist-credentials: false
       - name: Check Xcode
         run: xcodebuild -version
+      - name: Generate native AppIcon asset
+        run: |
+          swift scripts/generate_icon.swift
+          test -s RepoPulse/Assets.xcassets/AppIcon.appiconset/AppIcon.png
       - name: Generate Xcode project
         run: |
           brew install xcodegen
