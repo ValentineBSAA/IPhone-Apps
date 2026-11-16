@@ -16,8 +16,8 @@ settings:
     INFOPLIST_KEY_UIRequiresFullScreen: YES
     INFOPLIST_KEY_UIStatusBarHidden: YES
     INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance: NO
-    MARKETING_VERSION: "0.5.2"
-    CURRENT_PROJECT_VERSION: "9"
+    MARKETING_VERSION: "0.5.3"
+    CURRENT_PROJECT_VERSION: "10"
 targets:
   BerryBlockBlast:
     type: application
