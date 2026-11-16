@@ -97,6 +97,22 @@ def patch_build_identifiers(root: Path) -> None:
     with backup_plist.open("wb") as stream:
         plistlib.dump(backup_info, stream, sort_keys=False)
 
+    # The real signing engine already asks iOS for alert, badge and sound
+    # authorization. Rename the messages it sends so a user running both
+    # the official SideStore and lab can identify the correct native banner.
+    notifier = (root / "SideStore" / "Core" / "Operations"
+                / "StandaloneOperations"
+                / "ScheduleExpirationWarningNotificationOperation.swift")
+    for old_text, new_text in [
+        ("SideStore Expiring Soon", "DaySix Signer Lab Expiring Soon"),
+        ("SideStore Expiring Extremely Soon", "DaySix Signer Lab Expiring in 6 Hours"),
+        ("SideStore Expired", "DaySix Signer Lab Expired"),
+        ("SideStore will expire in 24 hours.", "DaySix Signer Lab will expire in 24 hours."),
+        ("SideStore will expire in 6 hours!", "DaySix Signer Lab will expire in 6 hours!"),
+        ("SideStore has expired.", "DaySix Signer Lab has expired."),
+    ]:
+        replace_exact(notifier, old_text, new_text)
+
     # SideStore's ad-hoc ldid release targets embed static app identifiers
     # and static application group names even though the Info.plist uses Xcode
     # variables. Update BOTH main and widget values consistently.
@@ -162,7 +178,7 @@ def patch(root: Path, upstream_sha: str) -> Path:
         "upstream_repository": "https://github.com/SideStore/SideStore",
         "upstream_commit": upstream_sha.strip(),
         "upstream_license": "AGPL-3.0",
-        "modification": "Display label, Xcode and runtime identity, main/widget/backup app groups, backup callback routing, public URL handlers, and ad-hoc release entitlements",
+        "modification": "Display label, Xcode and runtime identity, app groups, backup callback/URL routing, native alert text, and ad-hoc entitlements",
         "expected_bundle_id": PREVIEW_BUNDLE_ID,
         "preview_primary_url_scheme": PREVIEW_URL_SCHEME,
         "preview_backup_url_scheme": "daysixbackup",
