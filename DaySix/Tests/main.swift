@@ -102,6 +102,17 @@ expect(!RenewalPolicy.dueAndRetryable(
     lastAttempt: nil, now: now),
     "An expired signing window should require manual recovery")
 
+// Early user-facing readiness checks are scheduled separately from the
+// actual DaySix renewal request, to give a broken signer recovery time.
+RenewalPolicy.hoursBeforeExpiry = 24
+expect(abs(RenewalPolicy.preflightAt(expiration: expiresIn23)
+           .timeIntervalSince(expiresIn23.addingTimeInterval(-48 * 3600))) < 1,
+       "Default day-six mode must warn 48 hours before expiration")
+RenewalPolicy.hoursBeforeExpiry = 48
+expect(abs(RenewalPolicy.preflightAt(expiration: expiresIn23)
+           .timeIntervalSince(expiresIn23.addingTimeInterval(-60 * 3600))) < 1,
+       "48-hour renewal mode must warn 60 hours before expiration")
+
 UserDefaults.standard.removeObject(forKey: RenewalPolicy.hoursKey)
 UserDefaults.standard.removeObject(forKey: RenewalPolicy.autoKey)
 
