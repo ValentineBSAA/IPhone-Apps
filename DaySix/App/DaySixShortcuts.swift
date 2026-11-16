@@ -1,16 +1,16 @@
 import AppIntents
 import Foundation
 
-/// Returns a boolean so iOS Shortcuts can run SideStore ONLY when a tracked
-/// app has reached day six. This intent does not perform code signing itself.
+/// Returns true when DaySix *itself* OR a manually tracked app reaches
+/// the day-six threshold. SideStore still performs actual signing.
 struct CheckDaySixRefreshIntent: AppIntent {
     static var title: LocalizedStringResource = "Check DaySix Refresh"
     static var description = IntentDescription(
-        "Returns true if any tracked app is due to be refreshed on day six.")
+        "Checks both DaySix's own provisioning expiry and tracked apps for day-six renewal.")
     static var openAppWhenRun: Bool = false
 
     func perform() async throws -> some IntentResult & ReturnsValue<Bool> {
-        let due = DaySixStorage.read().contains { $0.isDue }
+        let due = SelfProvisioning.isDue || DaySixStorage.read().contains { $0.isDue }
         return .result(value: due)
     }
 }
@@ -32,6 +32,11 @@ struct RecordDaySixAttemptIntent: AppIntent {
             changed += 1
         }
         if changed > 0 { DaySixStorage.write(apps) }
+        if SelfProvisioning.isDue {
+            // Never declare renewal successful based on an attempt alone.
+            UserDefaults.standard.set(now, forKey: "daysix.lastSelfRenewalAttempt")
+            changed += 1
+        }
         return .result(value: changed)
     }
 }
