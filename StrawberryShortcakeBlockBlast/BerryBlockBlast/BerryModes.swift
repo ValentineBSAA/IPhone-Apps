@@ -32,6 +32,9 @@ struct BerryHomeView: View {
     @State private var showSettings = false
     @State private var showMore = false
     @State private var showSchool = false
+    @State private var showCollection = false
+    @AppStorage("berryblockblast.lifetime-lines") private var lifetimeLines = 0
+    @AppStorage("berryblockblast.strawberry-unlocked") private var strawberryUnlocked = false
     @AppStorage("berryblockblast.music") private var music = true
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.haptics") private var haptics = true
@@ -82,6 +85,8 @@ struct BerryHomeView: View {
                             Button("🧺 More Adventures") { showMore = true }
                                 .font(.title3.bold()).foregroundStyle(BerryStyle.strawberry)
                                 .frame(maxWidth: .infinity).padding(18).background(.white, in: RoundedRectangle(cornerRadius: 20))
+                            Button("📖 Berry Collection") { showCollection = true }
+                                .font(.system(size: 14, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.strawberry)
                             Button("🍓 Strawberry School • Learn to Play") { showSchool = true }
                                 .font(.system(size: 14, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.leaf)
                             HStack {
@@ -97,6 +102,23 @@ struct BerryHomeView: View {
                         .frame(minHeight: geo.size.height, alignment: .center)
                     }
                 }
+            }
+        }
+        .sheet(isPresented: $showCollection) {
+            NavigationStack {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        Text("🍓 The Berry Collection").font(.title.bold()).foregroundStyle(BerryStyle.strawberry)
+                        Text("Collect new berry blocks by clearing lines in any garden.")
+                        ProgressView(value: Double(min(10, lifetimeLines)), total: 10).tint(BerryStyle.strawberry)
+                        Text("\(lifetimeLines) lifetime lines harvested")
+                        Label("Classic Blocks • Unlocked", systemImage: "checkmark.seal.fill")
+                        Text(strawberryUnlocked ? "🍓 Strawberry Blocks • Unlocked" : "🔒 Strawberry Blocks • Clear 10 lines")
+                            .font(.headline).foregroundStyle(BerryStyle.leaf)
+                    }.padding(24)
+                }.background(BerryStyle.cream.ignoresSafeArea())
+                .navigationTitle("Berry Collection")
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showCollection = false } } }
             }
         }
         .sheet(isPresented: $showSchool) { BerrySchoolView(onFinish: { graduated in showSchool = false; if graduated { BerryGameSession().rewardTutorial() } }) }
