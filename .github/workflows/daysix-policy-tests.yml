@@ -9,6 +9,8 @@ on:
       - "DaySix/App/**"
       - "DaySix/Tests/**"
       - "DaySix/SignerLab/preview_brand.py"
+      - "DaySix/SignerLab/simple_nav.py"
+      - "DaySix/SignerLab/DaySixSignerHome.swift"
       - "DaySix/SignerLab/Tests/**"
       - ".github/workflows/daysix-policy-tests.yml"
   pull_request:
@@ -17,6 +19,8 @@ on:
       - "DaySix/App/**"
       - "DaySix/Tests/**"
       - "DaySix/SignerLab/preview_brand.py"
+      - "DaySix/SignerLab/simple_nav.py"
+      - "DaySix/SignerLab/DaySixSignerHome.swift"
       - "DaySix/SignerLab/Tests/**"
       - ".github/workflows/daysix-policy-tests.yml"
   workflow_dispatch:
