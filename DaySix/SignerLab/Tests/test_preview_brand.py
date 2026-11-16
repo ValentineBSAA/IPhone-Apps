@@ -61,10 +61,31 @@ class PreviewSafetyTests(unittest.TestCase):
                 "<array><string>group.com.SideStore.SideStore</string></array>"
                 "</dict></plist>",
                 encoding="utf-8")
+        pipeline = (
+            self.root / "SideStore" / "Core" / "Operations"
+            / "PipelineOperations" / "PerformBackupRestoreOperation.swift"
+        )
+        pipeline.parent.mkdir(parents=True, exist_ok=True)
+        pipeline.write_text(
+            'let callbackURL = URL(string: "sidestore://")!\n',
+            encoding="utf-8")
+
+        helper = self.root / "SideBackup" / "SideBackupApp.swift"
+        helper.parent.mkdir(parents=True, exist_ok=True)
+        helper.write_text(
+            'guard let scheme = responseURL.scheme, scheme.hasPrefix("sidestore") else {\n'
+            '    debugLog(logger, "does not start with \'sidestore\'. Aborting launch.")\n',
+            encoding="utf-8")
+        backup_plist = self.root / "SideBackup" / "Info.plist"
+        backup_plist.write_bytes(plistlib.dumps({
+            "CFBundleURLTypes": [{"CFBundleURLSchemes": ["sidebackup"]}]
+        }))
+
         self.provenance = preview.patch(self.root, "abc123def")
 
     def make_ipa(self, bundle_id, label=None, preview_marker=True,
-                 widget_id=None, backup_id=None, primary_scheme=None):
+                 widget_id=None, backup_id=None, primary_scheme=None,
+                 backup_scheme="daysixbackup"):
         info = {
             "CFBundleIdentifier": bundle_id,
             "CFBundleDisplayName": label or preview.DISPLAY_NAME,
@@ -79,7 +100,10 @@ class PreviewSafetyTests(unittest.TestCase):
             "CFBundleIdentifier": widget_id or preview.PREVIEW_BUNDLE_ID + ".AltWidget"
         }
         backup_info = {
-            "CFBundleIdentifier": backup_id or preview.PREVIEW_BUNDLE_ID + ".SideBackup"
+            "CFBundleIdentifier": backup_id or preview.PREVIEW_BUNDLE_ID + ".SideBackup",
+            "CFBundleURLTypes": [
+                {"CFBundleURLSchemes": [backup_scheme]}
+            ],
         }
         nested_data = io.BytesIO()
         with zipfile.ZipFile(nested_data, "w") as nested:
@@ -117,6 +141,22 @@ class PreviewSafetyTests(unittest.TestCase):
         ).read_text()
         self.assertEqual(runtime_helper.count(preview.PREVIEW_BUNDLE_ID), 2)
         self.assertNotIn("com.SideStore.SideStore", runtime_helper)
+        pipeline = (
+            self.root / "SideStore" / "Core" / "Operations"
+            / "PipelineOperations" / "PerformBackupRestoreOperation.swift"
+        ).read_text()
+        self.assertIn('URL(string: "daysixlab://")', pipeline)
+        self.assertNotIn('URL(string: "sidestore://")', pipeline)
+        backup_swift = (self.root / "SideBackup" / "SideBackupApp.swift").read_text()
+        self.assertIn('scheme == "daysixlab"', backup_swift)
+        self.assertIn('scheme.hasPrefix("sidestore-")', backup_swift)
+        backup_plist = plistlib.loads(
+            (self.root / "SideBackup" / "Info.plist").read_bytes()
+        )
+        self.assertEqual(
+            backup_plist["CFBundleURLTypes"][0]["CFBundleURLSchemes"],
+            ["daysixbackup"]
+        )
         for relative in [
             "AltStore/Resources/ReleaseEntitlements.plist",
             "AltWidget/Resources/ReleaseEntitlements.plist",
@@ -162,6 +202,16 @@ class PreviewSafetyTests(unittest.TestCase):
         result = preview.verify_ipa(self.make_ipa(
             preview.PREVIEW_BUNDLE_ID,
             primary_scheme=preview.PREVIEW_URL_SCHEME))
+        self.assertEqual(result["bundle_id"], preview.PREVIEW_BUNDLE_ID)
+
+    def test_backup_url_scheme_does_not_conflict(self):
+        with self.assertRaises(RuntimeError):
+            preview.verify_ipa(self.make_ipa(
+                preview.PREVIEW_BUNDLE_ID,
+                backup_scheme="sidebackup"))
+        result = preview.verify_ipa(self.make_ipa(
+            preview.PREVIEW_BUNDLE_ID,
+            backup_scheme="daysixbackup"))
         self.assertEqual(result["bundle_id"], preview.PREVIEW_BUNDLE_ID)
 
     def test_nested_app_ids_cannot_impersonate_sidestore(self):
