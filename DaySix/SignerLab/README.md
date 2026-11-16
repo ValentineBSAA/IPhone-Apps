@@ -8,12 +8,41 @@ The finished product should be a **single iPhone app** that can sign and install
 
 ## What the lab does
 
+There are **two distinct deliverables**, neither yet equivalent to a verified
+stock-iOS installer:
+
+- **DaySix SwiftUI companion**: the premium dashboard and day-six logic, which
+  currently delegates actual signing to SideStore.
+- **DaySix Signer Lab**: an experimental, AGPL-licensed derivative of the real
+  SideStore signer. It intentionally retains upstream installer logic and UI,
+  uses the display name **DaySix Signer Lab**, and must use a separate test
+  bundle ID. This is the first codebase that could actually contain an
+  independent on-device IPA signing engine.
+
+The standalone preview does not yet include the premium DaySix SwiftUI
+dashboard. That UI integration is a separate, subsequent engineering step.
+
 The isolated GitHub Actions workflow:
 
 1. Checks out the **official SideStore/SideStore develop tree**, including submodules.
 2. Prints the exact upstream Git commit used. Never accepts a random third-party pre-signed binary.
 3. Reads the upstream AGPLv3 license, then attempts the officially documented unsigned-IPA Makefile build (`make build fakesign ipa`) with no Apple ID and no signing secrets.
-4. Uploads the build log and any produced unsigned IPA for examination.
+4. Applies the audited `preview_brand.py` change (display name and preview
+   marker) and compiles with an explicit experimental bundle-ID suffix.
+5. Inspects the produced IPA to reject official SideStore bundle IDs or
+   missing experimental markers, then uploads only inspected artifacts and
+   the build log.
+
+The safety checks are run on Linux by
+`DaySix/SignerLab/Tests/test_preview_brand.py` as well as before the real
+macOS IPA artifact is uploaded. This test is independent of Apple credentials.
+
+**Do not install this preview alongside a working SideStore** until we also
+audit its URL schemes, app groups, system callback identifiers, pairing,
+self-renewal identity, and Apple account interaction. A distinct bundle ID
+alone does not eliminate all conflicts; both apps may still register the
+`sidestore://` URL scheme. The preview intentionally does **not** claim
+that an iPhone would run it safely today.
 
 A successful upstream build would prove only that the signing-capable SideStore code can be compiled in our CI environment. **It does not create a DaySix-branded integrated signer, and does not prove real device signing or self-refresh.** There is no credential collection, account login, or physical-device access in GitHub Actions.
 
