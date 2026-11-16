@@ -31,6 +31,7 @@ struct BerryHomeView: View {
     @State private var activeMode: BerryMode?
     @State private var showSettings = false
     @State private var showMore = false
+    @State private var showSchool = false
     @AppStorage("berryblockblast.music") private var music = true
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.haptics") private var haptics = true
@@ -79,6 +80,8 @@ struct BerryHomeView: View {
                             Button("🧺 More Adventures") { showMore = true }
                                 .font(.title3.bold()).foregroundStyle(BerryStyle.strawberry)
                                 .frame(maxWidth: .infinity).padding(18).background(.white, in: RoundedRectangle(cornerRadius: 20))
+                            Button("🍓 Strawberry School • Learn to Play") { showSchool = true }
+                                .font(.system(size: 14, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.leaf)
                             HStack {
                                 Text(music ? "🎶 Music box playing" : "🎶 Music box paused")
                                 Spacer()
@@ -94,6 +97,7 @@ struct BerryHomeView: View {
                 }
             }
         }
+        .sheet(isPresented: $showSchool) { BerrySchoolView(onFinish: { showSchool = false; BerryGameSession().rewardTutorial() }) }
         .sheet(isPresented: $showMore) {
             NavigationStack {
                 ScrollView {
