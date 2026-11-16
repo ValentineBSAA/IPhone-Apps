@@ -1,0 +1,63 @@
+name: DaySix Signer Lab - Upstream Integration Probe
+
+on:
+  push:
+    branches: [feature/daysix-ios-signing-dashboard]
+    paths:
+      - "DaySix/SignerLab/**"
+      - ".github/workflows/daysix-signer-lab.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upstream-signer-probe:
+    runs-on: macos-15
+    timeout-minutes: 50
+    steps:
+      - name: Checkout audit and test files
+        uses: actions/checkout@v4
+
+      - name: Checkout official SideStore signing code and submodules
+        uses: actions/checkout@v4
+        with:
+          repository: SideStore/SideStore
+          ref: develop
+          path: upstream-sidestore
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Record upstream SHA and license
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd upstream-sidestore
+          git rev-parse HEAD | tee ../daysix-upstream-sha.txt
+          test -e LICENSE || test -e LICENSE.md || test -e COPYING
+          xcodebuild -version
+          git submodule status --recursive | tee ../daysix-upstream-submodules.txt
+
+      - name: Build upstream unsigned IPA using its documented Makefile
+        working-directory: upstream-sidestore
+        shell: bash
+        run: |
+          set -o pipefail
+          make build fakesign ipa 2>&1 | tee ../daysix-upstream-build.log
+
+      - name: Collect build outputs
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p upstream-probe-outputs
+          cp -f daysix-upstream-*.txt upstream-probe-outputs/ 2>/dev/null || true
+          cp -f daysix-upstream-build.log upstream-probe-outputs/ 2>/dev/null || true
+          find upstream-sidestore -type f -name '*.ipa' -size -150M -print -exec cp '{}' upstream-probe-outputs/ \; || true
+
+      - name: Publish integration evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DaySix-Upstream-Signer-Probe
+          path: upstream-probe-outputs/
+          retention-days: 7
