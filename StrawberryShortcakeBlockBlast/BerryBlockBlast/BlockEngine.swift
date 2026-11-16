@@ -95,11 +95,13 @@ struct BerryEngine: Codable {
     }
 
     // Explicit initial state is useful for deterministic puzzle-rule tests.
-    init(board: [[Int?]], tray: [BerryPiece?], score: Int = 0) {
-        precondition(board.count == Self.classicSide && board.allSatisfy { $0.count == Self.classicSide })
+    init(board: [[Int?]], tray: [BerryPiece?], score: Int = 0, hard: Bool = false) {
+        let dimension = board.count
+        precondition((dimension == 8 || dimension == 12) && board.allSatisfy { $0.count == dimension })
         precondition(tray.count == 3)
         self.board = board
-        self.side = Self.classicSide
+        self.side = dimension
+        self.hardPieces = hard
         self.tray = tray
         self.score = score
     }
