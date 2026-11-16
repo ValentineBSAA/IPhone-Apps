@@ -17,6 +17,7 @@ final class BerryGameSession: ObservableObject {
     @Published private(set) var cottageDecorations = UserDefaults.standard.integer(forKey: "berryblockblast.cottage.decorations")
     private var previous: BerryEngine?
     private var previousBerryEarnings = 0
+    private var previousRewardEntry: String?
     private var activeMode: BerryMode = .endless
     private func modeKey(_ mode: BerryMode) -> String {
         switch mode {
@@ -83,6 +84,7 @@ final class BerryGameSession: ObservableObject {
         guard let outcome = engine.place(slot: slot, row: row, col: col) else { return false }
         previous = before
         previousBerryEarnings = 0
+        previousRewardEntry = nil
         if engine.score > bestScore {
             bestScore = engine.score
             UserDefaults.standard.set(bestScore, forKey: bestKey)
@@ -93,6 +95,7 @@ final class BerryGameSession: ObservableObject {
             let gained = outcome.clearedLines * 3 + (outcome.streak > 1 ? outcome.streak : 0) + (outcome.boardClear ? 25 : 0)
             previousBerryEarnings = gained
             earn(gained, reason: "Completed berry lines")
+            previousRewardEntry = rewardsLog.first
             celebration += 1
             lastMessage = outcome.boardClear ? "PERFECT GARDEN! +300 ✨" :
                 outcome.clearedLines >= 3 ? "BERRY SPECTACULAR! ✨" :
@@ -108,6 +111,11 @@ final class BerryGameSession: ObservableObject {
         engine = previous
         berries = max(0, berries - previousBerryEarnings)
         totalEarnedBerries = max(0, totalEarnedBerries - previousBerryEarnings)
+        if let entry = previousRewardEntry, let index = rewardsLog.firstIndex(of: entry) {
+            rewardsLog.remove(at: index)
+            UserDefaults.standard.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
+        }
+        previousRewardEntry = nil
         previousBerryEarnings = 0
         self.previous = nil
         undos -= 1
@@ -122,6 +130,8 @@ final class BerryGameSession: ObservableObject {
         shuffles -= 1
         gameOver = !engine.hasMove()
         previous = nil
+        previousBerryEarnings = 0
+        previousRewardEntry = nil
         lastMessage = "Freshly picked berry blocks! 🍓"
         save()
     }
