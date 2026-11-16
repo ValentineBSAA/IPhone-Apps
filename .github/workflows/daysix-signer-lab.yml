@@ -32,7 +32,7 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
-      - name: Record upstream SHA and license
+      - name: Prepare auditable DaySix Signer Lab preview
         shell: bash
         run: |
           set -euo pipefail
@@ -42,13 +42,28 @@ jobs:
           test -e CodeSigning.xcconfig || cp CodeSigning.xcconfig.sample CodeSigning.xcconfig
           xcodebuild -version
           git submodule status --recursive | tee ../daysix-upstream-submodules.txt
+          cd ..
+          python3 DaySix/SignerLab/preview_brand.py \
+            --root upstream-sidestore \
+            --sha "$(cat daysix-upstream-sha.txt)"
+          command -v ldid || brew install ldid
 
-      - name: Build upstream unsigned IPA using its documented Makefile
+      - name: Compile actual SideStore signing engine (separate test bundle ID)
         working-directory: upstream-sidestore
         shell: bash
+        env:
+          BUNDLE_ID_SUFFIX: DAY6LAB001
         run: |
           set -o pipefail
           make build fakesign ipa 2>&1 | tee ../daysix-upstream-build.log
+
+      - name: Confirm distinct bundle ID and experimental preview label
+        working-directory: upstream-sidestore
+        shell: bash
+        run: |
+          python3 ../DaySix/SignerLab/preview_brand.py --verify-ipa SideStore.ipa \
+            | tee ../daysix-preview-inspection.json
+          cp SideStore.ipa ../DaySix-Signer-Lab-unsigned.ipa
 
       - name: Collect build outputs
         if: always()
@@ -57,7 +72,9 @@ jobs:
           mkdir -p upstream-probe-outputs
           cp -f daysix-upstream-*.txt upstream-probe-outputs/ 2>/dev/null || true
           cp -f daysix-upstream-build.log upstream-probe-outputs/ 2>/dev/null || true
-          find upstream-sidestore -type f -name '*.ipa' -size -150M -print -exec cp '{}' upstream-probe-outputs/ \; || true
+          cp -f daysix-signerlab-provenance.json daysix-preview-inspection.json upstream-probe-outputs/ 2>/dev/null || true
+          test ! -f DaySix-Signer-Lab-unsigned.ipa || cp -f DaySix-Signer-Lab-unsigned.ipa upstream-probe-outputs/
+          # Never publish unverified SideStore.ipa or embedded signing material.
 
       - name: Publish integration evidence
         if: always()
