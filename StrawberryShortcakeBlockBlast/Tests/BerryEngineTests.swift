@@ -58,6 +58,41 @@ final class BerryEngineTests: XCTestCase {
         XCTAssertEqual(game.tray, restored.tray)
     }
 
+    func testDailySeedReproducesSamePieceShapesAndColors() {
+        let first = BerryEngine(seed: 20261116)
+        let second = BerryEngine(seed: 20261116)
+        XCTAssertEqual(first.tray.map { $0?.points }, second.tray.map { $0?.points })
+        XCTAssertEqual(first.tray.map { $0?.tint }, second.tray.map { $0?.tint })
+    }
+
+    func testLegacySaveWithoutNewOptionalFieldsDecodes() throws {
+        let game = BerryEngine(seed: 20261116)
+        let encoded = try JSONEncoder().encode(game)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        object.removeValue(forKey: "randomState")
+        object.removeValue(forKey: "cozyPieces")
+        let legacy = try JSONSerialization.data(withJSONObject: object)
+        let restored = try JSONDecoder().decode(BerryEngine.self, from: legacy)
+        XCTAssertEqual(restored.board, game.board)
+        XCTAssertEqual(restored.tray, game.tray)
+    }
+
+    func testRejectsCorruptedSaveDimensions() throws {
+        let game = BerryEngine()
+        let encoded = try JSONEncoder().encode(game)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        object["board"] = [[NSNull()]]
+        let corrupted = try JSONSerialization.data(withJSONObject: object)
+        XCTAssertThrowsError(try JSONDecoder().decode(BerryEngine.self, from: corrupted))
+    }
+
+    func testCozyModeProducesPlayableSmallPieces() {
+        let game = BerryEngine(cozy: true)
+        XCTAssertEqual(game.tray.compactMap { $0 }.count, 3)
+        XCTAssertTrue(game.tray.compactMap { $0 }.allSatisfy { $0.points.count <= 4 })
+        XCTAssertTrue(game.hasMove())
+    }
+
     private func emptyBoard() -> [[Int?]] {
         Array(repeating: Array(repeating: nil, count: 8), count: 8)
     }
