@@ -3,6 +3,29 @@
 
 A dark glass, teal-and-violet iOS dashboard inspired by ReProvision for the seven-day personal-development provisioning cycle. DaySix automatically checks **its own installed Apple provisioning-profile expiration**, tracks other apps you explicitly add, and gates SideStore's **Refresh All Apps** Shortcuts action at **day six**, with local reminders as a fallback.
 
+## Signer Lab: a real engine technical preview, not a finished DaySix signer
+
+We now have a **reproducible SideStore-derived unsigned IPA build recipe** in
+[SignerLab](SignerLab/README.md). Unlike the separate SwiftUI companion, the
+upstream code contains actual on-device Apple provisioning, IPA signing, local
+VPN installation, and SideStore-style self-refresh. The lab applies a visible
+**DaySix Signer Lab** technical-preview name, requests a distinct bundle-ID
+suffix and refuses to publish the preview unless identity checks pass. The
+companion's UI is **not yet embedded** in the signing engine.
+
+The lab builds SideStore's official AGPLv3 source and records its exact
+upstream SHA and dependencies, without copying certificates, credentials or
+pairing files. Source and build patches must be available under the applicable
+open-source license terms. This preview is **not safe to install beside your
+working SideStore yet** because its URL schemes and some app-group/callback
+identities may overlap. A unique bundle ID alone does not prove safe
+coexistence, nor does compilation prove automatic self-renewal.
+
+The fast Linux tests enforce the preview label, provenance marker and
+different bundle ID. The macOS workflow verifies the packaged IPA as well,
+but the actual SideStore-derived signing process is unverified until an
+unsigned build compiles and a real iOS 27 device passes end-to-end tests.
+
 ## New in v0.1.6: verified prerequisites and actual signing engine research
 
 - **Signing enrollment check:** More → Reliability Lab now asks you to confirm that DaySix appears in **SideStore → My Apps**, and that you've tested a successful refresh. These are honest user confirmations, not claims that DaySix can inspect SideStore's private database.
