@@ -103,6 +103,25 @@ final class BerryEngineTests: XCTestCase {
         XCTAssertTrue(game.hasMove())
     }
 
+    func testNightmareLargePiecesStayWithinBoardAndPersist() throws {
+        // Exercise repeated deals so 7-9-square pieces do not break encoding
+        // or placement on the larger board.
+        for _ in 0..<40 {
+            var game = BerryEngine(side: 12, hard: true)
+            XCTAssertTrue(game.tray.compactMap { $0 }.allSatisfy { $0.points.count >= 5 })
+            for piece in game.tray.compactMap({ $0 }) {
+                XCTAssertLessThanOrEqual(piece.width, 12)
+                XCTAssertLessThanOrEqual(piece.height, 12)
+            }
+            let restored = try JSONDecoder().decode(BerryEngine.self, from: JSONEncoder().encode(game))
+            XCTAssertEqual(restored.side, 12)
+            XCTAssertEqual(restored.tray, game.tray)
+            if let piece = game.tray[0] {
+                XCTAssertTrue(game.canPlace(piece, row: 0, col: 0))
+            }
+        }
+    }
+
     func testNightmareRejectsOutOfBoundsAndPersistsDimensions() throws {
         var game = BerryEngine(side: 12, hard: true)
         let piece = try XCTUnwrap(game.tray[0])
