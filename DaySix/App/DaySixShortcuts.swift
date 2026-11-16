@@ -37,6 +37,11 @@ struct RecordDaySixAttemptIntent: AppIntent {
             UserDefaults.standard.set(now, forKey: "daysix.lastSelfRenewalAttempt")
             changed += 1
         }
+        if changed > 0 {
+            RenewalAudit.record(
+                .automationAttempt,
+                "A SideStore refresh was requested by the Shortcuts workflow. Check the signing expiration to verify success.")
+        }
         return .result(value: changed)
     }
 }
