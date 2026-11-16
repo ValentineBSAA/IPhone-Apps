@@ -41,6 +41,17 @@ jobs:
           set -euo pipefail
           app="$RUNNER_TEMP/RepoPulseBuild/Build/Products/Release-iphoneos/RepoPulse.app"
           test -d "$app"
+          python3 - "$app/Info.plist" <<'PY'
+          import plistlib, sys
+          with open(sys.argv[1], 'rb') as fh:
+              info = plistlib.load(fh)
+          assert info.get('CFBundleIdentifier') == 'com.valentinebsaa.repopulse', info
+          assert info.get('CFBundleShortVersionString') == '1.1.0', info
+          assert info.get('CFBundleVersion') == '2', info
+          assert info.get('CFBundleIcons', {}).get('CFBundlePrimaryIcon', {}).get('CFBundleIconName') == 'AppIcon', info
+          print('Verified iPhone bundle ID, version, build number and AppIcon')
+          PY
+          test -s "$app/Assets.car"
           mkdir -p output/Payload
           cp -R "$app" output/Payload/
           cd output

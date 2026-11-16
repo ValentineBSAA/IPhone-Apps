@@ -2,7 +2,7 @@
 
 This repository hosts experiments in genuinely native iPhone apps. No websites or PWAs.
 
-## Repo Pulse iOS · Pocket Premium
+## Repo Pulse iOS · Pocket Premium v1.1.0
 
 Native SwiftUI dashboard for public GitHub repositories, with a premium teal/navy home dashboard, richer release cards, a custom reproducible app icon, and detailed release history. No subscription, backend, API key, or third-party dependencies.
 
@@ -23,7 +23,7 @@ GitHub unauthenticated REST API calls are limited to roughly 60 requests per hou
 1. Open GitHub Actions for this repository, select Repo Pulse iOS Build and run the workflow (or inspect the build from a pull request).
 2. The macOS runner uses XcodeGen and Xcode to compile a real iOS app.
 3. Download the RepoPulse-unsigned-ipa artifact, extract its ZIP, and obtain RepoPulse-unsigned.ipa.
-4. This IPA is unsigned. A compatible local sideloading tool must SIGN it before installation on your iPhone. Free Apple ID signing generally requires refreshing within seven days.
+4. This IPA is unsigned. The project retains the bundle ID `com.valentinebsaa.repopulse` and declares version 1.1.0 (build 2). A compatible local sideloading tool must SIGN it before installation on your iPhone. Free Apple ID signing generally requires refreshing within seven days.
 
 No Apple credentials are required in the build job. A green CI result proves compilation, NOT that signing, installation or physical-device behavior have passed testing.
 
