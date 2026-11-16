@@ -18,7 +18,11 @@ workflows:
       - name: Generate original app icon and Xcode project
         script: |
           set -e
-          .venv/bin/python Tools/generate_icon.py
+          if [ ! -s BerryBlockBlast/Assets.xcassets/AppIcon.appiconset/AppIcon.png ]; then
+            .venv/bin/python Tools/generate_icon.py
+          else
+            echo "Using committed AppIcon.png without regenerating it"
+          fi
           xcodegen generate --spec project.yml
       - name: Compile native iPhone app without signing
         script: |
