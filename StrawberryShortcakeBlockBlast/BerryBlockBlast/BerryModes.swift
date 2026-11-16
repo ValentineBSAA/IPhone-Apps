@@ -30,6 +30,7 @@ enum BerryMode: String, CaseIterable, Identifiable {
 struct BerryHomeView: View {
     @State private var activeMode: BerryMode?
     @State private var showSettings = false
+    @State private var showMore = false
     @AppStorage("berryblockblast.music") private var music = true
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.haptics") private var haptics = true
@@ -57,7 +58,7 @@ struct BerryHomeView: View {
                             Text("Berry Block Blast!").font(.system(size: 34, weight: .black, design: .rounded)).minimumScaleFactor(0.65).lineLimit(1).foregroundStyle(BerryStyle.strawberry)
                             Text("PICK • PLANT • POP • CELEBRATE").font(.system(size: 10, weight: .bold, design: .rounded)).tracking(1).foregroundStyle(BerryStyle.chocolate)
                             Text("What shall we bake up today? 🍰").font(.system(size: 19, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.chocolate).padding(.vertical, 8)
-                            ForEach(BerryMode.allCases) { mode in
+                            ForEach(Array(BerryMode.allCases.prefix(3))) { mode in
                                 Button { BerryAudio.shared.setMusic(music); activeMode = mode } label: {
                                     HStack(spacing: 14) {
                                         Image(systemName: mode.icon).font(.system(size: 23, weight: .bold)).foregroundStyle(.white).frame(width: 53, height: 53).background(mode == .story ? BerryStyle.leaf : BerryStyle.strawberry, in: RoundedRectangle(cornerRadius: 16))
@@ -75,6 +76,9 @@ struct BerryHomeView: View {
                                     .overlay(RoundedRectangle(cornerRadius: 21).stroke(.white, lineWidth: 2))
                                 }.buttonStyle(.plain)
                             }
+                            Button("🧺 More Adventures") { showMore = true }
+                                .font(.title3.bold()).foregroundStyle(BerryStyle.strawberry)
+                                .frame(maxWidth: .infinity).padding(18).background(.white, in: RoundedRectangle(cornerRadius: 20))
                             HStack {
                                 Text(music ? "🎶 Music box playing" : "🎶 Music box paused")
                                 Spacer()
@@ -88,6 +92,24 @@ struct BerryHomeView: View {
                         .frame(minHeight: geo.size.height, alignment: .center)
                     }
                 }
+            }
+        }
+        .sheet(isPresented: $showMore) {
+            NavigationStack {
+                ScrollView {
+                    VStack(spacing: 18) {
+                        Text("🍓 More Sweet Adventures").font(.title.bold()).foregroundStyle(BerryStyle.strawberry)
+                        ForEach(Array(BerryMode.allCases.dropFirst(3))) { mode in
+                            Button(mode.rawValue + " • " + mode.description) { showMore = false; activeMode = mode }
+                                .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
+                        }
+                        Text("🎶 Strawberry Jukebox").font(.title2.bold())
+                        Text(BerryAudio.shared.currentTrackName)
+                        Button("Shuffle Next Track") { BerryAudio.shared.nextTrack() }.buttonStyle(.borderedProminent)
+                    }.padding(22)
+                }.background(BerryStyle.cream.ignoresSafeArea())
+                .navigationTitle("More Adventures")
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showMore = false } } }
             }
         }
         .sheet(isPresented: $showSettings) {
