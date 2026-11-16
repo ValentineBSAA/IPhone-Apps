@@ -33,11 +33,11 @@ struct BerryHomeView: View {
                 GeometryReader { geo in
                     ScrollView {
                         VStack(spacing: 15) {
-                            Text("✿ STRAWBERRY SWEET ✿").font(.system(size: 12, weight: .black, design: .rounded)).tracking(2).foregroundStyle(BerryStyle.leaf)
+                            Text("✿ WELCOME TO STRAWBERRY VILLAGE ✿").font(.system(size: 12, weight: .black, design: .rounded)).tracking(2).foregroundStyle(BerryStyle.leaf)
                             BerryGirlView().frame(width: 135, height: 135).clipped()
                             Text("Berry Block Blast!").font(.system(size: 34, weight: .black, design: .rounded)).minimumScaleFactor(0.65).lineLimit(1).foregroundStyle(BerryStyle.strawberry)
-                            Text("A LITTLE GARDEN FULL OF BIG SURPRISES").font(.system(size: 10, weight: .bold, design: .rounded)).tracking(1).foregroundStyle(BerryStyle.chocolate)
-                            Text("Pick your berry adventure 🍓").font(.system(size: 19, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.chocolate).padding(.vertical, 8)
+                            Text("PICK • PLANT • POP • CELEBRATE").font(.system(size: 10, weight: .bold, design: .rounded)).tracking(1).foregroundStyle(BerryStyle.chocolate)
+                            Text("What shall we bake up today? 🍰").font(.system(size: 19, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.chocolate).padding(.vertical, 8)
                             ForEach(BerryMode.allCases) { mode in
                                 Button { activeMode = mode } label: {
                                     HStack(spacing: 14) {
