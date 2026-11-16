@@ -158,11 +158,16 @@ private extension TabBarController
         info = {
             "CFBundleIdentifier": bundle_id,
             "CFBundleDisplayName": label or preview.DISPLAY_NAME,
+            "CFBundleName": preview.DISPLAY_NAME,
             "DaySixSignerLabPreview": preview_marker,
             "CFBundleURLTypes": [{
+                "CFBundleURLName": "DaySix Signer Lab General",
                 "CFBundleURLSchemes": [
                     primary_scheme if primary_scheme is not None else preview.PREVIEW_URL_SCHEME
                 ]
+            }, {
+                "CFBundleURLName": "DaySix Signer Lab Backup",
+                "CFBundleURLSchemes": ["sidestore-" + preview.PREVIEW_BUNDLE_ID]
             }],
         }
         widget_info = {
@@ -192,6 +197,9 @@ private extension TabBarController
     def test_patch_preserves_original_handler(self):
         modified = plistlib.loads(self.plist.read_bytes())
         self.assertEqual(modified["CFBundleDisplayName"], preview.DISPLAY_NAME)
+        self.assertEqual(modified["CFBundleName"], preview.DISPLAY_NAME)
+        self.assertEqual(modified["CFBundleURLTypes"][0]["CFBundleURLName"],
+                         "DaySix Signer Lab General")
         self.assertEqual(modified["CFBundleURLTypes"][0]["CFBundleURLSchemes"],
                          [preview.PREVIEW_URL_SCHEME])
         self.assertNotEqual(modified["CFBundleURLTypes"],
