@@ -10,7 +10,7 @@ enum BerryMode: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .endless: "infinity"
-        case .story: "map.fill"
+        case .story: "book.closed.fill"
         case .daily: "calendar"
         case .cozy: "cup.and.saucer.fill"
         case .challenge: "bolt.fill"
@@ -60,8 +60,9 @@ struct BerryHomeView: View {
                             Text("🍓 ✨ 🍰 ✨ 🍓").font(.title2)
                                 .accessibilityLabel("Strawberry sweets")
                             Text("✿ WELCOME TO STRAWBERRY VILLAGE ✿").font(.system(size: 12, weight: .black, design: .rounded)).tracking(2).foregroundStyle(BerryStyle.leaf)
-                            BerryGirlView().frame(width: 150, height: 150).clipped()
+                            BerryGirlView().frame(width: 174, height: 180)
                                 .background(Circle().fill(.white.opacity(0.45)).shadow(color: BerryStyle.strawberry.opacity(0.2), radius: 18, y: 6))
+                                .frame(maxWidth: .infinity, alignment: .center)
                             Text("Berry Block Blast!").font(.system(size: 34, weight: .black, design: .rounded)).minimumScaleFactor(0.65).lineLimit(1).foregroundStyle(BerryStyle.strawberry)
                             Text("PICK • PLANT • POP • CELEBRATE").font(.system(size: 10, weight: .bold, design: .rounded)).tracking(1).foregroundStyle(BerryStyle.chocolate)
                             Text("What shall we bake up today? 🍰").font(.system(size: 19, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.chocolate).padding(.vertical, 8)
@@ -110,6 +111,7 @@ struct BerryHomeView: View {
                 ScrollView {
                     VStack(spacing: 20) {
                         Text("🍓 The Berry Collection").font(.title.bold()).foregroundStyle(BerryStyle.strawberry)
+                        Text("🌸 🍓 🎀 🍰 🌿").font(.title2)
                         Text("Collect new berry blocks by clearing lines in any garden.")
                         ProgressView(value: Double(min(10, lifetimeLines)), total: 10).tint(BerryStyle.strawberry)
                         Text("\(lifetimeLines) lifetime lines harvested")
@@ -128,6 +130,7 @@ struct BerryHomeView: View {
                 ScrollView {
                     VStack(spacing: 18) {
                         Text("🍓 More Sweet Adventures").font(.title.bold()).foregroundStyle(BerryStyle.strawberry)
+                        Text("🌸 A basket of new adventures 🌸").font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
                         ForEach(Array(BerryMode.allCases.dropFirst(3))) { mode in
                             Button(mode.rawValue + " • " + mode.description) { showMore = false; activeMode = mode }
                                 .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
@@ -178,7 +181,7 @@ struct BerryHomeView: View {
                     Section("About") { LabeledContent("Version", value: version); Text("Original offline strawberry puzzle. No ads or purchases.") }
                 }
                 .scrollContentBackground(.hidden)
-                .background(BerryStyle.cream.ignoresSafeArea())
+                .background(LinearGradient(colors: [BerryStyle.cream, Color(red: 1, green: 0.85, blue: 0.90)], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
                 .navigationTitle("🍓 Berry Settings")
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showSettings = false } } }
             }.presentationDetents([.medium, .large])
