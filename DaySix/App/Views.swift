@@ -132,14 +132,14 @@ struct DashboardView: View {
                                         .font(.caption2.bold())
                                         .foregroundStyle(DS.muted)
                                 }
-                                Text(store.apps.isEmpty ? "A fresh start." :
-                                     store.urgentCount > 0 ? "Renewal needed." : "Looking good.")
+                                Text(store.urgentCount > 0 ? "Renewal needed." :
+                                     store.selfExpiresAt == nil ? "Check signing setup." : "Looking good.")
                                     .font(.system(size: 27, weight: .bold, design: .rounded))
-                                Text(store.apps.isEmpty
-                                     ? "Add an app to track its seven-day signing window."
-                                     : store.urgentCount > 0
-                                       ? "\(store.urgentCount) app(s) are due. Refresh in SideStore and verify the result."
-                                       : "No tracked apps have reached their day-six refresh window.")
+                                Text(store.urgentCount > 0
+                                     ? "\(store.urgentCount) signature(s) are due, including DaySix itself when necessary."
+                                     : store.selfExpiresAt == nil
+                                       ? "DaySix's own signing expiry is unknown. Check SideStore, then add other apps to track."
+                                       : "DaySix is monitoring its own signature. Other apps can be added below.")
                                     .font(.subheadline)
                                     .foregroundStyle(DS.muted)
                                 HStack(spacing: 10) {
@@ -151,9 +151,12 @@ struct DashboardView: View {
                             }
                         }
                         HStack(spacing: 12) {
-                            stat(number: "\(store.apps.count)", label: "Tracked apps", symbol: "square.stack.fill")
+                            stat(number: "\(store.apps.count + 1)", label: "Monitored apps", symbol: "square.stack.fill")
                             stat(number: "\(store.urgentCount)", label: "Due now", symbol: "clock.arrow.circlepath")
                         }
+                        Text("THIS IPHONE APP")
+                            .font(.caption.bold()).tracking(1.5).foregroundStyle(DS.muted)
+                        SelfSignatureCard()
                         HStack {
                             Text("UPCOMING RENEWALS")
                                 .font(.caption.bold()).tracking(1.5)
@@ -263,7 +266,8 @@ struct ManagedAppsView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         SectionHeading(title: "My Apps",
-                                       subtitle: "Apps you have added for renewal monitoring.")
+                                       subtitle: "DaySix monitors itself; add other apps to track them.")
+                        SelfSignatureCard()
                         GlowButton(title: "Add Tracked App", symbol: "plus.app.fill") { showAdd = true }
                         if store.apps.isEmpty {
                             GlassCard {
@@ -468,7 +472,7 @@ struct MoreView: View {
                             VStack(alignment: .leading, spacing: 13) {
                                 Label("Day-six automation", systemImage: "clock.arrow.2.circlepath")
                                     .font(.headline).foregroundStyle(DS.mint)
-                                Text("Use a daily iOS Shortcuts automation to check DaySix. When an app reaches day six, Shortcuts calls SideStore's native Refresh All Apps action.")
+                                Text("The daily automation checks DaySix's own signing profile and your tracked apps. When either reaches day six, Shortcuts asks SideStore to refresh every app SideStore manages, including DaySix if you installed it through SideStore.")
                                     .font(.subheadline).foregroundStyle(DS.muted)
                                 Text(recipe).font(.footnote).foregroundStyle(.white.opacity(0.9))
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -507,7 +511,7 @@ struct MoreView: View {
                                      destination: URL(string: "https://docs.sidestore.io/docs/installation/install.html")!)
                                 Link("Official SideInstaller project",
                                      destination: URL(string: "https://github.com/FrizzleM/SideInstaller")!)
-                                Text("A free Apple developer signature still expires in seven days. No app can override Apple's provisioned expiration.")
+                                Text("To renew DaySix itself, it must be listed in SideStore's My Apps. Reinstall it from inside SideStore if necessary. Apple still limits free developer signatures to seven days.")
                                     .font(.footnote).foregroundStyle(DS.muted)
                             }
                             .tint(DS.mint)
