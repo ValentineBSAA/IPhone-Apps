@@ -61,7 +61,7 @@ private struct DaySixSignerHomeView: View {
                                     .foregroundStyle(subdued)
                             }
                         }
-                        Button(action: importIPA) {
+                        SwiftUI.Button(action: importIPA) {
                             HStack {
                                 Image(systemName: "plus.app.fill")
                                 Text("Choose IPA File")
@@ -110,8 +110,8 @@ private struct DaySixSignerHomeView: View {
                             .foregroundStyle(subdued)
 
                         HStack(spacing: 18) {
-                            Button("Settings", action: openSettings)
-                            Button("App Sources", action: openSources)
+                            SwiftUI.Button("Settings", action: openSettings)
+                            SwiftUI.Button("App Sources", action: openSources)
                         }
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(mint)
@@ -134,7 +134,7 @@ private struct DaySixSignerHomeView: View {
     private func quickAction(title: String, detail: String,
                              symbol: String, accent: Color,
                              action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        SwiftUI.Button(action: action) {
             HStack(spacing: 14) {
                 Image(systemName: symbol)
                     .font(.system(size: 23, weight: .medium))
