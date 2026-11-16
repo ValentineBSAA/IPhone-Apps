@@ -35,6 +35,8 @@ struct BerryHomeView: View {
     @AppStorage("berryblockblast.music") private var music = true
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.haptics") private var haptics = true
+    @AppStorage("berryblockblast.musicVolume") private var musicVolume = 0.22
+    @AppStorage("berryblockblast.effectVolume") private var effectVolume = 0.65
     private var version: String { "🍓 v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev") • \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?")" }
     @AppStorage("berryblockblast.story.level") private var storyLevel = 1
     var body: some View {
@@ -119,19 +121,23 @@ struct BerryHomeView: View {
         .sheet(isPresented: $showSettings) {
             NavigationStack {
                 Form {
-                    Section("Strawberry Sound Studio 🎶") {
-                        Toggle("Music box melody", isOn: $music).onChange(of: music) { _, enabled in BerryAudio.shared.setMusic(enabled) }
-                        Toggle("Sweet sound effects", isOn: $sound)
-                        Toggle("Haptic feedback", isOn: $haptics)
+                    Section("🍓 Strawberry Sound Studio") {
+                        Toggle("Music box melody", isOn: $music).tint(BerryStyle.strawberry).onChange(of: music) { _, enabled in BerryAudio.shared.setMusic(enabled) }
+                        Slider(value: $musicVolume, in: 0...1) { Text("🎵 Music Volume") }.tint(BerryStyle.strawberry).onChange(of: musicVolume) { _, value in BerryAudio.shared.setMusicVolume(Float(value)) }
+                        Slider(value: $effectVolume, in: 0...1) { Text("🍓 Berry Sounds Volume") }.tint(BerryStyle.strawberry).onChange(of: effectVolume) { _, value in BerryAudio.shared.setEffectVolume(Float(value)) }
+                        Toggle("Sweet sound effects", isOn: $sound).tint(BerryStyle.strawberry)
+                        Toggle("Haptic feedback", isOn: $haptics).tint(BerryStyle.strawberry)
                         Button("Test berry chimes 🍓") { BerryAudio.shared.play(.clear) }
                     }
                     Section("About") { LabeledContent("Version", value: version); Text("Original offline strawberry puzzle. No ads or purchases.") }
                 }
-                .navigationTitle("Berry Settings")
+                .scrollContentBackground(.hidden)
+                .background(BerryStyle.cream.ignoresSafeArea())
+                .navigationTitle("🍓 Berry Settings")
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showSettings = false } } }
             }.presentationDetents([.medium, .large])
         }
-        .onAppear { BerryAudio.shared.setMusic(music) }
+        .onAppear { BerryAudio.shared.setMusicVolume(Float(musicVolume)); BerryAudio.shared.setEffectVolume(Float(effectVolume)); BerryAudio.shared.setMusic(music) }
         .preferredColorScheme(.light)
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
