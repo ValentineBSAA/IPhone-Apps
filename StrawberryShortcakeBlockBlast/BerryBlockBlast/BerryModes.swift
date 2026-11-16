@@ -6,6 +6,7 @@ enum BerryMode: String, CaseIterable, Identifiable {
     case daily = "Daily Harvest"
     case cozy = "Cozy Cottage"
     case challenge = "Berry Blitz"
+    case superHard = "Strawberry Nightmare"
     var id: String { rawValue }
     var icon: String {
         switch self {
@@ -14,6 +15,7 @@ enum BerryMode: String, CaseIterable, Identifiable {
         case .daily: "calendar"
         case .cozy: "cup.and.saucer.fill"
         case .challenge: "bolt.fill"
+        case .superHard: "square.grid.3x3.fill"
         }
     }
     var description: String {
@@ -23,6 +25,7 @@ enum BerryMode: String, CaseIterable, Identifiable {
         case .daily: "One fresh strawberry challenge every day."
         case .cozy: "Take it easy in a cozy garden."
         case .challenge: "Race to a sweet high-score target."
+        case .superHard: "A 12 × 12 garden with bigger pieces. Every move counts!"
         }
     }
 }
