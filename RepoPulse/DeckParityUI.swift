@@ -61,8 +61,9 @@ private struct DeckHeader: View {
 
     var body: some View {
         HStack(spacing: 11) {
-            Image(systemName: "cube.transparent.fill")
-                .font(.system(size: 23, weight: .light))
+            Image("DeckCube")
+                .resizable()
+                .scaledToFit()
                 .foregroundStyle(DeckLook.gradient)
                 .frame(width: 47, height: 47)
                 .background(DeckLook.raised, in: RoundedRectangle(cornerRadius: 14))
@@ -404,7 +405,8 @@ struct DeckPulseHome: View {
                 section("Momentum board",icon:"bolt.fill")
                 let changes = group.map { (stats:$0, gain:deck.change($0.id,mode,asset)) }
                     .sorted { ($0.gain ?? Int.min) > ($1.gain ?? Int.min) }
-                ForEach(changes,id:\.stats.id) { entry in
+                ForEach(changes.indices,id:\.self) { index in
+                    let entry = changes[index]
                     HStack {
                         Image(systemName:"chart.line.uptrend.xyaxis")
                             .foregroundStyle(DeckLook.violet)
@@ -635,8 +637,9 @@ private struct DeckRepoTile: View {
         let measured = stats?.measure(mode,asset:asset)
         VStack(alignment:.leading,spacing:9) {
             HStack {
-                Image(systemName:other ? "folder.fill" : "gamecontroller.fill")
-                    .font(.title3)
+                Image("DeckCube")
+                    .resizable()
+                    .scaledToFit()
                     .foregroundStyle(kindColor(repo.id))
                     .frame(width:42,height:42)
                     .background(kindColor(repo.id).opacity(0.12),in:RoundedRectangle(cornerRadius:12))
@@ -866,7 +869,7 @@ private struct DeckRepoDetails: View {
                 ScrollView {
                     VStack(alignment:.leading,spacing:18) {
                         HStack(spacing:11) {
-                            Image(systemName:"cube.transparent.fill").font(.largeTitle)
+                            Image("DeckCube").resizable().scaledToFit().frame(width:52,height:52)
                                 .foregroundStyle(kindColor(stats.id))
                             VStack(alignment:.leading,spacing:5) {
                                 Text(stats.identity.name).font(.title2.bold()).lineLimit(1).minimumScaleFactor(0.7)
