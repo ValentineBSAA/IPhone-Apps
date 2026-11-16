@@ -30,6 +30,7 @@ final class BerryGameSession: ObservableObject {
         case .daily: "berryblockblast.daily.engine." + Self.dailyDateKey()
         case .cozy: "berryblockblast.cozy.engine.v1"
         case .challenge: "berryblockblast.blitz.engine.v1"
+        case .superHard: "berryblockblast.nightmare.engine.v1"
         }
     }
     func selectMode(_ mode: BerryMode) {
@@ -52,6 +53,7 @@ final class BerryGameSession: ObservableObject {
 
     private func freshEngine() -> BerryEngine {
         if activeMode == .cozy { return BerryEngine(cozy: true) }
+        if activeMode == .superHard { return BerryEngine(side: 12, hard: true) }
         guard activeMode == .daily else { return BerryEngine() }
         let components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
         let number = (components.year ?? 2026) * 10000 + (components.month ?? 1) * 100 + (components.day ?? 1)
