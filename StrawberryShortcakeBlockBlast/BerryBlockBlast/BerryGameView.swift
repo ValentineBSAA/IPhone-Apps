@@ -80,6 +80,7 @@ struct BerryGameView: View {
     @State private var showVictory = false
     @State private var blitzRemaining = 120
     @State private var blitzRunning = false
+    @State private var blitzDeadline: Date?
     @State private var isPaused = false
     @Environment(\.scenePhase) private var scenePhase
     private var canManuallyPause: Bool { mode != .challenge }
@@ -157,7 +158,7 @@ struct BerryGameView: View {
                         .padding(7)
                         .contentShape(Rectangle())
                         .onTapGesture { location in
-                            guard !isPaused, let slot = selectedSlot, let piece = session.engine.tray[slot] else { return }
+                            guard !isPaused, !showGameOver, let slot = selectedSlot, let piece = session.engine.tray[slot] else { return }
                             let step = cell + 3
                             let col = Int(floor((location.x - 7) / step))
                             let row = Int(floor((location.y - 7) / step))
@@ -244,22 +245,23 @@ struct BerryGameView: View {
         .sheet(isPresented: $showWelcome) { welcomeSheet }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active && canManuallyPause { isPaused = true; drag = nil; selectedSlot = nil }
+            if phase == .active && mode == .challenge { refreshBlitzClock() }
         }
-        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
-            guard mode == .challenge, blitzRunning, !showVictory, !showGameOver, !showSettings, !showShop, !showStats, !showCottage, !isPaused, !showHelp, !showWelcome, !showUnlock else { return }
-            blitzRemaining = max(0, blitzRemaining - 1)
-            if blitzRemaining == 0 { blitzRunning = false; showGameOver = true }
+        .onReceive(Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()) { _ in
+            if mode == .challenge { refreshBlitzClock() }
         }
         .onChange(of: session.gameOver) { _, ended in showGameOver = ended && !showVictory }
         .onAppear {
             BerryAudio.shared.setMusic(music)
             session.selectMode(mode)
             blitzRunning = mode == .challenge
+            if mode == .challenge { blitzDeadline = Date().addingTimeInterval(TimeInterval(blitzRemaining)) }
             showGameOver = session.gameOver
             if !welcomed { showWelcome = true }
         }
         .onChange(of: session.engine.score) { _, _ in checkObjective() }
         .onChange(of: session.engine.totalLines) { _, _ in checkObjective() }
+        .onChange(of: showSettings) { _, _ in if mode == .challenge { refreshBlitzClock() } }
         .overlay {
             if isPaused && !showVictory && !showGameOver {
                 ZStack {
@@ -299,7 +301,7 @@ struct BerryGameView: View {
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
                         Button(showVictory ? "🍓 Another Sweet Adventure" : "🍓 Plant a Fresh Garden") {
                             showVictory = false; showGameOver = false; confirmRestart = false
-                            session.newGame(); selectedSlot = nil; drag = nil; blitzRemaining = 120; blitzRunning = mode == .challenge
+                            session.newGame(); selectedSlot = nil; drag = nil; blitzRemaining = 120; blitzRunning = mode == .challenge; blitzDeadline = mode == .challenge ? Date().addingTimeInterval(120) : nil
                         }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
                         Button("🏡 Return to Strawberry Village") { onExit() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
@@ -444,13 +446,18 @@ struct BerryGameView: View {
 
     private func finishDrag() {
         defer { drag = nil }
-        guard !isPaused, let drag, drag.allowed else { return }
+        guard !isPaused, !showGameOver, let drag, drag.allowed else { return }
         if session.drop(slot: drag.slot, row: drag.row, col: drag.col) {
             selectedSlot = nil
             successFeedback()
         }
     }
 
+    private func refreshBlitzClock() {
+        guard mode == .challenge, blitzRunning, let deadline = blitzDeadline, !showVictory else { return }
+        blitzRemaining = max(0, Int(ceil(deadline.timeIntervalSinceNow)))
+        if blitzRemaining == 0 { blitzRunning = false; showGameOver = true; drag = nil; selectedSlot = nil }
+    }
     private func checkObjective() {
         guard !showVictory else { return }
         let completed: Bool
@@ -473,7 +480,10 @@ struct BerryGameView: View {
             showUnlock = true
             session.awardOnce("strawberry-unlock", amount: 15, reason: "Strawberry blocks unlocked")
         }
-        if mode == .challenge && session.lastClearedLines > 0 { blitzRemaining += min(15, session.lastClearedLines * 5) }
+        if mode == .challenge && session.lastClearedLines > 0 {
+            blitzDeadline = blitzDeadline?.addingTimeInterval(TimeInterval(min(15, session.lastClearedLines * 5)))
+            refreshBlitzClock()
+        }
         if haptics { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
         if sound { BerryAudio.shared.play(session.lastEarned > 10 ? .clear : .place) }
         if session.lastEarned > 10 {
