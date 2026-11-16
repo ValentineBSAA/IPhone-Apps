@@ -98,7 +98,7 @@ struct BerryGameView: View {
     @State private var showWelcome = false
     @AppStorage("berryblockblast.haptics") private var haptics = true
     @AppStorage("berryblockblast.sound") private var sound = true
-    @AppStorage("berryblockblast.music") private var music = false
+    @AppStorage("berryblockblast.music") private var music = true
     @State private var sparkle = false
     private let harvestCheers = [
         "🍓 A berry sweet harvest!", "🍰 Piece of strawberry cake!",
@@ -276,11 +276,14 @@ struct BerryGameView: View {
             BerryGirlView().frame(width: compact ? 45 : 54, height: compact ? 45 : 54).clipped()
             VStack(alignment: .leading, spacing: 0) {
                 Text("STRAWBERRY SWEET").font(.system(size: 8, weight: .black, design: .rounded)).tracking(1.7).foregroundStyle(BerryStyle.leaf)
-                Text("Berry Block Blast!").font(.system(size: compact ? 22 : 25, weight: .black, design: .rounded)).lineLimit(1).minimumScaleFactor(0.6).foregroundStyle(BerryStyle.strawberry)
+                Text("Berry Block Blast!").font(.system(size: compact ? 20 : 23, weight: .black, design: .rounded)).lineLimit(1).minimumScaleFactor(0.6).foregroundStyle(BerryStyle.strawberry)
                 Text(mode == .endless ? "THE ENDLESS BERRY GARDEN" : mode.rawValue.uppercased()).font(.system(size: 8, weight: .bold, design: .rounded)).tracking(0.7).foregroundStyle(BerryStyle.chocolate.opacity(0.7))
             }
             Spacer(minLength: 0)
             Button { onExit() } label: { Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.leaf) }.accessibilityLabel("Main menu")
+            Button { showSettings = true } label: {
+                Image(systemName: "gearshape.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.strawberry)
+            }.accessibilityLabel("Berry settings")
             Button { showHelp = true } label: {
                 Image(systemName: "questionmark.circle.fill").font(.system(size: 23)).foregroundStyle(BerryStyle.strawberry)
             }.accessibilityLabel("How to play")
@@ -407,7 +410,7 @@ struct BerryGameView: View {
                 .onChange(of: music) { _, enabled in BerryAudio.shared.setMusic(enabled) }
             Text("Your game is saved automatically. The display uses the full iPhone screen.").font(.footnote)
             Button("Start a New Garden", role: .destructive) { showSettings = false; confirmRestart = true }
-            Text("Berry Block Blast • 0.4.0 • Strawberry Village Edition").font(.footnote).foregroundStyle(.secondary)
+            Text("🍓 v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev") • build \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?")").font(.footnote).foregroundStyle(.secondary)
             primaryButton("Done") { showSettings = false }
         }
     }
