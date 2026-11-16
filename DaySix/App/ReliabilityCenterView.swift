@@ -9,6 +9,7 @@ struct ReliabilityCenterView: View {
     @State private var backgroundStatus: UIBackgroundRefreshStatus = .restricted
     @State private var notificationAuthorized = false
     @State private var sideStorePresent = false
+    @State private var lowPowerMode = false
 
     private let smartAutomation = """
     A) Create a Shortcut named DaySix Refresh:
@@ -70,6 +71,11 @@ struct ReliabilityCenterView: View {
                                       good: "iOS permits requests",
                                       bad: "Disabled or restricted",
                                       detail: "Apple decides whether a background check actually runs.")
+                            statusRow("Low Power Mode",
+                                      ok: !lowPowerMode,
+                                      good: "Off, background work has more opportunity",
+                                      bad: "On, iOS limits background refresh",
+                                      detail: "This does not change the fixed Shortcuts schedule.")
                             statusRow("iPhone notifications",
                                       ok: notificationAuthorized,
                                       good: "Authorized",
@@ -183,6 +189,7 @@ struct ReliabilityCenterView: View {
 
     private func inspect() {
         backgroundStatus = UIApplication.shared.backgroundRefreshStatus
+        lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
         if let u = URL(string: "sidestore://") {
             sideStorePresent = UIApplication.shared.canOpenURL(u)
         }
