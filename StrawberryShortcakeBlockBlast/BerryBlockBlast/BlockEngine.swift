@@ -35,7 +35,7 @@ struct BerryEngine: Codable {
     private(set) var dryMoves = 0
     private(set) var boardClears = 0
     private var randomState: UInt64? = nil
-    private var cozyPieces = false
+    private var cozyPieces: Bool? = nil
 
     init() { refill() }
     init(cozy: Bool) {
@@ -142,7 +142,7 @@ struct BerryEngine: Codable {
         ]
         // A newly dealt tray always contains at least one legal move. Prefer
         // several playable choices instead of handing out impossible pieces.
-        let selection = cozyPieces ? Array(catalog.prefix(8)) : catalog
+        let selection = cozyPieces == true ? Array(catalog.prefix(8)) : catalog
         let viable = selection.filter { shape in
             let piece = BerryPiece(points: shape, tint: 0)
             return (0..<Self.side).contains { r in
@@ -151,7 +151,7 @@ struct BerryEngine: Codable {
         }
         var nextTray: [BerryPiece?] = []
         for index in 0..<3 {
-            let pool = cozyPieces ? (!viable.isEmpty ? viable : selection) : (!viable.isEmpty && (index < 2 || nextRandom(2) == 0) ? viable : catalog)
+            let pool = cozyPieces == true ? (!viable.isEmpty ? viable : selection) : (!viable.isEmpty && (index < 2 || nextRandom(2) == 0) ? viable : catalog)
             let shape = pool[nextRandom(pool.count)]
             nextTray.append(BerryPiece(points: shape, tint: nextRandom(6)))
         }
