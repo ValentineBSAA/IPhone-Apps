@@ -239,7 +239,7 @@ struct BerryGameView: View {
         .sheet(isPresented: $showCottage) { cottageSheet }
         .sheet(isPresented: $showWelcome) { welcomeSheet }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
-            guard mode == .challenge, blitzRunning, !showVictory, !showGameOver, !showSettings, !showShop, !showStats, !showHelp, !showWelcome, !showUnlock else { return }
+            guard mode == .challenge, blitzRunning, !showVictory, !showGameOver, !showSettings, !showShop, !showStats, !showCottage, !showHelp, !showWelcome, !showUnlock else { return }
             blitzRemaining = max(0, blitzRemaining - 1)
             if blitzRemaining == 0 { blitzRunning = false; showGameOver = true }
         }
@@ -251,13 +251,8 @@ struct BerryGameView: View {
             showGameOver = session.gameOver
             if !welcomed { showWelcome = true }
         }
-        .onChange(of: session.engine.score) { _, newScore in
-            guard mode == .story || mode == .daily || mode == .challenge else { return }
-            guard newScore >= goal, !showVictory else { return }
-            if mode == .story { session.rewardStory(storyLevel); storyLevel += 1 }
-            if mode == .daily { session.rewardDaily(); dailyCompleted = Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)) }
-            showVictory = true
-        }
+        .onChange(of: session.engine.score) { _, _ in checkObjective() }
+        .onChange(of: session.engine.totalLines) { _, _ in checkObjective() }
         .overlay {
             if showVictory || showGameOver || confirmRestart {
                 ZStack {
@@ -419,6 +414,21 @@ struct BerryGameView: View {
         }
     }
 
+    private func checkObjective() {
+        guard !showVictory else { return }
+        let completed: Bool
+        switch mode {
+        case .story: completed = storyIsLineQuest ? session.engine.totalLines >= storyTargetLines : session.engine.score >= goal
+        case .daily: completed = session.engine.score >= goal
+        case .challenge: completed = session.engine.score >= goal && blitzRemaining > 0
+        default: completed = false
+        }
+        guard completed else { return }
+        if mode == .story { session.rewardStory(storyLevel); storyLevel += 1 }
+        if mode == .daily { session.rewardDaily(); dailyCompleted = Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)) }
+        blitzRunning = false
+        showVictory = true
+    }
     private func successFeedback() {
         lifetimeLines += session.lastClearedLines
         if lifetimeLines >= 10 && !strawberryUnlocked {
