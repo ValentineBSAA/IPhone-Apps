@@ -46,21 +46,22 @@ jobs:
           with open(sys.argv[1], 'rb') as fh:
               info = plistlib.load(fh)
           assert info.get('CFBundleIdentifier') == 'com.valentinebsaa.repopulse', info
-          assert info.get('CFBundleShortVersionString') == '1.2.0', info
-          assert info.get('CFBundleVersion') == '3', info
+          assert info.get('CFBundleShortVersionString') == '1.3.0', info
+          assert info.get('CFBundleVersion') == '4', info
           assert info.get('CFBundleIcons', {}).get('CFBundlePrimaryIcon', {}).get('CFBundleIconName') == 'AppIcon', info
           print('Verified iPhone bundle ID, version, build number and AppIcon')
           PY
           test -s "$app/Assets.car"
+          test -s RepoPulse/Assets.xcassets/DeckCube.imageset/DeckCube.png
           mkdir -p output/Payload
           cp -R "$app" output/Payload/
           cd output
-          zip -qry RepoPulse-POCKET-PREMIUM-v1.2.0-BUILD3-UNSIGNED.ipa Payload
-          test -s RepoPulse-POCKET-PREMIUM-v1.2.0-BUILD3-UNSIGNED.ipa
+          zip -qry RepoPulse-DECK-EDITION-v1.3.0-BUILD4-UNSIGNED.ipa Payload
+          test -s RepoPulse-DECK-EDITION-v1.3.0-BUILD4-UNSIGNED.ipa
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v4
         with:
-          name: RepoPulse-POCKET-PREMIUM-v1.2.0-BUILD3
-          path: output/RepoPulse-POCKET-PREMIUM-v1.2.0-BUILD3-UNSIGNED.ipa
+          name: RepoPulse-DECK-EDITION-v1.3.0-BUILD4
+          path: output/RepoPulse-DECK-EDITION-v1.3.0-BUILD4-UNSIGNED.ipa
           if-no-files-found: error
           retention-days: 14

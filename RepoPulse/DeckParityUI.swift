@@ -164,7 +164,7 @@ struct DeckPulseHome: View {
             // Foreground-only polling. iOS can suspend the process in background.
             if store.refreshedAt == nil { await reload() }
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 300_000_000_000)
+                try? await Task.sleep(nanoseconds: 900_000_000_000)
                 if Task.isCancelled { break }
                 await reload()
             }
@@ -208,12 +208,12 @@ struct DeckPulseHome: View {
             pageScroll {
                 header("Repo Pulse", "Steam Deck analytics, now native on iPhone")
                 HStack {
-                    Label("POCKET / DECK 0.8.3 PARITY", systemImage: "checkmark.seal.fill")
+                    Label("DECK EDITION · 0.8.3 DNA", systemImage: "checkmark.seal.fill")
                         .font(.system(size: 10, weight: .heavy, design: .rounded))
                         .tracking(0.6)
                         .foregroundStyle(DeckLook.cyan)
                     Spacer()
-                    Text("v\(Bundle.main.object(forInfoDictionaryKey:"CFBundleShortVersionString") as? String ?? "?")")
+                    Text("v\(Bundle.main.object(forInfoDictionaryKey:"CFBundleShortVersionString") as? String ?? "?") · b\(Bundle.main.object(forInfoDictionaryKey:"CFBundleVersion") as? String ?? "?")")
                         .font(.system(size: 10, weight: .bold, design: .monospaced))
                         .foregroundStyle(DeckLook.dim)
                 }
@@ -565,7 +565,7 @@ struct DeckPulseHome: View {
                     Label("Send test iPhone notification",systemImage:"paperplane.fill")
                 }
                 .tint(DeckLook.cyan)
-                Text("Alerts are scheduled locally after a successful refresh finds new changes. The iPhone must permit notifications. Reliable alerts while the app is closed require a separate APNs push service; iOS may suspend background checks.")
+                Text("While open, Repo Pulse checks GitHub about every 15 minutes. New activity schedules local iPhone banners and sounds with permission. iOS suspends closed apps; always-on alerts require a separate APNs push backend.")
                     .font(.caption2).foregroundStyle(DeckLook.dim)
                 section("Dashboard",icon:"slider.horizontal.3")
                 Toggle("Show status ribbon",isOn:$showRibbon)
@@ -747,8 +747,7 @@ private struct DeckQuickGlance: View {
                         Text("Most growth").tag("growth")
                         Text("Watchlist").tag("custom")
                     }.pickerStyle(.segmented)
-                    let sorted = stats.sorted { a,b in
-                        if sort=="custom" { return false }
+                    let sorted = sort=="custom" ? stats : stats.sorted { a,b in
                         if sort=="growth" { return (engine.change(a.id,mode,asset) ?? -1) > (engine.change(b.id,mode,asset) ?? -1) }
                         return (a.measure(mode,asset:asset).count ?? -1) > (b.measure(mode,asset:asset).count ?? -1)
                     }
