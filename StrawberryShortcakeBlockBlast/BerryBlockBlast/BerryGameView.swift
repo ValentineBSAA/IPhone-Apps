@@ -97,6 +97,7 @@ struct BerryGameView: View {
     @AppStorage("berryblockblast.haptics") private var haptics = true
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.music") private var music = false
+    @State private var sparkle = false
     @AppStorage("berryblockblast.welcomed.v3") private var welcomed = false
 
     var body: some View {
@@ -123,6 +124,7 @@ struct BerryGameView: View {
                     .foregroundStyle(BerryStyle.chocolate)
                     .frame(height: 19)
                     BerryBoard(engine: session.engine, preview: drag, size: boardSize, selected: selectedSlot)
+                        .overlay { if sparkle { Text("🍓 ✨ BERRY BRILLIANT! ✨ 🍓").font(.headline).foregroundStyle(BerryStyle.strawberry).padding(12).background(.regularMaterial, in: Capsule()).transition(.scale.combined(with: .opacity)).allowsHitTesting(false) } }
                         .padding(7)
                         .contentShape(Rectangle())
                         .onTapGesture { location in
@@ -358,9 +360,14 @@ struct BerryGameView: View {
     private func successFeedback() {
         if haptics { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
         if sound { BerryAudio.shared.play(session.lastEarned > 10 ? .clear : .place) }
+        if session.lastEarned > 10 {
+            withAnimation(.spring()) { sparkle = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) { withAnimation { sparkle = false } }
+        }
     }
     private func warningFeedback() {
         if haptics { UINotificationFeedbackGenerator().notificationOccurred(.warning) }
+        if sound { BerryAudio.shared.play(.invalid) }
     }
 
     private var welcomeSheet: some View {
