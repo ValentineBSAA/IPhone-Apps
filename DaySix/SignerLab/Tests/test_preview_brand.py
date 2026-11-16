@@ -64,11 +64,16 @@ class PreviewSafetyTests(unittest.TestCase):
         self.provenance = preview.patch(self.root, "abc123def")
 
     def make_ipa(self, bundle_id, label=None, preview_marker=True,
-                 widget_id=None, backup_id=None):
+                 widget_id=None, backup_id=None, primary_scheme=None):
         info = {
             "CFBundleIdentifier": bundle_id,
             "CFBundleDisplayName": label or preview.DISPLAY_NAME,
             "DaySixSignerLabPreview": preview_marker,
+            "CFBundleURLTypes": [{
+                "CFBundleURLSchemes": [
+                    primary_scheme if primary_scheme is not None else preview.PREVIEW_URL_SCHEME
+                ]
+            }],
         }
         widget_info = {
             "CFBundleIdentifier": widget_id or preview.PREVIEW_BUNDLE_ID + ".AltWidget"
@@ -94,8 +99,10 @@ class PreviewSafetyTests(unittest.TestCase):
     def test_patch_preserves_original_handler(self):
         modified = plistlib.loads(self.plist.read_bytes())
         self.assertEqual(modified["CFBundleDisplayName"], preview.DISPLAY_NAME)
-        self.assertEqual(modified["CFBundleURLTypes"],
-                         self.baseline["CFBundleURLTypes"])
+        self.assertEqual(modified["CFBundleURLTypes"][0]["CFBundleURLSchemes"],
+                         [preview.PREVIEW_URL_SCHEME])
+        self.assertNotEqual(modified["CFBundleURLTypes"],
+                            self.baseline["CFBundleURLTypes"])
         meta = json.loads(self.provenance.read_text())
         self.assertEqual(meta["upstream_commit"], "abc123def")
         self.assertFalse(meta["iphone_self_renewal_tested"])
@@ -147,6 +154,15 @@ class PreviewSafetyTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             preview.verify_ipa(self.make_ipa(
                 preview.PREVIEW_BUNDLE_ID, label="SideStore"))
+
+    def test_official_url_scheme_is_rejected(self):
+        with self.assertRaises(RuntimeError):
+            preview.verify_ipa(self.make_ipa(
+                preview.PREVIEW_BUNDLE_ID, primary_scheme="sidestore"))
+        result = preview.verify_ipa(self.make_ipa(
+            preview.PREVIEW_BUNDLE_ID,
+            primary_scheme=preview.PREVIEW_URL_SCHEME))
+        self.assertEqual(result["bundle_id"], preview.PREVIEW_BUNDLE_ID)
 
     def test_nested_app_ids_cannot_impersonate_sidestore(self):
         with self.assertRaises(RuntimeError):
