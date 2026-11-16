@@ -19,7 +19,7 @@ final class BerryGameSession: ObservableObject {
     private var previousBerryEarnings = 0
     private var previousRewardEntry: String?
     private var activeMode: BerryMode = .endless
-    private static func dailyDateKey() -> String {
+    static func dailyDateKey() -> String {
         let components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
         return String(format: "%04d-%02d-%02d", components.year ?? 2026, components.month ?? 1, components.day ?? 1)
     }
