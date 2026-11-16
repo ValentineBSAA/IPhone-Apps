@@ -213,8 +213,10 @@ struct BerryGameView: View {
                                 DragGesture(minimumDistance: 2, coordinateSpace: .named("berry-screen"))
                                     .onChanged { value in updateDrag(slot: slot, finger: value.location, cell: cell) }
                                     .onEnded { value in
-                                        updateDrag(slot: slot, finger: value.location, cell: cell)
-                                        finishDrag()
+                                        // Commit from the final gesture position directly. @State writes
+                                        // are not guaranteed to be visible until the next SwiftUI update.
+                                        let finalDrop = placementForDrag(slot: slot, finger: value.location, cell: cell)
+                                        finishDrag(finalDrop)
                                     }
                             )
                             .accessibilityLabel("Berry piece \(slot + 1)")
@@ -467,15 +469,12 @@ struct BerryGameView: View {
     // DragGesture locations and boardRect are both measured in berry-screen coordinates.
     // Keep the block centered on the touch: the previous 42pt vertical shift
     // rejected valid drops near the top and made the preview disagree with release.
-    private func updateDrag(slot: Int, finger: CGPoint, cell: CGFloat) {
-        guard canMakeMove else { drag = nil; return }
-        guard session.engine.tray.indices.contains(slot),
-              let piece = session.engine.tray[slot] else { drag = nil; return }
+    private func placementForDrag(slot: Int, finger: CGPoint, cell: CGFloat) -> BerryDragState? {
+        guard canMakeMove, session.engine.tray.indices.contains(slot),
+              let piece = session.engine.tray[slot], boardRect.width > 0 else { return nil }
         let step = cell + 3
         let localX = finger.x - boardRect.minX
         let localY = finger.y - boardRect.minY
-        // Center on occupied cells, not the nominal bounding box: some pieces
-        // intentionally have empty leading cells (for example the T shape).
         let minCol = piece.points.map(\.col).min() ?? 0
         let maxCol = piece.points.map(\.col).max() ?? 0
         let minRow = piece.points.map(\.row).min() ?? 0
@@ -483,15 +482,19 @@ struct BerryGameView: View {
         let col = Int(floor(localX / step - CGFloat(minCol + maxCol + 1) / 2 + 0.5))
         let row = Int(floor(localY / step - CGFloat(minRow + maxRow + 1) / 2 + 0.5))
         let touchingBoard = boardRect.insetBy(dx: -max(12, step * 0.6), dy: -max(12, step * 0.6)).contains(finger)
-        drag = BerryDragState(slot: slot, piece: piece, row: row, col: col,
+        return BerryDragState(slot: slot, piece: piece, row: row, col: col,
                               allowed: touchingBoard && session.engine.canPlace(piece, row: row, col: col))
     }
 
-    private func finishDrag() {
+    private func updateDrag(slot: Int, finger: CGPoint, cell: CGFloat) {
+        drag = placementForDrag(slot: slot, finger: finger, cell: cell)
+    }
+
+    private func finishDrag(_ finalDrop: BerryDragState?) {
         defer { drag = nil }
-        guard canMakeMove, let drag else { refreshBlitzClock(); return }
-        guard drag.allowed else { warningFeedback(); return }
-        if session.drop(slot: drag.slot, row: drag.row, col: drag.col) {
+        guard canMakeMove, let finalDrop else { refreshBlitzClock(); return }
+        guard finalDrop.allowed else { warningFeedback(); return }
+        if session.drop(slot: finalDrop.slot, row: finalDrop.row, col: finalDrop.col) {
             selectedSlot = nil
             successFeedback()
         } else {
