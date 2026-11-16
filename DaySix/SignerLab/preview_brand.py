@@ -15,6 +15,7 @@ from pathlib import Path
 DISPLAY_NAME = "DaySix Signer Lab"
 PREVIEW_ORG = "com.valentinebsaa.daysix"
 PREVIEW_BUNDLE_ID = PREVIEW_ORG + ".signerlab"
+PREVIEW_URL_SCHEME = "daysixlab"
 UPSTREAM_BUNDLE_ID = "com.SideStore.SideStore"
 PREVIEW_TEAM_ID = "XYZ0123456"  # upstream's ad-hoc CI placeholder, not a real certificate
 
@@ -75,12 +76,26 @@ def patch(root: Path, upstream_sha: str) -> Path:
     with plist_path.open("rb") as source:
         info = plistlib.load(source)
     original_name = info.get("CFBundleDisplayName", info.get("CFBundleName", "SideStore"))
-    if original_name != DISPLAY_NAME:
-        info["CFBundleDisplayName"] = DISPLAY_NAME
-        # This marker is informational, not a security or entitlement claim.
-        info["DaySixSignerLabPreview"] = True
-        with plist_path.open("wb") as dest:
-            plistlib.dump(info, dest, sort_keys=False)
+    types = info.get("CFBundleURLTypes")
+    if not isinstance(types, list):
+        raise RuntimeError("Upstream main app has no URL types; refusing preview")
+    general_count = 0
+    for entry in types:
+        schemes = entry.get("CFBundleURLSchemes", [])
+        if "sidestore" in schemes:
+            general_count += 1
+            entry["CFBundleURLSchemes"] = [
+                PREVIEW_URL_SCHEME if scheme == "sidestore" else scheme
+                for scheme in schemes
+            ]
+    if general_count != 1:
+        raise RuntimeError(
+            f"Expected exactly one public SideStore URL scheme, got {general_count}")
+    info["CFBundleDisplayName"] = DISPLAY_NAME
+    # This marker is informational, not a security or entitlement claim.
+    info["DaySixSignerLabPreview"] = True
+    with plist_path.open("wb") as dest:
+        plistlib.dump(info, dest, sort_keys=False)
 
     with plist_path.open("rb") as source:
         result = plistlib.load(source)
@@ -88,8 +103,13 @@ def patch(root: Path, upstream_sha: str) -> Path:
         raise RuntimeError("Display-name patch failed")
     if not result.get("DaySixSignerLabPreview"):
         raise RuntimeError("Preview marker absent")
-    if result.get("CFBundleURLTypes") != info.get("CFBundleURLTypes"):
-        raise RuntimeError("Existing URL schemes were unexpectedly modified")
+    schemes = [
+        scheme
+        for entry in result.get("CFBundleURLTypes", [])
+        for scheme in entry.get("CFBundleURLSchemes", [])
+    ]
+    if PREVIEW_URL_SCHEME not in schemes or "sidestore" in schemes:
+        raise RuntimeError("Experimental public URL scheme not isolated")
 
     evidence = {
         "product": DISPLAY_NAME,
@@ -99,6 +119,7 @@ def patch(root: Path, upstream_sha: str) -> Path:
         "upstream_license": "AGPL-3.0",
         "modification": "Display label, preview marker, Xcode main/extension IDs, runtime self-identity constants, ad-hoc CI entitlements, and Makefile org identifier",
         "expected_bundle_id": PREVIEW_BUNDLE_ID,
+        "preview_primary_url_scheme": PREVIEW_URL_SCHEME,
         "ad_hoc_team_placeholder": PREVIEW_TEAM_ID,
         "install_warning": "Experimental signer may still conflict with SideStore URL schemes and installer callbacks",
         "dependency_licenses": "Check upstream source and nested package licenses",
@@ -137,6 +158,13 @@ def verify_ipa(path: Path) -> dict:
 
     if info.get("CFBundleDisplayName") != DISPLAY_NAME:
         raise RuntimeError("Packaged IPA lost DaySix Signer Lab label")
+    primary_schemes = [
+        scheme
+        for entry in info.get("CFBundleURLTypes", [])
+        for scheme in entry.get("CFBundleURLSchemes", [])
+    ]
+    if primary_schemes.count(PREVIEW_URL_SCHEME) != 1 or "sidestore" in primary_schemes:
+        raise RuntimeError("Lab IPA cannot claim the official sidestore:// handler")
     if not info.get("DaySixSignerLabPreview"):
         raise RuntimeError("Packaged IPA missing its experimental marker")
 
