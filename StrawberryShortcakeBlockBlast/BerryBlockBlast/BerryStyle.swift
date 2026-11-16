@@ -22,10 +22,22 @@ enum BerryStyle {
 struct BerryTile: View {
     let tint: Int
     var preview = false
+    var mode: BerryMode = .endless
+    var strawberryUnlocked = false
 
+    private var decorated: Bool { strawberryUnlocked && tint % 6 == 0 }
+    private var palette: Color {
+        switch mode {
+        case .endless: BerryStyle.color(for: tint)
+        case .story: [Color(red: 0.92, green: 0.38, blue: 0.64), .purple, .orange, .pink, .mint, .indigo][(tint % 6 + 6) % 6]
+        case .daily: [Color(red: 0.94, green: 0.43, blue: 0.35), .yellow, .orange, .green, .red, .brown][(tint % 6 + 6) % 6]
+        case .cozy: [Color(red: 0.76, green: 0.58, blue: 0.44), Color(red: 0.83, green: 0.67, blue: 0.52), .mint, Color(red: 0.68, green: 0.77, blue: 0.52), .orange, .teal][(tint % 6 + 6) % 6]
+        case .challenge: [.red, .orange, .yellow, .pink, .purple, .cyan][(tint % 6 + 6) % 6]
+        }
+    }
     var body: some View {
         RoundedRectangle(cornerRadius: 7, style: .continuous)
-            .fill(LinearGradient(colors: [BerryStyle.color(for: tint).opacity(0.82), BerryStyle.color(for: tint)],
+            .fill(LinearGradient(colors: [palette.opacity(0.82), palette],
                                  startPoint: .topLeading, endPoint: .bottomTrailing))
             .overlay(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 3)
@@ -34,9 +46,22 @@ struct BerryTile: View {
                     .padding(5)
             }
             .overlay {
+                if decorated {
+                    Text("🍓").font(.system(size: 21)).minimumScaleFactor(0.5).shadow(color: .white.opacity(0.6), radius: 1)
+                } else if mode == .cozy {
+                    Image(systemName: "leaf.fill").font(.system(size: 11)).foregroundStyle(.white.opacity(0.75))
+                } else if mode == .story {
+                    Image(systemName: "sparkle").font(.system(size: 11)).foregroundStyle(.white.opacity(0.7))
+                } else if mode == .daily {
+                    Image(systemName: "sun.max.fill").font(.system(size: 10)).foregroundStyle(.white.opacity(0.65))
+                } else if mode == .challenge {
+                    Image(systemName: "bolt.fill").font(.system(size: 11)).foregroundStyle(.white.opacity(0.75))
+                }
+            }
+            .overlay {
                 RoundedRectangle(cornerRadius: 7).strokeBorder(.white.opacity(0.43), lineWidth: 1.2)
             }
-            .shadow(color: BerryStyle.color(for: tint).opacity(preview ? 0.12 : 0.22), radius: 3, y: 2)
+            .shadow(color: palette.opacity(preview ? 0.12 : 0.22), radius: 3, y: 2)
             .opacity(preview ? 0.67 : 1)
     }
 }
@@ -44,11 +69,13 @@ struct BerryTile: View {
 struct BerryPieceGlyph: View {
     let piece: BerryPiece
     let unit: CGFloat
+    var mode: BerryMode = .endless
+    var strawberryUnlocked = false
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             ForEach(piece.points, id: \.self) { cell in
-                BerryTile(tint: piece.tint)
+                BerryTile(tint: piece.tint, mode: mode, strawberryUnlocked: strawberryUnlocked)
                     .frame(width: unit - 2, height: unit - 2)
                     .offset(x: CGFloat(cell.col) * unit, y: CGFloat(cell.row) * unit)
             }
