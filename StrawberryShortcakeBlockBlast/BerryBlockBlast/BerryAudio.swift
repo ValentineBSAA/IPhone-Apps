@@ -81,6 +81,9 @@ final class BerryAudio {
     private var musicVolume: Float = 0.22
     private var effectVolume: Float = 0.65
     private var musicTimer: Timer?
+    private var shuffleEnabled = true
+    private var history: [Int] = []
+    private var generationTask: Task<Void, Never>?
     static let trackNames = [
         "Good Morning, Strawberry Village", "A Picnic in the Sunshine", "Berry Blossom Waltz",
         "The Little Pink Bakery", "Blueberry Skies", "Custard's Cozy Afternoon",
@@ -89,6 +92,18 @@ final class BerryAudio {
         "Moonlight Over Berry Lane", "A Basket Full of Wishes", "Goodnight, Strawberry Village"
     ]
     var currentTrackName: String { trackIndex >= 0 ? Self.trackNames[trackIndex] : "Strawberry Jukebox" }
+    var currentTrackNumber: Int { max(0, trackIndex) + 1 }
+    var isShuffling: Bool { shuffleEnabled }
+    func toggleShuffle() { shuffleEnabled.toggle() }
+    func previousTrack() {
+        guard musicEnabled else { return }
+        if history.count >= 2 { history.removeLast(); playTrack(history.removeLast()) }
+        else { playTrack((max(0, trackIndex) + Self.trackNames.count - 1) % Self.trackNames.count) }
+    }
+    func selectTrack(_ index: Int) {
+        guard Self.trackNames.indices.contains(index) else { return }
+        playTrack(index)
+    }
 
     func setMusicVolume(_ value: Float) {
         musicVolume = value
@@ -97,6 +112,7 @@ final class BerryAudio {
     func setEffectVolume(_ value: Float) { effectVolume = value }
     func nextTrack() {
         guard musicEnabled else { return }
+        if !shuffleEnabled { playTrack((trackIndex + 1) % Self.trackNames.count); return }
         if queue.isEmpty {
             queue = Array(0..<15).filter { $0 != trackIndex }.shuffled()
         }
@@ -105,6 +121,8 @@ final class BerryAudio {
     }
     private func playTrack(_ index: Int) {
         trackIndex = index
+        history.append(index)
+        if history.count > 30 { history.removeFirst() }
         let scales: [[Double]] = [
             [261.63,293.66,329.63,392,440,523.25,587.33,659.25],
             [293.66,329.63,369.99,440,493.88,587.33,659.25,739.99],
@@ -131,6 +149,7 @@ final class BerryAudio {
             }
         }
         musicPlayer?.stop()
+        musicTimer?.invalidate()
         do {
             musicPlayer = try AVAudioPlayer(data: wav(notes, volume: 0.12, arranged: true))
             musicPlayer?.volume = musicVolume
@@ -146,6 +165,7 @@ final class BerryAudio {
         guard enabled != musicEnabled else { return }
         musicEnabled = enabled
         if !enabled {
+            generationTask?.cancel()
             musicTimer?.invalidate()
             musicTimer = nil
             musicPlayer?.stop()
