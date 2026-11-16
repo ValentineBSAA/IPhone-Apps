@@ -3,6 +3,8 @@ import UserNotifications
 
 @main
 struct DaySixApp: App {
+    @UIApplicationDelegateAdaptor(DaySixLifecycleDelegate.self)
+    private var lifecycleDelegate
     @StateObject private var store = DaySixStore()
     @Environment(\.scenePhase) private var scenePhase
 
@@ -14,11 +16,15 @@ struct DaySixApp: App {
                 .onAppear {
                     RenewalAudit.reconcileSelfSignature()
                     store.reload()
+                    BackgroundRenewalWatchdog.schedule()
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
                         RenewalAudit.reconcileSelfSignature()
                         store.reload()
+                        BackgroundRenewalWatchdog.schedule()
+                    } else if phase == .background {
+                        BackgroundRenewalWatchdog.schedule()
                     }
                 }
         }
