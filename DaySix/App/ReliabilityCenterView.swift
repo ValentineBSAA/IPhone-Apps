@@ -6,6 +6,8 @@ import UserNotifications
 /// independent system automation triggers plus an opt-in signer-only lifeboat.
 struct ReliabilityCenterView: View {
     @EnvironmentObject private var store: DaySixStore
+    @AppStorage(SigningReadiness.managedKey) private var enrolledInSigner = false
+    @AppStorage(SigningReadiness.refreshTestedKey) private var refreshTested = false
     @State private var backgroundStatus: UIBackgroundRefreshStatus = .restricted
     @State private var notificationAuthorized = false
     @State private var sideStorePresent = false
@@ -66,6 +68,30 @@ struct ReliabilityCenterView: View {
                                       good: "Detected on iPhone",
                                       bad: "Not detected",
                                       detail: "Detection cannot verify your Apple account or pairing.")
+                            Divider().overlay(.white.opacity(0.08))
+                            Toggle(isOn: $enrolledInSigner) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text("DaySix appears in SideStore → My Apps")
+                                        .font(.subheadline.bold())
+                                    Text("I checked this myself. A normal iOS app cannot read SideStore's private managed-app database.")
+                                        .font(.caption).foregroundStyle(DS.muted)
+                                }
+                            }
+                            .tint(DS.mint)
+                            Toggle(isOn: $refreshTested) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text("SideStore manual refresh succeeded")
+                                        .font(.subheadline.bold())
+                                    Text("I verified a fresh expiration in SideStore. This is a user confirmation, not an automated test.")
+                                        .font(.caption).foregroundStyle(DS.muted)
+                                }
+                            }
+                            .tint(DS.mint)
+                            if !enrolledInSigner || !refreshTested {
+                                Label("Automatic self-renewal is not yet validated on this iPhone.",
+                                      systemImage: "exclamationmark.circle.fill")
+                                    .font(.footnote.bold()).foregroundStyle(DS.amber)
+                            }
                             statusRow("Background App Refresh",
                                       ok: backgroundStatus == .available,
                                       good: "iOS permits requests",
