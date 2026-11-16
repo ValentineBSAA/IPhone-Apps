@@ -113,6 +113,27 @@ final class BerryEngineTests: XCTestCase {
         XCTAssertEqual(restored.board, game.board)
     }
 
+    func testLegacySaveWithoutBoardSizeStillLoadsAsClassic() throws {
+        let game = BerryEngine()
+        var payload = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(game)) as? [String: Any])
+        payload.removeValue(forKey: "side")
+        payload.removeValue(forKey: "hardPieces")
+        let restored = try JSONDecoder().decode(BerryEngine.self, from: JSONSerialization.data(withJSONObject: payload))
+        XCTAssertEqual(restored.side, 8)
+        XCTAssertEqual(restored.board.count, 8)
+        XCTAssertEqual(restored.tray.count, 3)
+    }
+
+    func testNightmareClearsTwelveCellRow() throws {
+        var game = BerryEngine(side: 12, hard: true)
+        let piece = try XCTUnwrap(game.tray[0])
+        XCTAssertTrue(game.canPlace(piece, row: 0, col: 0))
+        XCTAssertNotNil(game.place(slot: 0, row: 0, col: 0))
+        XCTAssertEqual(game.board.count, 12)
+        XCTAssertEqual(game.moves, 1)
+        XCTAssertEqual(game.score, piece.points.count)
+    }
+
     private func emptyBoard() -> [[Int?]] {
         Array(repeating: Array(repeating: nil, count: 8), count: 8)
     }
