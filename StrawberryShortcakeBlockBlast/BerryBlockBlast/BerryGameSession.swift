@@ -168,33 +168,33 @@ final class BerryGameSession: ObservableObject {
         awardOnce("chapter-" + String(chapter), amount: 15 + min(35, chapter * 5), reason: "Story chapter")
     }
     func buyCottageDecoration() {
+        guard berries >= 50 else { return }
         // Purchases must invalidate the undo snapshot to prevent currency duplication.
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
-        guard berries >= 50 else { return }
         berries -= 50
         cottageDecorations += 1
         UserDefaults.standard.set(cottageDecorations, forKey: "berryblockblast.cottage.decorations")
         save()
     }
     func buyUndo() {
+        guard berries >= 25 else { return }
         // Purchases must invalidate the undo snapshot to prevent currency duplication.
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
-        guard berries >= 25 else { return }
         berries -= 25
         undos += 1
         save()
     }
 
     func buyShuffle() {
+        guard berries >= 25 else { return }
         // Purchases must invalidate the undo snapshot to prevent currency duplication.
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
-        guard berries >= 25 else { return }
         berries -= 25
         shuffles += 1
         save()
