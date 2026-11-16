@@ -97,7 +97,7 @@ struct BerryHomeView: View {
                 }
             }
         }
-        .sheet(isPresented: $showSchool) { BerrySchoolView(onFinish: { showSchool = false; BerryGameSession().rewardTutorial() }) }
+        .sheet(isPresented: $showSchool) { BerrySchoolView(onFinish: { graduated in showSchool = false; if graduated { BerryGameSession().rewardTutorial() } }) }
         .sheet(isPresented: $showMore) {
             NavigationStack {
                 ScrollView {
