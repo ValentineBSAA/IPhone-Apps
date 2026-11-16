@@ -64,3 +64,12 @@ Source reference: the user's Repo Pulse 0.8.3 Decky plugin ZIP. This is a native
 - Clipped scrolling content beneath the iOS status bar and shortened the truncated header subtitle.
 - Existing native notification banners and sounds are unchanged.
 - Output: **RepoPulse-DECK-EDITION-v1.3.1-BUILD5-VISUAL-FIX-UNSIGNED.ipa**; the same iOS bundle identifier is preserved.
+
+
+## iPhone 1.4.0 · Nova Design (Build 6)
+
+Replaces the earlier Deck-derived cramped four-tile grid and stacked detail sheets with a purpose-built native iPhone visual system. One fixed midnight theme. The Home screen uses a compact top bar, legible download hero, four swipeable/paged full-width repository rows, and a short status briefing. Details push through native navigation and summarize initial flat readings in a compact observation state instead of stretching two identical observations into a full-height fake-looking area chart. Charts appear only when three real readings contain a change; release comparisons use real per-release counts. Insights, trophy summaries, notifications and settings use the same visual language. In-app project emblems are vector SwiftUI artwork; the verified iOS app icon is preserved.
+
+Build artifact **RepoPulse-NOVA-REDESIGN-v1.4.0-BUILD6-UNSIGNED.ipa**. Same iOS bundle ID `com.valentinebsaa.repopulse`, compatible with in-place signing and installation subject to Apple's signing/provisioning rules. Local watchlist, download history, notification inbox and preferences are not cleared.
+
+The app supports iOS notification permissions, native local banners and sounds after detected changes, but no claim of always-on APNs push delivery while iOS suspends it.

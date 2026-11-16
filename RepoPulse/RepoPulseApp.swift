@@ -193,7 +193,7 @@ struct RepoPulseApp: App {
 
     var body: some Scene {
         WindowGroup {
-            DeckPulseHome()
+            NovaAppView()
                 .environmentObject(store)
                 .environmentObject(deck)
                 .preferredColorScheme(.dark)
