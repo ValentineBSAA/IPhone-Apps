@@ -265,7 +265,8 @@ struct BerryGameView: View {
                 }
                 refreshBlitzClock()
             }
-            showGameOver = session.gameOver
+            showGameOver = session.gameOver || (mode == .challenge && blitzRemaining == 0)
+            if mode == .daily && dailyCompleted == Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)) { showVictory = session.engine.score >= goal }
             if !welcomed { showWelcome = true }
         }
         .onChange(of: session.engine.score) { _, _ in checkObjective() }
@@ -468,7 +469,13 @@ struct BerryGameView: View {
         if blitzRemaining == 0 { blitzRunning = false; showGameOver = true; drag = nil; selectedSlot = nil }
     }
     private func checkObjective() {
-        guard !showVictory else { return }
+        guard !showVictory, !showGameOver else { return }
+        if mode == .challenge {
+            guard let deadline = blitzDeadline, deadline > Date() else {
+                refreshBlitzClock()
+                return
+            }
+        }
         let completed: Bool
         switch mode {
         case .story: completed = storyIsLineQuest ? session.engine.totalLines >= storyTargetLines : session.engine.score >= goal
