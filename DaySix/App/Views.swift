@@ -150,6 +150,13 @@ struct DashboardView: View {
                                 }
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(store.urgentCount > 0 ? DS.amber : DS.mint)
+                                if store.urgentCount > 0 {
+                                    GlowButton(title: "Run Renewal Shortcut", symbol: "arrow.clockwise") {
+                                        RefreshLauncher.runConfiguredShortcut()
+                                    }
+                                    Text("This launches your saved Shortcut. Confirm the new signing date afterward.")
+                                        .font(.caption2).foregroundStyle(DS.muted)
+                                }
                             }
                         }
                         HStack(spacing: 12) {
