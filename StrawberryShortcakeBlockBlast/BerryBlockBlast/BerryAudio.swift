@@ -56,28 +56,90 @@ final class BerryAudio {
         }
         activateAudio()
         do {
-            effectPlayer = try AVAudioPlayer(data: wav(notes, volume: 0.23))
+            effectPlayer = try AVAudioPlayer(data: wav(notes, volume: 0.23 * Double(effectVolume)))
             effectPlayer?.prepareToPlay()
             effectPlayer?.play()
         } catch { }
     }
 
+
+    private var trackIndex = -1
+    private var queue = Array(0..<15).shuffled()
+    private var musicVolume: Float = 0.22
+    private var effectVolume: Float = 0.65
+    private var musicTimer: Timer?
+    static let trackNames = [
+        "Good Morning, Strawberry Village", "A Picnic in the Sunshine", "Berry Blossom Waltz",
+        "The Little Pink Bakery", "Blueberry Skies", "Custard's Cozy Afternoon",
+        "Strawberry Fields Forevermore", "The Garden Tea Party", "Raspberry Ribbon Dance",
+        "Honeycomb Hideaway", "The Sweetest Little Adventure", "Petals in the Breeze",
+        "Moonlight Over Berry Lane", "A Basket Full of Wishes", "Goodnight, Strawberry Village"
+    ]
+    var currentTrackName: String { trackIndex >= 0 ? Self.trackNames[trackIndex] : "Strawberry Jukebox" }
+
+    func setMusicVolume(_ value: Float) {
+        musicVolume = value
+        musicPlayer?.volume = value
+    }
+    func setEffectVolume(_ value: Float) { effectVolume = value }
+    func nextTrack() {
+        guard musicEnabled else { return }
+        if queue.isEmpty {
+            queue = Array(0..<15).filter { $0 != trackIndex }.shuffled()
+        }
+        let next = queue.removeFirst()
+        playTrack(next)
+    }
+    private func playTrack(_ index: Int) {
+        trackIndex = index
+        let scales: [[Double]] = [
+            [261.63,293.66,329.63,392,440,523.25,587.33,659.25],
+            [293.66,329.63,369.99,440,493.88,587.33,659.25,739.99],
+            [246.94,277.18,329.63,369.99,440,493.88,554.37,659.25],
+            [261.63,311.13,349.23,392,466.16,523.25,622.25,698.46],
+            [220,246.94,277.18,329.63,369.99,440,493.88,554.37]
+        ]
+        let scale = scales[index % scales.count]
+        let motifs: [[Int]] = [
+            [0,2,4,5,4,2,1,0], [0,3,4,6,5,3,2,1], [2,4,5,7,6,4,3,1],
+            [0,1,3,4,6,5,3,2], [4,3,1,2,5,7,6,4]
+        ]
+        let motif = motifs[(index / 3) % motifs.count]
+        let tempo = 0.23 + Double(index % 4) * 0.035
+        var notes: [(Double, Double)] = []
+        // Distinct phrases, changing register, rests and cadences over roughly a minute.
+        for phrase in 0..<18 {
+            for step in 0..<8 {
+                let rotation = (phrase / 3 + index) % 8
+                let degree = motif[(step + rotation) % 8]
+                let pitch = scale[(degree + phrase % 3) % scale.count]
+                let octave = (phrase % 6 == 5 && step % 2 == 0) ? 0.5 : 1.0
+                notes.append((pitch * octave, tempo * (step == 7 ? 1.7 : 1)))
+            }
+        }
+        musicPlayer?.stop()
+        do {
+            musicPlayer = try AVAudioPlayer(data: wav(notes, volume: 0.12))
+            musicPlayer?.volume = musicVolume
+            musicPlayer?.prepareToPlay()
+            musicPlayer?.play()
+            musicTimer?.invalidate()
+            musicTimer = Timer.scheduledTimer(withTimeInterval: musicPlayer?.duration ?? 60, repeats: false) { [weak self] _ in
+                Task { @MainActor in self?.nextTrack() }
+            }
+        } catch { }
+    }
     func setMusic(_ enabled: Bool) {
         guard enabled != musicEnabled else { return }
         musicEnabled = enabled
-        if !enabled { musicPlayer?.stop(); musicPlayer = nil; return }
+        if !enabled {
+            musicTimer?.invalidate()
+            musicTimer = nil
+            musicPlayer?.stop()
+            musicPlayer = nil
+            return
+        }
         activateAudio()
-        let melody: [(Double, Double)] = [
-            (523.25, 0.22), (659.25, 0.22), (783.99, 0.22), (659.25, 0.22),
-            (587.33, 0.22), (698.46, 0.22), (880.0, 0.22), (698.46, 0.22),
-            (659.25, 0.22), (783.99, 0.22), (1046.5, 0.28), (783.99, 0.16),
-            (698.46, 0.22), (659.25, 0.22), (587.33, 0.22), (523.25, 0.34)
-        ]
-        do {
-            musicPlayer = try AVAudioPlayer(data: wav(melody, volume: 0.09))
-            musicPlayer?.numberOfLoops = -1
-            musicPlayer?.prepareToPlay()
-            musicPlayer?.play()
-        } catch { }
+        nextTrack()
     }
 }
