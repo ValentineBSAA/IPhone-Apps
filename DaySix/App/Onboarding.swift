@@ -12,7 +12,7 @@ struct DaySixOnboardingView: View {
         ("clock.arrow.2.circlepath", "Build the automation",
          "In Shortcuts, create a daily Run Immediately automation. Check DaySix's due flag, then run SideStore's Refresh All Apps only when needed."),
         ("square.stack.3d.up.fill", "Add and verify",
-         "DaySix reads its own provisioning expiration automatically. Add other apps manually, and confirm those apps' renewed dates after SideStore succeeds.")
+         "DaySix reads its own provisioning expiration when available. Add other apps manually, then open More → Reliability Lab to set up background alerts, a charger trigger and an independent emergency automation.")
     ]
 
     var body: some View {
