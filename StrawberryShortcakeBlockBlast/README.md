@@ -1,21 +1,20 @@
 # 🍓 Berry Block Blast for iPhone
 
-**v0.2.0 source release • native SwiftUI • iOS 17+**
+**Version 0.3.0 • Native SwiftUI • iPhone • Original fan concept**
 
-Unofficial strawberry-themed fan puzzle. Not affiliated with Strawberry Shortcake or Block Blast. Uses original artwork and code.
+An independent, strawberry-themed endless 8×8 block puzzle. Not affiliated with Strawberry Shortcake or Block Blast. No official art, logos, or audio copied.
 
-## What's new in 0.2.0
-- Full-screen portrait layout, much smaller header and a tray that fits onscreen on compact iPhones.
-- Endless 8×8 block puzzle: place three pieces, receive three more, continue until no remaining piece fits.
-- Draggable placement with red/green validity preview; tap piece and then board as an alternate input.
-- Newly generated trays include at least one playable shape; unavailable pieces appear faded.
-- Scoring: 1 per tile, 10 × (lines cleared)² × combo multiplier, up to ×8; +300 on full board clear.
-- Combos continue through two non-clearing placements and expire after three.
-- Total line count, move count, best score, end-of-game summary, restart confirmation, haptics and sound toggles.
-- Autosave of current board, score and piece tray; independent best score.
+## Play
+Drag a piece to the board, or tap a piece then a cell. Fill rows or columns to clear them. New pieces arrive after all three have been used. Keep playing until no placement remains. Clearing lines builds combos and earns strawberries. Earned strawberries buy undo and shuffle helpers. No advertisements or in-app purchases.
 
-## Building
-Use Xcode and XcodeGen with `project.yml`, or the repository's GitHub Actions iOS workflow once these sources have been committed. The ZIP is source code, **not a signed or compiled IPA**. iOS signing is required for installation.
+## Version 0.3.0
+- True edge-to-edge launch screen configuration (fixes black letterboxing on modern iPhones)
+- Responsive, safe-area-aware layout with visible board and piece tray
+- Native full-screen pastel garden with original character illustration
+- Undo and shuffle tools, berry currency and in-game basket
+- Auto-save with migration from v0.2.0, achievements/stat scrapbook
+- First-launch tutorial, combo display, haptics and sound toggles
+- Endless puzzle rules, line-clear bonuses, game-over handling
 
-## Validation
-Swift parsing succeeded; the standalone engine completed 250 automated simulated placements and JSON save/restore checks. Actual SwiftUI compilation and iPhone touch testing are still required.
+## Build
+The GitHub Actions workflow generates the Xcode project with XcodeGen and packages `Berry-Block-Blast-v0.3.0-unsigned.ipa`. Unsigned IPAs require signing before installation. Test on real iPhones for touch behavior and safe-area layout.

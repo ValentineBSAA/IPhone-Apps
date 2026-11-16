@@ -101,6 +101,10 @@ struct BerryEngine: Codable {
         return BerryPlacement(clearedRows: rows, clearedColumns: cols, earned: earned, streak: streak, boardClear: boardClear)
     }
 
+    mutating func reshuffleTray() {
+        refill()
+    }
+
     private mutating func refill() {
         let catalog: [[BerryPoint]] = [
             [BerryPoint(0,0)], [BerryPoint(0,0),BerryPoint(0,1)], [BerryPoint(0,0),BerryPoint(1,0)],

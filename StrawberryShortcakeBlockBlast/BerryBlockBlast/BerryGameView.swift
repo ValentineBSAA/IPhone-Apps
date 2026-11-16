@@ -2,266 +2,314 @@ import SwiftUI
 import UIKit
 import AudioToolbox
 
-private struct BoardFrameKey: PreferenceKey {
+private struct BerryBoardRect: PreferenceKey {
     static var defaultValue: CGRect = .zero
     static func reduce(value: inout CGRect, nextValue: () -> CGRect) { value = nextValue() }
 }
 
-struct BerryDrag {
-    let slot: Int
-    let piece: BerryPiece
-    let row: Int
-    let col: Int
-    let hovering: Bool
-    let allowed: Bool
+private struct BerryDragState {
+    var slot: Int
+    var piece: BerryPiece
+    var row: Int
+    var col: Int
+    var allowed: Bool
 }
 
-struct BerryBoardView: View {
+private struct BerryBoard: View {
     let engine: BerryEngine
-    let preview: BerryDrag?
+    let preview: BerryDragState?
     let size: CGFloat
+    let selected: Int?
     private let gap: CGFloat = 3
 
     var body: some View {
-        let cell = (size - 7 * gap) / 8
+        let unit = (size - 7 * gap) / 8
         ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 20).fill(BerryStyle.strawberry.opacity(0.12)).padding(-7)
-            ForEach(0..<64, id: \.self) { index in
-                let row = index / 8
-                let col = index % 8
+            RoundedRectangle(cornerRadius: 22)
+                .fill(Color(red: 0.98, green: 0.71, blue: 0.79))
+                .overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(.white.opacity(0.8), lineWidth: 3) }
+                .padding(-7)
+                .shadow(color: BerryStyle.strawberry.opacity(0.22), radius: 15, y: 8)
+            ForEach(0..<64, id: \.self) { i in
+                let r = i / 8
+                let c = i % 8
                 ZStack {
-                    RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.78))
-                    if let tint = engine.board[row][col] { BerryTile(tint: tint) }
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.76))
+                        .overlay(alignment: .topLeading) {
+                            RoundedRectangle(cornerRadius: 8).strokeBorder(.white.opacity(0.58), lineWidth: 1)
+                        }
+                    if let tint = engine.board[r][c] { BerryTile(tint: tint) }
                 }
-                .frame(width: cell, height: cell)
-                .offset(x: CGFloat(col) * (cell + gap), y: CGFloat(row) * (cell + gap))
+                .frame(width: unit, height: unit)
+                .offset(x: CGFloat(c) * (unit + gap), y: CGFloat(r) * (unit + gap))
             }
-            if let preview, preview.hovering {
-                ForEach(preview.piece.points, id: \.self) { point in
-                    let r = preview.row + point.row
-                    let c = preview.col + point.col
+            if let preview {
+                ForEach(preview.piece.points, id: \.self) { p in
+                    let r = preview.row + p.row
+                    let c = preview.col + p.col
                     if (0..<8).contains(r), (0..<8).contains(c) {
                         BerryTile(tint: preview.piece.tint, preview: true)
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .strokeBorder(preview.allowed ? BerryStyle.leaf : .red, lineWidth: 2)
-                            }
-                            .frame(width: cell, height: cell)
-                            .offset(x: CGFloat(c) * (cell + gap), y: CGFloat(r) * (cell + gap))
+                            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(preview.allowed ? Color.green : Color.red, lineWidth: 2) }
+                            .frame(width: unit, height: unit)
+                            .offset(x: CGFloat(c) * (unit + gap), y: CGFloat(r) * (unit + gap))
                     }
                 }
             }
         }
         .frame(width: size, height: size, alignment: .topLeading)
         .background {
-            GeometryReader { proxy in
-                Color.clear.preference(key: BoardFrameKey.self,
-                                       value: proxy.frame(in: .named("berry-playfield")))
+            GeometryReader { geo in
+                Color.clear.preference(key: BerryBoardRect.self, value: geo.frame(in: .named("berry-screen")))
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Eight by eight puzzle board, score \(engine.score)")
+        .accessibilityLabel("Berry garden, eight by eight puzzle board")
     }
 }
 
 struct BerryGameView: View {
     @StateObject private var session = BerryGameSession()
-    @State private var boardFrame: CGRect = .zero
-    @State private var drag: BerryDrag?
-    @State private var selectedSlot: Int? = nil
+    @State private var boardRect: CGRect = .zero
+    @State private var drag: BerryDragState?
+    @State private var selectedSlot: Int?
     @State private var showHelp = false
     @State private var showSettings = false
+    @State private var showShop = false
+    @State private var showStats = false
     @State private var confirmRestart = false
     @State private var showGameOver = false
+    @State private var showWelcome = false
     @AppStorage("berryblockblast.haptics") private var haptics = true
     @AppStorage("berryblockblast.sound") private var sound = true
+    @AppStorage("berryblockblast.welcomed.v3") private var welcomed = false
 
     var body: some View {
-        GeometryReader { geometry in
-            let width = geometry.size.width
-            let height = geometry.size.height
-            // Reserve enough height for the complete tray and controls, even on
-            // small iPhones. The board never pushes the playable pieces offscreen.
-            let boardSize = max(190, min(width - 44, height - 312, 450))
+        GeometryReader { geo in
+            let width = geo.size.width
+            let height = geo.size.height
+            let top = geo.safeAreaInsets.top
+            let bottom = geo.safeAreaInsets.bottom
+            let compact = height < 740
+            let boardSize = max(185, min(width - 42, height - top - bottom - (compact ? 248 : 282), 475))
             let cell = (boardSize - 21) / 8
             ZStack {
-                LinearGradient(colors: [Color(red: 1, green: 0.91, blue: 0.94),
-                                        BerryStyle.cream, Color(red: 1, green: 0.86, blue: 0.88)],
-                               startPoint: .top, endPoint: .bottom)
-                    .ignoresSafeArea()
-                VStack(spacing: 0) {
-                    header
-                        .frame(height: 72)
-                    HStack(spacing: 8) {
-                        scoreCard("SCORE", value: session.engine.score, symbol: "heart.fill")
-                        scoreCard("BEST", value: session.bestScore, symbol: "crown.fill")
-                        Button { showHelp = true } label: {
-                            Image(systemName: "questionmark.circle.fill")
-                                .font(.system(size: 24))
-                                .foregroundStyle(BerryStyle.strawberry)
-                                .frame(width: 43, height: 58)
-                                .background(.white.opacity(0.8), in: RoundedRectangle(cornerRadius: 15))
-                        }.accessibilityLabel("How to play")
+                background
+                VStack(spacing: compact ? 5 : 8) {
+                    topBar(compact: compact)
+                    scoreBar
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles")
+                        Text(session.lastMessage ?? "Fill a row or column. Grow your berry garden!")
+                            .lineLimit(1).minimumScaleFactor(0.65)
+                        Image(systemName: "sparkles")
                     }
-                    .padding(.top, 4)
-                    HStack(spacing: 8) {
-                        Text(session.lastMessage ?? "Clear rows & columns to earn berry bonuses!")
-                            .lineLimit(1).minimumScaleFactor(0.7)
-                        if session.engine.streak > 1 {
-                            Text("×\(session.engine.streak)")
-                                .foregroundStyle(BerryStyle.strawberry)
-                        }
-                    }
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .font(.system(size: compact ? 10 : 12, weight: .bold, design: .rounded))
                     .foregroundStyle(BerryStyle.chocolate)
-                    .frame(height: 29)
-                    .animation(.easeInOut(duration: 0.18), value: session.celebration)
-
-                    BerryBoardView(engine: session.engine, preview: drag, size: boardSize)
+                    .frame(height: 19)
+                    BerryBoard(engine: session.engine, preview: drag, size: boardSize, selected: selectedSlot)
                         .padding(7)
-                        .background(.white.opacity(0.7), in: RoundedRectangle(cornerRadius: 24))
-                        .shadow(color: BerryStyle.strawberry.opacity(0.15), radius: 12, y: 5)
                         .contentShape(Rectangle())
                         .onTapGesture { location in
-                            guard let slot = selectedSlot,
-                                  let piece = session.engine.tray[slot] else { return }
+                            guard let slot = selectedSlot, let piece = session.engine.tray[slot] else { return }
                             let step = cell + 3
-                            let col = Int(((location.x - 7) / step).rounded(.down))
-                            let row = Int(((location.y - 7) / step).rounded(.down))
+                            let col = Int(floor((location.x - 7) / step))
+                            let row = Int(floor((location.y - 7) / step))
                             if session.drop(slot: slot, row: row, col: col) {
                                 selectedSlot = nil
-                                feedback()
-                            } else if !session.engine.canPlace(piece, row: row, col: col) {
-                                UINotificationFeedbackGenerator().notificationOccurred(.warning)
-                            }
+                                successFeedback()
+                            } else if !session.engine.canPlace(piece, row: row, col: col) { warningFeedback() }
                         }
-                    Text(selectedSlot == nil ? "DRAG A PIECE UP • OR TAP PIECE THEN BOARD" : "TAP A FREE SQUARE TO PLACE YOUR PIECE")
-                        .font(.system(size: 10, weight: .heavy, design: .rounded))
-                        .tracking(0.6)
-                        .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
-                        .frame(height: 29)
-                        .lineLimit(1).minimumScaleFactor(0.7)
-                    HStack(spacing: 9) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "hand.draw.fill")
+                        Text(selectedSlot == nil ? "DRAG UP TO PLACE  •  OR TAP A PIECE" : "TAP AN EMPTY SPACE TO PLACE")
+                    }
+                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .tracking(0.6)
+                    .foregroundStyle(BerryStyle.chocolate.opacity(0.72))
+                    .frame(height: 17)
+                    HStack(spacing: 8) {
                         ForEach(0..<3, id: \.self) { slot in
                             let piece = session.engine.tray[slot]
                             ZStack {
                                 RoundedRectangle(cornerRadius: 17)
-                                    .fill(selectedSlot == slot ? BerryStyle.softPink : Color.white.opacity(0.82))
+                                    .fill(Color.white.opacity(0.86))
                                     .overlay {
                                         RoundedRectangle(cornerRadius: 17)
-                                            .strokeBorder(selectedSlot == slot ? BerryStyle.strawberry : BerryStyle.strawberry.opacity(0.15), lineWidth: 2)
+                                            .strokeBorder(selectedSlot == slot ? BerryStyle.strawberry : .white, lineWidth: selectedSlot == slot ? 3 : 1.5)
                                     }
+                                    .shadow(color: BerryStyle.strawberry.opacity(0.12), radius: 5, y: 3)
                                 if let piece {
-                                    BerryPieceGlyph(piece: piece, unit: min(20, (width - 90) / CGFloat(3 * max(piece.width, 3))))
-                                        .opacity(drag?.slot == slot ? 0.3 : session.engine.hasPlacement(for: piece) ? 1 : 0.35)
+                                    BerryPieceGlyph(piece: piece, unit: min(17, (width - 86) / CGFloat(3 * max(piece.width, 3))))
+                                        .opacity(drag?.slot == slot ? 0.3 : session.engine.hasPlacement(for: piece) ? 1 : 0.3)
                                 } else {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(BerryStyle.leaf.opacity(0.45))
+                                    Image(systemName: "checkmark.seal.fill")
+                                        .foregroundStyle(BerryStyle.leaf.opacity(0.6))
+                                        .font(.title2)
                                 }
                             }
                             .frame(maxWidth: .infinity)
-                            .frame(height: 74)
+                            .frame(height: compact ? 65 : 76)
                             .contentShape(Rectangle())
                             .onTapGesture { if piece != nil { selectedSlot = selectedSlot == slot ? nil : slot } }
                             .gesture(
-                                DragGesture(minimumDistance: 5, coordinateSpace: .named("berry-playfield"))
+                                DragGesture(minimumDistance: 5, coordinateSpace: .named("berry-screen"))
                                     .onChanged { value in updateDrag(slot: slot, finger: value.location, cell: cell) }
                                     .onEnded { _ in finishDrag() }
                             )
-                            .accessibilityLabel("Piece \(slot + 1)")
+                            .accessibilityLabel("Berry piece \(slot + 1)")
                         }
                     }
+                    toolBar
                     HStack {
-                        Button { confirmRestart = true } label: {
-                            Label("New Game", systemImage: "arrow.clockwise")
-                        }
+                        Text("🍓 \(session.berries) berries")
                         Spacer()
-                        Text("LINES \(session.engine.totalLines)  •  MOVES \(session.engine.moves)")
-                        Spacer()
-                        Button { showSettings = true } label: {
-                            Image(systemName: "gearshape.fill")
-                        }.accessibilityLabel("Settings")
+                        Text("\(session.engine.totalLines) lines • \(session.engine.moves) moves")
                     }
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate)
-                    .frame(height: 37)
+                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate.opacity(0.65))
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 15)
-                .frame(maxWidth: 520)
+                .padding(.top, max(8, top + 3))
+                .padding(.bottom, max(5, bottom))
+                .frame(maxWidth: 510)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .coordinateSpace(name: "berry-playfield")
-            .onPreferenceChange(BoardFrameKey.self) { boardFrame = $0 }
+            .frame(width: width, height: height)
+            .coordinateSpace(name: "berry-screen")
+            .onPreferenceChange(BerryBoardRect.self) { boardRect = $0 }
         }
         .preferredColorScheme(.light)
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
         .sheet(isPresented: $showHelp) { helpSheet }
         .sheet(isPresented: $showSettings) { settingsSheet }
-        .confirmationDialog("Start a new berry puzzle?", isPresented: $confirmRestart) {
-            Button("New Game", role: .destructive) { session.newGame(); selectedSlot = nil; drag = nil }
+        .sheet(isPresented: $showShop) { shopSheet }
+        .sheet(isPresented: $showStats) { statsSheet }
+        .sheet(isPresented: $showWelcome) { welcomeSheet }
+        .confirmationDialog("Start a fresh berry garden?", isPresented: $confirmRestart) {
+            Button("Start New Game", role: .destructive) { session.newGame(); selectedSlot = nil; drag = nil }
             Button("Keep Playing", role: .cancel) { }
-        } message: { Text("Your current board will be replaced. Your best score stays saved.") }
+        } message: { Text("Your best score and earned berries stay saved.") }
         .onChange(of: session.gameOver) { _, ended in showGameOver = ended }
-        .onAppear { showGameOver = session.gameOver }
-        .alert("Berry sweet run! 🍓", isPresented: $showGameOver) {
-            Button("Play Again") { session.newGame(); selectedSlot = nil }
+        .onAppear { showGameOver = session.gameOver; if !welcomed { showWelcome = true } }
+        .alert("Berry Garden Complete! 🍓", isPresented: $showGameOver) {
+            Button("Fresh Garden") { session.newGame(); selectedSlot = nil }
+            if session.shuffles > 0 {
+                Button("Use Shuffle (\(session.shuffles) left)") { session.shuffle() }
+            }
         } message: {
-            Text("Score: \(session.engine.score) • Lines: \(session.engine.totalLines) • Best combo: ×\(session.engine.bestCombo). Try to beat your best!")
+            Text("Score \(session.engine.score) • \(session.engine.totalLines) lines • Best combo ×\(session.engine.bestCombo). Keep growing!")
         }
     }
 
-    private var header: some View {
+    private var background: some View {
+        ZStack {
+            LinearGradient(colors: [Color(red: 1, green: 0.85, blue: 0.9), Color(red: 1, green: 0.96, blue: 0.87), Color(red: 1, green: 0.8, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            GeometryReader { geo in
+                Circle().fill(.white.opacity(0.34)).frame(width: geo.size.width * 0.85).offset(x: -geo.size.width * 0.35, y: -geo.size.height * 0.13)
+                Circle().fill(BerryStyle.strawberry.opacity(0.06)).frame(width: 270).offset(x: geo.size.width - 170, y: geo.size.height * 0.62)
+                VStack {
+                    HStack { Text("✿"); Spacer(); Text("🍓") }
+                    Spacer()
+                    HStack { Text("🍃"); Spacer(); Text("✿") }
+                }
+                .font(.system(size: 31))
+                .opacity(0.28)
+                .padding(15)
+            }
+        }.ignoresSafeArea()
+    }
+
+    private func topBar(compact: Bool) -> some View {
         HStack(spacing: 8) {
-            BerryGirlView().frame(width: 67, height: 69).clipped().accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 1) {
-                Text("STRAWBERRY SWEET").font(.system(size: 9, weight: .heavy, design: .rounded))
-                    .tracking(2).foregroundStyle(BerryStyle.leaf)
-                Text("Berry Block Blast!")
-                    .font(.system(size: 26, weight: .black, design: .rounded))
-                    .minimumScaleFactor(0.65).lineLimit(1)
-                    .foregroundStyle(BerryStyle.strawberry)
-                Text("ENDLESS BERRY GARDEN  🍓")
-                    .font(.system(size: 9, weight: .bold, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate.opacity(0.7))
+            BerryGirlView().frame(width: compact ? 45 : 54, height: compact ? 45 : 54).clipped()
+            VStack(alignment: .leading, spacing: 0) {
+                Text("STRAWBERRY SWEET").font(.system(size: 8, weight: .black, design: .rounded)).tracking(1.7).foregroundStyle(BerryStyle.leaf)
+                Text("Berry Block Blast!").font(.system(size: compact ? 22 : 25, weight: .black, design: .rounded)).lineLimit(1).minimumScaleFactor(0.6).foregroundStyle(BerryStyle.strawberry)
+                Text("THE ENDLESS BERRY GARDEN").font(.system(size: 8, weight: .bold, design: .rounded)).tracking(0.7).foregroundStyle(BerryStyle.chocolate.opacity(0.7))
             }
             Spacer(minLength: 0)
+            Button { showHelp = true } label: {
+                Image(systemName: "questionmark.circle.fill").font(.system(size: 23)).foregroundStyle(BerryStyle.strawberry)
+            }.accessibilityLabel("How to play")
+        }
+        .frame(height: compact ? 48 : 56)
+    }
+
+    private var scoreBar: some View {
+        HStack(spacing: 8) {
+            scorePill("SCORE", value: session.engine.score, icon: "heart.fill")
+            scorePill("BEST", value: session.bestScore, icon: "crown.fill")
+            HStack(spacing: 3) {
+                Text("🍓").font(.system(size: 18))
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("COMBO").font(.system(size: 8, weight: .heavy))
+                    Text("×\(max(1, session.engine.streak))").font(.system(size: 19, weight: .black, design: .rounded))
+                }
+            }
+            .foregroundStyle(BerryStyle.chocolate)
+            .frame(width: 80, height: 51)
+            .background(.white.opacity(0.84), in: RoundedRectangle(cornerRadius: 15))
         }
     }
 
-    private func scoreCard(_ title: String, value: Int, symbol: String) -> some View {
-        HStack(spacing: 7) {
-            Image(systemName: symbol)
-                .foregroundStyle(title == "BEST" ? .orange : BerryStyle.strawberry)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title).font(.system(size: 9, weight: .heavy, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate.opacity(0.6))
-                Text(value.formatted()).font(.system(size: 22, weight: .black, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate)
-                    .lineLimit(1).minimumScaleFactor(0.5)
+    private func scorePill(_ title: String, value: Int, icon: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon).foregroundStyle(title == "BEST" ? .orange : BerryStyle.strawberry)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title).font(.system(size: 8, weight: .heavy, design: .rounded)).foregroundStyle(BerryStyle.chocolate.opacity(0.65))
+                Text(value.formatted()).font(.system(size: 20, weight: .black, design: .rounded)).foregroundStyle(BerryStyle.chocolate).lineLimit(1).minimumScaleFactor(0.5)
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 9)
         .frame(maxWidth: .infinity)
-        .frame(height: 58)
-        .background(.white.opacity(0.83), in: RoundedRectangle(cornerRadius: 16))
+        .frame(height: 51)
+        .background(.white.opacity(0.84), in: RoundedRectangle(cornerRadius: 15))
+    }
+
+    private var toolBar: some View {
+        HStack(spacing: 7) {
+            toolButton("Undo", icon: "arrow.uturn.backward", count: session.undos, enabled: session.canUndo) {
+                session.undo(); selectedSlot = nil; successFeedback()
+            }
+            toolButton("Shuffle", icon: "shuffle", count: session.shuffles, enabled: session.shuffles > 0) {
+                session.shuffle(); selectedSlot = nil; successFeedback()
+            }
+            toolButton("Shop", icon: "basket.fill", count: nil, enabled: true) { showShop = true }
+            toolButton("Stats", icon: "chart.bar.fill", count: nil, enabled: true) { showStats = true }
+            toolButton("Menu", icon: "gearshape.fill", count: nil, enabled: true) { showSettings = true }
+        }.frame(height: 43)
+    }
+
+    private func toolButton(_ title: String, icon: String, count: Int?, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 1) {
+                HStack(spacing: 2) {
+                    Image(systemName: icon).font(.system(size: 13, weight: .bold))
+                    if let count { Text("\(count)").font(.system(size: 10, weight: .heavy)) }
+                }
+                Text(title).font(.system(size: 9, weight: .heavy, design: .rounded))
+            }
+            .foregroundStyle(enabled ? BerryStyle.strawberry : Color.gray)
+            .frame(maxWidth: .infinity)
+            .frame(height: 42)
+            .background(.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 12))
+        }.disabled(!enabled)
     }
 
     private func updateDrag(slot: Int, finger: CGPoint, cell: CGFloat) {
-        guard session.engine.tray.indices.contains(slot),
-              let piece = session.engine.tray[slot] else { drag = nil; return }
+        guard session.engine.tray.indices.contains(slot), let piece = session.engine.tray[slot] else { drag = nil; return }
         let step = cell + 3
-        let x = finger.x - boardFrame.minX - CGFloat(piece.width) * step / 2
-        let y = finger.y - boardFrame.minY - 45 - CGFloat(piece.height) * step / 2
+        let x = finger.x - boardRect.minX - CGFloat(piece.width) * step / 2
+        let y = finger.y - boardRect.minY - 42 - CGFloat(piece.height) * step / 2
         let col = Int((x / step).rounded())
         let row = Int((y / step).rounded())
-        let hovering = boardFrame.insetBy(dx: -35, dy: -65).contains(finger)
-        drag = BerryDrag(slot: slot, piece: piece, row: row, col: col,
-                         hovering: hovering,
-                         allowed: hovering && session.engine.canPlace(piece, row: row, col: col))
+        let hovering = boardRect.insetBy(dx: -28, dy: -55).contains(finger)
+        drag = BerryDragState(slot: slot, piece: piece, row: row, col: col,
+                              allowed: hovering && session.engine.canPlace(piece, row: row, col: col))
     }
 
     private func finishDrag() {
@@ -269,51 +317,91 @@ struct BerryGameView: View {
         guard let drag, drag.allowed else { return }
         if session.drop(slot: drag.slot, row: drag.row, col: drag.col) {
             selectedSlot = nil
-            feedback()
+            successFeedback()
         }
     }
 
-    private func feedback() {
-        if haptics { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+    private func successFeedback() {
+        if haptics { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
         if sound { AudioServicesPlaySystemSound(1104) }
     }
-
-    private var helpSheet: some View {
-        VStack(spacing: 16) {
-            Text("🍓").font(.system(size: 52))
-            Text("How to Play").font(.system(size: 28, weight: .black, design: .rounded))
-                .foregroundStyle(BerryStyle.strawberry)
-            Text("Drag a piece from the tray onto the 8 × 8 garden, or tap a piece and then tap the board. Fill complete rows or columns to clear them. All three pieces used? Three new ones arrive! Keep playing until no piece fits.")
-                .multilineTextAlignment(.center)
-            Text("Every tile scores 1 point. Line clears earn 10 × lines², multiplied by your combo (up to ×8). Clear again within three moves to keep the combo alive. Empty the board for +300!")
-                .multilineTextAlignment(.center)
-            Button("Let's Play!") { showHelp = false }
-                .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
-        }
-        .font(.system(size: 15, weight: .medium, design: .rounded))
-        .foregroundStyle(BerryStyle.chocolate)
-        .padding(25)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(BerryStyle.cream.ignoresSafeArea())
-        .presentationDetents([.medium, .large])
+    private func warningFeedback() {
+        if haptics { UINotificationFeedbackGenerator().notificationOccurred(.warning) }
     }
 
-    private var settingsSheet: some View {
-        VStack(spacing: 18) {
-            Text("Berry Settings 🍓").font(.system(size: 26, weight: .black, design: .rounded))
-                .foregroundStyle(BerryStyle.strawberry)
-            Toggle("Haptic feedback", isOn: $haptics)
-            Toggle("Soft game sounds", isOn: $sound)
-            Text("Your current game and personal best are saved automatically on this iPhone.")
-                .font(.footnote).foregroundStyle(.secondary)
-            Text("Berry Block Blast • v0.2.0 • Unofficial fan puzzle")
-                .font(.footnote).foregroundStyle(.secondary)
-            Button("Done") { showSettings = false }
-                .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
+    private var welcomeSheet: some View {
+        sheetBase("Welcome to Berry Garden!", icon: "🍓") {
+            Text("Make the sweetest garden one block at a time. Place berry pieces, complete rows and columns, and earn strawberries to stock your basket.")
+            Text("No timer, no pressure. Every three placed pieces bring a new batch. Your progress saves automatically.")
+            primaryButton("Let's Grow!") { welcomed = true; showWelcome = false }
         }
-        .padding(28)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    private var helpSheet: some View {
+        sheetBase("How to Play", icon: "🍰") {
+            Text("Drag a block onto the 8 × 8 board. Or tap a block, then tap an empty square. Complete full rows or columns to clear them.")
+            Text("Clear multiple lines together for bonus points. Keep clearing to grow your combo. Clear the entire board for +300!")
+            Text("Earn strawberries for line clears. Spend them in the basket on extra Undos and Shuffles. Keep playing until nothing fits.")
+            primaryButton("Got It!") { showHelp = false }
+        }
+    }
+    private var settingsSheet: some View {
+        sheetBase("Berry Settings", icon: "⚙️") {
+            Toggle("Haptic feedback", isOn: $haptics)
+            Toggle("Sweet sound effects", isOn: $sound)
+            Text("Your game is saved automatically. The display uses the full iPhone screen.").font(.footnote)
+            Button("Start a New Garden", role: .destructive) { showSettings = false; confirmRestart = true }
+            Text("Berry Block Blast • 0.3.0 • Unofficial original fan puzzle").font(.footnote).foregroundStyle(.secondary)
+            primaryButton("Done") { showSettings = false }
+        }
+    }
+    private var shopSheet: some View {
+        sheetBase("The Berry Basket", icon: "🧺") {
+            Text("Your strawberries: 🍓 \(session.berries)").font(.system(size: 22, weight: .black, design: .rounded))
+            HStack {
+                VStack(alignment: .leading) { Text("Extra Undo").bold(); Text("🍓 25").font(.caption) }
+                Spacer()
+                Button("Buy") { session.buyUndo() }.disabled(session.berries < 25).buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
+            }
+            HStack {
+                VStack(alignment: .leading) { Text("Extra Shuffle").bold(); Text("🍓 25").font(.caption) }
+                Spacer()
+                Button("Buy") { session.buyShuffle() }.disabled(session.berries < 25).buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
+            }
+            Text("All strawberries are earned by playing. No purchases or ads.").font(.footnote)
+            primaryButton("Back to Garden") { showShop = false }
+        }
+    }
+    private var statsSheet: some View {
+        sheetBase("Berry Scrapbook", icon: "📖") {
+            statRow("Best score", "\(session.bestScore)")
+            statRow("Current score", "\(session.engine.score)")
+            statRow("Lines cleared", "\(session.engine.totalLines)")
+            statRow("Moves", "\(session.engine.moves)")
+            statRow("Best combo", "×\(session.engine.bestCombo)")
+            statRow("Perfect gardens", "\(session.engine.boardClears)")
+            statRow("Berries earned", "\(session.totalEarnedBerries)")
+            primaryButton("Keep Playing") { showStats = false }
+        }
+    }
+    private func statRow(_ name: String, _ value: String) -> some View {
+        HStack { Text(name); Spacer(); Text(value).bold().foregroundStyle(BerryStyle.strawberry) }
+    }
+    private func primaryButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(title, action: action).buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
+    }
+    private func sheetBase<Content: View>(_ title: String, icon: String, @ViewBuilder content: () -> Content) -> some View {
+        ScrollView {
+            VStack(spacing: 17) {
+                Text(icon).font(.system(size: 49))
+                Text(title).font(.system(size: 26, weight: .black, design: .rounded)).foregroundStyle(BerryStyle.strawberry)
+                content()
+            }
+            .font(.system(size: 15, weight: .medium, design: .rounded))
+            .foregroundStyle(BerryStyle.chocolate)
+            .padding(24)
+            .frame(maxWidth: .infinity)
+        }
         .background(BerryStyle.cream.ignoresSafeArea())
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
     }
 }
