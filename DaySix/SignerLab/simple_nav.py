@@ -65,7 +65,18 @@ def patch(root: Path) -> None:
             showApps: { [weak self] in self?.selectedIndex = Tab.myApps.rawValue },
             refreshApps: { [weak self] in self?.renewRealApps() },
             openSettings: { [weak self] in self?.selectedIndex = Tab.settings.rawValue },
-            openSources: { [weak self] in self?.presentSources(self as Any) }
+            openSources: { [weak self] in self?.presentSources(self as Any) },
+            readStatus: {
+                // The upstream database is the authority for managed apps.
+                // This snapshot does not infer an installation from a button tap.
+                let context = DatabaseManager.shared.viewContext
+                let renewable = InstalledApp.fetchAppsForRefreshingAll(in: context)
+                let ownSigner = InstalledApp.fetchAltStore(in: context)
+                return DaySixSigningSnapshot(
+                    renewableAppCount: renewable.count,
+                    selfExpiry: ownSigner?.expirationDate
+                )
+            }
         )
         let home = UINavigationController(
             rootViewController: UIHostingController(rootView: homeView))
