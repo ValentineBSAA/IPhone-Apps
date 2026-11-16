@@ -49,4 +49,43 @@ if SelfProvisioning.expiresAt == nil {
     UserDefaults.standard.removeObject(forKey: "daysix.self.manuallyEnteredExpiry.v1")
 }
 
-print("DaySix self-provisioning smoke tests PASSED")
+// ReProvision-style configurable scheduling: day-six default, guardrails,
+// manual disable and longer lead times. No access to Apple credentials.
+RenewalPolicy.hoursBeforeExpiry = 24
+RenewalPolicy.automaticallyRequestRefresh = true
+let now = Date.now
+
+let expiresIn25 = now.addingTimeInterval(25 * 3600)
+let expiresIn23 = now.addingTimeInterval(23 * 3600)
+expect(!RenewalPolicy.isDue(expiration: expiresIn25, now: now),
+       "25 hours left should be outside the default renewal window")
+expect(RenewalPolicy.isDue(expiration: expiresIn23, now: now),
+       "23 hours left should be inside the default day-six window")
+expect(!RenewalPolicy.shouldRunAutomaticRenewal(expirations: [expiresIn25], now: now),
+       "A healthy app must not trigger automatic signing")
+expect(RenewalPolicy.shouldRunAutomaticRenewal(expirations: [expiresIn23], now: now),
+       "Day-six expiry must trigger the external signer request")
+
+RenewalPolicy.hoursBeforeExpiry = 48
+expect(RenewalPolicy.isDue(
+           expiration: now.addingTimeInterval(36 * 3600), now: now),
+       "48-hour mode must refresh before a 36-hour expiration")
+
+RenewalPolicy.hoursBeforeExpiry = 999
+expect(RenewalPolicy.hoursBeforeExpiry == 24,
+       "Unsupported renewal windows must revert to the day-six default")
+
+RenewalPolicy.automaticallyRequestRefresh = false
+expect(!RenewalPolicy.shouldRunAutomaticRenewal(
+           expirations: [expiresIn23], now: now),
+       "Disabling automatic requests must actually suppress Shortcuts activation")
+
+RenewalPolicy.automaticallyRequestRefresh = true
+expect(!RenewalPolicy.shouldRunAutomaticRenewal(
+           expirations: [now.addingTimeInterval(-3600)], now: now),
+       "Already expired signing must not be falsely reported as an on-time renewal")
+
+UserDefaults.standard.removeObject(forKey: RenewalPolicy.hoursKey)
+UserDefaults.standard.removeObject(forKey: RenewalPolicy.autoKey)
+
+print("DaySix provisioning and ReProvision-style scheduling smoke tests PASSED")
