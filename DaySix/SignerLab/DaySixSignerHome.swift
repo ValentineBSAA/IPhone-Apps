@@ -163,7 +163,7 @@ private struct DaySixSignerHomeView: View {
                     Text("\(status.renewableAppCount)")
                         .font(.system(size: 30, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
-                        .contentTransition(.numericText())
+                        // Keep the signer compatible with upstream's iOS 15 target.
                     Text("Apps eligible for refresh")
                         .font(.caption)
                         .foregroundStyle(subdued)
