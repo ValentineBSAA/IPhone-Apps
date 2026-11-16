@@ -2,6 +2,7 @@ import SwiftUI
 import UserNotifications
 
 struct DaySixOnboardingView: View {
+    @EnvironmentObject private var store: DaySixStore
     let completed: () -> Void
     @State private var step = 0
     @State private var notificationsRequested = false
@@ -69,6 +70,7 @@ struct DaySixOnboardingView: View {
                             notificationsRequested = true
                             notificationsGranted = (try? await UNUserNotificationCenter.current()
                                 .requestAuthorization(options: [.alert, .badge, .sound])) ?? false
+                            if notificationsGranted { store.syncNotifications() }
                         }
                     } label: {
                         Label(notificationsGranted ? "iPhone Notifications Enabled"
