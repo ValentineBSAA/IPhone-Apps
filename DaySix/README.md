@@ -1,7 +1,17 @@
 # DaySix 🍃
-**Native iPhone signing companion · v0.1.5**
+**Native iPhone signing companion · v0.1.6**
 
 A dark glass, teal-and-violet iOS dashboard inspired by ReProvision for the seven-day personal-development provisioning cycle. DaySix automatically checks **its own installed Apple provisioning-profile expiration**, tracks other apps you explicitly add, and gates SideStore's **Refresh All Apps** Shortcuts action at **day six**, with local reminders as a fallback.
+
+## New in v0.1.6: verified prerequisites and actual signing engine research
+
+- **Signing enrollment check:** More → Reliability Lab now asks you to confirm that DaySix appears in **SideStore → My Apps**, and that you've tested a successful refresh. These are honest user confirmations, not claims that DaySix can inspect SideStore's private database.
+- **Self-renewal readiness warning:** The DaySix card warns if the installed signing application is not confirmed to manage it, even if a good provisioning expiration exists.
+- **Real signing engine integration probes:** `DaySix/SignerLab` tests building official SideStore and importing the actual **SideSign** Swift package, separately from DaySix's companion app. These experiments do not handle Apple credentials and do not yet provide in-app IPA signing.
+- **Linux policy tests:** A second fast GitHub Actions workflow compiles the Foundation-only signing policy, provisioning reader, and readiness checks, so we can validate those without needing a macOS runner.
+- **Xcode 27 runner and queue cleanup:** iPhone and SideStore integration experiments now use GitHub's Xcode 27 macOS runner and cancel superseded builds, to avoid a pileup of outdated jobs.
+
+**Current signer:** SideStore still does the signing. True independent DaySix signing remains a separate engineering milestone. If a new build hasn't passed, don't sideload an unvalidated IPA.
 
 ## New in v0.1.5: Apple-permitted reliability safeguards
 
