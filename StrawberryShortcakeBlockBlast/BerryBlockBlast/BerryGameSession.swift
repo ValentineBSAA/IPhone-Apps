@@ -38,6 +38,8 @@ final class BerryGameSession: ObservableObject {
                   let restored = try? JSONDecoder().decode(BerryEngine.self, from: data) { engine = restored }
         else { engine = freshEngine() }
         previous = nil
+        previousBerryEarnings = 0
+        previousRewardEntry = nil
         gameOver = !engine.hasMove()
         lastMessage = nil
     }
@@ -166,6 +168,10 @@ final class BerryGameSession: ObservableObject {
         awardOnce("chapter-" + String(chapter), amount: 15 + min(35, chapter * 5), reason: "Story chapter")
     }
     func buyCottageDecoration() {
+        // Purchases must invalidate the undo snapshot to prevent currency duplication.
+        previous = nil
+        previousBerryEarnings = 0
+        previousRewardEntry = nil
         guard berries >= 50 else { return }
         berries -= 50
         cottageDecorations += 1
@@ -173,6 +179,10 @@ final class BerryGameSession: ObservableObject {
         save()
     }
     func buyUndo() {
+        // Purchases must invalidate the undo snapshot to prevent currency duplication.
+        previous = nil
+        previousBerryEarnings = 0
+        previousRewardEntry = nil
         guard berries >= 25 else { return }
         berries -= 25
         undos += 1
@@ -180,6 +190,10 @@ final class BerryGameSession: ObservableObject {
     }
 
     func buyShuffle() {
+        // Purchases must invalidate the undo snapshot to prevent currency duplication.
+        previous = nil
+        previousBerryEarnings = 0
+        previousRewardEntry = nil
         guard berries >= 25 else { return }
         berries -= 25
         shuffles += 1
@@ -191,6 +205,8 @@ final class BerryGameSession: ObservableObject {
     func newGame() {
         engine = freshEngine()
         previous = nil
+        previousBerryEarnings = 0
+        previousRewardEntry = nil
         gameOver = false
         lastMessage = nil
         lastEarned = 0
