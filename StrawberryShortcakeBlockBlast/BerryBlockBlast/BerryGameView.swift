@@ -86,7 +86,7 @@ struct BerryGameView: View {
         case .endless: "Fill a row or column. Grow your berry garden!"
         case .story: "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
         case .daily: "DAILY HARVEST • Gather \(goal) points!"
-        case .cozy: "COZY COTTAGE • Enjoy the garden at your pace!"
+        case .cozy: "COZY COTTAGE • \(session.cottageDecorations) decorations • Grow at your pace!"
         case .challenge: "⚡ BERRY BLITZ • \(blitzRemaining)s left • Reach \(goal)!"
         }
     }
@@ -235,7 +235,7 @@ struct BerryGameView: View {
         .sheet(isPresented: $showStats) { statsSheet }
         .sheet(isPresented: $showWelcome) { welcomeSheet }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
-            guard mode == .challenge, blitzRunning, !showVictory, !showGameOver else { return }
+            guard mode == .challenge, blitzRunning, !showVictory, !showGameOver, !showSettings, !showShop, !showStats, !showHelp, !showWelcome, !showUnlock else { return }
             blitzRemaining = max(0, blitzRemaining - 1)
             if blitzRemaining == 0 { blitzRunning = false; showGameOver = true }
         }
@@ -480,6 +480,11 @@ struct BerryGameView: View {
                 Spacer()
                 Button("Buy") { session.buyShuffle() }.disabled(session.berries < 25).buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
             }
+            HStack {
+                VStack(alignment: .leading) { Text("🏡 Cottage Decoration").bold(); Text("🍓 50 • Owned: \(session.cottageDecorations)").font(.caption) }
+                Spacer()
+                Button("Decorate") { session.buyCottageDecoration() }.disabled(session.berries < 50).buttonStyle(.borderedProminent).tint(BerryStyle.leaf)
+            }
             Text("🍓 Clear lines to earn berries: +3 per line, plus combo and perfect-garden bonuses. Strawberry School earns +25, Daily Harvest +30, and Story chapters earn rewards.").font(.subheadline)
             Text("🎀 Recent Berry Harvests").font(.headline).foregroundStyle(BerryStyle.strawberry)
             ForEach(session.rewardsLog.prefix(6), id: \.self) { reward in Text(reward).font(.caption) }
@@ -497,6 +502,7 @@ struct BerryGameView: View {
             statRow("Best combo", "×\(session.engine.bestCombo)")
             statRow("Perfect gardens", "\(session.engine.boardClears)")
             statRow("Berries earned", "\(session.totalEarnedBerries)")
+            statRow("Cottage decorations", "\(session.cottageDecorations)")
             primaryButton("Keep Playing") { showStats = false }
         }
     }
