@@ -8,6 +8,7 @@ final class BerryGameSession: ObservableObject {
     @Published private(set) var lastMessage: String? = nil
     @Published private(set) var celebration = 0
     @Published private(set) var lastEarned = 0
+    @Published private(set) var lastClearedLines = 0
     @Published private(set) var berries = 0
     @Published private(set) var undos = 2
     @Published private(set) var shuffles = 2
@@ -84,6 +85,7 @@ final class BerryGameSession: ObservableObject {
             UserDefaults.standard.set(bestScore, forKey: bestKey)
         }
         lastEarned = outcome.earned
+        lastClearedLines = outcome.clearedLines
         if outcome.clearedLines > 0 {
             let gained = outcome.clearedLines * 3 + (outcome.streak > 1 ? outcome.streak : 0) + (outcome.boardClear ? 25 : 0)
             earn(gained, reason: "Completed berry lines")
@@ -162,6 +164,7 @@ final class BerryGameSession: ObservableObject {
         gameOver = false
         lastMessage = nil
         lastEarned = 0
+        lastClearedLines = 0
         undos = max(undos, 2)
         shuffles = max(shuffles, 2)
         save()
