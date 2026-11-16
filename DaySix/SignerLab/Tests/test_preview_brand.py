@@ -80,6 +80,10 @@ class PreviewSafetyTests(unittest.TestCase):
         backup_plist.write_bytes(plistlib.dumps({
             "CFBundleURLTypes": [{"CFBundleURLSchemes": ["sidebackup"]}]
         }))
+        (self.root / "SideBackup" / "SideBackup.entitlements").write_text(
+            "<plist><dict><key>com.apple.security.application-groups</key>"
+            "<array><string>group.$(APP_GROUP_IDENTIFIER)</string></array>"
+            "</dict></plist>", encoding="utf-8")
 
         notifier = (self.root / "SideStore" / "Core" / "Operations"
                     / "StandaloneOperations"
@@ -154,7 +158,7 @@ private extension TabBarController
 
     def make_ipa(self, bundle_id, label=None, preview_marker=True,
                  widget_id=None, backup_id=None, primary_scheme=None,
-                 backup_scheme="daysixbackup"):
+                 backup_scheme="daysixbackup", backup_group=None):
         info = {
             "CFBundleIdentifier": bundle_id,
             "CFBundleDisplayName": label or preview.DISPLAY_NAME,
@@ -183,6 +187,10 @@ private extension TabBarController
         with zipfile.ZipFile(nested_data, "w") as nested:
             nested.writestr("Payload/SideBackup.app/Info.plist",
                             plistlib.dumps(backup_info))
+            group = (backup_group if backup_group is not None
+                     else "group." + preview.PREVIEW_BUNDLE_ID)
+            nested.writestr("Payload/SideBackup.app/SideBackup",
+                            ("Mach-O fixture " + group).encode("utf-8"))
         path = self.root / "preview.ipa"
         with zipfile.ZipFile(path, "w") as archive:
             archive.writestr("Payload/SideStore.app/Info.plist",
@@ -268,6 +276,11 @@ private extension TabBarController
             backup_plist["CFBundleURLTypes"][0]["CFBundleURLSchemes"],
             ["daysixbackup"]
         )
+        helper_entitlements = (
+            self.root / "SideBackup" / "SideBackup.entitlements"
+        ).read_text()
+        self.assertIn("group." + preview.PREVIEW_BUNDLE_ID, helper_entitlements)
+        self.assertNotIn("$(APP_GROUP_IDENTIFIER)", helper_entitlements)
         for relative in [
             "AltStore/Resources/ReleaseEntitlements.plist",
             "AltWidget/Resources/ReleaseEntitlements.plist",
@@ -324,6 +337,18 @@ private extension TabBarController
             preview.PREVIEW_BUNDLE_ID,
             backup_scheme="daysixbackup"))
         self.assertEqual(result["bundle_id"], preview.PREVIEW_BUNDLE_ID)
+
+    def test_backup_executable_must_have_isolated_app_group(self):
+        self.assertEqual(
+            preview.verify_ipa(self.make_ipa(preview.PREVIEW_BUNDLE_ID))["bundle_id"],
+            preview.PREVIEW_BUNDLE_ID)
+        for group in ["group.$(APP_GROUP_IDENTIFIER)",
+                      "group.com.SideStore.SideStore",
+                      "group.example.incorrect"]:
+            with self.subTest(app_group=group):
+                with self.assertRaises(RuntimeError):
+                    preview.verify_ipa(
+                        self.make_ipa(preview.PREVIEW_BUNDLE_ID, backup_group=group))
 
     def test_nested_app_ids_cannot_impersonate_sidestore(self):
         with self.assertRaises(RuntimeError):
