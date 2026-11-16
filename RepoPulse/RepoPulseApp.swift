@@ -397,11 +397,13 @@ private struct AddRepoSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Public GitHub repository") {
+                Section {
                     TextField("owner/repository", text: $entry)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
+                } header: {
+                    Text("Public GitHub repository")
                 } footer: {
                     Text("Only public repositories are supported in this prototype.")
                 }
