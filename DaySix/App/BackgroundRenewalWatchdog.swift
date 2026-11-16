@@ -9,10 +9,13 @@ import UserNotifications
 /// never attempts signing, opens SideStore, runs Shortcuts, or maintains a
 /// fake persistent foreground/background service. It only evaluates the
 /// local signing dates and can display a rescue notification.
-final class DaySixLifecycleDelegate: NSObject, UIApplicationDelegate {
+final class DaySixLifecycleDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions:
                         [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // Required to present real iOS banners and sounds even while the
+        // DaySix screen is foregrounded (including a five-second test).
+        UNUserNotificationCenter.current().delegate = self
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: BackgroundRenewalWatchdog.identifier,
             using: nil) { task in
@@ -28,6 +31,14 @@ final class DaySixLifecycleDelegate: NSObject, UIApplicationDelegate {
 
     func applicationDidEnterBackground(_ application: UIApplication) {
         BackgroundRenewalWatchdog.schedule()
+    }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification) async
+        -> UNNotificationPresentationOptions {
+        // The system's own notification authorization, Focus and sound
+        // preferences still override these presentation options.
+        [.banner, .list, .sound]
     }
 }
 
@@ -79,7 +90,10 @@ enum BackgroundRenewalWatchdog {
 
             // An opportunistic safety alert. We do NOT count this as a
             // signing attempt, successful renewal, or a guarantee.
-            if let expiry = SelfProvisioning.effectiveExpiry,
+            if DaySixNotificationPreferences.critical,
+               (UserDefaults.standard.object(forKey: DaySixStorage.remindersKey) == nil
+                || UserDefaults.standard.bool(forKey: DaySixStorage.remindersKey)),
+               let expiry = SelfProvisioning.effectiveExpiry,
                expiry > now,
                RenewalPolicy.isDue(expiration: expiry, now: now) {
                 let previouslyNotified = UserDefaults.standard.object(
