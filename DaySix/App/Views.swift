@@ -48,6 +48,8 @@ struct GlowButton: View {
 }
 
 struct DaySixRootView: View {
+    @AppStorage("daysix.didFinishOnboarding.v1") private var didFinishOnboarding = false
+
     var body: some View {
         TabView {
             DashboardView()
@@ -61,6 +63,11 @@ struct DaySixRootView: View {
         }
         .tint(DS.mint)
         .toolbarColorScheme(.dark, for: .tabBar)
+        .fullScreenCover(isPresented: Binding(
+            get: { !didFinishOnboarding },
+            set: { if !$0 { didFinishOnboarding = true } })) {
+            DaySixOnboardingView { didFinishOnboarding = true }
+        }
     }
 }
 
