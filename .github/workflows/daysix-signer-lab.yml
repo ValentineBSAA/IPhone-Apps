@@ -56,6 +56,18 @@ jobs:
             --sha "$(cat daysix-upstream-sha.txt)"
           command -v ldid || brew install ldid
 
+      - name: Install original DaySix icon artwork into signer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/daysix-signer-python
+          /tmp/daysix-signer-python/bin/python -m pip install Pillow
+          /tmp/daysix-signer-python/bin/python DaySix/scripts/make_icon.py
+          /tmp/daysix-signer-python/bin/python DaySix/SignerLab/brand_icons.py \
+            --source DaySix/Assets.xcassets/AppIcon.appiconset/AppIcon.png \
+            --catalog upstream-sidestore/AltStore/Resources/Icons.xcassets/AppIcon.appiconset \
+            | tee daysix-icon-assets.json
+
       - name: Compile SideStore-derived engine under patched DaySix identity
         working-directory: upstream-sidestore
         shell: bash
@@ -96,7 +108,7 @@ jobs:
           mkdir -p upstream-probe-outputs
           cp -f daysix-upstream-*.txt upstream-probe-outputs/ 2>/dev/null || true
           cp -f daysix-upstream-build.log upstream-probe-outputs/ 2>/dev/null || true
-          cp -f daysix-signerlab-provenance.json daysix-preview-inspection.json daysix-signerlab-entitlements.txt upstream-probe-outputs/ 2>/dev/null || true
+          cp -f daysix-signerlab-provenance.json daysix-preview-inspection.json daysix-signerlab-entitlements.txt daysix-icon-assets.json upstream-probe-outputs/ 2>/dev/null || true
           test ! -f DaySix-Signer-Lab-unsigned.ipa || cp -f DaySix-Signer-Lab-unsigned.ipa upstream-probe-outputs/
           # Never publish unverified SideStore.ipa or embedded signing material.
 
