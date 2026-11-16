@@ -230,6 +230,16 @@ def verify_ipa(path: Path) -> dict:
             raise RuntimeError(
                 f"{key} bundle ID {actual!r}; expected {expected!r}. Refuse packaging.")
 
+    # The backup helper must not claim the public sidebackup:// scheme used
+    # by the official SideStore helper when both installers are present.
+    backup_schemes = [
+        scheme
+        for entry in backup_info.get("CFBundleURLTypes", [])
+        for scheme in entry.get("CFBundleURLSchemes", [])
+    ]
+    if "daysixbackup" not in backup_schemes or "sidebackup" in backup_schemes:
+        raise RuntimeError("Packaged backup helper has a conflicting URL scheme")
+
     return {
         "bundle_id": actual_ids["main"],
         "embedded_bundle_ids": actual_ids,
