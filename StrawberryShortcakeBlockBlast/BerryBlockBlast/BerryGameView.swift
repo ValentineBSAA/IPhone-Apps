@@ -22,6 +22,7 @@ private struct BerryBoard: View {
     let selected: Int?
     let mode: BerryMode
     let strawberryUnlocked: Bool
+    let previewStyle: String
     private let gap: CGFloat = 3
 
     var body: some View {
@@ -46,12 +47,13 @@ private struct BerryBoard: View {
                 .frame(width: unit, height: unit)
                 .offset(x: CGFloat(c) * (unit + gap), y: CGFloat(r) * (unit + gap))
             }
-            if let preview {
+            if let preview, previewStyle != "mystery" {
                 ForEach(preview.piece.points, id: \.self) { p in
                     let r = preview.row + p.row
                     let c = preview.col + p.col
                     if (0..<8).contains(r), (0..<8).contains(c) {
                         BerryTile(tint: preview.piece.tint, preview: true, mode: mode, strawberryUnlocked: strawberryUnlocked)
+                            .opacity(previewStyle == "outline" ? 0.18 : 0.56)
                             .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(preview.allowed ? Color.green : Color.red, lineWidth: 2) }
                             .frame(width: unit, height: unit)
                             .offset(x: CGFloat(c) * (unit + gap), y: CGFloat(r) * (unit + gap))
@@ -105,6 +107,7 @@ struct BerryGameView: View {
     @AppStorage("berryblockblast.strawberry-unlocked") private var strawberryUnlocked = false
     @AppStorage("berryblockblast.lifetime-lines") private var lifetimeLines = 0
     @State private var showUnlock = false
+    @AppStorage("berryblockblast.previewStyle") private var previewStyle = "ghost"
     private let harvestCheers = [
         "🍓 A berry sweet harvest!", "🍰 Piece of strawberry cake!",
         "🌸 The garden is blooming!", "✨ Sweet as sunshine!",
@@ -141,7 +144,7 @@ struct BerryGameView: View {
                     .font(.system(size: compact ? 10 : 12, weight: .bold, design: .rounded))
                     .foregroundStyle(BerryStyle.chocolate)
                     .frame(height: 19)
-                    BerryBoard(engine: session.engine, preview: drag, size: boardSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked)
+                    BerryBoard(engine: session.engine, preview: drag, size: boardSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle)
                         .overlay { if sparkle { Text(harvestCheer).font(.headline).foregroundStyle(BerryStyle.strawberry).padding(12).background(.regularMaterial, in: Capsule()).transition(.scale.combined(with: .opacity)).allowsHitTesting(false) } }
                         .padding(7)
                         .contentShape(Rectangle())
@@ -356,10 +359,10 @@ struct BerryGameView: View {
     private var toolBar: some View {
         HStack(spacing: 7) {
             toolButton("Undo", icon: "arrow.uturn.backward", count: session.undos, enabled: session.canUndo) {
-                session.undo(); selectedSlot = nil; successFeedback()
+                if session.canUndo { session.undo(); selectedSlot = nil; successFeedback() } else { showShop = true }
             }
             toolButton("Shuffle", icon: "shuffle", count: session.shuffles, enabled: session.shuffles > 0) {
-                session.shuffle(); selectedSlot = nil; successFeedback()
+                if session.shuffles > 0 { session.shuffle(); selectedSlot = nil; successFeedback() } else { showShop = true }
             }
             toolButton("Shop", icon: "basket.fill", count: nil, enabled: true) { showShop = true }
             toolButton("Stats", icon: "chart.bar.fill", count: nil, enabled: true) { showStats = true }
@@ -380,7 +383,7 @@ struct BerryGameView: View {
             .frame(maxWidth: .infinity)
             .frame(height: 42)
             .background(.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 12))
-        }.disabled(!enabled)
+        }.disabled(!enabled && count == nil)
     }
 
     private func updateDrag(slot: Int, finger: CGPoint, cell: CGFloat) {
@@ -440,6 +443,11 @@ struct BerryGameView: View {
     }
     private var settingsSheet: some View {
         sheetBase("Berry Settings", icon: "⚙️") {
+            Picker("🍓 Placement Preview", selection: $previewStyle) {
+                Text("Sweet Assist").tag("ghost")
+                Text("Outline Only").tag("outline")
+                Text("Mystery Garden").tag("mystery")
+            }
             Toggle("Haptic feedback", isOn: $haptics).tint(BerryStyle.strawberry)
             Toggle("Sweet sound effects", isOn: $sound).tint(BerryStyle.strawberry)
             Toggle("Strawberry music box", isOn: $music).tint(BerryStyle.strawberry)
