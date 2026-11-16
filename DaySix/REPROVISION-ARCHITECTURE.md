@@ -23,6 +23,15 @@ Sources:
 - Apple background execution: https://developer.apple.com/documentation/backgroundtasks/choosing-background-strategies-for-your-app
 - SideStore iOS 27 credential issue: https://github.com/SideStore/SideStore/issues/1584
 
+## Additional real iOS options audited in November 2026
+
+- **Apple Shortcuts personal automations** permit system triggers like Time of Day and Charger. Multiple triggers can safely call DaySix's decision intent; an independent emergency automation can call SideStore without DaySix itself. The six-hour DaySix cooldown reduces accidental duplicate Apple signing requests.
+- **BGAppRefreshTask** is available with background fetch and a permitted task identifier. DaySix v0.1.5 uses it only to inspect expiry and notify if iOS schedules it. It is not a privileged daemon, a timed guarantee, or a background IPA signer.
+- **BGContinuedProcessingTask (newer iOS)** may support user-started operations continuing after leaving the app in a future integrated signer. It does NOT authorize scheduled re-signing independently of normal iOS restrictions.
+- **SideInstaller** (https://sideinstaller.net/) can bootstrap iOS 27 signing entirely on-device, with local pairing and app installation. Its custom license restricts incorporation; do not simply copy its Rust/Swift signing core into DaySix.
+- **Tetherless** (https://github.com/pwnapplehat/TetherlessiOS) advertises a self-renewing signer with a native Shortcuts refresh action, but these vendor claims are not independent physical-device validation of DaySix and do not create an API that DaySix can silently call.
+- **Apple free personal teams** still have seven-day provisioning and a three-app-per-device limit. A separate DaySix and SideStore installation costs two slots, which is why a single-app integrated signing target is a genuine future improvement.
+
 ## Next milestone: genuine integrated signing engine
 The current DaySix app is a **SideStore companion**. For a **single-app signer** that does not require a separate SideStore icon, rebuild DaySix on top of SideStore's existing on-device signing and installation core rather than copying ReProvision's privileged daemon into this SwiftUI starter.
 
