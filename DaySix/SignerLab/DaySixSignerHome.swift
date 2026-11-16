@@ -8,6 +8,9 @@ private struct DaySixSignerHomeView: View {
     let refreshApps: () -> Void
     let openSettings: () -> Void
     let openSources: () -> Void
+    let readStatus: () -> DaySixSigningSnapshot
+
+    @State private var status = DaySixSigningSnapshot(renewableAppCount: 0, selfExpiry: nil)
 
     private let ink = Color(red: 0.026, green: 0.035, blue: 0.08)
     private let surface = Color(red: 0.074, green: 0.092, blue: 0.16)
@@ -46,6 +49,8 @@ private struct DaySixSignerHomeView: View {
                             .foregroundStyle(subdued)
                     }
                     .padding(.top, 20)
+
+                    signingStatusCard
 
                     VStack(alignment: .leading, spacing: 15) {
                         HStack(spacing: 12) {
@@ -128,6 +133,68 @@ private struct DaySixSignerHomeView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onAppear { status = readStatus() }
+    }
+
+    private var signingStatusCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Label("Signing overview", systemImage: "checkmark.shield.fill")
+                    .font(.headline)
+                    .foregroundStyle(mint)
+                Spacer()
+                SwiftUI.Button {
+                    status = readStatus()
+                } label: {
+                    Label("Update", systemImage: "arrow.clockwise")
+                        .font(.caption.weight(.semibold))
+                }
+                .foregroundStyle(mint)
+                .accessibilityHint("Read current signing dates from the local signer database")
+            }
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("\(status.renewableAppCount)")
+                        .font(.system(size: 30, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .contentTransition(.numericText())
+                    Text("Apps eligible for refresh")
+                        .font(.caption)
+                        .foregroundStyle(subdued)
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 6) {
+                    if let expiration = status.selfExpiry {
+                        Text(expiration < .now ? "Signature expired" : "Signer expiry")
+                            .font(.caption)
+                            .foregroundStyle(subdued)
+                        Text(expiration, style: .date)
+                            .font(.subheadline.bold())
+                            .foregroundStyle(expiration < .now ? Color.orange : mint)
+                        Text(expiration, style: .relative)
+                            .font(.caption2)
+                            .foregroundStyle(subdued)
+                    } else {
+                        Text("Signer expiry")
+                            .font(.caption)
+                            .foregroundStyle(subdued)
+                        Text("Not yet available")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.orange)
+                    }
+                }
+            }
+            Divider().overlay(.white.opacity(0.10))
+            Text("Dates come from this signer's local records. A successful build or a refresh request does not prove an iPhone app was renewed.")
+                .font(.caption)
+                .foregroundStyle(subdued)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(20)
+        .background(surface, in: RoundedRectangle(cornerRadius: 24))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24).stroke(.white.opacity(0.08))
+        }
     }
 
     private func quickAction(title: String, detail: String,
