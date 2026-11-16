@@ -8,6 +8,12 @@ on:
     paths:
       - "DaySix/**"
       - ".github/workflows/daysix-ios.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "DaySix/**"
+      - ".github/workflows/daysix-ios.yml"
   workflow_dispatch:
 
 permissions:
