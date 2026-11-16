@@ -20,7 +20,9 @@ final class BerryAudio {
     private func wav(_ notes: [(Double, Double)], volume: Double, arranged: Bool = false) -> Data {
         let rate = 22050
         let frames = notes.reduce(0) { $0 + Int($1.1 * Double(rate)) }
-        var bytes = Data()
+        // Reserve PCM capacity up front: appending millions of individual Data values
+        // made long tracks stall the main thread and caused avoidable reallocations.
+        var bytes = Data(capacity: 44 + frames * 2)
         func write32(_ n: UInt32) {
             var value = n.littleEndian
             withUnsafeBytes(of: &value) { bytes.append(contentsOf: $0) }
@@ -34,20 +36,26 @@ final class BerryAudio {
         write16(1); write16(1); write32(UInt32(rate)); write32(UInt32(rate * 2))
         write16(2); write16(16)
         bytes.append(contentsOf: Array("data".utf8)); write32(UInt32(frames * 2))
-        for (noteIndex, note) in notes.enumerated() {
-            let (pitch, duration) = note
+        var pcm = [Int16](repeating: 0, count: frames)
+        var offset = 0
+        for (pitch, duration) in notes {
             let count = Int(duration * Double(rate))
+            let step = 2 * Double.pi * pitch / Double(rate)
             for index in 0..<count {
                 let t = Double(index) / Double(rate)
+                let phase = step * Double(index)
                 let envelope = pow(max(0, 1 - Double(index) / Double(max(1, count))), 1.4)
-                let lead = sin(2 * Double.pi * pitch * t) + 0.18 * sin(4 * Double.pi * pitch * t)
-                let bass = sin(2 * Double.pi * pitch * 0.25 * t)
-                let harmony = sin(2 * Double.pi * pitch * 1.25 * t)
-                let pluck = sin(2 * Double.pi * pitch * 2 * t) * exp(-t * 7)
+                let lead = sin(phase) + 0.18 * sin(2 * phase)
+                let bass = sin(0.25 * phase)
+                let harmony = sin(1.25 * phase)
+                let pluck = sin(2 * phase) * exp(-t * 7)
                 let tone = arranged ? lead * 0.6 + bass * 0.2 + harmony * 0.12 + pluck * 0.18 : lead
-                let sample = Int16(max(-32767, min(32767, tone * envelope * volume * 23000)))
-                write16(UInt16(bitPattern: sample))
+                pcm[offset + index] = Int16(max(-32767, min(32767, tone * envelope * volume * 23000)))
             }
+            offset += count
+        }
+        pcm.withUnsafeBufferPointer { buffer in
+            bytes.append(contentsOf: UnsafeRawBufferPointer(buffer))
         }
         return bytes
     }
