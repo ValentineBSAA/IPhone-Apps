@@ -210,7 +210,10 @@ struct BerryGameView: View {
                             .gesture(
                                 DragGesture(minimumDistance: 5, coordinateSpace: .named("berry-screen"))
                                     .onChanged { value in updateDrag(slot: slot, finger: value.location, cell: cell) }
-                                    .onEnded { _ in finishDrag() }
+                                    .onEnded { value in
+                                        updateDrag(slot: slot, finger: value.location, cell: cell)
+                                        finishDrag()
+                                    }
                             )
                             .accessibilityLabel("Berry piece \(slot + 1)")
                         }
@@ -459,25 +462,32 @@ struct BerryGameView: View {
         }.disabled(!enabled && count == nil)
     }
 
+    // DragGesture locations and boardRect are both measured in berry-screen coordinates.
+    // Keep the block centered on the touch: the previous 42pt vertical shift
+    // rejected valid drops near the top and made the preview disagree with release.
     private func updateDrag(slot: Int, finger: CGPoint, cell: CGFloat) {
         guard canMakeMove else { drag = nil; return }
-        guard session.engine.tray.indices.contains(slot), let piece = session.engine.tray[slot] else { drag = nil; return }
+        guard session.engine.tray.indices.contains(slot),
+              let piece = session.engine.tray[slot] else { drag = nil; return }
         let step = cell + 3
-        let x = finger.x - boardRect.minX - CGFloat(piece.width) * step / 2
-        let y = finger.y - boardRect.minY - 42 - CGFloat(piece.height) * step / 2
-        let col = Int((x / step).rounded())
-        let row = Int((y / step).rounded())
-        let hovering = boardRect.insetBy(dx: -28, dy: -55).contains(finger)
+        let localX = finger.x - boardRect.minX
+        let localY = finger.y - boardRect.minY
+        let col = Int(floor((localX - CGFloat(piece.width) * step / 2) / step + 0.5))
+        let row = Int(floor((localY - CGFloat(piece.height) * step / 2) / step + 0.5))
+        let touchingBoard = boardRect.insetBy(dx: -12, dy: -12).contains(finger)
         drag = BerryDragState(slot: slot, piece: piece, row: row, col: col,
-                              allowed: hovering && session.engine.canPlace(piece, row: row, col: col))
+                              allowed: touchingBoard && session.engine.canPlace(piece, row: row, col: col))
     }
 
     private func finishDrag() {
         defer { drag = nil }
-        guard canMakeMove, let drag, drag.allowed else { refreshBlitzClock(); return }
+        guard canMakeMove, let drag else { refreshBlitzClock(); return }
+        guard drag.allowed else { warningFeedback(); return }
         if session.drop(slot: drag.slot, row: drag.row, col: drag.col) {
             selectedSlot = nil
             successFeedback()
+        } else {
+            warningFeedback()
         }
     }
 
@@ -541,7 +551,7 @@ struct BerryGameView: View {
     }
     private var helpSheet: some View {
         sheetBase("How to Play", icon: "🍰") {
-            Text("Drag a block onto the 8 × 8 board. Or tap a block, then tap an empty square. Complete full rows or columns to clear them.")
+            Text("Touch a piece and slide it onto the 8 × 8 board, then release. Or tap a piece and tap the board to place it. Complete full rows or columns to clear them.")
             Text("Clear multiple lines together for bonus points. Keep clearing to grow your combo. Clear the entire board for +300!")
             Text("Earn strawberries for line clears. Spend them in the basket on extra Undos and Shuffles. Keep playing until nothing fits.")
             primaryButton("Got It!") { showHelp = false }
@@ -646,7 +656,7 @@ struct BerryGameView: View {
             .padding(24)
             .frame(maxWidth: .infinity)
         }
-        .background(BerryStyle.cream.ignoresSafeArea())
+        .background(LinearGradient(colors: [BerryStyle.cream, Color(red: 1, green: 0.85, blue: 0.90), Color(red: 0.91, green: 0.97, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing).ignoresSafeArea())
         .presentationDetents([.medium, .large])
     }
 }
