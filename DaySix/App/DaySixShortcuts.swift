@@ -10,7 +10,9 @@ struct CheckDaySixRefreshIntent: AppIntent {
     static var openAppWhenRun: Bool = false
 
     func perform() async throws -> some IntentResult & ReturnsValue<Bool> {
-        let due = SelfProvisioning.isDue || DaySixStorage.read().contains { $0.isDue }
+        let expirations = [SelfProvisioning.effectiveExpiry].compactMap { $0 }
+            + DaySixStorage.read().map(\.expiresAt)
+        let due = RenewalPolicy.shouldRunAutomaticRenewal(expirations: expirations)
         return .result(value: due)
     }
 }
