@@ -19,6 +19,7 @@ struct BerryPlacement: Equatable {
     let clearedColumns: [Int]
     let earned: Int
     let streak: Int
+    let boardClear: Bool
     var clearedLines: Int { clearedRows.count + clearedColumns.count }
 }
 
@@ -29,6 +30,10 @@ struct BerryEngine: Codable {
     private(set) var score = 0
     private(set) var streak = 0
     private(set) var moves = 0
+    private(set) var totalLines = 0
+    private(set) var bestCombo = 0
+    private(set) var dryMoves = 0
+    private(set) var boardClears = 0
 
     init() { refill() }
 
@@ -52,6 +57,12 @@ struct BerryEngine: Codable {
         return true
     }
 
+    func hasPlacement(for piece: BerryPiece) -> Bool {
+        (0..<Self.side).contains { row in
+            (0..<Self.side).contains { col in canPlace(piece, row: row, col: col) }
+        }
+    }
+
     func hasMove() -> Bool {
         for piece in tray.compactMap({ $0 }) {
             for row in 0..<Self.side {
@@ -73,15 +84,21 @@ struct BerryEngine: Codable {
         let lines = rows.count + cols.count
         if lines > 0 {
             streak += 1
+            dryMoves = 0
+            totalLines += lines
+            bestCombo = max(bestCombo, streak)
             for r in rows { for c in 0..<Self.side { board[r][c] = nil } }
             for c in cols { for r in 0..<Self.side { board[r][c] = nil } }
         } else {
-            streak = 0
+            dryMoves += 1
+            if dryMoves >= 3 { streak = 0 }
         }
-        let earned = piece.points.count + lines * 12 + max(0, lines - 1) * 8 + (lines > 0 ? max(0, streak - 1) * 8 : 0)
+        let boardClear = lines > 0 && board.flatMap { $0 }.allSatisfy { $0 == nil }
+        if boardClear { boardClears += 1 }
+        let earned = piece.points.count + (lines > 0 ? 10 * lines * lines * min(streak, 8) : 0) + (boardClear ? 300 : 0)
         score += earned
         if tray.allSatisfy({ $0 == nil }) { refill() }
-        return BerryPlacement(clearedRows: rows, clearedColumns: cols, earned: earned, streak: streak)
+        return BerryPlacement(clearedRows: rows, clearedColumns: cols, earned: earned, streak: streak, boardClear: boardClear)
     }
 
     private mutating func refill() {
@@ -100,9 +117,17 @@ struct BerryEngine: Codable {
             [BerryPoint(0,0),BerryPoint(0,1),BerryPoint(0,2),BerryPoint(0,3),BerryPoint(0,4)],
             [BerryPoint(0,0),BerryPoint(1,0),BerryPoint(2,0),BerryPoint(3,0),BerryPoint(4,0)]
         ]
-        tray = (0..<3).map { _ in
-            let shape = catalog.randomElement() ?? [BerryPoint(row: 0, col: 0)]
-            return BerryPiece(points: shape, tint: Int.random(in: 0..<6))
+        // A newly dealt tray always contains at least one legal move. Prefer
+        // several playable choices instead of handing out impossible pieces.
+        let viable = catalog.filter { shape in
+            let piece = BerryPiece(points: shape, tint: 0)
+            return (0..<Self.side).contains { r in
+                (0..<Self.side).contains { c in canPlace(piece, row: r, col: c) }
+            }
+        }
+        tray = (0..<3).map { index in
+            let pool = !viable.isEmpty && (index < 2 || Bool.random()) ? viable : catalog
+            return BerryPiece(points: pool.randomElement() ?? [BerryPoint(0,0)], tint: Int.random(in: 0..<6))
         }
     }
 }

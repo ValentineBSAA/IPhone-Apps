@@ -28,7 +28,7 @@ final class BerryEngineTests: XCTestCase {
         let outcome = game.place(slot: 0, row: 0, col: 7)
         XCTAssertEqual(outcome?.clearedRows, [0])
         XCTAssertEqual(outcome?.clearedColumns, [])
-        XCTAssertEqual(game.score, 13)
+        XCTAssertEqual(game.score, 311)
         XCTAssertTrue(game.board[0].allSatisfy { $0 == nil })
     }
 
@@ -41,7 +41,7 @@ final class BerryEngineTests: XCTestCase {
         let outcome = game.place(slot: 0, row: 7, col: 7)
         XCTAssertEqual(outcome?.clearedRows, [7])
         XCTAssertEqual(outcome?.clearedColumns, [7])
-        XCTAssertEqual(game.score, 33)
+        XCTAssertEqual(game.score, 341)
         XCTAssertTrue(game.board.flatMap { $0 }.allSatisfy { $0 == nil })
     }
 

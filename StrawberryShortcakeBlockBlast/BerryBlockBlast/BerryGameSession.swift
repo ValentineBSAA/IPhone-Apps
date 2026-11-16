@@ -7,6 +7,7 @@ final class BerryGameSession: ObservableObject {
     @Published private(set) var gameOver = false
     @Published private(set) var lastMessage: String? = nil
     @Published private(set) var celebration = 0
+    @Published private(set) var lastEarned = 0
 
     private let saveKey = "berryblockblast.saved-game.v1"
     private let bestKey = "berryblockblast.best-score.v1"
@@ -32,10 +33,12 @@ final class BerryGameSession: ObservableObject {
             bestScore = engine.score
             UserDefaults.standard.set(bestScore, forKey: bestKey)
         }
+        lastEarned = outcome.earned
         if outcome.clearedLines > 0 {
             celebration += 1
-            lastMessage = outcome.clearedLines >= 3 ? "BERRY AMAZING! ✨" :
-                outcome.streak >= 2 ? "SWEET COMBO! 🍓" : "DELICIOUS! 🍰"
+            lastMessage = outcome.boardClear ? "PERFECT BOARD! +300 ✨" :
+                outcome.clearedLines >= 3 ? "BERRY AMAZING! ✨" :
+                outcome.streak >= 2 ? "SWEET COMBO ×\(outcome.streak)! 🍓" : "DELICIOUS! 🍰"
         } else {
             lastMessage = nil
         }
@@ -48,6 +51,7 @@ final class BerryGameSession: ObservableObject {
         engine = BerryEngine()
         gameOver = false
         lastMessage = nil
+        lastEarned = 0
         save()
     }
 
