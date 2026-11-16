@@ -232,8 +232,8 @@ struct BerryGameView: View {
         .onChange(of: session.engine.score) { _, newScore in
             guard mode == .story || mode == .daily || mode == .challenge else { return }
             guard newScore >= goal, !showVictory else { return }
-            if mode == .story { storyLevel += 1 }
-            if mode == .daily { dailyCompleted = Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)) }
+            if mode == .story { session.rewardStory(storyLevel); storyLevel += 1 }
+            if mode == .daily { session.rewardDaily(); dailyCompleted = Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)) }
             showVictory = true
         }
         .alert("Strawberry Spectacular! 🍰", isPresented: $showVictory) {
@@ -404,9 +404,9 @@ struct BerryGameView: View {
     }
     private var settingsSheet: some View {
         sheetBase("Berry Settings", icon: "⚙️") {
-            Toggle("Haptic feedback", isOn: $haptics)
-            Toggle("Sweet sound effects", isOn: $sound)
-            Toggle("Strawberry music box", isOn: $music)
+            Toggle("Haptic feedback", isOn: $haptics).tint(BerryStyle.strawberry)
+            Toggle("Sweet sound effects", isOn: $sound).tint(BerryStyle.strawberry)
+            Toggle("Strawberry music box", isOn: $music).tint(BerryStyle.strawberry)
                 .onChange(of: music) { _, enabled in BerryAudio.shared.setMusic(enabled) }
             Text("Your game is saved automatically. The display uses the full iPhone screen.").font(.footnote)
             Button("Start a New Garden", role: .destructive) { showSettings = false; confirmRestart = true }
@@ -427,6 +427,9 @@ struct BerryGameView: View {
                 Spacer()
                 Button("Buy") { session.buyShuffle() }.disabled(session.berries < 25).buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
             }
+            Text("🍓 Clear lines to earn berries: +3 per line, plus combo and perfect-garden bonuses. Strawberry School earns +25, Daily Harvest +30, and Story chapters earn rewards.").font(.subheadline)
+            Text("🎀 Recent Berry Harvests").font(.headline).foregroundStyle(BerryStyle.strawberry)
+            ForEach(session.rewardsLog.prefix(6), id: \.self) { reward in Text(reward).font(.caption) }
             Text("All strawberries are earned by playing. No purchases or ads.").font(.footnote)
             primaryButton("Back to Garden") { showShop = false }
         }
