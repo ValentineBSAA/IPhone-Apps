@@ -41,7 +41,7 @@ private struct DaySixSignerHomeView: View {
                             .foregroundStyle(.white)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        Text("Sign, install and refresh directly on your iPhone.")
+                        Text("Install and manage your apps in one place.")
                             .font(.subheadline)
                             .foregroundStyle(subdued)
                     }
@@ -56,7 +56,7 @@ private struct DaySixSignerHomeView: View {
                                 Text("Install an IPA")
                                     .font(.title3.weight(.bold))
                                     .foregroundStyle(.white)
-                                Text("Choose a file or paste a download link.")
+                                Text("Pick an .ipa file. Review the install before signing.")
                                     .font(.caption)
                                     .foregroundStyle(subdued)
                             }
@@ -64,7 +64,7 @@ private struct DaySixSignerHomeView: View {
                         Button(action: importIPA) {
                             HStack {
                                 Image(systemName: "plus.app.fill")
-                                Text("Choose IPA")
+                                Text("Choose IPA File")
                                 Spacer()
                                 Image(systemName: "arrow.right")
                             }
@@ -76,7 +76,7 @@ private struct DaySixSignerHomeView: View {
                                         in: RoundedRectangle(cornerRadius: 18))
                         }
                         .buttonStyle(.plain)
-                        .accessibilityHint("Opens this app's genuine IPA signing and installation flow")
+                        .accessibilityHint("Opens Files, then a signing and installation confirmation for the selected IPA")
                     }
                     .padding(20)
                     .background(surface, in: RoundedRectangle(cornerRadius: 24))
