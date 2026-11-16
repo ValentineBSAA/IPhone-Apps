@@ -52,6 +52,51 @@ def patch_build_identifiers(root: Path) -> None:
     replace_exact(root / "Makefile", "ORG_IDENTIFIER=com.SideStore",
                   f"ORG_IDENTIFIER={PREVIEW_ORG}")
 
+    # Backup/restore must send its completion to THIS app. Retaining
+    # sidestore:// here silently directs the response to official SideStore,
+    # or loses the callback on iOS with both apps installed.
+    replace_exact(
+        root / "SideStore" / "Core" / "Operations" / "PipelineOperations"
+        / "PerformBackupRestoreOperation.swift",
+        'URL(string: "sidestore://")',
+        f'URL(string: "{PREVIEW_URL_SCHEME}://")')
+
+    # SideBackup validates the URL scheme before returning control. Permit
+    # the lab's public callback as well as SideStore's *unique per-app*
+    # sidestore-<bundleID> URL generated for managed applications. Never
+    # accept bare sidestore://, which belongs to the official signer.
+    backup_app = root / "SideBackup" / "SideBackupApp.swift"
+    replace_exact(
+        backup_app,
+        'guard let scheme = responseURL.scheme, scheme.hasPrefix("sidestore") else {',
+        ('guard let scheme = responseURL.scheme, '
+         f'(scheme == "{PREVIEW_URL_SCHEME}" || scheme.hasPrefix("sidestore-")) else {{'))
+    replace_exact(
+        backup_app,
+        "does not start with 'sidestore'. Aborting launch.",
+        f"is not a supported '{PREVIEW_URL_SCHEME}' or per-app callback. Aborting launch.")
+
+    # The bundled backup app's own public sidebackup:// handler is a second
+    # global URL collision, even though its per-app URL scheme is distinct.
+    backup_plist = root / "SideBackup" / "Info.plist"
+    with backup_plist.open("rb") as stream:
+        backup_info = plistlib.load(stream)
+    backup_urltypes = backup_info.get("CFBundleURLTypes", [])
+    original_backup_count = 0
+    for url_type in backup_urltypes:
+        schemes = url_type.get("CFBundleURLSchemes", [])
+        if "sidebackup" in schemes:
+            original_backup_count += 1
+            url_type["CFBundleURLSchemes"] = [
+                "daysixbackup" if scheme == "sidebackup" else scheme
+                for scheme in schemes
+            ]
+    if original_backup_count != 1:
+        raise RuntimeError(
+            f"Expected one SideBackup public URL handler, got {original_backup_count}")
+    with backup_plist.open("wb") as stream:
+        plistlib.dump(backup_info, stream, sort_keys=False)
+
     # SideStore's ad-hoc ldid release targets embed static app identifiers
     # and static application group names even though the Info.plist uses Xcode
     # variables. Update BOTH main and widget values consistently.
@@ -117,9 +162,10 @@ def patch(root: Path, upstream_sha: str) -> Path:
         "upstream_repository": "https://github.com/SideStore/SideStore",
         "upstream_commit": upstream_sha.strip(),
         "upstream_license": "AGPL-3.0",
-        "modification": "Display label, preview marker, Xcode main/extension IDs, runtime self-identity constants, ad-hoc CI entitlements, and Makefile org identifier",
+        "modification": "Display label, Xcode and runtime identity, main/widget/backup app groups, backup callback routing, public URL handlers, and ad-hoc release entitlements",
         "expected_bundle_id": PREVIEW_BUNDLE_ID,
         "preview_primary_url_scheme": PREVIEW_URL_SCHEME,
+        "preview_backup_url_scheme": "daysixbackup",
         "ad_hoc_team_placeholder": PREVIEW_TEAM_ID,
         "install_warning": "Experimental signer may still conflict with SideStore URL schemes and installer callbacks",
         "dependency_licenses": "Check upstream source and nested package licenses",
