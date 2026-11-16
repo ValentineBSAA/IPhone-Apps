@@ -32,7 +32,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: SideStore/SideStore
-          ref: develop
+          # The previously compiled official SideStore source snapshot.
+          # Pin source so a future upstream commit cannot silently change
+          # the signing engine or invalidate our narrowly audited patches.
+          ref: 4f3d18d98c5fbee72c80f787ceb2e8e09ded60a6
           path: upstream-sidestore
           submodules: recursive
           persist-credentials: false
