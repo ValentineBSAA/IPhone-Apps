@@ -92,9 +92,24 @@ def patch(root: Path) -> None:
     # flow to our simplified home instead of opening an inert share sheet
     # or a non-attached navigation bar popover.
     apps_file = root / "AltStore" / "My Apps" / "MyAppsViewController.swift"
-    one(apps_file,
-        "    private func presentDocumentPicker()",
-        "    func presentDocumentPicker()")
+    # Upstream declares the picker and refresh actions in private
+    # extensions. Keep them private and add narrow, internal wrappers
+    # alongside them IN THE SAME SOURCE FILE so Swift's access rules hold.
+    with apps_file.open("a", encoding="utf-8") as file:
+        file.write("""
+#if !os(tvOS)
+extension MyAppsViewController {
+    func daySixOpenIPAFromFiles() {
+        self.presentDocumentPicker()
+    }
+
+    func daySixRefreshManagedApps() {
+        self.refreshAllApps(UIBarButtonItem(barButtonSystemItem: .refresh,
+                                           target: nil, action: nil))
+    }
+}
+#endif
+""")
 
     actions = """private extension TabBarController
 {
@@ -111,7 +126,7 @@ def patch(root: Path) -> None:
             else { return }
             navigation.popToRootViewController(animated: false)
             apps.loadViewIfNeeded()
-            apps.presentDocumentPicker()
+            apps.daySixOpenIPAFromFiles()
         }
     }
 
@@ -124,9 +139,7 @@ def patch(root: Path) -> None:
                   let navigation = self.viewControllers?[Tab.myApps.rawValue] as? UINavigationController,
                   let apps = navigation.viewControllers.first as? MyAppsViewController
             else { return }
-            apps.refreshAllApps(
-                UIBarButtonItem(barButtonSystemItem: .refresh,
-                                target: nil, action: nil))
+            apps.daySixRefreshManagedApps()
         }
     }
 }
