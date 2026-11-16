@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import plistlib
+import runpy
 from pathlib import Path
 
 DISPLAY_NAME = "DaySix Signer Lab"
@@ -133,6 +134,9 @@ def patch(root: Path, upstream_sha: str) -> Path:
         raise FileNotFoundError(f"Upstream SideStore Info.plist absent: {plist_path}")
 
     patch_build_identifiers(root)
+    # Keep the real signing and refresh engines. Only simplify their UI shell.
+    simple_nav = Path(__file__).with_name("simple_nav.py")
+    runpy.run_path(str(simple_nav))["patch"](root)
 
     with plist_path.open("rb") as source:
         info = plistlib.load(source)
@@ -178,7 +182,7 @@ def patch(root: Path, upstream_sha: str) -> Path:
         "upstream_repository": "https://github.com/SideStore/SideStore",
         "upstream_commit": upstream_sha.strip(),
         "upstream_license": "AGPL-3.0",
-        "modification": "Display label, Xcode and runtime identity, app groups, backup callback/URL routing, native alert text, and ad-hoc entitlements",
+        "modification": "Simplified native DaySix signer home wired to real IPA import and refresh; Xcode/runtime identities, backup callbacks, native alert branding and app-group isolation",
         "expected_bundle_id": PREVIEW_BUNDLE_ID,
         "preview_primary_url_scheme": PREVIEW_URL_SCHEME,
         "preview_backup_url_scheme": "daysixbackup",
