@@ -41,7 +41,7 @@ jobs:
 
       - name: Validate self-signature expiration parser
         run: |
-          swiftc DaySix/App/RenewalPolicy.swift DaySix/App/SelfProvisioning.swift DaySix/Tests/main.swift -o /tmp/daysix-provisioning-test
+          swiftc DaySix/App/RenewalPolicy.swift DaySix/App/SigningReadiness.swift DaySix/App/SelfProvisioning.swift DaySix/Tests/main.swift -o /tmp/daysix-provisioning-test
           /tmp/daysix-provisioning-test
 
       - name: Build unsigned iPhone application
