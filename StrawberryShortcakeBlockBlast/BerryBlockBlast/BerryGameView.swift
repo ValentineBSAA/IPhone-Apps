@@ -100,6 +100,17 @@ struct BerryGameView: View {
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.music") private var music = false
     @State private var sparkle = false
+    private let harvestCheers = [
+        "🍓 A berry sweet harvest!", "🍰 Piece of strawberry cake!",
+        "🌸 The garden is blooming!", "✨ Sweet as sunshine!",
+        "🧺 Basketful of brilliance!", "🍓 That's jam-tastic!",
+        "🌿 Fresh from the berry patch!", "🎀 What a lovely little harvest!",
+        "🍒 A delicious combo!", "🌷 The village is cheering!",
+        "🍓 Strawberries and sparkles!", "🍰 A slice of sweet success!"
+    ]
+    private var harvestCheer: String {
+        harvestCheers[max(0, session.celebration - 1) % harvestCheers.count]
+    }
     @AppStorage("berryblockblast.welcomed.v3") private var welcomed = false
 
     var body: some View {
@@ -126,7 +137,7 @@ struct BerryGameView: View {
                     .foregroundStyle(BerryStyle.chocolate)
                     .frame(height: 19)
                     BerryBoard(engine: session.engine, preview: drag, size: boardSize, selected: selectedSlot)
-                        .overlay { if sparkle { Text("🍓 ✨ BERRY BRILLIANT! ✨ 🍓").font(.headline).foregroundStyle(BerryStyle.strawberry).padding(12).background(.regularMaterial, in: Capsule()).transition(.scale.combined(with: .opacity)).allowsHitTesting(false) } }
+                        .overlay { if sparkle { Text(harvestCheer).font(.headline).foregroundStyle(BerryStyle.strawberry).padding(12).background(.regularMaterial, in: Capsule()).transition(.scale.combined(with: .opacity)).allowsHitTesting(false) } }
                         .padding(7)
                         .contentShape(Rectangle())
                         .onTapGesture { location in
