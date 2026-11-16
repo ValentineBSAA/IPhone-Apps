@@ -118,6 +118,7 @@ struct BerryGameView: View {
     @AppStorage("berryblockblast.strawberry-unlocked") private var strawberryUnlocked = false
     @AppStorage("berryblockblast.lifetime-lines") private var lifetimeLines = 0
     @State private var showUnlock = false
+    @State private var lastBlitzTimeBonus = 0
     @AppStorage("berryblockblast.previewStyle") private var previewStyle = "ghost"
     private let harvestCheers = [
         "🍓 A berry sweet harvest!", "🍰 Piece of strawberry cake!",
@@ -414,7 +415,18 @@ struct BerryGameView: View {
     private var toolBar: some View {
         HStack(spacing: 7) {
             toolButton("Undo", icon: "arrow.uturn.backward", count: session.undos, enabled: session.canUndo) {
-                if session.canUndo { session.undo(); selectedSlot = nil; drag = nil } else { showShop = true }
+                if session.canUndo {
+                    let revertedLines = max(0, session.engine.totalLines - (session.engine.totalLines - session.lastClearedLines))
+                    session.undo()
+                    lifetimeLines = max(0, lifetimeLines - revertedLines)
+                    if mode == .challenge && lastBlitzTimeBonus > 0 {
+                        blitzDeadline = blitzDeadline?.addingTimeInterval(TimeInterval(-lastBlitzTimeBonus))
+                        UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey)
+                        lastBlitzTimeBonus = 0
+                        refreshBlitzClock()
+                    }
+                    selectedSlot = nil; drag = nil
+                } else { showShop = true }
             }
             toolButton("Shuffle", icon: "shuffle", count: session.shuffles, enabled: session.shuffles > 0) {
                 if session.shuffles > 0 { session.shuffle(); selectedSlot = nil; drag = nil } else { showShop = true }
@@ -496,8 +508,9 @@ struct BerryGameView: View {
             showUnlock = true
             session.awardOnce("strawberry-unlock", amount: 15, reason: "Strawberry blocks unlocked")
         }
-        if mode == .challenge && session.lastClearedLines > 0 {
-            blitzDeadline = blitzDeadline?.addingTimeInterval(TimeInterval(min(15, session.lastClearedLines * 5)))
+        lastBlitzTimeBonus = mode == .challenge ? min(15, session.lastClearedLines * 5) : 0
+        if mode == .challenge && lastBlitzTimeBonus > 0 {
+            blitzDeadline = blitzDeadline?.addingTimeInterval(TimeInterval(lastBlitzTimeBonus))
             UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey)
             refreshBlitzClock()
         }
