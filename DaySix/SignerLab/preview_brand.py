@@ -33,6 +33,15 @@ def replace_exact(path: Path, old: str, new: str) -> None:
 
 def patch_build_identifiers(root: Path) -> None:
     """Patch actual Xcode build settings, not the unused Makefile suffix flag."""
+    # This runtime bundle helper controls what SideStore considers to be
+    # *itself*. Leaving the original ID here breaks self-app recognition,
+    # even when Xcode has built the main app under a new bundle identifier.
+    bundle_helper = root / "Shared" / "Extensions" / "Bundle+AltStore.swift"
+    for property_name in ["storeAppBundleIdentifier", "appbundleIdentifier"]:
+        replace_exact(
+            bundle_helper,
+            f'@objc dynamic static let {property_name} = "{UPSTREAM_BUNDLE_ID}"',
+            f'@objc dynamic static let {property_name} = "{PREVIEW_BUNDLE_ID}"')
     replace_exact(root / "Build.xcconfig",
                   "ORG_IDENTIFIER = com.SideStore",
                   f"ORG_IDENTIFIER = {PREVIEW_ORG}")
@@ -88,7 +97,7 @@ def patch(root: Path, upstream_sha: str) -> Path:
         "upstream_repository": "https://github.com/SideStore/SideStore",
         "upstream_commit": upstream_sha.strip(),
         "upstream_license": "AGPL-3.0",
-        "modification": "Display label, preview marker, Xcode main/extension bundle IDs, ad-hoc CI entitlements, and Makefile org identifier",
+        "modification": "Display label, preview marker, Xcode main/extension IDs, runtime self-identity constants, ad-hoc CI entitlements, and Makefile org identifier",
         "expected_bundle_id": PREVIEW_BUNDLE_ID,
         "ad_hoc_team_placeholder": PREVIEW_TEAM_ID,
         "install_warning": "Experimental signer may still conflict with SideStore URL schemes and installer callbacks",
