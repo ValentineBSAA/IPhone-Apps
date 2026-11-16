@@ -28,7 +28,7 @@ private struct DaySixSignerHomeView: View {
                            startRadius: 0, endRadius: 420)
                 .ignoresSafeArea()
 
-            ScrollView {
+            ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 22) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("DAY SIX")
@@ -126,7 +126,6 @@ private struct DaySixSignerHomeView: View {
                 .frame(maxWidth: 640, alignment: .leading)
                 .padding(.horizontal, 20)
             }
-            .scrollIndicators(.hidden)
         }
         .preferredColorScheme(.dark)
     }
