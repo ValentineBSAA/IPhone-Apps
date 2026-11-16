@@ -1,8 +1,11 @@
 import SwiftUI
+import UserNotifications
 
 struct DaySixOnboardingView: View {
     let completed: () -> Void
     @State private var step = 0
+    @State private var notificationsRequested = false
+    @State private var notificationsGranted = false
 
     private let pages: [(symbol: String, title: String, message: String)] = [
         ("checkmark.shield.fill", "Welcome to DaySix",
@@ -11,6 +14,8 @@ struct DaySixOnboardingView: View {
          "SideStore handles signing. To renew DaySix itself, install or reinstall DaySix through SideStore so it appears under SideStore's My Apps. DaySix never requests your Apple password."),
         ("clock.arrow.2.circlepath", "Build the automation",
          "In Shortcuts, create a daily Run Immediately automation. Check DaySix's due flag, then run SideStore's Refresh All Apps only when needed."),
+        ("bell.badge.fill", "Real iPhone notifications",
+         "Enable Apple notifications so DaySix can show native banners, Lock Screen alerts, sounds and renewal reminders. You'll also find DaySix under iPhone Settings → Apps → DaySix → Notifications."),
         ("square.stack.3d.up.fill", "Add and verify",
          "DaySix reads its own provisioning expiration when available. Add other apps manually, then open More → Reliability Lab to set up background alerts, a charger trigger and an independent emergency automation.")
     ]
@@ -57,6 +62,28 @@ struct DaySixOnboardingView: View {
                 if step == 2 {
                     Text("More → Copy Setup Steps has the full Shortcuts recipe.")
                         .font(.footnote).foregroundStyle(DS.amber)
+                }
+                if step == 3 {
+                    Button {
+                        Task {
+                            notificationsRequested = true
+                            notificationsGranted = (try? await UNUserNotificationCenter.current()
+                                .requestAuthorization(options: [.alert, .badge, .sound])) ?? false
+                        }
+                    } label: {
+                        Label(notificationsGranted ? "iPhone Notifications Enabled"
+                              : "Allow Native iPhone Notifications",
+                              systemImage: notificationsGranted ? "checkmark.circle.fill" : "bell.badge.fill")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(DS.mint)
+                    }
+                    .disabled(notificationsRequested)
+                    Text(notificationsRequested
+                         ? (notificationsGranted
+                            ? "Apple notification permission granted."
+                            : "You can change this later in iPhone Settings → Apps → DaySix → Notifications.")
+                         : "Tap to show Apple's genuine notification permission prompt.")
+                        .font(.footnote).foregroundStyle(DS.muted)
                 }
 
                 Spacer()
