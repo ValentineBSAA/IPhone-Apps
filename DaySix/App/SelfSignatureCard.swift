@@ -5,6 +5,8 @@ import UIKit
 /// app list, and it reads the renewed profile again after reinstall/refresh.
 struct SelfSignatureCard: View {
     @EnvironmentObject private var store: DaySixStore
+    @AppStorage(SigningReadiness.managedKey) private var enrolledInSigner = false
+    @AppStorage(SigningReadiness.refreshTestedKey) private var refreshTested = false
     @State private var editingExpiry = false
     @State private var editedExpiry = Date.now.addingTimeInterval(7 * 86_400)
     private var verifiedExpiry: Date? { SelfProvisioning.expiresAt }
@@ -38,6 +40,16 @@ struct SelfSignatureCard: View {
                         .background(
                             (isDue ? DS.amber : verifiedExpiry == nil ? DS.amber : DS.mint).opacity(0.11),
                             in: Capsule())
+                }
+
+                if !enrolledInSigner {
+                    Label("Self-renewal not configured: confirm DaySix appears in SideStore → My Apps.",
+                          systemImage: "exclamationmark.triangle.fill")
+                        .font(.footnote.bold()).foregroundStyle(DS.amber)
+                } else if !refreshTested {
+                    Label("SideStore enrollment confirmed by you. Test a manual refresh in SideStore before relying on automation.",
+                          systemImage: "checkmark.shield")
+                        .font(.footnote).foregroundStyle(DS.amber)
                 }
 
                 if let expiry {
