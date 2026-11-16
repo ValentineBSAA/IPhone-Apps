@@ -78,14 +78,16 @@ struct BerryGameView: View {
     @AppStorage("berryblockblast.story.level") private var storyLevel = 1
     @AppStorage("berryblockblast.daily.completed") private var dailyCompleted = ""
     @State private var showVictory = false
-    private var goal: Int { mode == .story ? 100 + storyLevel * 80 : mode == .challenge ? 600 : 300 }
+    @State private var blitzRemaining = 120
+    @State private var blitzRunning = false
+    private var goal: Int { mode == .story ? 100 + storyLevel * 80 : mode == .challenge ? 250 : 120 }
     private var objective: String {
         switch mode {
         case .endless: "Fill a row or column. Grow your berry garden!"
         case .story: "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
         case .daily: "DAILY HARVEST • Gather \(goal) points!"
         case .cozy: "COZY COTTAGE • Enjoy the garden at your pace!"
-        case .challenge: "BERRY BLITZ • Reach \(goal) points!"
+        case .challenge: "⚡ BERRY BLITZ • \(blitzRemaining)s left • Reach \(goal)!"
         }
     }
 
@@ -232,10 +234,16 @@ struct BerryGameView: View {
         .sheet(isPresented: $showShop) { shopSheet }
         .sheet(isPresented: $showStats) { statsSheet }
         .sheet(isPresented: $showWelcome) { welcomeSheet }
+        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
+            guard mode == .challenge, blitzRunning, !showVictory, !showGameOver else { return }
+            blitzRemaining = max(0, blitzRemaining - 1)
+            if blitzRemaining == 0 { blitzRunning = false; showGameOver = true }
+        }
         .onChange(of: session.gameOver) { _, ended in showGameOver = ended && !showVictory }
         .onAppear {
             BerryAudio.shared.setMusic(music)
             session.selectMode(mode)
+            blitzRunning = mode == .challenge
             showGameOver = session.gameOver
             if !welcomed { showWelcome = true }
         }
@@ -261,7 +269,7 @@ struct BerryGameView: View {
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
                         Button(showVictory ? "🍓 Another Sweet Adventure" : "🍓 Plant a Fresh Garden") {
                             showVictory = false; showGameOver = false; confirmRestart = false
-                            session.newGame(); selectedSlot = nil; drag = nil
+                            session.newGame(); selectedSlot = nil; drag = nil; blitzRemaining = 120; blitzRunning = mode == .challenge
                         }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
                         Button("🏡 Return to Strawberry Village") { onExit() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
@@ -414,6 +422,7 @@ struct BerryGameView: View {
             showUnlock = true
             session.awardOnce("strawberry-unlock", amount: 15, reason: "Strawberry blocks unlocked")
         }
+        if mode == .challenge && session.lastClearedLines > 0 { blitzRemaining += min(15, session.lastClearedLines * 5) }
         if haptics { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
         if sound { BerryAudio.shared.play(session.lastEarned > 10 ? .clear : .place) }
         if session.lastEarned > 10 {
