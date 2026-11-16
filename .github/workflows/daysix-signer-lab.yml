@@ -39,6 +39,7 @@ jobs:
           cd upstream-sidestore
           git rev-parse HEAD | tee ../daysix-upstream-sha.txt
           test -e LICENSE || test -e LICENSE.md || test -e COPYING
+          test -e CodeSigning.xcconfig || cp CodeSigning.xcconfig.sample CodeSigning.xcconfig
           xcodebuild -version
           git submodule status --recursive | tee ../daysix-upstream-submodules.txt
 
