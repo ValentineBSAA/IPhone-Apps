@@ -124,14 +124,27 @@ final class BerryEngineTests: XCTestCase {
         XCTAssertEqual(restored.tray.count, 3)
     }
 
-    func testNightmareClearsTwelveCellRow() throws {
-        var game = BerryEngine(side: 12, hard: true)
-        let piece = try XCTUnwrap(game.tray[0])
-        XCTAssertTrue(game.canPlace(piece, row: 0, col: 0))
-        XCTAssertNotNil(game.place(slot: 0, row: 0, col: 0))
-        XCTAssertEqual(game.board.count, 12)
-        XCTAssertEqual(game.moves, 1)
-        XCTAssertEqual(game.score, piece.points.count)
+    func testNightmareClearsTwelveCellRow() {
+        var board = Array(repeating: Array<Int?>(repeating: nil, count: 12), count: 12)
+        for col in 0..<11 { board[0][col] = 1 }
+        let piece = BerryPiece(points: [BerryPoint(row: 0, col: 0)], tint: 2)
+        var game = BerryEngine(board: board, tray: [piece, nil, nil], hard: true)
+        let result = game.place(slot: 0, row: 0, col: 11)
+        XCTAssertEqual(result?.clearedRows, [0])
+        XCTAssertEqual(result?.clearedColumns, [])
+        XCTAssertTrue(game.board[0].allSatisfy { $0 == nil })
+        XCTAssertEqual(game.side, 12)
+        XCTAssertEqual(game.score, 311)
+    }
+
+    func testNightmareClearsTwelveCellColumn() {
+        var board = Array(repeating: Array<Int?>(repeating: nil, count: 12), count: 12)
+        for row in 0..<11 { board[row][11] = 1 }
+        let piece = BerryPiece(points: [BerryPoint(row: 0, col: 0)], tint: 3)
+        var game = BerryEngine(board: board, tray: [piece, nil, nil], hard: true)
+        let result = game.place(slot: 0, row: 11, col: 11)
+        XCTAssertEqual(result?.clearedColumns, [11])
+        XCTAssertTrue((0..<12).allSatisfy { game.board[$0][11] == nil })
     }
 
     private func emptyBoard() -> [[Int?]] {
