@@ -10,6 +10,7 @@ enum PulseStyle {
     static let teal = Color(red: 0.31, green: 0.91, blue: 0.83)
     static let blue = Color(red: 0.24, green: 0.64, blue: 0.94)
     static let muted = Color(red: 0.61, green: 0.68, blue: 0.77)
+    static let violet = Color(red: 0.62, green: 0.42, blue: 0.98)
     static let stroke = Color.white.opacity(0.075)
     static let accentGradient = LinearGradient(
         colors: [teal, blue], startPoint: .topLeading, endPoint: .bottomTrailing
@@ -34,10 +35,18 @@ struct PulseDashboard: View {
         NavigationStack {
             ZStack {
                 PulseStyle.bg.ignoresSafeArea()
+                Circle()
+                    .fill(PulseStyle.violet.opacity(0.12))
+                    .frame(width: 340, height: 340)
+                    .blur(radius: 90)
+                    .offset(x: 190, y: -340)
+                    .allowsHitTesting(false)
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 22) {
                         topBar
+                        editionStamp
                         hero
+                        releaseFootprint
                         HStack(spacing: 12) {
                             compactMetric("TOTAL STARS", totalStars.formatted(), "star.fill")
                             compactMetric("OPEN ISSUES", totalIssues.formatted(), "exclamationmark.circle")
@@ -139,6 +148,91 @@ struct PulseDashboard: View {
         .tint(PulseStyle.teal)
     }
 
+
+    // Version comes from the real installed app bundle, never a hardcoded sample.
+    private var editionStamp: some View {
+        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        let b = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        return HStack(spacing: 12) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 21, weight: .bold))
+                .foregroundStyle(PulseStyle.teal)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("POCKET PREMIUM EDITION")
+                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .tracking(1.45)
+                    .foregroundStyle(.white)
+                Text("VERSION \(v)  •  BUILD \(b)")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .foregroundStyle(PulseStyle.teal)
+            }
+            Spacer(minLength: 5)
+            Image(systemName: "bolt.horizontal.fill")
+                .foregroundStyle(PulseStyle.violet)
+        }
+        .padding(.horizontal, 17)
+        .padding(.vertical, 15)
+        .background(
+            LinearGradient(colors: [
+                PulseStyle.violet.opacity(0.28), PulseStyle.teal.opacity(0.13)
+            ], startPoint: .leading, endPoint: .trailing),
+            in: RoundedRectangle(cornerRadius: 18)
+        )
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(PulseStyle.violet.opacity(0.62), lineWidth: 1.2))
+        .accessibilityElement(children: .combine)
+    }
+
+    // Uses real loaded release totals. Bars compare repositories, not imaginary historical trends.
+    private var releaseFootprint: some View {
+        let sorted = store.loaded.values.sorted { $0.totalDownloads > $1.totalDownloads }
+        let maximum = max(1, sorted.first?.totalDownloads ?? 1)
+        return VStack(alignment: .leading, spacing: 15) {
+            HStack {
+                Image(systemName: "chart.bar.xaxis").foregroundStyle(PulseStyle.teal)
+                Text("RELEASE FOOTPRINT")
+                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .tracking(1.4)
+                Spacer()
+                Text("DOWNLOAD SHARE")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(0.7)
+                    .foregroundStyle(PulseStyle.muted)
+            }
+            if sorted.isEmpty {
+                Text(store.busy ? "Loading release data..." : "Refresh to load release data")
+                    .font(.caption)
+                    .foregroundStyle(PulseStyle.muted)
+            } else {
+                ForEach(Array(sorted.prefix(4))) { item in
+                    VStack(alignment: .leading, spacing: 7) {
+                        HStack(spacing: 8) {
+                            Text(item.identity.name)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            Spacer()
+                            Text(item.totalDownloads.formatted())
+                                .foregroundStyle(PulseStyle.teal)
+                                .monospacedDigit()
+                        }
+                        .font(.system(size: 12, weight: .semibold))
+                        GeometryReader { geometry in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(Color.white.opacity(0.09))
+                                Capsule()
+                                    .fill(PulseStyle.accentGradient)
+                                    .frame(width: max(3, geometry.size.width * CGFloat(item.totalDownloads) / CGFloat(maximum)))
+                            }
+                        }
+                        .frame(height: 8)
+                    }
+                }
+            }
+        }
+        .padding(19)
+        .background(PulseStyle.surface, in: RoundedRectangle(cornerRadius: 22))
+        .overlay(RoundedRectangle(cornerRadius: 22).stroke(PulseStyle.violet.opacity(0.30)))
+    }
+
     private var topBar: some View {
         HStack(spacing: 12) {
             ZStack {
@@ -157,7 +251,7 @@ struct PulseDashboard: View {
                     .font(.system(size: 15, weight: .heavy, design: .rounded))
                     .tracking(2.8)
                     .foregroundStyle(.white)
-                Text("iPhone command center")
+                Text("NATIVE iPHONE COMMAND CENTER")
                     .font(.caption)
                     .foregroundStyle(PulseStyle.muted)
             }
@@ -199,7 +293,7 @@ struct PulseDashboard: View {
                     .foregroundStyle(PulseStyle.teal.opacity(0.7))
             }
             VStack(alignment: .leading, spacing: 7) {
-                Text("Your projects.\nOne clear pulse.")
+                Text("Your GitHub,\nin motion.")
                     .font(.system(size: 30, weight: .heavy, design: .rounded))
                     .tracking(-0.65)
                     .foregroundStyle(.white)

@@ -46,8 +46,8 @@ jobs:
           with open(sys.argv[1], 'rb') as fh:
               info = plistlib.load(fh)
           assert info.get('CFBundleIdentifier') == 'com.valentinebsaa.repopulse', info
-          assert info.get('CFBundleShortVersionString') == '1.1.0', info
-          assert info.get('CFBundleVersion') == '2', info
+          assert info.get('CFBundleShortVersionString') == '1.2.0', info
+          assert info.get('CFBundleVersion') == '3', info
           assert info.get('CFBundleIcons', {}).get('CFBundlePrimaryIcon', {}).get('CFBundleIconName') == 'AppIcon', info
           print('Verified iPhone bundle ID, version, build number and AppIcon')
           PY
@@ -55,12 +55,12 @@ jobs:
           mkdir -p output/Payload
           cp -R "$app" output/Payload/
           cd output
-          zip -qry RepoPulse-unsigned.ipa Payload
-          test -s RepoPulse-unsigned.ipa
+          zip -qry RepoPulse-POCKET-PREMIUM-v1.2.0-BUILD3-UNSIGNED.ipa Payload
+          test -s RepoPulse-POCKET-PREMIUM-v1.2.0-BUILD3-UNSIGNED.ipa
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v4
         with:
-          name: RepoPulse-unsigned-ipa
-          path: output/RepoPulse-unsigned.ipa
+          name: RepoPulse-POCKET-PREMIUM-v1.2.0-BUILD3
+          path: output/RepoPulse-POCKET-PREMIUM-v1.2.0-BUILD3-UNSIGNED.ipa
           if-no-files-found: error
           retention-days: 14
