@@ -142,7 +142,16 @@ final class DaySixStore: ObservableObject {
 
     func syncNotifications() {
         let center = UNUserNotificationCenter.current()
-        center.getPendingNotificationRequests { pending in
+        center.getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized
+                    || settings.authorizationStatus == .provisional
+                    || settings.authorizationStatus == .ephemeral else {
+                // Apple's notification permission is authoritative. If the
+                // user later enables notifications in iPhone Settings,
+                // DaySix reschedules on its next foreground transition.
+                return
+            }
+            center.getPendingNotificationRequests { pending in
             let ours = pending.map(\.identifier).filter { $0.hasPrefix("daysix.") }
             guard UserDefaults.standard.object(forKey: DaySixStorage.remindersKey) == nil
                     || UserDefaults.standard.bool(forKey: DaySixStorage.remindersKey) else {
@@ -157,15 +166,23 @@ final class DaySixStore: ObservableObject {
             var desiredIDs = Set<String>()
             if let selfExpiry = SelfProvisioning.effectiveExpiry,
                selfExpiry > Date.now {
-                desiredIDs.formUnion([
-                    "daysix.self.preflight",
-                    "daysix.self.due",
-                    "daysix.self.critical"
-                ])
+                if DaySixNotificationPreferences.preflight {
+                    desiredIDs.insert("daysix.self.preflight")
+                }
+                if DaySixNotificationPreferences.due {
+                    desiredIDs.insert("daysix.self.due")
+                }
+                if DaySixNotificationPreferences.critical {
+                    desiredIDs.insert("daysix.self.critical")
+                }
             }
             for app in activeApps where app.expiresAt > Date.now {
-                desiredIDs.insert("daysix.\(app.id.uuidString).preflight")
-                desiredIDs.insert("daysix.\(app.id.uuidString).due")
+                if DaySixNotificationPreferences.preflight {
+                    desiredIDs.insert("daysix.\(app.id.uuidString).preflight")
+                }
+                if DaySixNotificationPreferences.due {
+                    desiredIDs.insert("daysix.\(app.id.uuidString).due")
+                }
             }
             let staleIDs = ours.filter { !desiredIDs.contains($0) }
             if !staleIDs.isEmpty {
@@ -198,7 +215,8 @@ final class DaySixStore: ObservableObject {
                 // setting) gives users a chance to repair a broken signer
                 // before the requested day-six automatic refresh.
                 let preflightDate = RenewalPolicy.preflightAt(expiration: expires)
-                if preflightDate > Date.now.addingTimeInterval(120) {
+                if DaySixNotificationPreferences.preflight
+                   && preflightDate > Date.now.addingTimeInterval(120) {
                     let preflight = UNMutableNotificationContent()
                     preflight.title = "DaySix • Signing check coming up"
                     preflight.body = "Check SideStore pairing, Apple sign-in and LocalDevVPN before DaySix's renewal window."
@@ -217,7 +235,8 @@ final class DaySixStore: ObservableObject {
                 renewalNotice.sound = .default
                 // If the threshold passed while the phone was asleep, issue
                 // one near-term reminder and a final six-hour warning.
-                if let trigger = dueTrigger(
+                if DaySixNotificationPreferences.due,
+                   let trigger = dueTrigger(
                     for: expires, at: dueDate,
                     key: "daysix.alert.self.dueExpiry") {
                     center.add(UNNotificationRequest(
@@ -225,7 +244,8 @@ final class DaySixStore: ObservableObject {
                         content: renewalNotice, trigger: trigger))
                 }
                 let criticalDate = expires.addingTimeInterval(-6 * 60 * 60)
-                if criticalDate > Date.now.addingTimeInterval(120) {
+                if DaySixNotificationPreferences.critical
+                   && criticalDate > Date.now.addingTimeInterval(120) {
                     let warning = UNMutableNotificationContent()
                     warning.title = "DaySix • Signature expires soon"
                     warning.body = "Less than six hours remain. Verify a successful refresh in SideStore."
@@ -242,7 +262,8 @@ final class DaySixStore: ObservableObject {
                 guard app.expiresAt > Date.now else { continue }
                 let dueDate = max(Date.now.addingTimeInterval(90), app.refreshDueAt)
                 let preflightDate = RenewalPolicy.preflightAt(expiration: app.expiresAt)
-                if preflightDate > Date.now.addingTimeInterval(120) {
+                if DaySixNotificationPreferences.preflight
+                   && preflightDate > Date.now.addingTimeInterval(120) {
                     let preflight = UNMutableNotificationContent()
                     preflight.title = "DaySix • Signing health check"
                     preflight.body = "\(app.name) needs renewal soon. Check that SideStore and LocalDevVPN still work."
@@ -259,13 +280,15 @@ final class DaySixStore: ObservableObject {
                 content.title = "DaySix • Refresh needed"
                 content.body = "\(app.name) is due for renewal. Open SideStore and verify it succeeds before expiration."
                 content.sound = .default
-                if let trigger = dueTrigger(
+                if DaySixNotificationPreferences.due,
+                   let trigger = dueTrigger(
                     for: app.expiresAt, at: dueDate,
                     key: "daysix.alert.\(app.id.uuidString).dueExpiry") {
                     center.add(UNNotificationRequest(
                         identifier: "daysix.\(app.id.uuidString).due",
                         content: content, trigger: trigger))
                 }
+            }
             }
         }
     }
