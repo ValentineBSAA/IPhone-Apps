@@ -42,6 +42,7 @@ final class BerryGameSession: ObservableObject {
     private let bestKey = "berryblockblast.best-score.v1"
     private let inventoryKey = "berryblockblast.inventory.v3"
 
+    private struct Inventory: Codable { var berries: Int; var undos: Int; var shuffles: Int; var totalEarnedBerries: Int }
     private struct Save: Codable {
         var engine: BerryEngine
         var berries: Int
@@ -67,6 +68,9 @@ final class BerryGameSession: ObservableObject {
             engine = restored
         } else { engine = BerryEngine() }
         gameOver = !engine.hasMove()
+        if let inventory = UserDefaults.standard.data(forKey: inventoryKey), let saved = try? JSONDecoder().decode(Inventory.self, from: inventory) {
+            berries = saved.berries; undos = saved.undos; shuffles = saved.shuffles; totalEarnedBerries = saved.totalEarnedBerries
+        }
     }
 
     @discardableResult
@@ -164,6 +168,8 @@ final class BerryGameSession: ObservableObject {
     }
 
     private func save() {
+        let inventory = Inventory(berries: berries, undos: undos, shuffles: shuffles, totalEarnedBerries: totalEarnedBerries)
+        if let data = try? JSONEncoder().encode(inventory) { UserDefaults.standard.set(data, forKey: inventoryKey) }
         let snapshot = Save(engine: engine, berries: berries, undos: undos, shuffles: shuffles, totalEarnedBerries: totalEarnedBerries)
         if activeMode == .endless {
             if let data = try? JSONEncoder().encode(snapshot) { UserDefaults.standard.set(data, forKey: saveKey) }
