@@ -74,12 +74,14 @@ struct BerryGameView: View {
     @AppStorage("berryblockblast.story.level") private var storyLevel = 1
     @AppStorage("berryblockblast.daily.completed") private var dailyCompleted = ""
     @State private var showVictory = false
-    private var goal: Int { mode == .story ? 100 + storyLevel * 80 : 300 }
+    private var goal: Int { mode == .story ? 100 + storyLevel * 80 : mode == .challenge ? 600 : 300 }
     private var objective: String {
         switch mode {
         case .endless: "Fill a row or column. Grow your berry garden!"
-        case .story: "CHAPTER \\(storyLevel) • Reach \\(goal) points to bloom!"
-        case .daily: "DAILY HARVEST • Gather \\(goal) points!"
+        case .story: "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
+        case .daily: "DAILY HARVEST • Gather \(goal) points!"
+        case .cozy: "COZY COTTAGE • Enjoy the garden at your pace!"
+        case .challenge: "BERRY BLITZ • Reach \(goal) points!"
         }
     }
 
@@ -209,7 +211,7 @@ struct BerryGameView: View {
             Button("Start New Game", role: .destructive) { session.newGame(); selectedSlot = nil; drag = nil }
             Button("Keep Playing", role: .cancel) { }
         } message: { Text("Your best score and earned berries stay saved.") }
-        .onChange(of: session.gameOver) { _, ended in showGameOver = ended }
+        .onChange(of: session.gameOver) { _, ended in showGameOver = ended && !showVictory }
         .onAppear {
             BerryAudio.shared.setMusic(music)
             session.selectMode(mode)
@@ -217,7 +219,8 @@ struct BerryGameView: View {
             if !welcomed { showWelcome = true }
         }
         .onChange(of: session.engine.score) { _, newScore in
-            guard mode != .endless, newScore >= goal, !showVictory else { return }
+            guard mode == .story || mode == .daily || mode == .challenge else { return }
+            guard newScore >= goal, !showVictory else { return }
             if mode == .story { storyLevel += 1 }
             if mode == .daily { dailyCompleted = Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)) }
             showVictory = true
