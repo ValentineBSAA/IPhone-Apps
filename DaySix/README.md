@@ -31,6 +31,8 @@ These settings are functional: the renewal window changes the actual stored expi
 3. DaySix automatically inspects **its own** installed signature. Add **other apps** using their last **verified** signing date from SideStore. When DaySix cannot read a profile, use **My Apps → DaySix → Enter SideStore expiration** to set its actual expiration date as an explicitly manual fallback.
 4. In **Shortcuts**, create a shortcut with the exact name **DaySix Refresh**. Add these actions in order:
    - **Set VPN: Connect LocalDevVPN**
+   - **Open URLs: `sidestore://`** (opens SideStore, which may avoid iOS 27 background authentication failures)
+   - **Wait 5 seconds** for SideStore to initialize
    - **DaySix: Record Refresh Attempt** (records a requested attempt, even if SideStore later fails)
    - **SideStore: Refresh All Apps** (the signing operation)
 5. Next create a **Time of Day → Daily → Run Immediately** automation. Add:
@@ -69,6 +71,6 @@ DaySix does **not** collect Apple IDs, passwords, anisette tokens, pairing recor
 **Planned next stage**: an audited, in-app signing/refresh engine using an appropriately licensed signing core. This version **uses SideStore for signing including DaySix itself**; it does not independently sign, install, or refresh apps. No guarantee of exact background execution.
 
 ### Build/compatibility testing
-The macOS GitHub Actions workflow compiles the RenewalPolicy and SelfProvisioning models, runs Foundation-only smoke tests for profile parsing, manual fallback and configurable day-six scheduling, then builds an unsigned IPA. The workflow passing **does not** prove on-device SideStore integration. Current iOS 27 reports include failed SideStore Shortcuts refreshes even when manually refreshing works. If the shortcut fails, open SideStore manually and refresh before expiration.
+The macOS GitHub Actions workflow compiles the RenewalPolicy and SelfProvisioning models, runs Foundation-only smoke tests for profile parsing, manual fallback and configurable day-six scheduling, then builds an unsigned IPA. The workflow passing **does not** prove on-device SideStore integration. Current iOS 27 reports include failed SideStore Shortcuts refreshes when its process is not alive even though manual refreshing works. Opening `sidestore://` before the refresh can improve some setups, but often requires the phone to be unlocked; it is NOT a guaranteed locked-screen daemon. If the shortcut fails, open SideStore manually and refresh before expiration.
 
 **iPhone test checklist**: install via SideStore; verify DaySix appears in SideStore's managed list; check DaySix's embedded expiry; run the named shortcut; verify a new embedded expiry and audit entry; leave iPhone locked overnight; observe the day-six reminder and daily automation without assuming success.
