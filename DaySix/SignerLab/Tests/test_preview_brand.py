@@ -134,6 +134,22 @@ private extension TabBarController
 }
 """, encoding="utf-8")
 
+        apps_source = self.root / "AltStore" / "My Apps" / "MyAppsViewController.swift"
+        apps_source.parent.mkdir(parents=True, exist_ok=True)
+        apps_source.write_text(
+            "    private func presentDocumentPicker()\n"
+            "    {\n"
+            "        let documentPickerViewController = UIDocumentPickerViewController()\n"
+            "        documentPickerViewController.delegate = self\n"
+            "        self.present(documentPickerViewController, animated: true, completion: nil)\n"
+            "    }\n"
+            "    func documentPickerDidPick() {\n"
+            "        InstallAppDialog.present(ipaURL: fileURL, from: self) {\n"
+            "            AppManager.shared.install(.url(fileURL), presentingViewController: self)\n"
+            "        }\n"
+            "    }\n",
+            encoding="utf-8")
+
         self.provenance = preview.patch(self.root, "abc123def")
 
     def make_ipa(self, bundle_id, label=None, preview_marker=True,
@@ -187,7 +203,15 @@ private extension TabBarController
         tab_source = (self.root / "AltStore" / "TabBarController.swift").read_text()
         self.assertIn("private struct DaySixSignerHomeView: View", tab_source)
         self.assertIn("func showRealInstaller()", tab_source)
-        self.assertIn("apps.sideloadApp(button)", tab_source)
+        self.assertIn("apps.presentDocumentPicker()", tab_source)
+        self.assertNotIn("apps.sideloadApp(button)", tab_source)
+        picker_source = (
+            self.root / "AltStore" / "My Apps" / "MyAppsViewController.swift"
+        ).read_text()
+        self.assertIn("    func presentDocumentPicker()", picker_source)
+        self.assertNotIn("    private func presentDocumentPicker()", picker_source)
+        self.assertIn("InstallAppDialog.present(ipaURL: fileURL", picker_source)
+        self.assertIn("AppManager.shared.install", picker_source)
         self.assertIn("func renewRealApps()", tab_source)
         self.assertIn("apps.refreshAllApps(", tab_source)
         self.assertIn("self.viewControllers = [home, apps, settings]", tab_source)
