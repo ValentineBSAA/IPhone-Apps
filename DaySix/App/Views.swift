@@ -355,115 +355,46 @@ struct AddTrackedAppView: View {
 }
 
 struct IPAInstallView: View {
-    @State private var urlInput = ""
-    @State private var showImporter = false
-    @State private var importedFile: URL?
-    @State private var error: String?
+    // This monitor-only build has no signing engine. The previous Files
+    // button opened a share sheet and falsely suggested installation.
+    // Keep this screen truthful until the integrated signer replaces it.
     var body: some View {
         NavigationStack {
             DaySixBackground {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
-                        SectionHeading(title: "Install an IPA",
-                                       subtitle: "A clean handoff to SideStore's on-device signer.")
+                        SectionHeading(
+                            title: "Install an IPA",
+                            subtitle: "The built-in signing engine is being integrated.")
+
                         GlassCard {
-                            VStack(alignment: .leading, spacing: 14) {
-                                Label("From a download URL", systemImage: "link")
-                                    .font(.headline).foregroundStyle(DS.mint)
-                                TextField("https://example.com/app.ipa", text: $urlInput)
-                                    .keyboardType(.URL).textInputAutocapitalization(.never)
-                                    .autocorrectionDisabled()
-                                    .padding(13)
-                                    .background(DS.ink, in: RoundedRectangle(cornerRadius: 12))
-                                GlowButton(title: "Open Installer", symbol: "arrow.down.circle.fill") {
-                                    let input = urlInput.trimmingCharacters(in: .whitespacesAndNewlines)
-                                    guard let remote = URL(string: input),
-                                          remote.scheme?.lowercased() == "https",
-                                          remote.host != nil else {
-                                        error = "Enter a valid HTTPS IPA download URL."
-                                        return
-                                    }
-                                    var components = URLComponents()
-                                    components.scheme = "sidestore"
-                                    components.host = "install"
-                                    components.queryItems = [URLQueryItem(name: "url", value: remote.absoluteString)]
-                                    guard let destination = components.url else {
-                                        error = "Could not form the SideStore install link."
-                                        return
-                                    }
-                                    UIApplication.shared.open(destination) { opened in
-                                        if !opened {
-                                            DispatchQueue.main.async {
-                                                error = "SideStore must be installed and configured first."
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        GlassCard {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Label("From Files", systemImage: "folder.fill")
-                                    .font(.headline).foregroundStyle(DS.violet)
-                                Text("Import a local .ipa, then use the share sheet to send it to a compatible signing app.")
-                                    .font(.subheadline).foregroundStyle(DS.muted)
-                                Button {
-                                    showImporter = true
-                                } label: {
-                                    Label("Choose an IPA File", systemImage: "doc.badge.plus")
-                                        .font(.subheadline.bold())
-                                        .frame(maxWidth: .infinity).padding(14)
-                                        .background(DS.cardBright, in: RoundedRectangle(cornerRadius: 14))
-                                }
-                                .buttonStyle(.plain)
-                                if let file = importedFile {
-                                    HStack {
-                                        Text(file.lastPathComponent).lineLimit(1).font(.caption)
-                                        Spacer()
-                                        ShareLink(item: file) {
-                                            Label("Share to Signer", systemImage: "square.and.arrow.up")
-                                                .font(.subheadline.bold()).foregroundStyle(DS.mint)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        GlassCard {
-                            VStack(alignment: .leading, spacing: 7) {
-                                Label("What happens next?", systemImage: "checkmark.shield.fill")
-                                    .foregroundStyle(DS.mint).font(.headline)
-                                Text("SideStore handles account authentication, signing, pairing and installation. DaySix never asks for your Apple password or certificate.")
-                                    .font(.footnote).foregroundStyle(DS.muted)
-                                Text("A remote IPA must come from a source you trust.")
-                                    .font(.footnote.bold()).foregroundStyle(DS.amber)
+                            VStack(alignment: .leading, spacing: 13) {
+                                Label("Installer not active in this build",
+                                      systemImage: "wrench.and.screwdriver.fill")
+                                    .font(.headline)
+                                    .foregroundStyle(DS.amber)
+                                Text("This version of DaySix monitors expiration dates but cannot sign or install an IPA.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.white)
+                                Text("The old Choose IPA File button only shared the file. It didn't start installation, so that misleading button has been removed.")
+                                    .font(.footnote)
+                                    .foregroundStyle(DS.muted)
+                                Divider().overlay(.white.opacity(0.08))
+                                Label("Integrated signer in development",
+                                      systemImage: "checkmark.shield.fill")
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(DS.mint)
+                                Text("The next signing-capable build will use a real IPA picker and a confirmation step connected directly to the signing engine. You won't need a separate SideStore installation for its core signing interface.")
+                                    .font(.footnote)
+                                    .foregroundStyle(DS.muted)
                             }
                         }
                     }
                     .padding(20)
+                    .padding(.bottom, 24)
                 }
             }
             .navigationBarHidden(true)
-            .fileImporter(isPresented: $showImporter, allowedContentTypes: [.data]) { result in
-                do {
-                    let selected = try result.get()
-                    guard selected.pathExtension.lowercased() == "ipa" else {
-                        error = "Select a file ending in .ipa."
-                        return
-                    }
-                    let access = selected.startAccessingSecurityScopedResource()
-                    defer { if access { selected.stopAccessingSecurityScopedResource() } }
-                    let destination = FileManager.default.temporaryDirectory
-                        .appendingPathComponent(UUID().uuidString + "-" + selected.lastPathComponent)
-                    try FileManager.default.copyItem(at: selected, to: destination)
-                    importedFile = destination
-                } catch {
-                    self.error = error.localizedDescription
-                }
-            }
-            .alert("Installation", isPresented: Binding(
-                get: { error != nil }, set: { if !$0 { error = nil } })) {
-                Button("OK", role: .cancel) { error = nil }
-            } message: { Text(error ?? "") }
         }
     }
 }
