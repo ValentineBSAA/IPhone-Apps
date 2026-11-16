@@ -274,7 +274,7 @@ struct BerryGameView: View {
                 refreshBlitzClock()
             }
             showGameOver = session.gameOver || (mode == .challenge && blitzRemaining == 0)
-            if mode == .daily && dailyCompleted == Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)) { showVictory = session.engine.score >= goal }
+            if mode == .daily && dailyCompleted == BerryGameSession.dailyDateKey() { showVictory = session.engine.score >= goal }
             if !welcomed { showWelcome = true }
         }
         .onChange(of: session.engine.score) { _, _ in checkObjective() }
@@ -503,7 +503,7 @@ struct BerryGameView: View {
         }
         guard completed else { return }
         if mode == .story { completedStoryChapter = storyLevel; session.rewardStory(storyLevel); storyLevel += 1 }
-        if mode == .daily { session.rewardDaily(); dailyCompleted = Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)) }
+        if mode == .daily { session.rewardDaily(); dailyCompleted = BerryGameSession.dailyDateKey() }
         blitzRunning = false
         showVictory = true
     }
