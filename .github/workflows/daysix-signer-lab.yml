@@ -6,6 +6,11 @@ on:
     paths:
       - "DaySix/SignerLab/**"
       - ".github/workflows/daysix-signer-lab.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "DaySix/SignerLab/**"
+      - ".github/workflows/daysix-signer-lab.yml"
   workflow_dispatch:
 
 concurrency:
