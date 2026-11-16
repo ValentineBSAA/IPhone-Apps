@@ -172,6 +172,24 @@ final class DaySixStore: ObservableObject {
             if let dueDate = SelfProvisioning.refreshDueAt,
                let expires = SelfProvisioning.effectiveExpiry,
                expires > Date.now {
+                // Two-day preflight (or earlier for a larger lead-time
+                // setting) gives users a chance to repair a broken signer
+                // before the requested day-six automatic refresh.
+                let safetyLead = max(48, RenewalPolicy.hoursBeforeExpiry + 12)
+                let preflightDate = expires.addingTimeInterval(-Double(safetyLead) * 3600)
+                if preflightDate > Date.now.addingTimeInterval(120) {
+                    let preflight = UNMutableNotificationContent()
+                    preflight.title = "DaySix • Signing check coming up"
+                    preflight.body = "Check SideStore pairing, Apple sign-in and LocalDevVPN before DaySix's renewal window."
+                    preflight.sound = .default
+                    center.add(UNNotificationRequest(
+                        identifier: "daysix.self.preflight",
+                        content: preflight,
+                        trigger: UNTimeIntervalNotificationTrigger(
+                            timeInterval: preflightDate.timeIntervalSinceNow,
+                            repeats: false)))
+                }
+
                 let renewalNotice = UNMutableNotificationContent()
                 renewalNotice.title = "DaySix • Refresh its own signature"
                 renewalNotice.body = "DaySix's signing profile is due. Open SideStore and check that DaySix is renewed."
@@ -202,6 +220,21 @@ final class DaySixStore: ObservableObject {
                 // expired app. A local reminder cannot perform code signing.
                 guard app.expiresAt > Date.now else { continue }
                 let dueDate = max(Date.now.addingTimeInterval(90), app.refreshDueAt)
+                let safetyLead = max(48, RenewalPolicy.hoursBeforeExpiry + 12)
+                let preflightDate = app.expiresAt.addingTimeInterval(-Double(safetyLead) * 3600)
+                if preflightDate > Date.now.addingTimeInterval(120) {
+                    let preflight = UNMutableNotificationContent()
+                    preflight.title = "DaySix • Signing health check"
+                    preflight.body = "\(app.name) needs renewal soon. Check that SideStore and LocalDevVPN still work."
+                    preflight.sound = .default
+                    center.add(UNNotificationRequest(
+                        identifier: "daysix.\(app.id.uuidString).preflight",
+                        content: preflight,
+                        trigger: UNTimeIntervalNotificationTrigger(
+                            timeInterval: preflightDate.timeIntervalSinceNow,
+                            repeats: false)))
+                }
+
                 let content = UNMutableNotificationContent()
                 content.title = "DaySix • Refresh needed"
                 content.body = "\(app.name) is due for renewal. Open SideStore and verify it succeeds before expiration."
