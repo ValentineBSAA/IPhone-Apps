@@ -11,8 +11,15 @@ struct DaySixApp: App {
             DaySixRootView()
                 .environmentObject(store)
                 .preferredColorScheme(.dark)
+                .onAppear {
+                    RenewalAudit.reconcileSelfSignature()
+                    store.reload()
+                }
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { store.reload() }
+                    if phase == .active {
+                        RenewalAudit.reconcileSelfSignature()
+                        store.reload()
+                    }
                 }
         }
     }
@@ -141,19 +148,36 @@ final class DaySixStore: ObservableObject {
             }
             // Reminder for DaySix's own Apple provisioning profile. This is
             // a real embedded-profile deadline, not a manually estimated date.
-            if let dueDate = SelfProvisioning.refreshDueAt, dueDate > Date.now {
-                let content = UNMutableNotificationContent()
-                content.title = "DaySix needs to refresh itself"
-                content.body = "One day remains on DaySix's own signature. Refresh it through SideStore and check the new expiration."
-                content.sound = .default
+            if let dueDate = SelfProvisioning.refreshDueAt,
+               let expires = SelfProvisioning.expiresAt,
+               expires > Date.now {
+                let renewalNotice = UNMutableNotificationContent()
+                renewalNotice.title = "DaySix • Refresh its own signature"
+                renewalNotice.body = "DaySix's signing profile is due. Open SideStore and check that DaySix is renewed."
+                renewalNotice.sound = .default
+                // If the threshold passed while the phone was asleep, issue
+                // one near-term reminder and a final six-hour warning.
                 center.add(UNNotificationRequest(
-                    identifier: "daysix.self.due", content: content,
+                    identifier: "daysix.self.due", content: renewalNotice,
                     trigger: UNTimeIntervalNotificationTrigger(
-                        timeInterval: max(60, dueDate.timeIntervalSinceNow), repeats: false)))
+                        timeInterval: max(90, dueDate.timeIntervalSinceNow), repeats: false)))
+                let criticalDate = expires.addingTimeInterval(-6 * 60 * 60)
+                if criticalDate > Date.now.addingTimeInterval(120) {
+                    let warning = UNMutableNotificationContent()
+                    warning.title = "DaySix • Signature expires soon"
+                    warning.body = "Less than six hours remain. Verify a successful refresh in SideStore."
+                    warning.sound = .default
+                    center.add(UNNotificationRequest(
+                        identifier: "daysix.self.critical", content: warning,
+                        trigger: UNTimeIntervalNotificationTrigger(
+                            timeInterval: criticalDate.timeIntervalSinceNow, repeats: false)))
+                }
             }
-            for app in DaySixStorage.read() {
-                guard app.refreshDueAt > Date.now else { continue }
-                let dueDate = app.refreshDueAt
+            for app in DaySixStorage.read().prefix(24) {
+                // Also warn when the user adds an already due, but not yet
+                // expired app. A local reminder cannot perform code signing.
+                guard app.expiresAt > Date.now else { continue }
+                let dueDate = max(Date.now.addingTimeInterval(90), app.refreshDueAt)
                 let content = UNMutableNotificationContent()
                 content.title = "DaySix • Refresh needed"
                 content.body = "\(app.name) is due for renewal. Open SideStore and verify it succeeds before expiration."
