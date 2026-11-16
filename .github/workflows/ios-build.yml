@@ -1,0 +1,51 @@
+name: Repo Pulse iOS Build
+
+on:
+  push:
+    branches: [main, feat/repo-pulse-ios-foundation]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unsigned-ipa:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check Xcode
+        run: xcodebuild -version
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: Compile for physical iPhone without signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -project RepoPulse.xcodeproj -scheme RepoPulse \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/RepoPulseBuild" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package unsigned application
+        shell: bash
+        run: |
+          set -euo pipefail
+          app="$RUNNER_TEMP/RepoPulseBuild/Build/Products/Release-iphoneos/RepoPulse.app"
+          test -d "$app"
+          mkdir -p output/Payload
+          cp -R "$app" output/Payload/
+          cd output
+          zip -qry RepoPulse-unsigned.ipa Payload
+          test -s RepoPulse-unsigned.ipa
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: RepoPulse-unsigned-ipa
+          path: output/RepoPulse-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14

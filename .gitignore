@@ -1,0 +1,6 @@
+RepoPulse.xcodeproj/
+DerivedData/
+build/
+output/
+.DS_Store
+*.xcuserdata/
