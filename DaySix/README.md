@@ -1,5 +1,5 @@
 # DaySix 🍃
-**Native iPhone signing companion · v0.1.6**
+**Native iPhone signing companion · v0.1.7**
 
 A dark glass, teal-and-violet iOS dashboard inspired by ReProvision for the seven-day personal-development provisioning cycle. DaySix automatically checks **its own installed Apple provisioning-profile expiration**, tracks other apps you explicitly add, and gates SideStore's **Refresh All Apps** Shortcuts action at **day six**, with local reminders as a fallback.
 
