@@ -19,21 +19,25 @@ final class BerryGameSession: ObservableObject {
     private var previousBerryEarnings = 0
     private var previousRewardEntry: String?
     private var activeMode: BerryMode = .endless
+    private static func dailyDateKey() -> String {
+        let components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        return String(format: "%04d-%02d-%02d", components.year ?? 2026, components.month ?? 1, components.day ?? 1)
+    }
     private func modeKey(_ mode: BerryMode) -> String {
         switch mode {
         case .endless: saveKey
         case .story: "berryblockblast.story.engine.v1"
-        case .daily: "berryblockblast.daily.engine." + Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash))
+        case .daily: "berryblockblast.daily.engine." + Self.dailyDateKey()
         case .cozy: "berryblockblast.cozy.engine.v1"
         case .challenge: "berryblockblast.blitz.engine.v1"
         }
     }
     func selectMode(_ mode: BerryMode) {
-        guard activeMode != mode else { return }
         activeMode = mode
         if mode == .endless {
             if let data = UserDefaults.standard.data(forKey: saveKey),
                let snapshot = try? JSONDecoder().decode(Save.self, from: data) { engine = snapshot.engine }
+            else { engine = freshEngine() }
         } else if let data = UserDefaults.standard.data(forKey: modeKey(mode)),
                   let restored = try? JSONDecoder().decode(BerryEngine.self, from: data) { engine = restored }
         else { engine = freshEngine() }
@@ -162,7 +166,7 @@ final class BerryGameSession: ObservableObject {
     }
     func rewardTutorial() { awardOnce("tutorial", amount: 25, reason: "Strawberry School") }
     func rewardDaily() {
-        let day = Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash))
+        let day = Self.dailyDateKey()
         awardOnce("daily-" + day, amount: 30, reason: "Daily Harvest")
     }
     func rewardStory(_ chapter: Int) {
