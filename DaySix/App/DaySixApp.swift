@@ -80,8 +80,14 @@ final class DaySixStore: ObservableObject {
     }
 
     var dueApps: [TrackedApp] { apps.filter(\.isDue) }
-    var urgentCount: Int { dueApps.count }
-    var nextDate: Date? { apps.map(\.refreshDueAt).min() }
+    // DaySix counts itself, even when the user has not registered any other apps.
+    var selfExpiresAt: Date? { SelfProvisioning.expiresAt }
+    var selfRefreshDueAt: Date? { SelfProvisioning.refreshDueAt }
+    var selfIsDue: Bool { SelfProvisioning.isDue }
+    var urgentCount: Int { dueApps.count + (selfIsDue ? 1 : 0) }
+    var nextDate: Date? {
+        (apps.map(\.refreshDueAt) + [selfRefreshDueAt].compactMap { $0 }).min()
+    }
 
     func reload() {
         apps = DaySixStorage.read()
@@ -133,8 +139,21 @@ final class DaySixStore: ObservableObject {
                     || UserDefaults.standard.bool(forKey: DaySixStorage.remindersKey) else {
                 return
             }
+            // Reminder for DaySix's own Apple provisioning profile. This is
+            // a real embedded-profile deadline, not a manually estimated date.
+            if let dueDate = SelfProvisioning.refreshDueAt, dueDate > Date.now {
+                let content = UNMutableNotificationContent()
+                content.title = "DaySix needs to refresh itself"
+                content.body = "One day remains on DaySix's own signature. Refresh it through SideStore and check the new expiration."
+                content.sound = .default
+                center.add(UNNotificationRequest(
+                    identifier: "daysix.self.due", content: content,
+                    trigger: UNTimeIntervalNotificationTrigger(
+                        timeInterval: max(60, dueDate.timeIntervalSinceNow), repeats: false)))
+            }
             for app in DaySixStorage.read() {
-                let dueDate = max(Date.now.addingTimeInterval(90), app.refreshDueAt)
+                guard app.refreshDueAt > Date.now else { continue }
+                let dueDate = app.refreshDueAt
                 let content = UNMutableNotificationContent()
                 content.title = "DaySix • Refresh needed"
                 content.body = "\(app.name) is due for renewal. Open SideStore and verify it succeeds before expiration."
