@@ -203,17 +203,19 @@ private extension TabBarController
         tab_source = (self.root / "AltStore" / "TabBarController.swift").read_text()
         self.assertIn("private struct DaySixSignerHomeView: View", tab_source)
         self.assertIn("func showRealInstaller()", tab_source)
-        self.assertIn("apps.presentDocumentPicker()", tab_source)
+        self.assertIn("apps.daySixOpenIPAFromFiles()", tab_source)
         self.assertNotIn("apps.sideloadApp(button)", tab_source)
         picker_source = (
             self.root / "AltStore" / "My Apps" / "MyAppsViewController.swift"
         ).read_text()
-        self.assertIn("    func presentDocumentPicker()", picker_source)
-        self.assertNotIn("    private func presentDocumentPicker()", picker_source)
+        self.assertIn("    func daySixOpenIPAFromFiles()", picker_source)
+        self.assertIn("    private func presentDocumentPicker()", picker_source)
         self.assertIn("InstallAppDialog.present(ipaURL: fileURL", picker_source)
         self.assertIn("AppManager.shared.install", picker_source)
         self.assertIn("func renewRealApps()", tab_source)
-        self.assertIn("apps.refreshAllApps(", tab_source)
+        self.assertIn("apps.daySixRefreshManagedApps()", tab_source)
+        self.assertIn("self.refreshAllApps(", picker_source)
+        self.assertIn("SwiftUI.Button(action: importIPA)", tab_source)
         self.assertIn("self.viewControllers = [home, apps, settings]", tab_source)
         self.assertNotIn("self.selectedIndex = Tab.sources.rawValue", tab_source)
         self.assertIn(
