@@ -138,7 +138,7 @@ struct BerryGameView: View {
                     topBar(compact: compact)
                     scoreBar
                     HStack(spacing: 6) {
-                        Image(systemName: "sparkles")
+                        Image(systemName: mode == .challenge ? "bolt.fill" : mode == .cozy ? "leaf.fill" : "sparkles")
                         Text(session.lastMessage ?? objective)
                             .lineLimit(1).minimumScaleFactor(0.65)
                         Image(systemName: "sparkles")
@@ -296,7 +296,7 @@ struct BerryGameView: View {
 
     private var background: some View {
         ZStack {
-            LinearGradient(colors: [Color(red: 1, green: 0.85, blue: 0.9), Color(red: 1, green: 0.96, blue: 0.87), Color(red: 1, green: 0.8, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            LinearGradient(colors: mode == .cozy ? [Color(red: 0.88, green: 0.96, blue: 0.84), BerryStyle.cream, Color(red: 1, green: 0.86, blue: 0.87)] : mode == .challenge ? [Color(red: 1, green: 0.79, blue: 0.84), Color(red: 1, green: 0.95, blue: 0.77), Color(red: 0.98, green: 0.73, blue: 0.8)] : mode == .story ? [Color(red: 0.94, green: 0.83, blue: 1), BerryStyle.cream, Color(red: 1, green: 0.83, blue: 0.91)] : [Color(red: 1, green: 0.85, blue: 0.9), Color(red: 1, green: 0.96, blue: 0.87), Color(red: 1, green: 0.8, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing)
             GeometryReader { geo in
                 Circle().fill(.white.opacity(0.34)).frame(width: geo.size.width * 0.85).offset(x: -geo.size.width * 0.35, y: -geo.size.height * 0.13)
                 Circle().fill(BerryStyle.strawberry.opacity(0.06)).frame(width: 270).offset(x: geo.size.width - 170, y: geo.size.height * 0.62)
