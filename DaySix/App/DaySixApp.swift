@@ -88,7 +88,7 @@ final class DaySixStore: ObservableObject {
 
     var dueApps: [TrackedApp] { apps.filter(\.isDue) }
     // DaySix counts itself, even when the user has not registered any other apps.
-    var selfExpiresAt: Date? { SelfProvisioning.expiresAt }
+    var selfExpiresAt: Date? { SelfProvisioning.effectiveExpiry }
     var selfRefreshDueAt: Date? { SelfProvisioning.refreshDueAt }
     var selfIsDue: Bool { SelfProvisioning.isDue }
     var urgentCount: Int { dueApps.count + (selfIsDue ? 1 : 0) }
@@ -149,7 +149,7 @@ final class DaySixStore: ObservableObject {
             // Reminder for DaySix's own Apple provisioning profile. This is
             // a real embedded-profile deadline, not a manually estimated date.
             if let dueDate = SelfProvisioning.refreshDueAt,
-               let expires = SelfProvisioning.expiresAt,
+               let expires = SelfProvisioning.effectiveExpiry,
                expires > Date.now {
                 let renewalNotice = UNMutableNotificationContent()
                 renewalNotice.title = "DaySix • Refresh its own signature"
