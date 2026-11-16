@@ -56,6 +56,33 @@ struct BerryEngine: Codable {
         return Int((state &* 2685821657736338717) % UInt64(upperBound))
     }
 
+    // Codable does not apply stored-property defaults when keys are absent.
+    // Decode the optional mode metadata explicitly so older saves survive upgrades.
+    private enum CodingKeys: String, CodingKey {
+        case board, tray, score, streak, moves, totalLines, bestCombo
+        case dryMoves, boardClears, randomState, cozyPieces
+    }
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        board = try values.decode([[Int?]].self, forKey: .board)
+        tray = try values.decode([BerryPiece?].self, forKey: .tray)
+        score = try values.decodeIfPresent(Int.self, forKey: .score) ?? 0
+        streak = try values.decodeIfPresent(Int.self, forKey: .streak) ?? 0
+        moves = try values.decodeIfPresent(Int.self, forKey: .moves) ?? 0
+        totalLines = try values.decodeIfPresent(Int.self, forKey: .totalLines) ?? 0
+        bestCombo = try values.decodeIfPresent(Int.self, forKey: .bestCombo) ?? 0
+        dryMoves = try values.decodeIfPresent(Int.self, forKey: .dryMoves) ?? 0
+        boardClears = try values.decodeIfPresent(Int.self, forKey: .boardClears) ?? 0
+        randomState = try values.decodeIfPresent(UInt64.self, forKey: .randomState)
+        cozyPieces = try values.decodeIfPresent(Bool.self, forKey: .cozyPieces)
+        guard board.count == Self.side,
+              board.allSatisfy({ $0.count == Self.side }),
+              tray.count == 3 else {
+            throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath,
+                debugDescription: "Invalid Berry Block Blast board or tray dimensions"))
+        }
+    }
+
     // Explicit initial state is useful for deterministic puzzle-rule tests.
     init(board: [[Int?]], tray: [BerryPiece?], score: Int = 0) {
         precondition(board.count == Self.side && board.allSatisfy { $0.count == Self.side })
