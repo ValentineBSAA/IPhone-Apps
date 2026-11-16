@@ -81,6 +81,19 @@ class PreviewSafetyTests(unittest.TestCase):
             "CFBundleURLTypes": [{"CFBundleURLSchemes": ["sidebackup"]}]
         }))
 
+        notifier = (self.root / "SideStore" / "Core" / "Operations"
+                    / "StandaloneOperations"
+                    / "ScheduleExpirationWarningNotificationOperation.swift")
+        notifier.parent.mkdir(parents=True, exist_ok=True)
+        notifier.write_text(
+            "SideStore Expiring Soon\n"
+            "SideStore Expiring Extremely Soon\n"
+            "SideStore Expired\n"
+            "SideStore will expire in 24 hours.\n"
+            "SideStore will expire in 6 hours!\n"
+            "SideStore has expired.\n"
+            "content.sound = .default\n",
+            encoding="utf-8")
         self.provenance = preview.patch(self.root, "abc123def")
 
     def make_ipa(self, bundle_id, label=None, preview_marker=True,
@@ -150,6 +163,14 @@ class PreviewSafetyTests(unittest.TestCase):
         backup_swift = (self.root / "SideBackup" / "SideBackupApp.swift").read_text()
         self.assertIn('scheme == "daysixlab"', backup_swift)
         self.assertIn('scheme.hasPrefix("sidestore-")', backup_swift)
+        notifier = (self.root / "SideStore" / "Core" / "Operations"
+                    / "StandaloneOperations"
+                    / "ScheduleExpirationWarningNotificationOperation.swift"
+                   ).read_text()
+        self.assertIn("DaySix Signer Lab Expiring Soon", notifier)
+        self.assertIn("DaySix Signer Lab Expired", notifier)
+        self.assertNotIn("SideStore Expiring Soon", notifier)
+        self.assertIn("content.sound = .default", notifier)
         backup_plist = plistlib.loads(
             (self.root / "SideBackup" / "Info.plist").read_bytes()
         )
