@@ -10,10 +10,29 @@ struct CheckDaySixRefreshIntent: AppIntent {
     static var openAppWhenRun: Bool = false
 
     func perform() async throws -> some IntentResult & ReturnsValue<Bool> {
-        let expirations = [SelfProvisioning.effectiveExpiry].compactMap { $0 }
-            + DaySixStorage.read().map(\.expiresAt)
-        let due = RenewalPolicy.shouldRunAutomaticRenewal(expirations: expirations)
-        return .result(value: due)
+        let now = Date.now
+        guard RenewalPolicy.automaticallyRequestRefresh else {
+            return .result(value: false)
+        }
+
+        // SideStore must manage DaySix for this request to actually re-sign it.
+        // Still include it in scheduling, rather than depending on a user's
+        // manually entered tracked-app card.
+        let selfDue: Bool
+        if let expiry = SelfProvisioning.effectiveExpiry {
+            let lastSelfAttempt = UserDefaults.standard.object(
+                forKey: "daysix.lastSelfRenewalAttempt") as? Date
+            selfDue = RenewalPolicy.dueAndRetryable(
+                expiration: expiry, lastAttempt: lastSelfAttempt, now: now)
+        } else {
+            selfDue = false
+        }
+
+        let otherAppDue = DaySixStorage.read().contains { app in
+            RenewalPolicy.dueAndRetryable(
+                expiration: app.expiresAt, lastAttempt: app.lastAttempt, now: now)
+        }
+        return .result(value: selfDue || otherAppDue)
     }
 }
 
@@ -29,13 +48,21 @@ struct RecordDaySixAttemptIntent: AppIntent {
         var apps = DaySixStorage.read()
         let now = Date.now
         var changed = 0
-        for index in apps.indices where apps[index].isDue {
+        for index in apps.indices
+        where RenewalPolicy.dueAndRetryable(
+            expiration: apps[index].expiresAt,
+            lastAttempt: apps[index].lastAttempt,
+            now: now) {
             apps[index].lastAttempt = now
             changed += 1
         }
         if changed > 0 { DaySixStorage.write(apps) }
-        if SelfProvisioning.isDue {
-            // Never declare renewal successful based on an attempt alone.
+        let lastSelfAttempt = UserDefaults.standard.object(
+            forKey: "daysix.lastSelfRenewalAttempt") as? Date
+        if let expiry = SelfProvisioning.effectiveExpiry,
+           RenewalPolicy.dueAndRetryable(
+               expiration: expiry, lastAttempt: lastSelfAttempt, now: now) {
+            // This is an ATTEMPT, not verified Apple signing.
             UserDefaults.standard.set(now, forKey: "daysix.lastSelfRenewalAttempt")
             changed += 1
         }
