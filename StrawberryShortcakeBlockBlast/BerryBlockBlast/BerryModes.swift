@@ -87,7 +87,7 @@ struct BerryHomeView: View {
                                     .overlay(RoundedRectangle(cornerRadius: 21).stroke(.white, lineWidth: 2))
                                 }.buttonStyle(.plain)
                             }
-                            Button("🧺 More Adventures") { showMore = true }
+                            Button("🧺 More Adventures  •  Strawberry Nightmare") { showMore = true }
                                 .font(.title3.bold()).foregroundStyle(BerryStyle.strawberry)
                                 .frame(maxWidth: .infinity).padding(18).background(.white, in: RoundedRectangle(cornerRadius: 20))
                             Button("📖 Berry Collection") { showCollection = true }
@@ -135,8 +135,41 @@ struct BerryHomeView: View {
                         Text("🍓 More Sweet Adventures").font(.title.bold()).foregroundStyle(BerryStyle.strawberry)
                         Text("🌸 A basket of new adventures 🌸").font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
                         ForEach(Array(BerryMode.allCases.dropFirst(3))) { mode in
-                            Button(mode.rawValue + " • " + mode.description) { showMore = false; activeMode = mode }
-                                .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
+                            Button {
+                                showMore = false
+                                activeMode = mode
+                            } label: {
+                                HStack(spacing: 14) {
+                                    Image(systemName: mode.icon)
+                                        .font(.system(size: 22, weight: .bold))
+                                        .foregroundStyle(.white)
+                                        .frame(width: 52, height: 52)
+                                        .background(mode == .superHard ? BerryStyle.chocolate : BerryStyle.strawberry,
+                                                    in: RoundedRectangle(cornerRadius: 16))
+                                    VStack(alignment: .leading, spacing: 5) {
+                                        Text(mode.rawValue)
+                                            .font(.system(size: 19, weight: .black, design: .rounded))
+                                        Text(mode.description)
+                                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                                            .fixedSize(horizontal: false, vertical: true)
+                                            .multilineTextAlignment(.leading)
+                                        if mode == .superHard {
+                                            Text("12 × 12  •  144 squares  •  Larger pieces")
+                                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                                                .foregroundStyle(BerryStyle.strawberry)
+                                        }
+                                    }
+                                    Spacer(minLength: 4)
+                                    Image(systemName: "chevron.right")
+                                        .font(.subheadline.bold())
+                                }
+                                .foregroundStyle(BerryStyle.chocolate)
+                                .padding(14)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 22))
+                                .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white, lineWidth: 2))
+                            }
+                            .buttonStyle(.plain)
                         }
                         Text("🎶 Strawberry Jukebox").font(.title2.bold())
                         Text(BerryAudio.shared.currentTrackName).font(.headline).foregroundStyle(BerryStyle.chocolate)
