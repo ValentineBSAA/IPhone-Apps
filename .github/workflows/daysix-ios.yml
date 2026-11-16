@@ -1,0 +1,64 @@
+name: DaySix • iPhone IPA
+
+on:
+  push:
+    branches:
+      - main
+      - feature/daysix-ios-signing-dashboard
+    paths:
+      - "DaySix/**"
+      - ".github/workflows/daysix-ios.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Check out iPhone apps
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          brew install xcodegen
+          python3 -m venv /tmp/daysix-python
+          /tmp/daysix-python/bin/python -m pip install Pillow
+
+      - name: Generate premium icon and Xcode project
+        run: |
+          /tmp/daysix-python/bin/python DaySix/scripts/make_icon.py
+          cd DaySix
+          xcodegen generate
+
+      - name: Build unsigned iPhone application
+        run: |
+          cd DaySix
+          xcodebuild -project DaySix.xcodeproj \
+            -scheme DaySix \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$PWD/build" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package unsigned IPA for on-device signing
+        run: |
+          set -euo pipefail
+          cd DaySix
+          APP="build/Build/Products/Release-iphoneos/DaySix.app"
+          test -d "$APP"
+          mkdir -p dist/Payload
+          cp -R "$APP" dist/Payload/DaySix.app
+          (cd dist && zip -q -r ../DaySix-unsigned.ipa Payload)
+
+      - name: Upload iPhone build
+        uses: actions/upload-artifact@v4
+        with:
+          name: DaySix-iPhone-unsigned-IPA
+          path: DaySix/DaySix-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
