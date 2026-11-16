@@ -149,8 +149,26 @@ final class DaySixStore: ObservableObject {
                     || UserDefaults.standard.bool(forKey: DaySixStorage.remindersKey) else {
                 return
             }
-            // Reminder for DaySix's own Apple provisioning profile. This is
-            // a real embedded-profile deadline, not a manually estimated date.
+            // Reminders are scheduled at their actual time whenever possible.
+            // For an already-passed due threshold, use a persisted expiry token
+            // to avoid spamming another alert every time DaySix comes forward.
+            // A new signing expiration resets the token naturally.
+            func dueTrigger(for expiry: Date, at target: Date,
+                            key: String) -> UNNotificationTrigger? {
+                if target > Date.now.addingTimeInterval(90) {
+                    return UNTimeIntervalNotificationTrigger(
+                        timeInterval: target.timeIntervalSinceNow, repeats: false)
+                }
+                let recorded = UserDefaults.standard.object(forKey: key) as? Date
+                guard recorded != expiry else { return nil }
+                UserDefaults.standard.set(expiry, forKey: key)
+                return UNTimeIntervalNotificationTrigger(
+                    timeInterval: 90, repeats: false)
+            }
+
+            // Reminder for DaySix's own Apple provisioning profile (or its
+            // explicitly labeled manual fallback). This is only a warning,
+            // never a verified signing operation.
             if let dueDate = SelfProvisioning.refreshDueAt,
                let expires = SelfProvisioning.effectiveExpiry,
                expires > Date.now {
@@ -160,10 +178,13 @@ final class DaySixStore: ObservableObject {
                 renewalNotice.sound = .default
                 // If the threshold passed while the phone was asleep, issue
                 // one near-term reminder and a final six-hour warning.
-                center.add(UNNotificationRequest(
-                    identifier: "daysix.self.due", content: renewalNotice,
-                    trigger: UNTimeIntervalNotificationTrigger(
-                        timeInterval: max(90, dueDate.timeIntervalSinceNow), repeats: false)))
+                if let trigger = dueTrigger(
+                    for: expires, at: dueDate,
+                    key: "daysix.alert.self.dueExpiry") {
+                    center.add(UNNotificationRequest(
+                        identifier: "daysix.self.due",
+                        content: renewalNotice, trigger: trigger))
+                }
                 let criticalDate = expires.addingTimeInterval(-6 * 60 * 60)
                 if criticalDate > Date.now.addingTimeInterval(120) {
                     let warning = UNMutableNotificationContent()
@@ -185,12 +206,13 @@ final class DaySixStore: ObservableObject {
                 content.title = "DaySix • Refresh needed"
                 content.body = "\(app.name) is due for renewal. Open SideStore and verify it succeeds before expiration."
                 content.sound = .default
-                let request = UNNotificationRequest(
-                    identifier: "daysix.\(app.id.uuidString).due",
-                    content: content,
-                    trigger: UNTimeIntervalNotificationTrigger(
-                        timeInterval: max(60, dueDate.timeIntervalSinceNow), repeats: false))
-                center.add(request)
+                if let trigger = dueTrigger(
+                    for: app.expiresAt, at: dueDate,
+                    key: "daysix.alert.\(app.id.uuidString).dueExpiry") {
+                    center.add(UNNotificationRequest(
+                        identifier: "daysix.\(app.id.uuidString).due",
+                        content: content, trigger: trigger))
+                }
             }
         }
     }
