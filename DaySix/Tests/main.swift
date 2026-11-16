@@ -116,4 +116,22 @@ expect(abs(RenewalPolicy.preflightAt(expiration: expiresIn23)
 UserDefaults.standard.removeObject(forKey: RenewalPolicy.hoursKey)
 UserDefaults.standard.removeObject(forKey: RenewalPolicy.autoKey)
 
-print("DaySix provisioning and ReProvision-style scheduling smoke tests PASSED")
+// A user-confirmed SideStore setup is an explicit prerequisite, never a
+// claim to have inspected another app's sandboxed signing database.
+SigningReadiness.userConfirmedEnrollment = false
+SigningReadiness.userConfirmedRefreshTest = false
+expect(!SigningReadiness.userReportedReady,
+       "Unconfirmed enrollment and refresh must never be marked as ready")
+SigningReadiness.userConfirmedEnrollment = true
+expect(!SigningReadiness.userReportedReady,
+       "Enrollment alone must not prove renewal success")
+SigningReadiness.userConfirmedRefreshTest = true
+expect(SigningReadiness.userReportedReady,
+       "Both explicit user confirmations can show user-reported readiness")
+SigningReadiness.userConfirmedEnrollment = false
+expect(!SigningReadiness.userReportedReady,
+       "Revoked enrollment confirmation must clear readiness")
+UserDefaults.standard.removeObject(forKey: SigningReadiness.managedKey)
+UserDefaults.standard.removeObject(forKey: SigningReadiness.refreshTestedKey)
+
+print("DaySix provisioning, renewal policy and signing readiness smoke tests PASSED")
