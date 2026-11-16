@@ -38,6 +38,7 @@ struct ReleaseAsset: Decodable {
 struct GitHubRelease: Decodable {
     let tagName: String
     let prerelease: Bool
+    let publishedAt: String?
     let assets: [ReleaseAsset]
     let htmlUrl: URL
     var downloads: Int { assets.reduce(0) { $0 + $1.downloadCount } }
@@ -184,11 +185,17 @@ final class PulseStore: ObservableObject {
 @main
 struct RepoPulseApp: App {
     @StateObject private var store = PulseStore()
+    @StateObject private var deck = DeckPulseEngine()
+
+    init() {
+        PulseNotifier.shared.configure()
+    }
 
     var body: some Scene {
         WindowGroup {
-            PulseDashboard()
+            DeckPulseHome()
                 .environmentObject(store)
+                .environmentObject(deck)
                 .preferredColorScheme(.dark)
         }
     }
