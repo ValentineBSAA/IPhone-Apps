@@ -9,6 +9,10 @@ on:
       - ".github/workflows/daysix-sidesign-probe.yml"
   workflow_dispatch:
 
+concurrency:
+  group: daysix-sidesign-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
