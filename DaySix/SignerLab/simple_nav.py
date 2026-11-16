@@ -87,21 +87,31 @@ def patch(root: Path) -> None:
         sources.modalPresentationStyle = .pageSheet
         self.present(sources, animated: true)""")
 
+    # Upstream's Files picker already calls InstallAppDialog and then
+    # AppManager.shared.install when the user confirms. Expose that exact
+    # flow to our simplified home instead of opening an inert share sheet
+    # or a non-attached navigation bar popover.
+    apps_file = root / "AltStore" / "My Apps" / "MyAppsViewController.swift"
+    one(apps_file,
+        "    private func presentDocumentPicker()",
+        "    func presentDocumentPicker()")
+
     actions = """private extension TabBarController
 {
     func showRealInstaller()
     {
-        // Route into upstream My Apps' actual file/URL signing flow.
+        // Choose a real IPA file. On selection, the existing
+        // MyAppsViewController UIDocumentPickerDelegate presents upstream's
+        // InstallAppDialog and calls AppManager.shared.install on approval.
         self.selectedIndex = Tab.myApps.rawValue
         DispatchQueue.main.async { [weak self] in
             guard let self,
                   let navigation = self.viewControllers?[Tab.myApps.rawValue] as? UINavigationController,
                   let apps = navigation.viewControllers.first as? MyAppsViewController
             else { return }
-            let button = apps.navigationItem.rightBarButtonItem
-                ?? UIBarButtonItem(barButtonSystemItem: .add,
-                                   target: nil, action: nil)
-            apps.sideloadApp(button)
+            navigation.popToRootViewController(animated: false)
+            apps.loadViewIfNeeded()
+            apps.presentDocumentPicker()
         }
     }
 
