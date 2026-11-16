@@ -41,5 +41,5 @@ workflows:
           test -s Berry-Block-Blast-v0.5.3-unsigned.ipa
           unzip -l Berry-Block-Blast-v0.5.3-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
     artifacts:
-      - StrawberryShortcakeBlockBlast/dist/*.ipa
-      - StrawberryShortcakeBlockBlast/build/Logs/Build/*.xcactivitylog
+      - dist/*.ipa
+      - build/Logs/Build/*.xcactivitylog
