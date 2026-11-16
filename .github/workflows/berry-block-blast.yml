@@ -7,6 +7,10 @@ on:
       - 'StrawberryShortcakeBlockBlast/**'
       - '.github/workflows/berry-block-blast.yml'
 
+concurrency:
+  group: berry-block-blast-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
