@@ -53,11 +53,15 @@ struct BerryGirlView: View {
                             .offset(x: CGFloat(direction) * (24 + CGFloat(dot)*5), y: 27 + CGFloat(dot%2)*3)
                     }
                 }
-                // Centered smile in the same local coordinate space as the face.
+                // The smile is positioned relative to the centered face, not
+                // the parent view's top-left origin.
                 Path { p in
-                    p.move(to: CGPoint(x: 75, y: 147))
-                    p.addQuadCurve(to: CGPoint(x: 105, y: 147), control: CGPoint(x: 90, y: 164))
-                }.stroke(Color(red: 0.58, green: 0.23, blue: 0.27), style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+                    p.move(to: CGPoint(x: 75, y: 135))
+                    p.addQuadCurve(to: CGPoint(x: 105, y: 135), control: CGPoint(x: 90, y: 153))
+                }
+                .stroke(Color(red: 0.58, green: 0.23, blue: 0.27),
+                        style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+                .frame(width: 180, height: 220)
                 // Iconic berry-garden hat shape, original geometric rendering.
                 Ellipse().fill(Color(red: 1, green: 0.74, blue: 0.82))
                     .frame(width: 162, height: 47).offset(y: -28)
