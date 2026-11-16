@@ -463,7 +463,7 @@ struct IPAInstallView: View {
 
 struct MoreView: View {
     @EnvironmentObject private var store: DaySixStore
-    private let recipe = "FIRST: In Shortcuts, create a shortcut named DaySix Refresh.\n1. Set VPN: Connect LocalDevVPN\n2. DaySix: Record Refresh Attempt\n3. SideStore: Refresh All Apps\n\nTHEN: In Shortcuts → Automation → Time of Day → Daily → Run Immediately:\n1. DaySix: Check DaySix Refresh\n2. If result is True\n3. Run Shortcut: DaySix Refresh\n4. End If\n\nThe one-tap button in DaySix also runs this shortcut. No success is assumed until the expiry changes."
+    private let recipe = "FIRST: In Shortcuts, create a shortcut named DaySix Refresh.\n1. Set VPN: Connect LocalDevVPN\n2. Open URLs: sidestore://\n3. Wait 5 seconds (iOS 27 workaround)\n4. DaySix: Record Refresh Attempt\n5. SideStore: Refresh All Apps\n\nTHEN: In Shortcuts → Automation → Time of Day → Daily → Run Immediately:\n1. DaySix: Check DaySix Refresh\n2. If result is True\n3. Run Shortcut: DaySix Refresh\n4. End If\n\nOn iOS 27, opening SideStore may require the iPhone to be unlocked. If unattended automation cannot wake SideStore, open it manually when notified. No success is assumed until the expiry changes."
     var body: some View {
         NavigationStack {
             DaySixBackground {
