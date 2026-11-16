@@ -106,8 +106,10 @@ final class BerryEngineTests: XCTestCase {
     func testNightmareLargePiecesStayWithinBoardAndPersist() throws {
         // Exercise repeated deals so 7-9-square pieces do not break encoding
         // or placement on the larger board.
-        for _ in 0..<40 {
-            var game = BerryEngine(side: 12, hard: true)
+        var largestPieceSeen = 0
+        for _ in 0..<100 {
+            let game = BerryEngine(side: 12, hard: true)
+            largestPieceSeen = max(largestPieceSeen, game.tray.compactMap { $0 }.map { $0.points.count }.max() ?? 0)
             XCTAssertTrue(game.tray.compactMap { $0 }.allSatisfy { $0.points.count >= 5 })
             for piece in game.tray.compactMap({ $0 }) {
                 XCTAssertLessThanOrEqual(piece.width, 12)
@@ -120,6 +122,7 @@ final class BerryEngineTests: XCTestCase {
                 XCTAssertTrue(game.canPlace(piece, row: 0, col: 0))
             }
         }
+        XCTAssertGreaterThanOrEqual(largestPieceSeen, 7, "Nightmare should actually deal its larger shapes")
     }
 
     func testNightmareRejectsOutOfBoundsAndPersistsDimensions() throws {
