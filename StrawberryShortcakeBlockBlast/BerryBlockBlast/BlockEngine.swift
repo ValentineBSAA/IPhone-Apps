@@ -181,9 +181,20 @@ struct BerryEngine: Codable {
             [BerryPoint(0,0),BerryPoint(0,1),BerryPoint(0,2),BerryPoint(0,3),BerryPoint(0,4)],
             [BerryPoint(0,0),BerryPoint(1,0),BerryPoint(2,0),BerryPoint(3,0),BerryPoint(4,0)]
         ]
+        // Nightmare uses genuinely larger shapes instead of just more empty
+        // squares. These long and wide pieces demand deliberate space planning.
+        let nightmareShapes: [[BerryPoint]] = [
+            (0..<7).map { BerryPoint(0, $0) },
+            (0..<7).map { BerryPoint($0, 0) },
+            (0..<3).flatMap { row in (0..<3).map { col in BerryPoint(row, col) } },
+            (0..<4).flatMap { row in (0..<2).map { col in BerryPoint(row, col) } },
+            (0..<2).flatMap { row in (0..<4).map { col in BerryPoint(row, col) } },
+            [BerryPoint(0,0), BerryPoint(1,0), BerryPoint(2,0), BerryPoint(3,0),
+             BerryPoint(3,1), BerryPoint(3,2), BerryPoint(3,3)]
+        ]
         // A newly dealt tray always contains at least one legal move. Prefer
         // several playable choices instead of handing out impossible pieces.
-        let selection = cozyPieces == true ? Array(catalog.prefix(8)) : hardPieces == true ? Array(catalog.filter { $0.count >= 4 }) : catalog
+        let selection = cozyPieces == true ? Array(catalog.prefix(8)) : hardPieces == true ? Array(catalog.filter { $0.count >= 5 }) + nightmareShapes : catalog
         let viable = selection.filter { shape in
             let piece = BerryPiece(points: shape, tint: 0)
             return (0..<side).contains { r in
