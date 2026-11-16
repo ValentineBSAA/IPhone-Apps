@@ -78,6 +78,7 @@ struct BerryGameView: View {
     @AppStorage("berryblockblast.story.level") private var storyLevel = 1
     @AppStorage("berryblockblast.daily.completed") private var dailyCompleted = ""
     @State private var showVictory = false
+    @State private var completedStoryChapter: Int?
     @State private var blitzRemaining = 120
     @State private var blitzRunning = false
     @State private var blitzDeadline: Date?
@@ -304,12 +305,12 @@ struct BerryGameView: View {
                         Text(showVictory ? "Strawberry Spectacular!" : confirmRestart ? "Plant a Fresh Garden?" : "Our Berry Patch Is Full!")
                             .font(.system(size: 25, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry).multilineTextAlignment(.center)
-                        Text(showVictory ? "Your strawberry star has blossomed!" : confirmRestart ? "Your best score and earned berries stay safe." : "You harvested \(session.engine.score) sweet points and cleared \(session.engine.totalLines) lines. Every garden deserves another season!")
+                        Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "Your best score and earned berries stay safe." : "You harvested \(session.engine.score) sweet points and cleared \(session.engine.totalLines) lines. Every garden deserves another season!")
                             .font(.system(size: 15, weight: .medium, design: .rounded))
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
                         Button(showVictory ? "🍓 Another Sweet Adventure" : "🍓 Plant a Fresh Garden") {
                             showVictory = false; showGameOver = false; confirmRestart = false
-                            session.newGame(); selectedSlot = nil; drag = nil; blitzRemaining = 120; blitzRunning = mode == .challenge; blitzDeadline = mode == .challenge ? Date().addingTimeInterval(120) : nil; if mode == .challenge { UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey) }
+                            completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil; blitzRemaining = 120; blitzRunning = mode == .challenge; blitzDeadline = mode == .challenge ? Date().addingTimeInterval(120) : nil; if mode == .challenge { UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey) }
                         }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
                         Button("🏡 Return to Strawberry Village") { onExit() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
@@ -476,7 +477,7 @@ struct BerryGameView: View {
         default: completed = false
         }
         guard completed else { return }
-        if mode == .story { session.rewardStory(storyLevel); storyLevel += 1 }
+        if mode == .story { completedStoryChapter = storyLevel; session.rewardStory(storyLevel); storyLevel += 1 }
         if mode == .daily { session.rewardDaily(); dailyCompleted = Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)) }
         blitzRunning = false
         showVictory = true
