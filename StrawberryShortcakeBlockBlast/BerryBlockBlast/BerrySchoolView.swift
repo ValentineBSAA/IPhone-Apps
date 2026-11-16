@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct BerrySchoolView: View {
-    let onFinish: () -> Void
+    let onFinish: (Bool) -> Void
     @State private var lesson = 0
     @State private var placed = false
     private let lessons: [(String, String, String)] = [
@@ -33,9 +33,9 @@ struct BerrySchoolView: View {
             Text(lessons[lesson].2).font(.subheadline).foregroundStyle(BerryStyle.chocolate.opacity(0.7)).multilineTextAlignment(.center)
             Spacer()
             Button(lesson == 4 ? "Graduate! 🍓" : "Next Lesson") {
-                if lesson < 4 { lesson += 1 } else { onFinish() }
+                if lesson < 4 { lesson += 1 } else { onFinish(true) }
             }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
-            Button("Skip School") { onFinish() }.foregroundStyle(BerryStyle.chocolate)
+            Button("Skip School") { onFinish(false) }.foregroundStyle(BerryStyle.chocolate)
         }
         .padding(28).frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(LinearGradient(colors: [BerryStyle.cream, Color(red: 1, green: 0.82, blue: 0.88)], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
