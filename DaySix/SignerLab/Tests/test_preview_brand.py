@@ -94,6 +94,46 @@ class PreviewSafetyTests(unittest.TestCase):
             "SideStore has expired.\n"
             "content.sound = .default\n",
             encoding="utf-8")
+        tab = self.root / "AltStore" / "TabBarController.swift"
+        tab.write_text("""@preconcurrency import UIKit
+
+extension TabBarController
+{
+    private enum Tab: Int, CaseIterable
+    {
+        case news
+        case sources
+        case browse
+        case myApps
+        case settings
+    }
+}
+
+final class TabBarController: UITabBarController
+{
+    private var sourcesViewController: SourcesViewController!
+
+    override func viewDidLoad() {
+        let browseNavigationController = self.viewControllers![Tab.browse.rawValue] as! UINavigationController
+        browseNavigationController.tabBarItem.image = UIImage(systemName: "bag")
+        
+        let sourcesNavigationController = self.viewControllers![Tab.sources.rawValue] as! UINavigationController
+        self.sourcesViewController = sourcesNavigationController.viewControllers.first as? SourcesViewController
+    }
+    func presentSources(_ sender: Any) {
+        self.selectedIndex = Tab.sources.rawValue
+    }
+}
+
+private extension TabBarController
+{
+    @objc func importApp(_ notification: Notification)
+    {
+        self.selectedIndex = Tab.myApps.rawValue
+    }
+}
+""", encoding="utf-8")
+
         self.provenance = preview.patch(self.root, "abc123def")
 
     def make_ipa(self, bundle_id, label=None, preview_marker=True,
@@ -144,6 +184,14 @@ class PreviewSafetyTests(unittest.TestCase):
         self.assertEqual(meta["upstream_commit"], "abc123def")
         self.assertFalse(meta["iphone_self_renewal_tested"])
         self.assertEqual(meta["expected_bundle_id"], preview.PREVIEW_BUNDLE_ID)
+        tab_source = (self.root / "AltStore" / "TabBarController.swift").read_text()
+        self.assertIn("private struct DaySixSignerHomeView: View", tab_source)
+        self.assertIn("func showRealInstaller()", tab_source)
+        self.assertIn("apps.sideloadApp(button)", tab_source)
+        self.assertIn("func renewRealApps()", tab_source)
+        self.assertIn("apps.refreshAllApps(", tab_source)
+        self.assertIn("self.viewControllers = [home, apps, settings]", tab_source)
+        self.assertNotIn("self.selectedIndex = Tab.sources.rawValue", tab_source)
         self.assertIn(
             "BASE_BUNDLE_ID                                  = $(ORG_IDENTIFIER).signerlab",
             (self.root / "Build.xcconfig").read_text())
