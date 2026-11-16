@@ -203,7 +203,7 @@ struct BerryGameView: View {
                                     }
                                     .shadow(color: BerryStyle.strawberry.opacity(0.12), radius: 5, y: 3)
                                 if let piece {
-                                    BerryPieceGlyph(piece: piece, unit: min(17, (width - 86) / CGFloat(3 * max(piece.width, 3))), mode: mode, strawberryUnlocked: strawberryUnlocked)
+                                    BerryPieceGlyph(piece: piece, unit: min(17, (width - 86) / CGFloat(3 * max(piece.width, 3)), CGFloat(compact ? 57 : 68) / CGFloat(max(piece.height, 1))), mode: mode, strawberryUnlocked: strawberryUnlocked)
                                         .opacity(drag?.slot == slot ? 0.3 : session.engine.hasPlacement(for: piece) ? 1 : 0.3)
                                 } else {
                                     Image(systemName: "checkmark.seal.fill")
