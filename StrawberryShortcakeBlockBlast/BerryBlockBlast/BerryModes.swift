@@ -205,18 +205,54 @@ struct BerryHomeView: View {
         }
         .sheet(isPresented: $showSettings) {
             NavigationStack {
-                Form {
-                    Section("🍓 Strawberry Sound Studio") {
-                        Toggle("Music box melody", isOn: $music).tint(BerryStyle.strawberry).onChange(of: music) { _, enabled in BerryAudio.shared.setMusic(enabled) }
-                        Slider(value: $musicVolume, in: 0...1) { Text("🎵 Music Volume") }.tint(BerryStyle.strawberry).onChange(of: musicVolume) { _, value in BerryAudio.shared.setMusicVolume(Float(value)) }
-                        Slider(value: $effectVolume, in: 0...1) { Text("🍓 Berry Sounds Volume") }.tint(BerryStyle.strawberry).onChange(of: effectVolume) { _, value in BerryAudio.shared.setEffectVolume(Float(value)) }
-                        Toggle("Sweet sound effects", isOn: $sound).tint(BerryStyle.strawberry)
-                        Toggle("Haptic feedback", isOn: $haptics).tint(BerryStyle.strawberry)
-                        Button("Test berry chimes 🍓") { BerryAudio.shared.play(.clear) }
+                ScrollView {
+                    VStack(spacing: 18) {
+                        Text("🍓 🎶 🌸")
+                            .font(.system(size: 38))
+                        Text("Strawberry Sound Studio")
+                            .font(.system(size: 25, weight: .black, design: .rounded))
+                            .foregroundStyle(BerryStyle.strawberry)
+                        VStack(alignment: .leading, spacing: 18) {
+                            Toggle("Music box melody", isOn: $music)
+                                .onChange(of: music) { _, enabled in BerryAudio.shared.setMusic(enabled) }
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("🎵 Music Volume").font(.subheadline.bold())
+                                Slider(value: $musicVolume, in: 0...1)
+                                    .onChange(of: musicVolume) { _, value in BerryAudio.shared.setMusicVolume(Float(value)) }
+                            }
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("🍓 Berry Sounds Volume").font(.subheadline.bold())
+                                Slider(value: $effectVolume, in: 0...1)
+                                    .onChange(of: effectVolume) { _, value in BerryAudio.shared.setEffectVolume(Float(value)) }
+                            }
+                            Toggle("Sweet sound effects", isOn: $sound)
+                            Toggle("Haptic feedback", isOn: $haptics)
+                            Button { BerryAudio.shared.play(.clear) } label: {
+                                Label("Test berry chimes", systemImage: "music.note")
+                                    .font(.headline)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(12)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(BerryStyle.strawberry)
+                        }
+                        .tint(BerryStyle.strawberry)
+                        .foregroundStyle(BerryStyle.chocolate)
+                        .padding(20)
+                        .background(.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 24))
+                        .overlay(RoundedRectangle(cornerRadius: 24).stroke(.white, lineWidth: 2))
+                        VStack(spacing: 6) {
+                            Text(version).font(.subheadline.bold())
+                            Text("Original offline strawberry puzzle. No ads or purchases.")
+                                .font(.caption)
+                                .multilineTextAlignment(.center)
+                        }
+                        .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
                     }
-                    Section("About") { LabeledContent("Version", value: version); Text("Original offline strawberry puzzle. No ads or purchases.") }
+                    .padding(22)
+                    .frame(maxWidth: 520)
+                    .frame(maxWidth: .infinity)
                 }
-                .scrollContentBackground(.hidden)
                 .background(LinearGradient(colors: [BerryStyle.cream, Color(red: 1, green: 0.85, blue: 0.90)], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
                 .navigationTitle("🍓 Berry Settings")
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showSettings = false } } }
