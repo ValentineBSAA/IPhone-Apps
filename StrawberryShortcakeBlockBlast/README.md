@@ -18,3 +18,4 @@ Drag a piece to the board, or tap a piece then a cell. Fill rows or columns to c
 
 ## Build
 The GitHub Actions workflow generates the Xcode project with XcodeGen and packages `Berry-Block-Blast-v0.3.0-unsigned.ipa`. Unsigned IPAs require signing before installation. Test on real iPhones for touch behavior and safe-area layout.
+\n\n## v0.3.1 Strawberry Sweet Edition\n\nNew main menu with Sweet Endless, Berry Story chapter goals, and Daily Harvest. Separate mode saves, strawberry-themed navigation, original offline artwork, and full-screen iPhone support.\n

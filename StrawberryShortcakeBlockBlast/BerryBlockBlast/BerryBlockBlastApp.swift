@@ -4,7 +4,7 @@ import SwiftUI
 struct BerryBlockBlastApp: App {
     var body: some Scene {
         WindowGroup {
-            BerryGameView()
+            BerryHomeView()
         }
     }
 }

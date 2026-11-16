@@ -69,6 +69,20 @@ private struct BerryBoard: View {
 }
 
 struct BerryGameView: View {
+    let mode: BerryMode
+    let onExit: () -> Void
+    @AppStorage("berryblockblast.story.level") private var storyLevel = 1
+    @AppStorage("berryblockblast.daily.completed") private var dailyCompleted = ""
+    @State private var showVictory = false
+    private var goal: Int { mode == .story ? 100 + storyLevel * 80 : 300 }
+    private var objective: String {
+        switch mode {
+        case .endless: "Fill a row or column. Grow your berry garden!"
+        case .story: "CHAPTER \\(storyLevel) • Reach \\(goal) points to bloom!"
+        case .daily: "DAILY HARVEST • Gather \\(goal) points!"
+        }
+    }
+
     @StateObject private var session = BerryGameSession()
     @State private var boardRect: CGRect = .zero
     @State private var drag: BerryDragState?
@@ -100,7 +114,7 @@ struct BerryGameView: View {
                     scoreBar
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
-                        Text(session.lastMessage ?? "Fill a row or column. Grow your berry garden!")
+                        Text(session.lastMessage ?? objective)
                             .lineLimit(1).minimumScaleFactor(0.65)
                         Image(systemName: "sparkles")
                     }
@@ -193,7 +207,23 @@ struct BerryGameView: View {
             Button("Keep Playing", role: .cancel) { }
         } message: { Text("Your best score and earned berries stay saved.") }
         .onChange(of: session.gameOver) { _, ended in showGameOver = ended }
-        .onAppear { showGameOver = session.gameOver; if !welcomed { showWelcome = true } }
+        .onAppear {
+            session.selectMode(mode)
+            showGameOver = session.gameOver
+            if !welcomed { showWelcome = true }
+        }
+        .onChange(of: session.engine.score) { _, newScore in
+            guard mode != .endless, newScore >= goal, !showVictory else { return }
+            if mode == .story { storyLevel += 1 }
+            if mode == .daily { dailyCompleted = Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)) }
+            showVictory = true
+        }
+        .alert("Strawberry Spectacular! 🍰", isPresented: $showVictory) {
+            Button(mode == .story ? "Next Chapter" : "Another Harvest") { session.newGame() }
+            Button("Main Menu") { onExit() }
+        } message: {
+            Text(mode == .story ? "Your strawberry star is earned! The next chapter has blossomed." : "Today's sweet challenge is complete. Come back for another harvest!")
+        }
         .alert("Berry Garden Complete! 🍓", isPresented: $showGameOver) {
             Button("Fresh Garden") { session.newGame(); selectedSlot = nil }
             if session.shuffles > 0 {
@@ -228,10 +258,10 @@ struct BerryGameView: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text("STRAWBERRY SWEET").font(.system(size: 8, weight: .black, design: .rounded)).tracking(1.7).foregroundStyle(BerryStyle.leaf)
                 Text("Berry Block Blast!").font(.system(size: compact ? 22 : 25, weight: .black, design: .rounded)).lineLimit(1).minimumScaleFactor(0.6).foregroundStyle(BerryStyle.strawberry)
-                Text("THE ENDLESS BERRY GARDEN").font(.system(size: 8, weight: .bold, design: .rounded)).tracking(0.7).foregroundStyle(BerryStyle.chocolate.opacity(0.7))
+                Text(mode == .endless ? "THE ENDLESS BERRY GARDEN" : mode.rawValue.uppercased()).font(.system(size: 8, weight: .bold, design: .rounded)).tracking(0.7).foregroundStyle(BerryStyle.chocolate.opacity(0.7))
             }
             Spacer(minLength: 0)
-            Button { showHelp = true } label: {
+            Button { onExit() } label: { Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.leaf) }.accessibilityLabel("Main menu")\n            Button { showHelp = true } label: {
                 Image(systemName: "questionmark.circle.fill").font(.system(size: 23)).foregroundStyle(BerryStyle.strawberry)
             }.accessibilityLabel("How to play")
         }
@@ -280,7 +310,7 @@ struct BerryGameView: View {
             }
             toolButton("Shop", icon: "basket.fill", count: nil, enabled: true) { showShop = true }
             toolButton("Stats", icon: "chart.bar.fill", count: nil, enabled: true) { showStats = true }
-            toolButton("Menu", icon: "gearshape.fill", count: nil, enabled: true) { showSettings = true }
+            toolButton("Home", icon: "house.fill", count: nil, enabled: true) { onExit() }
         }.frame(height: 43)
     }
 
@@ -350,7 +380,7 @@ struct BerryGameView: View {
             Toggle("Sweet sound effects", isOn: $sound)
             Text("Your game is saved automatically. The display uses the full iPhone screen.").font(.footnote)
             Button("Start a New Garden", role: .destructive) { showSettings = false; confirmRestart = true }
-            Text("Berry Block Blast • 0.3.0 • Unofficial original fan puzzle").font(.footnote).foregroundStyle(.secondary)
+            Text("Berry Block Blast • 0.3.1 • Original strawberry-inspired puzzle").font(.footnote).foregroundStyle(.secondary)
             primaryButton("Done") { showSettings = false }
         }
     }

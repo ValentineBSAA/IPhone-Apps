@@ -13,6 +13,28 @@ final class BerryGameSession: ObservableObject {
     @Published private(set) var shuffles = 2
     @Published private(set) var totalEarnedBerries = 0
     private var previous: BerryEngine?
+    private var activeMode: BerryMode = .endless
+    private func modeKey(_ mode: BerryMode) -> String {
+        switch mode {
+        case .endless: saveKey
+        case .story: "berryblockblast.story.engine.v1"
+        case .daily: "berryblockblast.daily.engine." + Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash))
+        }
+    }
+    func selectMode(_ mode: BerryMode) {
+        guard activeMode != mode else { return }
+        activeMode = mode
+        if mode == .endless {
+            if let data = UserDefaults.standard.data(forKey: saveKey),
+               let snapshot = try? JSONDecoder().decode(Save.self, from: data) { engine = snapshot.engine }
+        } else if let data = UserDefaults.standard.data(forKey: modeKey(mode)),
+                  let restored = try? JSONDecoder().decode(BerryEngine.self, from: data) { engine = restored }
+        else { engine = BerryEngine() }
+        previous = nil
+        gameOver = !engine.hasMove()
+        lastMessage = nil
+    }
+
     private let saveKey = "berryblockblast.saved-game.v3"
     private let bestKey = "berryblockblast.best-score.v1"
     private let inventoryKey = "berryblockblast.inventory.v3"
@@ -118,6 +140,10 @@ final class BerryGameSession: ObservableObject {
 
     private func save() {
         let snapshot = Save(engine: engine, berries: berries, undos: undos, shuffles: shuffles, totalEarnedBerries: totalEarnedBerries)
-        if let data = try? JSONEncoder().encode(snapshot) { UserDefaults.standard.set(data, forKey: saveKey) }
+        if activeMode == .endless {
+            if let data = try? JSONEncoder().encode(snapshot) { UserDefaults.standard.set(data, forKey: saveKey) }
+        } else if let data = try? JSONEncoder().encode(engine) {
+            UserDefaults.standard.set(data, forKey: modeKey(activeMode))
+        }
     }
 }
