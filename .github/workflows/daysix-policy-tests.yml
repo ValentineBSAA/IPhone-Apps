@@ -6,8 +6,7 @@ on:
       - main
       - feature/daysix-ios-signing-dashboard
     paths:
-      - "DaySix/App/RenewalPolicy.swift"
-      - "DaySix/App/SelfProvisioning.swift"
+      - "DaySix/App/**"
       - "DaySix/Tests/**"
       - "DaySix/SignerLab/preview_brand.py"
       - "DaySix/SignerLab/Tests/**"
@@ -15,8 +14,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - "DaySix/App/RenewalPolicy.swift"
-      - "DaySix/App/SelfProvisioning.swift"
+      - "DaySix/App/**"
       - "DaySix/Tests/**"
       - "DaySix/SignerLab/preview_brand.py"
       - "DaySix/SignerLab/Tests/**"
@@ -48,6 +46,11 @@ jobs:
             DaySix/App/SelfProvisioning.swift \
             DaySix/Tests/main.swift \
             -o /tmp/daysix-policy-tests
+
+      - name: Parse all iPhone SwiftUI, AppIntents and notification sources
+        run: |
+          # Syntax validation only: the full iOS SDK typecheck still needs Xcode.
+          swiftc -frontend -parse DaySix/App/*.swift
 
       - name: Run expiry, retry, and policy tests
         run: /tmp/daysix-policy-tests
