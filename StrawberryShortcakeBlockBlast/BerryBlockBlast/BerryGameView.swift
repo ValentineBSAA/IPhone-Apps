@@ -20,6 +20,8 @@ private struct BerryBoard: View {
     let preview: BerryDragState?
     let size: CGFloat
     let selected: Int?
+    let mode: BerryMode
+    let strawberryUnlocked: Bool
     private let gap: CGFloat = 3
 
     var body: some View {
@@ -39,7 +41,7 @@ private struct BerryBoard: View {
                         .overlay(alignment: .topLeading) {
                             RoundedRectangle(cornerRadius: 8).strokeBorder(.white.opacity(0.58), lineWidth: 1)
                         }
-                    if let tint = engine.board[r][c] { BerryTile(tint: tint) }
+                    if let tint = engine.board[r][c] { BerryTile(tint: tint, mode: mode, strawberryUnlocked: strawberryUnlocked) }
                 }
                 .frame(width: unit, height: unit)
                 .offset(x: CGFloat(c) * (unit + gap), y: CGFloat(r) * (unit + gap))
@@ -49,7 +51,7 @@ private struct BerryBoard: View {
                     let r = preview.row + p.row
                     let c = preview.col + p.col
                     if (0..<8).contains(r), (0..<8).contains(c) {
-                        BerryTile(tint: preview.piece.tint, preview: true)
+                        BerryTile(tint: preview.piece.tint, preview: true, mode: mode, strawberryUnlocked: strawberryUnlocked)
                             .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(preview.allowed ? Color.green : Color.red, lineWidth: 2) }
                             .frame(width: unit, height: unit)
                             .offset(x: CGFloat(c) * (unit + gap), y: CGFloat(r) * (unit + gap))
@@ -100,6 +102,9 @@ struct BerryGameView: View {
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.music") private var music = true
     @State private var sparkle = false
+    @AppStorage("berryblockblast.strawberry-unlocked") private var strawberryUnlocked = false
+    @AppStorage("berryblockblast.lifetime-lines") private var lifetimeLines = 0
+    @State private var showUnlock = false
     private let harvestCheers = [
         "🍓 A berry sweet harvest!", "🍰 Piece of strawberry cake!",
         "🌸 The garden is blooming!", "✨ Sweet as sunshine!",
@@ -136,7 +141,7 @@ struct BerryGameView: View {
                     .font(.system(size: compact ? 10 : 12, weight: .bold, design: .rounded))
                     .foregroundStyle(BerryStyle.chocolate)
                     .frame(height: 19)
-                    BerryBoard(engine: session.engine, preview: drag, size: boardSize, selected: selectedSlot)
+                    BerryBoard(engine: session.engine, preview: drag, size: boardSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked)
                         .overlay { if sparkle { Text(harvestCheer).font(.headline).foregroundStyle(BerryStyle.strawberry).padding(12).background(.regularMaterial, in: Capsule()).transition(.scale.combined(with: .opacity)).allowsHitTesting(false) } }
                         .padding(7)
                         .contentShape(Rectangle())
@@ -170,7 +175,7 @@ struct BerryGameView: View {
                                     }
                                     .shadow(color: BerryStyle.strawberry.opacity(0.12), radius: 5, y: 3)
                                 if let piece {
-                                    BerryPieceGlyph(piece: piece, unit: min(17, (width - 86) / CGFloat(3 * max(piece.width, 3))))
+                                    BerryPieceGlyph(piece: piece, unit: min(17, (width - 86) / CGFloat(3 * max(piece.width, 3))), mode: mode, strawberryUnlocked: strawberryUnlocked)
                                         .opacity(drag?.slot == slot ? 0.3 : session.engine.hasPlacement(for: piece) ? 1 : 0.3)
                                 } else {
                                     Image(systemName: "checkmark.seal.fill")
@@ -213,6 +218,12 @@ struct BerryGameView: View {
         .preferredColorScheme(.light)
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
+        .sheet(isPresented: $showUnlock) {
+            sheetBase("Strawberry Blocks Unlocked!", icon: "🍓") {
+                Text("You cleared 10 lines! Your red blocks now grow strawberry decorations across every game mode. Plus, you earned 15 berries!")
+                primaryButton("Sweet! 🍓") { showUnlock = false }
+            }
+        }
         .sheet(isPresented: $showHelp) { helpSheet }
         .sheet(isPresented: $showSettings) { settingsSheet }
         .sheet(isPresented: $showShop) { shopSheet }
@@ -394,6 +405,16 @@ struct BerryGameView: View {
     }
 
     private func successFeedback() {
+        let key = "berryblockblast.lines-seen." + mode.rawValue
+        let previous = UserDefaults.standard.integer(forKey: key)
+        let current = session.engine.totalLines
+        if current > previous { lifetimeLines += current - previous }
+        UserDefaults.standard.set(current, forKey: key)
+        if lifetimeLines >= 10 && !strawberryUnlocked {
+            strawberryUnlocked = true
+            showUnlock = true
+            session.awardOnce("strawberry-unlock", amount: 15, reason: "Strawberry blocks unlocked")
+        }
         if haptics { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
         if sound { BerryAudio.shared.play(session.lastEarned > 10 ? .clear : .place) }
         if session.lastEarned > 10 {
@@ -449,6 +470,7 @@ struct BerryGameView: View {
             Text("🍓 Clear lines to earn berries: +3 per line, plus combo and perfect-garden bonuses. Strawberry School earns +25, Daily Harvest +30, and Story chapters earn rewards.").font(.subheadline)
             Text("🎀 Recent Berry Harvests").font(.headline).foregroundStyle(BerryStyle.strawberry)
             ForEach(session.rewardsLog.prefix(6), id: \.self) { reward in Text(reward).font(.caption) }
+            Text(strawberryUnlocked ? "🍓 Strawberry blocks unlocked!" : "🔒 Clear \(max(0, 10 - lifetimeLines)) more lines across your gardens to unlock strawberry blocks and 15 berries.").font(.subheadline).foregroundStyle(BerryStyle.leaf)
             Text("All strawberries are earned by playing. No purchases or ads.").font(.footnote)
             primaryButton("Back to Garden") { showShop = false }
         }
