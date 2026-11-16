@@ -85,6 +85,23 @@ expect(!RenewalPolicy.shouldRunAutomaticRenewal(
            expirations: [now.addingTimeInterval(-3600)], now: now),
        "Already expired signing must not be falsely reported as an on-time renewal")
 
+// Cooldown protects against repeated Apple account provisioning requests
+// when SideStore's App Intent silently fails on iOS 27.
+RenewalPolicy.hoursBeforeExpiry = 24
+expect(RenewalPolicy.dueAndRetryable(
+    expiration: expiresIn23, lastAttempt: nil, now: now),
+    "An app with no previous attempt should be retryable on day six")
+expect(!RenewalPolicy.retryAllowed(
+    lastAttempt: now.addingTimeInterval(-2 * 3600), now: now),
+    "A two-hour-old attempt must not trigger a new automatic signature")
+expect(RenewalPolicy.retryAllowed(
+    lastAttempt: now.addingTimeInterval(-7 * 3600), now: now),
+    "A seven-hour-old attempt must allow a later retry")
+expect(!RenewalPolicy.dueAndRetryable(
+    expiration: now.addingTimeInterval(-3600),
+    lastAttempt: nil, now: now),
+    "An expired signing window should require manual recovery")
+
 UserDefaults.standard.removeObject(forKey: RenewalPolicy.hoursKey)
 UserDefaults.standard.removeObject(forKey: RenewalPolicy.autoKey)
 
