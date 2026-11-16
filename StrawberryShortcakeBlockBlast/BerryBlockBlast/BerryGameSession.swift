@@ -41,8 +41,12 @@ final class BerryGameSession: ObservableObject {
                let snapshot = try? JSONDecoder().decode(Save.self, from: data) { engine = snapshot.engine }
             else { engine = freshEngine() }
         } else if let data = UserDefaults.standard.data(forKey: modeKey(mode)),
-                  let restored = try? JSONDecoder().decode(BerryEngine.self, from: data) { engine = restored }
-        else { engine = freshEngine() }
+                  let restored = try? JSONDecoder().decode(BerryEngine.self, from: data),
+                  restored.side == (mode == .superHard ? 12 : 8) {
+            engine = restored
+        } else {
+            engine = freshEngine()
+        }
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
