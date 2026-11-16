@@ -25,7 +25,12 @@ jobs:
           python3 -m venv .venv
           .venv/bin/python -m pip install --upgrade pip Pillow
       - name: Generate Strawberry Sweet app icon
-        run: .venv/bin/python Tools/generate_icon.py
+        run: |
+          if [ ! -s BerryBlockBlast/Assets.xcassets/AppIcon.appiconset/AppIcon.png ]; then
+            .venv/bin/python Tools/generate_icon.py
+          else
+            echo "Using committed AppIcon.png without regenerating it"
+          fi
       - name: Generate native Xcode project
         run: xcodegen generate --spec project.yml
       - name: Build for physical iPhones (unsigned)
