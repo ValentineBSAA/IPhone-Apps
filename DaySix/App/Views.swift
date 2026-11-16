@@ -551,7 +551,7 @@ struct MoreView: View {
                         }
                         GlassCard {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("DaySix 0.1.0").font(.subheadline.bold())
+                                Text("DaySix 0.1.2").font(.subheadline.bold())
                                 Text("Local-first. No analytics. No Apple credentials stored. Tracking is manual until a verified signer integration is available.")
                                     .font(.footnote).foregroundStyle(DS.muted)
                             }
