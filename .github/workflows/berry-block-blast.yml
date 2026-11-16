@@ -2,6 +2,11 @@ name: Berry Block Blast iPhone IPA
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'StrawberryShortcakeBlockBlast/**'
+      - '.github/workflows/berry-block-blast.yml'
 
 concurrency:
   group: berry-block-blast-${{ github.ref }}
@@ -25,7 +30,12 @@ jobs:
           python3 -m venv .venv
           .venv/bin/python -m pip install --upgrade pip Pillow
       - name: Generate Strawberry Sweet app icon
-        run: .venv/bin/python Tools/generate_icon.py
+        run: |
+          if [ ! -s BerryBlockBlast/Assets.xcassets/AppIcon.appiconset/AppIcon.png ]; then
+            .venv/bin/python Tools/generate_icon.py
+          else
+            echo "Using committed app icon"
+          fi
       - name: Generate native Xcode project
         run: xcodegen generate --spec project.yml
       - name: Build for physical iPhones (unsigned)
@@ -73,12 +83,12 @@ jobs:
           mkdir -p dist/Payload
           cp -R build/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
           cd dist
-          zip -qr Berry-Block-Blast-v0.5.3-unsigned.ipa Payload
-          test -s Berry-Block-Blast-v0.5.3-unsigned.ipa
-          unzip -l Berry-Block-Blast-v0.5.3-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
+          zip -qr Berry-Block-Blast-v0.5.4-unsigned.ipa Payload
+          test -s Berry-Block-Blast-v0.5.4-unsigned.ipa
+          unzip -l Berry-Block-Blast-v0.5.4-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
       - name: Upload iPhone IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Berry-Block-Blast-v0.5.3-iPhone-unsigned
-          path: StrawberryShortcakeBlockBlast/dist/Berry-Block-Blast-v0.5.3-unsigned.ipa
+          name: Berry-Block-Blast-v0.5.4-iPhone-unsigned
+          path: StrawberryShortcakeBlockBlast/dist/Berry-Block-Blast-v0.5.4-unsigned.ipa
           if-no-files-found: error
