@@ -258,7 +258,9 @@ struct BerryGameView: View {
         .onReceive(Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()) { _ in
             if mode == .challenge { refreshBlitzClock() }
         }
-        .onChange(of: session.gameOver) { _, ended in showGameOver = ended && !showVictory }
+        .onChange(of: session.gameOver) { _, ended in
+            showGameOver = !showVictory && (ended || (mode == .challenge && !blitzRunning && blitzRemaining == 0))
+        }
         .onAppear {
             BerryAudio.shared.setMusic(music)
             session.selectMode(mode)
@@ -480,7 +482,7 @@ struct BerryGameView: View {
     }
 
     private func refreshBlitzClock() {
-        guard mode == .challenge, blitzRunning, let deadline = blitzDeadline, !showVictory else { return }
+        guard mode == .challenge, let deadline = blitzDeadline, !showVictory else { return }
         blitzRemaining = max(0, Int(ceil(deadline.timeIntervalSinceNow)))
         if blitzRemaining == 0 { blitzRunning = false; showGameOver = true; drag = nil; selectedSlot = nil }
     }
