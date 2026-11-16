@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
 import plistlib
 import tempfile
@@ -56,16 +57,32 @@ class PreviewSafetyTests(unittest.TestCase):
                 encoding="utf-8")
         self.provenance = preview.patch(self.root, "abc123def")
 
-    def make_ipa(self, bundle_id, label=None, preview_marker=True):
+    def make_ipa(self, bundle_id, label=None, preview_marker=True,
+                 widget_id=None, backup_id=None):
         info = {
             "CFBundleIdentifier": bundle_id,
             "CFBundleDisplayName": label or preview.DISPLAY_NAME,
             "DaySixSignerLabPreview": preview_marker,
         }
+        widget_info = {
+            "CFBundleIdentifier": widget_id or preview.PREVIEW_BUNDLE_ID + ".AltWidget"
+        }
+        backup_info = {
+            "CFBundleIdentifier": backup_id or preview.PREVIEW_BUNDLE_ID + ".SideBackup"
+        }
+        nested_data = io.BytesIO()
+        with zipfile.ZipFile(nested_data, "w") as nested:
+            nested.writestr("Payload/SideBackup.app/Info.plist",
+                            plistlib.dumps(backup_info))
         path = self.root / "preview.ipa"
         with zipfile.ZipFile(path, "w") as archive:
             archive.writestr("Payload/SideStore.app/Info.plist",
                              plistlib.dumps(info))
+            archive.writestr(
+                "Payload/SideStore.app/PlugIns/AltWidgetExtension.appex/Info.plist",
+                plistlib.dumps(widget_info))
+            archive.writestr("Payload/SideStore.app/SideBackup.ipa",
+                             nested_data.getvalue())
         return path
 
     def test_patch_preserves_original_handler(self):
@@ -119,6 +136,16 @@ class PreviewSafetyTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             preview.verify_ipa(self.make_ipa(
                 preview.PREVIEW_BUNDLE_ID, label="SideStore"))
+
+    def test_nested_app_ids_cannot_impersonate_sidestore(self):
+        with self.assertRaises(RuntimeError):
+            preview.verify_ipa(self.make_ipa(
+                preview.PREVIEW_BUNDLE_ID,
+                widget_id="com.SideStore.SideStore.AltWidget"))
+        with self.assertRaises(RuntimeError):
+            preview.verify_ipa(self.make_ipa(
+                preview.PREVIEW_BUNDLE_ID,
+                backup_id="com.SideStore.SideStore.SideBackup"))
 
     def test_unknown_upstream_config_rejected(self):
         # A changed upstream identity scheme must not silently produce an IPA.
