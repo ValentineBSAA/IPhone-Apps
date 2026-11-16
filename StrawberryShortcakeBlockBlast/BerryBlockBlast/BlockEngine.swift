@@ -25,7 +25,8 @@ struct BerryPlacement: Equatable {
 
 struct BerryEngine: Codable {
     static let side = 8
-    private(set) var board: [[Int?]] = Array(repeating: Array(repeating: nil, count: side), count: side)
+    private(set) var side: Int = 8
+    private(set) var board: [[Int?]] = Array(repeating: Array(repeating: nil, count: 8), count: 8)
     private(set) var tray: [BerryPiece?] = []
     private(set) var score = 0
     private(set) var streak = 0
@@ -36,8 +37,16 @@ struct BerryEngine: Codable {
     private(set) var boardClears = 0
     private var randomState: UInt64? = nil
     private var cozyPieces: Bool? = nil
+    private var hardPieces: Bool? = nil
 
     init() { refill() }
+    init(side: Int, hard: Bool = false) {
+        precondition(side == 8 || side == 12)
+        self.side = side
+        self.hardPieces = hard
+        board = Array(repeating: Array(repeating: nil, count: side), count: side)
+        refill()
+    }
     init(cozy: Bool) {
         cozyPieces = cozy
         refill()
@@ -60,11 +69,13 @@ struct BerryEngine: Codable {
     // Decode the optional mode metadata explicitly so older saves survive upgrades.
     private enum CodingKeys: String, CodingKey {
         case board, tray, score, streak, moves, totalLines, bestCombo
-        case dryMoves, boardClears, randomState, cozyPieces
+        case dryMoves, boardClears, randomState, cozyPieces, side, hardPieces
     }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         board = try values.decode([[Int?]].self, forKey: .board)
+        side = try values.decodeIfPresent(Int.self, forKey: .side) ?? 8
+        hardPieces = try values.decodeIfPresent(Bool.self, forKey: .hardPieces)
         tray = try values.decode([BerryPiece?].self, forKey: .tray)
         score = try values.decodeIfPresent(Int.self, forKey: .score) ?? 0
         streak = try values.decodeIfPresent(Int.self, forKey: .streak) ?? 0
@@ -75,8 +86,8 @@ struct BerryEngine: Codable {
         boardClears = try values.decodeIfPresent(Int.self, forKey: .boardClears) ?? 0
         randomState = try values.decodeIfPresent(UInt64.self, forKey: .randomState)
         cozyPieces = try values.decodeIfPresent(Bool.self, forKey: .cozyPieces)
-        guard board.count == Self.side,
-              board.allSatisfy({ $0.count == Self.side }),
+        guard (side == 8 || side == 12), board.count == side,
+              board.allSatisfy({ $0.count == side }),
               tray.count == 3 else {
             throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath,
                 debugDescription: "Invalid Berry Block Blast board or tray dimensions"))
@@ -88,6 +99,7 @@ struct BerryEngine: Codable {
         precondition(board.count == Self.side && board.allSatisfy { $0.count == Self.side })
         precondition(tray.count == 3)
         self.board = board
+        self.side = Self.side
         self.tray = tray
         self.score = score
     }
@@ -96,7 +108,7 @@ struct BerryEngine: Codable {
         for p in piece.points {
             let r = row + p.row
             let c = col + p.col
-            guard (0..<Self.side).contains(r), (0..<Self.side).contains(c), board[r][c] == nil else {
+            guard (0..<side).contains(r), (0..<side).contains(c), board[r][c] == nil else {
                 return false
             }
         }
@@ -104,15 +116,15 @@ struct BerryEngine: Codable {
     }
 
     func hasPlacement(for piece: BerryPiece) -> Bool {
-        (0..<Self.side).contains { row in
-            (0..<Self.side).contains { col in canPlace(piece, row: row, col: col) }
+        (0..<side).contains { row in
+            (0..<side).contains { col in canPlace(piece, row: row, col: col) }
         }
     }
 
     func hasMove() -> Bool {
         for piece in tray.compactMap({ $0 }) {
-            for row in 0..<Self.side {
-                for col in 0..<Self.side where canPlace(piece, row: row, col: col) { return true }
+            for row in 0..<side {
+                for col in 0..<side where canPlace(piece, row: row, col: col) { return true }
             }
         }
         return false
@@ -125,16 +137,16 @@ struct BerryEngine: Codable {
         tray[slot] = nil
         moves += 1
 
-        let rows = (0..<Self.side).filter { r in board[r].allSatisfy { $0 != nil } }
-        let cols = (0..<Self.side).filter { c in (0..<Self.side).allSatisfy { board[$0][c] != nil } }
+        let rows = (0..<side).filter { r in board[r].allSatisfy { $0 != nil } }
+        let cols = (0..<side).filter { c in (0..<side).allSatisfy { board[$0][c] != nil } }
         let lines = rows.count + cols.count
         if lines > 0 {
             streak += 1
             dryMoves = 0
             totalLines += lines
             bestCombo = max(bestCombo, streak)
-            for r in rows { for c in 0..<Self.side { board[r][c] = nil } }
-            for c in cols { for r in 0..<Self.side { board[r][c] = nil } }
+            for r in rows { for c in 0..<side { board[r][c] = nil } }
+            for c in cols { for r in 0..<side { board[r][c] = nil } }
         } else {
             dryMoves += 1
             if dryMoves >= 3 { streak = 0 }
@@ -169,16 +181,16 @@ struct BerryEngine: Codable {
         ]
         // A newly dealt tray always contains at least one legal move. Prefer
         // several playable choices instead of handing out impossible pieces.
-        let selection = cozyPieces == true ? Array(catalog.prefix(8)) : catalog
+        let selection = cozyPieces == true ? Array(catalog.prefix(8)) : hardPieces == true ? Array(catalog.filter { $0.count >= 4 }) : catalog
         let viable = selection.filter { shape in
             let piece = BerryPiece(points: shape, tint: 0)
-            return (0..<Self.side).contains { r in
-                (0..<Self.side).contains { c in canPlace(piece, row: r, col: c) }
+            return (0..<side).contains { r in
+                (0..<side).contains { c in canPlace(piece, row: r, col: c) }
             }
         }
         var nextTray: [BerryPiece?] = []
         for index in 0..<3 {
-            let pool = cozyPieces == true ? (!viable.isEmpty ? viable : selection) : (!viable.isEmpty && (index < 2 || nextRandom(2) == 0) ? viable : catalog)
+            let pool = cozyPieces == true ? (!viable.isEmpty ? viable : selection) : hardPieces == true ? (!viable.isEmpty ? viable : selection) : (!viable.isEmpty && (index < 2 || nextRandom(2) == 0) ? viable : catalog)
             let shape = pool[nextRandom(pool.count)]
             nextTray.append(BerryPiece(points: shape, tint: nextRandom(6)))
         }
