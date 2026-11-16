@@ -143,11 +143,13 @@ struct BerryEngine: Codable {
                 (0..<Self.side).contains { c in canPlace(piece, row: r, col: c) }
             }
         }
-        tray = (0..<3).map { index in
+        var nextTray: [BerryPiece?] = []
+        for index in 0..<3 {
             let pool = !viable.isEmpty && (index < 2 || nextRandom(2) == 0) ? viable : catalog
             let shape = pool[nextRandom(pool.count)]
-            return BerryPiece(points: shape, tint: nextRandom(6))
+            nextTray.append(BerryPiece(points: shape, tint: nextRandom(6)))
         }
+        tray = nextTray
     }
 }
 
