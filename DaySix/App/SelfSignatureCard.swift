@@ -56,6 +56,11 @@ struct SelfSignatureCard: View {
                         .font(.footnote).foregroundStyle(DS.amber)
                 }
 
+                if let renewed = RenewalAudit.lastVerifiedSelfRenewal {
+                    Label("Last verified self-renewal: \(renewed.formatted(date: .abbreviated, time: .shortened))",
+                          systemImage: "checkmark.seal.fill")
+                        .font(.footnote).foregroundStyle(DS.mint)
+                }
                 if let attempt, isDue {
                     Text("Last refresh attempt: \(attempt.formatted(date: .abbreviated, time: .shortened)). This is not proof of success.")
                         .font(.footnote).foregroundStyle(DS.amber)
