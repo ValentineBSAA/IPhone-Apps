@@ -98,7 +98,7 @@ class PreviewSafetyTests(unittest.TestCase):
                 with self.assertRaises(RuntimeError):
                     preview.verify_ipa(self.make_ipa(official))
         for not_expected in [
-            preview.PREVIEW_BUNDLE_ID,
+            "com.SideStore.SideStore.DAY6LAB001",
             "com.valentinebsaa.daysix",
             "com.valentinebsaa.daysix.signerlab2"
         ]:
