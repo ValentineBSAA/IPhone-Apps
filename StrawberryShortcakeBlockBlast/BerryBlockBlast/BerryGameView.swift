@@ -86,6 +86,11 @@ struct BerryGameView: View {
     @State private var isPaused = false
     @Environment(\.scenePhase) private var scenePhase
     private var canManuallyPause: Bool { mode != .challenge }
+    private var canMakeMove: Bool {
+        guard !isPaused, !showGameOver, !showVictory, !session.gameOver else { return false }
+        if mode == .challenge { return blitzRunning && (blitzDeadline.map { $0 > Date() } ?? false) }
+        return true
+    }
     private var goal: Int { mode == .story ? 100 + storyLevel * 55 : mode == .challenge ? 250 : 120 }
     private var storyTargetLines: Int { 2 + (storyLevel / 2) }
     private var storyIsLineQuest: Bool { storyLevel % 2 == 0 }
@@ -161,7 +166,7 @@ struct BerryGameView: View {
                         .padding(7)
                         .contentShape(Rectangle())
                         .onTapGesture { location in
-                            guard !isPaused, !showGameOver, let slot = selectedSlot, let piece = session.engine.tray[slot] else { return }
+                            guard canMakeMove, let slot = selectedSlot, session.engine.tray.indices.contains(slot), let piece = session.engine.tray[slot] else { return }
                             let step = cell + 3
                             let col = Int(floor((location.x - 7) / step))
                             let row = Int(floor((location.y - 7) / step))
@@ -454,7 +459,7 @@ struct BerryGameView: View {
     }
 
     private func updateDrag(slot: Int, finger: CGPoint, cell: CGFloat) {
-        guard !isPaused else { drag = nil; return }
+        guard canMakeMove else { drag = nil; return }
         guard session.engine.tray.indices.contains(slot), let piece = session.engine.tray[slot] else { drag = nil; return }
         let step = cell + 3
         let x = finger.x - boardRect.minX - CGFloat(piece.width) * step / 2
@@ -468,7 +473,7 @@ struct BerryGameView: View {
 
     private func finishDrag() {
         defer { drag = nil }
-        guard !isPaused, !showGameOver, let drag, drag.allowed else { return }
+        guard canMakeMove, let drag, drag.allowed else { refreshBlitzClock(); return }
         if session.drop(slot: drag.slot, row: drag.row, col: drag.col) {
             selectedSlot = nil
             successFeedback()
