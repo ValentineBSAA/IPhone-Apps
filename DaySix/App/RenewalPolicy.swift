@@ -43,6 +43,26 @@ enum RenewalPolicy {
         now >= renewAt(expiration: expiration)
     }
 
+    /// Prevent an unsuccessful external Shortcuts action from repeatedly
+    /// requesting Apple provisioning operations in a tight loop. This is a
+    /// *minimum interval* between requests, not a background retry daemon.
+    static let minimumAttemptSpacing: TimeInterval = 6 * 60 * 60
+
+    static func retryAllowed(lastAttempt: Date?, now: Date = .now) -> Bool {
+        guard let lastAttempt else { return true }
+        // Future timestamps can result from clock changes; wait rather than
+        // requesting multiple provisioning attempts immediately.
+        return now.timeIntervalSince(lastAttempt) >= minimumAttemptSpacing
+    }
+
+    static func dueAndRetryable(expiration: Date,
+                                lastAttempt: Date?,
+                                now: Date = .now) -> Bool {
+        expiration > now
+            && isDue(expiration: expiration, now: now)
+            && retryAllowed(lastAttempt: lastAttempt, now: now)
+    }
+
     static func shouldRunAutomaticRenewal(expirations: [Date], now: Date = .now) -> Bool {
         automaticallyRequestRefresh && expirations.contains {
             // Do not advertise signing an already expired app as an on-time
