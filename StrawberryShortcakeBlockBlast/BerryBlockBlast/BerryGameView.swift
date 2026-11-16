@@ -80,6 +80,9 @@ struct BerryGameView: View {
     @State private var showVictory = false
     @State private var blitzRemaining = 120
     @State private var blitzRunning = false
+    @State private var isPaused = false
+    @Environment(\.scenePhase) private var scenePhase
+    private var canManuallyPause: Bool { mode != .challenge }
     private var goal: Int { mode == .story ? 100 + storyLevel * 55 : mode == .challenge ? 250 : 120 }
     private var storyTargetLines: Int { 2 + (storyLevel / 2) }
     private var storyIsLineQuest: Bool { storyLevel % 2 == 0 }
@@ -154,7 +157,7 @@ struct BerryGameView: View {
                         .padding(7)
                         .contentShape(Rectangle())
                         .onTapGesture { location in
-                            guard let slot = selectedSlot, let piece = session.engine.tray[slot] else { return }
+                            guard !isPaused, let slot = selectedSlot, let piece = session.engine.tray[slot] else { return }
                             let step = cell + 3
                             let col = Int(floor((location.x - 7) / step))
                             let row = Int(floor((location.y - 7) / step))
@@ -194,7 +197,7 @@ struct BerryGameView: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: compact ? 65 : 76)
                             .contentShape(Rectangle())
-                            .onTapGesture { if piece != nil { selectedSlot = selectedSlot == slot ? nil : slot } }
+                            .onTapGesture { if !isPaused && piece != nil { selectedSlot = selectedSlot == slot ? nil : slot } }
                             .gesture(
                                 DragGesture(minimumDistance: 5, coordinateSpace: .named("berry-screen"))
                                     .onChanged { value in updateDrag(slot: slot, finger: value.location, cell: cell) }
@@ -213,6 +216,7 @@ struct BerryGameView: View {
                     .foregroundStyle(BerryStyle.chocolate.opacity(0.65))
                     Spacer(minLength: 0)
                 }
+                .disabled(isPaused)
                 .padding(.horizontal, 15)
                 .padding(.top, max(8, top + 3))
                 .padding(.bottom, max(5, bottom))
@@ -238,8 +242,11 @@ struct BerryGameView: View {
         .sheet(isPresented: $showStats) { statsSheet }
         .sheet(isPresented: $showCottage) { cottageSheet }
         .sheet(isPresented: $showWelcome) { welcomeSheet }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active && canManuallyPause { isPaused = true; drag = nil; selectedSlot = nil }
+        }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
-            guard mode == .challenge, blitzRunning, !showVictory, !showGameOver, !showSettings, !showShop, !showStats, !showCottage, !showHelp, !showWelcome, !showUnlock else { return }
+            guard mode == .challenge, blitzRunning, !showVictory, !showGameOver, !showSettings, !showShop, !showStats, !showCottage, !isPaused, !showHelp, !showWelcome, !showUnlock else { return }
             blitzRemaining = max(0, blitzRemaining - 1)
             if blitzRemaining == 0 { blitzRunning = false; showGameOver = true }
         }
@@ -253,6 +260,30 @@ struct BerryGameView: View {
         }
         .onChange(of: session.engine.score) { _, _ in checkObjective() }
         .onChange(of: session.engine.totalLines) { _, _ in checkObjective() }
+        .overlay {
+            if isPaused && !showVictory && !showGameOver {
+                ZStack {
+                    BerryStyle.chocolate.opacity(0.54).ignoresSafeArea()
+                    VStack(spacing: 18) {
+                        Text("🍓 🌸 🫖").font(.system(size: 44))
+                        Text("A Little Berry Break").font(.system(size: 27, weight: .black, design: .rounded))
+                            .foregroundStyle(BerryStyle.strawberry)
+                        Text("Your garden is safely waiting. Take all the time you need!")
+                            .multilineTextAlignment(.center).foregroundStyle(BerryStyle.chocolate)
+                        Text("🍓 \(session.berries) berries • \(session.engine.score) points")
+                            .font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
+                        Button("Continue Gardening") { isPaused = false }
+                            .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
+                        Button("Save & Return Home") { isPaused = false; onExit() }
+                            .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
+                    }
+                    .padding(26).frame(maxWidth: 350)
+                    .background(LinearGradient(colors: [BerryStyle.cream, Color(red: 1, green: 0.84, blue: 0.89)], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 28))
+                    .overlay(RoundedRectangle(cornerRadius: 28).stroke(.white, lineWidth: 3))
+                    .padding(22)
+                }
+            }
+        }
         .overlay {
             if showVictory || showGameOver || confirmRestart {
                 ZStack {
@@ -320,6 +351,11 @@ struct BerryGameView: View {
                 Text(mode == .endless ? "THE ENDLESS BERRY GARDEN" : mode.rawValue.uppercased()).font(.system(size: 8, weight: .bold, design: .rounded)).tracking(0.7).foregroundStyle(BerryStyle.chocolate.opacity(0.7))
             }
             Spacer(minLength: 0)
+            if canManuallyPause {
+                Button { isPaused = true; drag = nil; selectedSlot = nil } label: {
+                    Image(systemName: "pause.circle.fill").font(.system(size: 23)).foregroundStyle(BerryStyle.strawberry)
+                }.accessibilityLabel("Pause game")
+            }
             Button { onExit() } label: { Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.leaf) }.accessibilityLabel("Main menu")
             Button { showSettings = true } label: {
                 Image(systemName: "gearshape.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.strawberry)
@@ -394,6 +430,7 @@ struct BerryGameView: View {
     }
 
     private func updateDrag(slot: Int, finger: CGPoint, cell: CGFloat) {
+        guard !isPaused else { drag = nil; return }
         guard session.engine.tray.indices.contains(slot), let piece = session.engine.tray[slot] else { drag = nil; return }
         let step = cell + 3
         let x = finger.x - boardRect.minX - CGFloat(piece.width) * step / 2
@@ -407,7 +444,7 @@ struct BerryGameView: View {
 
     private func finishDrag() {
         defer { drag = nil }
-        guard let drag, drag.allowed else { return }
+        guard !isPaused, let drag, drag.allowed else { return }
         if session.drop(slot: drag.slot, row: drag.row, col: drag.col) {
             selectedSlot = nil
             successFeedback()
