@@ -472,8 +472,14 @@ struct BerryGameView: View {
         let step = cell + 3
         let localX = finger.x - boardRect.minX
         let localY = finger.y - boardRect.minY
-        let col = Int(floor((localX - CGFloat(piece.width) * step / 2) / step + 0.5))
-        let row = Int(floor((localY - CGFloat(piece.height) * step / 2) / step + 0.5))
+        // Center on occupied cells, not the nominal bounding box: some pieces
+        // intentionally have empty leading cells (for example the T shape).
+        let minCol = piece.points.map(\.col).min() ?? 0
+        let maxCol = piece.points.map(\.col).max() ?? 0
+        let minRow = piece.points.map(\.row).min() ?? 0
+        let maxRow = piece.points.map(\.row).max() ?? 0
+        let col = Int(floor(localX / step - CGFloat(minCol + maxCol + 1) / 2 + 0.5))
+        let row = Int(floor(localY / step - CGFloat(minRow + maxRow + 1) / 2 + 0.5))
         let touchingBoard = boardRect.insetBy(dx: -12, dy: -12).contains(finger)
         drag = BerryDragState(slot: slot, piece: piece, row: row, col: col,
                               allowed: touchingBoard && session.engine.canPlace(piece, row: row, col: col))
