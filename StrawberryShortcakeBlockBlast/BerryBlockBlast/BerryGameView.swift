@@ -224,13 +224,13 @@ struct BerryGameView: View {
         } message: {
             Text(mode == .story ? "Your strawberry star is earned! The next chapter has blossomed." : "Today's sweet challenge is complete. Come back for another harvest!")
         }
-        .alert("Berry Garden Complete! 🍓", isPresented: $showGameOver) {
-            Button("Fresh Garden") { session.newGame(); selectedSlot = nil }
+        .alert("No More Room in the Berry Patch! 🌱", isPresented: $showGameOver) {
+            Button("Plant a Fresh Garden") { session.newGame(); selectedSlot = nil }
             if session.shuffles > 0 {
                 Button("Use Shuffle (\(session.shuffles) left)") { session.shuffle() }
             }
         } message: {
-            Text("Score \(session.engine.score) • \(session.engine.totalLines) lines • Best combo ×\(session.engine.bestCombo). Keep growing!")
+            Text("No more pieces fit. You harvested \(session.engine.score) points and cleared \(session.engine.totalLines) lines. Every garden deserves another season! 🍓")
         }
     }
 
