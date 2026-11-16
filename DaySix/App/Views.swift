@@ -511,6 +511,24 @@ struct MoreView: View {
                             }
                         }
                         NavigationLink {
+                            DaySixNotificationSettingsView()
+                        } label: {
+                            GlassCard {
+                                HStack(spacing: 13) {
+                                    Image(systemName: "bell.badge.fill")
+                                        .font(.title2).foregroundStyle(DS.mint)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("iPhone Notifications").font(.headline)
+                                        Text("Native iOS banners, sounds, permissions, alert types and a test.")
+                                            .font(.caption).foregroundStyle(DS.muted)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right").foregroundStyle(DS.muted)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        NavigationLink {
                             ReliabilityCenterView()
                         } label: {
                             GlassCard {
@@ -552,13 +570,14 @@ struct MoreView: View {
                                     Label("Day-six reminders", systemImage: "bell.badge.fill")
                                 }
                                 .tint(DS.mint)
-                                Button {
-                                    store.requestNotificationPermission()
+                                NavigationLink {
+                                    DaySixNotificationSettingsView()
                                 } label: {
-                                    Label("Enable iPhone Notifications", systemImage: "bell")
+                                    Label("Manage Native iPhone Notifications",
+                                          systemImage: "bell.badge.fill")
                                         .foregroundStyle(DS.mint)
                                 }
-                                Text("Local reminders still work when a background refresh cannot run.")
+                                Text("iOS manages banners, sounds, badges and Lock Screen alerts. DaySix schedules local renewal reminders even when background refresh cannot run.")
                                     .font(.footnote).foregroundStyle(DS.muted)
                             }
                         }
