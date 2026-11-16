@@ -46,6 +46,8 @@ final class BerryGameSession: ObservableObject {
         previousRewardEntry = nil
         gameOver = !engine.hasMove()
         lastMessage = nil
+        lastEarned = 0
+        lastClearedLines = 0
     }
 
     private func freshEngine() -> BerryEngine {
@@ -119,8 +121,10 @@ final class BerryGameSession: ObservableObject {
         return true
     }
 
-    func undo() {
-        guard undos > 0, let previous else { return }
+    @discardableResult
+    func undo() -> Int {
+        guard undos > 0, let previous else { return 0 }
+        let revertedLines = max(0, engine.totalLines - previous.totalLines)
         engine = previous
         berries = max(0, berries - previousBerryEarnings)
         totalEarnedBerries = max(0, totalEarnedBerries - previousBerryEarnings)
@@ -134,7 +138,10 @@ final class BerryGameSession: ObservableObject {
         undos -= 1
         gameOver = !engine.hasMove()
         lastMessage = "A little second chance! 💗"
+        lastEarned = 0
+        lastClearedLines = 0
         save()
+        return revertedLines
     }
 
     func shuffle() {
@@ -146,6 +153,8 @@ final class BerryGameSession: ObservableObject {
         previousBerryEarnings = 0
         previousRewardEntry = nil
         lastMessage = "Freshly picked berry blocks! 🍓"
+        lastEarned = 0
+        lastClearedLines = 0
         save()
     }
 
