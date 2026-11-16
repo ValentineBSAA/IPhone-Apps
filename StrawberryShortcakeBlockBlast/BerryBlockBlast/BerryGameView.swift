@@ -315,7 +315,7 @@ struct BerryGameView: View {
                         Button("🏡 Return to Strawberry Village") { onExit() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
                         if showGameOver && session.shuffles > 0 {
-                            Button("✨ Use Shuffle (\(session.shuffles) left)") { session.shuffle(); showGameOver = session.gameOver }
+                            Button("✨ Use Shuffle (\(session.shuffles) left)") { session.shuffle(); showGameOver = session.gameOver; selectedSlot = nil; drag = nil }
                                 .foregroundStyle(BerryStyle.strawberry)
                         }
                         if confirmRestart {
@@ -413,10 +413,10 @@ struct BerryGameView: View {
     private var toolBar: some View {
         HStack(spacing: 7) {
             toolButton("Undo", icon: "arrow.uturn.backward", count: session.undos, enabled: session.canUndo) {
-                if session.canUndo { session.undo(); selectedSlot = nil; successFeedback() } else { showShop = true }
+                if session.canUndo { session.undo(); selectedSlot = nil; drag = nil } else { showShop = true }
             }
             toolButton("Shuffle", icon: "shuffle", count: session.shuffles, enabled: session.shuffles > 0) {
-                if session.shuffles > 0 { session.shuffle(); selectedSlot = nil; successFeedback() } else { showShop = true }
+                if session.shuffles > 0 { session.shuffle(); selectedSlot = nil; drag = nil } else { showShop = true }
             }
             toolButton("Shop", icon: "basket.fill", count: nil, enabled: true) { showShop = true }
             toolButton(mode == .cozy ? "Cottage" : "Stats", icon: mode == .cozy ? "house.lodge.fill" : "chart.bar.fill", count: nil, enabled: true) { if mode == .cozy { showCottage = true } else { showStats = true } }
