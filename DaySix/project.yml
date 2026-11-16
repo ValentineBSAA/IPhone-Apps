@@ -38,6 +38,10 @@ targets:
           - CFBundleURLName: com.valentinebsaa.daysix
             CFBundleURLSchemes: [daysix]
         LSApplicationQueriesSchemes: [sidestore, shortcuts]
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.valentinebsaa.daysix.refresh
+        UIBackgroundModes:
+          - fetch
         UIRequiresFullScreen: false
     scheme:
       testTargets: []
