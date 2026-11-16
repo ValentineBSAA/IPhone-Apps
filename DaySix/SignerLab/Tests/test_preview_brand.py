@@ -219,6 +219,7 @@ private extension TabBarController
         self.assertIn("InstalledApp.fetchAltStore", tab_source)
         self.assertIn("selfExpiry: ownSigner?.expirationDate", tab_source)
         self.assertIn("status = readStatus()", tab_source)
+        self.assertNotIn(".contentTransition(.numericText())", tab_source)
         self.assertIn("A successful build or a refresh request does not prove", tab_source)
         self.assertIn("apps.daySixRefreshManagedApps()", tab_source)
         self.assertIn("self.refreshAllApps(", picker_source)
