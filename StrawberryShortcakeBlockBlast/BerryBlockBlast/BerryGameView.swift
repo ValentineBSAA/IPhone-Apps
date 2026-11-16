@@ -99,6 +99,7 @@ struct BerryGameView: View {
     @State private var showSettings = false
     @State private var showShop = false
     @State private var showStats = false
+    @State private var showCottage = false
     @State private var confirmRestart = false
     @State private var showGameOver = false
     @State private var showWelcome = false
@@ -233,6 +234,7 @@ struct BerryGameView: View {
         .sheet(isPresented: $showSettings) { settingsSheet }
         .sheet(isPresented: $showShop) { shopSheet }
         .sheet(isPresented: $showStats) { statsSheet }
+        .sheet(isPresented: $showCottage) { cottageSheet }
         .sheet(isPresented: $showWelcome) { welcomeSheet }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             guard mode == .challenge, blitzRunning, !showVictory, !showGameOver, !showSettings, !showShop, !showStats, !showHelp, !showWelcome, !showUnlock else { return }
@@ -373,7 +375,7 @@ struct BerryGameView: View {
                 if session.shuffles > 0 { session.shuffle(); selectedSlot = nil; successFeedback() } else { showShop = true }
             }
             toolButton("Shop", icon: "basket.fill", count: nil, enabled: true) { showShop = true }
-            toolButton("Stats", icon: "chart.bar.fill", count: nil, enabled: true) { showStats = true }
+            toolButton(mode == .cozy ? "Cottage" : "Stats", icon: mode == .cozy ? "house.lodge.fill" : "chart.bar.fill", count: nil, enabled: true) { if mode == .cozy { showCottage = true } else { showStats = true } }
             toolButton("Home", icon: "house.fill", count: nil, enabled: true) { onExit() }
         }.frame(height: 43)
     }
@@ -491,6 +493,31 @@ struct BerryGameView: View {
             Text(strawberryUnlocked ? "🍓 Strawberry blocks unlocked!" : "🔒 Clear \(max(0, 10 - lifetimeLines)) more lines across your gardens to unlock strawberry blocks and 15 berries.").font(.subheadline).foregroundStyle(BerryStyle.leaf)
             Text("All strawberries are earned by playing. No purchases or ads.").font(.footnote)
             primaryButton("Back to Garden") { showShop = false }
+        }
+    }
+    private var cottageSheet: some View {
+        sheetBase("My Strawberry Cottage", icon: "🏡") {
+            Text("A little home that grows with every harvest.").multilineTextAlignment(.center)
+            ZStack {
+                RoundedRectangle(cornerRadius: 24).fill(Color(red: 0.86, green: 0.96, blue: 0.81))
+                VStack(spacing: 8) {
+                    Text("☀️  ☁️  🌷  ☁️").font(.title2)
+                    Text("🏡").font(.system(size: 100))
+                    HStack(spacing: 8) {
+                        ForEach(0..<min(session.cottageDecorations, 12), id: \.self) { i in
+                            Text(["🍓", "🌷", "🪴", "🎀", "🍰", "🧺"][i % 6])
+                                .font(.system(size: 24))
+                        }
+                    }
+                    Text("🌿 🌸 🌿 🌸 🌿").font(.title2)
+                }.padding()
+            }.frame(height: 250)
+            Text("\(session.cottageDecorations) decorations collected").font(.headline).foregroundStyle(BerryStyle.leaf)
+            Button("Add a garden decoration • 🍓 50") { session.buyCottageDecoration() }
+                .disabled(session.berries < 50)
+                .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
+            Text("Your strawberry basket: 🍓 \(session.berries)").font(.caption)
+            primaryButton("Back to the Garden") { showCottage = false }
         }
     }
     private var statsSheet: some View {
