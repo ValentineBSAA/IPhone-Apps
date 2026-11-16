@@ -1,0 +1,86 @@
+name: Repo Pulse iOS Build
+
+on:
+  push:
+    branches: [main, feat/repo-pulse-ios-foundation]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unsigned-ipa:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check Xcode
+        run: xcodebuild -version
+      - name: Generate native AppIcon asset
+        run: |
+          swift scripts/generate_icon.swift
+          test -s RepoPulse/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+      - name: Upload app icon for visual verification
+        uses: actions/upload-artifact@v4
+        with:
+          name: RepoPulse-AppIcon-Preview-v1.4.0-BUILD6
+          path: RepoPulse/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+          if-no-files-found: error
+          retention-days: 14
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: Compile for physical iPhone without signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -project RepoPulse.xcodeproj -scheme RepoPulse \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/RepoPulseBuild" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package unsigned application
+        shell: bash
+        run: |
+          set -euo pipefail
+          app="$RUNNER_TEMP/RepoPulseBuild/Build/Products/Release-iphoneos/RepoPulse.app"
+          test -d "$app"
+          python3 - "$app/Info.plist" <<'PY'
+          import plistlib, sys
+          with open(sys.argv[1], 'rb') as fh:
+              info = plistlib.load(fh)
+          assert info.get('CFBundleIdentifier') == 'com.valentinebsaa.repopulse', info
+          assert info.get('CFBundleShortVersionString') == '1.4.0', info
+          assert info.get('CFBundleVersion') == '6', info
+          assert info.get('CFBundleIcons', {}).get('CFBundlePrimaryIcon', {}).get('CFBundleIconName') == 'AppIcon', info
+          print('Verified iPhone bundle ID, version, build number and AppIcon')
+          PY
+          test -s "$app/Assets.car"
+          test -s "$app/RepoPulse"
+          python3 - <<'PY'
+          import struct, pathlib
+          for path, size in [
+              ("RepoPulse/Assets.xcassets/AppIcon.appiconset/AppIcon.png",1024),
+              ("RepoPulse/Assets.xcassets/RepoPulseMark.imageset/RepoPulseMark.png",256),
+          ]:
+              data=pathlib.Path(path).read_bytes()
+              assert data[:8] == b'\x89PNG\r\n\x1a\n'
+              assert struct.unpack('>II',data[16:24]) == (size,size)
+              assert len(data) > 12000
+          PY
+          test -s RepoPulse/Assets.xcassets/RepoPulseMark.imageset/RepoPulseMark.png
+          mkdir -p output/Payload
+          cp -R "$app" output/Payload/
+          cd output
+          zip -qry RepoPulse-NOVA-REDESIGN-v1.4.0-BUILD6-UNSIGNED.ipa Payload
+          test -s RepoPulse-NOVA-REDESIGN-v1.4.0-BUILD6-UNSIGNED.ipa
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: RepoPulse-NOVA-REDESIGN-v1.4.0-BUILD6
+          path: output/RepoPulse-NOVA-REDESIGN-v1.4.0-BUILD6-UNSIGNED.ipa
+          if-no-files-found: error
+          retention-days: 14

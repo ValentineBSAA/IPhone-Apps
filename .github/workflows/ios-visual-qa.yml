@@ -1,0 +1,70 @@
+name: Repo Pulse iOS Simulator Visual QA
+
+on:
+  push:
+    branches: [feat/repo-pulse-ios-foundation]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual-qa:
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prepare native app
+        run: |
+          brew install xcodegen
+          swift scripts/generate_icon.swift
+          xcodegen generate
+      - name: Select a real iPhone simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available -j > "$RUNNER_TEMP/devices.json"
+          python3 - "$RUNNER_TEMP/devices.json" "$RUNNER_TEMP/selected-device.txt" <<'PY'
+          import json,sys
+          data=json.load(open(sys.argv[1]))
+          devices=[d for group in data['devices'].values() for d in group
+                   if d.get('isAvailable') and 'iPhone' in d.get('name','')]
+          if not devices: raise SystemExit('No available iPhone simulator runtime')
+          choices=sorted(devices, key=lambda d: ('iPhone 16' not in d['name'],d['name']))
+          selected=choices[0]
+          print('Using simulator:',selected['name'],selected['udid'])
+          with open(sys.argv[2],'w') as fh: fh.write(selected['udid'])
+          PY
+      - name: Build iPhone simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -project RepoPulse.xcodeproj -scheme RepoPulse \
+            -configuration Debug -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/RepoPulseSim" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Install launch and photograph the actual app
+        shell: bash
+        run: |
+          set -euo pipefail
+          UDID="$(cat "$RUNNER_TEMP/selected-device.txt")"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl ui "$UDID" appearance dark
+          APP="$RUNNER_TEMP/RepoPulseSim/Build/Products/Debug-iphonesimulator/RepoPulse.app"
+          test -d "$APP"
+          xcrun simctl install "$UDID" "$APP"
+          xcrun simctl launch "$UDID" com.valentinebsaa.repopulse
+          sleep 16
+          mkdir -p simulator-preview
+          xcrun simctl io "$UDID" screenshot simulator-preview/RepoPulse-v1.4.0-Home.png
+          test -s simulator-preview/RepoPulse-v1.4.0-Home.png
+      - name: Upload native screen capture
+        uses: actions/upload-artifact@v4
+        with:
+          name: RepoPulse-NOVA-v1.4.0-BUILD6-SIMULATOR-SCREEN
+          path: simulator-preview/*.png
+          if-no-files-found: error
+          retention-days: 14
