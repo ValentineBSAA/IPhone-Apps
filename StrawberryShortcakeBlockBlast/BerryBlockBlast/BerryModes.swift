@@ -30,7 +30,7 @@ enum BerryMode: String, CaseIterable, Identifiable {
 struct BerryHomeView: View {
     @State private var activeMode: BerryMode?
     @State private var showSettings = false
-    @AppStorage("berryblockblast.music") private var music = false
+    @AppStorage("berryblockblast.music") private var music = true
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.haptics") private var haptics = true
     private var version: String { "🍓 v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev") • \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?")" }
@@ -50,8 +50,10 @@ struct BerryHomeView: View {
                                 Button { showSettings = true } label: { Image(systemName: "gearshape.fill").font(.title2).foregroundStyle(BerryStyle.strawberry).frame(width: 46, height: 46).background(.white, in: Circle()) }.accessibilityLabel("Settings")
                             }
                             Text("🍓 ✨ 🍰 ✨ 🍓").font(.title2)
+                                .accessibilityLabel("Strawberry sweets")
                             Text("✿ WELCOME TO STRAWBERRY VILLAGE ✿").font(.system(size: 12, weight: .black, design: .rounded)).tracking(2).foregroundStyle(BerryStyle.leaf)
-                            BerryGirlView().frame(width: 135, height: 135).clipped()
+                            BerryGirlView().frame(width: 150, height: 150).clipped()
+                                .background(Circle().fill(.white.opacity(0.45)).shadow(color: BerryStyle.strawberry.opacity(0.2), radius: 18, y: 6))
                             Text("Berry Block Blast!").font(.system(size: 34, weight: .black, design: .rounded)).minimumScaleFactor(0.65).lineLimit(1).foregroundStyle(BerryStyle.strawberry)
                             Text("PICK • PLANT • POP • CELEBRATE").font(.system(size: 10, weight: .bold, design: .rounded)).tracking(1).foregroundStyle(BerryStyle.chocolate)
                             Text("What shall we bake up today? 🍰").font(.system(size: 19, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.chocolate).padding(.vertical, 8)
@@ -103,6 +105,7 @@ struct BerryHomeView: View {
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showSettings = false } } }
             }.presentationDetents([.medium, .large])
         }
+        .onAppear { BerryAudio.shared.setMusic(music) }
         .preferredColorScheme(.light)
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
