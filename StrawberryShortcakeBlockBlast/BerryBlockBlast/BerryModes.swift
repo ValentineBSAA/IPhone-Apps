@@ -33,6 +33,7 @@ struct BerryHomeView: View {
     @State private var showMore = false
     @State private var showSchool = false
     @State private var showCollection = false
+    @State private var jukeboxRefresh = 0
     @AppStorage("berryblockblast.lifetime-lines") private var lifetimeLines = 0
     @AppStorage("berryblockblast.strawberry-unlocked") private var strawberryUnlocked = false
     @AppStorage("berryblockblast.music") private var music = true
@@ -132,8 +133,31 @@ struct BerryHomeView: View {
                                 .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
                         }
                         Text("🎶 Strawberry Jukebox").font(.title2.bold())
-                        Text(BerryAudio.shared.currentTrackName)
-                        Button("Shuffle Next Track") { BerryAudio.shared.nextTrack() }.buttonStyle(.borderedProminent)
+                        Text(BerryAudio.shared.currentTrackName).font(.headline).foregroundStyle(BerryStyle.chocolate)
+                        Text("Track \(BerryAudio.shared.currentTrackNumber) of 15").font(.caption)
+                        HStack(spacing: 14) {
+                            Button { BerryAudio.shared.previousTrack(); jukeboxRefresh += 1 } label: { Label("Previous", systemImage: "backward.end.fill") }
+                            Button { music.toggle(); BerryAudio.shared.setMusic(music); jukeboxRefresh += 1 } label: { Image(systemName: music ? "pause.fill" : "play.fill") }
+                            Button { BerryAudio.shared.nextTrack(); jukeboxRefresh += 1 } label: { Label("Next", systemImage: "forward.end.fill") }
+                        }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
+                        Button(BerryAudio.shared.isShuffling ? "Shuffle On" : "Play in Order") {
+                            BerryAudio.shared.toggleShuffle(); jukeboxRefresh += 1
+                        }.buttonStyle(.bordered)
+                        ForEach(Array(BerryAudio.trackNames.enumerated()), id: \.offset) { index, title in
+                            Button {
+                                if !music { music = true; BerryAudio.shared.setMusic(true) }
+                                BerryAudio.shared.selectTrack(index)
+                                jukeboxRefresh += 1
+                            } label: {
+                                HStack {
+                                    Text("\(index + 1). \(title)").multilineTextAlignment(.leading)
+                                    Spacer()
+                                    if BerryAudio.shared.currentTrackNumber == index + 1 { Image(systemName: "music.note") }
+                                }
+                            }.buttonStyle(.plain).foregroundStyle(BerryStyle.chocolate).padding(.vertical, 5)
+                        }
+                        Text("Original synthesized melodies made for Berry Block Blast.")
+                            .font(.caption).foregroundStyle(.secondary)
                     }.padding(22)
                 }.background(BerryStyle.cream.ignoresSafeArea())
                 .navigationTitle("More Adventures")
