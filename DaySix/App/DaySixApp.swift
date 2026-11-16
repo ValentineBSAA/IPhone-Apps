@@ -197,8 +197,7 @@ final class DaySixStore: ObservableObject {
                 // Two-day preflight (or earlier for a larger lead-time
                 // setting) gives users a chance to repair a broken signer
                 // before the requested day-six automatic refresh.
-                let safetyLead = max(48, RenewalPolicy.hoursBeforeExpiry + 12)
-                let preflightDate = expires.addingTimeInterval(-Double(safetyLead) * 3600)
+                let preflightDate = RenewalPolicy.preflightAt(expiration: expires)
                 if preflightDate > Date.now.addingTimeInterval(120) {
                     let preflight = UNMutableNotificationContent()
                     preflight.title = "DaySix • Signing check coming up"
@@ -242,8 +241,7 @@ final class DaySixStore: ObservableObject {
                 // expired app. A local reminder cannot perform code signing.
                 guard app.expiresAt > Date.now else { continue }
                 let dueDate = max(Date.now.addingTimeInterval(90), app.refreshDueAt)
-                let safetyLead = max(48, RenewalPolicy.hoursBeforeExpiry + 12)
-                let preflightDate = app.expiresAt.addingTimeInterval(-Double(safetyLead) * 3600)
+                let preflightDate = RenewalPolicy.preflightAt(expiration: app.expiresAt)
                 if preflightDate > Date.now.addingTimeInterval(120) {
                     let preflight = UNMutableNotificationContent()
                     preflight.title = "DaySix • Signing health check"
