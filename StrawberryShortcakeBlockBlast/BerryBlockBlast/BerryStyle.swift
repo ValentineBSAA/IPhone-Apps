@@ -33,6 +33,7 @@ struct BerryTile: View {
         case .daily: [Color(red: 0.94, green: 0.43, blue: 0.35), .yellow, .orange, .green, .red, .brown][(tint % 6 + 6) % 6]
         case .cozy: [Color(red: 0.76, green: 0.58, blue: 0.44), Color(red: 0.83, green: 0.67, blue: 0.52), .mint, Color(red: 0.68, green: 0.77, blue: 0.52), .orange, .teal][(tint % 6 + 6) % 6]
         case .challenge: [.red, .orange, .yellow, .pink, .purple, .cyan][(tint % 6 + 6) % 6]
+        case .superHard: [Color(red: 0.62, green: 0.12, blue: 0.29), .purple, .indigo, .red, .orange, .pink][(tint % 6 + 6) % 6]
         }
     }
     var body: some View {
