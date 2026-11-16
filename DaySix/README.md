@@ -1,7 +1,15 @@
 # DaySix 🍃
-**Native iPhone signing companion · v0.1.3**
+**Native iPhone signing companion · v0.1.4**
 
-A dark glass, teal-and-violet iOS dashboard for the seven-day personal-development provisioning cycle. DaySix automatically checks **its own installed Apple provisioning-profile expiration**, tracks other apps you explicitly add, and gates SideStore's **Refresh All Apps** Shortcuts action at **day six**, with local reminders as a fallback.
+A dark glass, teal-and-violet iOS dashboard inspired by ReProvision for the seven-day personal-development provisioning cycle. DaySix automatically checks **its own installed Apple provisioning-profile expiration**, tracks other apps you explicitly add, and gates SideStore's **Refresh All Apps** Shortcuts action at **day six**, with local reminders as a fallback.
+
+## New in v0.1.4: ReProvision-style Renewal Center
+
+The **Renew** tab now has a premium signing queue including DaySix itself, an enable/disable control for automatic refresh requests, and configurable **12-, 24-, 36-, or 48-hour** lead times before signature expiration. **24 hours remains the default**, so this is day six of a seven-day free signature.
+
+These settings are functional: the renewal window changes the actual stored expiration calculations, the daily Shortcuts Boolean decision and notification scheduling. Disabling automatic requests prevents the Shortcuts gate from requesting a refresh. Manual **Run DaySix Refresh** remains available.
+
+**This is a ReProvision-inspired user interface and working scheduler decision layer, not ReProvision's jailbreak signing daemon.** SideStore remains the signing/install engine; exact-time background execution is not guaranteed. See [REPROVISION-ARCHITECTURE.md](REPROVISION-ARCHITECTURE.md) for the engineering path toward a true single-app signer and AGPLv3 obligations.
 
 ## Important: what actually works
 
@@ -61,6 +69,6 @@ DaySix does **not** collect Apple IDs, passwords, anisette tokens, pairing recor
 **Planned next stage**: an audited, in-app signing/refresh engine using an appropriately licensed signing core. This version **uses SideStore for signing including DaySix itself**; it does not independently sign, install, or refresh apps. No guarantee of exact background execution.
 
 ### Build/compatibility testing
-The macOS GitHub Actions workflow runs Foundation-only smoke tests for valid/malformed provisioning profiles, missing dates and manual fallback scheduling, then builds an unsigned IPA. The workflow passing **does not** prove on-device SideStore integration. Current iOS 27 reports include failed SideStore Shortcuts refreshes even when manually refreshing works. If the shortcut fails, open SideStore manually and refresh before expiration.
+The macOS GitHub Actions workflow compiles the RenewalPolicy and SelfProvisioning models, runs Foundation-only smoke tests for profile parsing, manual fallback and configurable day-six scheduling, then builds an unsigned IPA. The workflow passing **does not** prove on-device SideStore integration. Current iOS 27 reports include failed SideStore Shortcuts refreshes even when manually refreshing works. If the shortcut fails, open SideStore manually and refresh before expiration.
 
 **iPhone test checklist**: install via SideStore; verify DaySix appears in SideStore's managed list; check DaySix's embedded expiry; run the named shortcut; verify a new embedded expiry and audit entry; leave iPhone locked overnight; observe the day-six reminder and daily automation without assuming success.
