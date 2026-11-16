@@ -14,7 +14,9 @@ final class BerryGameSession: ObservableObject {
     @Published private(set) var shuffles = 2
     @Published private(set) var totalEarnedBerries = 0
     @Published private(set) var rewardsLog: [String] = UserDefaults.standard.stringArray(forKey: "berryblockblast.rewards.v1") ?? []
+    @Published private(set) var cottageDecorations = UserDefaults.standard.integer(forKey: "berryblockblast.cottage.decorations")
     private var previous: BerryEngine?
+    private var previousBerryEarnings = 0
     private var activeMode: BerryMode = .endless
     private func modeKey(_ mode: BerryMode) -> String {
         switch mode {
@@ -80,6 +82,7 @@ final class BerryGameSession: ObservableObject {
         let before = engine
         guard let outcome = engine.place(slot: slot, row: row, col: col) else { return false }
         previous = before
+        previousBerryEarnings = 0
         if engine.score > bestScore {
             bestScore = engine.score
             UserDefaults.standard.set(bestScore, forKey: bestKey)
@@ -88,6 +91,7 @@ final class BerryGameSession: ObservableObject {
         lastClearedLines = outcome.clearedLines
         if outcome.clearedLines > 0 {
             let gained = outcome.clearedLines * 3 + (outcome.streak > 1 ? outcome.streak : 0) + (outcome.boardClear ? 25 : 0)
+            previousBerryEarnings = gained
             earn(gained, reason: "Completed berry lines")
             celebration += 1
             lastMessage = outcome.boardClear ? "PERFECT GARDEN! +300 ✨" :
@@ -102,6 +106,9 @@ final class BerryGameSession: ObservableObject {
     func undo() {
         guard undos > 0, let previous else { return }
         engine = previous
+        berries = max(0, berries - previousBerryEarnings)
+        totalEarnedBerries = max(0, totalEarnedBerries - previousBerryEarnings)
+        previousBerryEarnings = 0
         self.previous = nil
         undos -= 1
         gameOver = !engine.hasMove()
@@ -141,6 +148,13 @@ final class BerryGameSession: ObservableObject {
     }
     func rewardStory(_ chapter: Int) {
         awardOnce("chapter-" + String(chapter), amount: 15 + min(35, chapter * 5), reason: "Story chapter")
+    }
+    func buyCottageDecoration() {
+        guard berries >= 50 else { return }
+        berries -= 50
+        cottageDecorations += 1
+        UserDefaults.standard.set(cottageDecorations, forKey: "berryblockblast.cottage.decorations")
+        save()
     }
     func buyUndo() {
         guard berries >= 25 else { return }
