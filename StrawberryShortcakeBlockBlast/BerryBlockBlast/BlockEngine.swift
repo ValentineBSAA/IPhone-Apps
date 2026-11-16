@@ -167,30 +167,30 @@ struct BerryEngine: Codable {
 
     private mutating func refill() {
         let catalog: [[BerryPoint]] = [
-            [BerryPoint(0,0)], [BerryPoint(0,0),BerryPoint(0,1)], [BerryPoint(0,0),BerryPoint(1,0)],
-            [BerryPoint(0,0),BerryPoint(0,1),BerryPoint(0,2)], [BerryPoint(0,0),BerryPoint(1,0),BerryPoint(2,0)],
-            [BerryPoint(0,0),BerryPoint(0,1),BerryPoint(1,0),BerryPoint(1,1)],
-            [BerryPoint(0,0),BerryPoint(1,0),BerryPoint(1,1)], [BerryPoint(0,0),BerryPoint(0,1),BerryPoint(1,1)],
-            [BerryPoint(0,0),BerryPoint(1,0),BerryPoint(2,0),BerryPoint(3,0)], [BerryPoint(0,0),BerryPoint(0,1),BerryPoint(0,2),BerryPoint(0,3)],
-            [BerryPoint(0,0),BerryPoint(0,1),BerryPoint(0,2),BerryPoint(1,1)], [BerryPoint(0,1),BerryPoint(1,0),BerryPoint(1,1),BerryPoint(1,2)],
-            [BerryPoint(0,0),BerryPoint(1,0),BerryPoint(2,0),BerryPoint(2,1)], [BerryPoint(0,1),BerryPoint(1,1),BerryPoint(2,0),BerryPoint(2,1)],
-            [BerryPoint(0,0),BerryPoint(0,1),BerryPoint(1,1),BerryPoint(1,2)], [BerryPoint(0,1),BerryPoint(0,2),BerryPoint(1,0),BerryPoint(1,1)],
-            [BerryPoint(0,0),BerryPoint(0,1),BerryPoint(0,2),BerryPoint(1,0),BerryPoint(1,1),BerryPoint(1,2)],
-            [BerryPoint(0,0),BerryPoint(1,0),BerryPoint(2,0),BerryPoint(2,1),BerryPoint(2,2)],
-            [BerryPoint(0,0),BerryPoint(0,1),BerryPoint(1,0),BerryPoint(1,1),BerryPoint(2,0),BerryPoint(2,1)],
-            [BerryPoint(0,0),BerryPoint(0,1),BerryPoint(0,2),BerryPoint(0,3),BerryPoint(0,4)],
-            [BerryPoint(0,0),BerryPoint(1,0),BerryPoint(2,0),BerryPoint(3,0),BerryPoint(4,0)]
+            [BerryPoint(row: 0, col: 0)], [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1)], [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0)],
+            [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 0, col: 2)], [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0),BerryPoint(row: 2, col: 0)],
+            [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 1, col: 0),BerryPoint(row: 1, col: 1)],
+            [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0),BerryPoint(row: 1, col: 1)], [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 1, col: 1)],
+            [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0),BerryPoint(row: 2, col: 0),BerryPoint(row: 3, col: 0)], [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 0, col: 2),BerryPoint(row: 0, col: 3)],
+            [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 0, col: 2),BerryPoint(row: 1, col: 1)], [BerryPoint(row: 0, col: 1),BerryPoint(row: 1, col: 0),BerryPoint(row: 1, col: 1),BerryPoint(row: 1, col: 2)],
+            [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0),BerryPoint(row: 2, col: 0),BerryPoint(row: 2, col: 1)], [BerryPoint(row: 0, col: 1),BerryPoint(row: 1, col: 1),BerryPoint(row: 2, col: 0),BerryPoint(row: 2, col: 1)],
+            [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 1, col: 1),BerryPoint(row: 1, col: 2)], [BerryPoint(row: 0, col: 1),BerryPoint(row: 0, col: 2),BerryPoint(row: 1, col: 0),BerryPoint(row: 1, col: 1)],
+            [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 0, col: 2),BerryPoint(row: 1, col: 0),BerryPoint(row: 1, col: 1),BerryPoint(row: 1, col: 2)],
+            [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0),BerryPoint(row: 2, col: 0),BerryPoint(row: 2, col: 1),BerryPoint(row: 2, col: 2)],
+            [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 1, col: 0),BerryPoint(row: 1, col: 1),BerryPoint(row: 2, col: 0),BerryPoint(row: 2, col: 1)],
+            [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 0, col: 2),BerryPoint(row: 0, col: 3),BerryPoint(row: 0, col: 4)],
+            [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0),BerryPoint(row: 2, col: 0),BerryPoint(row: 3, col: 0),BerryPoint(row: 4, col: 0)]
         ]
         // Nightmare uses genuinely larger shapes instead of just more empty
         // squares. These long and wide pieces demand deliberate space planning.
         let nightmareShapes: [[BerryPoint]] = [
-            (0..<7).map { BerryPoint(0, $0) },
-            (0..<7).map { BerryPoint($0, 0) },
-            (0..<3).flatMap { row in (0..<3).map { col in BerryPoint(row, col) } },
-            (0..<4).flatMap { row in (0..<2).map { col in BerryPoint(row, col) } },
-            (0..<2).flatMap { row in (0..<4).map { col in BerryPoint(row, col) } },
-            [BerryPoint(0,0), BerryPoint(1,0), BerryPoint(2,0), BerryPoint(3,0),
-             BerryPoint(3,1), BerryPoint(3,2), BerryPoint(3,3)]
+            (0..<7).map { BerryPoint(row: 0, col: $0) },
+            (0..<7).map { BerryPoint(row: $0, col: 0) },
+            (0..<3).flatMap { row in (0..<3).map { col in BerryPoint(row: row, col: col) } },
+            (0..<4).flatMap { row in (0..<2).map { col in BerryPoint(row: row, col: col) } },
+            (0..<2).flatMap { row in (0..<4).map { col in BerryPoint(row: row, col: col) } },
+            [BerryPoint(row: 0, col: 0), BerryPoint(row: 1, col: 0), BerryPoint(row: 2, col: 0), BerryPoint(row: 3, col: 0),
+             BerryPoint(row: 3, col: 1), BerryPoint(row: 3, col: 2), BerryPoint(row: 3, col: 3)]
         ]
         // A newly dealt tray always contains at least one legal move. Prefer
         // several playable choices instead of handing out impossible pieces.
