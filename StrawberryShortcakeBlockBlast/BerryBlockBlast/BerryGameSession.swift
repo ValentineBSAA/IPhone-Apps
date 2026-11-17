@@ -416,6 +416,8 @@ final class BerryGameSession: ObservableObject {
     /// never depend on purchases; old earned strawberries remain spendable.
     func buyCosmetic(id: String, cost: Int) -> Bool {
         let valid: [String:Int] = ["blueberry-blocks":90,"vanilla-blocks":90,
+            "raspberry-ruby":110,"lemon-glaze":110,"chocolate-truffle":120,
+            "mint-frost":125,"blackberry-jam":145,
             "rose-border":75,"mint-border":75,"berry-sparkle":100]
         guard valid[id] == cost, cost > 0, berries >= cost,
               !ownedCosmetics.contains(id) else { return false }
