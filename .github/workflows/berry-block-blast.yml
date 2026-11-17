@@ -13,7 +13,7 @@ on:
       - '.github/workflows/berry-block-blast.yml'
 
 concurrency:
-  group: berry-block-blast-${{ github.ref }}
+  group: berry-block-blast-test-${{ github.sha }}
   cancel-in-progress: true
 
 permissions:
