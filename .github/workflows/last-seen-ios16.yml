@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - feature/last-seen-ios16
+      - feature/last-seen-story-photos-voice-prep
     paths:
       - 'LastSeen/**'
       - '.github/workflows/last-seen-ios16.yml'
@@ -70,6 +71,24 @@ jobs:
             test -s "LastSeenApp/Assets.xcassets/${asset}.imageset/portrait.jpg"
           done
 
+      - name: Import optional story-photo Release pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view story-photos-v1 --repo ValentineBSAA/IPhone-Apps >/dev/null 2>&1; then
+            gh release download story-photos-v1 \
+              --repo ValentineBSAA/IPhone-Apps \
+              --pattern 'LAST_SEEN_10_Story_Photos.zip' \
+              --dir . --clobber
+            mv LAST_SEEN_10_Story_Photos.zip StoryPhotos.zip
+            unzip -tq StoryPhotos.zip
+            python3 Tools/import_story_photos.py --zip StoryPhotos.zip --required
+            test "$(find LastSeenApp/Assets.xcassets -maxdepth 1 -type d -name 'Story_*.imageset' | wc -l | tr -d ' ')" = "10"
+          else
+            echo "::notice::Publish story-photo ZIP as release tag story-photos-v1 to include all ten images. Existing image fallback remains available."
+          fi
+
       - name: Generate iOS 16 Xcode project
         run: |
           set -euo pipefail
@@ -123,16 +142,16 @@ jobs:
           cp -R build/Build/Products/Release-iphoneos/LastSeen.app dist/Payload/
           (
             cd dist
-            zip -qr Last-Seen-v1.0.2-iOS16-unsigned.ipa Payload
+            zip -qr Last-Seen-v1.0.3-iOS16-unsigned.ipa Payload
           )
-          test -s dist/Last-Seen-v1.0.2-iOS16-unsigned.ipa
-          unzip -l dist/Last-Seen-v1.0.2-iOS16-unsigned.ipa | grep -q 'Payload/LastSeen.app/Info.plist'
+          test -s dist/Last-Seen-v1.0.3-iOS16-unsigned.ipa
+          unzip -l dist/Last-Seen-v1.0.3-iOS16-unsigned.ipa | grep -q 'Payload/LastSeen.app/Info.plist'
 
       - name: Publish unsigned IPA for user-side installation
         uses: actions/upload-artifact@v4
         with:
-          name: LAST-SEEN-v1.0.2-iOS16-unsigned
-          path: LastSeen/dist/Last-Seen-v1.0.2-iOS16-unsigned.ipa
+          name: LAST-SEEN-v1.0.3-iOS16-unsigned
+          path: LastSeen/dist/Last-Seen-v1.0.3-iOS16-unsigned.ipa
           if-no-files-found: error
           retention-days: 30
 
