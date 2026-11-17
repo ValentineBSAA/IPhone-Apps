@@ -66,6 +66,7 @@ struct ConversationView: View {
                 .onAppear {
                     game.selectStory(contact)
                     game.markThreadRead(contact.id)
+                    if let pending = game.notificationDraft { draft = pending }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) {
                         proxy.scrollTo("bottom", anchor: .bottom)
                     }
@@ -120,6 +121,9 @@ struct ConversationView: View {
             PhotoDetailView(message: photo)
                 .environmentObject(game)
         }
+        .onChange(of: game.notificationDraft) { text in
+            if let text { draft = text }
+        }
         .onDisappear {
             game.closeConversation(contact)
         }
@@ -143,6 +147,7 @@ struct ConversationView: View {
                 Button {
                     if unlocked {
                         draft = ""
+                        game.clearDraft()
                         _ = game.choose(choice.id)
                     }
                 } label: {
@@ -215,6 +220,7 @@ struct ConversationView: View {
             $0.title.lowercased().filter { $0.isLetter || $0.isNumber } == normalized
         }), game.choose(choice.id) {
             draft = ""
+            game.clearDraft()
         } else {
             showTypedHelp = true
         }
