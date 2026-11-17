@@ -1,0 +1,105 @@
+name: Berry Block Blast 0.5.6 build 3 iOS 16
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'StrawberryShortcakeBlockBlast/project.yml'
+      - 'StrawberryShortcakeBlockBlast/BerryBlockBlast/**'
+      - 'StrawberryShortcakeBlockBlast/Tools/check_ios16_compat.py'
+      - 'StrawberryShortcakeBlockBlast/RELEASE-QA-0.5.6-BUILD3-IOS16.md'
+      - '.github/workflows/berry-ios16-compat.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: berry-ios16-build3-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  iphone-ios16:
+    name: Build, audio QA, simulator test, unsigned IPA
+    runs-on: macos-15
+    timeout-minutes: 55
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify iOS 16 source compatibility
+        run: python3 Tools/check_ios16_compat.py
+
+      - name: Verify approved artwork, mascot and original audio
+        run: |
+          set -euo pipefail
+          python3 Tools/verify_artwork.py
+          python3 Tools/verify_audio_build2.py
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate native Xcode project
+        run: xcodegen generate --spec project.yml
+
+      - name: Build native physical iPhone app targeting iOS 16.0
+        run: |
+          set -euo pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Check compiled minimum OS and all 67 sound files
+        run: |
+          set -euo pipefail
+          APP="build/Build/Products/Release-iphoneos/BerryBlockBlast.app"
+          MIN_OS="$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$APP/Info.plist")"
+          echo "Compiled minimum iOS: $MIN_OS"
+          test "$MIN_OS" = "16.0"
+          python3 Tools/verify_audio_build2.py --app "$APP"
+
+      - name: Run iPhone simulator unit tests
+        timeout-minutes: 18
+        run: |
+          set -euo pipefail
+          SIMULATOR_ID="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next((v["udid"] for ds in d["devices"].values() for v in ds if v.get("isAvailable") and v.get("name","").startswith("iPhone")), ""))')"
+          if [ -z "$SIMULATOR_ID" ]; then
+            echo "::error::iPhone simulator missing. Tests must not be skipped."
+            exit 1
+          fi
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath build-simulator \
+            -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=NO \
+            test
+
+      - name: Package and verify unsigned iOS 16 IPA
+        run: |
+          set -euo pipefail
+          mkdir -p dist/Payload
+          cp -R build/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
+          (
+            cd dist
+            zip -qr Berry-Block-Blast-v0.5.6-build3-iOS16-unsigned.ipa Payload
+          )
+          unzip -l dist/Berry-Block-Blast-v0.5.6-build3-iOS16-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
+          python3 Tools/verify_audio_build2.py --ipa dist/Berry-Block-Blast-v0.5.6-build3-iOS16-unsigned.ipa
+
+      - name: Upload downloadable unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-Block-Blast-v0.5.6-build3-iOS16-unsigned
+          path: StrawberryShortcakeBlockBlast/dist/Berry-Block-Blast-v0.5.6-build3-iOS16-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 30
