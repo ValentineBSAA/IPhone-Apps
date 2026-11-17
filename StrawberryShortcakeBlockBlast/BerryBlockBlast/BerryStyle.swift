@@ -31,6 +31,18 @@ struct BerryTile: View {
 
     private var skin: String { skinOverride ?? blockSkin }
     private var decorated: Bool { strawberryUnlocked && tint % 6 == 0 }
+    /// Prepared 0.5.8 art catalog: each square remains an exact grid cell.
+    private var artName: String? {
+        switch skin {
+        case "default": return tint % 6 == 0 ? "StrawberryCandyBlock" : nil
+        case "raspberry-blocks": return "RaspberryRubyBlock"
+        case "lemon-blocks": return "LemonGlazeBlock"
+        case "chocolate-blocks": return "ChocolateTruffleBlock"
+        case "mint-blocks": return "MintFrostBlock"
+        case "blackberry-blocks": return "BlackberryJamBlock"
+        default: return nil
+        }
+    }
     private var palette: Color {
         let index = (tint % 6 + 6) % 6
         if skin == "blueberry-blocks" {
@@ -109,6 +121,17 @@ struct BerryTile: View {
                         .padding(.bottom, max(2, side * 0.08))
                 }
                 .shadow(color: palette.opacity(preview ? 0.10 : 0.24), radius: 2, y: 2)
+                .overlay {
+                    if let asset = artName {
+                        Image(asset)
+                            .resizable()
+                            .interpolation(.medium)
+                            .scaledToFill()
+                            .frame(width: side, height: side)
+                            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+                            .allowsHitTesting(false)
+                    }
+                }
         }
         .opacity(preview ? 0.80 : 1)
     }
