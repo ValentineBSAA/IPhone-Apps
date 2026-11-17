@@ -66,6 +66,17 @@ struct BerryMusicSettingsView: View {
                 }
                 Spacer(minLength: 4)
                 Button {
+                    audio.previousTrack()
+                } label: {
+                    Image(systemName: "backward.end.fill")
+                        .font(.system(size: 15, weight: .bold))
+                        .frame(width: 35, height: 43)
+                }
+                .buttonStyle(.bordered)
+                .tint(BerryStyle.strawberry)
+                .disabled(!music)
+                .accessibilityLabel("Previous Berry song")
+                Button {
                     audio.nextTrack()
                 } label: {
                     Image(systemName: "forward.end.fill")

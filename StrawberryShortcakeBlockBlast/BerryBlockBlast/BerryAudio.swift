@@ -31,6 +31,7 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private var musicPlayer: AVAudioPlayer?
     private var effectPlayers: [AVAudioPlayer] = []
     private var currentIndex: Int?
+    private var pendingTrackIndex: Int?
     private var history: [Int] = []
     private var failedIndices = Set<Int>()
     private var screen: Screen = .menu
@@ -121,6 +122,7 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
         UserDefaults.standard.set(enabled, forKey: "berryblockblast.music")
         if !enabled {
             changeGeneration += 1
+            pendingTrackIndex = nil
             endFadeTimer?.invalidate()
             musicPlayer?.pause()
             isPlaying = false
@@ -162,9 +164,11 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
             // Victory is a deliberate transition from active play, not a
             // random gameplay shuffle. The supplied track #05 is full length.
             if currentIndex != 4 && musicEnabled { switchTrack(to: 4) }
-        } else if prior == .results && currentIndex == 4 {
-            // Returning to play/menu gently exits the results theme.
-            if let next = nextGameplayIndex() { switchTrack(to: next) }
+        } else if prior == .results && (currentIndex == 4 || pendingTrackIndex == 4) {
+            // Even a rapid dismissal cancels a pending victory theme switch.
+            // Menu receives its reserved song; gameplay receives its own mix.
+            if target == .menu { switchTrack(to: 0) }
+            else if let next = nextGameplayIndex() { switchTrack(to: next) }
         } else {
             // Menu/gameplay transitions do NOT restart the current music.
             ensurePlaying()
@@ -220,6 +224,8 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     private func switchTrack(to index: Int) {
         guard Self.tracks.indices.contains(index) else { return }
+        if currentIndex == index && musicPlayer?.isPlaying == true && pendingTrackIndex == nil { return }
+        pendingTrackIndex = index
         changeGeneration += 1
         let generation = changeGeneration
         endFadeTimer?.invalidate()
@@ -250,6 +256,7 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
         endFadeTimer?.invalidate()
         musicPlayer?.stop()
         musicPlayer = nil
+        pendingTrackIndex = nil
         guard activateSession() else { return }
         let track = Self.tracks[index]
         guard let filename = URL(fileURLWithPath: track.file).deletingPathExtension().lastPathComponent as String?,
@@ -314,6 +321,9 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
             self.musicPlayer = nil
             self.endFadeTimer?.invalidate()
             self.isPlaying = false
+            // An intentional fade already owns the next song. Don't start
+            // a competing auto-advance in the final fraction of a second.
+            if self.pendingTrackIndex != nil { return }
             if !flag { self.playbackError = "A soundtrack recording stopped unexpectedly." }
             guard self.canPlayMusic else { return }
             if self.screen == .results && self.currentIndex == 4 {
