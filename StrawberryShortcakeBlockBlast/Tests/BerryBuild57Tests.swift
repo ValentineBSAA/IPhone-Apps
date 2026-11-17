@@ -66,6 +66,29 @@ final class BerryBuild57EngineTests: XCTestCase {
         XCTAssertFalse(engine.reshuffleTray())
     }
 
+    func testTimedBlitzStuckTrayRecoversWithoutLosingScore() {
+        var board = Array(repeating: Array<Int?>(repeating: 2, count: 8), count: 8)
+        board[7][7] = nil
+        let twin = BerryPiece(points: [BerryPoint(row: 0, col: 0),
+                                       BerryPoint(row: 0, col: 1)], tint: 2)
+        var engine = BerryEngine(board: board, tray: [twin, nil, nil], score: 432)
+        XCTAssertFalse(engine.hasMove())
+        XCTAssertTrue(engine.beginNextTimedBoardIfStuck())
+        XCTAssertTrue(engine.hasMove())
+        XCTAssertEqual(engine.score, 432)
+        XCTAssertEqual(engine.board[0][0], 2)
+    }
+
+    func testTimedBlitzFullBoardStartsFreshKeepingScore() {
+        let full = Array(repeating: Array<Int?>(repeating: 1, count: 8), count: 8)
+        let single = BerryPiece(points: [BerryPoint(row: 0, col: 0)], tint: 1)
+        var engine = BerryEngine(board: full, tray: [single, nil, nil], score: 990)
+        XCTAssertTrue(engine.beginNextTimedBoardIfStuck())
+        XCTAssertTrue(engine.hasMove())
+        XCTAssertEqual(engine.score, 990)
+        XCTAssertTrue(engine.board.flatMap { $0 }.allSatisfy { $0 == nil })
+    }
+
     func testDailyHistoryKeyMatchesLocalCalendar() async {
         let sessionDateKey = await BerryGameSession.dailyDateKey()
         XCTAssertEqual(BerryDailyHistory.dateKey(for: Date()), sessionDateKey)
