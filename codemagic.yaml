@@ -52,6 +52,16 @@ workflows:
           unzip -l Berry-Block-Blast-v0.5.7-build1-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
           cd ..
           python3 Tools/verify_audio_build2.py --ipa dist/Berry-Block-Blast-v0.5.7-build1-unsigned.ipa
+          echo '--- Verified IPA output ---'
+          ls -lh dist/*.ipa
+          shasum -a 256 dist/*.ipa
+          echo "Clone directory: $CM_BUILD_DIR"
+          echo "Artifact export directory: ${CM_EXPORT_DIR:-not-provided}"
+          if [ -n "${CM_EXPORT_DIR:-}" ]; then
+            mkdir -p "$CM_EXPORT_DIR"
+            cp dist/*.ipa "$CM_EXPORT_DIR/"
+            ls -lh "$CM_EXPORT_DIR/"*.ipa
+          fi
       # A simulator failure must never block packaging a valid native IPA.
       # This separate compile gate catches Swift errors in the XCTest bundle.
       - name: Compile all XCTest sources without launching the simulator
@@ -73,6 +83,9 @@ workflows:
           set -euo pipefail
           python3 Tools/run_codemagic_simulator.py
     artifacts:
+      # Artifact patterns resolve from the repository clone root.
+      - $CM_BUILD_DIR/StrawberryShortcakeBlockBlast/dist/*.ipa
+      - $CM_EXPORT_DIR/*.ipa
       - StrawberryShortcakeBlockBlast/dist/*.ipa
       - StrawberryShortcakeBlockBlast/dist/*.log
       - StrawberryShortcakeBlockBlast/dist/*.txt
