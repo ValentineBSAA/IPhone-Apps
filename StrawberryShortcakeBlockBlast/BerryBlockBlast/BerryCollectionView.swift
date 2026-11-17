@@ -130,7 +130,7 @@ struct BerryCollectionView: View {
                     Spacer()
                     Text("×\(session.hints)").bold().foregroundStyle(BerryStyle.strawberry)
                 }
-                Text("Use these from the game toolbar. Berry Classic and Blitz do not allow helpers.")
+                Text("Use these from the game toolbar. Berry Classic and timed challenges do not allow helpers.")
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -157,7 +157,7 @@ struct BerryCollectionView: View {
                             .font(.caption.bold()).buttonStyle(.borderedProminent)
                             .tint(equipped ? BerryStyle.leaf : BerryStyle.strawberry)
                     } else {
-                        Label("Visit Boutique", systemImage: "lock.fill")
+                        Label(skin.id == "strawberry-fruit" ? "Free in Boutique" : "Boutique • \(shopPrice(skin.id)) 🍓", systemImage: "lock.fill")
                             .font(.caption2).foregroundStyle(BerryStyle.strawberry)
                     }
                 }
@@ -208,6 +208,18 @@ struct BerryCollectionView: View {
             }
         }
     }
+    private func shopPrice(_ id: String) -> Int {
+        switch id {
+        case "blueberry-blocks", "vanilla-blocks": return 90
+        case "raspberry-blocks", "lemon-blocks", "mint-blocks": return 110
+        case "chocolate-blocks": return 120
+        case "blackberry-blocks": return 130
+        case "rose-border", "mint-border": return 75
+        case "berry-sparkle": return 100
+        default: return 0
+        }
+    }
+
     private func active(_ skin: Skin) -> Bool {
         switch skin.category {
         case "blocks": return blockSkin == skin.id
