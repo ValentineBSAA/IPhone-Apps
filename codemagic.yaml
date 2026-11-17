@@ -1,8 +1,8 @@
-# Berry Block Blast 0.5.7 iOS16 native cloud build on Codemagic.
+# Berry Block Blast 0.5.8 iOS16 native cloud build on Codemagic.
 # Test branch only; no Windows PC, Apple signing credentials, or main branch changes.
 workflows:
   berry-block-blast-unsigned:
-    name: Berry Block Blast 0.5.7 build 1 unsigned iPhone IPA
+    name: Berry Block Blast 0.5.8 build 1 unsigned iPhone IPA
     instance_type: mac_mini_m2
     max_build_duration: 60
     working_directory: StrawberryShortcakeBlockBlast
@@ -10,7 +10,7 @@ workflows:
       events:
         - push
       branch_patterns:
-        - pattern: 'feature/berry-057-build1-ios16'
+        - pattern: 'feature/berry-058-polish'
           include: true
           source: true
       cancel_previous_builds: true
@@ -21,6 +21,17 @@ workflows:
         script: |
           set -e
           brew install xcodegen
+      - name: Import optional 0.5.8 full artwork catalogs
+        script: |
+          set -e
+          if [ -f ../BuildPayload/Berry_Block_Blast_0.5.8_16_ArtCatalogs.zip ]; then
+            echo 'Installing all 16 game art catalogs...'
+            unzip -qo ../BuildPayload/Berry_Block_Blast_0.5.8_16_ArtCatalogs.zip -d ..
+            test -s BerryBlockBlast/Assets.xcassets/StrawberryCandyBlock.imageset/StrawberryCandyBlock.png
+            test -s BerryBlockBlast/Assets.xcassets/CottageGardenBackground.imageset/CottageGardenBackground.png
+          else
+            echo 'ART WARNING: 0.5.8 concept art pack has not been uploaded to BuildPayload; using SwiftUI fallbacks.'
+          fi
       - name: Verify approved icon and mascot, generate Xcode project
         script: |
           set -e
@@ -47,11 +58,11 @@ workflows:
           cp -R build/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
           python3 Tools/verify_audio_build2.py --app build/Build/Products/Release-iphoneos/BerryBlockBlast.app
           cd dist
-          zip -qr Berry-Block-Blast-v0.5.7-build1-unsigned.ipa Payload
-          test -s Berry-Block-Blast-v0.5.7-build1-unsigned.ipa
-          unzip -l Berry-Block-Blast-v0.5.7-build1-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
+          zip -qr Berry-Block-Blast-v0.5.8-build1-unsigned.ipa Payload
+          test -s Berry-Block-Blast-v0.5.8-build1-unsigned.ipa
+          unzip -l Berry-Block-Blast-v0.5.8-build1-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
           cd ..
-          python3 Tools/verify_audio_build2.py --ipa dist/Berry-Block-Blast-v0.5.7-build1-unsigned.ipa
+          python3 Tools/verify_audio_build2.py --ipa dist/Berry-Block-Blast-v0.5.8-build1-unsigned.ipa
           echo '--- Verified IPA output ---'
           ls -lh dist/*.ipa
           shasum -a 256 dist/*.ipa
