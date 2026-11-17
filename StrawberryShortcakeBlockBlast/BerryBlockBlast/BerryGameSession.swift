@@ -251,6 +251,17 @@ final class BerryGameSession: ObservableObject {
             previousRewardEntry = nil
             lastMessage = "🍓 A fresh berry season! Your score continues!"
         }
+        // Never terminate a timed score chase just because the tray is stuck.
+        // Keep score, records, moves and earned berries. Nightmare remains
+        // deliberately unforgiving and may end when no legal move remains.
+        if activeMode == .challenge && !engine.hasMove() {
+            if engine.beginNextTimedBoardIfStuck() {
+                previous = nil
+                previousBerryEarnings = 0
+                previousRewardEntry = nil
+                lastMessage = "🍓 Fresh pieces! Keep racing the clock!"
+            }
+        }
         gameOver = !engine.hasMove()
         save()
         return true
