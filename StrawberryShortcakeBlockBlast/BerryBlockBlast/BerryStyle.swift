@@ -24,9 +24,23 @@ struct BerryTile: View {
     var preview = false
     var mode: BerryMode = .endless
     var strawberryUnlocked = false
+    @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
+    @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkles = "default"
 
     private var decorated: Bool { strawberryUnlocked && tint % 6 == 0 }
     private var palette: Color {
+        let index = (tint % 6 + 6) % 6
+        if blockSkin == "blueberry-blocks" {
+            return [Color(red: 0.33, green: 0.45, blue: 0.86), .indigo,
+                Color(red: 0.62, green: 0.48, blue: 0.94), .purple,
+                Color(red: 0.48, green: 0.69, blue: 0.94), .cyan][index]
+        }
+        if blockSkin == "vanilla-blocks" {
+            return [Color(red: 0.97, green: 0.70, blue: 0.34),
+                Color(red: 1, green: 0.80, blue: 0.57), .brown,
+                Color(red: 0.96, green: 0.79, blue: 0.49), .orange,
+                Color(red: 0.86, green: 0.63, blue: 0.43)][index]
+        }
         switch mode {
         case .endless, .classic: BerryStyle.color(for: tint)
         case .story: [Color(red: 0.92, green: 0.38, blue: 0.64), .purple, .orange, .pink, .mint, .indigo][(tint % 6 + 6) % 6]
@@ -49,6 +63,10 @@ struct BerryTile: View {
             .overlay {
                 if decorated {
                     Text("🍓").font(.system(size: 21)).minimumScaleFactor(0.5).shadow(color: .white.opacity(0.6), radius: 1)
+                } else if sparkles == "berry-sparkle" {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.86))
                 } else if mode == .cozy {
                     Image(systemName: "leaf.fill").font(.system(size: 11)).foregroundStyle(.white.opacity(0.75))
                 } else if mode == .story {

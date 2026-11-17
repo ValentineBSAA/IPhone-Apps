@@ -19,14 +19,22 @@ private struct BerryBoard: View {
     let strawberryUnlocked: Bool
     let previewStyle: String
     let onBoardRect: (CGRect) -> Void
+    @AppStorage("berryblockblast.shop.equippedBorder.v056b2") private var borderSkin = "default"
     private let gap: CGFloat = 3
+    private var gardenBorder: Color {
+        switch borderSkin {
+        case "rose-border": return Color(red: 0.91, green: 0.25, blue: 0.55)
+        case "mint-border": return Color(red: 0.32, green: 0.73, blue: 0.58)
+        default: return Color(red: 0.98, green: 0.71, blue: 0.79)
+        }
+    }
 
     var body: some View {
         let side = engine.side
         let unit = (size - CGFloat(side - 1) * gap) / CGFloat(side)
         ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: 22)
-                .fill(Color(red: 0.98, green: 0.71, blue: 0.79))
+                .fill(gardenBorder)
                 .overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(.white.opacity(0.8), lineWidth: 3) }
                 .padding(-7)
                 .shadow(color: BerryStyle.strawberry.opacity(0.22), radius: 15, y: 8)
@@ -767,31 +775,12 @@ struct BerryGameView: View {
         }
     }
     private var shopSheet: some View {
-        sheetBase("The Berry Basket", icon: "🧺") {
-            Text("Your strawberries: 🍓 \(session.berries)").font(.system(size: 22, weight: .black, design: .rounded))
-            HStack {
-                VStack(alignment: .leading) { Text("Extra Undo").bold(); Text("🍓 25").font(.caption) }
-                Spacer()
-                Button("Buy") { session.buyUndo() }.disabled(session.berries < 25).buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
-            }
-            HStack {
-                VStack(alignment: .leading) { Text("Extra Shuffle").bold(); Text("🍓 25").font(.caption) }
-                Spacer()
-                Button("Buy") { session.buyShuffle() }.disabled(session.berries < 25).buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
-            }
-            HStack {
-                VStack(alignment: .leading) { Text("🏡 Cottage Decoration").bold(); Text("🍓 50 • Owned: \(session.cottageDecorations)").font(.caption) }
-                Spacer()
-                Button("Decorate") { session.buyCottageDecoration() }.disabled(session.berries < 50).buttonStyle(.borderedProminent).tint(BerryStyle.leaf)
-            }
-            Text("🍓 Clear lines to earn berries: +3 per line, plus combo and perfect-garden bonuses. Strawberry School earns +25, Daily Harvest +30, and Story chapters earn rewards.").font(.subheadline)
-            Text("🎀 Recent Berry Harvests").font(.headline).foregroundStyle(BerryStyle.strawberry)
-            ForEach(session.rewardsLog.prefix(6), id: \.self) { reward in Text(reward).font(.caption) }
-            Text(strawberryUnlocked ? "🍓 Strawberry blocks unlocked!" : "🔒 Clear \(max(0, 10 - lifetimeLines)) more lines across your gardens to unlock strawberry blocks and 15 berries.").font(.subheadline).foregroundStyle(BerryStyle.leaf)
-            Text("All strawberries are earned by playing. No purchases or ads.").font(.footnote)
-            primaryButton("Back to Garden") { showShop = false }
+        sheetBase("The Berry Boutique", icon: "🧺") {
+            BerryBoutiqueView(session: session)
+            primaryButton("Back to Your Berry Garden") { showShop = false }
         }
     }
+
     private var cottageSheet: some View {
         sheetBase("My Strawberry Cottage", icon: "🏡") {
             Text("A little home that grows with every harvest.").multilineTextAlignment(.center)
