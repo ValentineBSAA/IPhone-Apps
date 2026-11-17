@@ -185,12 +185,19 @@ struct BerryGameView: View {
                     .foregroundStyle(BerryStyle.chocolate)
                     .frame(height: 19)
                     if session.engine.side == 24 {
-                        ScrollView([.horizontal, .vertical]) {
-                            boardInteraction(actualSize: max(580, boardSize * 1.75))
+                        // ScrollViewReader is available on iOS 16. It keeps the oversized
+                        // Mega Garden centered initially while preserving two-axis panning.
+                        ScrollViewReader { boardReader in
+                            ScrollView([.horizontal, .vertical]) {
+                                boardInteraction(actualSize: max(580, boardSize * 1.75))
+                                    .id("mega-garden-center")
+                            }
+                            .frame(width: boardSize + 14, height: boardSize + 14)
+                            .scrollIndicators(.visible)
+                            .onAppear {
+                                boardReader.scrollTo("mega-garden-center", anchor: .center)
+                            }
                         }
-                        .frame(width: boardSize + 14, height: boardSize + 14)
-                        .scrollIndicators(.visible)
-                        .defaultScrollAnchor(.center)
                         .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 24))
                         .accessibilityLabel("24 by 24 Mega Garden. Scroll to reach more cells.")
                     } else {
@@ -284,7 +291,7 @@ struct BerryGameView: View {
         .sheet(isPresented: $showStats) { statsSheet }
         .sheet(isPresented: $showCottage) { cottageSheet }
         .sheet(isPresented: $showWelcome) { welcomeSheet }
-        .onChange(of: scenePhase) { _, phase in
+        .onChange(of: scenePhase) { phase in
             // iOS screenshots and banners can temporarily mark the app inactive.
             // Pause overlays appear only when Pause was pressed, not on screenshots.
             if phase == .background { drag = nil; selectedSlot = nil }
@@ -293,7 +300,7 @@ struct BerryGameView: View {
         .onReceive(Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()) { _ in
             if mode == .challenge { refreshBlitzClock() }
         }
-        .onChange(of: session.gameOver) { _, ended in
+        .onChange(of: session.gameOver) { ended in
             showGameOver = !showVictory && (ended || (mode == .challenge && !blitzRunning && blitzRemaining == 0))
             if ended && sound && mode != .challenge { BerryAudio.shared.play(.gameOver) }
         }
@@ -317,13 +324,13 @@ struct BerryGameView: View {
             if mode == .daily && dailyCompleted == BerryGameSession.dailyDateKey() { showVictory = session.engine.score >= goal }
             if !welcomed { showWelcome = true }
         }
-        .onChange(of: session.engine.score) { _, score in
+        .onChange(of: session.engine.score) { score in
             checkObjective()
             celebrateNewRecordIfNeeded(score)
         }
-        .onChange(of: session.engine.totalLines) { _, _ in checkObjective() }
-        .onChange(of: showSettings) { _, _ in if mode == .challenge { refreshBlitzClock() } }
-        .onChange(of: showVictory) { _, victory in
+        .onChange(of: session.engine.totalLines) { _ in checkObjective() }
+        .onChange(of: showSettings) { _ in if mode == .challenge { refreshBlitzClock() } }
+        .onChange(of: showVictory) { victory in
             BerryAudio.shared.setScreen(victory ? .results : (mode == .challenge ? .blitz : .gameplay))
             if victory && sound { BerryAudio.shared.play(.victory) }
         }
