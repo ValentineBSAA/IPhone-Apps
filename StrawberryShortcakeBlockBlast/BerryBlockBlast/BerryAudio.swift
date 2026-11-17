@@ -366,15 +366,25 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
     }
 
+    /// Called directly from SwiftUI scenePhase so audio stops before the OS
+    /// suspends the app, even when the device is in Low Power Mode.
+    func setAppActive(_ active: Bool) { setInactive(!active) }
+
     private func setInactive(_ value: Bool) {
         guard inactive != value else { return }
         inactive = value
         if value {
+            changeGeneration += 1       // Cancel pending asynchronous track changes.
+            duckGeneration += 1
             endFadeTimer?.invalidate()
-            musicPlayer?.pause()
+            endFadeTimer = nil
+            musicPlayer?.pause()         // Keep song position for foreground resume.
+            effectPlayers.forEach { $0.stop() }
+            effectPlayers.removeAll()
             isPlaying = false
             deactivateSession()
         } else {
+            duckFactor = 1
             ensurePlaying()
         }
     }
@@ -434,6 +444,7 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
     /// Real 48-kHz PCM WAV effects from the uploaded, source-verified 16-file pack.
     /// Slight per-event cooldown prevents a finger and a gesture from double-firing.
     func play(_ cue: Cue) {
+        guard !inactive && UIApplication.shared.applicationState == .active else { return }
         guard UserDefaults.standard.object(forKey: "berryblockblast.sound") == nil ||
               UserDefaults.standard.bool(forKey: "berryblockblast.sound") else { return }
         guard effectVolume > 0 else { return }
