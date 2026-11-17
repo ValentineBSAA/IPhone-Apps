@@ -104,6 +104,7 @@ struct ConversationView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
+                NavigationLink(value: AppPage.profile(contact, true)) {
                 HStack(spacing: 9) {
                     ContactAvatar(contact: contact, size: 34)
                     VStack(alignment: .leading, spacing: 2) {
@@ -115,6 +116,8 @@ struct ConversationView: View {
                     }
                 }
                 .accessibilityElement(children: .combine)
+                }
+                .buttonStyle(.plain)
             }
         }
         .sheet(item: $photoToShow) { photo in
