@@ -2,6 +2,15 @@ import XCTest
 @testable import BerryBlockBlast
 
 final class BerryEngineTests: XCTestCase {
+    func testClassicModeIsAnAdditionalMode() {
+        XCTAssertEqual(BerryMode.classic.rawValue, "Berry Classic")
+        XCTAssertTrue(BerryMode.allCases.contains(.classic))
+        let engine = BerryEngine()
+        XCTAssertEqual(engine.side, 8)
+        XCTAssertEqual(engine.tray.count, 3)
+        XCTAssertTrue(engine.hasMove())
+    }
+
     func testStartsWithEightByEightGridAndThreePieces() {
         let game = BerryEngine()
         XCTAssertEqual(game.board.count, 8)
@@ -220,9 +229,10 @@ final class BerryEngineTests: XCTestCase {
     }
 
     func testAllSixExistingModesRemainAvailable() {
-        XCTAssertEqual(BerryMode.allCases.count, 6)
+        XCTAssertEqual(BerryMode.allCases.count, 7)
         XCTAssertTrue(BerryMode.allCases.contains(.superHard))
         XCTAssertTrue(BerryMode.allCases.contains(.cozy))
+        XCTAssertTrue(BerryMode.allCases.contains(.classic))
     }
 
     private func emptyBoard() -> [[Int?]] {

@@ -28,7 +28,7 @@ struct BerryTile: View {
     private var decorated: Bool { strawberryUnlocked && tint % 6 == 0 }
     private var palette: Color {
         switch mode {
-        case .endless: BerryStyle.color(for: tint)
+        case .endless, .classic: BerryStyle.color(for: tint)
         case .story: [Color(red: 0.92, green: 0.38, blue: 0.64), .purple, .orange, .pink, .mint, .indigo][(tint % 6 + 6) % 6]
         case .daily: [Color(red: 0.94, green: 0.43, blue: 0.35), .yellow, .orange, .green, .red, .brown][(tint % 6 + 6) % 6]
         case .cozy: [Color(red: 0.76, green: 0.58, blue: 0.44), Color(red: 0.83, green: 0.67, blue: 0.52), .mint, Color(red: 0.68, green: 0.77, blue: 0.52), .orange, .teal][(tint % 6 + 6) % 6]

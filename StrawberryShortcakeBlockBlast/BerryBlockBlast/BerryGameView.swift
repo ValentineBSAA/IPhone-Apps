@@ -91,6 +91,7 @@ struct BerryGameView: View {
     private var objective: String {
         switch mode {
         case .endless: "Fill a row or column. Grow your berry garden!"
+        case .classic: "🍓 BERRY CLASSIC • Three pieces • Chase your best!"
         case .story: storyIsLineQuest ? "CHAPTER \(storyLevel) • Clear \(storyTargetLines) lines to bloom!" : "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
         case .daily: "DAILY HARVEST • Gather \(goal) points!"
         case .cozy: "COZY COTTAGE • \(session.cottageDecorations) decorations • Grow at your pace!"
@@ -119,6 +120,10 @@ struct BerryGameView: View {
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.music") private var music = true
     @State private var sparkle = false
+    @State private var showNewBestBanner = false
+    @State private var scoreRecordAtEntry = 0
+    @State private var celebratedRecordThisRun = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("berryblockblast.strawberry-unlocked") private var strawberryUnlocked = false
     @AppStorage("berryblockblast.lifetime-lines") private var lifetimeLines = 0
     @State private var showUnlock = false
@@ -150,7 +155,11 @@ struct BerryGameView: View {
                 background
                 VStack(spacing: compact ? 5 : 8) {
                     topBar(compact: compact)
-                    scoreBar
+                    if mode == .classic {
+                        BerryClassicScoreView(score: session.engine.score, best: session.bestScore, combo: session.engine.streak)
+                    } else {
+                        scoreBar
+                    }
                     HStack(spacing: 6) {
                         Image(systemName: mode == .challenge ? "bolt.fill" : mode == .cozy ? "leaf.fill" : "sparkles")
                         Text((mode == .endless || mode == .cozy) ? (session.lastMessage ?? objective) : objective)
@@ -161,7 +170,25 @@ struct BerryGameView: View {
                     .foregroundStyle(BerryStyle.chocolate)
                     .frame(height: 19)
                     BerryBoard(engine: session.engine, preview: drag, size: boardSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle, onBoardRect: { rect in boardRect = rect })
-                        .overlay { if sparkle { Text(harvestCheer).font(.headline).foregroundStyle(BerryStyle.strawberry).padding(12).background(.regularMaterial, in: Capsule()).transition(.scale.combined(with: .opacity)).allowsHitTesting(false) } }
+                        .overlay {
+                            if sparkle {
+                                Text(harvestCheer)
+                                    .font(.headline)
+                                    .foregroundStyle(BerryStyle.strawberry)
+                                    .padding(12)
+                                    .background(.regularMaterial, in: Capsule())
+                                    .transition(.scale.combined(with: .opacity))
+                                    .allowsHitTesting(false)
+                            }
+                        }
+                        .overlay {
+                            if showNewBestBanner {
+                                BerryNewBestBanner(score: session.engine.score)
+                                    .transition(.scale(scale: 0.78).combined(with: .opacity))
+                                    .allowsHitTesting(false)
+                                    .zIndex(3)
+                            }
+                        }
                         .padding(7)
                         .contentShape(Rectangle())
                         .onTapGesture { location in
@@ -286,6 +313,9 @@ struct BerryGameView: View {
         .onAppear {
             BerryAudio.shared.setMusic(music)
             session.selectMode(mode)
+            scoreRecordAtEntry = max(session.bestScore, session.engine.score)
+            celebratedRecordThisRun = false
+            showNewBestBanner = false
             blitzRunning = mode == .challenge
             if mode == .challenge {
                 if let saved = UserDefaults.standard.object(forKey: blitzDeadlineKey) as? Date { blitzDeadline = saved }
@@ -299,7 +329,10 @@ struct BerryGameView: View {
             if mode == .daily && dailyCompleted == BerryGameSession.dailyDateKey() { showVictory = session.engine.score >= goal }
             if !welcomed { showWelcome = true }
         }
-        .onChange(of: session.engine.score) { _, _ in checkObjective() }
+        .onChange(of: session.engine.score) { _, score in
+            checkObjective()
+            celebrateNewRecordIfNeeded(score)
+        }
         .onChange(of: session.engine.totalLines) { _, _ in checkObjective() }
         .onChange(of: showSettings) { _, _ in if mode == .challenge { refreshBlitzClock() } }
         .overlay {
@@ -341,11 +374,11 @@ struct BerryGameView: View {
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
                         Button(showVictory ? "🍓 Another Sweet Adventure" : "🍓 Plant a Fresh Garden") {
                             showVictory = false; showGameOver = false; confirmRestart = false
-                            completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil; lastBlitzTimeBonus = 0; blitzRemaining = 120; blitzRunning = mode == .challenge; blitzDeadline = mode == .challenge ? Date().addingTimeInterval(120) : nil; if mode == .challenge { UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey) }
+                            completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil; lastBlitzTimeBonus = 0; blitzRemaining = 120; blitzRunning = mode == .challenge; blitzDeadline = mode == .challenge ? Date().addingTimeInterval(120) : nil; if mode == .challenge { UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey) }; celebratedRecordThisRun = false; scoreRecordAtEntry = session.bestScore; showNewBestBanner = false
                         }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
                         Button("🏡 Return to Strawberry Village") { onExit() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
-                        if showGameOver && session.shuffles > 0 {
+                        if showGameOver && session.shuffles > 0 && mode != .classic {
                             Button("✨ Use Shuffle (\(session.shuffles) left)") { session.shuffle(); showGameOver = session.gameOver; selectedSlot = nil; drag = nil }
                                 .foregroundStyle(BerryStyle.strawberry)
                         }
@@ -443,6 +476,7 @@ struct BerryGameView: View {
 
     private var toolBar: some View {
         HStack(spacing: 7) {
+            if mode != .classic {
             toolButton("Undo", icon: "arrow.uturn.backward", count: session.undos, enabled: session.canUndo) {
                 if session.canUndo {
                     let revertedLines = session.undo()
@@ -460,6 +494,7 @@ struct BerryGameView: View {
                 if session.shuffles > 0 { session.shuffle(); selectedSlot = nil; drag = nil } else { showShop = true }
             }
             toolButton("Shop", icon: "basket.fill", count: nil, enabled: true) { showShop = true }
+            }
             toolButton(mode == .cozy ? "Cottage" : "Stats", icon: mode == .cozy ? "house.lodge.fill" : "chart.bar.fill", count: nil, enabled: true) { if mode == .cozy { showCottage = true } else { showStats = true } }
             toolButton("Home", icon: "house.fill", count: nil, enabled: true) { onExit() }
         }.frame(height: 43)
@@ -594,6 +629,22 @@ struct BerryGameView: View {
         blitzRunning = false
         showVictory = true
     }
+    private func celebrateNewRecordIfNeeded(_ score: Int) {
+        // A tiny score on a fresh run should not fill the screen with banners.
+        // Once a genuine record is passed, it is celebrated once per run.
+        guard !celebratedRecordThisRun, score > scoreRecordAtEntry,
+              score >= 20 else { return }
+        celebratedRecordThisRun = true
+        withAnimation(reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.7)) {
+            showNewBestBanner = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.9) {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.28)) {
+                showNewBestBanner = false
+            }
+        }
+    }
+
     private func successFeedback() {
         lifetimeLines += session.lastClearedLines
         if lifetimeLines >= 10 && !strawberryUnlocked {
@@ -630,7 +681,11 @@ struct BerryGameView: View {
         sheetBase("How to Play", icon: "🍰") {
             Text("Touch a piece and slide it onto the \(session.engine.side) × \(session.engine.side) board, then release. Or tap a piece and tap the board to place it. Complete full rows or columns to clear them.")
             Text("Clear multiple lines together for bonus points. Keep clearing to grow your combo. Clear the entire board for +300!")
-            Text("Earn strawberries for line clears. Spend them in the basket on extra Undos and Shuffles. Keep playing until nothing fits.")
+            if mode == .classic {
+                Text("Berry Classic uses three shapes at a time, with no timer, Undo or Shuffle. Build combos, clear rows or columns, and chase your personal record!")
+            } else {
+                Text("Earn strawberries for line clears. Spend them in the basket on extra Undos and Shuffles. Keep playing until nothing fits.")
+            }
             primaryButton("Got It!") { showHelp = false }
         }
     }

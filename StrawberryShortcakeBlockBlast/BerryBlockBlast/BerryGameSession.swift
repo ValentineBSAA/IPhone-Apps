@@ -31,12 +31,13 @@ final class BerryGameSession: ObservableObject {
         case .cozy: "berryblockblast.cozy.engine.v1"
         case .challenge: "berryblockblast.blitz.engine.v1"
         case .superHard: "berryblockblast.nightmare.engine.v1"
+        case .classic: "berryblockblast.classic.engine.v055"
         }
     }
     func selectMode(_ mode: BerryMode) {
         activeMode = mode
         let scoreKey = bestScoreKey(for: mode)
-        if mode != .superHard && UserDefaults.standard.object(forKey: scoreKey) == nil {
+        if mode != .superHard && mode != .classic && UserDefaults.standard.object(forKey: scoreKey) == nil {
             // Earlier versions shared one best-score key for five modes.
             // Seed independent records from it so an upgrade never loses that number.
             UserDefaults.standard.set(UserDefaults.standard.integer(forKey: bestKey), forKey: scoreKey)
@@ -82,6 +83,7 @@ final class BerryGameSession: ObservableObject {
         case .cozy: return "berryblockblast.cozy.best-score.v055"
         case .challenge: return "berryblockblast.blitz.best-score.v055"
         case .superHard: return nightmareBestKey
+        case .classic: return "berryblockblast.classic.best-score.v055"
         }
     }
     private let inventoryKey = "berryblockblast.inventory.v3"

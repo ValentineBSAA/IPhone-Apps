@@ -26,3 +26,12 @@ The test build is NOT stable until the iPhone 16e proves dragging actually works
 - Normal line-clear points now use the independently examined Android 10.8.1 Classic baseline: one line 10, two lines 20, three lines 60, four lines 120, plus placement points, combo multiplier and +300 full-board reward.
 - We cannot assert the current iOS app uses these identical weights. Berry retains its own objectives and six modes.
 - Automated tests cover two-line, three-line, and continuing combo scoring.
+
+## Berry Classic and score celebration
+- Added Berry Classic as a seventh mode in the home menu. All six prior modes remain.
+- Berry Classic has its own 8x8 board snapshot, best-score key, three-piece tray, no timer and no Undo/Shuffle/Shop shortcuts.
+- Berry Classic uses the corrected classic piece catalog and core scoring pipeline.
+- The Classic score receives a large strawberry/pink/gold spotlight with a slow pulse, bright glow, best record and combo label.
+- Any mode displays a brief original "NEW BERRY BEST!" banner after surpassing the score at the beginning of that run.
+- The celebration runs at most once per run, is noninteractive and respects iOS Reduce Motion.
+- Keep evaluating drag pickup, movement and release as the top release gate. Visual work does not mean touch reliability is verified.
