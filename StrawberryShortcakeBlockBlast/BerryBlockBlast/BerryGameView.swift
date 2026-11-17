@@ -715,6 +715,14 @@ struct BerryGameView: View {
 
     private func successFeedback() {
         lifetimeLines += session.lastClearedLines
+        // Genuine play milestones build longer-term progression without
+        // introducing yet another top-level mode.
+        for (lines, reward) in [(25, 15), (50, 30), (100, 60)] {
+            if lifetimeLines >= lines {
+                session.awardOnce("lifetime-lines-\(lines)", amount: reward,
+                                  reason: "Garden milestone: \(lines) lines")
+            }
+        }
         if lifetimeLines >= 10 && !strawberryUnlocked {
             strawberryUnlocked = true
             showUnlock = true
@@ -787,30 +795,69 @@ struct BerryGameView: View {
     }
 
     private var cottageSheet: some View {
-        sheetBase("My Strawberry Cottage", icon: "🏡") {
-            Text("A little home that grows with every harvest.").multilineTextAlignment(.center)
+        let completed = session.cottageDecorations
+        let upgrades = ["Berry Flowerbed 🌸", "Strawberry Garden Gate 🍓",
+                        "Jam Market Stall 🧺", "Village Fountain ⛲",
+                        "Rose Trellis 🌹", "Cottage Bakery 🍰"]
+        return sheetBase("My Strawberry Cottage", icon: "🏡") {
+            Text("Your little cottage becomes a sweeter home with every decoration.")
+                .multilineTextAlignment(.center)
             ZStack {
-                RoundedRectangle(cornerRadius: 24).fill(Color(red: 0.86, green: 0.96, blue: 0.81))
-                VStack(spacing: 8) {
-                    Text("☀️  ☁️  🌷  ☁️").font(.title2)
-                    Text("🏡").font(.system(size: 100))
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(LinearGradient(colors: [Color(red: 0.87, green: 0.97, blue: 0.83),
+                        Color(red: 1, green: 0.88, blue: 0.91)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing))
+                VStack(spacing: 7) {
+                    Text(completed >= 4 ? "☀️    🌺   ⛲   🌺    ☁️" : "☀️    🌸    ☁️")
+                        .font(.system(size: 23))
+                    Text("🏡")
+                        .font(.system(size: 94))
+                        .shadow(color: BerryStyle.strawberry.opacity(0.25), radius: 9, y: 5)
                     HStack(spacing: 8) {
-                        ForEach(0..<min(session.cottageDecorations, 12), id: \.self) { i in
-                            Text(["🍓", "🌷", "🪴", "🎀", "🍰", "🧺"][i % 6])
-                                .font(.system(size: 24))
-                        }
+                        if completed >= 1 { Text("🌷") }
+                        if completed >= 2 { Text("🍓") }
+                        if completed >= 3 { Text("🧺") }
+                        if completed >= 5 { Text("🌹") }
+                        if completed >= 6 { Text("🍰") }
                     }
-                    Text("🌿 🌸 🌿 🌸 🌿").font(.title2)
-                }.padding()
-            }.frame(height: 250)
-            Text("\(session.cottageDecorations) decorations collected").font(.headline).foregroundStyle(BerryStyle.leaf)
-            Button("Add a garden decoration • 🍓 50") { session.buyCottageDecoration() }
-                .disabled(session.berries < 50)
-                .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
-            Text("Your strawberry basket: 🍓 \(session.berries)").font(.caption)
+                    .font(.system(size: 27))
+                    Text(completed >= 6 ? "✨ THE SWEETEST COTTAGE ✨" :
+                        "🌿 A garden still growing 🌿")
+                        .font(.system(size: 12, weight: .black, design: .rounded))
+                        .foregroundStyle(BerryStyle.leaf)
+                }
+            }.frame(height: 256)
+            Text("🍓 \(completed) decorations collected")
+                .font(.headline)
+                .foregroundStyle(BerryStyle.leaf)
+            ForEach(0..<upgrades.count, id: \.self) { index in
+                HStack {
+                    Image(systemName: completed > index ? "checkmark.seal.fill" : "lock.fill")
+                        .foregroundStyle(completed > index ? BerryStyle.leaf : .gray)
+                    Text(upgrades[index])
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(BerryStyle.chocolate)
+                    Spacer()
+                    if completed > index { Text("Owned").font(.caption).foregroundStyle(BerryStyle.leaf) }
+                }
+                .padding(12)
+                .background(.white, in: RoundedRectangle(cornerRadius: 15))
+            }
+            Button(completed < upgrades.count ?
+                   "Decorate: \(upgrades[completed]) • 🍓 50" :
+                   "Add another garden bouquet • 🍓 50") {
+                session.buyCottageDecoration()
+                if sound { BerryAudio.shared.play(.reward) }
+            }
+            .disabled(session.berries < 50)
+            .buttonStyle(.borderedProminent)
+            .tint(BerryStyle.strawberry)
+            Text("Your strawberry basket: 🍓 \(session.berries)")
+                .font(.caption)
             primaryButton("Back to the Garden") { showCottage = false }
         }
     }
+
     private var statsSheet: some View {
         sheetBase("Berry Scrapbook", icon: "📖") {
             statRow("Best score", "\(session.bestScore)")
