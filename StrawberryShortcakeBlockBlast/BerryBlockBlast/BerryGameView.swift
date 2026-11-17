@@ -129,12 +129,14 @@ struct BerryGameView: View {
     @State private var blitzRunning = false
     @State private var blitzDeadline: Date?
     private var blitzVariant: BerryBlitzVariant { BerryBlitzVariant.selected }
+    private var isTimedMode: Bool { mode == .challenge || mode == .superHard }
+    private var timedDuration: Int { mode == .superHard ? 180 : blitzVariant.seconds }
     @State private var isPaused = false
     @Environment(\.scenePhase) private var scenePhase
-    private var canManuallyPause: Bool { mode != .challenge }
+    private var canManuallyPause: Bool { !isTimedMode }
     private var canMakeMove: Bool {
         guard !isPaused, !showGameOver, !showVictory, !session.gameOver else { return false }
-        if mode == .challenge { return blitzRunning && (blitzDeadline.map { $0 > Date() } ?? false) }
+        if isTimedMode { return blitzRunning && (blitzDeadline.map { $0 > Date() } ?? false) }
         return true
     }
     private var goal: Int { mode == .story ? 100 + storyLevel * 55 : 120 }
@@ -150,7 +152,7 @@ struct BerryGameView: View {
         case .daily: return "DAILY HARVEST • \(BerryGameSession.dailyDateKey()) • Gather \(goal) points!"
         case .cozy: return "COZY COTTAGE • \(session.cottageDecorations) decorations • Grow at your pace!"
         case .challenge: return "⚡ \(blitzVariant.rawValue.uppercased()) • \(blitzRemaining)s • \(session.engine.score) points"
-        case .superHard: return "🍓 STRAWBERRY NIGHTMARE • 12 × 12 • Bigger pieces!"
+        case .superHard: return "🌑 STRAWBERRY NIGHTMARE • \(blitzRemaining)s • 12 × 12"
         }
     }
 
@@ -208,7 +210,7 @@ struct BerryGameView: View {
             let bottom = geo.safeAreaInsets.bottom
             let compact = height < 740
             let boardSize = max(185, min(width - 42, height - top - bottom -
-                (mode == .challenge ? (compact ? 276 : 310) : (compact ? 248 : 282)), 475))
+                (isTimedMode ? (compact ? 276 : 310) : (compact ? 248 : 282)), 475))
             let cell = (boardSize - CGFloat(session.engine.side - 1) * 3) / CGFloat(session.engine.side)
             ZStack {
                 background
@@ -216,9 +218,10 @@ struct BerryGameView: View {
                     topBar(compact: compact)
                     if mode == .classic {
                         BerryClassicScoreView(score: session.engine.score, best: session.bestScore, combo: session.engine.streak)
-                    } else if mode == .challenge {
+                    } else if isTimedMode {
                         BerryBlitzHUD(timeLeft: blitzRemaining, score: session.engine.score,
-                                     best: session.bestScore, variant: blitzVariant)
+                                     best: session.bestScore, variant: blitzVariant,
+                                     overrideTitle: mode == .superHard ? "STRAWBERRY NIGHTMARE" : nil)
                     } else {
                         scoreBar
                     }
@@ -279,6 +282,14 @@ struct BerryGameView: View {
                                 if let piece {
                                     BerryPieceGlyph(piece: piece, unit: min(17, (width - 86) / CGFloat(3 * max(piece.width, 3)), CGFloat(compact ? 57 : 68) / CGFloat(max(piece.height, 1))), mode: mode, strawberryUnlocked: strawberryUnlocked)
                                         .opacity(activeDragSlot == slot ? 0.3 : session.engine.hasPlacement(for: piece) ? 1 : 0.3)
+                                    Text("\(piece.points.count)")
+                                        .font(.system(size: 11, weight: .black, design: .rounded))
+                                        .foregroundStyle(BerryStyle.strawberry)
+                                        .padding(.horizontal, 7).padding(.vertical, 3)
+                                        .background(.white, in: Capsule())
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                                        .padding(5)
+                                        .allowsHitTesting(false)
                                 } else {
                                     Image(systemName: "checkmark.seal.fill")
                                         .foregroundStyle(BerryStyle.leaf.opacity(0.6))
@@ -364,13 +375,13 @@ struct BerryGameView: View {
             // iOS screenshots and banners can temporarily mark the app inactive.
             // Pause overlays appear only when Pause was pressed, not on screenshots.
             if phase == .background { drag = nil; selectedSlot = nil }
-            if phase == .active && mode == .challenge { refreshBlitzClock() }
+            if phase == .active && isTimedMode { refreshBlitzClock() }
         }
         .onReceive(Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()) { _ in
-            if mode == .challenge { refreshBlitzClock() }
+            if isTimedMode { refreshBlitzClock() }
         }
         .onChange(of: session.gameOver) { ended in
-            showGameOver = !showVictory && (ended || (mode == .challenge && !blitzRunning && blitzRemaining == 0))
+            showGameOver = !showVictory && (ended || (isTimedMode && !blitzRunning && blitzRemaining == 0))
             if ended && sound && mode != .challenge { BerryAudio.shared.play(.gameOver) }
         }
         .onAppear {
@@ -380,16 +391,16 @@ struct BerryGameView: View {
             scoreRecordAtEntry = max(session.bestScore, session.engine.score)
             celebratedRecordThisRun = false
             showNewBestBanner = false
-            blitzRunning = mode == .challenge
+            blitzRunning = isTimedMode
             blitzFinished = false
             blitzWarnedTenSeconds = false
             blitzPlayedFinalTick = false
-            if mode == .challenge {
-                blitzRemaining = blitzVariant.seconds
-                blitzDeadline = Date().addingTimeInterval(TimeInterval(blitzVariant.seconds))
+            if isTimedMode {
+                blitzRemaining = timedDuration
+                blitzDeadline = Date().addingTimeInterval(TimeInterval(timedDuration))
                 if sound { BerryAudio.shared.play(.blitzStart) }
             }
-            showGameOver = session.gameOver || (mode == .challenge && blitzRemaining == 0)
+            showGameOver = session.gameOver || (isTimedMode && blitzRemaining == 0)
             if mode == .daily && dailyCompleted == BerryGameSession.dailyDateKey() { showVictory = session.engine.score >= goal }
             if !welcomed { showWelcome = true }
         }
@@ -398,7 +409,7 @@ struct BerryGameView: View {
             celebrateNewRecordIfNeeded(score)
         }
         .onChange(of: session.engine.totalLines) { _ in checkObjective() }
-        .onChange(of: showSettings) { _ in if mode == .challenge { refreshBlitzClock() } }
+        .onChange(of: showSettings) { _ in if isTimedMode { refreshBlitzClock() } }
         .onChange(of: showVictory) { victory in
             BerryAudio.shared.setScreen(victory ? .results : (mode == .challenge ? .blitz : .gameplay))
             if victory && sound { BerryAudio.shared.play(.victory) }
@@ -438,7 +449,7 @@ struct BerryGameView: View {
                              mode == .challenge ? "Time's Up, Berry Racer!" : "No More Moves!")
                             .font(.system(size: 25, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry).multilineTextAlignment(.center)
-                        Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "A fresh board starts this chapter again. Your records and earned berries stay safe." : mode == .challenge ? "Your timer reached zero. See your results below!" : "None of your remaining pieces can fit. Try a Shuffle to continue, or start this chapter again.")
+                        Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "A fresh board starts this chapter again. Your records and earned berries stay safe." : isTimedMode && blitzRemaining == 0 ? "Your timer reached zero. See your results below!" : "None of your remaining pieces can fit. Try a Shuffle to continue, or start this chapter again.")
                             .font(.system(size: 15, weight: .medium, design: .rounded))
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
                         if !confirmRestart {
@@ -462,11 +473,11 @@ struct BerryGameView: View {
                         Button(showVictory ? "🍓 Another Sweet Adventure" : mode == .challenge ? "⚡ Race Again" : "🍓 Plant a Fresh Garden") {
                             showVictory = false; showGameOver = false; confirmRestart = false
                             completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil; hintPreview = nil
-                            blitzRemaining = blitzVariant.seconds; blitzRunning = mode == .challenge
-                            blitzDeadline = mode == .challenge ?
-                                Date().addingTimeInterval(TimeInterval(blitzVariant.seconds)) : nil
+                            blitzRemaining = timedDuration; blitzRunning = isTimedMode
+                            blitzDeadline = isTimedMode ?
+                                Date().addingTimeInterval(TimeInterval(timedDuration)) : nil
                             blitzFinished = false; blitzWarnedTenSeconds = false; blitzPlayedFinalTick = false
-                            if mode == .challenge && sound { BerryAudio.shared.play(.blitzStart) }
+                            if isTimedMode && sound { BerryAudio.shared.play(.blitzStart) }
                             celebratedRecordThisRun = false; scoreRecordAtEntry = session.bestScore
                             showNewBestBanner = false
                         }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
@@ -786,7 +797,7 @@ struct BerryGameView: View {
     }
 
     private func refreshBlitzClock() {
-        guard mode == .challenge, blitzRunning, let deadline = blitzDeadline,
+        guard isTimedMode, blitzRunning, let deadline = blitzDeadline,
               !showVictory else { return }
         blitzRemaining = max(0, Int(ceil(deadline.timeIntervalSinceNow)))
         if blitzRemaining <= 10 && blitzRemaining > 0 && !blitzWarnedTenSeconds {
@@ -809,7 +820,7 @@ struct BerryGameView: View {
     }
     private func checkObjective() {
         guard !showVictory, !showGameOver else { return }
-        if mode == .challenge {
+        if isTimedMode {
             guard let deadline = blitzDeadline, deadline > Date() else {
                 refreshBlitzClock()
                 return
