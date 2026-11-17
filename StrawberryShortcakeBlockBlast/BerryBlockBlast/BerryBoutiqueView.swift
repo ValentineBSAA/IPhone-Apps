@@ -157,7 +157,7 @@ struct BerryBoutiqueView: View {
 
             VStack(alignment: .leading, spacing: 11) {
                 Text("🍰 GARDEN HELPERS").font(.headline).foregroundStyle(BerryStyle.strawberry)
-                Text("Use helpers from the game's bottom toolbar. Berry Classic and timed Blitz stay power-up free.")
+                Text("Use helpers from the game's bottom toolbar. Berry Classic, Berry Blitz and timed Nightmare stay power-up free.")
                     .font(.caption)
                     .fixedSize(horizontal: false, vertical: true)
                     .foregroundStyle(BerryStyle.chocolate.opacity(0.8))
