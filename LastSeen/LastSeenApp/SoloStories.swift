@@ -37,7 +37,7 @@ enum SoloStories {
                 }
                 return StoryBeat("nora", "nora", text,
                     kind: beat.kind == .call ? .text : beat.kind,
-                    delay: beat.delay)
+                    delay: beat.delay, asset: beat.asset)
             }
             library[key] = StoryScene(id: original.id, beats: beats,
                 choices: original.choices, next: original.next, ending: original.ending,
