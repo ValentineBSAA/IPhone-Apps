@@ -422,11 +422,11 @@ final class BerryGameSession: ObservableObject {
     /// Shop purchases are cosmetics only. Core rules and Berry Classic scoring
     /// never depend on purchases; old earned strawberries remain spendable.
     func buyCosmetic(id: String, cost: Int) -> Bool {
-        let valid: [String:Int] = ["blueberry-blocks":90,"vanilla-blocks":90,
+        let valid: [String:Int] = ["strawberry-fruit":0,"blueberry-blocks":90,"vanilla-blocks":90,
             "rose-border":75,"mint-border":75,"berry-sparkle":100,
             "raspberry-blocks":110,"lemon-blocks":110,"chocolate-blocks":120,
             "mint-blocks":110,"blackberry-blocks":130]
-        guard valid[id] == cost, cost > 0, berries >= cost,
+        guard valid[id] == cost, cost >= 0, berries >= cost,
               !ownedCosmetics.contains(id) else { return false }
         previous = nil
         previousBerryEarnings = 0
