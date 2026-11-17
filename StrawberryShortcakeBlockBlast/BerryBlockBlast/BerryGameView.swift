@@ -171,6 +171,8 @@ struct BerryGameView: View {
     @State private var showSettings = false
     @State private var showShop = false
     @State private var showStats = false
+    @State private var showCollection = false
+    @State private var openShopAfterCollection = false
     @State private var showCottage = false
     @State private var confirmRestart = false
     @State private var showGameOver = false
@@ -369,7 +371,26 @@ struct BerryGameView: View {
         .sheet(isPresented: $showSettings) { settingsSheet }
         .sheet(isPresented: $showShop) { shopSheet }
         .sheet(isPresented: $showStats) { statsSheet }
-        .sheet(isPresented: $showCottage) { cottageSheet }
+        .sheet(isPresented: $showCottage) { BerryCottageBuilderView(session: session) }
+        .sheet(isPresented: $showCollection, onDismiss: {
+            if openShopAfterCollection {
+                openShopAfterCollection = false
+                showShop = true
+            }
+        }) {
+            NavigationStack {
+                BerryCollectionView(session: session, lifetimeLines: lifetimeLines) {
+                    openShopAfterCollection = true
+                    showCollection = false
+                }
+                .navigationTitle("Berry Collection")
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { showCollection = false }
+                    }
+                }
+            }
+        }
         .sheet(isPresented: $showWelcome) { welcomeSheet }
         .onChange(of: scenePhase) { phase in
             // iOS screenshots and banners can temporarily mark the app inactive.
@@ -608,6 +629,9 @@ struct BerryGameView: View {
             toolButton("Hint", icon: "BerryHint", count: session.hints, enabled: session.hints > 0) {
                 if session.hints > 0 { showHint() } else { showShop = true }
             }
+            }
+            toolButton("Collection", icon: "BerryInventory", count: nil, enabled: true) {
+                showCollection = true
             }
             toolButton(mode == .cozy ? "Cottage" : "Stats", icon: mode == .cozy ? "CottageDecorations" : "StatsChart", count: nil, enabled: true) { if mode == .cozy { showCottage = true } else { showStats = true } }
             toolButton("Home", icon: "HomeCottage", count: nil, enabled: true) { returnToVillage() }
