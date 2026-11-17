@@ -34,10 +34,10 @@ private struct BerryBoard: View {
                 let r = i / side
                 let c = i % side
                 ZStack {
-                    RoundedRectangle(cornerRadius: side == 12 ? 4 : 8)
+                    RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
                         .fill(Color.white.opacity(0.76))
                         .overlay(alignment: .topLeading) {
-                            RoundedRectangle(cornerRadius: side == 12 ? 4 : 8).strokeBorder(.white.opacity(0.58), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: side > 8 ? 4 : 8).strokeBorder(.white.opacity(0.58), lineWidth: 1)
                         }
                     if let tint = engine.board[r][c] { BerryTile(tint: tint, mode: mode, strawberryUnlocked: strawberryUnlocked) }
                 }
@@ -51,7 +51,7 @@ private struct BerryBoard: View {
                     if (0..<side).contains(r), (0..<side).contains(c) {
                         BerryTile(tint: preview.piece.tint, preview: true, mode: mode, strawberryUnlocked: strawberryUnlocked)
                             .opacity(previewStyle == "outline" ? 0.18 : 0.56)
-                            .overlay { RoundedRectangle(cornerRadius: side == 12 ? 4 : 8).strokeBorder(preview.allowed ? Color.green : Color.red, lineWidth: 2) }
+                            .overlay { RoundedRectangle(cornerRadius: side > 8 ? 4 : 8).strokeBorder(preview.allowed ? Color.green : Color.red, lineWidth: 2) }
                             .frame(width: unit, height: unit)
                             .offset(x: CGFloat(c) * (unit + gap), y: CGFloat(r) * (unit + gap))
                     }
@@ -60,7 +60,7 @@ private struct BerryBoard: View {
         }
         .frame(width: size, height: size, alignment: .topLeading)
         // Both the touch receiver and this anchor measure UIWindow coordinates.
-        .background(BerryBoardWindowAnchor(onRect: onBoardRect))
+        .background(BerryBoardWindowAnchor(onRect: onBoardRect, tracksScrolling: side == 24))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Berry garden, \(engine.side) by \(engine.side) puzzle board")
     }
@@ -169,49 +169,18 @@ struct BerryGameView: View {
                     .font(.system(size: compact ? 10 : 12, weight: .bold, design: .rounded))
                     .foregroundStyle(BerryStyle.chocolate)
                     .frame(height: 19)
-                    BerryBoard(engine: session.engine, preview: drag, size: boardSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle, onBoardRect: { rect in boardRect = rect })
-                        .overlay {
-                            if sparkle {
-                                Text(harvestCheer)
-                                    .font(.headline)
-                                    .foregroundStyle(BerryStyle.strawberry)
-                                    .padding(12)
-                                    .background(.regularMaterial, in: Capsule())
-                                    .transition(.scale.combined(with: .opacity))
-                                    .allowsHitTesting(false)
-                            }
+                    if session.engine.side == 24 {
+                        ScrollView([.horizontal, .vertical]) {
+                            boardInteraction(actualSize: max(580, boardSize * 1.75))
                         }
-                        .overlay {
-                            if showNewBestBanner {
-                                BerryNewBestBanner(score: session.engine.score)
-                                    .transition(.scale(scale: 0.78).combined(with: .opacity))
-                                    .allowsHitTesting(false)
-                                    .zIndex(3)
-                            }
-                        }
-                        .padding(7)
-                        .contentShape(Rectangle())
-                        .onTapGesture { location in
-                            guard canMakeMove, let slot = selectedSlot,
-                                  session.engine.tray.indices.contains(slot),
-                                  let piece = session.engine.tray[slot] else { return }
-                            // Tap coordinates are local to the 7-point padded board wrapper.
-                            // Resolve using the same cell-origin logic as drag placement.
-                            let local = CGPoint(x: location.x - 7, y: location.y - 7)
-                            let area = CGRect(origin: .zero, size: CGSize(width: boardSize, height: boardSize))
-                            guard let target = BerryDropGeometry.target(
-                                for: local, board: area, piece: piece, side: session.engine.side
-                            ) else {
-                                warningFeedback()
-                                return
-                            }
-                            if session.drop(slot: slot, row: target.row, col: target.col) {
-                                selectedSlot = nil
-                                successFeedback()
-                            } else {
-                                warningFeedback()
-                            }
-                        }
+                        .frame(width: boardSize + 14, height: boardSize + 14)
+                        .scrollIndicators(.visible)
+                        .defaultScrollAnchor(.center)
+                        .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 24))
+                        .accessibilityLabel("24 by 24 Mega Garden. Scroll to reach more cells.")
+                    } else {
+                        boardInteraction(actualSize: boardSize)
+                    }
                     HStack(spacing: 5) {
                         Image(systemName: "hand.draw.fill")
                         Text(selectedSlot == nil ? "DRAG UP TO PLACE  •  OR TAP A PIECE" : "TAP AN EMPTY SPACE TO PLACE")
@@ -301,7 +270,9 @@ struct BerryGameView: View {
         .sheet(isPresented: $showCottage) { cottageSheet }
         .sheet(isPresented: $showWelcome) { welcomeSheet }
         .onChange(of: scenePhase) { _, phase in
-            if phase != .active && canManuallyPause { isPaused = true; drag = nil; selectedSlot = nil }
+            // iOS screenshots and banners can temporarily mark the app inactive.
+            // Pause overlays appear only when Pause was pressed, not on screenshots.
+            if phase == .background { drag = nil; selectedSlot = nil }
             if phase == .active && mode == .challenge { refreshBlitzClock() }
         }
         .onReceive(Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()) { _ in
@@ -604,6 +575,54 @@ struct BerryGameView: View {
         } else {
             warningFeedback()
         }
+    }
+
+    /// Identical drag and tap board to the physically verified 0.5.6 engine.
+    /// Only the 24x24 view enlarges and scrolls.
+    private func boardInteraction(actualSize: CGFloat) -> some View {
+            BerryBoard(engine: session.engine, preview: drag, size: actualSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle, onBoardRect: { rect in boardRect = rect })
+                .overlay {
+                    if sparkle {
+                        Text(harvestCheer)
+                            .font(.headline)
+                            .foregroundStyle(BerryStyle.strawberry)
+                            .padding(12)
+                            .background(.regularMaterial, in: Capsule())
+                            .transition(.scale.combined(with: .opacity))
+                            .allowsHitTesting(false)
+                    }
+                }
+                .overlay {
+                    if showNewBestBanner {
+                        BerryNewBestBanner(score: session.engine.score)
+                            .transition(.scale(scale: 0.78).combined(with: .opacity))
+                            .allowsHitTesting(false)
+                            .zIndex(3)
+                    }
+                }
+                .padding(7)
+                .contentShape(Rectangle())
+                .onTapGesture { location in
+                    guard canMakeMove, let slot = selectedSlot,
+                          session.engine.tray.indices.contains(slot),
+                          let piece = session.engine.tray[slot] else { return }
+                    // Tap coordinates are local to the 7-point padded board wrapper.
+                    // Resolve using the same cell-origin logic as drag placement.
+                    let local = CGPoint(x: location.x - 7, y: location.y - 7)
+                    let area = CGRect(origin: .zero, size: CGSize(width: actualSize, height: actualSize))
+                    guard let target = BerryDropGeometry.target(
+                        for: local, board: area, piece: piece, side: session.engine.side
+                    ) else {
+                        warningFeedback()
+                        return
+                    }
+                    if session.drop(slot: slot, row: target.row, col: target.col) {
+                        selectedSlot = nil
+                        successFeedback()
+                    } else {
+                        warningFeedback()
+                    }
+                }
     }
 
     private func refreshBlitzClock() {
