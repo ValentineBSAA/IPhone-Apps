@@ -251,6 +251,10 @@ final class BerryGameSession: ObservableObject {
             previousRewardEntry = nil
             lastMessage = "🍓 A fresh berry season! Your score continues!"
         }
+        if activeMode == .challenge && !engine.hasMove() {
+            _ = engine.recoverTimedBoardIfStuck()
+            lastMessage = "🍓 Fresh board! Keep racing the clock!"
+        }
         gameOver = !engine.hasMove()
         save()
         return true
