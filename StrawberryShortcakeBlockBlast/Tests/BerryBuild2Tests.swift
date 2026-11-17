@@ -88,4 +88,52 @@ final class BerryBuild2Tests: XCTestCase {
         XCTAssertEqual(target?.row, 0)
         XCTAssertEqual(target?.col, 0)
     }
+    func testSweetEndlessHasSeparateSavedSlotsForEveryBoardSize() {
+        let slots = [8, 12, 24].map { BerryGameSession.endlessSaveKey(side: $0) }
+        XCTAssertEqual(Set(slots).count, 3)
+        XCTAssertTrue(slots.allSatisfy { $0.contains("endless.saved") })
+    }
+
+    func testStuckEndlessBoardOpensNewSeasonWithoutResettingScore() throws {
+        let size = 8
+        let blocked = Array(repeating: Array<Int?>(repeating: 2, count: size), count: size)
+        let single = BerryPiece(points: [BerryPoint(row: 0, col: 0)], tint: 0)
+        var endless = BerryEngine(board: blocked, tray: [single, nil, nil], score: 1728)
+        XCTAssertFalse(endless.hasMove())
+        XCTAssertTrue(endless.beginNextEndlessSeasonIfStuck())
+        XCTAssertEqual(endless.score, 1728)
+        XCTAssertEqual(endless.seasons, 1)
+        XCTAssertTrue(endless.hasMove())
+        XCTAssertEqual(endless.tray.count, 3)
+        XCTAssertTrue(endless.board.flatMap { $0 }.allSatisfy { $0 == nil })
+        let restored = try JSONDecoder().decode(BerryEngine.self,
+                                                from: JSONEncoder().encode(endless))
+        XCTAssertEqual(restored.score, 1728)
+        XCTAssertEqual(restored.seasons, 1)
+    }
+
+    func testStuckMegaGardenOpensSeasonAndContinues() {
+        let size = 24
+        let blocked = Array(repeating: Array<Int?>(repeating: 3, count: size), count: size)
+        let single = BerryPiece(points: [BerryPoint(row: 0, col: 0)], tint: 1)
+        var endless = BerryEngine(board: blocked, tray: [single, nil, nil], score: 8000, hard: true)
+        XCTAssertFalse(endless.hasMove())
+        XCTAssertTrue(endless.beginNextEndlessSeasonIfStuck())
+        XCTAssertEqual(endless.score, 8000)
+        XCTAssertEqual(endless.side, 24)
+        XCTAssertTrue(endless.hasMove())
+        XCTAssertTrue(endless.tray.compactMap { $0 }.allSatisfy { $0.points.count >= 7 })
+    }
+
+    func testLegacySaveDecodesWithoutEndlessSeasonsField() throws {
+        let original = BerryEngine(side: 12, hard: true)
+        let data = try JSONEncoder().encode(original)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        object.removeValue(forKey: "seasons")
+        let legacy = try JSONSerialization.data(withJSONObject: object)
+        let restored = try JSONDecoder().decode(BerryEngine.self, from: legacy)
+        XCTAssertEqual(restored.seasons, 0)
+        XCTAssertEqual(restored.side, 12)
+    }
+
 }

@@ -101,7 +101,7 @@ struct BerryGameView: View {
     private var storyIsLineQuest: Bool { storyLevel % 2 == 0 }
     private var objective: String {
         switch mode {
-        case .endless: "Fill a row or column. Grow your berry garden!"
+        case .endless: "🍓 SWEET ENDLESS • SEASON \(session.engine.seasons + 1) • PLAY FOREVER!"
         case .classic: "🍓 BERRY CLASSIC • Three pieces • Chase your best!"
         case .story: storyIsLineQuest ? "CHAPTER \(storyLevel) • Clear \(storyTargetLines) lines to bloom!" : "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
         case .daily: "DAILY HARVEST • Gather \(goal) points!"
@@ -341,7 +341,7 @@ struct BerryGameView: View {
                             .font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
                         Button("Continue Gardening") { isPaused = false }
                             .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
-                        Button(mode == .classic ? "Save Garden & Return" : "Return to Village") { isPaused = false; onExit() }
+                        Button(mode == .endless ? "Save Forever Garden & Return" : "Return to Village") { isPaused = false; onExit() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
                     }
                     .padding(26).frame(maxWidth: 350)
@@ -784,8 +784,9 @@ struct BerryGameView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             BerryMusicSettingsView()
-            Text(mode == .classic ? "Berry Classic resumes your saved unfinished garden." :
-                 "Your records and rewards are saved. Only Classic resumes an unfinished board.")
+            Text(mode == .endless ?
+                "Sweet Endless saves this garden and your score automatically. When there are no moves, a new season begins without resetting your score." :
+                "Scores, strawberries and rewards are saved. Only Sweet Endless resumes a live board.")
                 .font(.footnote)
             Button("Start a New Garden", role: .destructive) { showSettings = false; confirmRestart = true }
             Text("🍓 v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev") • build \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?")").font(.footnote).foregroundStyle(.secondary)

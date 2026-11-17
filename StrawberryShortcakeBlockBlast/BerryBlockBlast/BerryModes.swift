@@ -22,7 +22,7 @@ enum BerryMode: String, CaseIterable, Identifiable {
     }
     var description: String {
         switch self {
-        case .endless: "A timeless garden. How high can you score?"
+        case .endless: "Your forever garden. Play, save and grow through new seasons!"
         case .story: "Earn stars, complete chapters, unlock the next!"
         case .daily: "One fresh strawberry challenge every day."
         case .cozy: "Take it easy in a cozy garden."
@@ -43,7 +43,9 @@ struct BerryHomeView: View {
     @State private var showBoardPicker = false
     @State private var showBlitzPicker = false
     @State private var launchBlitzAfterMoreDismissal = false
-    @State private var classicSaved = BerryGameSession.hasResumableClassic
+    @State private var savedEndlessSizes = Set([8, 12, 24].filter {
+        BerryGameSession.hasResumableEndless(side: $0)
+    })
     @AppStorage("berryblockblast.endless.boardSize.v056b2") private var endlessSize = 8
     @AppStorage("berryblockblast.blitz.variant.v056b2") private var selectedBlitz = BerryBlitzVariant.rush120.rawValue
     @ObservedObject private var audio = BerryAudio.shared
@@ -96,15 +98,9 @@ struct BerryHomeView: View {
                                         Text("The pure 8 × 8 block puzzle. No timer or power-ups.")
                                             .font(.system(size: 12, weight: .medium, design: .rounded))
                                             .fixedSize(horizontal: false, vertical: true)
-                                        if classicSaved {
-                                            Label("🍓 SAVED GARDEN • TAP TO CONTINUE", systemImage: "bookmark.fill")
-                                                .font(.system(size: 10, weight: .heavy, design: .rounded))
-                                                .foregroundStyle(BerryStyle.leaf)
-                                        } else {
-                                            Text("✨ BIG BRIGHT HIGH SCORE")
-                                                .font(.system(size: 10, weight: .heavy, design: .rounded))
-                                                .foregroundStyle(BerryStyle.strawberry)
-                                        }
+                                        Text("✨ BIG BRIGHT HIGH SCORE")
+                                            .font(.system(size: 10, weight: .heavy, design: .rounded))
+                                            .foregroundStyle(BerryStyle.strawberry)
                                     }
                                     Spacer(minLength: 0)
                                     Image(systemName: "chevron.right")
@@ -131,7 +127,16 @@ struct BerryHomeView: View {
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(mode.rawValue).font(.system(size: 20, weight: .black, design: .rounded))
                                             Text(mode.description).font(.system(size: 12, weight: .medium, design: .rounded)).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
-                                            if mode == .story { Text("Chapter \(storyLevel) ready").font(.system(size: 11, weight: .bold)).foregroundStyle(BerryStyle.leaf) }
+                                            if mode == .story {
+                                                Text("Chapter \(storyLevel) ready")
+                                                    .font(.system(size: 11, weight: .bold))
+                                                    .foregroundStyle(BerryStyle.leaf)
+                                            }
+                                            if mode == .endless && !savedEndlessSizes.isEmpty {
+                                                Label("🍓 SAVED FOREVER GARDEN", systemImage: "bookmark.fill")
+                                                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                                                    .foregroundStyle(BerryStyle.leaf)
+                                            }
                                         }
                                         Spacer()
                                         Image(systemName: "chevron.right")
@@ -289,7 +294,7 @@ struct BerryHomeView: View {
                         Text("🍓 Choose Your Garden Size")
                             .font(.system(size: 23, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry)
-                        Text("Sweet Endless offers three board sizes. Classic stays the original 8×8 puzzle.")
+                        Text("Sweet Endless never ends. Each garden size resumes its own saved run, even after a full board.")
                             .font(.subheadline)
                             .multilineTextAlignment(.center)
                         ForEach([8,12,24], id: \.self) { side in
@@ -313,6 +318,15 @@ struct BerryHomeView: View {
                                             side == 12 ? "More planning, bigger puzzles" :
                                             "Mega Garden • pan the zoomed board")
                                             .font(.system(size: 12, weight: .medium))
+                                        if savedEndlessSizes.contains(side) {
+                                            Label("🍓 CONTINUE SAVED GARDEN", systemImage: "bookmark.fill")
+                                                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                                                .foregroundStyle(BerryStyle.leaf)
+                                        } else {
+                                            Text("START NEW GARDEN")
+                                                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                                                .foregroundStyle(BerryStyle.strawberry)
+                                        }
                                     }
                                     Spacer()
                                     if endlessSize == side { Image(systemName: "checkmark.circle.fill") }
@@ -436,10 +450,12 @@ struct BerryHomeView: View {
             audio.setEffectVolume(Float(effectVolume))
             audio.setScreen(.menu)
             audio.setMusic(music)
-            classicSaved = BerryGameSession.hasResumableClassic
+            savedEndlessSizes = Set([8, 12, 24].filter { BerryGameSession.hasResumableEndless(side: $0) })
         }
         .onChange(of: activeMode) { _, selected in
-            if selected == nil { classicSaved = BerryGameSession.hasResumableClassic }
+            if selected == nil {
+                savedEndlessSizes = Set([8, 12, 24].filter { BerryGameSession.hasResumableEndless(side: $0) })
+            }
             audio.setScreen(selected == nil ? .menu : selected == .challenge ? .blitz : .gameplay)
         }
         .preferredColorScheme(.light)
