@@ -279,8 +279,9 @@ private struct MessageRow: View {
                 photoToShow = message
             } label: {
                 VStack(alignment: .leading, spacing: 8) {
-                    EvidencePhoto()
-                        .frame(width: 240)
+                    StoryPhotograph(assetName: message.photoAssetName)
+                        .frame(width: 240, height: 268)
+                        .clipped()
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                     Label("View photo · tap to examine", systemImage: "viewfinder")
                         .font(.system(size: 12, weight: .medium))
@@ -288,7 +289,7 @@ private struct MessageRow: View {
                 }
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Examine hallway photograph")
+            .accessibilityLabel("Open story photograph")
         case .voiceNote:
             VStack(alignment: .leading, spacing: 9) {
                 Label("Voice note · transcript", systemImage: "text.quote")
@@ -333,15 +334,16 @@ private struct PhotoDetailView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 19) {
-                    EvidencePhoto()
+                    StoryPhotograph(assetName: message.photoAssetName, fit: true)
+                        .frame(maxWidth: .infinity)
                         .scaleEffect(zoom)
                         .gesture(MagnificationGesture().onChanged { zoom = min(3, max(1, $0)) }
                             .onEnded { _ in withAnimation { zoom = 1 } })
-                        .padding(.vertical, 30)
+                        .padding(.vertical, 18)
                     SectionEyebrow(text: "Photograph inspected")
-                    Text("Look carefully at the reflection.")
+                    Text(message.body)
                         .font(.system(size: 22, weight: .semibold))
-                    Text("The hallway is dark, but a reflection shows a red 07 and a clock frozen at 01:43. The building only has four registered floors.")
+                    Text(StoryPhotoCatalog.labels[message.photoAssetName ?? ""] ?? "Inspect this photograph for details that might matter later.")
                         .font(.system(size: 15))
                         .foregroundColor(Night.muted)
                     Label("Evidence collected", systemImage: "checkmark.seal.fill")
