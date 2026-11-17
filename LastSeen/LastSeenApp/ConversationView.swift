@@ -12,11 +12,13 @@ struct ConversationView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 11) {
-                        Text("TODAY  ·  1:42 AM")
-                            .font(.system(size: 10, weight: .medium, design: .monospaced))
-                            .tracking(1.2)
-                            .foregroundColor(Night.muted)
-                            .padding(.vertical, 17)
+                        TimelineView(.periodic(from: .now, by: 20)) { clock in
+                            Text(clock.date, format: .dateTime.weekday(.wide).month(.abbreviated).day().hour().minute())
+                                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                .tracking(1.2)
+                                .foregroundColor(Night.muted)
+                        }
+                        .padding(.vertical, 17)
 
                         ForEach(game.messages(in: contact.id)) { message in
                             MessageRow(message: message, photoToShow: $photoToShow)
@@ -32,7 +34,7 @@ struct ConversationView: View {
                             .padding(.top, 4)
                         }
 
-                        if game.state.endingID != nil && contact == .nora {
+                        if game.state.endingID != nil && game.state.activeThread == contact.id {
                             Text(game.endingTitle ?? "THE END")
                                 .font(.system(size: 26, weight: .bold, design: .serif))
                                 .foregroundColor(Night.gold)
@@ -62,6 +64,7 @@ struct ConversationView: View {
                     }
                 }
                 .onAppear {
+                    game.selectStory(contact)
                     game.markThreadRead(contact.id)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) {
                         proxy.scrollTo("bottom", anchor: .bottom)
@@ -74,23 +77,7 @@ struct ConversationView: View {
             if game.state.endingID != nil {
                 footerNote("Story complete. Return to your inbox to replay.")
             } else if game.state.choiceReady {
-                if contact == .nora {
-                    choiceComposer
-                } else {
-                    VStack(spacing: 8) {
-                        footerNote("Nora is waiting for your response.")
-                        NavigationLink(value: Contact.nora) {
-                            Label("Reply in Nora's conversation", systemImage: "bubble.left.and.bubble.right")
-                                .font(.system(size: 13, weight: .semibold))
-                                .frame(maxWidth: .infinity)
-                                .padding(13)
-                                .background(Night.raised, in: RoundedRectangle(cornerRadius: 13))
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 15)
-                    }
-                    .padding(.bottom, 10)
-                }
+                choiceComposer
             } else {
                 HStack(spacing: 10) {
                     Image(systemName: "plus.circle.fill")
@@ -133,6 +120,9 @@ struct ConversationView: View {
             PhotoDetailView(message: photo)
                 .environmentObject(game)
         }
+        .onDisappear {
+            game.closeConversation(contact)
+        }
     }
 
     private func footerNote(_ text: String) -> some View {
@@ -165,7 +155,7 @@ struct ConversationView: View {
                                 .font(.system(size: 13, weight: .medium))
                                 .multilineTextAlignment(.leading)
                             if !unlocked {
-                                Text("Inspect the photo and voice message first")
+                                Text("Inspect the photo and voice-note transcript first")
                                     .font(.system(size: 10))
                                     .foregroundColor(Night.muted)
                             }
@@ -291,64 +281,35 @@ private struct MessageRow: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Examine hallway photograph")
         case .voiceNote:
-            VStack(alignment: .leading, spacing: 10) {
-                Button {
-                    game.toggleVoice(message)
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: game.playingVoiceID == message.id ? "pause.circle.fill" : "play.circle.fill")
-                            .font(.system(size: 31))
-                        VStack(alignment: .leading, spacing: 5) {
-                            Image(systemName: "waveform")
-                                .font(.system(size: 18))
-                            Text("Play voice recording")
-                                .font(.system(size: 11))
-                        }
-                        Spacer(minLength: 0)
-                    }
+            VStack(alignment: .leading, spacing: 9) {
+                Label("Voice note · transcript", systemImage: "text.quote")
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.white)
-                    .frame(width: 228)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Play or stop fictional voice recording")
-
                 Button {
                     showTranscript.toggle()
                     game.inspect(message)
                 } label: {
-                    Label(showTranscript ? "Hide transcript" : "Read transcript", systemImage: "text.quote")
+                    Label(showTranscript ? "Hide transcript" : "Read transcript", systemImage: "doc.text")
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.white.opacity(0.84))
+                        .foregroundColor(.white.opacity(0.85))
                 }
                 .buttonStyle(.plain)
-
                 if showTranscript {
                     Text(message.body.replacingOccurrences(of: "Voice message: ", with: ""))
-                        .font(.system(size: 13))
-                        .foregroundColor(.white.opacity(0.88))
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.9))
                         .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityAddTraits(.isStaticText)
+                } else {
+                    Text("Recorded dialogue is not available yet.")
+                        .font(.system(size: 11))
+                        .foregroundColor(Night.muted)
                 }
             }
         case .call:
-            Button {
-                game.presentedCall = message
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "phone.arrow.down.left.fill")
-                        .font(.system(size: 22))
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Unknown caller")
-                            .font(.system(size: 15, weight: .semibold))
-                        Text("Answer fictional in-app call")
-                            .font(.system(size: 11))
-                    }
-                    Spacer()
-                }
-                .foregroundColor(.white)
-                .frame(width: 230)
-            }
-            .buttonStyle(.plain)
+            Label("Call record · audio unavailable", systemImage: "phone.down")
+                .font(.system(size: 13))
+                .foregroundColor(.white.opacity(0.82))
+
         }
     }
 }
@@ -393,84 +354,3 @@ private struct PhotoDetailView: View {
     }
 }
 
-struct FictionalCallView: View {
-    let message: GameMessage
-    @EnvironmentObject private var game: GameStore
-    @Environment(\.dismiss) private var dismiss
-    @State private var connected = false
-
-    var body: some View {
-        ZStack {
-            LinearGradient(colors: [Color(red: 0.18, green: 0.18, blue: 0.24), Night.background],
-                           startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
-            VStack(spacing: 17) {
-                Spacer()
-                SectionEyebrow(text: "Fictional call · Last Seen")
-                Text("Unknown Number")
-                    .font(.system(size: 31, weight: .semibold))
-                Text(connected ? "Connected" : "Incoming call…")
-                    .font(.system(size: 15))
-                    .foregroundColor(Night.muted)
-                Spacer()
-                Circle()
-                    .fill(Night.danger.opacity(0.18))
-                    .frame(width: 160, height: 160)
-                    .overlay {
-                        Image(systemName: "person.crop.circle.badge.questionmark")
-                            .font(.system(size: 72))
-                            .foregroundColor(.white.opacity(0.8))
-                    }
-                Spacer()
-
-                if connected {
-                    Text("“There is no seventh floor. Stop counting the doors.”")
-                        .font(.system(size: 16, weight: .medium, design: .serif))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 25)
-                    Button {
-                        game.endCall()
-                        dismiss()
-                    } label: {
-                        Label("End call", systemImage: "phone.down.fill")
-                            .frame(maxWidth: .infinity)
-                            .padding(16)
-                            .background(Night.danger, in: Capsule())
-                    }
-                } else {
-                    HStack(spacing: 30) {
-                        Button {
-                            game.declineCall()
-                            dismiss()
-                        } label: {
-                            VStack(spacing: 8) {
-                                Image(systemName: "phone.down.fill")
-                                    .font(.system(size: 25))
-                                    .frame(width: 74, height: 74)
-                                    .background(Night.danger, in: Circle())
-                                Text("Decline").font(.system(size: 13))
-                            }
-                        }
-                        Spacer()
-                        Button {
-                            game.answerCall()
-                            connected = true
-                        } label: {
-                            VStack(spacing: 8) {
-                                Image(systemName: "phone.fill")
-                                    .font(.system(size: 25))
-                                    .frame(width: 74, height: 74)
-                                    .background(Color.green.opacity(0.76), in: Circle())
-                                Text("Answer").font(.system(size: 13))
-                            }
-                        }
-                    }
-                }
-                Spacer()
-            }
-            .foregroundColor(.white)
-            .padding(28)
-        }
-        .interactiveDismissDisabled(connected)
-    }
-}
