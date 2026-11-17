@@ -17,6 +17,9 @@ struct LastSeenApp: App {
                         switch page {
                         case .settings: SettingsView()
                         case .evidence: EvidenceView()
+                        case .contacts: ContactBookView()
+                        case .profile(let contact, let fromConversation):
+                            ContactProfileView(contact: contact, fromConversation: fromConversation)
                         }
                     }
             }
@@ -49,4 +52,6 @@ struct LastSeenApp: App {
 enum AppPage: Hashable {
     case settings
     case evidence
+    case contacts
+    case profile(Contact, Bool)
 }
