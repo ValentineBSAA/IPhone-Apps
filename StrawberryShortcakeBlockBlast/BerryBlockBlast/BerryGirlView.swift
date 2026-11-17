@@ -1,10 +1,35 @@
 import SwiftUI
 
-/// Uses the supplied BerryMascot image when installed; retains the geometric mascot as a safe fallback.
+/// Uses the user's approved 0.5.8 portraits, with the original 0.5.7
+/// BerryMascot as a fallback if the asset pack has not yet been imported.
 struct BerryGirlView: View {
+    enum Pose {
+        case portrait
+        case standing
+        case celebrate
+    }
+
+    var pose: Pose = .portrait
+
+    private var preferredArt: String {
+        switch pose {
+        case .portrait: return "BerryCharacterPortrait"
+        case .standing: return "BerryCharacterStanding"
+        case .celebrate: return "BerryCharacterCelebrate"
+        }
+    }
+
     var body: some View {
         Group {
-            if UIImage(named: "BerryMascot") != nil {
+            if let image = UIImage(named: preferredArt) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+            } else if let image = UIImage(named: "BerryCharacterStanding") {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+            } else if UIImage(named: "BerryMascot") != nil {
                 Image("BerryMascot")
                     .resizable()
                     .scaledToFit()
@@ -99,7 +124,7 @@ struct BerryGirlView: View {
         }
             }
         }
-        .accessibilityLabel("Smiling berry-garden girl wearing a pink strawberry hat")
+        .accessibilityLabel("Cheerful strawberry village girl with curly auburn hair, berry-red outfit and strawberry accessories")
     }
 }
 
