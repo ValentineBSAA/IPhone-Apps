@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct LastSeenApp: App {
+    @UIApplicationDelegateAdaptor(LastSeenAppDelegate.self) private var appDelegate
     @StateObject private var game = GameStore()
     @Environment(\.scenePhase) private var phase
 
@@ -20,14 +21,10 @@ struct LastSeenApp: App {
                     }
             }
             .environmentObject(game)
-            .sheet(item: $game.presentedCall) { call in
-                FictionalCallView(message: call)
-                    .environmentObject(game)
-                    .presentationDetents([.large])
-            }
             .tint(Night.accent)
             .preferredColorScheme(.dark)
             .onAppear {
+                NotificationRouter.shared.store = game
                 game.clearReminder()
                 game.beginOrResume()
             }
