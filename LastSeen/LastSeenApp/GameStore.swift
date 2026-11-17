@@ -39,7 +39,8 @@ final class GameStore: ObservableObject {
                                    sender: message.isOutgoing ? "player" : Contact.nora.id,
                                    body: text,
                                    kind: message.kind == .call ? .text : message.kind,
-                                   createdAt: message.createdAt, isRead: message.isRead)
+                                   createdAt: message.createdAt, isRead: message.isRead,
+                                   photoAssetName: message.photoAssetName)
             }
             state.schemaVersion = 2
             state.stories = [:]
@@ -222,7 +223,8 @@ final class GameStore: ObservableObject {
         }
         state.messages.append(
             GameMessage(id: id, thread: thread, sender: thread, body: beat.body,
-                        kind: beat.kind, createdAt: Date(), isRead: false)
+                        kind: beat.kind, createdAt: Date(), isRead: false,
+                        photoAssetName: beat.asset)
         )
         state.nextBeatIndex = index + 1
         if state.audioEnabled { AudioServicesPlaySystemSound(1104) }
