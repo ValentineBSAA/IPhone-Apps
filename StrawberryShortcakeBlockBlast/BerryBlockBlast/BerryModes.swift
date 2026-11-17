@@ -39,7 +39,7 @@ struct BerryHomeView: View {
     @State private var showMore = false
     @State private var showSchool = false
     @State private var showCollection = false
-    @State private var jukeboxRefresh = 0
+    @ObservedObject private var audio = BerryAudio.shared
     @AppStorage("berryblockblast.lifetime-lines") private var lifetimeLines = 0
     @AppStorage("berryblockblast.strawberry-unlocked") private var strawberryUnlocked = false
     @AppStorage("berryblockblast.music") private var music = true
@@ -208,31 +208,33 @@ struct BerryHomeView: View {
                             }
                             .buttonStyle(.plain)
                         }
-                        Text("🎶 Strawberry Jukebox").font(.title2.bold())
-                        Text(BerryAudio.shared.currentTrackName).font(.headline).foregroundStyle(BerryStyle.chocolate)
-                        Text("Track \(BerryAudio.shared.currentTrackNumber) of 15").font(.caption)
-                        HStack(spacing: 14) {
-                            Button { BerryAudio.shared.previousTrack(); jukeboxRefresh += 1 } label: { Label("Previous", systemImage: "backward.end.fill") }
-                            Button { music.toggle(); BerryAudio.shared.setMusic(music); jukeboxRefresh += 1 } label: { Image(systemName: music ? "pause.fill" : "play.fill") }
-                            Button { BerryAudio.shared.nextTrack(); jukeboxRefresh += 1 } label: { Label("Next", systemImage: "forward.end.fill") }
-                        }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
-                        Button(BerryAudio.shared.isShuffling ? "Shuffle On" : "Play in Order") {
-                            BerryAudio.shared.toggleShuffle(); jukeboxRefresh += 1
-                        }.buttonStyle(.bordered)
+                        BerryMusicSettingsView()
+                        Text("🎼 Your complete 15-song jukebox")
+                            .font(.system(size: 18, weight: .black, design: .rounded))
+                            .foregroundStyle(BerryStyle.strawberry)
+                        Text("Choose a song manually. Automatic rotation resumes when it ends.")
+                            .font(.caption)
+                            .foregroundStyle(BerryStyle.chocolate.opacity(0.7))
                         ForEach(Array(BerryAudio.trackNames.enumerated()), id: \.offset) { index, title in
                             Button {
-                                if !music { music = true; BerryAudio.shared.setMusic(true) }
-                                BerryAudio.shared.selectTrack(index)
-                                jukeboxRefresh += 1
+                                if !music { music = true; audio.setMusic(true) }
+                                audio.selectTrack(index)
                             } label: {
                                 HStack {
-                                    Text("\(index + 1). \(title)").multilineTextAlignment(.leading)
-                                    Spacer()
-                                    if BerryAudio.shared.currentTrackNumber == index + 1 { Image(systemName: "music.note") }
+                                    Text(String(format: "%02d", index + 1) + ". " + title)
+                                        .multilineTextAlignment(.leading)
+                                    Spacer(minLength: 5)
+                                    if audio.currentTrackNumber == index + 1 {
+                                        Image(systemName: "music.note")
+                                            .foregroundStyle(BerryStyle.strawberry)
+                                    }
                                 }
-                            }.buttonStyle(.plain).foregroundStyle(BerryStyle.chocolate).padding(.vertical, 5)
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(BerryStyle.chocolate)
+                            .padding(.vertical, 4)
                         }
-                        Text("Original synthesized melodies made for Berry Block Blast.")
+                        Text("The original AAC recordings are included in the app. No connection is needed.")
                             .font(.caption).foregroundStyle(.secondary)
                     }.padding(22)
                 }.background(BerryStyle.cream.ignoresSafeArea())
@@ -249,35 +251,24 @@ struct BerryHomeView: View {
                         Text("Strawberry Sound Studio")
                             .font(.system(size: 25, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry)
-                        VStack(alignment: .leading, spacing: 18) {
-                            Toggle("Music box melody", isOn: $music)
-                                .onChange(of: music) { _, enabled in BerryAudio.shared.setMusic(enabled) }
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text("🎵 Music Volume").font(.subheadline.bold())
-                                Slider(value: $musicVolume, in: 0...1)
-                                    .onChange(of: musicVolume) { _, value in BerryAudio.shared.setMusicVolume(Float(value)) }
-                            }
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text("🍓 Berry Sounds Volume").font(.subheadline.bold())
-                                Slider(value: $effectVolume, in: 0...1)
-                                    .onChange(of: effectVolume) { _, value in BerryAudio.shared.setEffectVolume(Float(value)) }
-                            }
-                            Toggle("Sweet sound effects", isOn: $sound)
+                        BerryMusicSettingsView()
+                        VStack(spacing: 14) {
                             Toggle("Haptic feedback", isOn: $haptics)
-                            Button { BerryAudio.shared.play(.clear) } label: {
+                                .tint(BerryStyle.strawberry)
+                            Button {
+                                if sound { audio.play(.clear) }
+                            } label: {
                                 Label("Test berry chimes", systemImage: "music.note")
                                     .font(.headline)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(12)
+                                    .frame(maxWidth: .infinity).padding(12)
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(BerryStyle.strawberry)
+                            .disabled(!sound)
                         }
-                        .tint(BerryStyle.strawberry)
                         .foregroundStyle(BerryStyle.chocolate)
-                        .padding(20)
-                        .background(.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 24))
-                        .overlay(RoundedRectangle(cornerRadius: 24).stroke(.white, lineWidth: 2))
+                        .padding(16)
+                        .background(.white.opacity(0.9), in: RoundedRectangle(cornerRadius: 20))
                         VStack(spacing: 6) {
                             Text(version).font(.subheadline.bold())
                             Text("Original offline strawberry puzzle. No ads or purchases.")
@@ -295,7 +286,15 @@ struct BerryHomeView: View {
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showSettings = false } } }
             }.presentationDetents([.large]).presentationDragIndicator(.visible)
         }
-        .onAppear { BerryAudio.shared.setMusicVolume(Float(musicVolume)); BerryAudio.shared.setEffectVolume(Float(effectVolume)); BerryAudio.shared.setMusic(music) }
+        .onAppear {
+            audio.setMusicVolume(Float(musicVolume))
+            audio.setEffectVolume(Float(effectVolume))
+            audio.setScreen(.menu)
+            audio.setMusic(music)
+        }
+        .onChange(of: activeMode) { _, selected in
+            audio.setScreen(selected == nil ? .menu : .gameplay)
+        }
         .preferredColorScheme(.light)
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)

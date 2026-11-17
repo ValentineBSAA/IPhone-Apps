@@ -1,13 +1,13 @@
 # Optional manual GitHub Actions smoke build. Codemagic is the PRIMARY iPhone IPA builder.
-# Temporary branch-only validation push trigger, removed before production merge.
-name: Berry Block Blast 0.5.5 build 1 manual QA
+# Feature-branch validation; the unsigned IPA is a test artifact until device QA.
+name: Berry Block Blast 0.5.6 build 1 manual QA
 
 on:
   workflow_dispatch:
-  # Temporary branch-only CI trigger while validating 0.5.5 build 1.
+  # Temporary branch-only CI trigger while validating 0.5.6 build 1.
   push:
     branches:
-      - fix/berry-055-native-touch
+      - feature/berry-056-soundtrack
     paths:
       - 'StrawberryShortcakeBlockBlast/**'
       - '.github/workflows/berry-block-blast.yml'
@@ -34,6 +34,9 @@ jobs:
       - name: Confirm both approved assets before compiling
         run: python3 Tools/verify_artwork.py
 
+      - name: Verify all 15 original M4A recordings and release catalog
+        run: python3 Tools/verify_soundtrack.py
+
       - name: Generate the native Xcode project
         run: xcodegen generate --spec project.yml
 
@@ -49,25 +52,32 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
+      - name: Verify 15 tracks embedded in the .app (no audio conversions)
+        run: python3 Tools/verify_soundtrack.py --app build/Build/Products/Release-iphoneos/BerryBlockBlast.app
+
       - name: Package versioned unsigned IPA
         run: |
           set -euo pipefail
           mkdir -p dist/Payload
           cp -R build/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
           cd dist
-          zip -qr Berry-Block-Blast-v0.5.5-build1-unsigned.ipa Payload
-          test -s Berry-Block-Blast-v0.5.5-build1-unsigned.ipa
-          unzip -l Berry-Block-Blast-v0.5.5-build1-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
+          zip -qr Berry-Block-Blast-v0.5.6-build1-unsigned.ipa Payload
+          test -s Berry-Block-Blast-v0.5.6-build1-unsigned.ipa
+          unzip -l Berry-Block-Blast-v0.5.6-build1-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
+          cd ..
+          python3 Tools/verify_soundtrack.py --ipa dist/Berry-Block-Blast-v0.5.6-build1-unsigned.ipa
 
+      # The source, compiled .app and IPA must be byte-verified before
+      # any artifact is created. Device/simulator QA still runs afterward.
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v4
         with:
-          name: Berry-Block-Blast-v0.5.5-build1-iPhone-unsigned
-          path: StrawberryShortcakeBlockBlast/dist/Berry-Block-Blast-v0.5.5-build1-unsigned.ipa
+          name: Berry-Block-Blast-v0.5.6-build1-iPhone-unsigned
+          path: StrawberryShortcakeBlockBlast/dist/Berry-Block-Blast-v0.5.6-build1-unsigned.ipa
           if-no-files-found: error
 
-      - name: Run engine and drag geometry tests on iPhone Simulator
-        timeout-minutes: 20
+      - name: Run engine and soundtrack playlist tests on iPhone Simulator
+        timeout-minutes: 15
         run: |
           set -euo pipefail
           SIMULATOR_ID="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next((v["udid"] for ds in d["devices"].values() for v in ds if v.get("isAvailable") and v.get("name","").startswith("iPhone")), ""))')"
@@ -84,4 +94,3 @@ jobs:
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO \
             test
-

@@ -1,0 +1,65 @@
+{
+  "note": "Suggested game playlist configuration; not implemented in app. Explicit selections can be changed by developer.",
+  "default_gameplay": {
+    "track_ids": [
+      "06-strawberry-morning",
+      "07-rainy-day-at-the-berry-cafe",
+      "08-twilight-in-berryland",
+      "09-a-little-berry-picnic",
+      "10-moonlight-and-strawberry-dreams",
+      "11-blueberry-breeze",
+      "12-peach-blossom-afternoon",
+      "13-raspberry-rainfall",
+      "14-vanilla-cream-skies",
+      "15-the-berry-garden-waltz"
+    ],
+    "shuffle": true,
+    "avoid_immediate_repeat": true,
+    "recommended_crossfade_seconds": 3
+  },
+  "bright_gameplay": {
+    "track_ids": [
+      "02-berry-block-boogie",
+      "04-jam-jar-jamboree"
+    ],
+    "shuffle": true,
+    "avoid_immediate_repeat": true,
+    "recommended_crossfade_seconds": 3
+  },
+  "high_score_gameplay": {
+    "track_ids": [
+      "03-strawberry-sugar-rush"
+    ],
+    "shuffle": false
+  },
+  "all_gameplay": {
+    "track_ids": [
+      "02-berry-block-boogie",
+      "03-strawberry-sugar-rush",
+      "04-jam-jar-jamboree",
+      "06-strawberry-morning",
+      "07-rainy-day-at-the-berry-cafe",
+      "08-twilight-in-berryland",
+      "09-a-little-berry-picnic",
+      "10-moonlight-and-strawberry-dreams",
+      "11-blueberry-breeze",
+      "12-peach-blossom-afternoon",
+      "13-raspberry-rainfall",
+      "14-vanilla-cream-skies",
+      "15-the-berry-garden-waltz"
+    ],
+    "shuffle": true,
+    "avoid_immediate_repeat": true
+  },
+  "main_menu": {
+    "track_ids": [
+      "01-welcome-to-berryland"
+    ]
+  },
+  "victory_results": {
+    "track_ids": [
+      "05-sweetest-victory"
+    ],
+    "note": "Full-length theme. For a short win event, use a separately edited stinger or play only an excerpt."
+  }
+}

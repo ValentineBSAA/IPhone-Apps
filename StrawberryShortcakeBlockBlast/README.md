@@ -1,6 +1,6 @@
 # 🍓 Berry Block Blast for iPhone
 
-**Version 0.5.5 • Build 1 • Native SwiftUI + UIKit touch input • Independent original game**
+**Version 0.5.6 • Build 1 • Native SwiftUI + UIKit touch input • Independent original game**
 
 Berry Block Blast is a strawberry-themed 8×8 block-placement puzzle for iPhone. Its classic rules are inspired by Block Blast, but all Berry illustrations, user interface, original music and extra game modes are independent. The project is not affiliated with Hungry Studio or Strawberry Shortcake.
 
@@ -32,9 +32,18 @@ All existing modes preserve their saved-board keys; new Berry Classic receives i
 - Added optional **Touch diagnostics (testing)** in Berry Settings, disabled by default.
 
 ## iPhone builds
-The `codemagic.yaml` workflow is the primary manual unsigned-IPA builder. A separate optional GitHub Actions workflow can compile an unsigned IPA for physical iPhone installation. **Build artifact: `Berry-Block-Blast-v0.5.5-build1-unsigned.ipa`.** Sign it with your existing iPhone signing method before installing.
+The `codemagic.yaml` workflow is the primary manual unsigned-IPA builder. A separate optional GitHub Actions workflow can compile an unsigned IPA for physical iPhone installation. **Build artifact: `Berry-Block-Blast-v0.5.6-build1-unsigned.ipa`.** Sign it with your existing iPhone signing method before installing.
 
 This build is **development/testing** until reliable dragging has been confirmed on the physical iPhone 16e. See `RELEASE-QA-0.5.5-BUILD1.md` for the complete checklist.
+
+## New in 0.5.6 build 1: Original 15-track soundtrack
+- Bundles all 15 original, iOS-ready AAC-LC M4A recordings (31:36) unaltered, available offline.
+- Native AVFoundation playlist shared across all screens with automatic track rotation, shuffle without immediate repeats and gentle sequential fades.
+- Cozy Berry 90/10, Balanced Berry 70/30 default, Arcade Berry 40/60: actual soundtrack catalog moods, not guessed metadata.
+- A dedicated first-launch menu song, full-length victory/results theme and 13 gameplay tracks.
+- Premium Strawberry Sound Studio in Home, More Adventures and in-game settings: Now Playing, Next, Shuffle, music and effects volumes.
+- Interruption/foreground/headset handling, persistent settings, and temporary volume ducking for celebratory effects.
+- Build checks verify the SHA-256 of all fifteen audio files at source, compiled app and final unsigned IPA.
 
 ## Earlier versions
 0.5.4 introduced 12×12 Nightmare and layout improvements. Earlier 0.3.x builds introduced the Strawberry Village menu, Story and Daily modes, sound, effects, and economy. Previous saved progress is not intentionally reset.

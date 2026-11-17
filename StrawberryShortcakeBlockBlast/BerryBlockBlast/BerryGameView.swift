@@ -311,6 +311,7 @@ struct BerryGameView: View {
             showGameOver = !showVictory && (ended || (mode == .challenge && !blitzRunning && blitzRemaining == 0))
         }
         .onAppear {
+            BerryAudio.shared.setScreen(.gameplay)
             BerryAudio.shared.setMusic(music)
             session.selectMode(mode)
             scoreRecordAtEntry = max(session.bestScore, session.engine.score)
@@ -335,6 +336,9 @@ struct BerryGameView: View {
         }
         .onChange(of: session.engine.totalLines) { _, _ in checkObjective() }
         .onChange(of: showSettings) { _, _ in if mode == .challenge { refreshBlitzClock() } }
+        .onChange(of: showVictory) { _, victory in
+            BerryAudio.shared.setScreen(victory ? .results : .gameplay)
+        }
         .overlay {
             if isPaused && !showVictory && !showGameOver {
                 ZStack {
@@ -635,6 +639,7 @@ struct BerryGameView: View {
         guard !celebratedRecordThisRun, score > scoreRecordAtEntry,
               score >= 20 else { return }
         celebratedRecordThisRun = true
+        BerryAudio.shared.duckForCelebration(duration: 1.6)
         withAnimation(reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.7)) {
             showNewBestBanner = true
         }
@@ -702,9 +707,7 @@ struct BerryGameView: View {
                 Text("A small status line appears below your tools for testing drag releases.")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            Toggle("Sweet sound effects", isOn: $sound).tint(BerryStyle.strawberry)
-            Toggle("Strawberry music box", isOn: $music).tint(BerryStyle.strawberry)
-                .onChange(of: music) { _, enabled in BerryAudio.shared.setMusic(enabled) }
+            BerryMusicSettingsView()
             Text("Your game is saved automatically. The display uses the full iPhone screen.").font(.footnote)
             Button("Start a New Garden", role: .destructive) { showSettings = false; confirmRestart = true }
             Text("🍓 v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev") • build \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?")").font(.footnote).foregroundStyle(.secondary)

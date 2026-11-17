@@ -1,0 +1,92 @@
+# One-time import of the 15 ORIGINAL, unmodified M4A tracks from release V1.
+# Triggered only by changes to this workflow, or by manual dispatch.
+name: Berry 0.5.6 - Import original soundtrack
+on:
+  push:
+    branches:
+      - feature/berry-056-soundtrack
+    paths:
+      - .github/workflows/berry-056-import-soundtrack.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  extract-original-audio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/berry-056-soundtrack
+      - name: Download approved release ZIP and import 15 M4A files byte-for-byte
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release download V1 --repo "${{ github.repository }}" \
+            --pattern 'BerryBlastBlast-Soundtrack-v1.0-iOS-Ready.zip' \
+            --dir "$RUNNER_TEMP" --clobber
+          python3 - "$RUNNER_TEMP/BerryBlastBlast-Soundtrack-v1.0-iOS-Ready.zip" <<'PY'
+          import hashlib, json, re, sys, zipfile
+          from pathlib import Path
+          path = Path(sys.argv[1])
+          expected = "4c09307e61d05ea5ea67e411c9f57d185b0b67bed62c33f927513d70cb7bf63e"
+          assert path.is_file(), "Original upload missing"
+          assert hashlib.sha256(path.read_bytes()).hexdigest() == expected, "Archive SHA-256 mismatch"
+          target = Path("StrawberryShortcakeBlockBlast/Soundtrack")
+          target.mkdir(parents=True, exist_ok=True)
+          with zipfile.ZipFile(path) as z:
+              entries = sorted(
+                  [x for x in z.infolist() if not x.is_dir() and x.filename.lower().endswith(".m4a")
+                   and not any(part.startswith("__MACOSX") or part.startswith("._") for part in x.filename.split("/"))],
+                  key=lambda x: x.filename.casefold()
+              )
+              print("Archive entries:",len(z.infolist()))
+              for info in z.infolist():
+                  if not info.is_dir():
+                      print("ZIP ENTRY:",info.filename,info.file_size)
+              assert len(entries) == 15, f"Expected exactly 15 M4A originals, found {len(entries)}"
+              def sortkey(info):
+                  basename = Path(info.filename).stem
+                  m = re.match(r"^\s*(\d{1,2})[\s._-]",basename)
+                  return (int(m.group(1)) if m else 100,basename.casefold())
+              entries.sort(key=sortkey)
+              catalog=[]
+              for number, item in enumerate(entries,1):
+                  data=z.read(item)
+                  assert len(data)>1000, f"Audio appears empty: {item.filename}"
+                  assert data[4:8]==b"ftyp", f"Not an MP4/M4A container: {item.filename}"
+                  filename=f"BerryTrack{number:02d}.m4a"
+                  (target/filename).write_bytes(data)
+                  title=Path(item.filename).stem
+                  title=re.sub(r"^\s*\d{1,2}[\s._-]+","",title)
+                  title=title.replace("_"," ").strip()
+                  catalog.append({"id":number,"file":filename,"title":title,
+                                  "originalArchivePath":item.filename,
+                                  "sha256":hashlib.sha256(data).hexdigest(),
+                                  "bytes":len(data),"mood":"unclassified"})
+                  print("EXTRACTED",number,repr(title),len(data),filename)
+              (target/"Catalog.json").write_text(json.dumps({"version":1,"originalArchive":"BerryBlastBlast-Soundtrack-v1.0-iOS-Ready.zip","archiveSHA256":expected,"tracks":catalog},ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+              support=target/"OriginalCatalog"
+              for item in z.infolist():
+                  if item.is_dir() or item in entries: continue
+                  if item.file_size>150000 or not Path(item.filename).suffix.lower() in {".json",".txt",".csv",".md"}: continue
+                  if item.filename.startswith("__MACOSX/"): continue
+                  support.mkdir(exist_ok=True)
+                  fname=Path(item.filename).name
+                  if not fname:continue
+                  dest=support/fname
+                  if dest.exists():dest=support/(str(len(list(support.iterdir())))+"-"+fname)
+                  dest.write_bytes(z.read(item))
+                  print("CATALOG SOURCE",item.filename,"->",dest)
+          print("Imported 15 real M4A recordings, no audio conversion.")
+          PY
+      - name: Commit authentic M4A recordings to development branch
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- StrawberryShortcakeBlockBlast/Soundtrack
+          git diff --cached --quiet && exit 0
+          git commit -m "Berry soundtrack: import all 15 original M4A files and catalog from release V1"
+          git push origin HEAD:feature/berry-056-soundtrack
