@@ -15,10 +15,19 @@ final class BerryGameSession: ObservableObject {
     @Published private(set) var totalEarnedBerries = 0
     @Published private(set) var rewardsLog: [String] = UserDefaults.standard.stringArray(forKey: "berryblockblast.rewards.v1") ?? []
     @Published private(set) var cottageDecorations = UserDefaults.standard.integer(forKey: "berryblockblast.cottage.decorations")
+    @Published private(set) var ownedCosmetics = UserDefaults.standard.stringArray(forKey: "berryblockblast.shop.owned.v056b2") ?? []
     private var previous: BerryEngine?
     private var previousBerryEarnings = 0
     private var previousRewardEntry: String?
     private var activeMode: BerryMode = .endless
+    static let classicSaveKey = "berryblockblast.classic.engine.v055"
+    static let classicSavedFlagKey = "berryblockblast.classic.savedFlag.v056b2"
+    static var hasResumableClassic: Bool {
+        guard let data = UserDefaults.standard.data(forKey: classicSaveKey),
+              let saved = try? JSONDecoder().decode(BerryEngine.self, from: data) else { return false }
+        return saved.side == 8 && saved.moves > 0 && saved.hasMove()
+    }
+
     static func dailyDateKey() -> String {
         let components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
         return String(format: "%04d-%02d-%02d", components.year ?? 2026, components.month ?? 1, components.day ?? 1)
@@ -31,7 +40,7 @@ final class BerryGameSession: ObservableObject {
         case .cozy: "berryblockblast.cozy.engine.v1"
         case .challenge: "berryblockblast.blitz.engine.v1"
         case .superHard: "berryblockblast.nightmare.engine.v1"
-        case .classic: "berryblockblast.classic.engine.v055"
+        case .classic: Self.classicSaveKey
         }
     }
     func selectMode(_ mode: BerryMode) {
@@ -43,15 +52,13 @@ final class BerryGameSession: ObservableObject {
             UserDefaults.standard.set(UserDefaults.standard.integer(forKey: bestKey), forKey: scoreKey)
         }
         bestScore = UserDefaults.standard.integer(forKey: scoreKey)
-        if mode == .endless {
-            if let data = UserDefaults.standard.data(forKey: saveKey),
-               let snapshot = try? JSONDecoder().decode(Save.self, from: data),
-               snapshot.engine.side == 8 { engine = snapshot.engine }
-            else { engine = freshEngine() }
-        } else if let data = UserDefaults.standard.data(forKey: modeKey(mode)),
-                  let restored = try? JSONDecoder().decode(BerryEngine.self, from: data),
-                  restored.side == (mode == .superHard ? 12 : 8) {
-            engine = restored
+        // Only Berry Classic resumes an unfinished board. Previous versions'
+        // saves for other modes remain untouched for rollback/migration.
+        if mode == .classic,
+           let data = UserDefaults.standard.data(forKey: Self.classicSaveKey),
+           let saved = try? JSONDecoder().decode(BerryEngine.self, from: data),
+           saved.side == 8 && saved.hasMove() {
+            engine = saved
         } else {
             engine = freshEngine()
         }
@@ -67,6 +74,11 @@ final class BerryGameSession: ObservableObject {
     private func freshEngine() -> BerryEngine {
         if activeMode == .cozy { return BerryEngine(cozy: true) }
         if activeMode == .superHard { return BerryEngine(side: 12, hard: true) }
+        if activeMode == .endless {
+            let requested = UserDefaults.standard.integer(forKey: "berryblockblast.endless.boardSize.v056b2")
+            let side = [8, 12, 24].contains(requested) ? requested : 8
+            return side == 8 ? BerryEngine() : BerryEngine(side: side, hard: side == 24)
+        }
         guard activeMode == .daily else { return BerryEngine() }
         let components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
         let number = (components.year ?? 2026) * 10000 + (components.month ?? 1) * 100 + (components.day ?? 1)
@@ -81,7 +93,7 @@ final class BerryGameSession: ObservableObject {
         case .story: return "berryblockblast.story.best-score.v055"
         case .daily: return "berryblockblast.daily.best-score.v055"
         case .cozy: return "berryblockblast.cozy.best-score.v055"
-        case .challenge: return "berryblockblast.blitz.best-score.v055"
+        case .challenge: return BerryBlitzVariant.selected.bestScoreKey
         case .superHard: return nightmareBestKey
         case .classic: return "berryblockblast.classic.best-score.v055"
         }
@@ -257,14 +269,38 @@ final class BerryGameSession: ObservableObject {
         save()
     }
 
+    /// Shop purchases are cosmetics only. Core rules and Berry Classic scoring
+    /// never depend on purchases; old earned strawberries remain spendable.
+    func buyCosmetic(id: String, cost: Int) -> Bool {
+        let valid: [String:Int] = ["blueberry-blocks":90,"vanilla-blocks":90,
+            "rose-border":75,"mint-border":75,"berry-sparkle":100]
+        guard valid[id] == cost, cost > 0, berries >= cost,
+              !ownedCosmetics.contains(id) else { return false }
+        previous = nil
+        previousBerryEarnings = 0
+        previousRewardEntry = nil
+        berries -= cost
+        ownedCosmetics.append(id)
+        UserDefaults.standard.set(ownedCosmetics, forKey: "berryblockblast.shop.owned.v056b2")
+        rewardsLog.insert("🧺 -\(cost) • Berry Boutique: \(id)", at: 0)
+        rewardsLog = Array(rewardsLog.prefix(20))
+        UserDefaults.standard.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
+        save()
+        return true
+    }
+
     private func save() {
         let inventory = Inventory(berries: berries, undos: undos, shuffles: shuffles, totalEarnedBerries: totalEarnedBerries)
         if let data = try? JSONEncoder().encode(inventory) { UserDefaults.standard.set(data, forKey: inventoryKey) }
-        let snapshot = Save(engine: engine, berries: berries, undos: undos, shuffles: shuffles, totalEarnedBerries: totalEarnedBerries)
-        if activeMode == .endless {
-            if let data = try? JSONEncoder().encode(snapshot) { UserDefaults.standard.set(data, forKey: saveKey) }
-        } else if let data = try? JSONEncoder().encode(engine) {
-            UserDefaults.standard.set(data, forKey: modeKey(activeMode))
+        // One and only resumable board: Berry Classic. Never overwrite older
+        // 0.5.6 saves in other modes. Don't show a saved badge for an empty game.
+        guard activeMode == .classic else { return }
+        let shouldKeep = engine.moves > 0 && !gameOver
+        if shouldKeep, let data = try? JSONEncoder().encode(engine) {
+            UserDefaults.standard.set(data, forKey: Self.classicSaveKey)
+        } else if !shouldKeep {
+            UserDefaults.standard.removeObject(forKey: Self.classicSaveKey)
         }
+        UserDefaults.standard.set(shouldKeep, forKey: Self.classicSavedFlagKey)
     }
 }
