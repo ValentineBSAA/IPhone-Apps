@@ -854,7 +854,7 @@ struct BerryGameView: View {
                 session.buyCottageDecoration()
                 if sound { BerryAudio.shared.play(.reward) }
             }
-            .disabled(session.berries < 50)
+            .disabled(session.berries < 50 || session.cottageDecorations >= 6)
             .buttonStyle(.borderedProminent)
             .tint(BerryStyle.strawberry)
             Text("Your strawberry basket: 🍓 \(session.berries)")

@@ -162,12 +162,12 @@ struct BerryBoutiqueView: View {
                 HStack {
                     Label("Cottage Decoration", systemImage: "house.lodge.fill")
                     Spacer()
-                    Text("Owned \(session.cottageDecorations)").font(.caption)
-                    Button("🍓 50") {
+                    Text("Owned \(min(session.cottageDecorations, 6))/6").font(.caption)
+                    Button(session.cottageDecorations >= 6 ? "Complete" : "🍓 50") {
                         session.buyCottageDecoration()
                         if sound { BerryAudio.shared.play(.reward) }
                     }
-                    .disabled(session.berries < 50)
+                    .disabled(session.berries < 50 || session.cottageDecorations >= 6)
                 }
             }
             .buttonStyle(.borderedProminent)

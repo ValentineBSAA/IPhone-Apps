@@ -48,6 +48,16 @@ final class BerryBuild2Tests: XCTestCase {
         }
     }
 
+    func testEachEndlessBoardSizeHasItsOwnScoreKey() {
+        let classicKey = BerryGameSession.endlessScoreKey(side: 8)
+        let expertKey = BerryGameSession.endlessScoreKey(side: 12)
+        let megaKey = BerryGameSession.endlessScoreKey(side: 24)
+        XCTAssertNotEqual(classicKey, expertKey)
+        XCTAssertNotEqual(expertKey, megaKey)
+        XCTAssertNotEqual(classicKey, megaKey)
+        XCTAssertEqual(classicKey, "berryblockblast.best-score.v1")
+    }
+
     func testBlitzIs60And120SecondsWithIndependentRecords() {
         XCTAssertEqual(BerryBlitzVariant.quick60.seconds, 60)
         XCTAssertEqual(BerryBlitzVariant.rush120.seconds, 120)

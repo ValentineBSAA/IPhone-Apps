@@ -46,8 +46,12 @@ final class BerryGameSession: ObservableObject {
     func selectMode(_ mode: BerryMode) {
         activeMode = mode
         let scoreKey = bestScoreKey(for: mode)
+        // Preserve legacy scores for old modes only. The new 12×12 and 24×24
+        // scoreboards must start independently, not inherit an 8×8 record.
+        let hasNewBoardSize = mode == .endless &&
+            [12, 24].contains(UserDefaults.standard.integer(forKey: "berryblockblast.endless.boardSize.v056b2"))
         if mode != .superHard && mode != .classic && mode != .challenge &&
-           UserDefaults.standard.object(forKey: scoreKey) == nil {
+           !hasNewBoardSize && UserDefaults.standard.object(forKey: scoreKey) == nil {
             // Earlier versions shared one best-score key for five modes.
             // Seed independent records from it so an upgrade never loses that number.
             UserDefaults.standard.set(UserDefaults.standard.integer(forKey: bestKey), forKey: scoreKey)
@@ -90,13 +94,22 @@ final class BerryGameSession: ObservableObject {
     private let nightmareBestKey = "berryblockblast.nightmare.best-score.v1"
     private func bestScoreKey(for mode: BerryMode) -> String {
         switch mode {
-        case .endless: return bestKey
+        case .endless:
+            let side = UserDefaults.standard.integer(forKey: "berryblockblast.endless.boardSize.v056b2")
+            return Self.endlessScoreKey(side: side)
         case .story: return "berryblockblast.story.best-score.v055"
         case .daily: return "berryblockblast.daily.best-score.v055"
         case .cozy: return "berryblockblast.cozy.best-score.v055"
         case .challenge: return BerryBlitzVariant.selected.bestScoreKey
         case .superHard: return nightmareBestKey
         case .classic: return "berryblockblast.classic.best-score.v055"
+        }
+    }
+    static func endlessScoreKey(side: Int) -> String {
+        switch side {
+        case 12: return "berryblockblast.endless.best-12.v056b2"
+        case 24: return "berryblockblast.endless.best-24.v056b2"
+        default: return "berryblockblast.best-score.v1" // Existing 8×8 record.
         }
     }
     private let inventoryKey = "berryblockblast.inventory.v3"
@@ -222,7 +235,9 @@ final class BerryGameSession: ObservableObject {
         awardOnce("chapter-" + String(chapter), amount: 15 + min(35, chapter * 5), reason: "Story chapter")
     }
     func buyCottageDecoration() {
-        guard berries >= 50 else { return }
+        // There are six unique Cottage upgrades. Earlier buyers with more
+        // decorations keep them, but never spend berries for a duplicate.
+        guard berries >= 50, cottageDecorations < 6 else { return }
         // Purchases must invalidate the undo snapshot to prevent currency duplication.
         previous = nil
         previousBerryEarnings = 0
