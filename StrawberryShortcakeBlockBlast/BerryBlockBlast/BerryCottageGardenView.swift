@@ -7,6 +7,7 @@ struct BerryCottageGardenView: View {
     @ObservedObject var session: BerryGameSession
     @Environment(\.dismiss) private var dismiss
     @State private var positions: [String: Spot] = [:]
+    @State private var gestureStarts: [String: Spot] = [:]
     @State private var selectedIndex: Int? = nil
 
     private struct Spot: Codable {
@@ -97,11 +98,18 @@ struct BerryCottageGardenView: View {
                                     .gesture(DragGesture(minimumDistance: 4)
                                         .onChanged { value in
                                             selectedIndex = index
-                                            let nx = min(0.86, max(0.14, Double(value.location.x / w + p.x - 0.15)))
-                                            let ny = min(0.88, max(0.12, Double(value.location.y / h + p.y - 0.13)))
+                                            if gestureStarts[decoration.id] == nil {
+                                                gestureStarts[decoration.id] = spot(index)
+                                            }
+                                            let origin = gestureStarts[decoration.id] ?? suggested[index]
+                                            let nx = min(0.86, max(0.14, origin.x + Double(value.translation.width / w)))
+                                            let ny = min(0.88, max(0.12, origin.y + Double(value.translation.height / h)))
                                             positions[decoration.id] = Spot(x: nx, y: ny)
                                         }
-                                        .onEnded { _ in savePositions() })
+                                        .onEnded { _ in
+                                            gestureStarts.removeValue(forKey: decoration.id)
+                                            savePositions()
+                                        })
                                     .accessibilityLabel(decoration.title + ", moveable garden decoration")
                             }
                         }
