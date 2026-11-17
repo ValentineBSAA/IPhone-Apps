@@ -19,7 +19,7 @@ for name in names:
     manifest = json.loads((folder / "Contents.json").read_text())
     file = folder / manifest["images"][0]["filename"]
     data = file.read_bytes()
-    assert data[:8] == b"\\x89PNG\\r\\n\\x1a\\n", file
+    assert data[:8] == b"\x89PNG\r\n\x1a\n", file
     width, height = struct.unpack(">II", data[16:24])
     assert width >= 128 and height >= 128, (name, width, height)
 project = (root / "project.yml").read_text()
