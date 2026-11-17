@@ -616,7 +616,7 @@ struct BerryGameView: View {
 
     private var toolBar: some View {
         HStack(spacing: 7) {
-            if mode != .classic && mode != .challenge {
+            if mode != .classic && !isTimedMode {
             toolButton("Undo", icon: "UndoIcon", count: session.undos, enabled: session.canUndo) {
                 if session.canUndo {
                     let revertedLines = session.undo()
@@ -955,7 +955,7 @@ struct BerryGameView: View {
             } else if mode == .endless {
                 Text("Sweet Endless has no final game over. When the pieces no longer fit, a new strawberry season starts automatically and keeps your score, line count, and berry rewards. Your garden saves so you can continue after leaving.")
             } else {
-                Text("Earn strawberries for line clears. Spend them in the basket on extra Undos and Shuffles. Keep playing until nothing fits.")
+                Text(isTimedMode ? "This is a timed score challenge. Hints, Undo and Shuffle are disabled until you return to other modes. The race ends when the clock reaches zero." : "Earn strawberries for line clears. Visit the Boutique for Undo, Shuffle and Hint helpers, then use them from the bottom toolbar. Keep playing until nothing fits.")
             }
             primaryButton("Got It!") { showHelp = false }
         }
