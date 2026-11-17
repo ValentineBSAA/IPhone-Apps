@@ -7,6 +7,7 @@ enum BerryMode: String, CaseIterable, Identifiable {
     case cozy = "Cozy Cottage"
     case challenge = "Berry Blitz"
     case superHard = "Strawberry Nightmare"
+    case classic = "Berry Classic"
     var id: String { rawValue }
     var icon: String {
         switch self {
@@ -16,6 +17,7 @@ enum BerryMode: String, CaseIterable, Identifiable {
         case .cozy: "cup.and.saucer.fill"
         case .challenge: "bolt.fill"
         case .superHard: "square.grid.3x3.fill"
+        case .classic: "crown.fill"
         }
     }
     var description: String {
@@ -26,6 +28,7 @@ enum BerryMode: String, CaseIterable, Identifiable {
         case .cozy: "Take it easy in a cozy garden."
         case .challenge: "Race to a sweet high-score target."
         case .superHard: "A 12 × 12 garden with bigger pieces. Every move counts!"
+        case .classic: "Pure 8 × 8 puzzle play with a glowing high score!"
         }
     }
 }
@@ -69,6 +72,40 @@ struct BerryHomeView: View {
                             Text("Berry Block Blast!").font(.system(size: 34, weight: .black, design: .rounded)).minimumScaleFactor(0.65).lineLimit(1).foregroundStyle(BerryStyle.strawberry)
                             Text("PICK • PLANT • POP • CELEBRATE").font(.system(size: 10, weight: .bold, design: .rounded)).tracking(1).foregroundStyle(BerryStyle.chocolate)
                             Text("What shall we bake up today? 🍰").font(.system(size: 19, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.chocolate).padding(.vertical, 8)
+                            Button {
+                                BerryAudio.shared.setMusic(music)
+                                activeMode = .classic
+                            } label: {
+                                HStack(spacing: 13) {
+                                    Image(systemName: "crown.fill")
+                                        .font(.system(size: 25, weight: .black))
+                                        .foregroundStyle(.white)
+                                        .frame(width: 53, height: 53)
+                                        .background(BerryStyle.strawberry, in: RoundedRectangle(cornerRadius: 16))
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("🍓 Berry Classic")
+                                            .font(.system(size: 21, weight: .black, design: .rounded))
+                                        Text("The pure 8 × 8 block puzzle. No timer or power-ups.")
+                                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                                            .fixedSize(horizontal: false, vertical: true)
+                                        Text("✨ BIG BRIGHT HIGH SCORE")
+                                            .font(.system(size: 10, weight: .heavy, design: .rounded))
+                                            .foregroundStyle(BerryStyle.strawberry)
+                                    }
+                                    Spacer(minLength: 0)
+                                    Image(systemName: "chevron.right")
+                                }
+                                .foregroundStyle(BerryStyle.chocolate)
+                                .padding(14)
+                                .background(
+                                    LinearGradient(colors: [.white, Color(red: 1, green: 0.88, blue: 0.91), Color(red: 1, green: 0.97, blue: 0.85)],
+                                                   startPoint: .topLeading, endPoint: .bottomTrailing),
+                                    in: RoundedRectangle(cornerRadius: 21)
+                                )
+                                .overlay(RoundedRectangle(cornerRadius: 21).strokeBorder(BerryStyle.strawberry.opacity(0.55), lineWidth: 2))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Play Berry Classic, the endless 8 by 8 block puzzle")
                             ForEach(Array(BerryMode.allCases.prefix(3))) { mode in
                                 Button { BerryAudio.shared.setMusic(music); activeMode = mode } label: {
                                     HStack(spacing: 14) {
@@ -134,7 +171,7 @@ struct BerryHomeView: View {
                     VStack(spacing: 18) {
                         Text("🍓 More Sweet Adventures").font(.title.bold()).foregroundStyle(BerryStyle.strawberry)
                         Text("🌸 A basket of new adventures 🌸").font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
-                        ForEach(Array(BerryMode.allCases.dropFirst(3))) { mode in
+                        ForEach(Array(BerryMode.allCases.dropFirst(3).filter { $0 != .classic })) { mode in
                             Button {
                                 showMore = false
                                 activeMode = mode

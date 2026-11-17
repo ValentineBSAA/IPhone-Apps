@@ -107,6 +107,7 @@ struct BerryEngine: Codable {
     }
 
     func canPlace(_ piece: BerryPiece, row: Int, col: Int) -> Bool {
+        guard !piece.points.isEmpty, Set(piece.points).count == piece.points.count else { return false }
         for p in piece.points {
             let r = row + p.row
             let c = col + p.col
@@ -155,7 +156,11 @@ struct BerryEngine: Codable {
         }
         let boardClear = lines > 0 && board.flatMap { $0 }.allSatisfy { $0 == nil }
         if boardClear { boardClears += 1 }
-        let earned = piece.points.count + (lines > 0 ? 10 * lines * lines * min(streak, 8) : 0) + (boardClear ? 300 : 0)
+        // Classic baseline: one line 10, two lines 20, three lines 60,
+        // four lines 120, multiplied by the current clearing streak.
+        // Other published app versions may use conditional score modifiers.
+        let lineBase = lines <= 1 ? 10 * lines : 10 * lines * (lines - 1)
+        let earned = piece.points.count + lineBase * min(streak, 8) + (boardClear ? 300 : 0)
         score += earned
         if tray.allSatisfy({ $0 == nil }) { refill() }
         return BerryPlacement(clearedRows: rows, clearedColumns: cols, earned: earned, streak: streak, boardClear: boardClear)
@@ -181,6 +186,27 @@ struct BerryEngine: Codable {
             [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 0, col: 2),BerryPoint(row: 0, col: 3),BerryPoint(row: 0, col: 4)],
             [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0),BerryPoint(row: 2, col: 0),BerryPoint(row: 3, col: 0),BerryPoint(row: 4, col: 0)]
         ]
+        // Classic now includes the 3x3 square, 2x3/3x2 rectangles, corners
+        // and zigzags. Old saved trays remain untouched; these appear on refill.
+        let classicExtras: [[BerryPoint]] = [
+            (0..<3).flatMap { r in (0..<3).map { c in BerryPoint(row: r, col: c) } },
+            (0..<2).flatMap { r in (0..<3).map { c in BerryPoint(row: r, col: c) } },
+            (0..<3).flatMap { r in (0..<2).map { c in BerryPoint(row: r, col: c) } },
+            [BerryPoint(0, 0), BerryPoint(1, 0), BerryPoint(2, 0),
+             BerryPoint(2, 1), BerryPoint(2, 2)],
+            [BerryPoint(0, 2), BerryPoint(1, 2), BerryPoint(2, 0),
+             BerryPoint(2, 1), BerryPoint(2, 2)],
+            [BerryPoint(0, 0), BerryPoint(0, 1), BerryPoint(1, 1), BerryPoint(1, 2)],
+            [BerryPoint(0, 1), BerryPoint(0, 2), BerryPoint(1, 0), BerryPoint(1, 1)],
+            [BerryPoint(0, 0), BerryPoint(0, 1), BerryPoint(0, 2),
+             BerryPoint(1, 0), BerryPoint(1, 2)],
+            [BerryPoint(0, 0), BerryPoint(1, 0), BerryPoint(2, 0),
+             BerryPoint(2, 1)],
+            [BerryPoint(0, 1), BerryPoint(1, 1), BerryPoint(2, 1),
+             BerryPoint(2, 0)]
+        ]
+        let classicCatalog = catalog + classicExtras
+
         // Nightmare uses genuinely larger shapes instead of just more empty
         // squares. These long and wide pieces demand deliberate space planning.
         let nightmareShapes: [[BerryPoint]] = [
@@ -194,7 +220,7 @@ struct BerryEngine: Codable {
         ]
         // A newly dealt tray always contains at least one legal move. Prefer
         // several playable choices instead of handing out impossible pieces.
-        let selection = cozyPieces == true ? Array(catalog.prefix(8)) : hardPieces == true ? Array(catalog.filter { $0.count >= 5 }) + nightmareShapes : catalog
+        let selection = cozyPieces == true ? Array(catalog.prefix(8)) : hardPieces == true ? Array(catalog.filter { $0.count >= 5 }) + nightmareShapes : classicCatalog
         let viable = selection.filter { shape in
             let piece = BerryPiece(points: shape, tint: 0)
             return (0..<side).contains { r in
@@ -203,7 +229,7 @@ struct BerryEngine: Codable {
         }
         var nextTray: [BerryPiece?] = []
         for index in 0..<3 {
-            let pool = cozyPieces == true ? (!viable.isEmpty ? viable : selection) : hardPieces == true ? (!viable.isEmpty ? viable : selection) : (!viable.isEmpty && (index < 2 || nextRandom(2) == 0) ? viable : catalog)
+            let pool = cozyPieces == true ? (!viable.isEmpty ? viable : selection) : hardPieces == true ? (!viable.isEmpty ? viable : selection) : (!viable.isEmpty && (index < 2 || nextRandom(2) == 0) ? viable : classicCatalog)
             let shape = pool[nextRandom(pool.count)]
             nextTray.append(BerryPiece(points: shape, tint: nextRandom(6)))
         }

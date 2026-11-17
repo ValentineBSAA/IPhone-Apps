@@ -2,11 +2,6 @@ import SwiftUI
 import UIKit
 import AudioToolbox
 
-private struct BerryBoardRect: PreferenceKey {
-    static var defaultValue: CGRect = .zero
-    static func reduce(value: inout CGRect, nextValue: () -> CGRect) { value = nextValue() }
-}
-
 private struct BerryDragState {
     var slot: Int
     var piece: BerryPiece
@@ -23,6 +18,7 @@ private struct BerryBoard: View {
     let mode: BerryMode
     let strawberryUnlocked: Bool
     let previewStyle: String
+    let onBoardRect: (CGRect) -> Void
     private let gap: CGFloat = 3
 
     var body: some View {
@@ -63,11 +59,8 @@ private struct BerryBoard: View {
             }
         }
         .frame(width: size, height: size, alignment: .topLeading)
-        .background {
-            GeometryReader { geo in
-                Color.clear.preference(key: BerryBoardRect.self, value: geo.frame(in: .global))
-            }
-        }
+        // Both the touch receiver and this anchor measure UIWindow coordinates.
+        .background(BerryBoardWindowAnchor(onRect: onBoardRect))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Berry garden, \(engine.side) by \(engine.side) puzzle board")
     }
@@ -98,6 +91,7 @@ struct BerryGameView: View {
     private var objective: String {
         switch mode {
         case .endless: "Fill a row or column. Grow your berry garden!"
+        case .classic: "🍓 BERRY CLASSIC • Three pieces • Chase your best!"
         case .story: storyIsLineQuest ? "CHAPTER \(storyLevel) • Clear \(storyTargetLines) lines to bloom!" : "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
         case .daily: "DAILY HARVEST • Gather \(goal) points!"
         case .cozy: "COZY COTTAGE • \(session.cottageDecorations) decorations • Grow at your pace!"
@@ -109,6 +103,10 @@ struct BerryGameView: View {
     @StateObject private var session = BerryGameSession()
     @State private var boardRect: CGRect = .zero
     @State private var drag: BerryDragState?
+    @State private var activeDragSlot: Int?
+    @State private var activeDragFinger: CGPoint?
+    @AppStorage("berryblockblast.touchDiagnostics") private var touchDiagnostics = false
+    @State private var touchStatus = "Ready"
     @State private var selectedSlot: Int?
     @State private var showHelp = false
     @State private var showSettings = false
@@ -122,6 +120,10 @@ struct BerryGameView: View {
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.music") private var music = true
     @State private var sparkle = false
+    @State private var showNewBestBanner = false
+    @State private var scoreRecordAtEntry = 0
+    @State private var celebratedRecordThisRun = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("berryblockblast.strawberry-unlocked") private var strawberryUnlocked = false
     @AppStorage("berryblockblast.lifetime-lines") private var lifetimeLines = 0
     @State private var showUnlock = false
@@ -153,7 +155,11 @@ struct BerryGameView: View {
                 background
                 VStack(spacing: compact ? 5 : 8) {
                     topBar(compact: compact)
-                    scoreBar
+                    if mode == .classic {
+                        BerryClassicScoreView(score: session.engine.score, best: session.bestScore, combo: session.engine.streak)
+                    } else {
+                        scoreBar
+                    }
                     HStack(spacing: 6) {
                         Image(systemName: mode == .challenge ? "bolt.fill" : mode == .cozy ? "leaf.fill" : "sparkles")
                         Text((mode == .endless || mode == .cozy) ? (session.lastMessage ?? objective) : objective)
@@ -163,25 +169,48 @@ struct BerryGameView: View {
                     .font(.system(size: compact ? 10 : 12, weight: .bold, design: .rounded))
                     .foregroundStyle(BerryStyle.chocolate)
                     .frame(height: 19)
-                    BerryBoard(engine: session.engine, preview: drag, size: boardSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle)
-                        .overlay { if sparkle { Text(harvestCheer).font(.headline).foregroundStyle(BerryStyle.strawberry).padding(12).background(.regularMaterial, in: Capsule()).transition(.scale.combined(with: .opacity)).allowsHitTesting(false) } }
+                    BerryBoard(engine: session.engine, preview: drag, size: boardSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle, onBoardRect: { rect in boardRect = rect })
+                        .overlay {
+                            if sparkle {
+                                Text(harvestCheer)
+                                    .font(.headline)
+                                    .foregroundStyle(BerryStyle.strawberry)
+                                    .padding(12)
+                                    .background(.regularMaterial, in: Capsule())
+                                    .transition(.scale.combined(with: .opacity))
+                                    .allowsHitTesting(false)
+                            }
+                        }
+                        .overlay {
+                            if showNewBestBanner {
+                                BerryNewBestBanner(score: session.engine.score)
+                                    .transition(.scale(scale: 0.78).combined(with: .opacity))
+                                    .allowsHitTesting(false)
+                                    .zIndex(3)
+                            }
+                        }
                         .padding(7)
                         .contentShape(Rectangle())
                         .onTapGesture { location in
-                            guard canMakeMove, let slot = selectedSlot, session.engine.tray.indices.contains(slot), let piece = session.engine.tray[slot] else { return }
-                            let step = cell + 3
-                            // Tap-to-place centers the chosen piece on the touched
-                            // square, matching the drag preview's placement logic.
-                            let minCol = piece.points.map(\.col).min() ?? 0
-                            let maxCol = piece.points.map(\.col).max() ?? 0
-                            let minRow = piece.points.map(\.row).min() ?? 0
-                            let maxRow = piece.points.map(\.row).max() ?? 0
-                            let col = Int(floor((location.x - 7) / step - CGFloat(minCol + maxCol + 1) / 2 + 0.5))
-                            let row = Int(floor((location.y - 7) / step - CGFloat(minRow + maxRow + 1) / 2 + 0.5))
-                            if session.drop(slot: slot, row: row, col: col) {
+                            guard canMakeMove, let slot = selectedSlot,
+                                  session.engine.tray.indices.contains(slot),
+                                  let piece = session.engine.tray[slot] else { return }
+                            // Tap coordinates are local to the 7-point padded board wrapper.
+                            // Resolve using the same cell-origin logic as drag placement.
+                            let local = CGPoint(x: location.x - 7, y: location.y - 7)
+                            let area = CGRect(origin: .zero, size: CGSize(width: boardSize, height: boardSize))
+                            guard let target = BerryDropGeometry.target(
+                                for: local, board: area, piece: piece, side: session.engine.side
+                            ) else {
+                                warningFeedback()
+                                return
+                            }
+                            if session.drop(slot: slot, row: target.row, col: target.col) {
                                 selectedSlot = nil
                                 successFeedback()
-                            } else if !session.engine.canPlace(piece, row: row, col: col) { warningFeedback() }
+                            } else {
+                                warningFeedback()
+                            }
                         }
                     HStack(spacing: 5) {
                         Image(systemName: "hand.draw.fill")
@@ -204,7 +233,7 @@ struct BerryGameView: View {
                                     .shadow(color: BerryStyle.strawberry.opacity(0.12), radius: 5, y: 3)
                                 if let piece {
                                     BerryPieceGlyph(piece: piece, unit: min(17, (width - 86) / CGFloat(3 * max(piece.width, 3)), CGFloat(compact ? 57 : 68) / CGFloat(max(piece.height, 1))), mode: mode, strawberryUnlocked: strawberryUnlocked)
-                                        .opacity(drag?.slot == slot ? 0.3 : session.engine.hasPlacement(for: piece) ? 1 : 0.3)
+                                        .opacity(activeDragSlot == slot ? 0.3 : session.engine.hasPlacement(for: piece) ? 1 : 0.3)
                                 } else {
                                     Image(systemName: "checkmark.seal.fill")
                                         .foregroundStyle(BerryStyle.leaf.opacity(0.6))
@@ -214,30 +243,13 @@ struct BerryGameView: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: compact ? 65 : 76)
                             .contentShape(Rectangle())
-                            // One recognizer handles taps and drag releases so they cannot compete.
-                            .gesture(
-                                DragGesture(minimumDistance: 0, coordinateSpace: .global)
-                                    .onChanged { value in
-                                        let distance2 = value.translation.width * value.translation.width
-                                            + value.translation.height * value.translation.height
-                                        if distance2 >= 64 {
-                                            updateDrag(slot: slot, finger: value.location)
-                                        }
-                                    }
-                                    .onEnded { value in
-                                        let distance2 = value.translation.width * value.translation.width
-                                            + value.translation.height * value.translation.height
-                                        if distance2 < 64 {
-                                            drag = nil
-                                            if canMakeMove && piece != nil {
-                                                selectedSlot = selectedSlot == slot ? nil : slot
-                                            }
-                                        } else {
-                                            // Use release coordinates; don't rely on previous @State.
-                                            finishDrag(placementForDrag(slot: slot, finger: value.location))
-                                        }
-                                    }
-                            )
+                            // Dedicated UIKit touch delivery persists after the finger
+                            // leaves the tray and cannot conflict with board tap gestures.
+                            .overlay {
+                                BerryTrayTouchCapture(slot: slot) { capturedSlot, event in
+                                    handleTrayTouch(slot: capturedSlot, event: event)
+                                }
+                            }
                             .accessibilityLabel("Berry piece \(slot + 1)")
                             .accessibilityAddTraits(.isButton)
                             .accessibilityAction {
@@ -248,6 +260,13 @@ struct BerryGameView: View {
                         }
                     }
                     toolBar
+                    if touchDiagnostics {
+                        Text(touchStatus)
+                            .font(.system(size: 9, weight: .medium, design: .monospaced))
+                            .lineLimit(2)
+                            .foregroundStyle(BerryStyle.chocolate)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                     HStack {
                         Text("🍓 \(session.berries) berries")
                         Spacer()
@@ -265,7 +284,6 @@ struct BerryGameView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
             .frame(width: width, height: height)
-            .onPreferenceChange(BerryBoardRect.self) { boardRect = $0 }
         }
         .preferredColorScheme(.light)
         .statusBarHidden()
@@ -295,6 +313,9 @@ struct BerryGameView: View {
         .onAppear {
             BerryAudio.shared.setMusic(music)
             session.selectMode(mode)
+            scoreRecordAtEntry = max(session.bestScore, session.engine.score)
+            celebratedRecordThisRun = false
+            showNewBestBanner = false
             blitzRunning = mode == .challenge
             if mode == .challenge {
                 if let saved = UserDefaults.standard.object(forKey: blitzDeadlineKey) as? Date { blitzDeadline = saved }
@@ -308,7 +329,10 @@ struct BerryGameView: View {
             if mode == .daily && dailyCompleted == BerryGameSession.dailyDateKey() { showVictory = session.engine.score >= goal }
             if !welcomed { showWelcome = true }
         }
-        .onChange(of: session.engine.score) { _, _ in checkObjective() }
+        .onChange(of: session.engine.score) { _, score in
+            checkObjective()
+            celebrateNewRecordIfNeeded(score)
+        }
         .onChange(of: session.engine.totalLines) { _, _ in checkObjective() }
         .onChange(of: showSettings) { _, _ in if mode == .challenge { refreshBlitzClock() } }
         .overlay {
@@ -350,11 +374,11 @@ struct BerryGameView: View {
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
                         Button(showVictory ? "🍓 Another Sweet Adventure" : "🍓 Plant a Fresh Garden") {
                             showVictory = false; showGameOver = false; confirmRestart = false
-                            completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil; lastBlitzTimeBonus = 0; blitzRemaining = 120; blitzRunning = mode == .challenge; blitzDeadline = mode == .challenge ? Date().addingTimeInterval(120) : nil; if mode == .challenge { UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey) }
+                            completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil; lastBlitzTimeBonus = 0; blitzRemaining = 120; blitzRunning = mode == .challenge; blitzDeadline = mode == .challenge ? Date().addingTimeInterval(120) : nil; if mode == .challenge { UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey) }; celebratedRecordThisRun = false; scoreRecordAtEntry = session.bestScore; showNewBestBanner = false
                         }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
                         Button("🏡 Return to Strawberry Village") { onExit() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
-                        if showGameOver && session.shuffles > 0 {
+                        if showGameOver && session.shuffles > 0 && mode != .classic {
                             Button("✨ Use Shuffle (\(session.shuffles) left)") { session.shuffle(); showGameOver = session.gameOver; selectedSlot = nil; drag = nil }
                                 .foregroundStyle(BerryStyle.strawberry)
                         }
@@ -452,6 +476,7 @@ struct BerryGameView: View {
 
     private var toolBar: some View {
         HStack(spacing: 7) {
+            if mode != .classic {
             toolButton("Undo", icon: "arrow.uturn.backward", count: session.undos, enabled: session.canUndo) {
                 if session.canUndo {
                     let revertedLines = session.undo()
@@ -469,6 +494,7 @@ struct BerryGameView: View {
                 if session.shuffles > 0 { session.shuffle(); selectedSlot = nil; drag = nil } else { showShop = true }
             }
             toolButton("Shop", icon: "basket.fill", count: nil, enabled: true) { showShop = true }
+            }
             toolButton(mode == .cozy ? "Cottage" : "Stats", icon: mode == .cozy ? "house.lodge.fill" : "chart.bar.fill", count: nil, enabled: true) { if mode == .cozy { showCottage = true } else { showStats = true } }
             toolButton("Home", icon: "house.fill", count: nil, enabled: true) { onExit() }
         }.frame(height: 43)
@@ -490,22 +516,66 @@ struct BerryGameView: View {
         }.disabled(!enabled && count == nil)
     }
 
-    // GeometryReader and DragGesture both work in global iOS coordinates.
-    // The position is calculated at release from the measured board dimensions.
+    // Both board measurement and touch events use UIWindow coordinates.
+    // A lifted preview matches the original thumb interaction; direct-finger
+    // targeting is accepted as a fallback when it is the legal position.
     private func placementForDrag(slot: Int, finger: CGPoint) -> BerryDragState? {
         guard canMakeMove, session.engine.tray.indices.contains(slot),
-              let piece = session.engine.tray[slot],
-              let target = BerryDropGeometry.target(
-                for: finger, board: boardRect, piece: piece, side: session.engine.side
-              ) else { return nil }
+              let piece = session.engine.tray[slot] else { return nil }
+        let candidates = BerryDropGeometry.candidates(
+            for: finger, board: boardRect, piece: piece, side: session.engine.side
+        )
+        let target = candidates.first {
+            session.engine.canPlace(piece, row: $0.row, col: $0.col)
+        } ?? candidates.first
+        guard let target else { return nil }
         return BerryDragState(
             slot: slot, piece: piece, row: target.row, col: target.col,
             allowed: session.engine.canPlace(piece, row: target.row, col: target.col)
         )
     }
 
-    private func updateDrag(slot: Int, finger: CGPoint) {
-        drag = placementForDrag(slot: slot, finger: finger)
+    private func handleTrayTouch(slot: Int, event: BerryTouchEvent) {
+        guard canMakeMove, session.engine.tray.indices.contains(slot),
+              session.engine.tray[slot] != nil else {
+            activeDragSlot = nil
+            activeDragFinger = nil
+            drag = nil
+            return
+        }
+        switch event.phase {
+        case .began:
+            touchStatus = "Picked up piece \(slot + 1)"
+        case .moved:
+            guard event.distanceSquared >= 64 else { return }
+            activeDragSlot = slot
+            activeDragFinger = event.location
+            drag = placementForDrag(slot: slot, finger: event.location)
+            if let drag {
+                touchStatus = "Preview (\(drag.row), \(drag.col)) \(drag.allowed ? "legal" : "blocked")"
+            } else {
+                touchStatus = "Moving piece \(slot + 1) toward board"
+            }
+        case .ended:
+            if event.distanceSquared < 64 {
+                selectedSlot = selectedSlot == slot ? nil : slot
+                touchStatus = "Selected piece \(slot + 1) for tap placement"
+            } else {
+                let finalDrop = placementForDrag(slot: slot, finger: event.location)
+                touchStatus = finalDrop.map {
+                    "Released (\($0.row), \($0.col)) \($0.allowed ? "legal" : "blocked")"
+                } ?? "Released outside board"
+                finishDrag(finalDrop)
+            }
+            activeDragSlot = nil
+            activeDragFinger = nil
+            drag = nil
+        case .cancelled:
+            touchStatus = "Touch cancelled"
+            activeDragSlot = nil
+            activeDragFinger = nil
+            drag = nil
+        }
     }
 
     private func finishDrag(_ finalDrop: BerryDragState?) {
@@ -559,6 +629,22 @@ struct BerryGameView: View {
         blitzRunning = false
         showVictory = true
     }
+    private func celebrateNewRecordIfNeeded(_ score: Int) {
+        // A tiny score on a fresh run should not fill the screen with banners.
+        // Once a genuine record is passed, it is celebrated once per run.
+        guard !celebratedRecordThisRun, score > scoreRecordAtEntry,
+              score >= 20 else { return }
+        celebratedRecordThisRun = true
+        withAnimation(reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.7)) {
+            showNewBestBanner = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.9) {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.28)) {
+                showNewBestBanner = false
+            }
+        }
+    }
+
     private func successFeedback() {
         lifetimeLines += session.lastClearedLines
         if lifetimeLines >= 10 && !strawberryUnlocked {
@@ -595,7 +681,11 @@ struct BerryGameView: View {
         sheetBase("How to Play", icon: "🍰") {
             Text("Touch a piece and slide it onto the \(session.engine.side) × \(session.engine.side) board, then release. Or tap a piece and tap the board to place it. Complete full rows or columns to clear them.")
             Text("Clear multiple lines together for bonus points. Keep clearing to grow your combo. Clear the entire board for +300!")
-            Text("Earn strawberries for line clears. Spend them in the basket on extra Undos and Shuffles. Keep playing until nothing fits.")
+            if mode == .classic {
+                Text("Berry Classic uses three shapes at a time, with no timer, Undo or Shuffle. Build combos, clear rows or columns, and chase your personal record!")
+            } else {
+                Text("Earn strawberries for line clears. Spend them in the basket on extra Undos and Shuffles. Keep playing until nothing fits.")
+            }
             primaryButton("Got It!") { showHelp = false }
         }
     }
@@ -607,6 +697,11 @@ struct BerryGameView: View {
                 Text("Mystery Garden").tag("mystery")
             }
             Toggle("Haptic feedback", isOn: $haptics).tint(BerryStyle.strawberry)
+            Toggle("Touch diagnostics (testing)", isOn: $touchDiagnostics).tint(BerryStyle.strawberry)
+            if touchDiagnostics {
+                Text("A small status line appears below your tools for testing drag releases.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Toggle("Sweet sound effects", isOn: $sound).tint(BerryStyle.strawberry)
             Toggle("Strawberry music box", isOn: $music).tint(BerryStyle.strawberry)
                 .onChange(of: music) { _, enabled in BerryAudio.shared.setMusic(enabled) }

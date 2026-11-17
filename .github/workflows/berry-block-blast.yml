@@ -1,13 +1,20 @@
 # Optional manual GitHub Actions smoke build. Codemagic is the PRIMARY iPhone IPA builder.
-# Intentionally no push trigger: do not spend CI minutes on every repository update.
-name: Berry Block Blast 0.5.4 build 12 manual QA
+# Temporary branch-only validation push trigger, removed before production merge.
+name: Berry Block Blast 0.5.5 build 1 manual QA
 
 on:
   workflow_dispatch:
+  # Temporary branch-only CI trigger while validating 0.5.5 build 1.
+  push:
+    branches:
+      - fix/berry-055-native-touch
+    paths:
+      - 'StrawberryShortcakeBlockBlast/**'
+      - '.github/workflows/berry-block-blast.yml'
 
 concurrency:
-  group: berry-block-blast-${{ github.ref }}
-  cancel-in-progress: false
+  group: berry-block-blast-test-${{ github.sha }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -30,24 +37,6 @@ jobs:
       - name: Generate the native Xcode project
         run: xcodegen generate --spec project.yml
 
-      - name: Run engine and drag geometry tests on iPhone Simulator
-        run: |
-          set -euo pipefail
-          SIMULATOR_ID="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next((v["udid"] for ds in d["devices"].values() for v in ds if v.get("isAvailable") and v.get("name","").startswith("iPhone")), ""))')"
-          if [ -z "$SIMULATOR_ID" ]; then
-            echo "::error::No available iPhone simulator. Tests may not be skipped."
-            exit 1
-          fi
-          xcodebuild -project BerryBlockBlast.xcodeproj \
-            -scheme BerryBlockBlast \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
-            -derivedDataPath build-simulator \
-            -parallel-testing-enabled NO \
-            CODE_SIGNING_ALLOWED=NO \
-            test
-
       - name: Build unsigned physical iPhone application
         run: |
           set -euo pipefail
@@ -66,13 +55,33 @@ jobs:
           mkdir -p dist/Payload
           cp -R build/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
           cd dist
-          zip -qr Berry-Block-Blast-v0.5.4-build12-unsigned.ipa Payload
-          test -s Berry-Block-Blast-v0.5.4-build12-unsigned.ipa
-          unzip -l Berry-Block-Blast-v0.5.4-build12-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
+          zip -qr Berry-Block-Blast-v0.5.5-build1-unsigned.ipa Payload
+          test -s Berry-Block-Blast-v0.5.5-build1-unsigned.ipa
+          unzip -l Berry-Block-Blast-v0.5.5-build1-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
 
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v4
         with:
-          name: Berry-Block-Blast-v0.5.4-build12-iPhone-unsigned
-          path: StrawberryShortcakeBlockBlast/dist/Berry-Block-Blast-v0.5.4-build12-unsigned.ipa
+          name: Berry-Block-Blast-v0.5.5-build1-iPhone-unsigned
+          path: StrawberryShortcakeBlockBlast/dist/Berry-Block-Blast-v0.5.5-build1-unsigned.ipa
           if-no-files-found: error
+
+      - name: Run engine and drag geometry tests on iPhone Simulator
+        timeout-minutes: 20
+        run: |
+          set -euo pipefail
+          SIMULATOR_ID="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next((v["udid"] for ds in d["devices"].values() for v in ds if v.get("isAvailable") and v.get("name","").startswith("iPhone")), ""))')"
+          if [ -z "$SIMULATOR_ID" ]; then
+            echo "::error::No available iPhone simulator. Tests may not be skipped."
+            exit 1
+          fi
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath build-simulator \
+            -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=NO \
+            test
+
