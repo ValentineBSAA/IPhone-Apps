@@ -12,7 +12,7 @@ permissions:
   contents: write
 jobs:
   import-and-build:
-    runs-on: macos-latest
+    runs-on: macos-15
     timeout-minutes: 55
     steps:
       - name: Checkout the test branch
