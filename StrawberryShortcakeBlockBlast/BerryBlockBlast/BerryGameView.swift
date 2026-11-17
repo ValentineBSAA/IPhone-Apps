@@ -115,6 +115,13 @@ private struct BerryBoard: View {
     }
 }
 
+/// UIKit geometry changes while the 24×24 garden scrolls are stored in a
+/// reference object, not @State, preventing 576 SwiftUI cells from rebuilding
+/// for every subpixel of movement or transient notification safe-area change.
+private final class BerryBoardPositionCache {
+    var rect: CGRect = .zero
+}
+
 struct BerryGameView: View {
     let mode: BerryMode
     let onExit: () -> Void
@@ -160,7 +167,8 @@ struct BerryGameView: View {
     }
 
     @StateObject private var session = BerryGameSession()
-    @State private var boardRect: CGRect = .zero
+    @State private var boardPosition = BerryBoardPositionCache()
+    @State private var stableBoardSize: CGFloat?
     @State private var drag: BerryDragState?
     @State private var hintPreview: BerryDragState?
     @State private var hintSerial = 0
@@ -212,8 +220,9 @@ struct BerryGameView: View {
             let top = geo.safeAreaInsets.top
             let bottom = geo.safeAreaInsets.bottom
             let compact = height < 740
-            let boardSize = max(185, min(width - 42, height - top - bottom -
-                (mode == .challenge ? (compact ? 276 : 310) : (compact ? 248 : 282)), 475))
+            let fittedBoardSize = max(185, min(width - 42, height - top - bottom -
+                (isTimedMode ? (compact ? 276 : 310) : (compact ? 248 : 282)), 475))
+            let boardSize = stableBoardSize ?? fittedBoardSize
             let cell = (boardSize - CGFloat(session.engine.side - 1) * 3) / CGFloat(session.engine.side)
             ZStack {
                 background
@@ -397,6 +406,9 @@ struct BerryGameView: View {
             }
             }
             .frame(width: width, height: height)
+            .onAppear {
+                if stableBoardSize == nil { stableBoardSize = fittedBoardSize }
+            }
         }
         .preferredColorScheme(.light)
         .statusBarHidden()
@@ -522,7 +534,12 @@ struct BerryGameView: View {
             if showVictory || showGameOver || confirmRestart {
                 ZStack {
                     BerryStyle.chocolate.opacity(0.42).ignoresSafeArea()
-                    VStack(spacing: 16) {
+                    VStack(spacing: 12) {
+                        if showVictory {
+                            BerryGirlView(pose: .celebrate)
+                                .frame(width: 83, height: 95)
+                                .accessibilityLabel("Berry heroine celebrating your chapter")
+                        }
                         Text(showVictory ? "🍰 ✨ 🍓" : confirmRestart ? "🌱 🍓 🌱" : "🍓 🌸 🧺")
                             .font(.system(size: 38))
                         Text(showVictory ? "Strawberry Spectacular!" : confirmRestart ? "Plant a Fresh Garden?" :
@@ -624,11 +641,6 @@ struct BerryGameView: View {
                 }.accessibilityLabel("Pause game")
             }
             Button { returnToVillage() } label: { Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.leaf) }.accessibilityLabel("Main menu")
-            if !isTimedMode {
-                Button { showShop = true } label: {
-                    BerryIcon(name: "ShopBasket", size: 27)
-                }.accessibilityLabel("Berry Boutique")
-            }
             Button { showSettings = true } label: {
                 Image(systemName: "gearshape.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.strawberry)
             }.accessibilityLabel("Berry settings")
@@ -760,7 +772,11 @@ struct BerryGameView: View {
             }
             }
             toolButton(mode == .cozy ? "Cottage" : "Stats", icon: mode == .cozy ? "CottageDecorations" : "StatsChart", count: nil, enabled: true) { if mode == .cozy { showCottage = true } else { showStats = true } }
-            toolButton("Home", icon: "HomeCottage", count: nil, enabled: true) { returnToVillage() }
+            if !isTimedMode {
+                toolButton("Boutique", icon: "ShopBasket", count: nil, enabled: true) {
+                    showShop = true
+                }
+            }
         }.frame(height: 50)
     }
 
@@ -790,7 +806,7 @@ struct BerryGameView: View {
         guard canMakeMove, session.engine.tray.indices.contains(slot),
               let piece = session.engine.tray[slot] else { return nil }
         let candidates = BerryDropGeometry.candidates(
-            for: finger, board: boardRect, piece: piece, side: session.engine.side
+            for: finger, board: boardPosition.rect, piece: piece, side: session.engine.side
         )
         // Preview and release MUST use the same lifted anchor. Choosing a
         // different candidate just because it is legal silently moves an L
@@ -870,7 +886,7 @@ struct BerryGameView: View {
         defer { drag = nil }
         guard canMakeMove, let finalDrop else {
             #if DEBUG
-            print("[BerryDrag] Release had no board target (boardRect=\(boardRect)).")
+            print("[BerryDrag] Release had no board target (boardPosition.rect=\(boardPosition.rect)).")
             #endif
             refreshBlitzClock()
             return
@@ -894,7 +910,7 @@ struct BerryGameView: View {
     /// Identical drag and tap board to the physically verified 0.5.6 engine.
     /// Only the 24x24 view enlarges and scrolls.
     private func boardInteraction(actualSize: CGFloat) -> some View {
-            BerryBoard(engine: session.engine, preview: drag ?? hintPreview, size: actualSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle, onBoardRect: { rect in boardRect = rect })
+            BerryBoard(engine: session.engine, preview: drag ?? hintPreview, size: actualSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle, onBoardRect: { rect in boardPosition.rect = rect })
                 .overlay {
                     if strawberryRain && !reduceMotion {
                         BerryStrawberryRain().allowsHitTesting(false)
