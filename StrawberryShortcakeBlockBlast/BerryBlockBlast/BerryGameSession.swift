@@ -46,7 +46,8 @@ final class BerryGameSession: ObservableObject {
     func selectMode(_ mode: BerryMode) {
         activeMode = mode
         let scoreKey = bestScoreKey(for: mode)
-        if mode != .superHard && mode != .classic && UserDefaults.standard.object(forKey: scoreKey) == nil {
+        if mode != .superHard && mode != .classic && mode != .challenge &&
+           UserDefaults.standard.object(forKey: scoreKey) == nil {
             // Earlier versions shared one best-score key for five modes.
             // Seed independent records from it so an upgrade never loses that number.
             UserDefaults.standard.set(UserDefaults.standard.integer(forKey: bestKey), forKey: scoreKey)
