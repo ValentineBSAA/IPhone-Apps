@@ -754,7 +754,7 @@ struct BerryGameView: View {
     private var welcomeSheet: some View {
         sheetBase("Welcome to Strawberry Village!", icon: "🍓") {
             Text("Make the sweetest garden one block at a time. Place berry pieces, complete rows and columns, and earn strawberries to stock your basket.")
-            Text("Complete full lines and make combos. Berry Classic is your single resumable garden.")
+            Text("Complete full lines and make combos. Sweet Endless saves your garden, and every blocked board blooms into a new season without ending your score!")
             primaryButton("Let's Grow!") { welcomed = true; showWelcome = false }
         }
     }
@@ -763,7 +763,9 @@ struct BerryGameView: View {
             Text("Touch a piece and slide it onto the \(session.engine.side) × \(session.engine.side) board, then release. Or tap a piece and tap the board to place it. Complete full rows or columns to clear them.")
             Text("Clear multiple lines together for bonus points. Keep clearing to grow your combo. Clear the entire board for +300!")
             if mode == .classic {
-                Text("Berry Classic uses three shapes at a time, with no timer, Undo or Shuffle. Build combos, clear rows or columns, and chase your personal record!")
+                Text("Berry Classic uses three shapes at a time, with no timer, Undo or Shuffle. When nothing fits, the run ends. Chase your best record!")
+            } else if mode == .endless {
+                Text("Sweet Endless has no final game over. When the pieces no longer fit, a new strawberry season starts automatically and keeps your score, line count, and berry rewards. Your garden saves so you can continue after leaving.")
             } else {
                 Text("Earn strawberries for line clears. Spend them in the basket on extra Undos and Shuffles. Keep playing until nothing fits.")
             }

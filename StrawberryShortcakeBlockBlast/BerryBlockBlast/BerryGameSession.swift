@@ -221,8 +221,15 @@ final class BerryGameSession: ObservableObject {
         } else { lastMessage = nil }
         let nextSeason = activeMode == .endless && !engine.hasMove() &&
             engine.beginNextEndlessSeasonIfStuck()
+        if nextSeason {
+            // Undoing across a renewed season would restore an unwinnable
+            // full board. Keep the uninterrupted score and disable that undo.
+            previous = nil
+            previousBerryEarnings = 0
+            previousRewardEntry = nil
+            lastMessage = "🍓 A fresh berry season! Your score continues!"
+        }
         gameOver = !engine.hasMove()
-        if nextSeason { lastMessage = "🍓 A fresh berry season! Your score continues!" }
         save()
         return true
     }
@@ -242,6 +249,7 @@ final class BerryGameSession: ObservableObject {
         previousBerryEarnings = 0
         self.previous = nil
         undos -= 1
+        if activeMode == .endless { _ = engine.beginNextEndlessSeasonIfStuck() }
         gameOver = !engine.hasMove()
         lastMessage = "A little second chance! 💗"
         lastEarned = 0

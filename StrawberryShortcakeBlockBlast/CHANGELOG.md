@@ -24,3 +24,9 @@
 
 ## v0.5.4 · Nightmare and visual improvements
 - 12×12 Strawberry Nightmare, original app icon, mascot and layout improvements.
+
+### Sweet Endless forever
+- Each of the 8×8, 12×12 and 24×24 Endless sizes keeps its saved board and independently accumulating score.
+- A blocked Endless board automatically begins another strawberry season without resetting score or rewards.
+- Saved berry garden bookmarks appear on the size selector. Classic game-over rules stay unchanged; old Classic saves retained for rollback.
+- Undo cannot return to an already blocked previous season.
