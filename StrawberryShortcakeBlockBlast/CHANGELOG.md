@@ -1,24 +1,26 @@
 # Berry Block Blast change history
 
-## v0.5.6 (build 2) · The Ultimate Berry Garden
-- 51 original music recordings and 16 original sound effects from supplied verified GitHub release audio-v1.0.
-- 8×8/12×12/24×24 Sweet Endless, pannable 576-cell Mega Garden.
-- Timed Berry Blitz: Quick Jam 60s and Berry Rush 120s, independent records.
-- Classic-only saved garden with bookmark, screenshot inactive pause flash fixed.
-- Premium Berry Boutique cosmetics, music Jukebox and More Adventures redesign.
-- Seven existing modes and all earned currency retained. Sound and drag acceptance remain physical-device gates.
-
+## v0.5.6 (build 2) · Ultimate Berry Garden update (development)
+- Updated music to all **51 original AAC-LC M4A** files, including 11 menu, 22 gameplay, 11 results and 7 dedicated Blitz themes. Replaced generated SFX with all **16 real original WAV effects**.
+- Added strict byte-for-byte SHA-256 checks of all 67 files at source, .app and IPA stages, with supplied archive catalogs.
+- Moved plain scrolling song list out of More Adventures and into the dedicated polished 51-track Strawberry Jukebox.
+- Premium More Adventures cards, clearer music display and conserved 0.5.6 user-tested audio/drag foundation.
+- Added **Sweet Endless 8×8 / 12×12 / 24×24** choice with enlarged panning board for Mega Garden, and large-format shapes.
+- New **Berry Blitz Quick Jam (60s)** and **Berry Rush (120s)** races, individual records, readable timer HUD, dedicated music and countdown cues.
+- Only Berry Classic resumes an unfinished board; a saved strawberry bookmark indicates progress. Previous saved boards for other modes are not erased.
+- Fixed the screenshot-triggered visible pause overlay; only manual Pause shows that panel. Music now suspends only after actual background entry.
+- Upgraded Berry Boutique with permanent paid-with-earned-berries block skins, borders, sparkles, ownership, equip, sound and distinct Cottage decorations.
+- Added lifetime line milestones, simulator tests and device QA checklist.
+- App is still unsigned by CI. Verify on actual iPhone before public stable release.
 
 ## v0.5.6 (build 1) · Original Soundtrack Integration
-- Imported all 15 supplied AAC-LC M4A tracks from GitHub Release V1 without re-encoding.
-- Added resilient AVFoundation playback, automatic rotation and pause/resume handling.
-- Added Cozy Berry (90/10), Balanced Berry (70/30 default) and Arcade Berry (40/60) playlists from the supplied manifest.
-- Created premium cross-screen Strawberry Sound Studio with song display, Next Track, Shuffle, music and effects volume sliders.
-- Reserved Welcome to Berryland for first launch menu and Sweetest Victory for results; gameplay shuffle uses the other 13 tracks.
-- Kept v0.5.5 touch fixes, Berry Classic, big score spotlight, all modes and saved progress.
-- Gate the iPhone build on exactly 15 authentic unchanged recordings in the .app and IPA.
+- Imported 15 original iOS-ready AAC M4As with source checksum verification.
+- Introduced app-wide AVFoundation music playback and Strawberry Sound Studio.
+- Preserved all seven modes, artwork, native touch and saves.
 
 ## v0.5.5 (build 1) · Core Puzzle Repairs
-- Native UIKit touch tracking and consistent piece previews, expanded classic shape catalog.
-- Strawberry Classic mode and bright record score celebrations.
-- Preserved earlier games, rewards, sound effects and artwork.
+- Native UIKit touch tracking, classic puzzle shapes and large glowing score.
+- Berry Classic mode and high-score celebrations.
+
+## v0.5.4 · Nightmare and visual improvements
+- 12×12 Strawberry Nightmare, original app icon, mascot and layout improvements.
