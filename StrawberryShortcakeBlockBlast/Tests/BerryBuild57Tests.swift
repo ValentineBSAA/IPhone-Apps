@@ -66,6 +66,24 @@ final class BerryBuild57EngineTests: XCTestCase {
         XCTAssertFalse(engine.reshuffleTray())
     }
 
+    func testTimedBlitzRenewsBlockedBoardWithoutResettingRun() {
+        let solid = Array(repeating: Array<Int?>(repeating: 3, count: 8), count: 8)
+        let piece = BerryPiece(points: [BerryPoint(row: 0, col: 0)], tint: 1)
+        var engine = BerryEngine(board: solid, tray: [piece, nil, nil], score: 725)
+        XCTAssertFalse(engine.hasMove())
+        XCTAssertTrue(engine.recoverTimedBoardIfStuck())
+        XCTAssertTrue(engine.hasMove())
+        XCTAssertEqual(engine.score, 725)
+        XCTAssertTrue(engine.board.flatMap { $0 }.allSatisfy { $0 == nil })
+    }
+
+    func testLongerBlitzVariantsKeepSeparateRecords() {
+        XCTAssertEqual(BerryBlitzVariant.allCases.count, 4)
+        XCTAssertEqual(BerryBlitzVariant.marathon600.seconds, 600)
+        XCTAssertEqual(BerryBlitzVariant.garden300.seconds, 300)
+        XCTAssertEqual(Set(BerryBlitzVariant.allCases.map(\.bestScoreKey)).count, 4)
+    }
+
     func testDailyHistoryKeyMatchesLocalCalendar() async {
         let sessionDateKey = await BerryGameSession.dailyDateKey()
         XCTAssertEqual(BerryDailyHistory.dateKey(for: Date()), sessionDateKey)
