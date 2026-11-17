@@ -1,0 +1,102 @@
+name: Berry Block Blast 0.5.7 Build 1 - iOS 16 test bench
+on:
+  push:
+    branches:
+      - feature/berry-057-build1-ios16
+    paths:
+      - 'BuildPayload/Berry-0.5.7-patch.zip'
+      - '.github/workflows/berry-057-bootstrap.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import-and-build:
+    runs-on: macos-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout the test branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Import the 0.5.7 source and themed icons
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -q -o 'BuildPayload/Berry-0.5.7-patch.zip' -d .
+          test -f StrawberryShortcakeBlockBlast/BerryBlockBlast/BerryCollectionView.swift
+          test -f StrawberryShortcakeBlockBlast/BerryBlockBlast/BerryDailyHarvestView.swift
+          grep -q 'MARKETING_VERSION: "0.5.7"' StrawberryShortcakeBlockBlast/project.yml
+          grep -q 'iOS: "16.0"' StrawberryShortcakeBlockBlast/project.yml
+          rm -f 'BuildPayload/Berry-0.5.7-patch.zip'
+          rmdir BuildPayload 2>/dev/null || true
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m 'Import Berry Block Blast 0.5.7 Build 1 source, icons and tests'
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Verify updated 0.5.7 source, artwork and original audio
+        working-directory: StrawberryShortcakeBlockBlast
+        run: |
+          set -euo pipefail
+          python3 Tools/verify_artwork.py
+          python3 Tools/verify_audio_build2.py
+          python3 Tools/verify_build57.py
+          python3 Tools/verify_ios16_source.py
+
+      - name: Generate Xcode project
+        working-directory: StrawberryShortcakeBlockBlast
+        run: xcodegen generate --spec project.yml
+
+      - name: Compile unsigned native iPhone application
+        working-directory: StrawberryShortcakeBlockBlast
+        run: |
+          set -euo pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO build
+
+      - name: Package the iPhone IPA and verify resources
+        working-directory: StrawberryShortcakeBlockBlast
+        run: |
+          set -euo pipefail
+          python3 Tools/verify_audio_build2.py --app build/Build/Products/Release-iphoneos/BerryBlockBlast.app
+          mkdir -p dist/Payload
+          cp -R build/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
+          (cd dist && zip -qr Berry-Block-Blast-v0.5.7-build1-iOS16-unsigned.ipa Payload)
+          python3 Tools/verify_audio_build2.py --ipa dist/Berry-Block-Blast-v0.5.7-build1-iOS16-unsigned.ipa
+          test -s dist/Berry-Block-Blast-v0.5.7-build1-iOS16-unsigned.ipa
+
+      - name: Upload unsigned test IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-Block-Blast-v0.5.7-build1-iOS16-unsigned
+          path: StrawberryShortcakeBlockBlast/dist/Berry-Block-Blast-v0.5.7-build1-iOS16-unsigned.ipa
+          if-no-files-found: error
+
+      - name: Run iPhone Simulator tests
+        working-directory: StrawberryShortcakeBlockBlast
+        timeout-minutes: 15
+        run: |
+          set -euo pipefail
+          SIMULATOR_ID="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next((v["udid"] for ds in d["devices"].values() for v in ds if v.get("isAvailable") and v.get("name","").startswith("iPhone")), ""))')"
+          test -n "$SIMULATOR_ID"
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath build-simulator \
+            -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=NO test
