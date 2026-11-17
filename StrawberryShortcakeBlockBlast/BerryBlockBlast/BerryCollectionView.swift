@@ -37,7 +37,9 @@ struct BerryCollectionView: View {
             ("Cozy Cottage", "CottageDecorations", defaults.integer(forKey: "berryblockblast.cozy.best-score.v055")),
             ("Strawberry Nightmare", "BerryClassic", defaults.integer(forKey: "berryblockblast.nightmare.best-score.v1")),
             ("Berry Blitz: Quick Jam", "Milestone", defaults.integer(forKey: BerryBlitzVariant.quick60.bestScoreKey)),
-            ("Berry Blitz: Berry Rush", "Milestone", defaults.integer(forKey: BerryBlitzVariant.rush120.bestScoreKey))
+            ("Berry Blitz: Berry Rush", "Milestone", defaults.integer(forKey: BerryBlitzVariant.rush120.bestScoreKey)),
+            ("Berry Blitz: Garden Sprint", "Milestone", defaults.integer(forKey: BerryBlitzVariant.garden300.bestScoreKey)),
+            ("Berry Blitz: Berry Marathon", "Milestone", defaults.integer(forKey: BerryBlitzVariant.marathon600.bestScoreKey))
         ].sorted { $0.2 > $1.2 }
     }
     var body: some View {
@@ -108,19 +110,19 @@ struct BerryCollectionView: View {
                     BerryIcon(name: "UndoIcon", size: 35)
                     Text("Undo")
                     Spacer()
-                    Text("×\(session.undos)").bold()
+                    Text("×\(session.undos)").bold().foregroundStyle(BerryStyle.strawberry)
                 }
                 HStack {
                     BerryIcon(name: "ShuffleIcon", size: 35)
                     Text("Shuffle")
                     Spacer()
-                    Text("×\(session.shuffles)").bold()
+                    Text("×\(session.shuffles)").bold().foregroundStyle(BerryStyle.strawberry)
                 }
                 HStack {
                     BerryIcon(name: "BerryHint", size: 35)
                     Text("Berry Hint")
                     Spacer()
-                    Text("×\(session.hints)").bold()
+                    Text("×\(session.hints)").bold().foregroundStyle(BerryStyle.strawberry)
                 }
                 Text("Use these from the game toolbar. Berry Classic and Blitz do not allow helpers.")
                     .font(.caption).foregroundStyle(.secondary)
@@ -149,7 +151,7 @@ struct BerryCollectionView: View {
                             .font(.caption.bold()).buttonStyle(.borderedProminent)
                             .tint(equipped ? BerryStyle.leaf : BerryStyle.strawberry)
                     } else {
-                        Label("Locked", systemImage: "lock.fill")
+                        Label("Boutique • \(skin.id == "berry-sparkle" ? "100" : skin.category == "frames" ? "75" : "90") 🍓", systemImage: "lock.fill")
                             .font(.caption2).foregroundStyle(.secondary)
                     }
                 }
