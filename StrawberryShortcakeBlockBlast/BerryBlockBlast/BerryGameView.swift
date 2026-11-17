@@ -388,7 +388,7 @@ struct BerryGameView: View {
         .sheet(isPresented: $showSettings) { settingsSheet }
         .sheet(isPresented: $showShop) { shopSheet }
         .sheet(isPresented: $showStats) { statsSheet }
-        .sheet(isPresented: $showCottage) { cottageSheet }
+        .sheet(isPresented: $showCottage) { BerryCottageGardenView(session: session) }
         .sheet(isPresented: $showWelcome) { welcomeSheet }
         .onChange(of: scenePhase) { phase in
             // iOS screenshots and banners can temporarily mark the app inactive.
