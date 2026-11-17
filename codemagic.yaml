@@ -2,7 +2,7 @@
 # Test branch only; no Windows PC, Apple signing credentials, or main branch changes.
 workflows:
   berry-block-blast-unsigned:
-    name: Berry Block Blast 0.5.8 build 1 unsigned iPhone IPA
+    name: Berry Block Blast 0.5.8 build 2 corrective unsigned iPhone IPA
     instance_type: mac_mini_m2
     max_build_duration: 60
     working_directory: StrawberryShortcakeBlockBlast
@@ -10,7 +10,7 @@ workflows:
       events:
         - push
       branch_patterns:
-        - pattern: 'feature/berry-058-build1-ios16'
+        - pattern: 'feature/berry-058-corrective'
           include: true
           source: true
       cancel_previous_builds: true
@@ -21,23 +21,36 @@ workflows:
         script: |
           set -e
           brew install xcodegen
-      - name: Import all 16 Berry 0.5.8 Xcode image catalogs
+      - name: Install all 19 approved images and genuine strawberry-shaped fruit tile
         script: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          import zipfile
+          import base64, hashlib, json, zipfile
           root = Path.cwd().parent.resolve()
-          payload = root / "BuildPayload" / "Berry-0.5.8-ArtCatalogs.zip"
+          payload = root / "BuildPayload" / "Berry_Block_Blast_0.5.8_19_ArtCatalogs_CloudReady.zip"
           if not payload.is_file():
-              raise SystemExit("ERROR: all 16 Berry v0.5.8 image assets are required for this IPA.")
+              raise SystemExit("Missing full 19-image 0.5.8 asset pack")
           with zipfile.ZipFile(payload) as z:
               for entry in z.namelist():
                   target = (root / entry).resolve()
                   if not target.is_relative_to(root):
                       raise SystemExit("Unsafe path in art payload: " + entry)
               z.extractall(root)
-          print("IMPORTED: all 16 Berry Block Blast 0.5.8 Xcode image assets")
+          artroot = Path.cwd() / "BerryBlockBlast" / "Assets.xcassets"
+          for name in ("BerryCharacterPortrait","BerryCharacterStanding","BerryCharacterCelebrate"):
+              assert (artroot / (name + ".imageset") / (name + ".jpg")).is_file(), name
+          encoded = root / "BuildPayload" / "BerryRealStrawberry.png.base64"
+          raw = base64.b64decode("".join(encoded.read_text().splitlines()), validate=True)
+          assert hashlib.sha256(raw).hexdigest() == "a27d31fa7e27b3ef8fe0938127d348304eeec61da3d5d04204371837e90ae1e1"
+          directory = artroot / "BerryRealStrawberry.imageset"
+          directory.mkdir(parents=True, exist_ok=True)
+          (directory / "BerryRealStrawberry.png").write_bytes(raw)
+          (directory / "Contents.json").write_text(json.dumps({
+              "images":[{"filename":"BerryRealStrawberry.png","idiom":"universal"}],
+              "info":{"author":"xcode","version":1}
+          }))
+          print("PASS: all 19 art catalogs and real 128px RGBA strawberry tile")
           PY
       - name: Verify 0.5.8 artwork, audio, iOS16 and source, then generate Xcode project
         script: |
@@ -66,11 +79,11 @@ workflows:
           cp -R build/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
           python3 Tools/verify_audio_build2.py --app build/Build/Products/Release-iphoneos/BerryBlockBlast.app
           cd dist
-          zip -qr Berry-Block-Blast-v0.5.8-build1-unsigned.ipa Payload
-          test -s Berry-Block-Blast-v0.5.8-build1-unsigned.ipa
-          unzip -l Berry-Block-Blast-v0.5.8-build1-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
+          zip -qr Berry-Block-Blast-v0.5.8-build2-unsigned.ipa Payload
+          test -s Berry-Block-Blast-v0.5.8-build2-unsigned.ipa
+          unzip -l Berry-Block-Blast-v0.5.8-build2-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
           cd ..
-          python3 Tools/verify_audio_build2.py --ipa dist/Berry-Block-Blast-v0.5.8-build1-unsigned.ipa
+          python3 Tools/verify_audio_build2.py --ipa dist/Berry-Block-Blast-v0.5.8-build2-unsigned.ipa
           echo '--- Verified IPA output ---'
           ls -lh dist/*.ipa
           shasum -a 256 dist/*.ipa
