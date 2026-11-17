@@ -42,12 +42,23 @@ struct BerryTile: View {
                 Color(red: 0.86, green: 0.63, blue: 0.43)][index]
         }
         switch mode {
-        case .endless, .classic: BerryStyle.color(for: tint)
-        case .story: [Color(red: 0.92, green: 0.38, blue: 0.64), .purple, .orange, .pink, .mint, .indigo][(tint % 6 + 6) % 6]
-        case .daily: [Color(red: 0.94, green: 0.43, blue: 0.35), .yellow, .orange, .green, .red, .brown][(tint % 6 + 6) % 6]
-        case .cozy: [Color(red: 0.76, green: 0.58, blue: 0.44), Color(red: 0.83, green: 0.67, blue: 0.52), .mint, Color(red: 0.68, green: 0.77, blue: 0.52), .orange, .teal][(tint % 6 + 6) % 6]
-        case .challenge: [.red, .orange, .yellow, .pink, .purple, .cyan][(tint % 6 + 6) % 6]
-        case .superHard: [Color(red: 0.62, green: 0.12, blue: 0.29), .purple, .indigo, .red, .orange, .pink][(tint % 6 + 6) % 6]
+        case .endless, .classic:
+            return BerryStyle.color(for: tint)
+        case .story:
+            let colors: [Color] = [Color(red: 0.92, green: 0.38, blue: 0.64), .purple, .orange, .pink, .mint, .indigo]
+            return colors[index]
+        case .daily:
+            let colors: [Color] = [Color(red: 0.94, green: 0.43, blue: 0.35), .yellow, .orange, .green, .red, .brown]
+            return colors[index]
+        case .cozy:
+            let colors: [Color] = [Color(red: 0.76, green: 0.58, blue: 0.44), Color(red: 0.83, green: 0.67, blue: 0.52), .mint, Color(red: 0.68, green: 0.77, blue: 0.52), .orange, .teal]
+            return colors[index]
+        case .challenge:
+            let colors: [Color] = [.red, .orange, .yellow, .pink, .purple, .cyan]
+            return colors[index]
+        case .superHard:
+            let colors: [Color] = [Color(red: 0.62, green: 0.12, blue: 0.29), .purple, .indigo, .red, .orange, .pink]
+            return colors[index]
         }
     }
     var body: some View {
