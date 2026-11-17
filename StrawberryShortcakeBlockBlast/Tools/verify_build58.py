@@ -22,7 +22,18 @@ for name in names:
     assert data[:8] == b"\x89PNG\r\n\x1a\n", file
     width, height = struct.unpack(">II", data[16:24])
     assert width >= 128 and height >= 128, (name, width, height)
+# Three approved original character poses and the generated fruit-shaped
+# replacement are mandatory. The game must not silently fall back to stickers.
+for name in ("BerryCharacterPortrait", "BerryCharacterStanding", "BerryCharacterCelebrate"):
+    folder = assets_root / (name + ".imageset")
+    manifest = json.loads((folder / "Contents.json").read_text())
+    image = folder / manifest["images"][0]["filename"]
+    assert image.is_file() and image.stat().st_size > 10000, image
+fruit = assets_root / "BerryRealStrawberry.imageset" / "BerryRealStrawberry.png"
+assert fruit.read_bytes()[:8] == b"\\x89PNG\\r\\n\\x1a\\n"
+assert struct.unpack(">II", fruit.read_bytes()[16:24]) == (128, 128)
 project = (root / "project.yml").read_text()
+assert 'CURRENT_PROJECT_VERSION: "2"' in project
 assert 'MARKETING_VERSION: "0.5.8"' in project
 assert 'IPHONEOS_DEPLOYMENT_TARGET: "16.0"' in project
 assert 'PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.berryblockblast' in project
@@ -31,4 +42,9 @@ assert 'private var isTimedMode:' in src
 assert 'private var timedDuration:' in src
 assert 'BerryCottageGardenView(session: session)' in src
 assert '"\\(piece.points.count)"' in src
-print("BERRY 0.5.8 PASS: 16 PNG image catalogs, build version, iOS16, timed rules, cottage, and piece counters")
+assert 'BerryRealStrawberry' in (root / "BerryBlockBlast" / "BerryStyle.swift").read_text()
+assert 'BerryStoryNarrative.title' in src
+assert 'BerryBoardPositionCache' in src
+assert 'pauseTimedClock()' in src
+assert 'BerryGirlView(pose: .celebrate)' in src
+print("BERRY 0.5.8 BUILD 2 PASS: 16 base assets + 3 character images + genuine strawberry; iOS16, Story, timer, viewport, cottage")
