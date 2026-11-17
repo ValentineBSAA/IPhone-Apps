@@ -26,8 +26,8 @@ enum BerryMode: String, CaseIterable, Identifiable {
         case .story: "Earn stars, complete chapters, unlock the next!"
         case .daily: "One fresh strawberry challenge every day."
         case .cozy: "Take it easy in a cozy garden."
-        case .challenge: "One-minute or two-minute score races. The clock is ticking!"
-        case .superHard: "A 12 × 12 garden with bigger pieces. Every move counts!"
+        case .challenge: "One, two, five and ten-minute score races. Keep racing until time runs out!"
+        case .superHard: "Three minutes in a 12 × 12 nightmare garden. Every move counts!"
         case .classic: "Pure 8 × 8 puzzle play with a glowing high score!"
         }
     }
@@ -40,6 +40,9 @@ struct BerryHomeView: View {
     @State private var showSchool = false
     @State private var showCollection = false
     @State private var showHomeShop = false
+    @State private var showHomeCottage = false
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showBoutiqueAfterCollection = false
     @StateObject private var villageSession = BerryGameSession()
     @AppStorage("berryblockblast.quoteIndex.v057") private var quoteIndex = 0
@@ -161,13 +164,13 @@ struct BerryHomeView: View {
                             }
                             Button {
                                 audio.play(.menuSelect)
-                                showHomeShop = true
+                                showHomeCottage = true
                             } label: {
                                 HStack(spacing: 12) {
-                                    BerryIcon(name: "BerryMarket", size: 53)
+                                    BerryIcon(name: "CottageDecorations", size: 53)
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("Berry Boutique").font(.headline)
-                                        Text("Shop, skins, helpers & cottage upgrades")
+                                        Text("My Strawberry Cottage").font(.headline)
+                                        Text("Decorate your garden and arrange your collection")
                                             .font(.caption).foregroundStyle(.secondary)
                                     }
                                     Spacer()
@@ -233,20 +236,18 @@ struct BerryHomeView: View {
                                 .background(.white.opacity(0.91), in: RoundedRectangle(cornerRadius: 18))
                             }
                             .buttonStyle(.plain)
-                            Button {
-                                quoteIndex = (quoteIndex + 1) % gardenQuotes.count
-                            } label: {
-                                HStack(spacing: 5) {
-                                    Image(systemName: "quote.bubble.fill")
-                                    Text(gardenQuotes[quoteIndex % gardenQuotes.count])
-                                        .multilineTextAlignment(.center)
-                                    Image(systemName: "arrow.clockwise")
-                                }
-                                .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                .foregroundStyle(BerryStyle.chocolate.opacity(0.8))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                            }.buttonStyle(.plain).accessibilityLabel("Rotate strawberry quote")
+                            HStack(spacing: 7) {
+                                Image(systemName: "quote.bubble.fill")
+                                Text(gardenQuotes[quoteIndex % gardenQuotes.count])
+                                    .id(quoteIndex)
+                                    .transition(.opacity)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(BerryStyle.strawberry)
+                            .frame(maxWidth: .infinity, minHeight: 32)
+                            .padding(.vertical, 5)
+                            .accessibilityLabel("A strawberry garden thought")
                         }
                         .padding(22)
                         .frame(maxWidth: 530)
@@ -287,6 +288,9 @@ struct BerryHomeView: View {
                     Button("Done") { showHomeShop = false }
                 }}
             }
+        }
+        .sheet(isPresented: $showHomeCottage) {
+            BerryCottageGardenView(session: villageSession)
         }
         .sheet(isPresented: $showSchool) { BerrySchoolView(onFinish: { graduated in showSchool = false; if graduated { BerryGameSession().rewardTutorial() } }) }
         .sheet(isPresented: $showMore, onDismiss: {
@@ -525,6 +529,13 @@ struct BerryHomeView: View {
             savedEndlessSizes = Set([8, 12, 24].filter { BerryGameSession.hasResumableEndless(side: $0) })
             villageSession.refreshEconomyFromDisk()
         }
+        .onReceive(Timer.publish(every: 18, on: .main, in: .common).autoconnect()) { _ in
+            guard activeMode == nil, scenePhase == .active else { return }
+            withAnimation(reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled ?
+                          nil : .easeInOut(duration: 0.25)) {
+                quoteIndex = (quoteIndex + 1) % gardenQuotes.count
+            }
+        }
         .onChange(of: activeMode) { selected in
             if selected == nil {
                 villageSession.refreshEconomyFromDisk()
@@ -532,6 +543,8 @@ struct BerryHomeView: View {
             }
             audio.setScreen(selected == nil ? .menu : selected == .challenge ? .blitz : .gameplay)
         }
+        .animation(reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled ?
+                   nil : .easeOut(duration: 0.18), value: activeMode)
         .preferredColorScheme(.light)
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
