@@ -1,0 +1,48 @@
+name: LastSeen
+options:
+  bundleIdPrefix: com.valentinebsaa
+  deploymentTarget:
+    iOS: "16.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    GENERATE_INFOPLIST_FILE: YES
+    INFOPLIST_KEY_CFBundleDisplayName: "Last Seen"
+    INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
+    INFOPLIST_KEY_UIRequiresFullScreen: YES
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    INFOPLIST_KEY_UILaunchScreen_Generation: YES
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  LastSeen:
+    type: application
+    platform: iOS
+    sources:
+      - path: LastSeenApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.lastseen.horror
+        CODE_SIGN_ENTITLEMENTS: ""
+  LastSeenTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: LastSeen
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.lastseen.horror.tests
+schemes:
+  LastSeen:
+    build:
+      targets:
+        LastSeen: all
+        LastSeenTests: [test]
+    test:
+      targets:
+        - LastSeenTests
