@@ -1,0 +1,52 @@
+name: Berry Build 2 Full Source Handoff Export
+on:
+  push:
+    branches:
+      - handoff/berry-056b2-full-source-20261117
+    paths:
+      - '.github/workflows/berry-handoff-snapshot.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export-current-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Capture source revision
+        run: |
+          printf '%s\n' "SOURCE_REPOSITORY=ValentineBSAA/IPhone-Apps" "SOURCE_SHA=$(git rev-parse HEAD)" "EXPORT_DATE=2026-11-17" > SOURCE_REVISION.txt
+          echo "Root repo SHA: $(git rev-parse HEAD)"
+      - name: Package complete Berry app project and offline audio
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+          root=Path('.')
+          includes=[Path('StrawberryShortcakeBlockBlast'),Path('codemagic.yaml'),Path('.github/workflows/berry-block-blast.yml'),Path('SOURCE_REVISION.txt')]
+          count=0
+          with zipfile.ZipFile('Berry-Block-Blast-build2-source-snapshot.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=4,allowZip64=True) as out:
+              for include in includes:
+                  paths=list(include.rglob('*')) if include.is_dir() else [include]
+                  for p in paths:
+                      if not p.is_file() or any(s in {'.DS_Store','.git','build','dist','DerivedData'} for s in p.parts):continue
+                      out.write(p,arcname=p.as_posix())
+                      count+=1
+          print('Archived source files:',count)
+          with zipfile.ZipFile('Berry-Block-Blast-build2-source-snapshot.zip') as check:
+              names=check.namelist()
+              assert len([n for n in names if n.startswith('StrawberryShortcakeBlockBlast/AudioBuild2/Music/') and n.endswith('.m4a')])==51
+              assert len([n for n in names if n.startswith('StrawberryShortcakeBlockBlast/AudioBuild2/Effects/') and n.endswith('.wav')])==16
+              assert any('BerryGameView.swift' in n for n in names)
+              assert any('project.yml' in n for n in names)
+          print('Bundle includes ALL 51 music files and 16 effects')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: berry-build2-complete-source-snapshot
+          path: Berry-Block-Blast-build2-source-snapshot.zip
+          compression-level: 0
+          retention-days: 3
