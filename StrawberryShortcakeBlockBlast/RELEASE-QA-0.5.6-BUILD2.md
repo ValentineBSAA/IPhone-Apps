@@ -2,7 +2,7 @@
 
 ## Source baseline and protection
 - From user-tested Build 1: do not rewrite UIKit drag/drop or classic placement logic.
-- Never reset or delete old non-Classic save keys. Berry Classic is the sole resumable game board.
+- Never reset or delete legacy Build 1/Classic save keys. Sweet Endless is the sole resumable mode, with separate 8×8/12×12/24×24 continuation slots. When no legal move remains, automatically begin the next season, keeping score and line history.
 - Preserve old best scores, Chapters, daily unlocks, strawberry balance and old signed bundle ID.
 - Version: MARKETING_VERSION 0.5.6, CURRENT_PROJECT_VERSION 2.
 
@@ -17,10 +17,11 @@
 - No generated placeholder recordings and no re-encoding.
 
 ## Playability / integration tests
-1. Berry Classic 8×8: native pickup, direct drag, lifted-thumb drop, tap-then-place and single saved-run badge.
-2. Return Home from Classic and relaunch: board/score resume. End a run/restart: saved badge clears. Do not overwrite old legacy keys.
-3. Sweet Endless: choose 8×8, 12×12 and 24×24. 24 must zoom and scroll; finger and board coordinates match after panning. Larger pieces must allow reasonable progress.
-4. Berry Story, Daily Harvest, Cozy Cottage, Strawberry Nightmare unchanged. Records, Chapter unlocks and earned berries persist, but boards start fresh.
+1. Berry Classic 8×8: native pickup, direct drag, lifted-thumb drop, tap-then-place, no powerups and a fresh high-score run on every entry.
+2. Sweet Endless 8×8/12×12/24×24: play one piece, exit, reopen, confirm matching board, score and tray restored. Each size must resume only its own run; the icon beside each saved size must update.
+3. Sweet Endless stuck-board scenario: verify a new garden season begins without a game-over screen or score reset, including 24×24. Starting a New Garden resets only the chosen size. Migrating a Build 1 8×8 saved board must not erase the original record or currency.
+4. Mega Garden must zoom and scroll; physical drag and tap coordinates must match after panning. Larger pieces must allow reasonable progress.
+5. Berry Story, Daily Harvest, Cozy Cottage, Strawberry Nightmare unchanged. Records, Chapter unlocks and earned berries persist, but boards start fresh.
 5. Berry Blitz: 60-sec Quick Jam and 120-sec Berry Rush have separate records. Clock cannot receive bonus seconds. Race ends at zero. 10-second warning, final countdown WAV and time-up fire each ONCE.
 6. No HUD display, visible pause overlay or music restart should occur solely because an iOS screenshot temporarily makes the app inactive.
 7. More Adventures shows only mode cards, no raw tracklist. Strawberry Jukebox contains all 51 titled tracks and categories, with the original playback modes intact.

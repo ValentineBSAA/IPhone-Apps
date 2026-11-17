@@ -8,8 +8,8 @@ Berry Block Blast is an independent, original strawberry-themed block-placement 
 Choose one of three pieces. Drag from the tray to the board and release, or tap a piece followed by a placement square. Complete full rows and columns simultaneously, pursue streaks, and keep space open for large pieces. All play is offline.
 
 ## Seven game modes
-- **Berry Classic:** Original 8×8 rules with big glowing high scores and the single persistent **Saved Garden**. No Undo/Shuffle power-ups.
-- **Sweet Endless:** Free play with your choice of **8×8, 12×12, or 24×24**. The 24×24 Mega Garden uses larger pieces and a two-axis scrollable, enlarged board.
+- **Berry Classic:** Original 8×8 fresh high-score challenge with the giant glowing score. No Undo/Shuffle power-ups.
+- **Sweet Endless:** The **only resumable mode**. Choose **8×8, 12×12, or 24×24** and return to your saved garden for that board size. When no move remains, a fresh season opens automatically while your score, lines and berry progress continue. The 24×24 Mega Garden uses larger pieces and a two-axis scrollable, enlarged board.
 - **Berry Story:** Chapter goals, progress and earned rewards.
 - **Daily Harvest:** Daily seeded puzzle, records and once-a-day rewards.
 - **Cozy Cottage:** Relaxing piece distribution and visibly upgraded cottage.
@@ -17,7 +17,7 @@ Choose one of three pieces. Drag from the tray to the board and release, or tap 
 - **Strawberry Nightmare:** Separate 12×12 challenging shape distribution.
 
 ### Saving
-Only Berry Classic restores an unfinished board, and it displays a strawberry bookmark on its Home card. Other modes preserve score records, permanent achievements, Chapter progression, currency and purchased cosmetics, but launch fresh boards. Legacy per-mode saves remain untouched for rollback.
+Only **Sweet Endless** restores an unfinished board. Its 8×8, 12×12 and 24×24 sizes have independent safe continuation slots, clearly identified by strawberry bookmark badges. Sweet Endless never ends due to a full/stuck board: the next season automatically clears the garden while keeping the accumulated score and lifetime line stats. Berry Classic and all other modes start fresh, while retaining their separate records, Chapter progression, earned berries and purchased cosmetics. The previous Endless 8×8 save is migrated on first use, and original Build 1/Classic save keys remain untouched for rollback. Starting a New Garden intentionally resets only the selected Endless size.
 
 ## Original 51-track soundtrack and 16 sound effects
 The complete iOS-ready AAC-LC M4A soundtrack and original PCM WAV effects have been imported **unchanged** from the two uploaded GitHub release archives. All **67 files** are embedded locally with SHA-256 verification. The music catalog contains **11 menu tracks, 22 gameplay tracks, 11 results songs, and 7 dedicated Berry Blitz recordings**. The SFX map covers real block pickup, successful/invalid placement, row clear, combo, record, victory, shop rewards, menu, and Blitz start/countdown/time-up cues.
