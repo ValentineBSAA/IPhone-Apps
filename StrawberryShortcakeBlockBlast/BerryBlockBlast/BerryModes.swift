@@ -42,6 +42,7 @@ struct BerryHomeView: View {
     @State private var showJukebox = false
     @State private var showBoardPicker = false
     @State private var showBlitzPicker = false
+    @State private var launchBlitzAfterMoreDismissal = false
     @State private var classicSaved = BerryGameSession.hasResumableClassic
     @AppStorage("berryblockblast.endless.boardSize.v056b2") private var endlessSize = 8
     @AppStorage("berryblockblast.blitz.variant.v056b2") private var selectedBlitz = BerryBlitzVariant.rush120.rawValue
@@ -205,7 +206,12 @@ struct BerryHomeView: View {
             }
         }
         .sheet(isPresented: $showSchool) { BerrySchoolView(onFinish: { graduated in showSchool = false; if graduated { BerryGameSession().rewardTutorial() } }) }
-        .sheet(isPresented: $showMore) {
+        .sheet(isPresented: $showMore, onDismiss: {
+            if launchBlitzAfterMoreDismissal {
+                launchBlitzAfterMoreDismissal = false
+                showBlitzPicker = true
+            }
+        }) {
             NavigationStack {
                 ScrollView {
                     VStack(spacing: 18) {
@@ -215,8 +221,14 @@ struct BerryHomeView: View {
                             Button {
                                 showMore = false
                                 audio.play(.menuSelect)
-                                if mode == .challenge { showBlitzPicker = true }
-                                else { audio.play(.gameStart); activeMode = mode }
+                                if mode == .challenge {
+                                    // Wait for More Adventures to finish closing
+                                    // before presenting the Blitz picker.
+                                    launchBlitzAfterMoreDismissal = true
+                                } else {
+                                    audio.play(.gameStart)
+                                    activeMode = mode
+                                }
                             } label: {
                                 HStack(spacing: 14) {
                                     Image(systemName: mode.icon)
