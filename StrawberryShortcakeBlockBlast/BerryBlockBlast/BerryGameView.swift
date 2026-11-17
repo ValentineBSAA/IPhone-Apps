@@ -160,7 +160,8 @@ struct BerryGameView: View {
             let top = geo.safeAreaInsets.top
             let bottom = geo.safeAreaInsets.bottom
             let compact = height < 740
-            let boardSize = max(185, min(width - 42, height - top - bottom - (compact ? 248 : 282), 475))
+            let boardSize = max(185, min(width - 42, height - top - bottom -
+                (mode == .challenge ? (compact ? 276 : 310) : (compact ? 248 : 282)), 475))
             let cell = (boardSize - CGFloat(session.engine.side - 1) * 3) / CGFloat(session.engine.side)
             ZStack {
                 background
@@ -168,6 +169,9 @@ struct BerryGameView: View {
                     topBar(compact: compact)
                     if mode == .classic {
                         BerryClassicScoreView(score: session.engine.score, best: session.bestScore, combo: session.engine.streak)
+                    } else if mode == .challenge {
+                        BerryBlitzHUD(timeLeft: blitzRemaining, score: session.engine.score,
+                                     best: session.bestScore, variant: blitzVariant)
                     } else {
                         scoreBar
                     }
@@ -354,13 +358,14 @@ struct BerryGameView: View {
                     VStack(spacing: 16) {
                         Text(showVictory ? "🍰 ✨ 🍓" : confirmRestart ? "🌱 🍓 🌱" : "🍓 🌸 🧺")
                             .font(.system(size: 38))
-                        Text(showVictory ? "Strawberry Spectacular!" : confirmRestart ? "Plant a Fresh Garden?" : "Our Berry Patch Is Full!")
+                        Text(showVictory ? "Strawberry Spectacular!" : confirmRestart ? "Plant a Fresh Garden?" :
+                             mode == .challenge ? "Time's Up, Berry Racer!" : "Our Berry Patch Is Full!")
                             .font(.system(size: 25, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry).multilineTextAlignment(.center)
                         Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "Your best score and earned berries stay safe." : "You harvested \(session.engine.score) sweet points and cleared \(session.engine.totalLines) lines. Every garden deserves another season!")
                             .font(.system(size: 15, weight: .medium, design: .rounded))
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
-                        Button(showVictory ? "🍓 Another Sweet Adventure" : "🍓 Plant a Fresh Garden") {
+                        Button(showVictory ? "🍓 Another Sweet Adventure" : mode == .challenge ? "⚡ Race Again" : "🍓 Plant a Fresh Garden") {
                             showVictory = false; showGameOver = false; confirmRestart = false
                             completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil
                             blitzRemaining = blitzVariant.seconds; blitzRunning = mode == .challenge
@@ -373,7 +378,7 @@ struct BerryGameView: View {
                         }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
                         Button("🏡 Return to Strawberry Village") { onExit() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
-                        if showGameOver && session.shuffles > 0 && mode != .classic {
+                        if showGameOver && session.shuffles > 0 && mode != .classic && mode != .challenge {
                             Button("✨ Use Shuffle (\(session.shuffles) left)") { session.shuffle(); showGameOver = session.gameOver; selectedSlot = nil; drag = nil }
                                 .foregroundStyle(BerryStyle.strawberry)
                         }
@@ -471,7 +476,7 @@ struct BerryGameView: View {
 
     private var toolBar: some View {
         HStack(spacing: 7) {
-            if mode != .classic {
+            if mode != .classic && mode != .challenge {
             toolButton("Undo", icon: "arrow.uturn.backward", count: session.undos, enabled: session.canUndo) {
                 if session.canUndo {
                     let revertedLines = session.undo()
