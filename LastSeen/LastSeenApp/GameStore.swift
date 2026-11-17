@@ -221,10 +221,12 @@ final class GameStore: ObservableObject {
         for i in state.messages.indices where state.messages[i].isOutgoing {
             state.messages[i].isRead = true
         }
+        let now = Date()
+        let resolved = StoryClock.contextualize(beat, sceneID: sceneID, index: index, now: now)
         state.messages.append(
-            GameMessage(id: id, thread: thread, sender: thread, body: beat.body,
-                        kind: beat.kind, createdAt: Date(), isRead: false,
-                        photoAssetName: beat.asset)
+            GameMessage(id: id, thread: thread, sender: thread, body: resolved.body,
+                        kind: resolved.kind, createdAt: now, isRead: false,
+                        photoAssetName: resolved.asset)
         )
         state.nextBeatIndex = index + 1
         if state.audioEnabled { AudioServicesPlaySystemSound(1104) }
