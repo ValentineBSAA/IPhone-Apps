@@ -43,7 +43,7 @@ final class BerryDropGeometryTests: XCTestCase {
     }
     func testLiftedTouchJustBelowBoardCanTargetBottomRow() {
         let board = CGRect(x: 30, y: 200, width: 320, height: 320)
-        let finger = CGPoint(x: 50, y: board.maxY + 22)
+        let finger = CGPoint(x: 50, y: board.maxY + 28)
         let matches = BerryDropGeometry.candidates(
             for: finger, board: board, piece: single, side: 8
         )

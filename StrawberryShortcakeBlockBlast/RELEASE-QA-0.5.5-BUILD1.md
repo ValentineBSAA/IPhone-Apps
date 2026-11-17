@@ -21,3 +21,8 @@ All modes: Sweet Endless, Berry Story, Daily Harvest, Cozy Cottage, Berry Blitz 
 Run xcodebuild simulator XCTest and verify unsigned IPA compilation; physical iPhone testing remains mandatory. Test actual drag across tray, hovering above your thumb, release when finger is below the board, screen edges and diagonal releases. Confirm piece disappears, score increments, preview matches release, invalid overlaps stay put, and tray refills after all three pieces. Test all six modes, saves, best scores, row/column intersection, streak break at three non-clears, undo, shuffle, music and scrolling sheets.
 
 The test build is NOT stable until the iPhone 16e proves dragging actually works.
+
+## Scoring refinement
+- Normal line-clear points now use the independently examined Android 10.8.1 Classic baseline: one line 10, two lines 20, three lines 60, four lines 120, plus placement points, combo multiplier and +300 full-board reward.
+- We cannot assert the current iOS app uses these identical weights. Berry retains its own objectives and six modes.
+- Automated tests cover two-line, three-line, and continuing combo scoring.

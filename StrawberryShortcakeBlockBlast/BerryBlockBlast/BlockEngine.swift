@@ -156,7 +156,11 @@ struct BerryEngine: Codable {
         }
         let boardClear = lines > 0 && board.flatMap { $0 }.allSatisfy { $0 == nil }
         if boardClear { boardClears += 1 }
-        let earned = piece.points.count + (lines > 0 ? 10 * lines * lines * min(streak, 8) : 0) + (boardClear ? 300 : 0)
+        // Classic baseline: one line 10, two lines 20, three lines 60,
+        // four lines 120, multiplied by the current clearing streak.
+        // Other published app versions may use conditional score modifiers.
+        let lineBase = lines <= 1 ? 10 * lines : 10 * lines * (lines - 1)
+        let earned = piece.points.count + lineBase * min(streak, 8) + (boardClear ? 300 : 0)
         score += earned
         if tray.allSatisfy({ $0 == nil }) { refill() }
         return BerryPlacement(clearedRows: rows, clearedColumns: cols, earned: earned, streak: streak, boardClear: boardClear)

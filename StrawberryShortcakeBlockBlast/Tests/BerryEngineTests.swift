@@ -41,8 +41,37 @@ final class BerryEngineTests: XCTestCase {
         let outcome = game.place(slot: 0, row: 7, col: 7)
         XCTAssertEqual(outcome?.clearedRows, [7])
         XCTAssertEqual(outcome?.clearedColumns, [7])
-        XCTAssertEqual(game.score, 341)
+        XCTAssertEqual(game.score, 321)
         XCTAssertTrue(game.board.flatMap { $0 }.allSatisfy { $0 == nil })
+    }
+
+    func testThreeLinesUseClassicBaselineScoring() {
+        var board = emptyBoard()
+        for row in 0..<3 {
+            for col in 0..<7 { board[row][col] = 1 }
+        }
+        board[7][7] = 3 // Prevent a full-board-clear bonus.
+        let piece = BerryPiece(points: [
+            BerryPoint(row: 0, col: 0), BerryPoint(row: 1, col: 0),
+            BerryPoint(row: 2, col: 0)
+        ], tint: 2)
+        var game = BerryEngine(board: board, tray: [piece, nil, nil])
+        let outcome = game.place(slot: 0, row: 0, col: 7)
+        XCTAssertEqual(outcome?.clearedRows, [0, 1, 2])
+        XCTAssertEqual(outcome?.clearedColumns, [])
+        XCTAssertEqual(game.score, 63) // Three placement cells + 60 line points.
+    }
+
+    func testComboContinuesAcrossOneNonClearingMove() {
+        var board = emptyBoard()
+        for col in 0..<7 { board[0][col] = 1; board[1][col] = 2 }
+        let piece = BerryPiece(points: [BerryPoint(row: 0, col: 0)], tint: 0)
+        var game = BerryEngine(board: board, tray: [piece, piece, piece])
+        XCTAssertNotNil(game.place(slot: 0, row: 0, col: 7))
+        XCTAssertNotNil(game.place(slot: 1, row: 2, col: 0))
+        XCTAssertNotNil(game.place(slot: 2, row: 1, col: 7))
+        XCTAssertEqual(game.bestCombo, 2)
+        XCTAssertEqual(game.score, 33)
     }
 
     func testPersistsAndRestoresBoardScoreAndTray() throws {
