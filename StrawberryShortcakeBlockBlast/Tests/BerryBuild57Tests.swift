@@ -66,7 +66,8 @@ final class BerryBuild57EngineTests: XCTestCase {
         XCTAssertFalse(engine.reshuffleTray())
     }
 
-    func testDailyHistoryKeyMatchesLocalCalendar() {
-        XCTAssertEqual(BerryDailyHistory.dateKey(for: Date()), BerryGameSession.dailyDateKey())
+    func testDailyHistoryKeyMatchesLocalCalendar() async {
+        let sessionDateKey = await BerryGameSession.dailyDateKey()
+        XCTAssertEqual(BerryDailyHistory.dateKey(for: Date()), sessionDateKey)
     }
 }
