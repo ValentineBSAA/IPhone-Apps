@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Bold, readable timer and score for the 60/120-second Blitz challenges.
+/// Bold, readable timer and score for all four Blitz durations.
 struct BerryBlitzHUD: View {
     let timeLeft: Int
     let score: Int
@@ -25,7 +25,7 @@ struct BerryBlitzHUD: View {
                     .foregroundStyle(timeLeft <= 10 ? BerryStyle.strawberry :
                         Color(red: 0.70, green: 0.28, blue: 0.48))
                     .shadow(color: BerryStyle.strawberry.opacity(timeLeft <= 10 ? 0.42 : 0.16), radius: 5)
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.24), value: timeLeft)
+                    .animation(reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled ? nil : .easeInOut(duration: 0.18), value: timeLeft)
             }
             Spacer(minLength: 6)
             VStack(alignment: .trailing, spacing: 4) {
