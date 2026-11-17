@@ -129,12 +129,14 @@ struct BerryGameView: View {
     @State private var blitzRunning = false
     @State private var blitzDeadline: Date?
     private var blitzVariant: BerryBlitzVariant { BerryBlitzVariant.selected }
+    private var isTimedMode: Bool { mode == .challenge || mode == .superHard }
+    private var timedDuration: Int { mode == .superHard ? 180 : blitzVariant.seconds }
     @State private var isPaused = false
     @Environment(\.scenePhase) private var scenePhase
-    private var canManuallyPause: Bool { mode != .challenge }
+    private var canManuallyPause: Bool { !isTimedMode }
     private var canMakeMove: Bool {
         guard !isPaused, !showGameOver, !showVictory, !session.gameOver else { return false }
-        if mode == .challenge { return blitzRunning && (blitzDeadline.map { $0 > Date() } ?? false) }
+        if isTimedMode { return blitzRunning && (blitzDeadline.map { $0 > Date() } ?? false) }
         return true
     }
     private var goal: Int { mode == .story ? 100 + storyLevel * 55 : 120 }
@@ -150,7 +152,7 @@ struct BerryGameView: View {
         case .daily: return "DAILY HARVEST • \(BerryGameSession.dailyDateKey()) • Gather \(goal) points!"
         case .cozy: return "COZY COTTAGE • \(session.cottageDecorations) decorations • Grow at your pace!"
         case .challenge: return "⚡ \(blitzVariant.rawValue.uppercased()) • \(blitzRemaining)s • \(session.engine.score) points"
-        case .superHard: return "🍓 STRAWBERRY NIGHTMARE • 12 × 12 • Bigger pieces!"
+        case .superHard: return "🌙 NIGHTMARE • 12 × 12 • \(blitzRemaining)s remaining"
         }
     }
 
@@ -219,6 +221,26 @@ struct BerryGameView: View {
                     } else if mode == .challenge {
                         BerryBlitzHUD(timeLeft: blitzRemaining, score: session.engine.score,
                                      best: session.bestScore, variant: blitzVariant)
+                    } else if mode == .superHard {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("🌙 STRAWBERRY NIGHTMARE")
+                                    .font(.system(size: 10, weight: .black, design: .rounded))
+                                Text(String(format: "%01d:%02d", blitzRemaining / 60, blitzRemaining % 60))
+                                    .font(.system(size: 35, weight: .black, design: .rounded))
+                                    .monospacedDigit()
+                            }
+                            Spacer()
+                            VStack(alignment: .trailing, spacing: 3) {
+                                Text("SCORE").font(.caption.bold())
+                                Text(session.engine.score.formatted()).font(.title.bold())
+                                Text("BEST \(session.bestScore)").font(.caption.bold())
+                            }
+                        }
+                        .foregroundStyle(Color(red: 0.49, green: 0.09, blue: 0.35))
+                        .padding(13)
+                        .frame(height: 87)
+                        .background(Color(red: 0.98, green: 0.86, blue: 0.94), in: RoundedRectangle(cornerRadius: 21))
                     } else {
                         scoreBar
                     }
@@ -279,6 +301,14 @@ struct BerryGameView: View {
                                 if let piece {
                                     BerryPieceGlyph(piece: piece, unit: min(17, (width - 86) / CGFloat(3 * max(piece.width, 3)), CGFloat(compact ? 57 : 68) / CGFloat(max(piece.height, 1))), mode: mode, strawberryUnlocked: strawberryUnlocked)
                                         .opacity(activeDragSlot == slot ? 0.3 : session.engine.hasPlacement(for: piece) ? 1 : 0.3)
+                                    Text("\(piece.points.count)")
+                                        .font(.system(size: 11, weight: .black, design: .rounded))
+                                        .foregroundStyle(BerryStyle.strawberry)
+                                        .padding(.horizontal, 6).padding(.vertical, 2)
+                                        .background(.white.opacity(0.95), in: Capsule())
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                                        .padding(5)
+                                        .allowsHitTesting(false)
                                 } else {
                                     Image(systemName: "checkmark.seal.fill")
                                         .foregroundStyle(BerryStyle.leaf.opacity(0.6))
