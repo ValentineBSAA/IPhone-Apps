@@ -1,0 +1,88 @@
+# One-time source import of the approved icon + mascot from GitHub Release tag 1.
+# Triggered by creation/change of this workflow or manually if GitHub skips the push event.
+name: Berry Block Blast - Import approved artwork
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/berry-artwork-import.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: berry-block-blast-artwork-import
+  cancel-in-progress: false
+
+jobs:
+  import-artwork:
+    name: Extract verified PNGs to Xcode assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+
+      - name: Download uploaded ZIP from release 1 and extract exact PNGs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release download 1 \
+            --repo "${{ github.repository }}" \
+            --pattern 'Berry-Block-Blast-0.5.4-Approved-Artwork-Patch.zip' \
+            --dir "$RUNNER_TEMP" \
+            --clobber
+          python3 - "$RUNNER_TEMP/Berry-Block-Blast-0.5.4-Approved-Artwork-Patch.zip" <<'PY'
+          from pathlib import Path
+          import hashlib
+          import sys
+          import zipfile
+
+          archive = Path(sys.argv[1])
+          assert archive.is_file(), "GitHub release asset ZIP not found"
+          expected_zip = "2804d480cce548c9147fa2a5d8a2d10dc2f0f74bc132936d46791e6ad6a7a747"
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == expected_zip, "Unexpected uploaded ZIP checksum"
+
+          files = {
+              "StrawberryShortcakeBlockBlast/BerryBlockBlast/Assets.xcassets/AppIcon.appiconset/AppIcon.png": (
+                  "a7fe26700c3e344e0a054eb6783777283fcb5e5870842b36659ff3f34e377d35"
+              ),
+              "StrawberryShortcakeBlockBlast/BerryBlockBlast/Assets.xcassets/BerryMascot.imageset/BerryMascot.png": (
+                  "76d83ecf6c7649f19c4eead984ca97e8cba39ffb014d01922490568972bf710b"
+              ),
+          }
+          with zipfile.ZipFile(archive) as zf:
+              for name, expected_sha256 in files.items():
+                  data = zf.read(name)
+                  assert data.startswith(bytes.fromhex("89504e470d0a1a0a")), f"Not a PNG: {name}"
+                  assert hashlib.sha256(data).hexdigest() == expected_sha256, f"Wrong image: {name}"
+                  target = Path(name)
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(data)
+                  print(f"Installed {target} ({len(data)} bytes)")
+          PY
+
+      - name: Verify asset catalog and exact approved art
+        run: python3 StrawberryShortcakeBlockBlast/Tools/verify_artwork.py
+
+      - name: Commit both verified PNGs to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- \
+            StrawberryShortcakeBlockBlast/BerryBlockBlast/Assets.xcassets/AppIcon.appiconset/AppIcon.png \
+            StrawberryShortcakeBlockBlast/BerryBlockBlast/Assets.xcassets/BerryMascot.imageset/BerryMascot.png
+          if git diff --cached --quiet; then
+            echo 'Approved images are already committed. No changes needed.'
+          else
+            git commit -m 'Berry Block Blast: install approved icon and mascot from release 1'
+            git push origin HEAD:main
+          fi
