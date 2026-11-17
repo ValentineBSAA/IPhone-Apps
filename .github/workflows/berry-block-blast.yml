@@ -1,5 +1,5 @@
 # Optional manual GitHub Actions smoke build. Codemagic is the PRIMARY iPhone IPA builder.
-# Intentionally no push trigger: do not spend CI minutes on every repository update.
+# Branch-only push trigger is temporary for 0.5.5 validation; remove before merge.
 name: Berry Block Blast 0.5.5 build 1 manual QA
 
 on:
@@ -14,7 +14,7 @@ on:
 
 concurrency:
   group: berry-block-blast-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -37,7 +37,20 @@ jobs:
       - name: Generate the native Xcode project
         run: xcodegen generate --spec project.yml
 
+      - name: Build unsigned physical iPhone application
+        run: |
+          set -euo pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
       - name: Run engine and drag geometry tests on iPhone Simulator
+        timeout-minutes: 20
         run: |
           set -euo pipefail
           SIMULATOR_ID="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next((v["udid"] for ds in d["devices"].values() for v in ds if v.get("isAvailable") and v.get("name","").startswith("iPhone")), ""))')"
@@ -54,18 +67,6 @@ jobs:
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO \
             test
-
-      - name: Build unsigned physical iPhone application
-        run: |
-          set -euo pipefail
-          xcodebuild -project BerryBlockBlast.xcodeproj \
-            -scheme BerryBlockBlast \
-            -configuration Release \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO \
-            build
 
       - name: Package versioned unsigned IPA
         run: |
