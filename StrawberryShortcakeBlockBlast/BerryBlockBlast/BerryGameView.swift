@@ -128,12 +128,13 @@ struct BerryGameView: View {
     @State private var blitzFinished = false
     @State private var blitzRunning = false
     @State private var blitzDeadline: Date?
+    @State private var pausedTimerAt: Date?
     private var blitzVariant: BerryBlitzVariant { BerryBlitzVariant.selected }
     private var isTimedMode: Bool { mode == .challenge || mode == .superHard }
     private var timedDuration: Int { mode == .superHard ? 180 : blitzVariant.seconds }
     @State private var isPaused = false
     @Environment(\.scenePhase) private var scenePhase
-    private var canManuallyPause: Bool { !isTimedMode }
+    private var canManuallyPause: Bool { true }
     private var canMakeMove: Bool {
         guard !isPaused, !showGameOver, !showVictory, !session.gameOver else { return false }
         if isTimedMode { return blitzRunning && (blitzDeadline.map { $0 > Date() } ?? false) }
@@ -394,14 +395,28 @@ struct BerryGameView: View {
             // iOS screenshots and banners can temporarily mark the app inactive.
             // Pause overlays appear only when Pause was pressed, not on screenshots.
             if phase == .background { drag = nil; selectedSlot = nil }
-            if phase == .active && isTimedMode { refreshBlitzClock() }
+            if isTimedMode {
+                if phase != .active { pauseTimedClock() }
+                else { resumeTimedClockIfPossible() }
+            }
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
-            if isTimedMode && scenePhase == .active { refreshBlitzClock() }
+            if isTimedMode && scenePhase == .active && !isPaused && pausedTimerAt == nil {
+                refreshBlitzClock()
+            }
         }
         .onChange(of: session.gameOver) { ended in
+            if ended && mode == .superHard {
+                // Nightmare is survival: a blocked board ends the race NOW.
+                blitzRunning = false
+                blitzFinished = true
+                blitzDeadline = nil
+                pausedTimerAt = nil
+            }
             showGameOver = !showVictory && (ended || (isTimedMode && !blitzRunning && blitzRemaining == 0))
-            if ended && sound && !isTimedMode { BerryAudio.shared.play(.gameOver) }
+            if ended && sound && (mode == .superHard || !isTimedMode) {
+                BerryAudio.shared.play(.gameOver)
+            }
         }
         .onAppear {
             BerryAudio.shared.setScreen(isTimedMode ? .blitz : .gameplay)
@@ -420,6 +435,11 @@ struct BerryGameView: View {
                 if sound { BerryAudio.shared.play(.blitzStart) }
             }
             showGameOver = session.gameOver || (isTimedMode && blitzRemaining == 0)
+            if mode == .superHard && session.gameOver {
+                blitzRunning = false
+                blitzFinished = true
+                blitzDeadline = nil
+            }
             if mode == .daily && dailyCompleted == BerryGameSession.dailyDateKey() { showVictory = session.engine.score >= goal }
             if !welcomed { showWelcome = true }
         }
@@ -428,7 +448,14 @@ struct BerryGameView: View {
             celebrateNewRecordIfNeeded(score)
         }
         .onChange(of: session.engine.totalLines) { _ in checkObjective() }
-        .onChange(of: showSettings) { _ in if isTimedMode { refreshBlitzClock() } }
+        .onChange(of: showSettings) { opened in
+            if opened { pauseTimedClock() }
+            else { resumeTimedClockIfPossible() }
+        }
+        .onChange(of: showHelp) { opened in
+            if opened { pauseTimedClock() }
+            else { resumeTimedClockIfPossible() }
+        }
         .onChange(of: showVictory) { victory in
             BerryAudio.shared.setScreen(victory ? .results : (isTimedMode ? .blitz : .gameplay))
             if victory && sound { BerryAudio.shared.play(.victory) }
@@ -445,7 +472,10 @@ struct BerryGameView: View {
                             .multilineTextAlignment(.center).foregroundStyle(BerryStyle.chocolate)
                         Text("🍓 \(session.berries) berries • \(session.engine.score) points")
                             .font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
-                        Button("Continue Gardening") { isPaused = false }
+                        Button("Continue Gardening") {
+                            isPaused = false
+                            resumeTimedClockIfPossible()
+                        }
                             .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
                         Button(mode == .endless ? "Save Forever Garden & Return" : "Return to Village") { isPaused = false; onExit() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
@@ -496,6 +526,7 @@ struct BerryGameView: View {
                             blitzDeadline = isTimedMode ?
                                 Date().addingTimeInterval(TimeInterval(timedDuration)) : nil
                             blitzFinished = false; blitzWarnedTenSeconds = false; blitzPlayedFinalTick = false
+                            pausedTimerAt = nil
                             if isTimedMode && sound { BerryAudio.shared.play(.blitzStart) }
                             celebratedRecordThisRun = false; scoreRecordAtEntry = session.bestScore
                             showNewBestBanner = false
@@ -553,12 +584,16 @@ struct BerryGameView: View {
             }
             Spacer(minLength: 0)
             if canManuallyPause {
-                Button { isPaused = true; drag = nil; selectedSlot = nil } label: {
+                Button {
+                    isPaused = true
+                    pauseTimedClock()
+                    drag = nil; selectedSlot = nil
+                } label: {
                     Image(systemName: "pause.circle.fill").font(.system(size: 23)).foregroundStyle(BerryStyle.strawberry)
                 }.accessibilityLabel("Pause game")
             }
             Button { returnToVillage() } label: { Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.leaf) }.accessibilityLabel("Main menu")
-            if mode != .challenge {
+            if !isTimedMode {
                 Button { showShop = true } label: {
                     BerryIcon(name: "ShopBasket", size: 27)
                 }.accessibilityLabel("Berry Boutique")
@@ -815,9 +850,23 @@ struct BerryGameView: View {
                 })
     }
 
+    private func pauseTimedClock() {
+        guard isTimedMode, blitzRunning, pausedTimerAt == nil else { return }
+        pausedTimerAt = Date()
+    }
+
+    private func resumeTimedClockIfPossible() {
+        guard isTimedMode, blitzRunning, !isPaused,
+              !showHelp, !showSettings, scenePhase == .active,
+              let began = pausedTimerAt else { return }
+        blitzDeadline = blitzDeadline?.addingTimeInterval(Date().timeIntervalSince(began))
+        pausedTimerAt = nil
+        refreshBlitzClock()
+    }
+
     private func refreshBlitzClock() {
         guard isTimedMode, blitzRunning, let deadline = blitzDeadline,
-              !showVictory else { return }
+              !showVictory, !isPaused, pausedTimerAt == nil else { return }
         blitzRemaining = max(0, Int(ceil(deadline.timeIntervalSinceNow)))
         if blitzRemaining <= 10 && blitzRemaining > 0 && !blitzWarnedTenSeconds {
             blitzWarnedTenSeconds = true
