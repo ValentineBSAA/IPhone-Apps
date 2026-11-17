@@ -1,5 +1,13 @@
 # Berry Block Blast change history
 
+## v0.5.6 (build 3) · iPhone 14 Pro iOS 16 test-bench compatibility (development)
+- Set project and compiled app minimum to **iOS 16.0**. Keep the existing bundle ID so installed test versions can share application data.
+- Replace all twelve iOS 17-only two-parameter SwiftUI `onChange` handlers with iOS 16-supported single-value observers, keeping their existing actions.
+- Replace the iOS 17-only `defaultScrollAnchor(.center)` in the 24×24 Mega Garden with `ScrollViewReader.scrollTo(anchor: .center)` for iOS 16 scrolling.
+- Preserve all seven game modes, board logic, Berry Boutique, 51 original songs, 16 original sound effects, and all persistent saves.
+- Add dedicated GitHub Actions build/test/unsigned IPA pipeline with deployment-target and audio verification.
+- This is a compatibility test build, **not** verified on physical iOS 16 until installed and tested.
+
 ## v0.5.6 (build 2) · Ultimate Berry Garden update (development)
 - Updated music to all **51 original AAC-LC M4A** files, including 11 menu, 22 gameplay, 11 results and 7 dedicated Blitz themes. Replaced generated SFX with all **16 real original WAV effects**.
 - Added strict byte-for-byte SHA-256 checks of all 67 files at source, .app and IPA stages, with supplied archive catalogs.
