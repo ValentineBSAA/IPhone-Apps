@@ -1,0 +1,122 @@
+name: LAST SEEN — native iOS 16 horror game
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/last-seen-ios16
+    paths:
+      - 'LastSeen/**'
+      - '.github/workflows/last-seen-ios16.yml'
+  pull_request:
+    paths:
+      - 'LastSeen/**'
+      - '.github/workflows/last-seen-ios16.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: last-seen-ios16-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test-package:
+    name: Native iPhone build, simulator tests, unsigned IPA
+    runs-on: macos-15
+    timeout-minutes: 55
+    defaults:
+      run:
+        working-directory: LastSeen
+    steps:
+      - name: Checkout game source
+        uses: actions/checkout@v4
+
+      - name: Show Xcode toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate original App Store icon
+        run: |
+          set -euo pipefail
+          swift Tools/make_icon.swift
+          test -s LastSeenApp/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+
+      - name: Generate iOS 16 Xcode project
+        run: |
+          set -euo pipefail
+          xcodegen generate --spec project.yml
+
+      - name: Build native iPhone release app (no code signing)
+        run: |
+          set -euo pipefail
+          xcodebuild -project LastSeen.xcodeproj \
+            -scheme LastSeen \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Verify exact minimum iOS version and bundled app icon
+        run: |
+          set -euo pipefail
+          APP="build/Build/Products/Release-iphoneos/LastSeen.app"
+          test -d "$APP"
+          MIN_OS="$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$APP/Info.plist")"
+          echo "Compiled MinimumOSVersion: $MIN_OS"
+          test "$MIN_OS" = "16.0"
+          test -f "$APP/Assets.car"
+
+      - name: Run full story-engine tests on iPhone simulator
+        timeout-minutes: 20
+        run: |
+          set -euo pipefail
+          SIMULATOR_ID="$(xcrun simctl list devices available -j | python3 -c 'import json,sys;d=json.load(sys.stdin);print(next((x["udid"] for devices in d["devices"].values() for x in devices if x.get("isAvailable") and x.get("name","").startswith("iPhone")),""))')"
+          if [ -z "$SIMULATOR_ID" ]; then
+            echo "::error::iPhone simulator unavailable. Tests must not be silently skipped."
+            exit 1
+          fi
+          xcodebuild -project LastSeen.xcodeproj \
+            -scheme LastSeen \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath build-simulator \
+            -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=NO \
+            test
+
+      - name: Package unsigned iPhone IPA
+        run: |
+          set -euo pipefail
+          mkdir -p dist/Payload
+          cp -R build/Build/Products/Release-iphoneos/LastSeen.app dist/Payload/
+          (
+            cd dist
+            zip -qr Last-Seen-v1.0.0-iOS16-unsigned.ipa Payload
+          )
+          test -s dist/Last-Seen-v1.0.0-iOS16-unsigned.ipa
+          unzip -l dist/Last-Seen-v1.0.0-iOS16-unsigned.ipa | grep -q 'Payload/LastSeen.app/Info.plist'
+
+      - name: Publish unsigned IPA for user-side installation
+        uses: actions/upload-artifact@v4
+        with:
+          name: LAST-SEEN-v1.0.0-iOS16-unsigned
+          path: LastSeen/dist/Last-Seen-v1.0.0-iOS16-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Keep simulator test results for debugging
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LAST-SEEN-simulator-results
+          path: LastSeen/build-simulator/Logs/Test/*.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
