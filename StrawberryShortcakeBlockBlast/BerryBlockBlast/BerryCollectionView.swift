@@ -156,7 +156,7 @@ struct BerryCollectionView: View {
                             .font(.caption.bold()).buttonStyle(.borderedProminent)
                             .tint(equipped ? BerryStyle.leaf : BerryStyle.strawberry)
                     } else {
-                        Label("Boutique • \(skin.id == "berry-sparkle" ? "100" : skin.category == "frames" ? "75" : "90") 🍓", systemImage: "lock.fill")
+                        Label("Boutique • \(skinPrice(skin.id)) 🍓", systemImage: "lock.fill")
                             .font(.caption2).foregroundStyle(.secondary)
                     }
                 }
@@ -205,6 +205,17 @@ struct BerryCollectionView: View {
                 .padding(10)
                 .background(.white, in: RoundedRectangle(cornerRadius: 14))
             }
+        }
+    }
+    private func skinPrice(_ id: String) -> Int {
+        switch id {
+        case "raspberry-ruby", "lemon-glaze": return 110
+        case "chocolate-truffle": return 120
+        case "mint-frost": return 125
+        case "blackberry-jam": return 145
+        case "berry-sparkle": return 100
+        case "rose-border", "mint-border": return 75
+        default: return 90
         }
     }
     private func active(_ skin: Skin) -> Bool {
