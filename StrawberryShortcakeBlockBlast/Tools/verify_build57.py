@@ -22,7 +22,7 @@ for asset in assets:
     assert width >= 100 and height >= 100,(asset,width,height)
 project=(root/'project.yml').read_text()
 assert 'MARKETING_VERSION: "0.5.8"' in project
-assert 'CURRENT_PROJECT_VERSION: "1"' in project
+assert 'CURRENT_PROJECT_VERSION: "2"' in project
 assert 'IPHONEOS_DEPLOYMENT_TARGET: "16.0"' in project
 text=(root/'BerryBlockBlast/BerryGameView.swift').read_text()
 assert 'let target = candidates.first' in text
