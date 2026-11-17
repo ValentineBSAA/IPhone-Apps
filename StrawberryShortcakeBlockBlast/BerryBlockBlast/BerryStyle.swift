@@ -61,6 +61,11 @@ struct BerryTile: View {
                     Color(red: 0.83, green: 0.56, blue: 0.24),
                     Color(red: 0.88, green: 0.66, blue: 0.41)][index]
         }
+        if skin == "raspberry-blocks" { return Color(red: 0.82, green: 0.07, blue: 0.28) }
+        if skin == "lemon-blocks" { return Color(red: 0.97, green: 0.72, blue: 0.10) }
+        if skin == "chocolate-blocks" { return Color(red: 0.44, green: 0.18, blue: 0.12) }
+        if skin == "mint-blocks" { return Color(red: 0.18, green: 0.77, blue: 0.55) }
+        if skin == "blackberry-blocks" { return Color(red: 0.35, green: 0.06, blue: 0.44) }
         switch mode {
         case .endless, .classic: return BerryStyle.color(for: tint)
         case .story: return [Color(red: 0.92, green: 0.31, blue: 0.57), .purple, .orange, .pink, .mint, .indigo][index]
@@ -122,7 +127,7 @@ struct BerryTile: View {
                 }
                 .shadow(color: palette.opacity(preview ? 0.10 : 0.24), radius: 2, y: 2)
                 .overlay {
-                    if let asset = artName {
+                    if let asset = artName, UIImage(named: asset) != nil {
                         Image(asset)
                             .resizable()
                             .interpolation(.medium)
