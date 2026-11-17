@@ -465,10 +465,10 @@ struct BerryGameView: View {
                         Text(showVictory ? "🍰 ✨ 🍓" : confirmRestart ? "🌱 🍓 🌱" : "🍓 🌸 🧺")
                             .font(.system(size: 38))
                         Text(showVictory ? "Strawberry Spectacular!" : confirmRestart ? "Plant a Fresh Garden?" :
-                             mode == .challenge ? "Time's Up, Berry Racer!" : "No More Moves!")
+                             isTimedMode && blitzRemaining == 0 ? "Time's Up, Berry Racer!" : "No More Moves!")
                             .font(.system(size: 25, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry).multilineTextAlignment(.center)
-                        Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "A fresh board starts this chapter again. Your records and earned berries stay safe." : mode == .challenge ? "Your timer reached zero. See your results below!" : "None of your remaining pieces can fit. Try a Shuffle to continue, or start this chapter again.")
+                        Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "A fresh board starts this chapter again. Your records and earned berries stay safe." : isTimedMode && blitzRemaining == 0 ? "Your timer reached zero. See your results below!" : "None of your remaining pieces can fit. Try a Shuffle to continue, or start this chapter again.")
                             .font(.system(size: 15, weight: .medium, design: .rounded))
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
                         if !confirmRestart {
@@ -489,14 +489,14 @@ struct BerryGameView: View {
                             }
                             .buttonStyle(.borderedProminent).tint(BerryStyle.leaf).controlSize(.large)
                         }
-                        Button(showVictory ? "🍓 Another Sweet Adventure" : mode == .challenge ? "⚡ Race Again" : "🍓 Plant a Fresh Garden") {
+                        Button(showVictory ? "🍓 Another Sweet Adventure" : isTimedMode ? "⚡ Race Again" : "🍓 Plant a Fresh Garden") {
                             showVictory = false; showGameOver = false; confirmRestart = false
                             completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil; hintPreview = nil
-                            blitzRemaining = blitzVariant.seconds; blitzRunning = mode == .challenge
-                            blitzDeadline = mode == .challenge ?
-                                Date().addingTimeInterval(TimeInterval(blitzVariant.seconds)) : nil
+                            blitzRemaining = timedDuration; blitzRunning = isTimedMode
+                            blitzDeadline = isTimedMode ?
+                                Date().addingTimeInterval(TimeInterval(timedDuration)) : nil
                             blitzFinished = false; blitzWarnedTenSeconds = false; blitzPlayedFinalTick = false
-                            if mode == .challenge && sound { BerryAudio.shared.play(.blitzStart) }
+                            if isTimedMode && sound { BerryAudio.shared.play(.blitzStart) }
                             celebratedRecordThisRun = false; scoreRecordAtEntry = session.bestScore
                             showNewBestBanner = false
                         }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
