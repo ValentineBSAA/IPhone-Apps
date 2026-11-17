@@ -26,8 +26,8 @@ enum BerryMode: String, CaseIterable, Identifiable {
         case .story: "Earn stars, complete chapters, unlock the next!"
         case .daily: "One fresh strawberry challenge every day."
         case .cozy: "Take it easy in a cozy garden."
-        case .challenge: "One-minute or two-minute score races. The clock is ticking!"
-        case .superHard: "A 12 × 12 garden with bigger pieces. Every move counts!"
+        case .challenge: "Choose a one, two, five or ten-minute score race!"
+        case .superHard: "A three-minute 12 × 12 nightmare with bigger pieces!"
         case .classic: "Pure 8 × 8 puzzle play with a glowing high score!"
         }
     }
@@ -40,6 +40,7 @@ struct BerryHomeView: View {
     @State private var showSchool = false
     @State private var showCollection = false
     @State private var showHomeShop = false
+    @State private var showCottageBuilder = false
     @State private var showBoutiqueAfterCollection = false
     @StateObject private var villageSession = BerryGameSession()
     @AppStorage("berryblockblast.quoteIndex.v057") private var quoteIndex = 0
@@ -77,7 +78,7 @@ struct BerryHomeView: View {
             } else {
                 GeometryReader { geo in
                     ScrollView {
-                        VStack(spacing: 12) {
+                        LazyVStack(spacing: 12) {
                             HStack {
                                 Text(version).font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.strawberry).padding(10).background(.white.opacity(0.9), in: Capsule())
                                 Spacer()
@@ -161,13 +162,13 @@ struct BerryHomeView: View {
                             }
                             Button {
                                 audio.play(.menuSelect)
-                                showHomeShop = true
+                                showCottageBuilder = true
                             } label: {
                                 HStack(spacing: 12) {
-                                    BerryIcon(name: "BerryMarket", size: 53)
+                                    BerryIcon(name: "CottageDecorations", size: 53)
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("Berry Boutique").font(.headline)
-                                        Text("Shop, skins, helpers & cottage upgrades")
+                                        Text("My Strawberry Cottage").font(.headline)
+                                        Text("Place decorations and build your berry garden")
                                             .font(.caption).foregroundStyle(.secondary)
                                     }
                                     Spacer()
@@ -233,20 +234,18 @@ struct BerryHomeView: View {
                                 .background(.white.opacity(0.91), in: RoundedRectangle(cornerRadius: 18))
                             }
                             .buttonStyle(.plain)
-                            Button {
-                                quoteIndex = (quoteIndex + 1) % gardenQuotes.count
-                            } label: {
-                                HStack(spacing: 5) {
-                                    Image(systemName: "quote.bubble.fill")
-                                    Text(gardenQuotes[quoteIndex % gardenQuotes.count])
-                                        .multilineTextAlignment(.center)
-                                    Image(systemName: "arrow.clockwise")
-                                }
-                                .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                .foregroundStyle(BerryStyle.chocolate.opacity(0.8))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                            }.buttonStyle(.plain).accessibilityLabel("Rotate strawberry quote")
+                            HStack(spacing: 6) {
+                                Image(systemName: "quote.bubble.fill")
+                                Text(gardenQuotes[quoteIndex % gardenQuotes.count])
+                                    .multilineTextAlignment(.center)
+                                    .id(quoteIndex)
+                                    .transition(.opacity)
+                            }
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(BerryStyle.strawberry)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .accessibilityLabel(gardenQuotes[quoteIndex % gardenQuotes.count])
                         }
                         .padding(22)
                         .frame(maxWidth: 530)
@@ -272,6 +271,9 @@ struct BerryHomeView: View {
                     Button("Done") { showCollection = false }
                 }}
             }
+        }
+        .sheet(isPresented: $showCottageBuilder) {
+            BerryCottageBuilderView(session: villageSession)
         }
         .sheet(isPresented: $showHomeShop, onDismiss: {
             villageSession.refreshEconomyFromDisk()
@@ -524,6 +526,12 @@ struct BerryHomeView: View {
             audio.setMusic(music)
             savedEndlessSizes = Set([8, 12, 24].filter { BerryGameSession.hasResumableEndless(side: $0) })
             villageSession.refreshEconomyFromDisk()
+        }
+        .onReceive(Timer.publish(every: 18, on: .main, in: .common).autoconnect()) { _ in
+            guard activeMode == nil && UIApplication.shared.applicationState == .active else { return }
+            withAnimation(ProcessInfo.processInfo.isLowPowerModeEnabled ? nil : .easeInOut(duration: 0.25)) {
+                quoteIndex = (quoteIndex + 1) % gardenQuotes.count
+            }
         }
         .onChange(of: activeMode) { selected in
             if selected == nil {
