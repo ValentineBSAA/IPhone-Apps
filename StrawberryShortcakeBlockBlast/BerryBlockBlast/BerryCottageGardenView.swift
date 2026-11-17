@@ -93,7 +93,7 @@ struct BerryCottageGardenView: View {
                                                 .padding(4)
                                         }
                                     }
-                                    .position(x: w * p.x, y: h * p.y)
+                                    .position(x: w * CGFloat(p.x), y: h * CGFloat(p.y))
                                     .onTapGesture { selectedIndex = index }
                                     .gesture(DragGesture(minimumDistance: 4)
                                         .onChanged { value in
