@@ -6,6 +6,7 @@ on:
     paths:
       - 'BuildPayload/Berry-0.5.7-patch.zip'
       - '.github/workflows/berry-057-bootstrap.yml'
+      - 'StrawberryShortcakeBlockBlast/**'
   workflow_dispatch:
 permissions:
   contents: write
@@ -21,6 +22,7 @@ jobs:
           persist-credentials: true
 
       - name: Import the 0.5.7 source and themed icons
+        if: ${{ hashFiles('BuildPayload/Berry-0.5.7-patch.zip') != '' }}
         shell: bash
         run: |
           set -euo pipefail
