@@ -30,7 +30,6 @@ final class BrowserModel: ObservableObject {
         webView = WKWebView(frame: .zero, configuration: configuration)
         webView.allowsBackForwardNavigationGestures = true
         webView.scrollView.contentInsetAdjustmentBehavior = .never
-        webView.isInspectable = false
     }
 
     func homePage() { webView.load(URLRequest(url: Self.home)) }
