@@ -256,7 +256,7 @@ struct BerryHomeView: View {
                 .background(LinearGradient(colors: [BerryStyle.cream, Color(red: 1, green: 0.85, blue: 0.90)], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
                 .navigationTitle("🍓 Berry Settings")
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showSettings = false } } }
-            }.presentationDetents([.medium, .large])
+            }.presentationDetents([.large]).presentationDragIndicator(.visible)
         }
         .onAppear { BerryAudio.shared.setMusicVolume(Float(musicVolume)); BerryAudio.shared.setEffectVolume(Float(effectVolume)); BerryAudio.shared.setMusic(music) }
         .preferredColorScheme(.light)

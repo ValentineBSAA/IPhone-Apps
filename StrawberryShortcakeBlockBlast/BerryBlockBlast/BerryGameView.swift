@@ -65,7 +65,7 @@ private struct BerryBoard: View {
         .frame(width: size, height: size, alignment: .topLeading)
         .background {
             GeometryReader { geo in
-                Color.clear.preference(key: BerryBoardRect.self, value: geo.frame(in: .named("berry-screen")))
+                Color.clear.preference(key: BerryBoardRect.self, value: geo.frame(in: .global))
             }
         }
         .accessibilityElement(children: .ignore)
@@ -156,7 +156,7 @@ struct BerryGameView: View {
                     scoreBar
                     HStack(spacing: 6) {
                         Image(systemName: mode == .challenge ? "bolt.fill" : mode == .cozy ? "leaf.fill" : "sparkles")
-                        Text(session.lastMessage ?? objective)
+                        Text((mode == .endless || mode == .cozy) ? (session.lastMessage ?? objective) : objective)
                             .lineLimit(1).minimumScaleFactor(0.65)
                         Image(systemName: "sparkles")
                     }
@@ -214,18 +214,37 @@ struct BerryGameView: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: compact ? 65 : 76)
                             .contentShape(Rectangle())
-                            .onTapGesture { if !isPaused && piece != nil { selectedSlot = selectedSlot == slot ? nil : slot } }
+                            // One recognizer handles taps and drag releases so they cannot compete.
                             .gesture(
-                                DragGesture(minimumDistance: 2, coordinateSpace: .named("berry-screen"))
-                                    .onChanged { value in updateDrag(slot: slot, finger: value.location, cell: cell) }
+                                DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                                    .onChanged { value in
+                                        let distance2 = value.translation.width * value.translation.width
+                                            + value.translation.height * value.translation.height
+                                        if distance2 >= 64 {
+                                            updateDrag(slot: slot, finger: value.location)
+                                        }
+                                    }
                                     .onEnded { value in
-                                        // Commit from the final gesture position directly. @State writes
-                                        // are not guaranteed to be visible until the next SwiftUI update.
-                                        let finalDrop = placementForDrag(slot: slot, finger: value.location, cell: cell)
-                                        finishDrag(finalDrop)
+                                        let distance2 = value.translation.width * value.translation.width
+                                            + value.translation.height * value.translation.height
+                                        if distance2 < 64 {
+                                            drag = nil
+                                            if canMakeMove && piece != nil {
+                                                selectedSlot = selectedSlot == slot ? nil : slot
+                                            }
+                                        } else {
+                                            // Use release coordinates; don't rely on previous @State.
+                                            finishDrag(placementForDrag(slot: slot, finger: value.location))
+                                        }
                                     }
                             )
                             .accessibilityLabel("Berry piece \(slot + 1)")
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityAction {
+                                if canMakeMove && piece != nil {
+                                    selectedSlot = selectedSlot == slot ? nil : slot
+                                }
+                            }
                         }
                     }
                     toolBar
@@ -246,7 +265,6 @@ struct BerryGameView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
             .frame(width: width, height: height)
-            .coordinateSpace(name: "berry-screen")
             .onPreferenceChange(BerryBoardRect.self) { boardRect = $0 }
         }
         .preferredColorScheme(.light)
@@ -472,34 +490,40 @@ struct BerryGameView: View {
         }.disabled(!enabled && count == nil)
     }
 
-    // DragGesture locations and boardRect are both measured in berry-screen coordinates.
-    // Keep the block centered on the touch: the previous 42pt vertical shift
-    // rejected valid drops near the top and made the preview disagree with release.
-    private func placementForDrag(slot: Int, finger: CGPoint, cell: CGFloat) -> BerryDragState? {
+    // GeometryReader and DragGesture both work in global iOS coordinates.
+    // The position is calculated at release from the measured board dimensions.
+    private func placementForDrag(slot: Int, finger: CGPoint) -> BerryDragState? {
         guard canMakeMove, session.engine.tray.indices.contains(slot),
-              let piece = session.engine.tray[slot], boardRect.width > 0 else { return nil }
-        let step = cell + 3
-        let localX = finger.x - boardRect.minX
-        let localY = finger.y - boardRect.minY
-        let minCol = piece.points.map(\.col).min() ?? 0
-        let maxCol = piece.points.map(\.col).max() ?? 0
-        let minRow = piece.points.map(\.row).min() ?? 0
-        let maxRow = piece.points.map(\.row).max() ?? 0
-        let col = Int(floor(localX / step - CGFloat(minCol + maxCol + 1) / 2 + 0.5))
-        let row = Int(floor(localY / step - CGFloat(minRow + maxRow + 1) / 2 + 0.5))
-        let touchingBoard = boardRect.insetBy(dx: -max(12, step * 0.6), dy: -max(12, step * 0.6)).contains(finger)
-        return BerryDragState(slot: slot, piece: piece, row: row, col: col,
-                              allowed: touchingBoard && session.engine.canPlace(piece, row: row, col: col))
+              let piece = session.engine.tray[slot],
+              let target = BerryDropGeometry.target(
+                for: finger, board: boardRect, piece: piece, side: session.engine.side
+              ) else { return nil }
+        return BerryDragState(
+            slot: slot, piece: piece, row: target.row, col: target.col,
+            allowed: session.engine.canPlace(piece, row: target.row, col: target.col)
+        )
     }
 
-    private func updateDrag(slot: Int, finger: CGPoint, cell: CGFloat) {
-        drag = placementForDrag(slot: slot, finger: finger, cell: cell)
+    private func updateDrag(slot: Int, finger: CGPoint) {
+        drag = placementForDrag(slot: slot, finger: finger)
     }
 
     private func finishDrag(_ finalDrop: BerryDragState?) {
         defer { drag = nil }
-        guard canMakeMove, let finalDrop else { refreshBlitzClock(); return }
-        guard finalDrop.allowed else { warningFeedback(); return }
+        guard canMakeMove, let finalDrop else {
+            #if DEBUG
+            print("[BerryDrag] Release had no board target (boardRect=\(boardRect)).")
+            #endif
+            refreshBlitzClock()
+            return
+        }
+        guard finalDrop.allowed else {
+            #if DEBUG
+            print("[BerryDrag] Invalid placement: row=\(finalDrop.row), col=\(finalDrop.col).")
+            #endif
+            warningFeedback()
+            return
+        }
         if session.drop(slot: finalDrop.slot, row: finalDrop.row, col: finalDrop.col) {
             selectedSlot = nil
             successFeedback()
@@ -671,10 +695,13 @@ struct BerryGameView: View {
             }
             .font(.system(size: 15, weight: .medium, design: .rounded))
             .foregroundStyle(BerryStyle.chocolate)
-            .padding(24)
+            .padding(.horizontal, 24)
+            .padding(.top, 30)
+            .padding(.bottom, 52)
             .frame(maxWidth: .infinity)
         }
         .background(LinearGradient(colors: [BerryStyle.cream, Color(red: 1, green: 0.85, blue: 0.90), Color(red: 0.91, green: 0.97, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing).ignoresSafeArea())
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
     }
 }
