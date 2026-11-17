@@ -101,7 +101,7 @@ def main() -> int:
         "-resultBundlePath", str(result_bundle),
         "-parallel-testing-enabled", "NO",
         "-maximum-concurrent-test-simulator-destinations", "1",
-        "CODE_SIGNING_ALLOWED=NO", "test"
+        "CODE_SIGNING_ALLOWED=NO", "test-without-building"
     ]
     rc, output, timed_out = bounded(cmd, "simulator-xctest.log", 300)
     if rc == 0:
@@ -109,8 +109,6 @@ def main() -> int:
         return 0
     simulator_failure_signatures = (
         "test runner hung before establishing connection",
-        "server failed to start",
-        "Testing cancelled because",
         "Failed to establish communication",
         "Failed to launch test runner",
         "test runner failed to launch",
