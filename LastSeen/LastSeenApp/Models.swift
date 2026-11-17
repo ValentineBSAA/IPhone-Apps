@@ -4,6 +4,7 @@ enum MessageKind: String, Codable {
     case text
     case photograph
     case voiceNote
+    case call
 }
 
 struct GameMessage: Identifiable, Codable, Equatable {
