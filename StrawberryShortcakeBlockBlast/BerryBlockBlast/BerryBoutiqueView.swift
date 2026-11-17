@@ -48,9 +48,9 @@ struct BerryBoutiqueView: View {
         var symbol: String {
             switch self {
             case .blocks: return "square.grid.3x3.fill"
-            case .frames: return "sparkles.rectangle.stack.fill"
+            case .frames: return "sparkles"
             case .helpers: return "wand.and.stars"
-            case .cottage: return "house.lodge.fill"
+            case .cottage: return "house.fill"
             case .inventory: return "shippingbox.fill"
             }
         }
