@@ -26,3 +26,10 @@ It also runs XCTest on an available iPhone simulator, before compiling an unsign
 - Tap piece then board; test sound and haptic feedback.
 - Open every gameplay sheet and scroll to its bottom button.
 - Test save/resume and Nightmare's separate game, with no progress regression.
+
+## Build pipeline consistency
+- Codemagic is the primary unsigned IPA build workflow, started manually.
+- The optional root GitHub Actions workflow is now manual-only, no push trigger.
+- Both workflows validate the exact two PNG artwork hashes before compiling.
+- The duplicate nonfunctional workflow nested under StrawberryShortcakeBlockBlast/.github was deleted.
+- No fallback icon generator is permitted to silently replace the approved icon.
