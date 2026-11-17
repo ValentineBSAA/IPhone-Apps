@@ -20,6 +20,11 @@ struct LastSeenApp: App {
                     }
             }
             .environmentObject(game)
+            .sheet(item: $game.presentedCall) { call in
+                FictionalCallView(message: call)
+                    .environmentObject(game)
+                    .presentationDetents([.large])
+            }
             .tint(Night.accent)
             .preferredColorScheme(.dark)
             .onAppear {
