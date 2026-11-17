@@ -26,7 +26,7 @@ enum BerryMode: String, CaseIterable, Identifiable {
         case .story: "Earn stars, complete chapters, unlock the next!"
         case .daily: "One fresh strawberry challenge every day."
         case .cozy: "Take it easy in a cozy garden."
-        case .challenge: "Race to a sweet high-score target."
+        case .challenge: "One-minute or two-minute score races. The clock is ticking!"
         case .superHard: "A 12 × 12 garden with bigger pieces. Every move counts!"
         case .classic: "Pure 8 × 8 puzzle play with a glowing high score!"
         }
@@ -39,6 +39,12 @@ struct BerryHomeView: View {
     @State private var showMore = false
     @State private var showSchool = false
     @State private var showCollection = false
+    @State private var showJukebox = false
+    @State private var showBoardPicker = false
+    @State private var showBlitzPicker = false
+    @State private var classicSaved = BerryGameSession.hasResumableClassic
+    @AppStorage("berryblockblast.endless.boardSize.v056b2") private var endlessSize = 8
+    @AppStorage("berryblockblast.blitz.variant.v056b2") private var selectedBlitz = BerryBlitzVariant.rush120.rawValue
     @ObservedObject private var audio = BerryAudio.shared
     @AppStorage("berryblockblast.lifetime-lines") private var lifetimeLines = 0
     @AppStorage("berryblockblast.strawberry-unlocked") private var strawberryUnlocked = false
@@ -74,6 +80,7 @@ struct BerryHomeView: View {
                             Text("What shall we bake up today? 🍰").font(.system(size: 19, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.chocolate).padding(.vertical, 8)
                             Button {
                                 BerryAudio.shared.setMusic(music)
+                                audio.play(.gameStart)
                                 activeMode = .classic
                             } label: {
                                 HStack(spacing: 13) {
@@ -88,9 +95,15 @@ struct BerryHomeView: View {
                                         Text("The pure 8 × 8 block puzzle. No timer or power-ups.")
                                             .font(.system(size: 12, weight: .medium, design: .rounded))
                                             .fixedSize(horizontal: false, vertical: true)
-                                        Text("✨ BIG BRIGHT HIGH SCORE")
-                                            .font(.system(size: 10, weight: .heavy, design: .rounded))
-                                            .foregroundStyle(BerryStyle.strawberry)
+                                        if classicSaved {
+                                            Label("🍓 SAVED GARDEN • TAP TO CONTINUE", systemImage: "bookmark.fill")
+                                                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                                                .foregroundStyle(BerryStyle.leaf)
+                                        } else {
+                                            Text("✨ BIG BRIGHT HIGH SCORE")
+                                                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                                                .foregroundStyle(BerryStyle.strawberry)
+                                        }
                                     }
                                     Spacer(minLength: 0)
                                     Image(systemName: "chevron.right")
@@ -107,7 +120,11 @@ struct BerryHomeView: View {
                             .buttonStyle(.plain)
                             .accessibilityLabel("Play Berry Classic, the endless 8 by 8 block puzzle")
                             ForEach(Array(BerryMode.allCases.prefix(3))) { mode in
-                                Button { BerryAudio.shared.setMusic(music); activeMode = mode } label: {
+                                Button {
+                                    audio.setMusic(music)
+                                    if mode == .endless { showBoardPicker = true }
+                                    else { audio.play(.gameStart); activeMode = mode }
+                                } label: {
                                     HStack(spacing: 14) {
                                         Image(systemName: mode.icon).font(.system(size: 23, weight: .bold)).foregroundStyle(.white).frame(width: 53, height: 53).background(mode == .story ? BerryStyle.leaf : BerryStyle.strawberry, in: RoundedRectangle(cornerRadius: 16))
                                         VStack(alignment: .leading, spacing: 4) {
@@ -124,18 +141,41 @@ struct BerryHomeView: View {
                                     .overlay(RoundedRectangle(cornerRadius: 21).stroke(.white, lineWidth: 2))
                                 }.buttonStyle(.plain)
                             }
-                            Button("🧺 More Adventures  •  Strawberry Nightmare") { showMore = true }
+                            Button("🧺 More Adventures  •  Blitz, Cozy & Nightmare") {
+                                audio.play(.menuSelect)
+                                showMore = true
+                            }
                                 .font(.title3.bold()).foregroundStyle(BerryStyle.strawberry)
                                 .frame(maxWidth: .infinity).padding(18).background(.white, in: RoundedRectangle(cornerRadius: 20))
                             Button("📖 Berry Collection") { showCollection = true }
                                 .font(.system(size: 14, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.strawberry)
                             Button("🍓 Strawberry School • Learn to Play") { showSchool = true }
                                 .font(.system(size: 14, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.leaf)
-                            HStack {
-                                Text(music ? "🎶 Music box playing" : "🎶 Music box paused")
-                                Spacer()
-                                Button(music ? "Pause" : "Play") { music.toggle(); BerryAudio.shared.setMusic(music) }.fontWeight(.bold)
-                            }.font(.system(size: 12, design: .rounded)).foregroundStyle(BerryStyle.strawberry).padding(12).background(.white.opacity(0.85), in: RoundedRectangle(cornerRadius: 14))
+                            Button {
+                                audio.play(.menuSelect)
+                                showJukebox = true
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "music.note.list")
+                                        .font(.system(size: 20, weight: .bold))
+                                        .foregroundStyle(.white)
+                                        .frame(width: 41, height: 41)
+                                        .background(BerryStyle.strawberry, in: RoundedRectangle(cornerRadius: 12))
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text("🎶 Strawberry Jukebox")
+                                            .font(.system(size: 15, weight: .black, design: .rounded))
+                                        Text(music ? audio.currentTrackName : "Music paused")
+                                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                                            .lineLimit(1)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                }
+                                .foregroundStyle(BerryStyle.chocolate)
+                                .padding(12)
+                                .background(.white.opacity(0.91), in: RoundedRectangle(cornerRadius: 18))
+                            }
+                            .buttonStyle(.plain)
                             Text("🍓 No ads • Offline • Just a little sweetness 🍓").font(.system(size: 11, weight: .medium, design: .rounded)).foregroundStyle(BerryStyle.chocolate.opacity(0.75)).padding(.top, 10)
                         }
                         .padding(22)
@@ -174,14 +214,18 @@ struct BerryHomeView: View {
                         ForEach(Array(BerryMode.allCases.dropFirst(3).filter { $0 != .classic })) { mode in
                             Button {
                                 showMore = false
-                                activeMode = mode
+                                audio.play(.menuSelect)
+                                if mode == .challenge { showBlitzPicker = true }
+                                else { audio.play(.gameStart); activeMode = mode }
                             } label: {
                                 HStack(spacing: 14) {
                                     Image(systemName: mode.icon)
                                         .font(.system(size: 22, weight: .bold))
                                         .foregroundStyle(.white)
                                         .frame(width: 52, height: 52)
-                                        .background(mode == .superHard ? BerryStyle.chocolate : BerryStyle.strawberry,
+                                        .background(mode == .superHard ? Color(red: 0.52, green: 0.35, blue: 0.73) :
+                                                        mode == .challenge ? Color(red: 0.96, green: 0.58, blue: 0.14) :
+                                                        BerryStyle.leaf,
                                                     in: RoundedRectangle(cornerRadius: 16))
                                     VStack(alignment: .leading, spacing: 5) {
                                         Text(mode.rawValue)
@@ -203,44 +247,133 @@ struct BerryHomeView: View {
                                 .foregroundStyle(BerryStyle.chocolate)
                                 .padding(14)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 22))
-                                .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white, lineWidth: 2))
+                                .background(
+                                    LinearGradient(colors: [.white,
+                                        mode == .challenge ? Color(red: 1, green: 0.91, blue: 0.75) :
+                                        mode == .superHard ? Color(red: 0.94, green: 0.86, blue: 1) :
+                                        Color(red: 0.87, green: 0.97, blue: 0.83)],
+                                        startPoint: .topLeading, endPoint: .bottomTrailing),
+                                    in: RoundedRectangle(cornerRadius: 22))
+                                .overlay(RoundedRectangle(cornerRadius: 22)
+                                    .strokeBorder(BerryStyle.strawberry.opacity(0.35), lineWidth: 1.7))
                             }
                             .buttonStyle(.plain)
                         }
-                        BerryMusicSettingsView()
-                        Text("🎼 Your complete 15-song jukebox")
-                            .font(.system(size: 18, weight: .black, design: .rounded))
-                            .foregroundStyle(BerryStyle.strawberry)
-                        Text("Choose a song manually. Automatic rotation resumes when it ends.")
-                            .font(.caption)
-                            .foregroundStyle(BerryStyle.chocolate.opacity(0.7))
-                        ForEach(Array(BerryAudio.trackNames.enumerated()), id: \.offset) { index, title in
-                            Button {
-                                if !music { music = true; audio.setMusic(true) }
-                                audio.selectTrack(index)
-                            } label: {
-                                HStack {
-                                    Text(String(format: "%02d", index + 1) + ". " + title)
-                                        .multilineTextAlignment(.leading)
-                                    Spacer(minLength: 5)
-                                    if audio.currentTrackNumber == index + 1 {
-                                        Image(systemName: "music.note")
-                                            .foregroundStyle(BerryStyle.strawberry)
-                                    }
-                                }
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(BerryStyle.chocolate)
-                            .padding(.vertical, 4)
-                        }
-                        Text("The original AAC recordings are included in the app. No connection is needed.")
-                            .font(.caption).foregroundStyle(.secondary)
+                        Text("🌸 Choose your adventure. The Jukebox has its own home.")
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .foregroundStyle(BerryStyle.chocolate.opacity(0.63))
+                            .multilineTextAlignment(.center)
                     }.padding(22)
                 }.background(BerryStyle.cream.ignoresSafeArea())
                 .navigationTitle("More Adventures")
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showMore = false } } }
             }
+        }
+        .sheet(isPresented: $showJukebox) { BerryJukeboxView() }
+        .sheet(isPresented: $showBoardPicker) {
+            NavigationStack {
+                ScrollView {
+                    VStack(spacing: 15) {
+                        Text("🍓 Choose Your Garden Size")
+                            .font(.system(size: 23, weight: .black, design: .rounded))
+                            .foregroundStyle(BerryStyle.strawberry)
+                        Text("Sweet Endless offers three board sizes. Classic stays the original 8×8 puzzle.")
+                            .font(.subheadline)
+                            .multilineTextAlignment(.center)
+                        ForEach([8,12,24], id: \.self) { side in
+                            Button {
+                                endlessSize = side
+                                showBoardPicker = false
+                                audio.play(.gameStart)
+                                activeMode = .endless
+                            } label: {
+                                HStack(spacing: 16) {
+                                    Image(systemName: side == 24 ? "square.grid.4x3.fill" : "square.grid.3x3.fill")
+                                        .font(.system(size: 26))
+                                        .foregroundStyle(.white)
+                                        .frame(width: 54, height: 54)
+                                        .background(side == 24 ? BerryStyle.chocolate : BerryStyle.strawberry,
+                                                    in: RoundedRectangle(cornerRadius: 15))
+                                    VStack(alignment: .leading, spacing: 5) {
+                                        Text("\(side) × \(side) Garden")
+                                            .font(.system(size: 21, weight: .black, design: .rounded))
+                                        Text(side == 8 ? "Classic-sized, easy to read" :
+                                            side == 12 ? "More planning, bigger puzzles" :
+                                            "Mega Garden • pan the zoomed board")
+                                            .font(.system(size: 12, weight: .medium))
+                                    }
+                                    Spacer()
+                                    if endlessSize == side { Image(systemName: "checkmark.circle.fill") }
+                                }
+                                .foregroundStyle(BerryStyle.chocolate)
+                                .padding(14)
+                                .background(.white, in: RoundedRectangle(cornerRadius: 20))
+                                .overlay(RoundedRectangle(cornerRadius: 20)
+                                    .strokeBorder(BerryStyle.strawberry.opacity(0.42), lineWidth: 1.7))
+                            }.buttonStyle(.plain)
+                        }
+                    }.padding(20)
+                }
+                .background(BerryStyle.cream.ignoresSafeArea())
+                .navigationTitle("Garden Size")
+                .toolbar { ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { showBoardPicker = false }
+                }}
+            }
+            .presentationDetents([.large])
+        }
+        .sheet(isPresented: $showBlitzPicker) {
+            NavigationStack {
+                ScrollView {
+                    VStack(spacing: 15) {
+                        Text("⚡ BERRY BLITZ")
+                            .font(.system(size: 27, weight: .black, design: .rounded))
+                            .foregroundStyle(BerryStyle.strawberry)
+                        Text("Race the clock, not a fixed score. No saving, no power-ups and no extra time.")
+                            .font(.subheadline)
+                            .multilineTextAlignment(.center)
+                        ForEach(BerryBlitzVariant.allCases) { variant in
+                            Button {
+                                selectedBlitz = variant.rawValue
+                                showBlitzPicker = false
+                                audio.play(.gameStart)
+                                activeMode = .challenge
+                            } label: {
+                                HStack(spacing: 13) {
+                                    Image(systemName: variant.icon)
+                                        .font(.system(size: 24))
+                                        .foregroundStyle(.white)
+                                        .frame(width: 52, height: 52)
+                                        .background(BerryStyle.strawberry, in: RoundedRectangle(cornerRadius: 16))
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(variant.rawValue)
+                                            .font(.system(size: 21, weight: .black, design: .rounded))
+                                        Text(variant.subtitle)
+                                            .font(.system(size: 12, weight: .medium))
+                                        Text("🏆 Best: \(UserDefaults.standard.integer(forKey: variant.bestScoreKey))")
+                                            .font(.system(size: 12, weight: .heavy))
+                                            .foregroundStyle(BerryStyle.leaf)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                }
+                                .foregroundStyle(BerryStyle.chocolate)
+                                .padding(14)
+                                .background(.white, in: RoundedRectangle(cornerRadius: 21))
+                                .overlay(RoundedRectangle(cornerRadius: 21)
+                                    .strokeBorder(BerryStyle.strawberry.opacity(0.5), lineWidth: 1.8))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }.padding(20)
+                }
+                .background(BerryStyle.cream.ignoresSafeArea())
+                .navigationTitle("Berry Blitz Challenges")
+                .toolbar { ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { showBlitzPicker = false }
+                }}
+            }
+            .presentationDetents([.large])
         }
         .sheet(isPresented: $showSettings) {
             NavigationStack {
@@ -291,9 +424,11 @@ struct BerryHomeView: View {
             audio.setEffectVolume(Float(effectVolume))
             audio.setScreen(.menu)
             audio.setMusic(music)
+            classicSaved = BerryGameSession.hasResumableClassic
         }
         .onChange(of: activeMode) { _, selected in
-            audio.setScreen(selected == nil ? .menu : .gameplay)
+            if selected == nil { classicSaved = BerryGameSession.hasResumableClassic }
+            audio.setScreen(selected == nil ? .menu : selected == .challenge ? .blitz : .gameplay)
         }
         .preferredColorScheme(.light)
         .statusBarHidden()
