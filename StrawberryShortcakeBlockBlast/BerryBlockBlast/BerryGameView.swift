@@ -394,32 +394,32 @@ struct BerryGameView: View {
             // iOS screenshots and banners can temporarily mark the app inactive.
             // Pause overlays appear only when Pause was pressed, not on screenshots.
             if phase == .background { drag = nil; selectedSlot = nil }
-            if phase == .active && mode == .challenge { refreshBlitzClock() }
+            if phase == .active && isTimedMode { refreshBlitzClock() }
         }
-        .onReceive(Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()) { _ in
-            if mode == .challenge { refreshBlitzClock() }
+        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
+            if isTimedMode && scenePhase == .active { refreshBlitzClock() }
         }
         .onChange(of: session.gameOver) { ended in
-            showGameOver = !showVictory && (ended || (mode == .challenge && !blitzRunning && blitzRemaining == 0))
-            if ended && sound && mode != .challenge { BerryAudio.shared.play(.gameOver) }
+            showGameOver = !showVictory && (ended || (isTimedMode && !blitzRunning && blitzRemaining == 0))
+            if ended && sound && !isTimedMode { BerryAudio.shared.play(.gameOver) }
         }
         .onAppear {
-            BerryAudio.shared.setScreen(mode == .challenge ? .blitz : .gameplay)
+            BerryAudio.shared.setScreen(isTimedMode ? .blitz : .gameplay)
             BerryAudio.shared.setMusic(music)
             session.selectMode(mode)
             scoreRecordAtEntry = max(session.bestScore, session.engine.score)
             celebratedRecordThisRun = false
             showNewBestBanner = false
-            blitzRunning = mode == .challenge
+            blitzRunning = isTimedMode
             blitzFinished = false
             blitzWarnedTenSeconds = false
             blitzPlayedFinalTick = false
-            if mode == .challenge {
-                blitzRemaining = blitzVariant.seconds
-                blitzDeadline = Date().addingTimeInterval(TimeInterval(blitzVariant.seconds))
+            if isTimedMode {
+                blitzRemaining = timedDuration
+                blitzDeadline = Date().addingTimeInterval(TimeInterval(timedDuration))
                 if sound { BerryAudio.shared.play(.blitzStart) }
             }
-            showGameOver = session.gameOver || (mode == .challenge && blitzRemaining == 0)
+            showGameOver = session.gameOver || (isTimedMode && blitzRemaining == 0)
             if mode == .daily && dailyCompleted == BerryGameSession.dailyDateKey() { showVictory = session.engine.score >= goal }
             if !welcomed { showWelcome = true }
         }
@@ -428,9 +428,9 @@ struct BerryGameView: View {
             celebrateNewRecordIfNeeded(score)
         }
         .onChange(of: session.engine.totalLines) { _ in checkObjective() }
-        .onChange(of: showSettings) { _ in if mode == .challenge { refreshBlitzClock() } }
+        .onChange(of: showSettings) { _ in if isTimedMode { refreshBlitzClock() } }
         .onChange(of: showVictory) { victory in
-            BerryAudio.shared.setScreen(victory ? .results : (mode == .challenge ? .blitz : .gameplay))
+            BerryAudio.shared.setScreen(victory ? .results : (isTimedMode ? .blitz : .gameplay))
             if victory && sound { BerryAudio.shared.play(.victory) }
         }
         .overlay {
@@ -607,7 +607,7 @@ struct BerryGameView: View {
 
     private var toolBar: some View {
         HStack(spacing: 7) {
-            if mode != .classic && mode != .challenge {
+            if mode != .classic && !isTimedMode {
             toolButton("Undo", icon: "UndoIcon", count: session.undos, enabled: session.canUndo) {
                 if session.canUndo {
                     let revertedLines = session.undo()
@@ -816,7 +816,7 @@ struct BerryGameView: View {
     }
 
     private func refreshBlitzClock() {
-        guard mode == .challenge, blitzRunning, let deadline = blitzDeadline,
+        guard isTimedMode, blitzRunning, let deadline = blitzDeadline,
               !showVictory else { return }
         blitzRemaining = max(0, Int(ceil(deadline.timeIntervalSinceNow)))
         if blitzRemaining <= 10 && blitzRemaining > 0 && !blitzWarnedTenSeconds {
@@ -839,7 +839,7 @@ struct BerryGameView: View {
     }
     private func checkObjective() {
         guard !showVictory, !showGameOver else { return }
-        if mode == .challenge {
+        if isTimedMode {
             guard let deadline = blitzDeadline, deadline > Date() else {
                 refreshBlitzClock()
                 return
