@@ -20,6 +20,11 @@ struct BerryCollectionView: View {
     private let skins = [
         Skin(id: "default", title: "Strawberry Candy", category: "blocks", detail: "Your classic berry pieces"),
         Skin(id: "blueberry-blocks", title: "Blueberry Velvet", category: "blocks", detail: "Deep blue and violet jewels"),
+        Skin(id: "raspberry-ruby", title: "Raspberry Ruby", category: "blocks", detail: "Rich ruby raspberry jewels • Boutique 110 🍓"),
+        Skin(id: "lemon-glaze", title: "Lemon Glaze", category: "blocks", detail: "Bright citrus candy • Boutique 110 🍓"),
+        Skin(id: "chocolate-truffle", title: "Chocolate Truffle", category: "blocks", detail: "Drizzled cocoa • Boutique 120 🍓"),
+        Skin(id: "mint-frost", title: "Mint Frost", category: "blocks", detail: "Cool green mint • Boutique 125 🍓"),
+        Skin(id: "blackberry-jam", title: "Blackberry Jam", category: "blocks", detail: "Deep purple jelly • Boutique 145 🍓"),
         Skin(id: "vanilla-blocks", title: "Vanilla Cream", category: "blocks", detail: "Golden honey and whipped cream"),
         Skin(id: "rose-border", title: "Rose Petal Frame", category: "frames", detail: "Raspberry-pink board edging"),
         Skin(id: "mint-border", title: "Mint Garden Frame", category: "frames", detail: "Fresh mint-green board edging"),
