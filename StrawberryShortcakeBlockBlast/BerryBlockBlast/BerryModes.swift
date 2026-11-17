@@ -39,6 +39,17 @@ struct BerryHomeView: View {
     @State private var showMore = false
     @State private var showSchool = false
     @State private var showCollection = false
+    @State private var showHomeShop = false
+    @State private var showBoutiqueAfterCollection = false
+    @StateObject private var villageSession = BerryGameSession()
+    @AppStorage("berryblockblast.quoteIndex.v057") private var quoteIndex = 0
+    private let gardenQuotes = [
+        "A sweeter day begins with one little berry.",
+        "Every lovely garden starts with a single seed.",
+        "Little blocks, big berry dreams.",
+        "Make room for something wonderful to bloom.",
+        "The sweetest harvest is the one you grow."
+    ]
     @State private var showJukebox = false
     @State private var showBoardPicker = false
     @State private var showBlitzPicker = false
@@ -70,6 +81,11 @@ struct BerryHomeView: View {
                             HStack {
                                 Text(version).font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.strawberry).padding(10).background(.white.opacity(0.9), in: Capsule())
                                 Spacer()
+                                BerryWalletPill(berries: villageSession.berries)
+                                Button { showHomeShop = true } label: {
+                                    BerryIcon(name: "ShopBasket", size: 39)
+                                        .frame(width: 43, height: 43)
+                                }.accessibilityLabel("Open Berry Boutique")
                                 Button { showSettings = true } label: { Image(systemName: "gearshape.fill").font(.title2).foregroundStyle(BerryStyle.strawberry).frame(width: 46, height: 46).background(.white, in: Circle()) }.accessibilityLabel("Settings")
                             }
                             Text("🍓 ✨ 🍰 ✨ 🍓").font(.title2)
@@ -87,11 +103,7 @@ struct BerryHomeView: View {
                                 activeMode = .classic
                             } label: {
                                 HStack(spacing: 13) {
-                                    Image(systemName: "crown.fill")
-                                        .font(.system(size: 25, weight: .black))
-                                        .foregroundStyle(.white)
-                                        .frame(width: 53, height: 53)
-                                        .background(BerryStyle.strawberry, in: RoundedRectangle(cornerRadius: 16))
+                                    BerryIcon(name: "BerryClassic", size: 56)
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text("🍓 Berry Classic")
                                             .font(.system(size: 21, weight: .black, design: .rounded))
@@ -123,7 +135,7 @@ struct BerryHomeView: View {
                                     else { audio.play(.gameStart); activeMode = mode }
                                 } label: {
                                     HStack(spacing: 14) {
-                                        Image(systemName: mode.icon).font(.system(size: 23, weight: .bold)).foregroundStyle(.white).frame(width: 53, height: 53).background(mode == .story ? BerryStyle.leaf : BerryStyle.strawberry, in: RoundedRectangle(cornerRadius: 16))
+                                        BerryIcon(name: mode == .endless ? "SweetEndless" : mode == .story ? "BerryStory" : "DailyHarvest", size: 56)
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(mode.rawValue).font(.system(size: 20, weight: .black, design: .rounded))
                                             Text(mode.description).font(.system(size: 12, weight: .medium, design: .rounded)).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
@@ -147,26 +159,65 @@ struct BerryHomeView: View {
                                     .overlay(RoundedRectangle(cornerRadius: 21).stroke(.white, lineWidth: 2))
                                 }.buttonStyle(.plain)
                             }
-                            Button("🧺 More Adventures  •  Blitz, Cozy & Nightmare") {
+                            Button {
+                                audio.play(.menuSelect)
+                                showHomeShop = true
+                            } label: {
+                                HStack(spacing: 12) {
+                                    BerryIcon(name: "BerryMarket", size: 53)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Berry Boutique").font(.headline)
+                                        Text("Shop, skins, helpers & cottage upgrades")
+                                            .font(.caption).foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                }
+                                .foregroundStyle(BerryStyle.chocolate)
+                                .padding(12)
+                                .background(.white, in: RoundedRectangle(cornerRadius: 19))
+                            }.buttonStyle(.plain)
+                            Button {
                                 audio.play(.menuSelect)
                                 showMore = true
+                            } label: {
+                                HStack(spacing: 12) {
+                                    BerryIcon(name: "MoreAdventures", size: 52)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text("More Adventures").font(.headline)
+                                        Text("Blitz • Cozy Cottage • Nightmare").font(.caption)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                }
+                                .foregroundStyle(BerryStyle.chocolate)
+                                .padding(12)
+                                .background(.white, in: RoundedRectangle(cornerRadius: 19))
+                            }.buttonStyle(.plain)
+                            HStack(spacing: 12) {
+                                Button { showCollection = true } label: {
+                                    VStack(spacing: 4) {
+                                        BerryIcon(name: "BerryCollection", size: 65)
+                                        Text("Collection").font(.caption.bold())
+                                    }.frame(maxWidth: .infinity).padding(10)
+                                        .background(.white, in: RoundedRectangle(cornerRadius: 17))
+                                }
+                                Button { showSchool = true } label: {
+                                    VStack(spacing: 4) {
+                                        BerryIcon(name: "StrawberrySchool", size: 65)
+                                        Text("Strawberry School").font(.caption.bold())
+                                    }.frame(maxWidth: .infinity).padding(10)
+                                        .background(.white, in: RoundedRectangle(cornerRadius: 17))
+                                }
                             }
-                                .font(.title3.bold()).foregroundStyle(BerryStyle.strawberry)
-                                .frame(maxWidth: .infinity).padding(18).background(.white, in: RoundedRectangle(cornerRadius: 20))
-                            Button("📖 Berry Collection") { showCollection = true }
-                                .font(.system(size: 14, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.strawberry)
-                            Button("🍓 Strawberry School • Learn to Play") { showSchool = true }
-                                .font(.system(size: 14, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.leaf)
+                            .foregroundStyle(BerryStyle.chocolate)
+                            .buttonStyle(.plain)
                             Button {
                                 audio.play(.menuSelect)
                                 showJukebox = true
                             } label: {
                                 HStack(spacing: 10) {
-                                    Image(systemName: "music.note.list")
-                                        .font(.system(size: 20, weight: .bold))
-                                        .foregroundStyle(.white)
-                                        .frame(width: 41, height: 41)
-                                        .background(BerryStyle.strawberry, in: RoundedRectangle(cornerRadius: 12))
+                                    BerryIcon(name: "StrawberryJukebox", size: 45)
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text("🎶 Strawberry Jukebox")
                                             .font(.system(size: 15, weight: .black, design: .rounded))
@@ -182,7 +233,20 @@ struct BerryHomeView: View {
                                 .background(.white.opacity(0.91), in: RoundedRectangle(cornerRadius: 18))
                             }
                             .buttonStyle(.plain)
-                            Text("🍓 No ads • Offline • Just a little sweetness 🍓").font(.system(size: 11, weight: .medium, design: .rounded)).foregroundStyle(BerryStyle.chocolate.opacity(0.75)).padding(.top, 10)
+                            Button {
+                                quoteIndex = (quoteIndex + 1) % gardenQuotes.count
+                            } label: {
+                                HStack(spacing: 5) {
+                                    Image(systemName: "quote.bubble.fill")
+                                    Text(gardenQuotes[quoteIndex % gardenQuotes.count])
+                                        .multilineTextAlignment(.center)
+                                    Image(systemName: "arrow.clockwise")
+                                }
+                                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                .foregroundStyle(BerryStyle.chocolate.opacity(0.8))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                            }.buttonStyle(.plain).accessibilityLabel("Rotate strawberry quote")
                         }
                         .padding(22)
                         .frame(maxWidth: 530)
@@ -192,22 +256,36 @@ struct BerryHomeView: View {
                 }
             }
         }
-        .sheet(isPresented: $showCollection) {
+        .sheet(isPresented: $showCollection, onDismiss: {
+            if showBoutiqueAfterCollection {
+                showBoutiqueAfterCollection = false
+                showHomeShop = true
+            }
+        }) {
+            NavigationStack {
+                BerryCollectionView(session: villageSession, lifetimeLines: lifetimeLines) {
+                    showBoutiqueAfterCollection = true
+                    showCollection = false
+                }
+                .navigationTitle("Berry Collection")
+                .toolbar { ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { showCollection = false }
+                }}
+            }
+        }
+        .sheet(isPresented: $showHomeShop, onDismiss: {
+            villageSession.refreshEconomyFromDisk()
+        }) {
             NavigationStack {
                 ScrollView {
-                    VStack(spacing: 20) {
-                        Text("🍓 The Berry Collection").font(.title.bold()).foregroundStyle(BerryStyle.strawberry)
-                        Text("🌸 🍓 🎀 🍰 🌿").font(.title2)
-                        Text("Collect new berry blocks by clearing lines in any garden.")
-                        ProgressView(value: Double(min(10, lifetimeLines)), total: 10).tint(BerryStyle.strawberry)
-                        Text("\(lifetimeLines) lifetime lines harvested")
-                        Label("Classic Blocks • Unlocked", systemImage: "checkmark.seal.fill")
-                        Text(strawberryUnlocked ? "🍓 Strawberry Blocks • Unlocked" : "🔒 Strawberry Blocks • Clear 10 lines")
-                            .font(.headline).foregroundStyle(BerryStyle.leaf)
-                    }.padding(24)
-                }.background(BerryStyle.cream.ignoresSafeArea())
-                .navigationTitle("Berry Collection")
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { audio.play(.menuBack); showCollection = false } } }
+                    BerryBoutiqueView(session: villageSession)
+                        .padding(.horizontal, 16).padding(.vertical, 18)
+                }
+                .background(BerryStyle.cream.ignoresSafeArea())
+                .navigationTitle("Market")
+                .toolbar { ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { showHomeShop = false }
+                }}
             }
         }
         .sheet(isPresented: $showSchool) { BerrySchoolView(onFinish: { graduated in showSchool = false; if graduated { BerryGameSession().rewardTutorial() } }) }
@@ -236,14 +314,8 @@ struct BerryHomeView: View {
                                 }
                             } label: {
                                 HStack(spacing: 14) {
-                                    Image(systemName: mode.icon)
-                                        .font(.system(size: 22, weight: .bold))
-                                        .foregroundStyle(.white)
-                                        .frame(width: 52, height: 52)
-                                        .background(mode == .superHard ? Color(red: 0.52, green: 0.35, blue: 0.73) :
-                                                        mode == .challenge ? Color(red: 0.96, green: 0.58, blue: 0.14) :
-                                                        BerryStyle.leaf,
-                                                    in: RoundedRectangle(cornerRadius: 16))
+                                    BerryIcon(name: mode == .cozy ? "CottageDecorations" :
+                                             mode == .challenge ? "Milestone" : "MoreAdventures", size: 55)
                                     VStack(alignment: .leading, spacing: 5) {
                                         Text(mode.rawValue)
                                             .font(.system(size: 19, weight: .black, design: .rounded))
@@ -430,7 +502,7 @@ struct BerryHomeView: View {
                         .background(.white.opacity(0.9), in: RoundedRectangle(cornerRadius: 20))
                         VStack(spacing: 6) {
                             Text(version).font(.subheadline.bold())
-                            Text("Original offline strawberry puzzle. No ads or purchases.")
+                            Text("A berry-sweet puzzle garden. Earn strawberries and decorate your world!")
                                 .font(.caption)
                                 .multilineTextAlignment(.center)
                         }
@@ -451,9 +523,11 @@ struct BerryHomeView: View {
             audio.setScreen(.menu)
             audio.setMusic(music)
             savedEndlessSizes = Set([8, 12, 24].filter { BerryGameSession.hasResumableEndless(side: $0) })
+            villageSession.refreshEconomyFromDisk()
         }
         .onChange(of: activeMode) { selected in
             if selected == nil {
+                villageSession.refreshEconomyFromDisk()
                 savedEndlessSizes = Set([8, 12, 24].filter { BerryGameSession.hasResumableEndless(side: $0) })
             }
             audio.setScreen(selected == nil ? .menu : selected == .challenge ? .blitz : .gameplay)

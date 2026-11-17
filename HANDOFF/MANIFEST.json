@@ -1,0 +1,25 @@
+{
+  "bundle_title": "Berry Block Blast next-build full source handoff",
+  "date": "2026-11-17",
+  "repo": "ValentineBSAA/IPhone-Apps",
+  "main_at_export": "34b89aa49df8275aec49d41d594d6ce4cdf3a2a8",
+  "source_export_branch_head": "92d8f8e46a0064a79d975c4a383937e6057c7ed0",
+  "version": "0.5.7 build 1",
+  "audio_music_count": 51,
+  "sfx_count": 16,
+  "icons": [
+    "daily-harvest",
+    "strawberry-jukebox",
+    "berry-boutique",
+    "more-adventures",
+    "berry-hint",
+    "berry-blitz"
+  ],
+  "integrated": true,
+  "next_ipa_built": false,
+  "user_requested": "integrated new development source build candidate for next iPhone 14 Pro trial",
+  "icon_assets_named": 31,
+  "app_bundle_id": "com.valentinebsaa.berryblockblast",
+  "minimum_ios": "16.0",
+  "source_compiled_with_xcode": false
+}

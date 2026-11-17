@@ -12,6 +12,7 @@ final class BerryGameSession: ObservableObject {
     @Published private(set) var berries = 0
     @Published private(set) var undos = 2
     @Published private(set) var shuffles = 2
+    @Published private(set) var hints = 0
     @Published private(set) var totalEarnedBerries = 0
     @Published private(set) var rewardsLog: [String] = UserDefaults.standard.stringArray(forKey: "berryblockblast.rewards.v1") ?? []
     @Published private(set) var cottageDecorations = UserDefaults.standard.integer(forKey: "berryblockblast.cottage.decorations")
@@ -164,7 +165,28 @@ final class BerryGameSession: ObservableObject {
     }
     private let inventoryKey = "berryblockblast.inventory.v3"
 
-    private struct Inventory: Codable { var berries: Int; var undos: Int; var shuffles: Int; var totalEarnedBerries: Int }
+    private struct Inventory: Codable {
+        var berries: Int
+        var undos: Int
+        var shuffles: Int
+        var totalEarnedBerries: Int
+        var hints: Int
+        private enum CodingKeys: String, CodingKey {
+            case berries, undos, shuffles, totalEarnedBerries, hints
+        }
+        init(berries: Int, undos: Int, shuffles: Int, totalEarnedBerries: Int, hints: Int) {
+            self.berries = berries; self.undos = undos; self.shuffles = shuffles
+            self.totalEarnedBerries = totalEarnedBerries; self.hints = hints
+        }
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            berries = try c.decode(Int.self, forKey: .berries)
+            undos = try c.decode(Int.self, forKey: .undos)
+            shuffles = try c.decode(Int.self, forKey: .shuffles)
+            totalEarnedBerries = try c.decode(Int.self, forKey: .totalEarnedBerries)
+            hints = try c.decodeIfPresent(Int.self, forKey: .hints) ?? 0
+        }
+    }
     private struct Save: Codable {
         var engine: BerryEngine
         var berries: Int
@@ -191,7 +213,7 @@ final class BerryGameSession: ObservableObject {
         } else { engine = BerryEngine() }
         gameOver = !engine.hasMove()
         if let inventory = UserDefaults.standard.data(forKey: inventoryKey), let saved = try? JSONDecoder().decode(Inventory.self, from: inventory) {
-            berries = saved.berries; undos = saved.undos; shuffles = saved.shuffles; totalEarnedBerries = saved.totalEarnedBerries
+            berries = saved.berries; undos = saved.undos; shuffles = saved.shuffles; totalEarnedBerries = saved.totalEarnedBerries; hints = saved.hints
         }
     }
 
@@ -234,6 +256,21 @@ final class BerryGameSession: ObservableObject {
         return true
     }
 
+    /// A separate menu-level session can refresh currency after leaving play.
+    func refreshEconomyFromDisk() {
+        if let data = UserDefaults.standard.data(forKey: inventoryKey),
+           let saved = try? JSONDecoder().decode(Inventory.self, from: data) {
+            berries = saved.berries
+            undos = saved.undos
+            shuffles = saved.shuffles
+            hints = saved.hints
+            totalEarnedBerries = saved.totalEarnedBerries
+        }
+        ownedCosmetics = UserDefaults.standard.stringArray(forKey: "berryblockblast.shop.owned.v056b2") ?? []
+        cottageDecorations = UserDefaults.standard.integer(forKey: "berryblockblast.cottage.decorations")
+        rewardsLog = UserDefaults.standard.stringArray(forKey: "berryblockblast.rewards.v1") ?? []
+    }
+
     @discardableResult
     func undo() -> Int {
         guard undos > 0, let previous else { return 0 }
@@ -258,9 +295,10 @@ final class BerryGameSession: ObservableObject {
         return revertedLines
     }
 
-    func shuffle() {
-        guard shuffles > 0 else { return }
-        engine.reshuffleTray()
+    @discardableResult
+    func shuffle() -> Bool {
+        guard shuffles > 0, engine.canRescueWithShuffle else { return false }
+        guard engine.reshuffleTray() else { return false }
         shuffles -= 1
         if activeMode == .endless { _ = engine.beginNextEndlessSeasonIfStuck() }
         gameOver = !engine.hasMove()
@@ -271,12 +309,13 @@ final class BerryGameSession: ObservableObject {
         lastEarned = 0
         lastClearedLines = 0
         save()
+        return true
     }
 
     func earn(_ amount: Int, reason: String) {
         guard amount > 0 else { return }
-        berries += amount
-        totalEarnedBerries += amount
+        berries = amount > Int.max - berries ? Int.max : berries + amount
+        totalEarnedBerries = amount > Int.max - totalEarnedBerries ? Int.max : totalEarnedBerries + amount
         rewardsLog.insert("🍓 +\(amount) • \(reason)", at: 0)
         rewardsLog = Array(rewardsLog.prefix(20))
         UserDefaults.standard.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
@@ -331,6 +370,24 @@ final class BerryGameSession: ObservableObject {
         save()
     }
 
+    func buyHint() {
+        guard berries >= 20 else { return }
+        previous = nil
+        previousBerryEarnings = 0
+        previousRewardEntry = nil
+        berries -= 20
+        hints += 1
+        save()
+    }
+
+    @discardableResult
+    func useHintIfPossible() -> BerryEngine.BerryHint? {
+        guard hints > 0, !gameOver, let hint = engine.suggestedMove() else { return nil }
+        hints -= 1
+        save()
+        return hint
+    }
+
     var canUndo: Bool { undos > 0 && previous != nil }
 
     func newGame() {
@@ -346,8 +403,8 @@ final class BerryGameSession: ObservableObject {
         lastMessage = nil
         lastEarned = 0
         lastClearedLines = 0
-        undos = max(undos, 2)
-        shuffles = max(shuffles, 2)
+        // Existing helper counts remain untouched. Replaying a chapter must
+        // not mint new free inventory or undermine the earned berry economy.
         save()
     }
 
@@ -372,7 +429,8 @@ final class BerryGameSession: ObservableObject {
     }
 
     private func save() {
-        let inventory = Inventory(berries: berries, undos: undos, shuffles: shuffles, totalEarnedBerries: totalEarnedBerries)
+        let inventory = Inventory(berries: berries, undos: undos, shuffles: shuffles,
+                                  totalEarnedBerries: totalEarnedBerries, hints: hints)
         if let data = try? JSONEncoder().encode(inventory) { UserDefaults.standard.set(data, forKey: inventoryKey) }
         // Only Sweet Endless persists an unfinished board. Each board size
         // keeps its own ongoing run. Original Build 1 and Classic save keys

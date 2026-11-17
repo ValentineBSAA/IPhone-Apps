@@ -1,8 +1,6 @@
 # 🍓 Berry Block Blast for iPhone
 
-**Version 0.5.6 • Build 3 • iOS 16.0 minimum • Native SwiftUI + UIKit input • Original offline soundtrack**
-
-**iPhone 14 Pro / iOS 16.0 compatibility:** Build 3 lowers the minimum from iOS 17 to iOS 16 and replaces iOS 17-only SwiftUI observation and scroll anchoring with iOS 16-compatible equivalents. Game modes, soundtrack, effects, saves, graphics and puzzle rules are intentionally unchanged. The app is unsigned and designed for device testing before a stable release. Build 3 is built using the [GitHub Actions iOS 16 workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-ios16-compat.yml). See `RELEASE-QA-0.5.6-BUILD3-IOS16.md`.
+**Version 0.5.7 • Build 1 • iOS 16.0+ • Native SwiftUI + UIKit input • 51 original songs & 16 original effects**
 
 Berry Block Blast is an independent, original strawberry-themed block-placement puzzle for iPhone. Its classic three-piece 8×8 mechanics are inspired by Block Blast, but the original artwork, strawberry world, soundtrack and special modes are our own. This project is not affiliated with Hungry Studio or the Strawberry Shortcake brand owner.
 
@@ -32,11 +30,23 @@ Music uses one AVFoundation playback coordinator, no online stream and subtle no
 Spend **earned** strawberries on permanent board cosmetics, selectable block skins, frames, sparkles and visible Cottage progression. Purchase keys and currency live across restarts. Berry Classic's fair score challenge is never affected by upgrades. No real-money items, ads, or subscriptions.
 
 ## Supported iPhone installation
-The signed bundle identifier remains `com.valentinebsaa.berryblockblast`. Codemagic's existing Build 2 pipeline and the GitHub Actions workflows compile a physical iPhone app and package **`Berry-Block-Blast-v0.5.6-build2-unsigned.ipa`**. Sign the unsigned IPA with your existing Windows signing process before installation.
+The signed bundle identifier remains `com.valentinebsaa.berryblockblast`. Codemagic and the optional GitHub Actions workflow compile a physical iPhone app and package **`Berry-Block-Blast-v0.5.7-build1-unsigned.ipa`**. Sign the unsigned IPA with your existing Windows signing process before installation.
 
-The Build 2 pipeline verifies all 51 original M4As and 16 WAVs in source, in the .app and in the finished IPA. Its simulator tests cover gameplay, 24×24 layouts, playlist routing and Blitz variants. **Physical iPhone testing is still mandatory**, particularly zoom/pan and drag on 24×24, Blitz countdown sounds, cosmetics, and data migration. Do not call Build 2 stable until device verification.
+The Build 1 pipeline verifies all 51 original M4As and 16 WAVs in source, in the .app and in the finished IPA. Its simulator tests cover gameplay, 24×24 layouts, playlist routing and Blitz variants. **Physical iPhone testing is still mandatory**, particularly zoom/pan and drag on 24×24, Blitz countdown sounds, cosmetics, and data migration. Do not call Build 1 stable until device verification.
 
-See `RELEASE-QA-0.5.6-BUILD3-IOS16.md` for Build 3 compatibility checks, plus `RELEASE-QA-0.5.6-BUILD2.md` and `CHANGELOG.md` for existing-game verification.
+See `RELEASE-QA-0.5.6-BUILD2.md` and `CHANGELOG.md` for details.
 
 ## Earlier versions
 Build 1 of 0.5.6 introduced the real 15-track offline soundtrack and persistent Strawberry Sound Studio. 0.5.5 built native UIKit finger tracking, Berry Classic and the big score display. 0.5.4 introduced Strawberry Nightmare and approved artwork.
+
+## 0.5.7 Build 1 iOS 16 testing focus
+- Fixed elevated drag placement anchor from preview to drop: never search for a different legal position; red individual blocked cells plus dimmed occupied cells. Pickup ghost shows immediately.
+- Premium block tile shapes, brighter distinct Blueberry Velvet / Vanilla Cream cosmetics, bounded strawberry-clear particles, Sweet Endless seasonal palette, and the user-generated 29-icon game set.
+- Main-menu Boutique button and wallet, new Berry Collection with Inventory, Awards and **offline personal** leaderboard, no made-up online ranks; bought helper counts and equip actions are visible.
+- New Berry Hint (20 earned strawberries), suggests a real legal placement for three seconds; no auto-play and only available outside Classic/Blitz. Shuffle cannot be consumed if it cannot rescue play. Restart does not mint free helpers.
+- Daily Harvest calendar with real local date, remaining reset hours, completed day history, and streak. Existing old daily-completion key is read without deleting it.
+- Clear no-moves Game Over panel; no more misleading “board full” wording. Full multi-line Strawberry Blocks unlock sheet.
+- Preserve all old iOS bundle ID and UserDefaults save/ownership keys. Audio resources preserved byte-for-byte.
+- Full native Xcode build and live iPhone QA **not performed here**; use the updated GitHub Actions or Codemagic pipeline to make an unsigned test IPA.
+
+See `RELEASE-QA-0.5.7-BUILD1.md` for regression instructions.

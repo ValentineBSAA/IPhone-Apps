@@ -8,8 +8,8 @@ struct BerrySchoolView: View {
         ("🍓 Welcome to Strawberry School", "Pick up a piece, then drag it to the garden. You can also tap a piece and tap the board.", "Tap the glowing strawberry to practice."),
         ("🌸 Clear a Row", "Complete all eight squares in a row or column. The full line disappears and makes space for more blocks.", "Every line earns 3 strawberries."),
         ("🍰 Make Sweet Combos", "Clear multiple lines or keep clearing on consecutive turns to increase your rewards.", "Combos grow your berry basket."),
-        ("🧺 Visit the Market", "Use your strawberries to buy extra Undo and Shuffle helpers. They are earned through gameplay, never purchased with money.", "You can see rewards in the shop ledger."),
-        ("🎀 You're Ready!", "Explore Sweet Endless, Berry Story, Daily Harvest and the More Adventures page. Your progress saves automatically.", "Graduate to collect 25 strawberries!")
+        ("🧺 Berry Boutique & Inventory", "Earn berries by clearing lines. Buy helpers, block skins, board frames, and cottage decorations in the Boutique. Manage owned cosmetics in Berry Collection's Inventory.", "Use Undo and Shuffle from the game toolbar in supported modes."),
+        ("🎀 You're Ready!", "Sweet Endless saves the current board and opens new seasons. Other modes keep records and rewards, but start fresh boards. Daily Harvest has a calendar and daily rewards.", "Graduate to collect 25 strawberries!")
     ]
     var body: some View {
         VStack(spacing: 18) {

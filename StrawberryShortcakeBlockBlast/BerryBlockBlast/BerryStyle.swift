@@ -24,75 +24,93 @@ struct BerryTile: View {
     var preview = false
     var mode: BerryMode = .endless
     var strawberryUnlocked = false
+    /// Preview a boutique skin without changing the player's actual selection.
+    var skinOverride: String? = nil
     @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
     @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkles = "default"
 
+    private var skin: String { skinOverride ?? blockSkin }
     private var decorated: Bool { strawberryUnlocked && tint % 6 == 0 }
     private var palette: Color {
         let index = (tint % 6 + 6) % 6
-        if blockSkin == "blueberry-blocks" {
-            return [Color(red: 0.33, green: 0.45, blue: 0.86), .indigo,
-                Color(red: 0.62, green: 0.48, blue: 0.94), .purple,
-                Color(red: 0.48, green: 0.69, blue: 0.94), .cyan][index]
+        if skin == "blueberry-blocks" {
+            return [Color(red: 0.20, green: 0.25, blue: 0.72),
+                    Color(red: 0.34, green: 0.20, blue: 0.67),
+                    Color(red: 0.17, green: 0.39, blue: 0.73),
+                    Color(red: 0.44, green: 0.23, blue: 0.77),
+                    Color(red: 0.21, green: 0.32, blue: 0.62),
+                    Color(red: 0.28, green: 0.17, blue: 0.61)][index]
         }
-        if blockSkin == "vanilla-blocks" {
-            return [Color(red: 0.97, green: 0.70, blue: 0.34),
-                Color(red: 1, green: 0.80, blue: 0.57), .brown,
-                Color(red: 0.96, green: 0.79, blue: 0.49), .orange,
-                Color(red: 0.86, green: 0.63, blue: 0.43)][index]
+        if skin == "vanilla-blocks" {
+            return [Color(red: 0.92, green: 0.64, blue: 0.27),
+                    Color(red: 0.95, green: 0.76, blue: 0.45),
+                    Color(red: 0.79, green: 0.47, blue: 0.23),
+                    Color(red: 0.95, green: 0.70, blue: 0.37),
+                    Color(red: 0.83, green: 0.56, blue: 0.24),
+                    Color(red: 0.88, green: 0.66, blue: 0.41)][index]
         }
         switch mode {
-        case .endless, .classic:
-            return BerryStyle.color(for: tint)
-        case .story:
-            let colors: [Color] = [Color(red: 0.92, green: 0.38, blue: 0.64), .purple, .orange, .pink, .mint, .indigo]
-            return colors[index]
-        case .daily:
-            let colors: [Color] = [Color(red: 0.94, green: 0.43, blue: 0.35), .yellow, .orange, .green, .red, .brown]
-            return colors[index]
-        case .cozy:
-            let colors: [Color] = [Color(red: 0.76, green: 0.58, blue: 0.44), Color(red: 0.83, green: 0.67, blue: 0.52), .mint, Color(red: 0.68, green: 0.77, blue: 0.52), .orange, .teal]
-            return colors[index]
-        case .challenge:
-            let colors: [Color] = [.red, .orange, .yellow, .pink, .purple, .cyan]
-            return colors[index]
-        case .superHard:
-            let colors: [Color] = [Color(red: 0.62, green: 0.12, blue: 0.29), .purple, .indigo, .red, .orange, .pink]
-            return colors[index]
+        case .endless, .classic: return BerryStyle.color(for: tint)
+        case .story: return [Color(red: 0.92, green: 0.31, blue: 0.57), .purple, .orange, .pink, .mint, .indigo][index]
+        case .daily: return [Color(red: 0.92, green: 0.30, blue: 0.29), .yellow, .orange, .green, .red, .brown][index]
+        case .cozy: return [Color(red: 0.76, green: 0.58, blue: 0.44), Color(red: 0.83, green: 0.67, blue: 0.52), .mint, Color(red: 0.68, green: 0.77, blue: 0.52), .orange, .teal][index]
+        case .challenge: return [.red, .orange, .yellow, .pink, .purple, .cyan][index]
+        case .superHard: return [Color(red: 0.62, green: 0.12, blue: 0.29), .purple, .indigo, .red, .orange, .pink][index]
         }
     }
     var body: some View {
-        RoundedRectangle(cornerRadius: 7, style: .continuous)
-            .fill(LinearGradient(colors: [palette.opacity(0.82), palette],
-                                 startPoint: .topLeading, endPoint: .bottomTrailing))
-            .overlay(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(.white.opacity(0.30))
-                    .frame(width: 11, height: 5)
-                    .padding(5)
-            }
-            .overlay {
-                if decorated {
-                    Text("🍓").font(.system(size: 21)).minimumScaleFactor(0.5).shadow(color: .white.opacity(0.6), radius: 1)
-                } else if sparkles == "berry-sparkle" {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.white.opacity(0.86))
-                } else if mode == .cozy {
-                    Image(systemName: "leaf.fill").font(.system(size: 11)).foregroundStyle(.white.opacity(0.75))
-                } else if mode == .story {
-                    Image(systemName: "sparkle").font(.system(size: 11)).foregroundStyle(.white.opacity(0.7))
-                } else if mode == .daily {
-                    Image(systemName: "sun.max.fill").font(.system(size: 10)).foregroundStyle(.white.opacity(0.65))
-                } else if mode == .challenge {
-                    Image(systemName: "bolt.fill").font(.system(size: 11)).foregroundStyle(.white.opacity(0.75))
+        GeometryReader { geometry in
+            let side = min(geometry.size.width, geometry.size.height)
+            let radius = max(3, side * 0.19)
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .fill(LinearGradient(colors: [palette.opacity(0.78), palette, palette.opacity(0.98)],
+                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+                .overlay {
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .strokeBorder(palette.opacity(0.74), lineWidth: max(1, side * 0.065))
                 }
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: 7).strokeBorder(.white.opacity(0.43), lineWidth: 1.2)
-            }
-            .shadow(color: palette.opacity(preview ? 0.12 : 0.22), radius: 3, y: 2)
-            .opacity(preview ? 0.67 : 1)
+                .overlay(alignment: .topLeading) {
+                    Capsule()
+                        .fill(.white.opacity(skin == "blueberry-blocks" ? 0.75 : 0.65))
+                        .frame(width: side * 0.46, height: max(2, side * 0.13))
+                        .padding(.top, side * 0.13).padding(.leading, side * 0.12)
+                }
+                .overlay {
+                    if side > 23 {
+                        if decorated {
+                            Text("🍓").font(.system(size: side * 0.50))
+                                .minimumScaleFactor(0.3)
+                        } else if skin == "blueberry-blocks" {
+                            Image(systemName: "sparkle")
+                                .font(.system(size: side * 0.37, weight: .medium))
+                                .foregroundStyle(Color(red: 0.89, green: 0.82, blue: 1))
+                                .shadow(color: .white, radius: 2)
+                        } else if skin == "vanilla-blocks" {
+                            Image(systemName: "circle.hexagongrid.fill")
+                                .font(.system(size: side * 0.34, weight: .regular))
+                                .foregroundStyle(.white.opacity(0.72))
+                        } else if sparkles == "berry-sparkle" {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: side * 0.38))
+                                .foregroundStyle(.white.opacity(0.95))
+                        } else {
+                            HStack(spacing: max(2, side * 0.12)) {
+                                Capsule().fill(.white.opacity(0.55)).frame(width: 3, height: side * 0.11)
+                                Capsule().fill(.white.opacity(0.42)).frame(width: 3, height: side * 0.11)
+                            }.rotationEffect(.degrees(24)).offset(y: side * 0.13)
+                        }
+                    }
+                }
+                .overlay(alignment: .bottom) {
+                    RoundedRectangle(cornerRadius: radius)
+                        .fill(.white.opacity(0.12))
+                        .frame(height: side * 0.13)
+                        .padding(.horizontal, max(2, side * 0.08))
+                        .padding(.bottom, max(2, side * 0.08))
+                }
+                .shadow(color: palette.opacity(preview ? 0.10 : 0.24), radius: 2, y: 2)
+        }
+        .opacity(preview ? 0.80 : 1)
     }
 }
 

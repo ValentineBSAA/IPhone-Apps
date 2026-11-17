@@ -47,7 +47,13 @@ private struct BerryBoard: View {
                         .overlay(alignment: .topLeading) {
                             RoundedRectangle(cornerRadius: side > 8 ? 4 : 8).strokeBorder(.white.opacity(0.58), lineWidth: 1)
                         }
-                    if let tint = engine.board[r][c] { BerryTile(tint: tint, mode: mode, strawberryUnlocked: strawberryUnlocked) }
+                    if let tint = engine.board[r][c] {
+                        let blocked = preview?.piece.points.contains(where: {
+                            preview!.row + $0.row == r && preview!.col + $0.col == c
+                        }) ?? false
+                        BerryTile(tint: tint, mode: mode, strawberryUnlocked: strawberryUnlocked)
+                            .opacity(blocked && !((preview?.allowed) ?? true) ? 0.24 : 1)
+                    }
                 }
                 .frame(width: unit, height: unit)
                 .offset(x: CGFloat(c) * (unit + gap), y: CGFloat(r) * (unit + gap))
@@ -57,9 +63,27 @@ private struct BerryBoard: View {
                     let r = preview.row + p.row
                     let c = preview.col + p.col
                     if (0..<side).contains(r), (0..<side).contains(c) {
-                        BerryTile(tint: preview.piece.tint, preview: true, mode: mode, strawberryUnlocked: strawberryUnlocked)
-                            .opacity(previewStyle == "outline" ? 0.18 : 0.56)
-                            .overlay { RoundedRectangle(cornerRadius: side > 8 ? 4 : 8).strokeBorder(preview.allowed ? Color.green : Color.red, lineWidth: 2) }
+                        let occupied = engine.board[r][c] != nil
+                        ZStack {
+                            if preview.allowed {
+                                BerryTile(tint: preview.piece.tint, preview: true,
+                                          mode: mode, strawberryUnlocked: strawberryUnlocked)
+                                    .opacity(previewStyle == "outline" ? 0.33 : 0.80)
+                            } else {
+                                RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
+                                    .fill(Color.red.opacity(occupied ? 0.28 : 0.12))
+                                if occupied {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: max(8, unit * 0.30), weight: .black))
+                                        .foregroundStyle(Color(red: 0.72, green: 0.07, blue: 0.22))
+                                }
+                            }
+                        }
+                            .overlay {
+                                RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
+                                    .strokeBorder(preview.allowed ? Color.green : Color.red,
+                                                  lineWidth: preview.allowed ? 2 : 2.8)
+                            }
                             .frame(width: unit, height: unit)
                             .offset(x: CGFloat(c) * (unit + gap), y: CGFloat(r) * (unit + gap))
                     }
@@ -67,6 +91,23 @@ private struct BerryBoard: View {
             }
         }
         .frame(width: size, height: size, alignment: .topLeading)
+        .overlay {
+            if let preview, !preview.allowed,
+               preview.piece.points.contains(where: {
+                   !(0..<engine.side).contains(preview.row + $0.row) ||
+                   !(0..<engine.side).contains(preview.col + $0.col)
+               }) {
+                RoundedRectangle(cornerRadius: 22)
+                    .strokeBorder(Color.red.opacity(0.82), lineWidth: 3)
+                    .overlay(alignment: .top) {
+                        Text("Outside the garden")
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .padding(6).background(.white, in: Capsule())
+                            .foregroundStyle(Color.red)
+                    }
+                    .allowsHitTesting(false)
+            }
+        }
         // Both the touch receiver and this anchor measure UIWindow coordinates.
         .background(BerryBoardWindowAnchor(onRect: onBoardRect, tracksScrolling: side == 24))
         .accessibilityElement(children: .ignore)
@@ -101,10 +142,12 @@ struct BerryGameView: View {
     private var storyIsLineQuest: Bool { storyLevel % 2 == 0 }
     private var objective: String {
         switch mode {
-        case .endless: "🍓 SWEET ENDLESS • SEASON \(session.engine.seasons + 1) • PLAY FOREVER!"
+        case .endless:
+            let seasonNames = ["Spring Bloom", "Summer Berries", "Autumn Honey", "Winter Frost"]
+            return "🍓 \(session.engine.side)×\(session.engine.side) • SEASON \(session.engine.seasons + 1): \(seasonNames[session.engine.seasons % 4])"
         case .classic: "🍓 BERRY CLASSIC • Three pieces • Chase your best!"
         case .story: storyIsLineQuest ? "CHAPTER \(storyLevel) • Clear \(storyTargetLines) lines to bloom!" : "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
-        case .daily: "DAILY HARVEST • Gather \(goal) points!"
+        case .daily: "DAILY HARVEST • \(BerryGameSession.dailyDateKey()) • Gather \(goal) points!"
         case .cozy: "COZY COTTAGE • \(session.cottageDecorations) decorations • Grow at your pace!"
         case .challenge: "⚡ \(blitzVariant.rawValue.uppercased()) • \(blitzRemaining)s • \(session.engine.score) points"
         case .superHard: "🍓 STRAWBERRY NIGHTMARE • 12 × 12 • Bigger pieces!"
@@ -114,6 +157,9 @@ struct BerryGameView: View {
     @StateObject private var session = BerryGameSession()
     @State private var boardRect: CGRect = .zero
     @State private var drag: BerryDragState?
+    @State private var hintPreview: BerryDragState?
+    @State private var hintSerial = 0
+    @State private var strawberryRain = false
     @State private var activeDragSlot: Int?
     @State private var activeDragFinger: CGPoint?
     @AppStorage("berryblockblast.touchDiagnostics") private var touchDiagnostics = false
@@ -127,6 +173,7 @@ struct BerryGameView: View {
     @State private var confirmRestart = false
     @State private var showGameOver = false
     @State private var showWelcome = false
+    @State private var showDailyCalendar = false
     @AppStorage("berryblockblast.haptics") private var haptics = true
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.music") private var music = true
@@ -184,20 +231,27 @@ struct BerryGameView: View {
                     .font(.system(size: compact ? 10 : 12, weight: .bold, design: .rounded))
                     .foregroundStyle(BerryStyle.chocolate)
                     .frame(height: 19)
+                    if mode == .daily {
+                        Button {
+                            showDailyCalendar = true
+                        } label: {
+                            HStack(spacing: 6) {
+                                BerryIcon(name: "DailyHarvest", size: 26)
+                                Text("Today's Harvest • Calendar & Streak")
+                                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                                Image(systemName: "chevron.right")
+                            }
+                            .foregroundStyle(BerryStyle.chocolate)
+                            .padding(.horizontal, 12).padding(.vertical, 5)
+                            .background(.white.opacity(0.87), in: Capsule())
+                        }.buttonStyle(.plain)
+                    }
                     if session.engine.side == 24 {
-                        // ScrollViewReader is available on iOS 16. It keeps the oversized
-                        // Mega Garden centered initially while preserving two-axis panning.
-                        ScrollViewReader { boardReader in
-                            ScrollView([.horizontal, .vertical]) {
-                                boardInteraction(actualSize: max(580, boardSize * 1.75))
-                                    .id("mega-garden-center")
-                            }
-                            .frame(width: boardSize + 14, height: boardSize + 14)
-                            .scrollIndicators(.visible)
-                            .onAppear {
-                                boardReader.scrollTo("mega-garden-center", anchor: .center)
-                            }
+                        ScrollView([.horizontal, .vertical]) {
+                            boardInteraction(actualSize: max(580, boardSize * 1.75))
                         }
+                        .frame(width: boardSize + 14, height: boardSize + 14)
+                        .scrollIndicators(.visible)
                         .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 24))
                         .accessibilityLabel("24 by 24 Mega Garden. Scroll to reach more cells.")
                     } else {
@@ -259,7 +313,7 @@ struct BerryGameView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     HStack {
-                        Text("🍓 \(session.berries) berries")
+                        BerryWalletPill(berries: session.berries)
                         Spacer()
                         Text("\(session.engine.totalLines) lines • \(session.engine.moves) moves")
                     }
@@ -273,6 +327,20 @@ struct BerryGameView: View {
                 .padding(.bottom, max(5, bottom))
                 .frame(maxWidth: 510)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                if let slot = activeDragSlot,
+                   drag == nil,
+                   let finger = activeDragFinger,
+                   session.engine.tray.indices.contains(slot),
+                   let piece = session.engine.tray[slot] {
+                    BerryPieceGlyph(piece: piece, unit: min(28, 90 / CGFloat(max(piece.width, piece.height))),
+                                    mode: mode, strawberryUnlocked: strawberryUnlocked)
+                        .opacity(0.79)
+                        .shadow(color: BerryStyle.strawberry.opacity(0.3), radius: 9, y: 3)
+                        .position(x: finger.x - geo.frame(in: .global).minX,
+                                  y: finger.y - geo.frame(in: .global).minY - 58)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
             }
             .frame(width: width, height: height)
         }
@@ -285,6 +353,7 @@ struct BerryGameView: View {
                 primaryButton("Sweet! 🍓") { showUnlock = false }
             }
         }
+        .sheet(isPresented: $showDailyCalendar) { BerryDailyHarvestView(goal: goal) }
         .sheet(isPresented: $showHelp) { helpSheet }
         .sheet(isPresented: $showSettings) { settingsSheet }
         .sheet(isPresented: $showShop) { shopSheet }
@@ -366,15 +435,33 @@ struct BerryGameView: View {
                         Text(showVictory ? "🍰 ✨ 🍓" : confirmRestart ? "🌱 🍓 🌱" : "🍓 🌸 🧺")
                             .font(.system(size: 38))
                         Text(showVictory ? "Strawberry Spectacular!" : confirmRestart ? "Plant a Fresh Garden?" :
-                             mode == .challenge ? "Time's Up, Berry Racer!" : "Our Berry Patch Is Full!")
+                             mode == .challenge ? "Time's Up, Berry Racer!" : "No More Moves!")
                             .font(.system(size: 25, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry).multilineTextAlignment(.center)
-                        Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "Your best score and earned berries stay safe." : "You harvested \(session.engine.score) sweet points and cleared \(session.engine.totalLines) lines. Every garden deserves another season!")
+                        Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "A fresh board starts this chapter again. Your records and earned berries stay safe." : mode == .challenge ? "Your timer reached zero. See your results below!" : "None of your remaining pieces can fit. Try a Shuffle to continue, or start this chapter again.")
                             .font(.system(size: 15, weight: .medium, design: .rounded))
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
+                        if !confirmRestart {
+                            HStack(spacing: 18) {
+                                VStack { Text("\(session.engine.score)").font(.title2.bold()); Text("SCORE").font(.caption2) }
+                                VStack { Text("\(session.engine.totalLines)").font(.title2.bold()); Text("LINES").font(.caption2) }
+                                VStack { Text("\(session.engine.moves)").font(.title2.bold()); Text("MOVES").font(.caption2) }
+                            }
+                            .foregroundStyle(BerryStyle.chocolate)
+                            if mode == .story && !showVictory {
+                                Text("Chapter \(storyLevel): \(storyIsLineQuest ? "\(session.engine.totalLines)/\(storyTargetLines) lines" : "\(session.engine.score)/\(goal) points")")
+                                    .font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
+                            }
+                        }
+                        if showGameOver && session.shuffles > 0 && session.engine.canRescueWithShuffle && mode != .classic && mode != .challenge {
+                            Button("✨ Continue with Shuffle (\(session.shuffles) left)") {
+                                session.shuffle(); showGameOver = session.gameOver; selectedSlot = nil; drag = nil
+                            }
+                            .buttonStyle(.borderedProminent).tint(BerryStyle.leaf).controlSize(.large)
+                        }
                         Button(showVictory ? "🍓 Another Sweet Adventure" : mode == .challenge ? "⚡ Race Again" : "🍓 Plant a Fresh Garden") {
                             showVictory = false; showGameOver = false; confirmRestart = false
-                            completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil
+                            completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil; hintPreview = nil
                             blitzRemaining = blitzVariant.seconds; blitzRunning = mode == .challenge
                             blitzDeadline = mode == .challenge ?
                                 Date().addingTimeInterval(TimeInterval(blitzVariant.seconds)) : nil
@@ -385,15 +472,11 @@ struct BerryGameView: View {
                         }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
                         Button("🏡 Return to Strawberry Village") { returnToVillage() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
-                        if showGameOver && session.shuffles > 0 && mode != .classic && mode != .challenge {
-                            Button("✨ Use Shuffle (\(session.shuffles) left)") { session.shuffle(); showGameOver = session.gameOver; selectedSlot = nil; drag = nil }
-                                .foregroundStyle(BerryStyle.strawberry)
-                        }
                         if confirmRestart {
                             Button("Keep Playing") { confirmRestart = false }.foregroundStyle(BerryStyle.chocolate)
                         }
                     }
-                    .padding(25).frame(maxWidth: 350)
+                    .padding(21).frame(maxWidth: 360)
                     .background(
                         LinearGradient(colors: [BerryStyle.cream, Color(red: 1, green: 0.85, blue: 0.9)],
                             startPoint: .topLeading, endPoint: .bottomTrailing),
@@ -408,7 +491,13 @@ struct BerryGameView: View {
 
     private var background: some View {
         ZStack {
-            LinearGradient(colors: mode == .cozy ? [Color(red: 0.88, green: 0.96, blue: 0.84), BerryStyle.cream, Color(red: 1, green: 0.86, blue: 0.87)] : mode == .challenge ? [Color(red: 1, green: 0.79, blue: 0.84), Color(red: 1, green: 0.95, blue: 0.77), Color(red: 0.98, green: 0.73, blue: 0.8)] : mode == .story ? [Color(red: 0.94, green: 0.83, blue: 1), BerryStyle.cream, Color(red: 1, green: 0.83, blue: 0.91)] : [Color(red: 1, green: 0.85, blue: 0.9), Color(red: 1, green: 0.96, blue: 0.87), Color(red: 1, green: 0.8, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            LinearGradient(colors: mode == .endless && session.engine.seasons % 4 == 1 ?
+                [Color(red: 0.87, green: 0.97, blue: 0.85), BerryStyle.cream, BerryStyle.softPink] :
+                mode == .endless && session.engine.seasons % 4 == 2 ?
+                [Color(red: 1, green: 0.88, blue: 0.71), BerryStyle.cream, Color(red: 1, green: 0.80, blue: 0.70)] :
+                mode == .endless && session.engine.seasons % 4 == 3 ?
+                [Color(red: 0.86, green: 0.88, blue: 1), BerryStyle.cream, Color(red: 0.91, green: 0.91, blue: 1)] :
+                mode == .cozy ? [Color(red: 0.88, green: 0.96, blue: 0.84), BerryStyle.cream, Color(red: 1, green: 0.86, blue: 0.87)] : mode == .challenge ? [Color(red: 1, green: 0.79, blue: 0.84), Color(red: 1, green: 0.95, blue: 0.77), Color(red: 0.98, green: 0.73, blue: 0.8)] : mode == .story ? [Color(red: 0.94, green: 0.83, blue: 1), BerryStyle.cream, Color(red: 1, green: 0.83, blue: 0.91)] : [Color(red: 1, green: 0.85, blue: 0.9), Color(red: 1, green: 0.96, blue: 0.87), Color(red: 1, green: 0.8, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing)
             GeometryReader { geo in
                 Circle().fill(.white.opacity(0.34)).frame(width: geo.size.width * 0.85).offset(x: -geo.size.width * 0.35, y: -geo.size.height * 0.13)
                 Circle().fill(BerryStyle.strawberry.opacity(0.06)).frame(width: 270).offset(x: geo.size.width - 170, y: geo.size.height * 0.62)
@@ -428,9 +517,9 @@ struct BerryGameView: View {
         HStack(spacing: 8) {
             BerryGirlView().frame(width: compact ? 45 : 54, height: compact ? 45 : 54).clipped()
             VStack(alignment: .leading, spacing: 0) {
-                Text("STRAWBERRY SWEET").font(.system(size: 8, weight: .black, design: .rounded)).tracking(1.7).foregroundStyle(BerryStyle.leaf)
-                Text("Berry Block Blast!").font(.system(size: compact ? 20 : 23, weight: .black, design: .rounded)).lineLimit(1).minimumScaleFactor(0.6).foregroundStyle(BerryStyle.strawberry)
-                Text(mode == .endless ? "THE ENDLESS BERRY GARDEN" : mode.rawValue.uppercased()).font(.system(size: 8, weight: .bold, design: .rounded)).tracking(0.7).foregroundStyle(BerryStyle.chocolate.opacity(0.7))
+                Text("STRAWBERRY SWEET").font(.system(size: 7, weight: .black, design: .rounded)).tracking(1.7).foregroundStyle(BerryStyle.leaf)
+                Text("Berry Blast!").font(.system(size: compact ? 19 : 21, weight: .black, design: .rounded)).lineLimit(1).minimumScaleFactor(0.6).foregroundStyle(BerryStyle.strawberry)
+                Text(mode == .endless ? "\(session.engine.side)×\(session.engine.side) • SEASON \(session.engine.seasons + 1)" : mode.rawValue.uppercased()).font(.system(size: 8, weight: .bold, design: .rounded)).tracking(0.7).foregroundStyle(BerryStyle.chocolate.opacity(0.7))
             }
             Spacer(minLength: 0)
             if canManuallyPause {
@@ -439,6 +528,11 @@ struct BerryGameView: View {
                 }.accessibilityLabel("Pause game")
             }
             Button { returnToVillage() } label: { Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.leaf) }.accessibilityLabel("Main menu")
+            if mode != .challenge {
+                Button { showShop = true } label: {
+                    BerryIcon(name: "ShopBasket", size: 27)
+                }.accessibilityLabel("Berry Boutique")
+            }
             Button { showSettings = true } label: {
                 Image(systemName: "gearshape.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.strawberry)
             }.accessibilityLabel("Berry settings")
@@ -451,8 +545,8 @@ struct BerryGameView: View {
 
     private var scoreBar: some View {
         HStack(spacing: 8) {
-            scorePill("SCORE", value: session.engine.score, icon: "heart.fill")
-            scorePill("BEST", value: session.bestScore, icon: "crown.fill")
+            scorePill("SCORE", value: session.engine.score, icon: "ScoreHeart")
+            scorePill("BEST", value: session.bestScore, icon: "BestCrown")
             HStack(spacing: 3) {
                 Text("🍓").font(.system(size: 18))
                 VStack(alignment: .leading, spacing: 0) {
@@ -468,10 +562,10 @@ struct BerryGameView: View {
 
     private func scorePill(_ title: String, value: Int, icon: String) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: icon).foregroundStyle(title == "BEST" ? .orange : BerryStyle.strawberry)
+            BerryIcon(name: icon, size: 27)
             VStack(alignment: .leading, spacing: 0) {
                 Text(title).font(.system(size: 8, weight: .heavy, design: .rounded)).foregroundStyle(BerryStyle.chocolate.opacity(0.65))
-                Text(value.formatted()).font(.system(size: 20, weight: .black, design: .rounded)).foregroundStyle(BerryStyle.chocolate).lineLimit(1).minimumScaleFactor(0.5)
+                Text(BerryNumbers.compact(value)).font(.system(size: 20, weight: .black, design: .rounded)).foregroundStyle(BerryStyle.chocolate).lineLimit(1).minimumScaleFactor(0.5)
             }
             Spacer(minLength: 0)
         }
@@ -484,7 +578,7 @@ struct BerryGameView: View {
     private var toolBar: some View {
         HStack(spacing: 7) {
             if mode != .classic && mode != .challenge {
-            toolButton("Undo", icon: "arrow.uturn.backward", count: session.undos, enabled: session.canUndo) {
+            toolButton("Undo", icon: "UndoIcon", count: session.undos, enabled: session.canUndo) {
                 if session.canUndo {
                     let revertedLines = session.undo()
                     lifetimeLines = max(0, lifetimeLines - revertedLines)
@@ -497,30 +591,35 @@ struct BerryGameView: View {
                     selectedSlot = nil; drag = nil
                 } else { showShop = true }
             }
-            toolButton("Shuffle", icon: "shuffle", count: session.shuffles, enabled: session.shuffles > 0) {
+            toolButton("Shuffle", icon: "ShuffleIcon", count: session.shuffles, enabled: session.shuffles > 0) {
                 if session.shuffles > 0 { session.shuffle(); selectedSlot = nil; drag = nil } else { showShop = true }
             }
-            toolButton("Shop", icon: "basket.fill", count: nil, enabled: true) { showShop = true }
+            toolButton("Hint", icon: "BerryHint", count: session.hints, enabled: session.hints > 0) {
+                if session.hints > 0 { showHint() } else { showShop = true }
             }
-            toolButton(mode == .cozy ? "Cottage" : "Stats", icon: mode == .cozy ? "house.lodge.fill" : "chart.bar.fill", count: nil, enabled: true) { if mode == .cozy { showCottage = true } else { showStats = true } }
-            toolButton("Home", icon: "house.fill", count: nil, enabled: true) { returnToVillage() }
-        }.frame(height: 43)
+            }
+            toolButton(mode == .cozy ? "Cottage" : "Stats", icon: mode == .cozy ? "CottageDecorations" : "StatsChart", count: nil, enabled: true) { if mode == .cozy { showCottage = true } else { showStats = true } }
+            toolButton("Home", icon: "HomeCottage", count: nil, enabled: true) { returnToVillage() }
+        }.frame(height: 50)
     }
 
     private func toolButton(_ title: String, icon: String, count: Int?, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 1) {
                 HStack(spacing: 2) {
-                    Image(systemName: icon).font(.system(size: 13, weight: .bold))
+                    BerryIcon(name: icon, size: 23)
                     if let count { Text("\(count)").font(.system(size: 10, weight: .heavy)) }
                 }
                 Text(title).font(.system(size: 9, weight: .heavy, design: .rounded))
             }
             .foregroundStyle(enabled ? BerryStyle.strawberry : Color.gray)
             .frame(maxWidth: .infinity)
-            .frame(height: 42)
-            .background(.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 12))
-        }.disabled(!enabled && count == nil)
+            .frame(height: 48)
+            .background(.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 12))
+        }.buttonStyle(.plain)
+        // Do not disable the Undo button; when no undo is available the player
+        // can still see the reason in the store/inventory.
+
     }
 
     // Both board measurement and touch events use UIWindow coordinates.
@@ -532,9 +631,10 @@ struct BerryGameView: View {
         let candidates = BerryDropGeometry.candidates(
             for: finger, board: boardRect, piece: piece, side: session.engine.side
         )
-        let target = candidates.first {
-            session.engine.canPlace(piece, row: $0.row, col: $0.col)
-        } ?? candidates.first
+        // Preview and release MUST use the same lifted anchor. Choosing a
+        // different candidate just because it is legal silently moves an L
+        // piece away from the location the player is pointing at.
+        let target = candidates.first
         guard let target else { return nil }
         return BerryDragState(
             slot: slot, piece: piece, row: target.row, col: target.col,
@@ -552,12 +652,15 @@ struct BerryGameView: View {
         }
         switch event.phase {
         case .began:
-            touchStatus = "Picked up piece \(slot + 1)"
-        case .moved:
-            guard event.distanceSquared >= 64 else { return }
-            if activeDragSlot != slot && sound { BerryAudio.shared.play(.pickup) }
             activeDragSlot = slot
             activeDragFinger = event.location
+            hintPreview = nil
+            touchStatus = "Picked up piece \(slot + 1)"
+        case .moved:
+            activeDragFinger = event.location
+            guard event.distanceSquared >= 64 else { return }
+            if drag == nil && sound { BerryAudio.shared.play(.pickup) }
+            activeDragSlot = slot
             drag = placementForDrag(slot: slot, finger: event.location)
             if let drag {
                 touchStatus = "Preview (\(drag.row), \(drag.col)) \(drag.allowed ? "legal" : "blocked")"
@@ -586,6 +689,22 @@ struct BerryGameView: View {
         }
     }
 
+    private func showHint() {
+        guard mode != .classic, mode != .challenge,
+              let suggestion = session.useHintIfPossible(),
+              let piece = session.engine.tray[suggestion.slot] else { return }
+        let preview = BerryDragState(slot: suggestion.slot, piece: piece,
+                                     row: suggestion.row, col: suggestion.col, allowed: true)
+        selectedSlot = suggestion.slot
+        hintPreview = preview
+        hintSerial += 1
+        let current = hintSerial
+        if sound { BerryAudio.shared.play(.menuSelect) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            if hintSerial == current { hintPreview = nil }
+        }
+    }
+
     private func finishDrag(_ finalDrop: BerryDragState?) {
         defer { drag = nil }
         guard canMakeMove, let finalDrop else {
@@ -603,6 +722,7 @@ struct BerryGameView: View {
             return
         }
         if session.drop(slot: finalDrop.slot, row: finalDrop.row, col: finalDrop.col) {
+            hintPreview = nil
             selectedSlot = nil
             successFeedback()
         } else {
@@ -613,7 +733,12 @@ struct BerryGameView: View {
     /// Identical drag and tap board to the physically verified 0.5.6 engine.
     /// Only the 24x24 view enlarges and scrolls.
     private func boardInteraction(actualSize: CGFloat) -> some View {
-            BerryBoard(engine: session.engine, preview: drag, size: actualSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle, onBoardRect: { rect in boardRect = rect })
+            BerryBoard(engine: session.engine, preview: drag ?? hintPreview, size: actualSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle, onBoardRect: { rect in boardRect = rect })
+                .overlay {
+                    if strawberryRain && !reduceMotion {
+                        BerryStrawberryRain().allowsHitTesting(false)
+                    }
+                }
                 .overlay {
                     if sparkle {
                         Text(harvestCheer)
@@ -635,7 +760,8 @@ struct BerryGameView: View {
                 }
                 .padding(7)
                 .contentShape(Rectangle())
-                .onTapGesture { location in
+                .gesture(SpatialTapGesture().onEnded { tap in
+                    let location = tap.location
                     guard canMakeMove, let slot = selectedSlot,
                           session.engine.tray.indices.contains(slot),
                           let piece = session.engine.tray[slot] else { return }
@@ -650,12 +776,13 @@ struct BerryGameView: View {
                         return
                     }
                     if session.drop(slot: slot, row: target.row, col: target.col) {
+                        hintPreview = nil
                         selectedSlot = nil
                         successFeedback()
                     } else {
                         warningFeedback()
                     }
-                }
+                })
     }
 
     private func refreshBlitzClock() {
@@ -698,7 +825,11 @@ struct BerryGameView: View {
         }
         guard completed else { return }
         if mode == .story { completedStoryChapter = storyLevel; session.rewardStory(storyLevel); storyLevel += 1 }
-        if mode == .daily { session.rewardDaily(); dailyCompleted = BerryGameSession.dailyDateKey() }
+        if mode == .daily {
+            session.rewardDaily()
+            dailyCompleted = BerryGameSession.dailyDateKey()
+            BerryDailyHistory.markCompleteToday()
+        }
         blitzRunning = false
         showVictory = true
     }
@@ -742,6 +873,10 @@ struct BerryGameView: View {
         }
         // Fixed time: no extensions for clears.
         lastBlitzTimeBonus = 0
+        if session.lastClearedLines > 0 && strawberryUnlocked && !reduceMotion {
+            strawberryRain = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.12) { strawberryRain = false }
+        }
         if haptics { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
         if sound {
             let cue: BerryAudio.Cue = session.lastClearedLines > 0 ?
@@ -803,10 +938,20 @@ struct BerryGameView: View {
         }
     }
     private var shopSheet: some View {
-        sheetBase("The Berry Boutique", icon: "🧺") {
-            BerryBoutiqueView(session: session)
-            primaryButton("Back to Your Berry Garden") { showShop = false }
+        NavigationStack {
+            ScrollView {
+                BerryBoutiqueView(session: session)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 35)
+            }
+            .background(BerryStyle.cream.ignoresSafeArea())
+            .navigationTitle("Berry Boutique")
+            .toolbar { ToolbarItem(placement: .confirmationAction) {
+                Button("Done") { showShop = false }
+            }}
         }
+        .presentationDetents([.large])
     }
 
     private var cottageSheet: some View {
@@ -896,7 +1041,10 @@ struct BerryGameView: View {
         ScrollView {
             VStack(spacing: 17) {
                 Text(icon).font(.system(size: 49))
-                Text(title).font(.system(size: 26, weight: .black, design: .rounded)).foregroundStyle(BerryStyle.strawberry)
+                Text(title).font(.system(size: 24, weight: .black, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .foregroundStyle(BerryStyle.strawberry)
                 content()
             }
             .font(.system(size: 15, weight: .medium, design: .rounded))

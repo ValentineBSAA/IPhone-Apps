@@ -54,7 +54,7 @@ struct BerryBoutiqueView: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
+        LazyVStack(spacing: 16) {
             HStack(spacing: 12) {
                 Text("🧺").font(.system(size: 42))
                     .frame(width: 61, height: 61)
@@ -74,7 +74,7 @@ struct BerryBoutiqueView: View {
                     .foregroundStyle(BerryStyle.strawberry)
                 Text("Your Berry Wallet").font(.headline)
                 Spacer()
-                Text("🍓 \(session.berries)")
+                Text("🍓 \(BerryNumbers.compact(session.berries))")
                     .font(.system(size: 21, weight: .black, design: .rounded))
                     .foregroundStyle(BerryStyle.strawberry)
             }
@@ -91,10 +91,18 @@ struct BerryBoutiqueView: View {
             ForEach(items) { item in
                 let owned = session.ownedCosmetics.contains(item.id)
                 HStack(spacing: 12) {
-                    Text(item.emoji).font(.system(size: 31))
-                        .frame(width: 58, height: 58)
-                        .background(item.accent.opacity(0.15),
-                                    in: RoundedRectangle(cornerRadius: 16))
+                    Group {
+                        if item.type == "blocks" {
+                            BerryTile(tint: item.id == "blueberry-blocks" ? 3 : 0,
+                                      mode: .classic, skinOverride: item.id)
+                                .padding(6)
+                        } else {
+                            BerryIcon(name: item.type == "frames" ? "CottageDecorations" : "Milestone", size: 54)
+                        }
+                    }
+                    .frame(width: 58, height: 58)
+                    .background(item.accent.opacity(0.15),
+                                in: RoundedRectangle(cornerRadius: 16))
                     VStack(alignment: .leading, spacing: 5) {
                         Text(item.name)
                             .font(.system(size: 16, weight: .black, design: .rounded))
@@ -104,7 +112,7 @@ struct BerryBoutiqueView: View {
                             .foregroundStyle(BerryStyle.chocolate.opacity(0.65))
                             .fixedSize(horizontal: false, vertical: true)
                         if owned {
-                            Label("Permanently owned", systemImage: "checkmark.seal.fill")
+                            Label(active(item) ? "✓ Equipped • permanently owned" : "Permanently owned", systemImage: "checkmark.seal.fill")
                                 .font(.caption2).foregroundStyle(BerryStyle.leaf)
                         }
                     }
@@ -123,7 +131,7 @@ struct BerryBoutiqueView: View {
                             if sound { BerryAudio.shared.play(.reward) }
                         }
                     } label: {
-                        Text(owned ? (active(item) ? "Remove" : "Equip") : "🍓 \(item.price)")
+                        Text(owned ? (active(item) ? "Unequip" : "Equip") : "🍓 \(item.price)")
                             .font(.system(size: 12, weight: .black, design: .rounded))
                             .frame(minWidth: 64)
                     }
@@ -139,10 +147,16 @@ struct BerryBoutiqueView: View {
 
             VStack(alignment: .leading, spacing: 11) {
                 Text("🍰 GARDEN HELPERS").font(.headline).foregroundStyle(BerryStyle.strawberry)
-                Text("Usable in relaxed modes. Berry Classic remains power-up free.")
-                    .font(.caption).foregroundStyle(BerryStyle.chocolate.opacity(0.7))
+                Text("Use helpers from the game's bottom toolbar. Berry Classic and timed Blitz stay power-up free.")
+                    .font(.caption)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .foregroundStyle(BerryStyle.chocolate.opacity(0.8))
                 HStack {
-                    Label("Extra Undo", systemImage: "arrow.uturn.backward")
+                    BerryIcon(name: "UndoIcon", size: 28)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Extra Undo")
+                        Text("Owned: \(session.undos)").font(.caption2).foregroundStyle(.secondary)
+                    }
                     Spacer()
                     Button("🍓 25") {
                         session.buyUndo()
@@ -151,7 +165,11 @@ struct BerryBoutiqueView: View {
                     .disabled(session.berries < 25)
                 }
                 HStack {
-                    Label("Extra Shuffle", systemImage: "shuffle")
+                    BerryIcon(name: "ShuffleIcon", size: 28)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Extra Shuffle")
+                        Text("Owned: \(session.shuffles)").font(.caption2).foregroundStyle(.secondary)
+                    }
                     Spacer()
                     Button("🍓 25") {
                         session.buyShuffle()
@@ -160,7 +178,20 @@ struct BerryBoutiqueView: View {
                     .disabled(session.berries < 25)
                 }
                 HStack {
-                    Label("Cottage Decoration", systemImage: "house.lodge.fill")
+                    BerryIcon(name: "BerryHint", size: 28)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Berry Hint")
+                        Text("Owned: \(session.hints) • highlights a legal move").font(.caption2).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("🍓 20") {
+                        session.buyHint()
+                        if sound { BerryAudio.shared.play(.reward) }
+                    }.disabled(session.berries < 20)
+                }
+                HStack {
+                    BerryIcon(name: "CottageDecorations", size: 30)
+                    Text("Cottage Decoration")
                     Spacer()
                     Text("Owned \(min(session.cottageDecorations, 6))/6").font(.caption)
                     Button(session.cottageDecorations >= 6 ? "Complete" : "🍓 50") {

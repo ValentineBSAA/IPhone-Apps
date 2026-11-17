@@ -127,6 +127,38 @@ struct BerryEngine: Codable {
         }
     }
 
+    struct BerryHint: Equatable {
+        let slot: Int
+        let row: Int
+        let col: Int
+    }
+    /// Offer a legal slot and exact position. Prefer completing lines; never
+    /// rotate or resize pieces. Hint is advisory and does not place a piece.
+    func suggestedMove() -> BerryHint? {
+        var best: (value: Int, hint: BerryHint)?
+        for (slot, optionalPiece) in tray.enumerated() {
+            guard let piece = optionalPiece else { continue }
+            for row in 0..<side {
+                for col in 0..<side where canPlace(piece, row: row, col: col) {
+                    let points = piece.points.map { BerryPoint(row: row + $0.row, col: col + $0.col) }
+                    let rows = Set(points.map(\.row))
+                    let cols = Set(points.map(\.col))
+                    let completedRows = rows.filter { r in
+                        (0..<side).allSatisfy { c in board[r][c] != nil || points.contains(BerryPoint(row: r, col: c)) }
+                    }.count
+                    let completedCols = cols.filter { c in
+                        (0..<side).allSatisfy { r in board[r][c] != nil || points.contains(BerryPoint(row: r, col: c)) }
+                    }.count
+                    let value = (completedRows + completedCols) * 1000 + piece.points.count
+                    if best == nil || value > best!.value {
+                        best = (value, BerryHint(slot: slot, row: row, col: col))
+                    }
+                }
+            }
+        }
+        return best?.hint
+    }
+
     func hasMove() -> Bool {
         for piece in tray.compactMap({ $0 }) {
             for row in 0..<side {
@@ -169,8 +201,20 @@ struct BerryEngine: Codable {
         return BerryPlacement(clearedRows: rows, clearedColumns: cols, earned: earned, streak: streak, boardClear: boardClear)
     }
 
-    mutating func reshuffleTray() {
+    /// A paid shuffle must never spend a helper without creating a legal move.
+    /// It can rescue isolated free cells by offering a one-square piece.
+    @discardableResult
+    mutating func reshuffleTray() -> Bool {
+        guard board.contains(where: { $0.contains(nil) }) else { return false }
         refill()
+        if !hasMove() {
+            tray[0] = BerryPiece(points: [BerryPoint(row: 0, col: 0)], tint: nextRandom(6))
+        }
+        return hasMove()
+    }
+
+    var canRescueWithShuffle: Bool {
+        board.contains { $0.contains(nil) }
     }
 
     /// Sweet Endless never ends for lack of legal moves. Once a board is stuck,
@@ -260,13 +304,22 @@ struct BerryEngine: Codable {
             }
         }
         var nextTray: [BerryPiece?] = []
+        var used: [[BerryPoint]] = []
+        var usedTints: Set<Int> = []
         for index in 0..<3 {
             let pool = side == 24 ? (!viable.isEmpty ? viable : selection) :
                 cozyPieces == true ? (!viable.isEmpty ? viable : selection) :
                 hardPieces == true ? (!viable.isEmpty ? viable : selection) :
                 (!viable.isEmpty && (index < 2 || nextRandom(2) == 0) ? viable : classicCatalog)
-            let shape = pool[nextRandom(pool.count)]
-            nextTray.append(BerryPiece(points: shape, tint: nextRandom(6)))
+            // A full hand should not repeat the identical L/line three times.
+            let unique = pool.filter { candidate in !used.contains(candidate) }
+            let choices = unique.isEmpty ? pool : unique
+            let shape = choices[nextRandom(choices.count)]
+            used.append(shape)
+            let freshTints = (0..<6).filter { !usedTints.contains($0) }
+            let tint = freshTints.isEmpty ? nextRandom(6) : freshTints[nextRandom(freshTints.count)]
+            usedTints.insert(tint)
+            nextTray.append(BerryPiece(points: shape, tint: tint))
         }
         tray = nextTray
     }
