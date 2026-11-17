@@ -1,0 +1,101 @@
+import SwiftUI
+
+struct SettingsView: View {
+    @EnvironmentObject private var game: GameStore
+    @State private var confirmReplay = false
+
+    var body: some View {
+        Form {
+            Section {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("LAST SEEN")
+                        .font(.system(size: 25, weight: .black, design: .rounded))
+                    Text("THE MISSING FLOOR")
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .tracking(2)
+                        .foregroundColor(Night.muted)
+                }
+                .padding(.vertical, 9)
+            }
+
+            Section("Experience") {
+                Toggle(isOn: Binding(
+                    get: { game.state.audioEnabled },
+                    set: { game.setAudio($0) }
+                )) {
+                    Label("Audio and ambience", systemImage: "speaker.wave.2")
+                }
+                Toggle(isOn: Binding(
+                    get: { game.state.hapticsEnabled },
+                    set: { game.setHaptics($0) }
+                )) {
+                    Label("Haptic feedback", systemImage: "hand.tap")
+                }
+                Toggle(isOn: Binding(
+                    get: { game.state.slowerText },
+                    set: { game.setSlowText($0) }
+                )) {
+                    Label("Longer dramatic pauses", systemImage: "hourglass")
+                }
+                Text("Reduce Motion follows your iPhone accessibility settings. Dialogue can always be revealed instantly.")
+                    .font(.system(size: 12))
+                    .foregroundColor(Night.muted)
+            }
+
+            Section("Story notifications") {
+                if game.state.notificationsEnabled {
+                    Label("Notifications enabled", systemImage: "checkmark.circle.fill")
+                        .foregroundColor(Night.accent)
+                    Button("Turn off story reminders") {
+                        game.disableNotifications()
+                    }
+                    .foregroundColor(Night.danger)
+                } else {
+                    Button {
+                        game.requestNotificationPermission()
+                    } label: {
+                        Label("Enable optional reminders", systemImage: "bell.badge")
+                    }
+                }
+                Text("Optional notifications are clearly labelled as part of this fictional game. They never impersonate actual Messages or emergency alerts.")
+                    .font(.system(size: 12))
+                    .foregroundColor(Night.muted)
+            }
+
+            Section("Story progress") {
+                LabeledContent("Chapter", value: "The Missing Floor")
+                LabeledContent("Evidence found", value: "\(game.state.clues.count) / 3")
+                LabeledContent("Choices made", value: "\(game.state.visitedChoices.count)")
+                if let ending = game.endingTitle {
+                    LabeledContent("Ending", value: ending)
+                }
+                Button(role: .destructive) {
+                    confirmReplay = true
+                } label: {
+                    Label("Erase story progress and restart", systemImage: "arrow.counterclockwise")
+                }
+            }
+
+            Section {
+                Text("An original, fictional interactive horror story. The app never accesses your actual calls, contacts, text messages or photos. Works offline.")
+                    .font(.system(size: 12))
+                    .foregroundColor(Night.muted)
+                HStack {
+                    Text("Version")
+                    Spacer()
+                    Text("1.0.0 · iOS 16+")
+                        .foregroundColor(Night.muted)
+                }
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Night.background.ignoresSafeArea())
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog("Erase this story?", isPresented: $confirmReplay) {
+            Button("Erase and replay", role: .destructive) { game.restart() }
+        } message: {
+            Text("Current messages, evidence and endings will be erased. Preferences are preserved.")
+        }
+    }
+}
