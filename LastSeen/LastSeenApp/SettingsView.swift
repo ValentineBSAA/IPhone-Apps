@@ -79,6 +79,16 @@ struct SettingsView: View {
                     .foregroundColor(Night.muted)
             }
 
+            Section("Future voice conversations") {
+                Label("In-game calls: not available", systemImage: "phone.down")
+                    .foregroundColor(Night.muted)
+                Label("Microphone transcription: off", systemImage: "mic.slash")
+                    .foregroundColor(Night.muted)
+                Text("Planned for a later update with real recorded character dialogue. The iPhone microphone is not activated, and no microphone or speech permission is requested by this version. When introduced, iOS will show the microphone indicator, even if spoken words are not displayed as text.")
+                    .font(.system(size: 12))
+                    .foregroundColor(Night.muted)
+            }
+
             Section("Story progress") {
                 LabeledContent("Story", value: game.activeContact.map { game.title(for: $0) } ?? "Choose a conversation")
                 LabeledContent("Evidence found", value: "\(game.state.clues.count) / 3")
@@ -100,7 +110,7 @@ struct SettingsView: View {
                 HStack {
                     Text("Version")
                     Spacer()
-                    Text("1.0.2 · iOS 16+")
+                    Text("1.0.3 · iOS 16+")
                         .foregroundColor(Night.muted)
                 }
             }
