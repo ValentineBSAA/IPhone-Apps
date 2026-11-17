@@ -232,6 +232,19 @@ struct BerryEngine: Codable {
         return hasMove()
     }
 
+    /// Timed Blitz must continue until the clock expires even when the board is full.
+    /// Preserve score, lines, move count, and all earned strawberry rewards.
+    @discardableResult
+    mutating func recoverTimedBoardIfStuck() -> Bool {
+        guard !hasMove() else { return false }
+        board = Array(repeating: Array<Int?>(repeating: nil, count: side), count: side)
+        tray = []
+        streak = 0
+        dryMoves = 0
+        refill()
+        return hasMove()
+    }
+
     private mutating func refill() {
         let catalog: [[BerryPoint]] = [
             [BerryPoint(row: 0, col: 0)], [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1)], [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0)],
