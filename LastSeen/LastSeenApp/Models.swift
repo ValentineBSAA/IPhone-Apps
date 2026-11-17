@@ -103,5 +103,46 @@ struct SavedGame: Codable {
     var hapticsEnabled: Bool = true
     var slowerText: Bool = false
     var lastSaved: Date = Date()
-    var schemaVersion: Int = 1
+    var activeThread: String? = nil
+    var stories: [String: StorySlot]? = nil
+    var schemaVersion: Int = 2
+}
+
+
+/// An independent, persistable conversation. Inactive threads never run timers.
+struct StorySlot: Codable {
+    var sceneID: String
+    var nextBeatIndex: Int = 0
+    var choiceReady: Bool = false
+    var messages: [GameMessage] = []
+    var visitedChoices: [String] = []
+    var clues: Set<String> = []
+    var readThreads: Set<String> = []
+    var endingID: String? = nil
+
+    init(sceneID: String) {
+        self.sceneID = sceneID
+    }
+
+    init(capturing state: SavedGame) {
+        sceneID = state.sceneID
+        nextBeatIndex = state.nextBeatIndex
+        choiceReady = state.choiceReady
+        messages = state.messages
+        visitedChoices = state.visitedChoices
+        clues = state.clues
+        readThreads = state.readThreads
+        endingID = state.endingID
+    }
+
+    func restore(into state: inout SavedGame) {
+        state.sceneID = sceneID
+        state.nextBeatIndex = nextBeatIndex
+        state.choiceReady = choiceReady
+        state.messages = messages
+        state.visitedChoices = visitedChoices
+        state.clues = clues
+        state.readThreads = readThreads
+        state.endingID = endingID
+    }
 }
