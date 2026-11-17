@@ -464,8 +464,14 @@ struct BerryGameView: View {
                 ZStack {
                     BerryStyle.chocolate.opacity(0.42).ignoresSafeArea()
                     VStack(spacing: 16) {
-                        Text(showVictory ? "🍰 ✨ 🍓" : confirmRestart ? "🌱 🍓 🌱" : "🍓 🌸 🧺")
-                            .font(.system(size: 38))
+                        if showVictory {
+                            BerryGirlView(pose: .celebrate)
+                                .frame(width: 94, height: 94)
+                                .accessibilityHidden(true)
+                        } else {
+                            Text(confirmRestart ? "🌱 🍓 🌱" : "🍓 🌸 🧺")
+                                .font(.system(size: 38))
+                        }
                         Text(showVictory ? "Strawberry Spectacular!" : confirmRestart ? "Plant a Fresh Garden?" :
                              mode == .challenge ? "Time's Up, Berry Racer!" : "No More Moves!")
                             .font(.system(size: 25, weight: .black, design: .rounded))
@@ -930,6 +936,10 @@ struct BerryGameView: View {
 
     private var welcomeSheet: some View {
         sheetBase("Welcome to Strawberry Village!", icon: "🍓") {
+            BerryGirlView(pose: .celebrate)
+                .frame(width: 138, height: 164)
+                .frame(maxWidth: .infinity)
+                .accessibilityHidden(true)
             Text("Make the sweetest garden one block at a time. Place berry pieces, complete rows and columns, and earn strawberries to stock your basket.")
             Text("Complete full lines and make combos. Sweet Endless saves your garden, and every blocked board blooms into a new season without ending your score!")
             primaryButton("Let's Grow!") { welcomed = true; showWelcome = false }
