@@ -58,6 +58,11 @@ struct SettingsView: View {
                 if game.state.notificationsEnabled {
                     Label("Notifications enabled", systemImage: "checkmark.circle.fill")
                         .foregroundColor(Night.accent)
+                    Button {
+                        game.sendTestNotification()
+                    } label: {
+                        Label("Send a test banner in 7 seconds", systemImage: "bell")
+                    }
                     Button("Turn off story reminders") {
                         game.disableNotifications()
                     }
@@ -69,13 +74,13 @@ struct SettingsView: View {
                         Label("Enable optional reminders", systemImage: "bell.badge")
                     }
                 }
-                Text("Optional notifications are clearly labelled as part of this fictional game. They never impersonate actual Messages or emergency alerts.")
+                Text("Real iOS notifications show a contact name and a short message. Lock-screen quick replies accept an offered story response; other text is kept as a draft. Notification delivery depends on iOS and Focus settings.")
                     .font(.system(size: 12))
                     .foregroundColor(Night.muted)
             }
 
             Section("Story progress") {
-                LabeledContent("Chapter", value: "The Missing Floor")
+                LabeledContent("Story", value: game.activeContact.map { game.title(for: $0) } ?? "Choose a conversation")
                 LabeledContent("Evidence found", value: "\(game.state.clues.count) / 3")
                 LabeledContent("Choices made", value: "\(game.state.visitedChoices.count)")
                 if let ending = game.endingTitle {
@@ -95,7 +100,7 @@ struct SettingsView: View {
                 HStack {
                     Text("Version")
                     Spacer()
-                    Text("1.0.0 · iOS 16+")
+                    Text("1.0.1 · iOS 16+")
                         .foregroundColor(Night.muted)
                 }
             }
@@ -107,7 +112,7 @@ struct SettingsView: View {
         .confirmationDialog("Erase this story?", isPresented: $confirmReplay) {
             Button("Erase and replay", role: .destructive) { game.restart() }
         } message: {
-            Text("Current messages, evidence and endings will be erased. Preferences are preserved.")
+            Text("Only the selected conversation will restart. Other story progress and preferences are preserved.")
         }
     }
 }
