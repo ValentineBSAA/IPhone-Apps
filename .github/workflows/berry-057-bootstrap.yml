@@ -25,6 +25,9 @@ jobs:
         run: |
           set -euo pipefail
           unzip -q -o 'BuildPayload/Berry-0.5.7-patch.zip' -d .
+          # GitHub Actions' token cannot update workflow YAML files.
+          # Keep the existing build workflow in Git; this bootstrap builds directly.
+          git restore .github/workflows/berry-block-blast.yml
           test -f StrawberryShortcakeBlockBlast/BerryBlockBlast/BerryCollectionView.swift
           test -f StrawberryShortcakeBlockBlast/BerryBlockBlast/BerryDailyHarvestView.swift
           grep -q 'MARKETING_VERSION: "0.5.7"' StrawberryShortcakeBlockBlast/project.yml
