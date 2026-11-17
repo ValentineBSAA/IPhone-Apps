@@ -1,5 +1,14 @@
 # Berry Block Blast change history
 
+## v0.5.6 (build 2) · The Ultimate Berry Garden
+- 51 original music recordings and 16 original sound effects from supplied verified GitHub release audio-v1.0.
+- 8×8/12×12/24×24 Sweet Endless, pannable 576-cell Mega Garden.
+- Timed Berry Blitz: Quick Jam 60s and Berry Rush 120s, independent records.
+- Classic-only saved garden with bookmark, screenshot inactive pause flash fixed.
+- Premium Berry Boutique cosmetics, music Jukebox and More Adventures redesign.
+- Seven existing modes and all earned currency retained. Sound and drag acceptance remain physical-device gates.
+
+
 ## v0.5.6 (build 1) · Original Soundtrack Integration
 - Imported all 15 supplied AAC-LC M4A tracks from GitHub Release V1 without re-encoding.
 - Added resilient AVFoundation playback, automatic rotation and pause/resume handling.

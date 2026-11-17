@@ -1,6 +1,6 @@
 # 🍓 Berry Block Blast for iPhone
 
-**Version 0.5.6 • Build 1 • Native SwiftUI + UIKit touch input • Independent original game**
+**Version 0.5.6 • Build 2 • Native SwiftUI + UIKit touch input • Independent original game**
 
 Berry Block Blast is a strawberry-themed 8×8 block-placement puzzle for iPhone. Its classic rules are inspired by Block Blast, but all Berry illustrations, user interface, original music and extra game modes are independent. The project is not affiliated with Hungry Studio or Strawberry Shortcake.
 
@@ -32,11 +32,26 @@ All existing modes preserve their saved-board keys; new Berry Classic receives i
 - Added optional **Touch diagnostics (testing)** in Berry Settings, disabled by default.
 
 ## iPhone builds
-The `codemagic.yaml` workflow is the primary manual unsigned-IPA builder. A separate optional GitHub Actions workflow can compile an unsigned IPA for physical iPhone installation. **Build artifact: `Berry-Block-Blast-v0.5.6-build1-unsigned.ipa`.** Sign it with your existing iPhone signing method before installing.
+The `codemagic.yaml` workflow is the primary manual unsigned-IPA builder. A separate optional GitHub Actions workflow can compile an unsigned IPA for physical iPhone installation. **Build artifact: `Berry-Block-Blast-v0.5.6-build2-unsigned.ipa`.** Sign it with your existing iPhone signing method before installing.
 
 This build is **development/testing** until reliable dragging has been confirmed on the physical iPhone 16e. See `RELEASE-QA-0.5.5-BUILD1.md` for the complete checklist.
 
-## New in 0.5.6 build 1: Original 15-track soundtrack
+## 0.5.6 Build 2: Mega Garden and expanded original audio
+
+- **51 original songs + 16 original sound effects**, bundled offline and verified byte-for-byte against their supplied release manifests.
+- Premium standalone **Strawberry Jukebox** with genre groupings and menu/gameplay/Blitz/results playlists. The long bare tracklist has been removed from More Adventures.
+- **8×8, 12×12 and 24×24** Sweet Endless boards. The 24×24 Mega Garden scrolls through a magnified 576-cell board; Berry Classic remains the physically verified 8×8 game.
+- **Berry Blitz** offers *Quick Jam (60 seconds)* and *Berry Rush (120 seconds)*, with separate high scores and no extra time or target-score victory.
+- **Berry Classic** is the only mode with a resumable unfinished board. The main card displays a save badge. Records, rewards and progress remain saved for the other six modes.
+- **The Berry Boutique** adds permanent cosmetic block palettes, board outlines and sparkle decorations, equipped with earned berries. Purchases never change the Classic puzzle rules.
+- Screenshot and temporary iOS inactive states no longer pop up the pause overlay.
+- Improved More Adventures cards, in-game score feedback, countdown sounds and victory presentation.
+- **iPhone bundle identifier unchanged:** `com.valentinebsaa.berryblockblast`.
+- The GitHub Actions and Codemagic unsigned-build pipelines validate all 67 audio tracks inside the compiled app and final IPA.
+
+**Release qualification:** macOS iPhone compilation and simulator tests must pass, and the 67 included audio files must match their source SHA-256 hashes. The resulting unsigned IPA still needs iPhone signing and physical device testing; especially confirm Mega Garden scrolling, persistent cosmetic selections, screenshot behavior and native drag/drop.
+
+## Previous: 0.5.6 build 1 original soundtrack
 - Bundles all 15 original, iOS-ready AAC-LC M4A recordings (31:36) unaltered, available offline.
 - Native AVFoundation playlist shared across all screens with automatic track rotation, shuffle without immediate repeats and gentle sequential fades.
 - Cozy Berry 90/10, Balanced Berry 70/30 default, Arcade Berry 40/60: actual soundtrack catalog moods, not guessed metadata.
