@@ -10,10 +10,10 @@ enum StoryScript {
             StoryScene(
                 id: "opening",
                 beats: [
-                    .init("nora", "nora", "Hey. Sorry to bother you this late.", delay: 1.0),
-                    .init("nora", "nora", "You awake?", delay: 2.0),
-                    .init("nora", "nora", "It's Nora. Apartment 402.", delay: 2.1),
-                    .init("nora", "nora", "Someone has been moving furniture upstairs for twenty minutes.", delay: 2.2),
+                    .init("nora", "nora", "Hey, quick question. Did maintenance mention an elevator inspection?", delay: 1.0),
+                    .init("nora", "nora", "It keeps stopping on my floor even when nobody calls it.", delay: 2.0),
+                    .init("nora", "nora", "It's Nora from 402, by the way.", delay: 2.1),
+                    .init("nora", "nora", "I was going to ask Eli, but there's something else. I keep hearing furniture dragging upstairs.", delay: 2.2),
                     .init("nora", "nora", "Except we're on the top floor."),
                     .init("nora", "nora", "Tell me you hear it too.")
                 ],
@@ -58,8 +58,8 @@ enum StoryScript {
             StoryScene(
                 id: "evidence",
                 beats: [
-                    .init("nora", "nora", "Photo taken at 1:43 AM.", kind: .photograph),
-                    .init("nora", "nora", "There's an elevator panel in the reflection. I didn't notice it at first."),
+                    .init("nora", "nora", "This is the elevator right now. Look at its reflection.", kind: .photograph, asset: "Story_02_Elevator_Reflection"),
+                    .init("nora", "nora", "I was standing alone when I took that. Does it look like someone is in the reflection?"),
                     .init("eli", "eli", "Building notice: maintenance on the north stairwell. Avoid the elevator tonight.", delay: 3.6),
                     .init("nora", "nora", "Why is Eli messaging you too?"),
                     .init("nora", "nora", "He doesn't usually work nights."),
@@ -75,8 +75,10 @@ enum StoryScript {
             StoryScene(
                 id: "photo_path",
                 beats: [
-                    .init("nora", "nora", "I see a 7. That's impossible. This building has four floors."),
-                    .init("nora", "nora", "When I took the photo, the display said 4."),
+                    .init("nora", "nora", "There's a figure on the metal doors. I didn't see anyone there."),
+                    .init("nora", "nora", "My front door is right beside the elevator. Here, I just took another photo."),
+                    .init("nora", "nora", "My door looks different now. I don't remember those scratches."),
+                    .init("nora", "nora", "Here is the photo of the door.", kind: .photograph, asset: "Story_03_Nora_Front_Door"),
                     .init("nora", "nora", "I can hear the doors sliding open above me."),
                     .init("eli", "eli", "Do not trust what you see in the mirrors.")
                 ],
@@ -130,6 +132,7 @@ enum StoryScript {
                 beats: [
                     .init("eli", "eli", "The stairwell lights only work every other landing."),
                     .init("eli", "eli", "Count the doors, not the steps."),
+                    .init("eli", "eli", "Photo from the stairwell, taken right now.", kind: .photograph, asset: "Story_09_Stairwell"),
                     .init("nora", "nora", "I can hear you on the stairs."),
                     .init("nora", "nora", "But you're still messaging me from your apartment, right?"),
                     .init("unit7", "unit7", "YOU HAVE PASSED THE FOURTH FLOOR TWICE."),
@@ -143,6 +146,7 @@ enum StoryScript {
                 beats: [
                     .init("eli", "eli", "I still have access to the lobby camera."),
                     .init("eli", "eli", "There's nobody standing at the elevator. But the doors keep opening."),
+                    .init("eli", "eli", "I snapped the inside control panel.", kind: .photograph, asset: "Story_06_Inside_Elevator"),
                     .init("nora", "nora", "What's the display showing?"),
                     .init("eli", "eli", "Seven."),
                     .init("unit7", "unit7", "CAMERAS ONLY SEE WHAT IS ALREADY GONE."),
@@ -155,6 +159,7 @@ enum StoryScript {
                 id: "nora_check",
                 beats: [
                     .init("nora", "nora", "Okay. I'm holding my phone."),
+                    .init("nora", "nora", "This is the hallway outside my apartment.", kind: .photograph, asset: "Story_01_Nora_Hallway"),
                     .init("nora", "nora", "Wait. Someone outside my apartment is talking with my voice."),
                     .init("nora", "nora", "They just said 'I am holding my phone.'"),
                     .init("eli", "eli", "Do not open for anyone who can finish your sentences."),
@@ -184,10 +189,11 @@ enum StoryScript {
             StoryScene(
                 id: "threshold",
                 beats: [
-                    .init("eli", "eli", "Look at the reflection. It's not the elevator number that matters."),
-                    .init("nora", "nora", "The photograph shows a clock behind me."),
+                    .init("eli", "eli", "Look at the reflection. That figure isn't standing inside the elevator."),
+                    .init("nora", "nora", "There isn't a mirror in that hallway, but you can see someone behind me."),
                     .init("eli", "eli", "Now compare that time to the voice message."),
                     .init("unit7", "unit7", "YOU ONLY GET TO ASK ONE MORE QUESTION."),
+                    .init("nora", "nora", "The hallway should not be this long. Look.", kind: .photograph, asset: "Story_04_Impossible_Hallway"),
                     .init("nora", "nora", "I heard the lock turn. I'm running out of time.")
                 ],
                 choices: [
@@ -199,11 +205,11 @@ enum StoryScript {
             StoryScene(
                 id: "safe_ending",
                 beats: [
-                    .init("nora", "nora", "The time in the photo... 1:43."),
+                    .init("nora", "nora", "The person in the photo... their face is turned away."),
                     .init("eli", "eli", "And the recording said not to take the elevator."),
-                    .init("eli", "eli", "The reflection isn't showing a floor. It's showing how many seconds the doors stay open."),
-                    .init("nora", "nora", "Seven seconds."),
-                    .init("eli", "eli", "Go to the stairwell when the doors close. The emergency door opens for exactly that long."),
+                    .init("eli", "eli", "The figure is standing at the stairwell, not the elevator. I think it's warning us."),
+                    .init("nora", "nora", "The voice message said not to take the elevator."),
+                    .init("eli", "eli", "Go to the stairwell when the doors close. Don't follow the figure into the elevator."),
                     .init("nora", "nora", "I'm outside. I can smell rain. Real rain."),
                     .init("unit7", "unit7", "ONE LEFT."),
                     .init("nora", "nora", "I think we made it. Please tell me you're okay."),
@@ -220,7 +226,7 @@ enum StoryScript {
                     .init("nora", "nora", "Oh, thank God. It's me."),
                     .init("eli", "eli", "What did you just tell her to do?"),
                     .init("unit7", "unit7", "WELCOME HOME."),
-                    .init("nora", "nora", "Hey. Sorry to bother you this late."),
+                    .init("nora", "nora", "Hey, quick question. Did maintenance mention an elevator inspection?"),
                     .init("nora", "nora", "You awake?"),
                     .init("unit7", "unit7", "THE CONVERSATION WILL BEGIN AGAIN.")
                 ],
@@ -237,6 +243,7 @@ enum StoryScript {
                     .init("unit7", "unit7", "THAT IS CORRECT."),
                     .init("eli", "eli", "Just one more step."),
                     .init("unit7", "unit7", "NEW TENANT REGISTERED."),
+                    .init("unit7", "unit7", "One last picture.", kind: .photograph, asset: "Story_10_Final_Reveal"),
                     .init("nora", "nora", "I can hear you knocking. But your number is disconnected.")
                 ],
                 choices: [],
