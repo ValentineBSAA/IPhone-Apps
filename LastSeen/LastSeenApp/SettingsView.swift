@@ -3,6 +3,9 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject private var game: GameStore
     @State private var confirmReplay = false
+    @AppStorage("lastseen.portrait.nora") private var noraPortrait = 1
+    @AppStorage("lastseen.portrait.eli") private var eliPortrait = 1
+    @AppStorage("lastseen.portrait.unit7") private var unit7Portrait = 1
 
     var body: some View {
         Form {
@@ -38,6 +41,15 @@ struct SettingsView: View {
                     Label("Longer dramatic pauses", systemImage: "hourglass")
                 }
                 Text("Reduce Motion follows your iPhone accessibility settings. Dialogue can always be revealed instantly.")
+                    .font(.system(size: 12))
+                    .foregroundColor(Night.muted)
+            }
+
+            Section("Contact photos") {
+                PortraitOptionRow(contact: .nora, count: 4, selected: $noraPortrait)
+                PortraitOptionRow(contact: .eli, count: 3, selected: $eliPortrait)
+                PortraitOptionRow(contact: .unit7, count: 3, selected: $unit7Portrait)
+                Text("Tap a photo to use it everywhere in the game. Photos stay square in the asset catalog and are cropped to circles in conversations and the inbox.")
                     .font(.system(size: 12))
                     .foregroundColor(Night.muted)
             }
@@ -97,5 +109,61 @@ struct SettingsView: View {
         } message: {
             Text("Current messages, evidence and endings will be erased. Preferences are preserved.")
         }
+    }
+}
+
+private struct PortraitOptionRow: View {
+    let contact: Contact
+    let count: Int
+    @Binding var selected: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 11) {
+            HStack {
+                Text(contact.name)
+                    .font(.system(size: 14, weight: .semibold))
+                Spacer()
+                Text("\(selected) of \(count)")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundColor(Night.muted)
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 14) {
+                    ForEach(1...count, id: \.self) { number in
+                        Button {
+                            selected = number
+                        } label: {
+                            VStack(spacing: 6) {
+                                ContactAvatar(contact: contact, size: 64, option: number)
+                                    .padding(3)
+                                    .overlay {
+                                        Circle()
+                                            .strokeBorder(
+                                                selected == number ? Night.accent : .clear,
+                                                lineWidth: 2.5
+                                            )
+                                    }
+                                    .overlay(alignment: .bottomTrailing) {
+                                        if selected == number {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .font(.system(size: 17))
+                                                .foregroundColor(Night.accent)
+                                                .background(Night.surface, in: Circle())
+                                        }
+                                    }
+                                Text("Option \(number)")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(selected == number ? .white : Night.muted)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(contact.name), option \(number)")
+                        .accessibilityAddTraits(selected == number ? [.isSelected] : [])
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        }
+        .padding(.vertical, 7)
     }
 }
