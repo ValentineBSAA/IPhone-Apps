@@ -19,6 +19,7 @@ struct BerryCollectionView: View {
     }
     private let skins = [
         Skin(id: "default", title: "Strawberry Candy", category: "blocks", detail: "Your classic berry pieces"),
+        Skin(id: "strawberry-fruit", title: "True Strawberry", category: "blocks", detail: "Real strawberry-shaped fruit blocks • Free"),
         Skin(id: "blueberry-blocks", title: "Blueberry Velvet", category: "blocks", detail: "Deep blue and violet jewels · 🍓 90"),
         Skin(id: "vanilla-blocks", title: "Vanilla Cream", category: "blocks", detail: "Golden honey and whipped cream · 🍓 90"),
         Skin(id: "raspberry-blocks", title: "Raspberry Ruby", category: "blocks", detail: "Raspberry candy jewels · 🍓 110"),
