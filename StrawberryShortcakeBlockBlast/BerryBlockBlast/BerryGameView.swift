@@ -377,7 +377,6 @@ struct BerryGameView: View {
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }
-            }
             // Screen-space celebrations, never attached to the scrollable
             // 24×24 board. Incoming notifications cannot move these banners.
             if sparkle {
@@ -395,6 +394,7 @@ struct BerryGameView: View {
                     .position(x: width / 2, y: height * 0.36)
                     .allowsHitTesting(false)
                     .zIndex(9)
+            }
             }
             .frame(width: width, height: height)
         }
