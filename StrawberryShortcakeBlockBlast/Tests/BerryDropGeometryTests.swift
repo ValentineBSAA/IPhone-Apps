@@ -41,4 +41,32 @@ final class BerryDropGeometryTests: XCTestCase {
             for: CGPoint(x: 100, y: 100), board: board, piece: square, side: 8
         ))
     }
+    func testLiftedTouchJustBelowBoardCanTargetBottomRow() {
+        let board = CGRect(x: 30, y: 200, width: 320, height: 320)
+        let finger = CGPoint(x: 50, y: board.maxY + 22)
+        let matches = BerryDropGeometry.candidates(
+            for: finger, board: board, piece: single, side: 8
+        )
+        XCTAssertFalse(matches.isEmpty)
+        XCTAssertEqual(matches.first?.row, 7)
+        XCTAssertEqual(matches.first?.col, 0)
+    }
+
+    func testPreviewAndReleaseUseIdenticalTargets() {
+        let board = CGRect(x: 22, y: 260, width: 350, height: 350)
+        let finger = CGPoint(x: 140, y: 515)
+        let preview = BerryDropGeometry.candidates(for: finger, board: board, piece: square, side: 8)
+        let release = BerryDropGeometry.candidates(for: finger, board: board, piece: square, side: 8)
+        XCTAssertEqual(preview.map { $0.row }, release.map { $0.row })
+        XCTAssertEqual(preview.map { $0.col }, release.map { $0.col })
+    }
+
+    func testExtremeFingerOvershootCannotTargetBoard() {
+        let board = CGRect(x: 25, y: 210, width: 345, height: 345)
+        let matches = BerryDropGeometry.candidates(
+            for: CGPoint(x: 110, y: board.maxY + 200),
+            board: board, piece: square, side: 8
+        )
+        XCTAssertTrue(matches.isEmpty)
+    }
 }

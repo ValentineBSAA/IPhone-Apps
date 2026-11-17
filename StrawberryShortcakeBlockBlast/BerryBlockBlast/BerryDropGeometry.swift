@@ -2,6 +2,23 @@ import Foundation
 
 /// Maps the physical finger location to a board origin; all coordinates are global.
 enum BerryDropGeometry {
+    /// The original touch game lifts the piece above the thumb.
+    /// Keep the unlifted alternative for direct-to-board dragging.
+    static func candidates(for finger: CGPoint, board: CGRect, piece: BerryPiece,
+                           side: Int) -> [(row: Int, col: Int)] {
+        guard board.width > 0 else { return [] }
+        let lift = min(CGFloat(84), max(CGFloat(46), board.width * 0.19))
+        let positions = [CGPoint(x: finger.x, y: finger.y - lift), finger]
+        var matches: [(row: Int, col: Int)] = []
+        for point in positions {
+            if let target = target(for: point, board: board, piece: piece, side: side),
+               !matches.contains(where: { $0.row == target.row && $0.col == target.col }) {
+                matches.append(target)
+            }
+        }
+        return matches
+    }
+
     static func target(for finger: CGPoint, board: CGRect, piece: BerryPiece,
                        side: Int, gap: CGFloat = 3) -> (row: Int, col: Int)? {
         guard side > 0, board.width > 0, board.height > 0,
