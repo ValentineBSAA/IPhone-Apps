@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "originalArchive": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready.zip",
+  "archiveSHA256": "4c09307e61d05ea5ea67e411c9f57d185b0b67bed62c33f927513d70cb7bf63e",
+  "tracks": [
+    {
+      "id": 1,
+      "file": "BerryTrack01.m4a",
+      "title": "welcome-to-berryland",
+      "originalArchivePath": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready/audio/01-welcome-to-berryland.m4a",
+      "sha256": "351aad6643cce2f59954bbb49ba7c5f206c13aaa845cec0c9c359e062625fc8f",
+      "bytes": 2838617,
+      "mood": "unclassified"
+    },
+    {
+      "id": 2,
+      "file": "BerryTrack02.m4a",
+      "title": "berry-block-boogie",
+      "originalArchivePath": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready/audio/02-berry-block-boogie.m4a",
+      "sha256": "37ceb8dd028c3c699e2421fd2d43e4fc2e57717e835bc57faed0c400a2aea6e1",
+      "bytes": 2695071,
+      "mood": "unclassified"
+    },
+    {
+      "id": 3,
+      "file": "BerryTrack03.m4a",
+      "title": "strawberry-sugar-rush",
+      "originalArchivePath": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready/audio/03-strawberry-sugar-rush.m4a",
+      "sha256": "efbaf8de400050761b4722b701b9fb311b80486a3eed28faf1702c0441ab3841",
+      "bytes": 3396915,
+      "mood": "unclassified"
+    },
+    {
+      "id": 4,
+      "file": "BerryTrack04.m4a",
+      "title": "jam-jar-jamboree",
+      "originalArchivePath": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready/audio/04-jam-jar-jamboree.m4a",
+      "sha256": "ca6ddcbddf6c381c75e9f494d933a15662f786a015f310aada1875018b3f795a",
+      "bytes": 2623631,
+      "mood": "unclassified"
+    },
+    {
+      "id": 5,
+      "file": "BerryTrack05.m4a",
+      "title": "sweetest-victory",
+      "originalArchivePath": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready/audio/05-sweetest-victory.m4a",
+      "sha256": "084bcb238813138a9b096c3b329c9bf3f4f684fb9be86dd1b90cad4357ebca7d",
+      "bytes": 2377577,
+      "mood": "unclassified"
+    },
+    {
+      "id": 6,
+      "file": "BerryTrack06.m4a",
+      "title": "strawberry-morning",
+      "originalArchivePath": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready/audio/06-strawberry-morning.m4a",
+      "sha256": "52643ea65222bc2d3349370e4061130f297a1ba6245521509450b58715dca7e0",
+      "bytes": 3525666,
+      "mood": "unclassified"
+    },
+    {
+      "id": 7,
+      "file": "BerryTrack07.m4a",
+      "title": "rainy-day-at-the-berry-cafe",
+      "originalArchivePath": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready/audio/07-rainy-day-at-the-berry-cafe.m4a",
+      "sha256": "c100f607700d77e73f14cd8d0ba1cfb8a54653726e82b30109b9d74e02f0bcfa",
+      "bytes": 3007660,
+      "mood": "unclassified"
+    },
+    {
+      "id": 8,
+      "file": "BerryTrack08.m4a",
+      "title": "twilight-in-berryland",
+      "originalArchivePath": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready/audio/08-twilight-in-berryland.m4a",
+      "sha256": "8e452f51271e3aa53ea08dc8d493118927bffc7f749a384cbbe7643f2b874048",
+      "bytes": 4109878,
+      "mood": "unclassified"
+    },
+    {
+      "id": 9,
+      "file": "BerryTrack09.m4a",
+      "title": "a-little-berry-picnic",
+      "originalArchivePath": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready/audio/09-a-little-berry-picnic.m4a",
+      "sha256": "e5b4443e3e683ea09149135f01bd3cce97c030f09dcde9f06a84f9913cbc8f1c",
+      "bytes": 2987922,
+      "mood": "unclassified"
+    },
+    {
+      "id": 10,
+      "file": "BerryTrack10.m4a",
+      "title": "moonlight-and-strawberry-dreams",
+      "originalArchivePath": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready/audio/10-moonlight-and-strawberry-dreams.m4a",
+      "sha256": "eaff9bfa437184a439cc25f3f65dfd356890e53120e5ebb61556f440f6b7305c",
+      "bytes": 3558128,
+      "mood": "unclassified"
+    },
+    {
+      "id": 11,
+      "file": "BerryTrack11.m4a",
+      "title": "blueberry-breeze",
+      "originalArchivePath": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready/audio/11-blueberry-breeze.m4a",
+      "sha256": "1573a3793ef9e658a38f70f3280f05687463187926c8a5cda6e8c67cfd99a947",
+      "bytes": 2428741,
+      "mood": "unclassified"
+    },
+    {
+      "id": 12,
+      "file": "BerryTrack12.m4a",
+      "title": "peach-blossom-afternoon",
+      "originalArchivePath": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready/audio/12-peach-blossom-afternoon.m4a",
+      "sha256": "3c9d160807bb5ae5770da21e78bf3bb1d884be45bec1e092cba92499def8a2eb",
+      "bytes": 3886565,
+      "mood": "unclassified"
+    },
+    {
+      "id": 13,
+      "file": "BerryTrack13.m4a",
+      "title": "raspberry-rainfall",
+      "originalArchivePath": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready/audio/13-raspberry-rainfall.m4a",
+      "sha256": "6254a46f6021a366d956000ecbdc5e7ba212eaeb2e74ee6a0edb181ae150472d",
+      "bytes": 3812595,
+      "mood": "unclassified"
+    },
+    {
+      "id": 14,
+      "file": "BerryTrack14.m4a",
+      "title": "vanilla-cream-skies",
+      "originalArchivePath": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready/audio/14-vanilla-cream-skies.m4a",
+      "sha256": "2c0aa86579cff792a849beb3ddb22906bb0a737abfd12af80a79028d560aa5c4",
+      "bytes": 1964942,
+      "mood": "unclassified"
+    },
+    {
+      "id": 15,
+      "file": "BerryTrack15.m4a",
+      "title": "the-berry-garden-waltz",
+      "originalArchivePath": "BerryBlastBlast-Soundtrack-v1.0-iOS-Ready/audio/15-the-berry-garden-waltz.m4a",
+      "sha256": "95b3df291d354bf08b4f811ebf9f1afd816a311b4034ffb6a2e5926c1b6b75bf",
+      "bytes": 3310606,
+      "mood": "unclassified"
+    }
+  ]
+}
