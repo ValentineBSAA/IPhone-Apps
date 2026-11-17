@@ -28,7 +28,7 @@ struct BerryMusicSettingsView: View {
                 }
             }
             Toggle("Original Berry soundtrack", isOn: $music)
-                .onChange(of: music) { _, value in audio.setMusic(value) }
+                .onChange(of: music) { value in audio.setMusic(value) }
             VStack(alignment: .leading, spacing: 7) {
                 Text("YOUR BERRY MIX").font(.system(size: 10, weight: .heavy, design: .rounded))
                     .tracking(1).foregroundStyle(BerryStyle.strawberry)
@@ -38,7 +38,7 @@ struct BerryMusicSettingsView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .onChange(of: musicMode) { _, value in
+                .onChange(of: musicMode) { value in
                     audio.setMusicMode(BerryMusicMode(rawValue: value) ?? .balanced)
                 }
                 Text((BerryMusicMode(rawValue: musicMode) ?? .balanced).description)
@@ -93,7 +93,7 @@ struct BerryMusicSettingsView: View {
                         in: RoundedRectangle(cornerRadius: 16))
 
             Toggle("Shuffle without repeating songs", isOn: $shuffle)
-                .onChange(of: shuffle) { _, value in audio.setShuffle(value) }
+                .onChange(of: shuffle) { value in audio.setShuffle(value) }
 
             VStack(alignment: .leading, spacing: 5) {
                 HStack {
@@ -103,7 +103,7 @@ struct BerryMusicSettingsView: View {
                         .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 }
                 Slider(value: $musicVolume, in: 0...1)
-                    .onChange(of: musicVolume) { _, value in audio.setMusicVolume(Float(value)) }
+                    .onChange(of: musicVolume) { value in audio.setMusicVolume(Float(value)) }
                     .accessibilityLabel("Music volume")
             }
             Toggle("Berry sound effects", isOn: $sound)
@@ -115,7 +115,7 @@ struct BerryMusicSettingsView: View {
                         .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 }
                 Slider(value: $effectsVolume, in: 0...1)
-                    .onChange(of: effectsVolume) { _, value in audio.setEffectVolume(Float(value)) }
+                    .onChange(of: effectsVolume) { value in audio.setEffectVolume(Float(value)) }
                     .accessibilityLabel("Sound effects volume")
             }
             if let error = audio.playbackError {
