@@ -15,8 +15,32 @@ enum Night {
 struct ContactAvatar: View {
     let contact: Contact
     var size: CGFloat = 52
+    var option: Int? = nil
 
-    private var color: Color {
+    // Store portrait selections separately from chapter progress, so replay
+    // never discards the player's preferred contact photographs.
+    @AppStorage("lastseen.portrait.nora") private var noraPortrait = 1
+    @AppStorage("lastseen.portrait.eli") private var eliPortrait = 1
+    @AppStorage("lastseen.portrait.unit7") private var unit7Portrait = 1
+
+    private var assetName: String {
+        let chosen: Int
+        let prefix: String
+        switch contact {
+        case .nora:
+            prefix = "Contact_Nora"
+            chosen = min(max(option ?? noraPortrait, 1), 4)
+        case .eli:
+            prefix = "Contact_Eli"
+            chosen = min(max(option ?? eliPortrait, 1), 3)
+        case .unit7:
+            prefix = "Contact_Unit7"
+            chosen = min(max(option ?? unit7Portrait, 1), 3)
+        }
+        return String(format: "%@_%02d", prefix, chosen)
+    }
+
+    private var fallbackColor: Color {
         switch contact {
         case .nora: return Color(red: 0.42, green: 0.44, blue: 0.66)
         case .eli: return Color(red: 0.32, green: 0.51, blue: 0.55)
@@ -25,19 +49,35 @@ struct ContactAvatar: View {
     }
 
     var body: some View {
-        Circle()
-            .fill(RadialGradient(colors: [color.opacity(0.9), color.opacity(0.23), .black],
-                                 center: .topLeading, startRadius: 0, endRadius: size))
-            .overlay {
-                Circle().strokeBorder(.white.opacity(0.16), lineWidth: 1)
-            }
-            .overlay {
+        ZStack {
+            if let photo = UIImage(named: assetName) {
+                Image(uiImage: photo)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: size, height: size)
+                    .clipped()
+            } else {
+                Circle()
+                    .fill(RadialGradient(
+                        colors: [fallbackColor.opacity(0.9), fallbackColor.opacity(0.23), .black],
+                        center: .topLeading,
+                        startRadius: 0,
+                        endRadius: size
+                    ))
                 Text(contact.initials)
-                    .font(.system(size: size * (contact == .unit7 ? 0.51 : 0.29), weight: .medium, design: .rounded))
+                    .font(.system(
+                        size: size * (contact == .unit7 ? 0.51 : 0.29),
+                        weight: .medium,
+                        design: .rounded
+                    ))
                     .foregroundColor(.white.opacity(0.92))
             }
-            .frame(width: size, height: size)
-            .accessibilityLabel(contact.name)
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(Circle().strokeBorder(.white.opacity(0.16), lineWidth: 1))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(contact.name) contact photo")
     }
 }
 
