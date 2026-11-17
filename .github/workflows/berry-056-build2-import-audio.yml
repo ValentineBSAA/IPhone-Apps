@@ -1,0 +1,99 @@
+name: Berry Build 2 - Import 51 OST and 16 SFX
+on:
+  push:
+    branches: [feature/berry-056-build2-ultimate]
+    paths: ['.github/workflows/berry-056-build2-import-audio.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/berry-056-build2-ultimate
+      - name: Fetch both exact user-uploaded audio archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/berry-audio"
+          gh release download audio-v1.0 --repo "${{ github.repository }}" \
+            --pattern 'BerryBlastBlast-OST-v1.2-51Tracks-iOS.zip' \
+            --pattern 'BerryBlastBlast-SFX-v1.0-16Effects-iOS.zip' \
+            --dir "$RUNNER_TEMP/berry-audio" --clobber
+      - name: Validate source SHA256 and import unchanged files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$RUNNER_TEMP/berry-audio" <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import json, zipfile, sys, re, csv, io
+          source = Path(sys.argv[1])
+          dst = Path("StrawberryShortcakeBlockBlast/AudioBuild2")
+          defs = [
+              ("music","BerryBlastBlast-OST-v1.2-51Tracks-iOS.zip", "fc1c27da553edd1b42cbc8ea8254875a91818c741e9db8904e1a211ae1dadadc",51),
+              ("sfx","BerryBlastBlast-SFX-v1.0-16Effects-iOS.zip", "982487908e5064c4b0c0845d7f37c73fba0df077e9ddff217129f7c51b89bd6b",16)
+          ]
+          catalog = {"version":2,"sources":[],"tracks":[],"effects":[]}
+          for kind, archive_name, expected, count in defs:
+              archive = source/archive_name
+              assert archive.is_file(), archive_name
+              assert sha256(archive.read_bytes()).hexdigest()==expected, f"Wrong supplied ZIP checksum: {archive_name}"
+              with zipfile.ZipFile(archive) as zipf:
+                  entries = [item for item in zipf.infolist() if not item.is_dir()
+                             and not item.filename.startswith("__MACOSX/")
+                             and not Path(item.filename).name.startswith("._")]
+                  music_ext = {".m4a"}
+                  sfx_ext = {".m4a", ".wav", ".caf", ".aiff", ".aif", ".mp3"}
+                  audio = [item for item in entries if Path(item.filename).suffix.lower() in (music_ext if kind=="music" else sfx_ext)]
+                  assert len(audio)==count, f"Expected {count} {kind}, found {len(audio)}. Entries: "+str([(i.filename,i.file_size) for i in entries])
+                  def sortkey(item):
+                      stem=Path(item.filename).stem
+                      match=re.match(r"^\s*(\d{1,3})(?:[._ -]|$)",stem)
+                      return (int(match.group(1)) if match else 10000,stem.casefold())
+                  audio.sort(key=sortkey)
+                  out=dst/("Music" if kind=="music" else "Effects")
+                  out.mkdir(parents=True,exist_ok=True)
+                  for number,item in enumerate(audio,1):
+                      data=zipf.read(item)
+                      assert len(data)>600, f"Unexpectedly short audio: {item.filename}"
+                      ext=Path(item.filename).suffix.lower()
+                      if ext==".m4a": assert data[4:8]==b"ftyp",f"Invalid M4A: {item.filename}"
+                      filename=f"Berry{'Track' if kind=='music' else 'Effect'}{number:02d}{ext}"
+                      (out/filename).write_bytes(data)
+                      name=Path(item.filename).stem
+                      name=re.sub(r"^\s*\d{1,3}[._ -]+","",name)
+                      entry={"id":number,"file":filename,"title":name.replace("_"," ").strip(),
+                             "originalPath":item.filename,"sha256":sha256(data).hexdigest(),
+                             "bytes":len(data),"extension":ext}
+                      catalog["tracks" if kind=="music" else "effects"].append(entry)
+                      print(f"{kind.upper()} {number:02d}: {item.filename} => {filename} ({len(data)} bytes)")
+                  extras=dst/("MusicSourceDocs" if kind=="music" else "EffectSourceDocs")
+                  for item in entries:
+                      if item in audio or item.file_size>300000:continue
+                      if Path(item.filename).suffix.lower() not in {".json",".txt",".md",".csv"}:continue
+                      extras.mkdir(parents=True,exist_ok=True)
+                      file=extras/Path(item.filename).name
+                      if file.exists():file=extras/(str(len(list(extras.iterdir())))+"-"+file.name)
+                      file.write_bytes(zipf.read(item))
+                      print("SOURCE DOC",kind,item.filename)
+                  catalog["sources"].append({"kind":kind,"archive":archive_name,"sha256":expected,
+                                              "audioCount":count})
+          (dst/"ImportManifest.json").write_text(json.dumps(catalog,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
+          assert len(catalog["tracks"])==51 and len(catalog["effects"])==16
+          print("Verified and imported exactly 51 music + 16 sound effects with no transcoding.")
+          PY
+      - name: Commit audio and original catalog sources
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- StrawberryShortcakeBlockBlast/AudioBuild2
+          if ! git diff --cached --quiet; then
+            git commit -m "Berry 0.5.6 build 2: import verified 51 OST and 16 sound effect originals"
+            git pull --rebase origin feature/berry-056-build2-ultimate
+            git push origin HEAD:feature/berry-056-build2-ultimate
+          fi
