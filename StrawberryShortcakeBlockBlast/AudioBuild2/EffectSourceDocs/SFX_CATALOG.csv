@@ -1,0 +1,17 @@
+﻿id,title,event_key,category,file,duration_seconds,source_file,source_codec,codec,format,sample_rate_hz,channels,sha256
+1,Strawberry Button Pop,menu_select,menu_ui,audio/menu_ui/01-strawberry-button-pop.wav,0.486,01 Strawberry Button Pop.mp3,mp3,PCM 16-bit,WAV,48000,2,aaf3c341306b5acf5cd927928ed0007a3cd2dd34b23973d8177e2474e4c378ea
+2,Berry Back Button,menu_back,menu_ui,audio/menu_ui/02-berry-back-button.wav,2.0,02 Berry Back Button.mp3,mp3,PCM 16-bit,WAV,48000,2,81c61fc0e88c0ab40b3ae2b14b4117083247b452e5c6ab88e537279036663a2d
+3,Let's Play!,game_start,menu_ui,audio/menu_ui/03-lets-play.wav,3.0,03 Let's Play!.mp3,mp3,PCM 16-bit,WAV,48000,2,29f400ceed20b9b726e1225d9394b003f513643b81b33c69cb157fd7d29e4ca5
+4,Pick Up Block,block_pickup,puzzle_actions,audio/puzzle_actions/04-pick-up-block.wav,1.0,04 Pick Up Block.mp3,mp3,PCM 16-bit,WAV,48000,2,5c2d5d57bac1097616bec150605dc349679b1291b6f4a8d38d4b3e2706f0608b
+5,Place Block,block_place,puzzle_actions,audio/puzzle_actions/05-place-block.wav,1.48,05 Place Block.mp3,mp3,PCM 16-bit,WAV,48000,2,528693f69e9b5ea5a49cca153d6b47db3d7922664c94db07eedee8c3dfc15f40
+6,Invalid Placement,invalid_placement,puzzle_actions,audio/puzzle_actions/06-invalid-placement.wav,1.0,06 Invalid Placement.mp3,mp3,PCM 16-bit,WAV,48000,2,787d8a1ec107e2dd3475d522b5df16cef8f4c66c166c988c2e81552e75e11006
+7,Clear a Row,row_clear,puzzle_actions,audio/puzzle_actions/07-clear-a-row.wav,3.0,07 Clear a Row.mp3,mp3,PCM 16-bit,WAV,48000,2,091a7fe7673de331637dbd088f6b823028bcb924d6d42c1465cd08ebb1903e97
+8,Berry Combo,berry_combo,puzzle_actions,audio/puzzle_actions/08-berry-combo.wav,4.0,08 Berry Combo.mp3,mp3,PCM 16-bit,WAV,48000,2,7efda2aabfd4ef6bff8647a71825a636e6b584569986064ec725b36e6d8c4bde
+9,New High Score!,new_high_score,scores_rewards,audio/scores_rewards/09-new-high-score.wav,5.0,09 New High Score!.mp3,mp3,PCM 16-bit,WAV,48000,2,fb914e84a4b5530dab528d7b4d0b72b1ed31483a410d95fae168e580b7552b23
+10,Victory!,victory,scores_rewards,audio/scores_rewards/10-victory.wav,4.0,010 Victory!.mp3,mp3,PCM 16-bit,WAV,48000,2,fa3853ba4b050d46da05b3beb517fa9a89e48b443f730a0506ecbf2e690be6f2
+11,No More Moves,no_more_moves,scores_rewards,audio/scores_rewards/11-no-more-moves.wav,3.0,011 No More Moves.mp3,mp3,PCM 16-bit,WAV,48000,2,948bead9a694e200a894451052e2e2b8403e7052262d2475b1a7b2f11a4284b4
+12,Reward Unlocked,reward_unlocked,scores_rewards,audio/scores_rewards/12-reward-unlocked.wav,4.0,012 Reward Unlocked.mp3,mp3,PCM 16-bit,WAV,48000,2,827798867a7da3186566a641a1f9d9bc4b6acbdb16388a05e378e686212e6232
+13,Blitz Start,blitz_start,berry_blitz,audio/berry_blitz/13-blitz-start.wav,3.0,013 Blitz Start.mp3,mp3,PCM 16-bit,WAV,48000,2,5bda0bf98ef4e9d7b5b3ffbeb3b8417b5d98c4b30a1bd45fb11a3daa1b2c6cdb
+14,Ten Seconds Left,ten_seconds_left,berry_blitz,audio/berry_blitz/14-ten-seconds-left.wav,2.0,014 Ten Seconds Left.mp3,mp3,PCM 16-bit,WAV,48000,2,9323d5b4e2d24f21c016467302149a32b4891023629f2b93c619a0e1e9020afc
+15,Final Countdown Tick,final_countdown_tick,berry_blitz,audio/berry_blitz/15-final-countdown-tick.wav,2.0,015 Final Countdown Tick.mp3,mp3,PCM 16-bit,WAV,48000,2,27f042913ca1a9267520bca837fe9c21e9841fe4682a1bc529ac80a498d9cd26
+16,Time's Up!,time_up,berry_blitz,audio/berry_blitz/16-times-up.wav,3.0,016 Time's Up!.mp3,mp3,PCM 16-bit,WAV,48000,2,8867b54bc3009048e07786a3779c45becfb0782cd304c63a4349b64c5b9de5b3
