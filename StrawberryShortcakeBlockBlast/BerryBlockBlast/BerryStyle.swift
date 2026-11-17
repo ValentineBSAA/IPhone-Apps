@@ -41,7 +41,7 @@ struct BerryTile: View {
         case "chocolate-truffle": return "ChocolateTruffleBlock"
         case "mint-frost": return "MintFrostBlock"
         case "blackberry-jam": return "BlackberryJamBlock"
-        case "default": return (tint % 6 + 6) % 6 == 0 ? "StrawberryCandyBlock" : nil
+        case "default": return strawberryUnlocked && (tint % 6 + 6) % 6 == 0 ? "StrawberryCandyBlock" : nil
         default: return nil
         }
     }
