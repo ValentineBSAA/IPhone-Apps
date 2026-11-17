@@ -1,6 +1,8 @@
 # 🍓 Berry Block Blast for iPhone
 
-**Version 0.5.6 • Build 2 • Native SwiftUI + UIKit input • Original offline soundtrack**
+**Version 0.5.6 • Build 3 • iOS 16.0 minimum • Native SwiftUI + UIKit input • Original offline soundtrack**
+
+**iPhone 14 Pro / iOS 16.0 compatibility:** Build 3 lowers the minimum from iOS 17 to iOS 16 and replaces iOS 17-only SwiftUI observation and scroll anchoring with iOS 16-compatible equivalents. Game modes, soundtrack, effects, saves, graphics and puzzle rules are intentionally unchanged. The app is unsigned and designed for device testing before a stable release. Build 3 is built using the [GitHub Actions iOS 16 workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-ios16-compat.yml). See `RELEASE-QA-0.5.6-BUILD3-IOS16.md`.
 
 Berry Block Blast is an independent, original strawberry-themed block-placement puzzle for iPhone. Its classic three-piece 8×8 mechanics are inspired by Block Blast, but the original artwork, strawberry world, soundtrack and special modes are our own. This project is not affiliated with Hungry Studio or the Strawberry Shortcake brand owner.
 
@@ -30,11 +32,11 @@ Music uses one AVFoundation playback coordinator, no online stream and subtle no
 Spend **earned** strawberries on permanent board cosmetics, selectable block skins, frames, sparkles and visible Cottage progression. Purchase keys and currency live across restarts. Berry Classic's fair score challenge is never affected by upgrades. No real-money items, ads, or subscriptions.
 
 ## Supported iPhone installation
-The signed bundle identifier remains `com.valentinebsaa.berryblockblast`. Codemagic and the optional GitHub Actions workflow compile a physical iPhone app and package **`Berry-Block-Blast-v0.5.6-build2-unsigned.ipa`**. Sign the unsigned IPA with your existing Windows signing process before installation.
+The signed bundle identifier remains `com.valentinebsaa.berryblockblast`. Codemagic's existing Build 2 pipeline and the GitHub Actions workflows compile a physical iPhone app and package **`Berry-Block-Blast-v0.5.6-build2-unsigned.ipa`**. Sign the unsigned IPA with your existing Windows signing process before installation.
 
 The Build 2 pipeline verifies all 51 original M4As and 16 WAVs in source, in the .app and in the finished IPA. Its simulator tests cover gameplay, 24×24 layouts, playlist routing and Blitz variants. **Physical iPhone testing is still mandatory**, particularly zoom/pan and drag on 24×24, Blitz countdown sounds, cosmetics, and data migration. Do not call Build 2 stable until device verification.
 
-See `RELEASE-QA-0.5.6-BUILD2.md` and `CHANGELOG.md` for details.
+See `RELEASE-QA-0.5.6-BUILD3-IOS16.md` for Build 3 compatibility checks, plus `RELEASE-QA-0.5.6-BUILD2.md` and `CHANGELOG.md` for existing-game verification.
 
 ## Earlier versions
 Build 1 of 0.5.6 introduced the real 15-track offline soundtrack and persistent Strawberry Sound Studio. 0.5.5 built native UIKit finger tracking, Berry Classic and the big score display. 0.5.4 introduced Strawberry Nightmare and approved artwork.
