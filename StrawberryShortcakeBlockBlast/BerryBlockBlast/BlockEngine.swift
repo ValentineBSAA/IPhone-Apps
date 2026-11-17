@@ -213,6 +213,22 @@ struct BerryEngine: Codable {
         return hasMove()
     }
 
+    /// Timed Blitz must only end when its timer reaches zero.
+    /// A stuck tray gets a complimentary legal reroll; a completely filled
+    /// board starts fresh without losing the run score or remaining time.
+    @discardableResult
+    mutating func beginNextTimedBoardIfStuck() -> Bool {
+        guard !hasMove() else { return false }
+        if !reshuffleTray() {
+            board = Array(repeating: Array<Int?>(repeating: nil, count: side), count: side)
+            tray = []
+            streak = 0
+            dryMoves = 0
+            refill()
+        }
+        return hasMove()
+    }
+
     var canRescueWithShuffle: Bool {
         board.contains { $0.contains(nil) }
     }
