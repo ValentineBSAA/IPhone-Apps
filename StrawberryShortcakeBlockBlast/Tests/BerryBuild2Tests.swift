@@ -63,7 +63,10 @@ final class BerryBuild2Tests: XCTestCase {
         XCTAssertEqual(BerryBlitzVariant.rush120.seconds, 120)
         XCTAssertNotEqual(BerryBlitzVariant.quick60.bestScoreKey,
                           BerryBlitzVariant.rush120.bestScoreKey)
-        XCTAssertEqual(BerryBlitzVariant.allCases.count, 2)
+        XCTAssertEqual(BerryBlitzVariant.garden300.seconds, 300)
+        XCTAssertEqual(BerryBlitzVariant.marathon600.seconds, 600)
+        XCTAssertNotEqual(BerryBlitzVariant.garden300.bestScoreKey, BerryBlitzVariant.marathon600.bestScoreKey)
+        XCTAssertEqual(BerryBlitzVariant.allCases.count, 4)
     }
 
     func testMegaGardenSupports24x24AndOriginalClassicRemains8x8() throws {
