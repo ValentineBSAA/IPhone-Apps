@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum BerryStyle {
     static let chocolate = Color(red: 0.38, green: 0.20, blue: 0.24)
@@ -31,6 +32,19 @@ struct BerryTile: View {
 
     private var skin: String { skinOverride ?? blockSkin }
     private var decorated: Bool { strawberryUnlocked && tint % 6 == 0 }
+    /// Optional AI-generated tile artwork, with procedural fallback when the
+    /// 0.5.8 asset ZIP has not yet been imported into Assets.xcassets.
+    private var artworkName: String? {
+        switch skin {
+        case "raspberry-ruby": return "RaspberryRubyBlock"
+        case "lemon-glaze": return "LemonGlazeBlock"
+        case "chocolate-truffle": return "ChocolateTruffleBlock"
+        case "mint-frost": return "MintFrostBlock"
+        case "blackberry-jam": return "BlackberryJamBlock"
+        case "default": return (tint % 6 + 6) % 6 == 0 ? "StrawberryCandyBlock" : nil
+        default: return nil
+        }
+    }
     private var palette: Color {
         let index = (tint % 6 + 6) % 6
         if skin == "blueberry-blocks" {
@@ -41,6 +55,11 @@ struct BerryTile: View {
                     Color(red: 0.21, green: 0.32, blue: 0.62),
                     Color(red: 0.28, green: 0.17, blue: 0.61)][index]
         }
+        if skin == "raspberry-ruby" { return Color(red: 0.79, green: 0.04, blue: 0.33) }
+        if skin == "lemon-glaze" { return Color(red: 1, green: 0.80, blue: 0.13) }
+        if skin == "chocolate-truffle" { return Color(red: 0.36, green: 0.13, blue: 0.10) }
+        if skin == "mint-frost" { return Color(red: 0.18, green: 0.78, blue: 0.59) }
+        if skin == "blackberry-jam" { return Color(red: 0.35, green: 0.05, blue: 0.47) }
         if skin == "vanilla-blocks" {
             return [Color(red: 0.92, green: 0.64, blue: 0.27),
                     Color(red: 0.95, green: 0.76, blue: 0.45),
@@ -107,6 +126,15 @@ struct BerryTile: View {
                         .frame(height: side * 0.13)
                         .padding(.horizontal, max(2, side * 0.08))
                         .padding(.bottom, max(2, side * 0.08))
+                }
+                .overlay {
+                    if side >= 28, let artworkName, let art = UIImage(named: artworkName) {
+                        Image(uiImage: art)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: side, height: side)
+                            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+                    }
                 }
                 .shadow(color: palette.opacity(preview ? 0.10 : 0.24), radius: 2, y: 2)
         }
