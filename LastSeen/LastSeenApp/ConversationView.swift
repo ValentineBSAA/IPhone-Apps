@@ -133,11 +133,6 @@ struct ConversationView: View {
             PhotoDetailView(message: photo)
                 .environmentObject(game)
         }
-        .sheet(item: $game.presentedCall) { call in
-            FictionalCallView(message: call)
-                .environmentObject(game)
-                .presentationDetents([.large])
-        }
     }
 
     private func footerNote(_ text: String) -> some View {
