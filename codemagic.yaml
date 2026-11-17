@@ -21,13 +21,32 @@ workflows:
         script: |
           set -e
           brew install xcodegen
-      - name: Verify approved icon and mascot, generate Xcode project
+      - name: Import all 16 Berry 0.5.8 Xcode image catalogs
         script: |
-          set -e
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+          root = Path.cwd().parent.resolve()
+          payload = root / "BuildPayload" / "Berry-0.5.8-ArtCatalogs.zip"
+          if not payload.is_file():
+              raise SystemExit("ERROR: all 16 Berry v0.5.8 image assets are required for this IPA.")
+          with zipfile.ZipFile(payload) as z:
+              for entry in z.namelist():
+                  target = (root / entry).resolve()
+                  if not target.is_relative_to(root):
+                      raise SystemExit("Unsafe path in art payload: " + entry)
+              z.extractall(root)
+          print("IMPORTED: all 16 Berry Block Blast 0.5.8 Xcode image assets")
+          PY
+      - name: Verify 0.5.8 artwork, audio, iOS16 and source, then generate Xcode project
+        script: |
+          set -euo pipefail
           python3 Tools/verify_artwork.py
           python3 Tools/verify_audio_build2.py
           python3 Tools/verify_ios16_source.py
           python3 Tools/verify_build57.py
+          python3 Tools/verify_build58.py
           xcodegen generate --spec project.yml
       - name: Compile native iPhone app without signing
         script: |
