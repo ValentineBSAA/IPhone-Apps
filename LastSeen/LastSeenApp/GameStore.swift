@@ -121,8 +121,10 @@ final class GameStore: ObservableObject {
             save()
         }
         visibleThread = thread
-        clearReminder()
-        beginOrResume()
+        if persistToDisk {
+            clearReminder()
+            beginOrResume()
+        }
     }
 
     func closeConversation(_ contact: Contact) {
