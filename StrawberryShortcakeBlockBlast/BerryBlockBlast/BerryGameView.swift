@@ -134,6 +134,7 @@ struct BerryGameView: View {
     @State private var isPaused = false
     @Environment(\.scenePhase) private var scenePhase
     private var canManuallyPause: Bool { !isTimedMode }
+    private var allowEffects: Bool { !reduceMotion && !ProcessInfo.processInfo.isLowPowerModeEnabled }
     private var canMakeMove: Bool {
         guard !isPaused, !showGameOver, !showVictory, !session.gameOver else { return false }
         if isTimedMode { return blitzRunning && (blitzDeadline.map { $0 > Date() } ?? false) }
@@ -473,7 +474,7 @@ struct BerryGameView: View {
                                 .font(.system(size: 38))
                         }
                         Text(showVictory ? "Strawberry Spectacular!" : confirmRestart ? "Plant a Fresh Garden?" :
-                             mode == .challenge ? "Time's Up, Berry Racer!" : "No More Moves!")
+                             isTimedMode ? (mode == .superHard ? "Nightmare Complete!" : "Time's Up, Berry Racer!") : "No More Moves!")
                             .font(.system(size: 25, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry).multilineTextAlignment(.center)
                         Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "A fresh board starts this chapter again. Your records and earned berries stay safe." : isTimedMode && blitzRemaining == 0 ? "Your timer reached zero. See your results below!" : "None of your remaining pieces can fit. Try a Shuffle to continue, or start this chapter again.")
@@ -491,13 +492,13 @@ struct BerryGameView: View {
                                     .font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
                             }
                         }
-                        if showGameOver && session.shuffles > 0 && session.engine.canRescueWithShuffle && mode != .classic && mode != .challenge {
+                        if showGameOver && session.shuffles > 0 && session.engine.canRescueWithShuffle && mode != .classic && !isTimedMode {
                             Button("✨ Continue with Shuffle (\(session.shuffles) left)") {
                                 session.shuffle(); showGameOver = session.gameOver; selectedSlot = nil; drag = nil
                             }
                             .buttonStyle(.borderedProminent).tint(BerryStyle.leaf).controlSize(.large)
                         }
-                        Button(showVictory ? "🍓 Another Sweet Adventure" : mode == .challenge ? "⚡ Race Again" : "🍓 Plant a Fresh Garden") {
+                        Button(showVictory ? "🍓 Another Sweet Adventure" : isTimedMode ? "⚡ Race Again" : "🍓 Plant a Fresh Garden") {
                             showVictory = false; showGameOver = false; confirmRestart = false
                             completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil; hintPreview = nil
                             blitzRemaining = timedDuration; blitzRunning = isTimedMode
@@ -620,7 +621,7 @@ struct BerryGameView: View {
                 if session.canUndo {
                     let revertedLines = session.undo()
                     lifetimeLines = max(0, lifetimeLines - revertedLines)
-                    if mode == .challenge && lastBlitzTimeBonus > 0 {
+                    if isTimedMode && lastBlitzTimeBonus > 0 {
                         blitzDeadline = blitzDeadline?.addingTimeInterval(TimeInterval(-lastBlitzTimeBonus))
                         // No saved Blitz timer. This challenge restarts on re-entry.
                         lastBlitzTimeBonus = 0
@@ -776,7 +777,7 @@ struct BerryGameView: View {
     private func boardInteraction(actualSize: CGFloat) -> some View {
             BerryBoard(engine: session.engine, preview: drag ?? hintPreview, size: actualSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle, onBoardRect: { rect in boardRect = rect })
                 .overlay {
-                    if strawberryRain && !reduceMotion {
+                    if strawberryRain && allowEffects {
                         BerryStrawberryRain().allowsHitTesting(false)
                     }
                 }
@@ -882,11 +883,11 @@ struct BerryGameView: View {
         celebratedRecordThisRun = true
         if sound { BerryAudio.shared.play(.highScore) }
         BerryAudio.shared.duckForCelebration(duration: 1.6)
-        withAnimation(reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.7)) {
+        withAnimation(allowEffects ? .spring(response: 0.38, dampingFraction: 0.7) : nil) {
             showNewBestBanner = true
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.9) {
-            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.28)) {
+            withAnimation(allowEffects ? .easeOut(duration: 0.28) : nil) {
                 showNewBestBanner = false
             }
         }
@@ -914,7 +915,7 @@ struct BerryGameView: View {
         }
         // Fixed time: no extensions for clears.
         lastBlitzTimeBonus = 0
-        if session.lastClearedLines > 0 && strawberryUnlocked && !reduceMotion {
+        if session.lastClearedLines > 0 && strawberryUnlocked && allowEffects {
             strawberryRain = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.12) { strawberryRain = false }
         }
@@ -925,8 +926,8 @@ struct BerryGameView: View {
             BerryAudio.shared.play(cue)
         }
         if session.lastEarned > 10 {
-            withAnimation(.spring()) { sparkle = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) { withAnimation { sparkle = false } }
+            withAnimation(allowEffects ? .spring() : nil) { sparkle = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) { withAnimation(allowEffects ? .easeOut(duration: 0.18) : nil) { sparkle = false } }
         }
     }
     private func warningFeedback() {
