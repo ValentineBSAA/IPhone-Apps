@@ -58,6 +58,8 @@ struct BerryBoutiqueView: View {
 
 
     private let items = [
+        BerryBoutiqueItem(id: "strawberry-fruit", name: "True Strawberry",
+                          detail: "Actual strawberry-shaped fruit blocks, not square tiles", emoji: "🍓", price: 0, type: "blocks"),
         BerryBoutiqueItem(id: "blueberry-blocks", name: "Blueberry Velvet",
                           detail: "Deep violet and blue game pieces", emoji: "🫐", price: 90, type: "blocks"),
         BerryBoutiqueItem(id: "vanilla-blocks", name: "Vanilla Cream",
