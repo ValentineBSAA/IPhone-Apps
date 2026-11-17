@@ -1,0 +1,48 @@
+name: Chat Companion iOS 16 unsigned IPA
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ChatGPTLegacy16/**'
+      - '.github/workflows/chat-companion-ios16.yml'
+
+jobs:
+  build:
+    runs-on: macos-15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: ChatGPTLegacy16
+        run: xcodegen generate --spec project.yml
+      - name: Build for physical iPhone (unsigned)
+        working-directory: ChatGPTLegacy16
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project ChatGPTLegacy16.xcodeproj \
+            -scheme ChatGPTLegacy16 \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+      - name: Package unsigned IPA
+        working-directory: ChatGPTLegacy16
+        run: |
+          set -euo pipefail
+          mkdir -p dist/Payload
+          cp -R build/Build/Products/Release-iphoneos/ChatGPTLegacy16.app dist/Payload/
+          (cd dist && zip -qr Chat-Companion-iOS16-v0.1.0-unsigned.ipa Payload)
+          unzip -l dist/Chat-Companion-iOS16-v0.1.0-unsigned.ipa | grep -q 'Payload/ChatGPTLegacy16.app/Info.plist'
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Chat-Companion-iOS16-v0.1.0-unsigned
+          path: ChatGPTLegacy16/dist/*.ipa
+          if-no-files-found: error
