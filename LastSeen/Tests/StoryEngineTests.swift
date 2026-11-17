@@ -118,6 +118,35 @@ final class StoryEngineTests: XCTestCase {
         XCTAssertEqual(ids.count, Set(ids).count)
     }
 
+    func testAllTenStoryPhotosAppearInTheStoryGraph() {
+        let used = Set(SoloStories.scenes.values.flatMap { scene in
+            scene.beats.compactMap { beat -> String? in
+                guard beat.kind == .photograph else { return nil }
+                return beat.asset
+            }
+        })
+        XCTAssertEqual(used, Set(StoryPhotoCatalog.assets))
+    }
+
+    func testStoryClockRespectsActualTimeOfDay() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Phoenix")!
+        let midday = calendar.date(from: DateComponents(year: 2026, month: 11, day: 17, hour: 12, minute: 20))!
+        let midnight = calendar.date(from: DateComponents(year: 2026, month: 11, day: 17, hour: 0, minute: 20))!
+        XCTAssertEqual(StoryClock.timeOfDay(midday, calendar: calendar), "afternoon")
+        XCTAssertEqual(StoryClock.timeOfDay(midnight, calendar: calendar), "night")
+        let beat = StoryBeat("nora", "nora", "Original greeting")
+        XCTAssertFalse(StoryClock.contextualize(beat, sceneID: "opening", index: 0, now: midday, calendar: calendar).body.contains("late"))
+        XCTAssertTrue(StoryClock.contextualize(beat, sceneID: "opening", index: 0, now: midnight, calendar: calendar).body.contains("late"))
+    }
+
+    func testMicrophoneAndVoiceCallsRemainDisabled() {
+        XCTAssertFalse(FutureVoiceFeatures.enabled)
+        XCTAssertFalse(FutureVoiceFeatures.permitCloudRecognition)
+        XCTAssertFalse(FutureVoiceFeatures.showTranscriptDuringCall)
+        XCTAssertTrue(FutureVoiceFeatures.requireRecordedCharacterDialogue)
+    }
+
     func testMessageTimestampsAreRealDates() {
         let game = GameStore(initial: SavedGame(), persistToDisk: false)
         game.selectStory(.nora)
