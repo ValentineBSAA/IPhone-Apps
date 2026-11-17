@@ -136,4 +136,74 @@ final class BerryBuild2Tests: XCTestCase {
         XCTAssertEqual(restored.side, 12)
     }
 
+    func testEndlessSaveAndResumeEverySize() throws {
+        let defaults = UserDefaults.standard
+        let sideKey = "berryblockblast.endless.boardSize.v056b2"
+        let migratedKey = "berryblockblast.endless.legacyMigrated.v056b2"
+        let keys = [sideKey, migratedKey] + [8, 12, 24].map {
+            BerryGameSession.endlessSaveKey(side: $0)
+        }
+        let backups = keys.map { ($0, defaults.object(forKey: $0)) }
+        defer {
+            for (key, value) in backups {
+                if let value { defaults.set(value, forKey: key) }
+                else { defaults.removeObject(forKey: key) }
+            }
+        }
+
+        defaults.set(true, forKey: migratedKey)
+        for side in [8, 12, 24] {
+            defaults.set(side, forKey: sideKey)
+            defaults.removeObject(forKey: BerryGameSession.endlessSaveKey(side: side))
+            let playing = BerryGameSession()
+            playing.selectMode(.endless)
+            XCTAssertEqual(playing.engine.side, side)
+            XCTAssertFalse(BerryGameSession.hasResumableEndless(side: side))
+            var placement: (Int, Int, Int)?
+            for slot in 0..<3 {
+                guard let piece = playing.engine.tray[slot] else { continue }
+                for row in 0..<side {
+                    for col in 0..<side where playing.engine.canPlace(piece, row: row, col: col) {
+                        if placement == nil { placement = (slot, row, col) }
+                    }
+                }
+            }
+            let legal = try XCTUnwrap(placement)
+            XCTAssertTrue(playing.drop(slot: legal.0, row: legal.1, col: legal.2))
+            XCTAssertTrue(BerryGameSession.hasResumableEndless(side: side))
+
+            let resumed = BerryGameSession()
+            resumed.selectMode(.endless)
+            XCTAssertEqual(resumed.engine.side, side)
+            XCTAssertEqual(resumed.engine.board, playing.engine.board)
+            XCTAssertEqual(resumed.engine.tray, playing.engine.tray)
+            XCTAssertEqual(resumed.engine.score, playing.engine.score)
+
+            // New Garden intentionally starts this size fresh, without
+            // resurrecting the legacy 8x8 board on the next visit.
+            resumed.newGame()
+            XCTAssertFalse(BerryGameSession.hasResumableEndless(side: side))
+            let restarted = BerryGameSession()
+            restarted.selectMode(.endless)
+            XCTAssertEqual(restarted.engine.score, 0)
+            XCTAssertEqual(restarted.engine.moves, 0)
+        }
+    }
+
+    func testClassicModeDoesNotResumeItsPreviousBoardInBuild2() throws {
+        let first = BerryGameSession()
+        first.selectMode(.classic)
+        let piece = try XCTUnwrap(first.engine.tray[0])
+        let row = try XCTUnwrap((0..<8).first { r in
+            (0..<8).contains { c in first.engine.canPlace(piece, row: r, col: c) }
+        })
+        let col = try XCTUnwrap((0..<8).first { c in first.engine.canPlace(piece, row: row, col: c) })
+        XCTAssertTrue(first.drop(slot: 0, row: row, col: col))
+        XCTAssertGreaterThan(first.engine.score, 0)
+        let again = BerryGameSession()
+        again.selectMode(.classic)
+        XCTAssertEqual(again.engine.score, 0)
+        XCTAssertEqual(again.engine.moves, 0)
+    }
+
 }
