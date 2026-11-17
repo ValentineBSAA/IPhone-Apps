@@ -127,7 +127,7 @@ struct BerryTile: View {
                 }
                 .shadow(color: palette.opacity(preview ? 0.10 : 0.24), radius: 2, y: 2)
                 .overlay {
-                    if let asset = artName, UIImage(named: asset) != nil {
+                    if let asset = artName {
                         Image(asset)
                             .resizable()
                             .interpolation(.medium)
