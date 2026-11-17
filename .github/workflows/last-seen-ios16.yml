@@ -46,6 +46,11 @@ jobs:
           swift Tools/make_icon.swift
           test -s LastSeenApp/Assets.xcassets/AppIcon.appiconset/AppIcon.png
 
+      - name: Import character contact photos into native asset catalog
+        run: |
+          set -euo pipefail
+          python3 Tools/import_contacts.py --zip ContactPhotos.zip
+
       - name: Generate iOS 16 Xcode project
         run: |
           set -euo pipefail
