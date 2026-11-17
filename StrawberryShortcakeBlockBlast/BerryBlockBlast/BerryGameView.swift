@@ -221,7 +221,8 @@ struct BerryGameView: View {
             let bottom = geo.safeAreaInsets.bottom
             let compact = height < 740
             let fittedBoardSize = max(185, min(width - 42, height - top - bottom -
-                (isTimedMode ? (compact ? 276 : 310) : (compact ? 248 : 282)), 475))
+                (isTimedMode ? (compact ? 276 : 310) : (compact ? 248 : 282)) -
+                (mode == .story ? 42 : 0), 475))
             let boardSize = stableBoardSize ?? fittedBoardSize
             let cell = (boardSize - CGFloat(session.engine.side - 1) * 3) / CGFloat(session.engine.side)
             ZStack {
@@ -561,7 +562,7 @@ struct BerryGameView: View {
                                     .font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
                             }
                         }
-                        if showGameOver && session.shuffles > 0 && session.engine.canRescueWithShuffle && mode != .classic && mode != .challenge {
+                        if showGameOver && session.shuffles > 0 && session.engine.canRescueWithShuffle && mode != .classic && !isTimedMode {
                             Button("✨ Continue with Shuffle (\(session.shuffles) left)") {
                                 session.shuffle(); showGameOver = session.gameOver; selectedSlot = nil; drag = nil
                             }
