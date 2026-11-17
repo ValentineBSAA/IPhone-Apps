@@ -939,7 +939,9 @@ struct BerryGameView: View {
             } else if mode == .endless {
                 Text("Sweet Endless has no final game over. When the pieces no longer fit, a new strawberry season starts automatically and keeps your score, line count, and berry rewards. Your garden saves so you can continue after leaving.")
             } else {
-                Text("Earn strawberries for line clears. Spend them in the basket on extra Undos and Shuffles. Keep playing until nothing fits.")
+                Text("Earn strawberries for line clears. Buy Undo, Shuffle and Berry Hint from the Boutique. Use helpers from the bottom toolbar in Story, Daily, Endless and Cozy modes. Berry Classic, Blitz and Nightmare stay power-up free.")
+            Text("Blitz offers 1, 2, 5 and 10-minute score races. When the tray gets stuck, fresh playable pieces appear, so the clock determines the finish. Nightmare is a separate three-minute challenge and still ends if no piece can fit.")
+            Text("Your purchased Cottage decorations can now be moved and saved inside My Strawberry Cottage on the village home screen.")
             }
             primaryButton("Got It!") { showHelp = false }
         }
