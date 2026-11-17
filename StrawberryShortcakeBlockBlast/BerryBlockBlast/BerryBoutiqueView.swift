@@ -22,6 +22,40 @@ struct BerryBoutiqueView: View {
     @AppStorage("berryblockblast.shop.equippedBorder.v056b2") private var borderSkin = "default"
     @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkleSkin = "default"
     @AppStorage("berryblockblast.sound") private var sound = true
+    @State private var selectedCategory: Category?
+
+    private enum Category: String, CaseIterable, Identifiable {
+        case blocks, frames, helpers, cottage, inventory
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .blocks: return "Block Styles"
+            case .frames: return "Frames & Sparkles"
+            case .helpers: return "Garden Helpers"
+            case .cottage: return "Cottage Decor"
+            case .inventory: return "My Items"
+            }
+        }
+        var subtitle: String {
+            switch self {
+            case .blocks: return "Make every berry block yours"
+            case .frames: return "Beautiful borders and effects"
+            case .helpers: return "Undo, Shuffle and Berry Hint"
+            case .cottage: return "Build your strawberry garden"
+            case .inventory: return "Owned cosmetics and supplies"
+            }
+        }
+        var symbol: String {
+            switch self {
+            case .blocks: return "square.grid.3x3.fill"
+            case .frames: return "sparkles.rectangle.stack.fill"
+            case .helpers: return "wand.and.stars"
+            case .cottage: return "house.lodge.fill"
+            case .inventory: return "shippingbox.fill"
+            }
+        }
+    }
+
 
     private let items = [
         BerryBoutiqueItem(id: "blueberry-blocks", name: "Blueberry Velvet",
@@ -63,171 +97,253 @@ struct BerryBoutiqueView: View {
         if sound { BerryAudio.shared.play(.menuSelect) }
     }
 
+
     var body: some View {
-        LazyVStack(spacing: 16) {
+        VStack(spacing: 16) {
             HStack(spacing: 12) {
-                Text("🧺").font(.system(size: 42))
-                    .frame(width: 61, height: 61)
-                    .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 17))
-                VStack(alignment: .leading, spacing: 4) {
+                BerryIcon(name: "ShopBasket", size: 57)
+                VStack(alignment: .leading, spacing: 3) {
                     Text("The Berry Boutique")
                         .font(.system(size: 24, weight: .black, design: .rounded))
                         .foregroundStyle(BerryStyle.strawberry)
                     Text("Little treasures for your strawberry village")
                         .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .foregroundStyle(BerryStyle.chocolate.opacity(0.76))
+                        .foregroundStyle(BerryStyle.chocolate)
                 }
-                Spacer()
+                Spacer(minLength: 0)
             }
             HStack {
-                Image(systemName: "basket.fill")
-                    .foregroundStyle(BerryStyle.strawberry)
-                Text("Your Berry Wallet").font(.headline)
+                Label("Berry Wallet", systemImage: "basket.fill")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
                 Spacer()
                 Text("🍓 \(BerryNumbers.compact(session.berries))")
-                    .font(.system(size: 21, weight: .black, design: .rounded))
+                    .font(.system(size: 20, weight: .black, design: .rounded))
                     .foregroundStyle(BerryStyle.strawberry)
+            }
+            .foregroundStyle(BerryStyle.chocolate)
+            .padding(13)
+            .background(.white, in: RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(BerryStyle.strawberry.opacity(0.30), lineWidth: 1))
+
+            if let selectedCategory {
+                HStack(spacing: 9) {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            self.selectedCategory = nil
+                        }
+                    } label: {
+                        Label("Categories", systemImage: "chevron.left")
+                            .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(BerryStyle.strawberry)
+                    Spacer()
+                    Text(selectedCategory.title)
+                        .font(.system(size: 16, weight: .black, design: .rounded))
+                        .foregroundStyle(BerryStyle.strawberry)
+                }
+                section(selectedCategory)
+            } else {
+                Text("CHOOSE YOUR BERRY TREASURE")
+                    .font(.system(size: 12, weight: .black, design: .rounded))
+                    .tracking(0.8)
+                    .foregroundStyle(BerryStyle.strawberry)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                    ForEach(Category.allCases) { category in
+                        categoryTile(category)
+                    }
+                }
+                Text("Purchases stay yours. Tap a category to browse and preview items.")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate.opacity(0.72))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 10)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+
+    private func categoryTile(_ category: Category) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                selectedCategory = category
+            }
+        } label: {
+            VStack(spacing: 8) {
+                Image(systemName: category.symbol)
+                    .font(.system(size: 32, weight: .semibold))
+                    .foregroundStyle(category == .cottage ? BerryStyle.leaf : BerryStyle.strawberry)
+                    .frame(width: 73, height: 73)
+                    .background(BerryStyle.softPink.opacity(0.8), in: RoundedRectangle(cornerRadius: 17))
+                Text(category.title)
+                    .font(.system(size: 15, weight: .black, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate)
+                    .multilineTextAlignment(.center)
+                Text(category.subtitle)
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate.opacity(0.72))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity, minHeight: 180)
+            .padding(.horizontal, 8)
+            .background(.white, in: RoundedRectangle(cornerRadius: 20))
+            .overlay(RoundedRectangle(cornerRadius: 20)
+                .strokeBorder(BerryStyle.strawberry.opacity(0.28), lineWidth: 1.3))
+            .shadow(color: BerryStyle.strawberry.opacity(0.09), radius: 6, y: 3)
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func section(_ category: Category) -> some View {
+        switch category {
+        case .blocks:
+            ForEach(items.filter { $0.type == "blocks" }) { item in itemCard(item) }
+        case .frames:
+            ForEach(items.filter { $0.type != "blocks" }) { item in itemCard(item) }
+        case .helpers:
+            VStack(alignment: .leading, spacing: 13) {
+                Text("Helpers are unavailable in Berry Classic and timed modes.")
+                    .font(.caption.bold())
+                    .foregroundStyle(BerryStyle.chocolate)
+                helperRow("Extra Undo", icon: "UndoIcon", count: session.undos, cost: 25) {
+                    session.buyUndo()
+                }
+                helperRow("Extra Shuffle", icon: "ShuffleIcon", count: session.shuffles, cost: 25) {
+                    session.buyShuffle()
+                }
+                helperRow("Berry Hint", icon: "BerryHint", count: session.hints, cost: 20) {
+                    session.buyHint()
+                }
             }
             .padding(14)
             .background(.white, in: RoundedRectangle(cornerRadius: 18))
-            .overlay(RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(BerryStyle.strawberry.opacity(0.30), lineWidth: 1.5))
-
-            Text("🎀 PERMANENT COLLECTIBLES")
-                .font(.system(size: 12, weight: .black, design: .rounded))
-                .tracking(1)
-                .foregroundStyle(BerryStyle.chocolate)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            ForEach(items) { item in
-                let owned = session.ownedCosmetics.contains(item.id)
-                HStack(spacing: 12) {
-                    Group {
-                        if item.type == "blocks" {
-                            BerryTile(tint: item.id == "blueberry-blocks" ? 3 : 0,
-                                      mode: .classic, skinOverride: item.id)
-                                .padding(6)
-                        } else {
-                            BerryIcon(name: item.type == "frames" ? "CottageDecorations" : "Milestone", size: 54)
-                        }
-                    }
-                    .frame(width: 58, height: 58)
-                    .background(item.accent.opacity(0.15),
-                                in: RoundedRectangle(cornerRadius: 16))
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(item.name)
-                            .font(.system(size: 16, weight: .black, design: .rounded))
-                            .foregroundStyle(BerryStyle.chocolate)
-                        Text(item.detail)
-                            .font(.system(size: 11, weight: .medium, design: .rounded))
-                            .foregroundStyle(BerryStyle.chocolate.opacity(0.65))
-                            .fixedSize(horizontal: false, vertical: true)
-                        if owned {
-                            Label(active(item) ? "✓ Equipped • permanently owned" : "Permanently owned", systemImage: "checkmark.seal.fill")
-                                .font(.caption2).foregroundStyle(BerryStyle.leaf)
-                        }
-                    }
-                    Spacer(minLength: 3)
-                    Button {
-                        if owned {
-                            if active(item) {
-                                switch item.type {
-                                case "blocks": blockSkin = "default"
-                                case "frames": borderSkin = "default"
-                                default: sparkleSkin = "default"
-                                }
-                            } else { equip(item) }
-                        } else if session.buyCosmetic(id: item.id, cost: item.price) {
-                            equip(item)
-                            if sound { BerryAudio.shared.play(.reward) }
-                        }
-                    } label: {
-                        Text(owned ? (active(item) ? "Unequip" : "Equip") : "🍓 \(item.price)")
-                            .font(.system(size: 12, weight: .black, design: .rounded))
-                            .frame(minWidth: 64)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(owned ? BerryStyle.leaf : BerryStyle.strawberry)
-                    .disabled(!owned && session.berries < item.price)
-                }
-                .padding(12)
-                .background(.white.opacity(0.96), in: RoundedRectangle(cornerRadius: 20))
-                .overlay(RoundedRectangle(cornerRadius: 20)
-                    .strokeBorder(item.accent.opacity(0.35), lineWidth: 1.2))
-            }
-
-            VStack(alignment: .leading, spacing: 11) {
-                Text("🍰 GARDEN HELPERS").font(.headline).foregroundStyle(BerryStyle.strawberry)
-                Text("Use helpers from the game's bottom toolbar. Berry Classic and timed Blitz stay power-up free.")
+        case .cottage:
+            VStack(spacing: 11) {
+                BerryIcon(name: "CottageDecorations", size: 87)
+                Text("Your Strawberry Cottage")
+                    .font(.system(size: 21, weight: .black, design: .rounded))
+                    .foregroundStyle(BerryStyle.strawberry)
+                Text("Owned: \(min(session.cottageDecorations, 6)) of 6 decorations")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(BerryStyle.chocolate)
+                Text("Decorate your garden by opening My Strawberry Cottage in the village. Every purchased item is saved.")
                     .font(.caption)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .foregroundStyle(BerryStyle.chocolate.opacity(0.8))
-                HStack {
-                    BerryIcon(name: "UndoIcon", size: 28)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Extra Undo")
-                        Text("Owned: \(session.undos)").font(.caption2).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button("🍓 25") {
-                        session.buyUndo()
-                        if sound { BerryAudio.shared.play(.reward) }
-                    }
-                    .disabled(session.berries < 25)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(BerryStyle.chocolate)
+                Button(session.cottageDecorations >= 6 ? "Collection Complete" : "Buy Next Decoration • 🍓 50") {
+                    session.buyCottageDecoration()
+                    if sound { BerryAudio.shared.play(.reward) }
                 }
-                HStack {
-                    BerryIcon(name: "ShuffleIcon", size: 28)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Extra Shuffle")
-                        Text("Owned: \(session.shuffles)").font(.caption2).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button("🍓 25") {
-                        session.buyShuffle()
-                        if sound { BerryAudio.shared.play(.reward) }
-                    }
-                    .disabled(session.berries < 25)
+                .buttonStyle(.borderedProminent)
+                .tint(BerryStyle.strawberry)
+                .disabled(session.cottageDecorations >= 6 || session.berries < 50)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(18)
+            .background(.white, in: RoundedRectangle(cornerRadius: 18))
+        case .inventory:
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Garden Supplies", systemImage: "shippingbox.fill")
+                    .font(.headline)
+                    .foregroundStyle(BerryStyle.strawberry)
+                Text("Undo ×\(session.undos)   •   Shuffle ×\(session.shuffles)   •   Hint ×\(session.hints)")
+                    .font(.system(size: 14, weight: .heavy, design: .rounded))
+                    .foregroundStyle(BerryStyle.strawberry)
+                Text("Cottage decorations: \(min(session.cottageDecorations, 6)) / 6")
+                    .foregroundStyle(BerryStyle.chocolate)
+                if items.allSatisfy({ !session.ownedCosmetics.contains($0.id) }) {
+                    Text("Your permanent cosmetic collection is waiting. Browse the Boutique to unlock your first style!")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
-                HStack {
-                    BerryIcon(name: "BerryHint", size: 28)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Berry Hint")
-                        Text("Owned: \(session.hints) • highlights a legal move").font(.caption2).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button("🍓 20") {
-                        session.buyHint()
-                        if sound { BerryAudio.shared.play(.reward) }
-                    }.disabled(session.berries < 20)
-                }
-                HStack {
-                    BerryIcon(name: "CottageDecorations", size: 30)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Cottage Decorations")
-                        Text("Place them in My Strawberry Cottage on the home screen")
-                            .font(.caption2).foregroundStyle(BerryStyle.strawberry)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    Spacer(minLength: 2)
-                    Text("Owned \(min(session.cottageDecorations, 6))/6")
-                        .font(.caption.bold()).foregroundStyle(BerryStyle.strawberry)
-                    Button(session.cottageDecorations >= 6 ? "Complete" : "🍓 50") {
-                        session.buyCottageDecoration()
-                        if sound { BerryAudio.shared.play(.reward) }
-                    }
-                    .disabled(session.berries < 50 || session.cottageDecorations >= 6)
-                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(.white, in: RoundedRectangle(cornerRadius: 18))
+            ForEach(items.filter { session.ownedCosmetics.contains($0.id) }) { item in
+                itemCard(item)
+            }
+        }
+    }
+
+    private func helperRow(_ name: String, icon: String, count: Int, cost: Int, purchase: @escaping () -> Void) -> some View {
+        HStack(spacing: 10) {
+            BerryIcon(name: icon, size: 37)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(name).font(.system(size: 14, weight: .bold, design: .rounded))
+                Text("Owned ×\(count)")
+                    .font(.caption.bold()).foregroundStyle(BerryStyle.strawberry)
+            }
+            Spacer()
+            Button("🍓 \(cost)") {
+                purchase()
+                if sound { BerryAudio.shared.play(.reward) }
             }
             .buttonStyle(.borderedProminent)
             .tint(BerryStyle.strawberry)
-            .foregroundStyle(BerryStyle.chocolate)
-            .padding(17)
-            .background(.white.opacity(0.95), in: RoundedRectangle(cornerRadius: 22))
-
-            Text("All berries are earned through play. Every collectible stays unlocked after app updates.")
-                .font(.caption)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(BerryStyle.chocolate.opacity(0.67))
+            .disabled(session.berries < cost)
         }
-        .padding(.vertical, 8)
+        .foregroundStyle(BerryStyle.chocolate)
+    }
+
+    private func itemCard(_ item: BerryBoutiqueItem) -> some View {
+        let owned = session.ownedCosmetics.contains(item.id)
+        return HStack(spacing: 11) {
+            Group {
+                if item.type == "blocks" {
+                    BerryTile(tint: item.id == "blueberry-blocks" ? 3 : 0,
+                              mode: .classic, strawberryUnlocked: true,
+                              skinOverride: item.id)
+                        .padding(7)
+                } else {
+                    BerryIcon(name: item.type == "frames" ? "CottageDecorations" : "Milestone", size: 53)
+                }
+            }
+            .frame(width: 58, height: 58)
+            .background(item.accent.opacity(0.13), in: RoundedRectangle(cornerRadius: 14))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(item.name)
+                    .font(.system(size: 15, weight: .black, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate)
+                Text(item.detail)
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
+                    .fixedSize(horizontal: false, vertical: true)
+                if owned {
+                    Text(active(item) ? "✓ EQUIPPED" : "✓ OWNED")
+                        .font(.system(size: 10, weight: .black, design: .rounded))
+                        .foregroundStyle(BerryStyle.leaf)
+                }
+            }
+            Spacer(minLength: 4)
+            Button {
+                if owned {
+                    if active(item) {
+                        switch item.type {
+                        case "blocks": blockSkin = "default"
+                        case "frames": borderSkin = "default"
+                        default: sparkleSkin = "default"
+                        }
+                    } else { equip(item) }
+                } else if session.buyCosmetic(id: item.id, cost: item.price) {
+                    equip(item)
+                    if sound { BerryAudio.shared.play(.reward) }
+                }
+            } label: {
+                Text(owned ? (active(item) ? "Unequip" : "Equip") : "🍓 \(item.price)")
+                    .font(.system(size: 11, weight: .black, design: .rounded))
+                    .frame(minWidth: 58)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(owned ? BerryStyle.leaf : BerryStyle.strawberry)
+            .disabled(!owned && session.berries < item.price)
+        }
+        .padding(12)
+        .background(.white, in: RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18)
+            .strokeBorder(item.accent.opacity(0.33), lineWidth: 1.2))
     }
 }
