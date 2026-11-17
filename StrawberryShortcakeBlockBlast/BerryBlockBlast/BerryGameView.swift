@@ -129,6 +129,8 @@ struct BerryGameView: View {
     @State private var blitzRunning = false
     @State private var blitzDeadline: Date?
     @State private var pausedTimerAt: Date?
+    @State private var storyMessage: String?
+    @State private var storyMessageGeneration = 0
     private var blitzVariant: BerryBlitzVariant { BerryBlitzVariant.selected }
     private var isTimedMode: Bool { mode == .challenge || mode == .superHard }
     private var timedDuration: Int { mode == .superHard ? 180 : blitzVariant.seconds }
@@ -254,6 +256,9 @@ struct BerryGameView: View {
                     .font(.system(size: compact ? 10 : 12, weight: .bold, design: .rounded))
                     .foregroundStyle(BerryStyle.chocolate)
                     .frame(height: 19)
+                    if mode == .story {
+                        storyProgressCard
+                    }
                     if mode == .daily {
                         Button {
                             showDailyCalendar = true
@@ -373,6 +378,24 @@ struct BerryGameView: View {
                         .accessibilityHidden(true)
                 }
             }
+            // Screen-space celebrations, never attached to the scrollable
+            // 24×24 board. Incoming notifications cannot move these banners.
+            if sparkle {
+                Text(harvestCheer)
+                    .font(.system(size: 14, weight: .black, design: .rounded))
+                    .foregroundStyle(BerryStyle.strawberry)
+                    .padding(13)
+                    .background(.regularMaterial, in: Capsule())
+                    .position(x: width / 2, y: height * 0.43)
+                    .allowsHitTesting(false)
+            }
+            if showNewBestBanner {
+                BerryNewBestBanner(score: session.engine.score)
+                    .frame(maxWidth: min(310, width - 30))
+                    .position(x: width / 2, y: height * 0.36)
+                    .allowsHitTesting(false)
+                    .zIndex(9)
+            }
             .frame(width: width, height: height)
         }
         .preferredColorScheme(.light)
@@ -435,6 +458,9 @@ struct BerryGameView: View {
                 if sound { BerryAudio.shared.play(.blitzStart) }
             }
             showGameOver = session.gameOver || (isTimedMode && blitzRemaining == 0)
+            if mode == .story {
+                tellStory(BerryStoryNarrative.opening(for: storyLevel))
+            }
             if mode == .superHard && session.gameOver {
                 blitzRunning = false
                 blitzFinished = true
@@ -447,7 +473,12 @@ struct BerryGameView: View {
             checkObjective()
             celebrateNewRecordIfNeeded(score)
         }
-        .onChange(of: session.engine.totalLines) { _ in checkObjective() }
+        .onChange(of: session.engine.totalLines) { lines in
+            if mode == .story, lines > 0 {
+                tellStory(BerryStoryNarrative.encouragement(for: storyLevel))
+            }
+            checkObjective()
+        }
         .onChange(of: showSettings) { opened in
             if opened { pauseTimedClock() }
             else { resumeTimedClockIfPossible() }
@@ -606,6 +637,71 @@ struct BerryGameView: View {
             }.accessibilityLabel("How to play")
         }
         .frame(height: compact ? 48 : 56)
+        .overlay(alignment: .bottomLeading) {
+            if mode == .story, let storyMessage {
+                Text(storyMessage)
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate)
+                    .padding(.horizontal, 10).padding(.vertical, 7)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 13))
+                    .overlay(RoundedRectangle(cornerRadius: 13)
+                        .strokeBorder(BerryStyle.strawberry.opacity(0.40), lineWidth: 1))
+                    .shadow(color: BerryStyle.strawberry.opacity(0.2), radius: 6, y: 2)
+                    .frame(maxWidth: 270, alignment: .leading)
+                    .offset(x: 34, y: 38)
+                    .allowsHitTesting(false)
+                    .zIndex(10)
+                    .transition(.opacity)
+            }
+        }
+    }
+
+    private var storyProgressCard: some View {
+        let current = storyIsLineQuest ? session.engine.totalLines : session.engine.score
+        let target = storyIsLineQuest ? storyTargetLines : goal
+        let progress = min(1.0, CGFloat(current) / CGFloat(max(target, 1)))
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                Image(systemName: "book.closed.fill")
+                    .foregroundStyle(BerryStyle.strawberry)
+                Text("CHAPTER \(storyLevel): \(BerryStoryNarrative.title(for: storyLevel))")
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                Spacer(minLength: 2)
+                Text(storyIsLineQuest ?
+                     "\(current) / \(target) LINES" : "\(current) / \(target) POINTS")
+                    .monospacedDigit()
+                    .foregroundStyle(BerryStyle.strawberry)
+                    .lineLimit(1)
+            }
+            .font(.system(size: 10, weight: .heavy, design: .rounded))
+            .foregroundStyle(BerryStyle.chocolate)
+            GeometryReader { bar in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(BerryStyle.strawberry.opacity(0.15))
+                    Capsule().fill(BerryStyle.strawberry)
+                        .frame(width: bar.size.width * progress)
+                }
+            }
+            .frame(height: 6)
+        }
+        .padding(.horizontal, 11).padding(.vertical, 7)
+        .background(.white.opacity(0.93), in: RoundedRectangle(cornerRadius: 12))
+        .accessibilityElement(children: .combine)
+    }
+
+    private func tellStory(_ message: String) {
+        storyMessageGeneration += 1
+        let generation = storyMessageGeneration
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) {
+            storyMessage = message
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+            guard storyMessageGeneration == generation else { return }
+            withAnimation(reduceMotion ? nil : .easeIn(duration: 0.20)) {
+                storyMessage = nil
+            }
+        }
     }
 
     private var scoreBar: some View {
@@ -804,25 +900,7 @@ struct BerryGameView: View {
                         BerryStrawberryRain().allowsHitTesting(false)
                     }
                 }
-                .overlay {
-                    if sparkle {
-                        Text(harvestCheer)
-                            .font(.headline)
-                            .foregroundStyle(BerryStyle.strawberry)
-                            .padding(12)
-                            .background(.regularMaterial, in: Capsule())
-                            .transition(.scale.combined(with: .opacity))
-                            .allowsHitTesting(false)
-                    }
-                }
-                .overlay {
-                    if showNewBestBanner {
-                        BerryNewBestBanner(score: session.engine.score)
-                            .transition(.scale(scale: 0.78).combined(with: .opacity))
-                            .allowsHitTesting(false)
-                            .zIndex(3)
-                    }
-                }
+
                 .padding(7)
                 .contentShape(Rectangle())
                 .gesture(SpatialTapGesture().onEnded { tap in
@@ -903,7 +981,13 @@ struct BerryGameView: View {
         default: completed = false
         }
         guard completed else { return }
-        if mode == .story { completedStoryChapter = storyLevel; session.rewardStory(storyLevel); storyLevel += 1 }
+        if mode == .story {
+            let completedChapter = storyLevel
+            completedStoryChapter = completedChapter
+            session.rewardStory(completedChapter)
+            tellStory(BerryStoryNarrative.victory(for: completedChapter))
+            storyLevel += 1
+        }
         if mode == .daily {
             session.rewardDaily()
             dailyCompleted = BerryGameSession.dailyDateKey()
