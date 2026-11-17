@@ -201,9 +201,15 @@ struct BerryBoutiqueView: View {
                 }
                 HStack {
                     BerryIcon(name: "CottageDecorations", size: 30)
-                    Text("Cottage Decoration")
-                    Spacer()
-                    Text("Owned \(min(session.cottageDecorations, 6))/6").font(.caption)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Cottage Decorations")
+                        Text("Place them in My Strawberry Cottage on the home screen")
+                            .font(.caption2).foregroundStyle(BerryStyle.strawberry)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 2)
+                    Text("Owned \(min(session.cottageDecorations, 6))/6")
+                        .font(.caption.bold()).foregroundStyle(BerryStyle.strawberry)
                     Button(session.cottageDecorations >= 6 ? "Complete" : "🍓 50") {
                         session.buyCottageDecoration()
                         if sound { BerryAudio.shared.play(.reward) }
@@ -212,7 +218,7 @@ struct BerryBoutiqueView: View {
                 }
             }
             .buttonStyle(.borderedProminent)
-            .tint(BerryStyle.leaf)
+            .tint(BerryStyle.strawberry)
             .foregroundStyle(BerryStyle.chocolate)
             .padding(17)
             .background(.white.opacity(0.95), in: RoundedRectangle(cornerRadius: 22))
