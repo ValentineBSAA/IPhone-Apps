@@ -145,12 +145,12 @@ struct BerryGameView: View {
         case .endless:
             let seasonNames = ["Spring Bloom", "Summer Berries", "Autumn Honey", "Winter Frost"]
             return "🍓 \(session.engine.side)×\(session.engine.side) • SEASON \(session.engine.seasons + 1): \(seasonNames[session.engine.seasons % 4])"
-        case .classic: "🍓 BERRY CLASSIC • Three pieces • Chase your best!"
-        case .story: storyIsLineQuest ? "CHAPTER \(storyLevel) • Clear \(storyTargetLines) lines to bloom!" : "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
-        case .daily: "DAILY HARVEST • \(BerryGameSession.dailyDateKey()) • Gather \(goal) points!"
-        case .cozy: "COZY COTTAGE • \(session.cottageDecorations) decorations • Grow at your pace!"
-        case .challenge: "⚡ \(blitzVariant.rawValue.uppercased()) • \(blitzRemaining)s • \(session.engine.score) points"
-        case .superHard: "🍓 STRAWBERRY NIGHTMARE • 12 × 12 • Bigger pieces!"
+        case .classic: return "🍓 BERRY CLASSIC • Three pieces • Chase your best!"
+        case .story: return storyIsLineQuest ? "CHAPTER \(storyLevel) • Clear \(storyTargetLines) lines to bloom!" : "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
+        case .daily: return "DAILY HARVEST • \(BerryGameSession.dailyDateKey()) • Gather \(goal) points!"
+        case .cozy: return "COZY COTTAGE • \(session.cottageDecorations) decorations • Grow at your pace!"
+        case .challenge: return "⚡ \(blitzVariant.rawValue.uppercased()) • \(blitzRemaining)s • \(session.engine.score) points"
+        case .superHard: return "🍓 STRAWBERRY NIGHTMARE • 12 × 12 • Bigger pieces!"
         }
     }
 
