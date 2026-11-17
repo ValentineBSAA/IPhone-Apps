@@ -93,7 +93,9 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
                                             object: AVAudioSession.sharedInstance(), queue: .main) { [weak self] _ in
             Task { @MainActor in self?.restoreAfterMediaReset() }
         })
-        observers.append(center.addObserver(forName: UIApplication.willResignActiveNotification,
+        // A screenshot can temporarily make an app inactive. Only actual
+        // backgrounding should suspend the soundtrack.
+        observers.append(center.addObserver(forName: UIApplication.didEnterBackgroundNotification,
                                             object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.setInactive(true) }
         })
