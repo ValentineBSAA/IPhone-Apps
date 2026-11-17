@@ -145,6 +145,9 @@ final class GameStore: ObservableObject {
             )
         )
         state.nextBeatIndex = index + 1
+        if beat.kind == .call && presentedCall == nil {
+            presentedCall = state.messages.last
+        }
         if state.audioEnabled { AudioServicesPlaySystemSound(1104) }
         if state.hapticsEnabled { UIImpactFeedbackGenerator(style: .soft).impactOccurred() }
         save()
