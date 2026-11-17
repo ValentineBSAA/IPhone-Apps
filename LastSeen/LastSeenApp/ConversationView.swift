@@ -235,6 +235,7 @@ private struct MessageRow: View {
     let message: GameMessage
     @Binding var photoToShow: GameMessage?
     @EnvironmentObject private var game: GameStore
+    @State private var showTranscript = false
 
     var body: some View {
         HStack {
@@ -290,25 +291,45 @@ private struct MessageRow: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Examine hallway photograph")
         case .voiceNote:
-            Button {
-                game.toggleVoice(message)
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: game.playingVoiceID == message.id ? "pause.circle.fill" : "play.circle.fill")
-                        .font(.system(size: 31))
-                    VStack(alignment: .leading, spacing: 5) {
-                        Image(systemName: "waveform")
-                            .font(.system(size: 18))
-                        Text("Voice recording · transcript available")
-                            .font(.system(size: 11))
+            VStack(alignment: .leading, spacing: 10) {
+                Button {
+                    game.toggleVoice(message)
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: game.playingVoiceID == message.id ? "pause.circle.fill" : "play.circle.fill")
+                            .font(.system(size: 31))
+                        VStack(alignment: .leading, spacing: 5) {
+                            Image(systemName: "waveform")
+                                .font(.system(size: 18))
+                            Text("Play voice recording")
+                                .font(.system(size: 11))
+                        }
+                        Spacer(minLength: 0)
                     }
-                    Spacer(minLength: 0)
+                    .foregroundColor(.white)
+                    .frame(width: 228)
                 }
-                .foregroundColor(.white)
-                .frame(width: 228)
+                .buttonStyle(.plain)
+                .accessibilityLabel("Play or stop fictional voice recording")
+
+                Button {
+                    showTranscript.toggle()
+                    game.inspect(message)
+                } label: {
+                    Label(showTranscript ? "Hide transcript" : "Read transcript", systemImage: "text.quote")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.84))
+                }
+                .buttonStyle(.plain)
+
+                if showTranscript {
+                    Text(message.body.replacingOccurrences(of: "Voice message: ", with: ""))
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.88))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isStaticText)
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Play fictional voice recording and reveal clue")
         case .call:
             Button {
                 game.presentedCall = message
