@@ -137,6 +137,12 @@ struct InboxView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink(value: AppPage.contacts) {
+                    Image(systemName: "person.crop.rectangle.stack")
+                        .accessibilityLabel("Contacts")
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink(value: AppPage.settings) {
                     Image(systemName: "gearshape")
                         .accessibilityLabel("Settings")
