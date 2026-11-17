@@ -46,10 +46,29 @@ jobs:
           swift Tools/make_icon.swift
           test -s LastSeenApp/Assets.xcassets/AppIcon.appiconset/AppIcon.png
 
-      - name: Import character contact photos into native asset catalog
+      - name: Download the ten uploaded contact photos from GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          python3 Tools/import_contacts.py --zip ContactPhotos.zip
+          gh release download Photos-1 \
+            --repo ValentineBSAA/IPhone-Apps \
+            --pattern 'Last-Seen-10-Contact-Portraits.zip' \
+            --dir . --clobber
+          mv Last-Seen-10-Contact-Portraits.zip ContactPhotos.zip
+          test "$(stat -f '%z' ContactPhotos.zip)" -ge 900000
+          unzip -tq ContactPhotos.zip
+
+      - name: Import all ten character photos into native iOS asset catalog
+        run: |
+          set -euo pipefail
+          python3 Tools/import_contacts.py --zip ContactPhotos.zip --required
+          test "$(find LastSeenApp/Assets.xcassets -maxdepth 1 -type d -name 'Contact_*.imageset' | wc -l | tr -d ' ')" = "10"
+          for asset in Contact_Nora_01 Contact_Nora_02 Contact_Nora_03 Contact_Nora_04 \
+                       Contact_Eli_01 Contact_Eli_02 Contact_Eli_03 \
+                       Contact_Unit7_01 Contact_Unit7_02 Contact_Unit7_03; do
+            test -s "LastSeenApp/Assets.xcassets/${asset}.imageset/portrait.jpg"
+          done
 
       - name: Generate iOS 16 Xcode project
         run: |
@@ -104,16 +123,16 @@ jobs:
           cp -R build/Build/Products/Release-iphoneos/LastSeen.app dist/Payload/
           (
             cd dist
-            zip -qr Last-Seen-v1.0.1-iOS16-unsigned.ipa Payload
+            zip -qr Last-Seen-v1.0.2-iOS16-unsigned.ipa Payload
           )
-          test -s dist/Last-Seen-v1.0.1-iOS16-unsigned.ipa
-          unzip -l dist/Last-Seen-v1.0.1-iOS16-unsigned.ipa | grep -q 'Payload/LastSeen.app/Info.plist'
+          test -s dist/Last-Seen-v1.0.2-iOS16-unsigned.ipa
+          unzip -l dist/Last-Seen-v1.0.2-iOS16-unsigned.ipa | grep -q 'Payload/LastSeen.app/Info.plist'
 
       - name: Publish unsigned IPA for user-side installation
         uses: actions/upload-artifact@v4
         with:
-          name: LAST-SEEN-v1.0.1-iOS16-unsigned
-          path: LastSeen/dist/Last-Seen-v1.0.1-iOS16-unsigned.ipa
+          name: LAST-SEEN-v1.0.2-iOS16-unsigned
+          path: LastSeen/dist/Last-Seen-v1.0.2-iOS16-unsigned.ipa
           if-no-files-found: error
           retention-days: 30
 
