@@ -30,11 +30,11 @@ struct BerryTile: View {
     @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkles = "default"
 
     private var skin: String { skinOverride ?? blockSkin }
-    private var decorated: Bool { strawberryUnlocked && tint % 6 == 0 }
+    private var decorated: Bool { strawberryUnlocked && (tint % 6 + 6) % 6 == 0 && skin == "default" }
     /// Prepared 0.5.8 art catalog: each square remains an exact grid cell.
     private var artName: String? {
         switch skin {
-        case "default": return tint % 6 == 0 ? "StrawberryCandyBlock" : nil
+        case "default", "strawberry-fruit": return nil
         case "raspberry-blocks": return "RaspberryRubyBlock"
         case "lemon-blocks": return "LemonGlazeBlock"
         case "chocolate-blocks": return "ChocolateTruffleBlock"
@@ -79,6 +79,18 @@ struct BerryTile: View {
         GeometryReader { geometry in
             let side = min(geometry.size.width, geometry.size.height)
             let radius = max(3, side * 0.19)
+            if decorated || skin == "strawberry-fruit" {
+                // The *entire* piece is shaped like a real strawberry.
+                // Hit-testing and placement still use the exact square cell.
+                Image("BerryRealStrawberry")
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: side, height: side)
+                    .shadow(color: Color(red: 0.66, green: 0.1, blue: 0.22).opacity(0.26),
+                            radius: max(1, side * 0.08), y: 1)
+                    .accessibilityLabel("Three-dimensional strawberry fruit block")
+            } else {
             RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .fill(LinearGradient(colors: [palette.opacity(0.78), palette, palette.opacity(0.98)],
                                      startPoint: .topLeading, endPoint: .bottomTrailing))
@@ -137,6 +149,7 @@ struct BerryTile: View {
                             .allowsHitTesting(false)
                     }
                 }
+            }
         }
         .opacity(preview ? 0.80 : 1)
     }
