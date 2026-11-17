@@ -93,22 +93,11 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
                                             object: AVAudioSession.sharedInstance(), queue: .main) { [weak self] _ in
             Task { @MainActor in self?.restoreAfterMediaReset() }
         })
-        // A screenshot can temporarily make an app inactive. Only actual
-        // backgrounding should suspend the soundtrack.
-        // iOS sends willResignActive BEFORE didEnterBackground, including
-        // on lock/low-power transitions. Stop audio immediately, not seconds later.
-        observers.append(center.addObserver(forName: UIApplication.willResignActiveNotification,
-                                            object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.setInactive(true) }
-        })
-        observers.append(center.addObserver(forName: UIApplication.didEnterBackgroundNotification,
-                                            object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.setInactive(true) }
-        })
-        observers.append(center.addObserver(forName: UIApplication.didBecomeActiveNotification,
-                                            object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.setInactive(false) }
-        })
+        // SwiftUI scenePhase is the single authoritative app lifecycle signal.
+        // Do not enqueue UIApplication activity callbacks in Tasks: a stale
+        // willResignActive callback can run after didBecomeActive and silence
+        // the main menu. Foreground and lock transitions are handled directly
+        // and synchronously by BerryBlockBlastApp.
     }
 
     private var canPlayMusic: Bool {
@@ -372,6 +361,20 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
     }
 
+    /// Synchronously stop game audio on lock/background and recover from
+    /// cold launch or notification overlays without races between observers.
+    func appSceneDidChange(_ phase: ScenePhase) {
+        if phase == .active {
+            if inactive {
+                setInactive(false)
+            } else {
+                ensurePlaying()  // Cold launch can miss play while iOS is inactive.
+            }
+        } else {
+            setInactive(true)
+        }
+    }
+
     private func setInactive(_ value: Bool) {
         guard inactive != value else { return }
         inactive = value
@@ -381,6 +384,7 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
             duckFactor = 1
             pendingTrackIndex = nil
             endFadeTimer?.invalidate()
+            musicPlayer?.setVolume(0, fadeDuration: 0)
             musicPlayer?.pause()
             // SFX must not continue playing under the lock screen or in background.
             effectPlayers.forEach { $0.stop() }
@@ -388,6 +392,7 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
             isPlaying = false
             deactivateSession()
         } else {
+            musicPlayer?.volume = targetVolume()
             ensurePlaying()
         }
     }
