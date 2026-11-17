@@ -35,6 +35,8 @@ struct BerryEngine: Codable {
     private(set) var bestCombo = 0
     private(set) var dryMoves = 0
     private(set) var boardClears = 0
+    /// Completed Sweet Endless gardens. Older saved games decode this as zero.
+    private(set) var seasons = 0
     private var randomState: UInt64? = nil
     private var cozyPieces: Bool? = nil
     private var hardPieces: Bool? = nil
@@ -69,7 +71,7 @@ struct BerryEngine: Codable {
     // Decode the optional mode metadata explicitly so older saves survive upgrades.
     private enum CodingKeys: String, CodingKey {
         case board, tray, score, streak, moves, totalLines, bestCombo
-        case dryMoves, boardClears, randomState, cozyPieces, side, hardPieces
+        case dryMoves, boardClears, seasons, randomState, cozyPieces, side, hardPieces
     }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -84,6 +86,7 @@ struct BerryEngine: Codable {
         bestCombo = try values.decodeIfPresent(Int.self, forKey: .bestCombo) ?? 0
         dryMoves = try values.decodeIfPresent(Int.self, forKey: .dryMoves) ?? 0
         boardClears = try values.decodeIfPresent(Int.self, forKey: .boardClears) ?? 0
+        seasons = try values.decodeIfPresent(Int.self, forKey: .seasons) ?? 0
         randomState = try values.decodeIfPresent(UInt64.self, forKey: .randomState)
         cozyPieces = try values.decodeIfPresent(Bool.self, forKey: .cozyPieces)
         guard (side == 8 || side == 12 || side == 24), board.count == side,
@@ -168,6 +171,21 @@ struct BerryEngine: Codable {
 
     mutating func reshuffleTray() {
         refill()
+    }
+
+    /// Sweet Endless never ends for lack of legal moves. Once a board is stuck,
+    /// begin the next garden season without wiping the run score, line history,
+    /// high score, piece count or berry rewards.
+    @discardableResult
+    mutating func beginNextEndlessSeasonIfStuck() -> Bool {
+        guard !hasMove() else { return false }
+        board = Array(repeating: Array<Int?>(repeating: nil, count: side), count: side)
+        tray = []
+        streak = 0
+        dryMoves = 0
+        seasons += 1
+        refill()
+        return hasMove()
     }
 
     private mutating func refill() {

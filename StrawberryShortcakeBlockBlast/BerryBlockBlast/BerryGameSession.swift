@@ -22,6 +22,45 @@ final class BerryGameSession: ObservableObject {
     private var activeMode: BerryMode = .endless
     static let classicSaveKey = "berryblockblast.classic.engine.v055"
     static let classicSavedFlagKey = "berryblockblast.classic.savedFlag.v056b2"
+    private static let legacyEndlessSaveKey = "berryblockblast.saved-game.v3"
+    private static let legacyEndlessV1Key = "berryblockblast.saved-game.v1"
+    private static let legacyEndlessMigratedKey = "berryblockblast.endless.legacyMigrated.v056b2"
+
+    /// One resumable MODE, Sweet Endless, with independent safe slots for
+    /// 8×8, 12×12 and 24×24. Each size has its own personal-best score too.
+    static func endlessSaveKey(side: Int) -> String {
+        switch side {
+        case 12: return "berryblockblast.endless.saved-12.v056b2"
+        case 24: return "berryblockblast.endless.saved-24.v056b2"
+        default: return "berryblockblast.endless.saved-8.v056b2"
+        }
+    }
+
+    static func savedEndlessEngine(side: Int) -> BerryEngine? {
+        guard [8, 12, 24].contains(side) else { return nil }
+        let defaults = UserDefaults.standard
+        if let data = defaults.data(forKey: endlessSaveKey(side: side)),
+           let snapshot = try? JSONDecoder().decode(BerryEngine.self, from: data),
+           snapshot.side == side, snapshot.moves > 0 { return snapshot }
+
+        // Restore the old Build 1 Sweet Endless board once, without writing
+        // or deleting that original save. An intentional New Garden sets the
+        // migration flag, so the legacy board cannot silently reappear.
+        guard side == 8, !defaults.bool(forKey: legacyEndlessMigratedKey) else { return nil }
+        if let data = defaults.data(forKey: legacyEndlessSaveKey),
+           let snapshot = try? JSONDecoder().decode(Save.self, from: data),
+           snapshot.engine.side == 8, snapshot.engine.moves > 0 {
+            return snapshot.engine
+        }
+        if let data = defaults.data(forKey: legacyEndlessV1Key),
+           let snapshot = try? JSONDecoder().decode(BerryEngine.self, from: data),
+           snapshot.side == 8, snapshot.moves > 0 { return snapshot }
+        return nil
+    }
+
+    static func hasResumableEndless(side: Int) -> Bool {
+        savedEndlessEngine(side: side) != nil
+    }
     static var hasResumableClassic: Bool {
         guard let data = UserDefaults.standard.data(forKey: classicSaveKey),
               let saved = try? JSONDecoder().decode(BerryEngine.self, from: data) else { return false }
@@ -57,15 +96,26 @@ final class BerryGameSession: ObservableObject {
             UserDefaults.standard.set(UserDefaults.standard.integer(forKey: bestKey), forKey: scoreKey)
         }
         bestScore = UserDefaults.standard.integer(forKey: scoreKey)
-        // Only Berry Classic resumes an unfinished board. Previous versions'
-        // saves for other modes remain untouched for rollback/migration.
-        if mode == .classic,
-           let data = UserDefaults.standard.data(forKey: Self.classicSaveKey),
-           let saved = try? JSONDecoder().decode(BerryEngine.self, from: data),
-           saved.side == 8 && saved.hasMove() {
+        // Sweet Endless is the only mode that resumes its board. Keep legacy
+        // Classic/non-Endless saves on disk for safe rollback, but never resume
+        // them in this build. A selected garden size resumes only its own slot.
+        let requestedSize = UserDefaults.standard.integer(forKey: "berryblockblast.endless.boardSize.v056b2")
+        let size = [8, 12, 24].contains(requestedSize) ? requestedSize : 8
+        if mode == .endless, let saved = Self.savedEndlessEngine(side: size) {
             engine = saved
+            if size == 8 {
+                UserDefaults.standard.set(true, forKey: Self.legacyEndlessMigratedKey)
+                if let data = try? JSONEncoder().encode(saved) {
+                    UserDefaults.standard.set(data, forKey: Self.endlessSaveKey(side: 8))
+                }
+            }
         } else {
             engine = freshEngine()
+        }
+        if mode == .endless && !engine.hasMove() {
+            // Older saves can be stuck; rescue the run without losing its score.
+            _ = engine.beginNextEndlessSeasonIfStuck()
+            save()
         }
         previous = nil
         previousBerryEarnings = 0
@@ -169,7 +219,10 @@ final class BerryGameSession: ObservableObject {
                 outcome.clearedLines >= 3 ? "BERRY SPECTACULAR! ✨" :
                 outcome.streak >= 2 ? "SWEET COMBO ×\(outcome.streak)! 🍓" : "BERRY DELICIOUS! 🍰"
         } else { lastMessage = nil }
+        let nextSeason = activeMode == .endless && !engine.hasMove() &&
+            engine.beginNextEndlessSeasonIfStuck()
         gameOver = !engine.hasMove()
+        if nextSeason { lastMessage = "🍓 A fresh berry season! Your score continues!" }
         save()
         return true
     }
@@ -201,6 +254,7 @@ final class BerryGameSession: ObservableObject {
         guard shuffles > 0 else { return }
         engine.reshuffleTray()
         shuffles -= 1
+        if activeMode == .endless { _ = engine.beginNextEndlessSeasonIfStuck() }
         gameOver = !engine.hasMove()
         previous = nil
         previousBerryEarnings = 0
@@ -272,6 +326,10 @@ final class BerryGameSession: ObservableObject {
     var canUndo: Bool { undos > 0 && previous != nil }
 
     func newGame() {
+        if activeMode == .endless && engine.side == 8 {
+            // A deliberate restart must not resurrect the old pre-Build-2 save.
+            UserDefaults.standard.set(true, forKey: Self.legacyEndlessMigratedKey)
+        }
         engine = freshEngine()
         previous = nil
         previousBerryEarnings = 0
@@ -308,15 +366,15 @@ final class BerryGameSession: ObservableObject {
     private func save() {
         let inventory = Inventory(berries: berries, undos: undos, shuffles: shuffles, totalEarnedBerries: totalEarnedBerries)
         if let data = try? JSONEncoder().encode(inventory) { UserDefaults.standard.set(data, forKey: inventoryKey) }
-        // One and only resumable board: Berry Classic. Never overwrite older
-        // 0.5.6 saves in other modes. Don't show a saved badge for an empty game.
-        guard activeMode == .classic else { return }
-        let shouldKeep = engine.moves > 0 && !gameOver
-        if shouldKeep, let data = try? JSONEncoder().encode(engine) {
-            UserDefaults.standard.set(data, forKey: Self.classicSaveKey)
-        } else if !shouldKeep {
-            UserDefaults.standard.removeObject(forKey: Self.classicSaveKey)
+        // Only Sweet Endless persists an unfinished board. Each board size
+        // keeps its own ongoing run. Original Build 1 and Classic save keys
+        // are never overwritten, which preserves the stable rollback.
+        guard activeMode == .endless else { return }
+        let key = Self.endlessSaveKey(side: engine.side)
+        if engine.moves > 0, let data = try? JSONEncoder().encode(engine) {
+            UserDefaults.standard.set(data, forKey: key)
+        } else if engine.moves == 0 {
+            UserDefaults.standard.removeObject(forKey: key)
         }
-        UserDefaults.standard.set(shouldKeep, forKey: Self.classicSavedFlagKey)
     }
 }
