@@ -46,9 +46,10 @@ enum SoloStories {
 
         let additional: [StoryScene] = [
             StoryScene(id: "eli_opening", beats: [
-                .init("eli", "eli", "Hi, this is Eli. I look after the building at night."),
+                .init("eli", "eli", "Hi, it's Eli from the maintenance office. Hope I'm not interrupting."),
                 .init("eli", "eli", "Someone left a key on the desk. It has your apartment number on it."),
                 .init("eli", "eli", "The strange part is that I locked the desk myself an hour ago."),
+                .init("eli", "eli", "Here's the maintenance room, for context.", kind: .photograph, asset: "Story_05_Eli_Maintenance"),
                 .init("eli", "eli", "Can I ask you something? Did you hear the elevator move?")
             ], choices: [
                 .init(id: "eli_careful", title: "Yes. Is someone stuck in it?", next: "eli_careful_route"),
@@ -68,6 +69,7 @@ enum SoloStories {
             ], choices: [], next: "eli_last"),
             StoryScene(id: "eli_last", beats: [
                 .init("eli", "eli", "I found a page from the old building plans."),
+                .init("eli", "eli", "This is the original record.", kind: .photograph, asset: "Story_07_Building_Records"),
                 .init("eli", "eli", "There used to be a seventh floor. It was sealed after a fire."),
                 .init("eli", "eli", "The key opens one of two doors. One is the stairwell exit."),
                 .init("eli", "eli", "The other door has your name written on it."),
@@ -78,7 +80,7 @@ enum SoloStories {
             ]),
             StoryScene(id: "eli_safe", beats: [
                 .init("eli", "eli", "The stairwell door opened."),
-                .init("eli", "eli", "There's daylight outside. That can't be right. It's still dark."),
+                .init("eli", "eli", "There's daylight outside, but the lobby windows are completely dark."),
                 .init("eli", "eli", "I put the key down and left."),
                 .init("eli", "eli", "I don't plan to work another night here.")
             ], choices: [], ending: "THE KEY", endingDetail: "Eli walked away from a door that knew your name."),
@@ -112,6 +114,7 @@ enum SoloStories {
             ], choices: [], next: "unit7_last"),
             StoryScene(id: "unit7_last", beats: [
                 .init("unit7", "unit7", "I just received a photograph of your door."),
+                .init("unit7", "unit7", "I don't know who took this.", kind: .photograph, asset: "Story_08_Unknown_Your_Door"),
                 .init("unit7", "unit7", "It was taken from the inside."),
                 .init("unit7", "unit7", "There's a number scratched into the frame. Seven."),
                 .init("unit7", "unit7", "I think it wants me to ask you to open it."),
