@@ -95,6 +95,12 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
         })
         // A screenshot can temporarily make an app inactive. Only actual
         // backgrounding should suspend the soundtrack.
+        // iOS sends willResignActive BEFORE didEnterBackground, including
+        // on lock/low-power transitions. Stop audio immediately, not seconds later.
+        observers.append(center.addObserver(forName: UIApplication.willResignActiveNotification,
+                                            object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.setInactive(true) }
+        })
         observers.append(center.addObserver(forName: UIApplication.didEnterBackgroundNotification,
                                             object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.setInactive(true) }
@@ -230,7 +236,7 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     private func ensurePlaying() {
-        guard canPlayMusic else { return }
+        guard canPlayMusic && UIApplication.shared.applicationState == .active else { return }
         if let p = musicPlayer {
             if p.isPlaying { isPlaying = true; return }
             guard activateSession() else { return }
@@ -370,8 +376,15 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
         guard inactive != value else { return }
         inactive = value
         if value {
+            changeGeneration += 1
+            duckGeneration += 1
+            duckFactor = 1
+            pendingTrackIndex = nil
             endFadeTimer?.invalidate()
             musicPlayer?.pause()
+            // SFX must not continue playing under the lock screen or in background.
+            effectPlayers.forEach { $0.stop() }
+            effectPlayers.removeAll()
             isPlaying = false
             deactivateSession()
         } else {
@@ -434,6 +447,7 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
     /// Real 48-kHz PCM WAV effects from the uploaded, source-verified 16-file pack.
     /// Slight per-event cooldown prevents a finger and a gesture from double-firing.
     func play(_ cue: Cue) {
+        guard !inactive && UIApplication.shared.applicationState == .active else { return }
         guard UserDefaults.standard.object(forKey: "berryblockblast.sound") == nil ||
               UserDefaults.standard.bool(forKey: "berryblockblast.sound") else { return }
         guard effectVolume > 0 else { return }
