@@ -89,7 +89,7 @@ struct BerryJukeboxView: View {
             .navigationTitle("🍓 Strawberry Jukebox")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button("Done") { audio.play(.menuBack); dismiss() }
                         .fontWeight(.bold)
                         .tint(BerryStyle.strawberry)
                 }

@@ -201,7 +201,7 @@ struct BerryHomeView: View {
                     }.padding(24)
                 }.background(BerryStyle.cream.ignoresSafeArea())
                 .navigationTitle("Berry Collection")
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showCollection = false } } }
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { audio.play(.menuBack); showCollection = false } } }
             }
         }
         .sheet(isPresented: $showSchool) { BerrySchoolView(onFinish: { graduated in showSchool = false; if graduated { BerryGameSession().rewardTutorial() } }) }
@@ -266,7 +266,7 @@ struct BerryHomeView: View {
                     }.padding(22)
                 }.background(BerryStyle.cream.ignoresSafeArea())
                 .navigationTitle("More Adventures")
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showMore = false } } }
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { audio.play(.menuBack); showMore = false } } }
             }
         }
         .sheet(isPresented: $showJukebox) { BerryJukeboxView() }
@@ -416,7 +416,7 @@ struct BerryHomeView: View {
                 }
                 .background(LinearGradient(colors: [BerryStyle.cream, Color(red: 1, green: 0.85, blue: 0.90)], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
                 .navigationTitle("🍓 Berry Settings")
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showSettings = false } } }
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { audio.play(.menuBack); showSettings = false } } }
             }.presentationDetents([.large]).presentationDragIndicator(.visible)
         }
         .onAppear {

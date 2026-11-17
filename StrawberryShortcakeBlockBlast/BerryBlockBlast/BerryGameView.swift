@@ -376,7 +376,7 @@ struct BerryGameView: View {
                             celebratedRecordThisRun = false; scoreRecordAtEntry = session.bestScore
                             showNewBestBanner = false
                         }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
-                        Button("🏡 Return to Strawberry Village") { onExit() }
+                        Button("🏡 Return to Strawberry Village") { returnToVillage() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
                         if showGameOver && session.shuffles > 0 && mode != .classic && mode != .challenge {
                             Button("✨ Use Shuffle (\(session.shuffles) left)") { session.shuffle(); showGameOver = session.gameOver; selectedSlot = nil; drag = nil }
@@ -431,7 +431,7 @@ struct BerryGameView: View {
                     Image(systemName: "pause.circle.fill").font(.system(size: 23)).foregroundStyle(BerryStyle.strawberry)
                 }.accessibilityLabel("Pause game")
             }
-            Button { onExit() } label: { Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.leaf) }.accessibilityLabel("Main menu")
+            Button { returnToVillage() } label: { Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.leaf) }.accessibilityLabel("Main menu")
             Button { showSettings = true } label: {
                 Image(systemName: "gearshape.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.strawberry)
             }.accessibilityLabel("Berry settings")
@@ -496,7 +496,7 @@ struct BerryGameView: View {
             toolButton("Shop", icon: "basket.fill", count: nil, enabled: true) { showShop = true }
             }
             toolButton(mode == .cozy ? "Cottage" : "Stats", icon: mode == .cozy ? "house.lodge.fill" : "chart.bar.fill", count: nil, enabled: true) { if mode == .cozy { showCottage = true } else { showStats = true } }
-            toolButton("Home", icon: "house.fill", count: nil, enabled: true) { onExit() }
+            toolButton("Home", icon: "house.fill", count: nil, enabled: true) { returnToVillage() }
         }.frame(height: 43)
     }
 
@@ -711,6 +711,11 @@ struct BerryGameView: View {
                 showNewBestBanner = false
             }
         }
+    }
+
+    private func returnToVillage() {
+        if sound { BerryAudio.shared.play(.menuBack) }
+        onExit()
     }
 
     private func successFeedback() {
