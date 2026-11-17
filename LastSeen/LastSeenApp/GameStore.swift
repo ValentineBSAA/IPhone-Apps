@@ -1,18 +1,16 @@
 import Foundation
 import SwiftUI
-import AVFoundation
-import AudioToolbox
 import UserNotifications
+import AudioToolbox
 
 @MainActor
 final class GameStore: ObservableObject {
     @Published private(set) var state: SavedGame
-    @Published private(set) var typingThread: String? = nil
-    @Published private(set) var playingVoiceID: String? = nil
-    @Published var presentedCall: GameMessage? = nil
+    @Published private(set) var typingThread: String?
+    @Published private(set) var visibleThread: String?
+    @Published var notificationDraft: String?
 
     private var deliveryTask: Task<Void, Never>?
-    private let synth = AVSpeechSynthesizer()
     private let ambience = AudioAtmosphere()
     private let persistToDisk: Bool
 
@@ -22,21 +20,43 @@ final class GameStore: ObservableObject {
             state = initial
         } else if persistToDisk,
                   let data = try? Data(contentsOf: Self.saveURL),
-                  let loaded = try? JSONDecoder().decode(SavedGame.self, from: data),
-                  loaded.schemaVersion == 1,
-                  StoryScript.scenes[loaded.sceneID] != nil {
-            state = loaded
+                  let previous = try? JSONDecoder().decode(SavedGame.self, from: data),
+                  [1, 2].contains(previous.schemaVersion) {
+            state = previous
         } else {
             state = SavedGame()
         }
+
+        // Migration from v1.0: preserve the earlier chapter, choices and collected evidence,
+        // but show its scattered contacts within Nora's thread as forwarded information.
+        if state.schemaVersion == 1 {
+            state.activeThread = state.messages.isEmpty ? nil : Contact.nora.id
+            state.messages = state.messages.map { message in
+                let source = Contact(rawValue: message.thread)
+                let text = (message.thread == Contact.nora.id || message.isOutgoing)
+                    ? message.body : "Forwarded from \(source?.name ?? "Unknown"): \(message.body)"
+                return GameMessage(id: message.id, thread: Contact.nora.id,
+                                   sender: message.isOutgoing ? "player" : Contact.nora.id,
+                                   body: text,
+                                   kind: message.kind == .call ? .text : message.kind,
+                                   createdAt: message.createdAt, isRead: message.isRead)
+            }
+            state.schemaVersion = 2
+            state.stories = [:]
+        }
+        if state.activeThread != nil && SoloStories.scenes[state.sceneID] == nil {
+            state = SavedGame()
+        }
+        if persistToDisk { save() }
     }
 
     static var saveURL: URL {
-        let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return directory.appendingPathComponent("last-seen-save-v1.json")
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("last-seen-save-v1.json")
     }
 
-    var currentScene: StoryScene? { StoryScript.scenes[state.sceneID] }
+    var activeContact: Contact? { state.activeThread.flatMap(Contact.init(rawValue:)) }
+    var currentScene: StoryScene? { SoloStories.scenes[state.sceneID] }
     var availableChoices: [StoryChoice] {
         state.choiceReady ? (currentScene?.choices ?? []) : []
     }
@@ -47,12 +67,20 @@ final class GameStore: ObservableObject {
     var endingDetail: String { currentScene?.endingDetail ?? "" }
     var allMessages: [GameMessage] { state.messages }
 
+    func title(for contact: Contact) -> String { SoloStories.title(for: contact.id) }
+
     func messages(in thread: String) -> [GameMessage] {
-        state.messages.filter { $0.thread == thread }
+        if state.activeThread == thread { return state.messages }
+        return state.stories?[thread]?.messages ?? []
     }
 
     func unreadCount(in thread: String) -> Int {
-        state.messages.filter { $0.thread == thread && !$0.isOutgoing && !$0.isRead }.count
+        messages(in: thread).filter { !$0.isOutgoing && !$0.isRead }.count
+    }
+
+    func ending(for contact: Contact) -> String? {
+        if state.activeThread == contact.id { return state.endingID }
+        return state.stories?[contact.id]?.endingID
     }
 
     func hasClues(_ clues: [String]) -> Bool {
@@ -60,20 +88,54 @@ final class GameStore: ObservableObject {
     }
 
     func markThreadRead(_ thread: String) {
-        var changed = false
-        for index in state.messages.indices where state.messages[index].thread == thread && !state.messages[index].isOutgoing && !state.messages[index].isRead {
+        guard state.activeThread == thread else { return }
+        var dirty = false
+        for index in state.messages.indices where
+            state.messages[index].thread == thread &&
+            !state.messages[index].isOutgoing &&
+            !state.messages[index].isRead {
             state.messages[index].isRead = true
-            changed = true
+            dirty = true
         }
-        if changed {
+        if dirty {
             state.readThreads.insert(thread)
             save()
         }
     }
 
+    /// A conversation is activated only after the player chooses its contact.
+    /// Switching stories snapshots the old progress and never advances inactive threads.
+    func selectStory(_ contact: Contact) {
+        let thread = contact.id
+        if state.activeThread != thread {
+            suspend()
+            var slots = state.stories ?? [:]
+            if let old = state.activeThread {
+                slots[old] = StorySlot(capturing: state)
+            }
+            let next = slots.removeValue(forKey: thread)
+                ?? StorySlot(sceneID: SoloStories.start(for: thread))
+            next.restore(into: &state)
+            state.stories = slots
+            state.activeThread = thread
+            save()
+        }
+        visibleThread = thread
+        clearReminder()
+        beginOrResume()
+    }
+
+    func closeConversation(_ contact: Contact) {
+        guard visibleThread == contact.id else { return }
+        visibleThread = nil
+        suspend()
+    }
+
     func beginOrResume() {
+        consumePendingReply()
+        guard let thread = state.activeThread, visibleThread == thread,
+              state.endingID == nil, !state.choiceReady else { return }
         if state.audioEnabled { ambience.start() }
-        guard state.endingID == nil, !state.choiceReady else { return }
         deliveryTask?.cancel()
         deliveryTask = Task { [weak self] in
             await self?.runDeliveryLoop()
@@ -88,26 +150,43 @@ final class GameStore: ObservableObject {
         save()
     }
 
+    /// Characters have thinking pauses and varied typing duration, not a uniform timer.
+    /// No background narration runs while another conversation is selected.
+    private func pacing(_ beat: StoryBeat, index: Int) -> (pause: Double, typing: Double) {
+        let count = Double(beat.body.count)
+        let scramble = Double((index * 17 + beat.body.utf8.reduce(0) { ($0 + Int($1)) % 97 }) % 7)
+        let pause = 0.4 + scramble * 0.39 + (index % 5 == 0 ? 1.7 : 0.0)
+        let composing = min(7.5, max(0.7, count / 15.0 + Double(index % 3) * 0.25))
+        let dramatic = state.slowerText ? 1.6 : 1.0
+        return (pause * dramatic, composing * dramatic)
+    }
+
     private func runDeliveryLoop() async {
         while !Task.isCancelled {
-            guard let scene = currentScene else { return }
+            guard state.activeThread == visibleThread,
+                  let scene = currentScene else { return }
 
             if state.nextBeatIndex < scene.beats.count {
-                let beat = scene.beats[state.nextBeatIndex]
-                typingThread = beat.thread
-                let duration = state.slowerText ? max(3.0, beat.delay * 1.65) : beat.delay
+                let index = state.nextBeatIndex
+                let beat = scene.beats[index]
+                let times = pacing(beat, index: index)
+                typingThread = nil
                 do {
-                    try await Task.sleep(nanoseconds: UInt64(max(0.1, duration) * 1_000_000_000))
+                    try await Task.sleep(nanoseconds: UInt64(times.pause * 1_000_000_000))
+                    guard !Task.isCancelled else { return }
+                    typingThread = beat.thread
+                    try await Task.sleep(nanoseconds: UInt64(times.typing * 1_000_000_000))
                 } catch {
                     typingThread = nil
                     return
                 }
-                guard !Task.isCancelled else {
+                guard !Task.isCancelled, state.activeThread == visibleThread,
+                      state.sceneID == scene.id, state.nextBeatIndex == index else {
                     typingThread = nil
                     return
                 }
                 typingThread = nil
-                deliverBeat(beat, sceneID: scene.id, index: state.nextBeatIndex)
+                deliverBeat(beat, sceneID: scene.id, index: index)
             } else if !scene.choices.isEmpty {
                 state.choiceReady = true
                 save()
@@ -129,34 +208,29 @@ final class GameStore: ObservableObject {
     }
 
     private func deliverBeat(_ beat: StoryBeat, sceneID: String, index: Int) {
-        let id = "\(sceneID)-\(index)"
+        guard let thread = state.activeThread else { return }
+        let id = "\(thread)-\(sceneID)-\(index)"
         guard !state.messages.contains(where: { $0.id == id }) else {
             state.nextBeatIndex = index + 1
             save()
             return
         }
-        for i in state.messages.indices where state.messages[i].thread == beat.thread && state.messages[i].isOutgoing {
+        for i in state.messages.indices where state.messages[i].isOutgoing {
             state.messages[i].isRead = true
         }
         state.messages.append(
-            GameMessage(
-                id: id, thread: beat.thread, sender: beat.sender, body: beat.body,
-                kind: beat.kind, createdAt: Date(), isRead: false
-            )
+            GameMessage(id: id, thread: thread, sender: thread, body: beat.body,
+                        kind: beat.kind, createdAt: Date(), isRead: false)
         )
         state.nextBeatIndex = index + 1
-        if beat.kind == .call && presentedCall == nil {
-            presentedCall = state.messages.last
-        }
         if state.audioEnabled { AudioServicesPlaySystemSound(1104) }
         if state.hapticsEnabled { UIImpactFeedbackGenerator(style: .soft).impactOccurred() }
         save()
     }
 
     func revealNextNow() {
-        guard state.endingID == nil, !state.choiceReady,
-              let scene = currentScene,
-              state.nextBeatIndex < scene.beats.count else { return }
+        guard state.activeThread == visibleThread, state.endingID == nil, !state.choiceReady,
+              let scene = currentScene, state.nextBeatIndex < scene.beats.count else { return }
         deliveryTask?.cancel()
         typingThread = nil
         deliverBeat(scene.beats[state.nextBeatIndex], sceneID: scene.id, index: state.nextBeatIndex)
@@ -165,21 +239,18 @@ final class GameStore: ObservableObject {
 
     @discardableResult
     func choose(_ choiceID: String) -> Bool {
-        guard state.choiceReady,
+        guard let thread = state.activeThread, state.choiceReady,
               let choice = currentScene?.choices.first(where: { $0.id == choiceID }),
               hasClues(choice.requiredClues),
-              StoryScript.scenes[choice.next] != nil else { return false }
-
+              SoloStories.scenes[choice.next] != nil else { return false }
         deliveryTask?.cancel()
-        let contact = choiceID == "caretaker_path" || choiceID == "taken" || choiceID == "eli_trust_early" ? "eli"
-            : choiceID == "unknown_path" ? "unit7" : "nora"
-        let choiceMessage = GameMessage(
-            id: "choice-\(state.sceneID)-\(choiceID)",
-            thread: contact, sender: "player", body: choice.title,
-            kind: .text, createdAt: Date(), isRead: false
-        )
-        if !state.messages.contains(where: { $0.id == choiceMessage.id }) {
-            state.messages.append(choiceMessage)
+        let id = "choice-\(thread)-\(state.sceneID)-\(choiceID)"
+        if !state.messages.contains(where: { $0.id == id }) {
+            state.messages.append(
+                GameMessage(id: id, thread: thread, sender: "player",
+                            body: choice.title, kind: .text,
+                            createdAt: Date(), isRead: false)
+            )
         }
         state.visitedChoices.append(choiceID)
         state.sceneID = choice.next
@@ -188,104 +259,37 @@ final class GameStore: ObservableObject {
         typingThread = nil
         if state.hapticsEnabled { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
         save()
-        beginOrResume()
+        if visibleThread == thread { beginOrResume() }
         return true
     }
 
     func inspect(_ message: GameMessage) {
+        guard message.thread == state.activeThread else { return }
         switch message.kind {
         case .photograph: state.clues.insert("photograph")
         case .voiceNote: state.clues.insert("voiceNote")
-        case .call: state.clues.insert("call")
-        case .text: break
+        case .text, .call: break
         }
         save()
     }
 
-    func toggleVoice(_ message: GameMessage) {
-        inspect(message)
-        guard state.audioEnabled else { return }
-        if synth.isSpeaking {
-            synth.stopSpeaking(at: .immediate)
-            if playingVoiceID == message.id {
-                playingVoiceID = nil
-                return
-            }
-        }
-        let utterance = AVSpeechUtterance(string: message.body.replacingOccurrences(of: "Voice message: ", with: ""))
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-        utterance.rate = 0.44
-        utterance.pitchMultiplier = 0.82
-        synth.speak(utterance)
-        playingVoiceID = message.id
-    }
-
-    func stopVoice() {
-        synth.stopSpeaking(at: .immediate)
-        playingVoiceID = nil
-    }
-
-    func answerCall() {
-        if let call = presentedCall {
-            inspect(call)
-            let scripted = GameMessage(
-                id: "call-transcript-\(call.id)", thread: call.thread,
-                sender: "unit7", body: "Call connected: \"There is no seventh floor. Stop counting the doors.\"",
-                kind: .text, createdAt: Date(), isRead: false
-            )
-            if !state.messages.contains(where: { $0.id == scripted.id }) {
-                state.messages.append(scripted)
-            }
-            if state.audioEnabled {
-                let statement = AVSpeechUtterance(string: "There is no seventh floor. Stop counting the doors.")
-                statement.voice = AVSpeechSynthesisVoice(language: "en-US")
-                statement.rate = 0.38
-                statement.pitchMultiplier = 0.65
-                synth.speak(statement)
-            }
-            save()
-        }
-    }
-
-    func endCall() {
-        presentedCall = nil
-        stopVoice()
-    }
-
-    func declineCall() {
-        if let call = presentedCall {
-            let missed = GameMessage(
-                id: "call-declined-\(call.id)", thread: call.thread, sender: "unit7",
-                body: "Missed call", kind: .text, createdAt: Date(), isRead: false
-            )
-            if !state.messages.contains(where: { $0.id == missed.id }) {
-                state.messages.append(missed)
-            }
-            save()
-        }
-        presentedCall = nil
-    }
+    /// No voice-call UI or fake audio playback without actual recorded files.
+    /// A legacy .call message is displayed as an ordinary text-only call record.
 
     func restart() {
         suspend()
-        stopVoice()
-        presentedCall = nil
-        let keepAudio = state.audioEnabled
-        let keepHaptics = state.hapticsEnabled
-        let keepNotifications = state.notificationsEnabled
-        let keepSlow = state.slowerText
-        state = SavedGame()
-        state.audioEnabled = keepAudio
-        state.hapticsEnabled = keepHaptics
-        state.notificationsEnabled = keepNotifications
-        state.slowerText = keepSlow
+        let current = state.activeThread
+        guard let thread = current else { return }
+        let initial = StorySlot(sceneID: SoloStories.start(for: thread))
+        initial.restore(into: &state)
         save()
-        beginOrResume()
+        if visibleThread == thread { beginOrResume() }
     }
 
     func setAudio(_ enabled: Bool) {
         state.audioEnabled = enabled
-        if enabled { ambience.start() } else { stopVoice(); ambience.stop() }
+        if enabled && visibleThread == state.activeThread { ambience.start() }
+        else if !enabled { ambience.stop() }
         save()
     }
 
@@ -310,26 +314,97 @@ final class GameStore: ObservableObject {
 
     func disableNotifications() {
         state.notificationsEnabled = false
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["last-seen-reminder"])
+        clearReminder()
         save()
     }
 
+    /// This uses the actual pending conversation text, not a generic "fictional game" ad.
+    /// iOS renders it under LAST SEEN; it must never pretend to be Apple Messages.
     func scheduleReturnReminder() {
-        guard state.notificationsEnabled, state.endingID == nil else { return }
+        guard persistToDisk, state.notificationsEnabled, state.endingID == nil,
+              let thread = state.activeThread,
+              let contact = Contact(rawValue: thread),
+              let scene = currentScene else { return }
         let content = UNMutableNotificationContent()
-        content.title = "LAST SEEN"
-        content.body = "Your fictional messages are still waiting. Continue The Missing Floor."
+        content.title = contact.name
+        content.userInfo = ["thread": thread]
+        if state.choiceReady {
+            content.body = state.messages.last(where: { !$0.isOutgoing })?.body ?? "Are you there?"
+            content.categoryIdentifier = NotificationRouter.replyCategory
+        } else if state.nextBeatIndex < scene.beats.count {
+            let beat = scene.beats[state.nextBeatIndex]
+            switch beat.kind {
+            case .photograph: content.body = "Sent a photo"
+            case .voiceNote: content.body = "Sent a voice note"
+            case .text, .call: content.body = beat.body
+            }
+        } else {
+            return
+        }
         content.sound = .default
         let request = UNNotificationRequest(
-            identifier: "last-seen-reminder",
+            identifier: NotificationRouter.storyNotificationID,
             content: content,
-            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 900, repeats: false)
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 14, repeats: false)
         )
         UNUserNotificationCenter.current().add(request)
     }
 
     func clearReminder() {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["last-seen-reminder"])
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: [NotificationRouter.storyNotificationID]
+        )
+    }
+
+    func sendTestNotification() {
+        guard state.notificationsEnabled else { return }
+        let content = UNMutableNotificationContent()
+        content.title = activeContact?.name ?? "Nora Bennett"
+        content.body = "Hey. Are you still there?"
+        content.sound = .default
+        let request = UNNotificationRequest(
+            identifier: "lastseen-test",
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 7, repeats: false)
+        )
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    func handleNotificationReply(_ input: String, thread: String) {
+        let value = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return }
+        if state.activeThread != thread {
+            // Keep a draft rather than silently applying a response to the wrong storyline.
+            notificationDraft = value
+            return
+        }
+        let normalized = Self.normalized(value)
+        if state.choiceReady, let matching = availableChoices.first(where: {
+            Self.normalized($0.title) == normalized
+                && hasClues($0.requiredClues)
+        }) {
+            _ = choose(matching.id)
+            notificationDraft = nil
+        } else {
+            notificationDraft = value
+        }
+    }
+
+    static func normalized(_ input: String) -> String {
+        input.lowercased().filter { $0.isLetter || $0.isNumber }
+    }
+
+    func clearDraft() {
+        notificationDraft = nil
+        UserDefaults.standard.removeObject(forKey: NotificationRouter.replyStorageKey)
+    }
+
+    private func consumePendingReply() {
+        guard let raw = UserDefaults.standard.dictionary(forKey: NotificationRouter.replyStorageKey),
+              let text = raw["text"] as? String,
+              let thread = raw["thread"] as? String else { return }
+        UserDefaults.standard.removeObject(forKey: NotificationRouter.replyStorageKey)
+        handleNotificationReply(text, thread: thread)
     }
 
     private func save() {
@@ -347,9 +422,11 @@ final class GameStore: ObservableObject {
         }
     }
 
-    // Pure synchronous progression for unit tests. Never used in the actual player's session.
+    /// Deterministic story advancement for tests, without waiting for UI animation.
     func advanceForTests() {
-        guard let scene = currentScene, state.endingID == nil, !state.choiceReady else { return }
+        guard state.activeThread != nil,
+              let scene = currentScene, state.endingID == nil,
+              !state.choiceReady else { return }
         if state.nextBeatIndex < scene.beats.count {
             deliverBeat(scene.beats[state.nextBeatIndex], sceneID: scene.id, index: state.nextBeatIndex)
         } else if !scene.choices.isEmpty {
