@@ -79,6 +79,7 @@ final class BerryTouchTrackingView: UIView {
 
 struct BerryBoardWindowAnchor: UIViewRepresentable {
     let onRect: (CGRect) -> Void
+    var tracksScrolling = false
 
     func makeUIView(context: Context) -> BerryBoardWindowTrackingView {
         BerryBoardWindowTrackingView()
@@ -86,6 +87,7 @@ struct BerryBoardWindowAnchor: UIViewRepresentable {
 
     func updateUIView(_ view: BerryBoardWindowTrackingView, context: Context) {
         view.onRect = onRect
+        view.trackScrolling = tracksScrolling
         view.publishIfNeeded()
     }
 }
@@ -93,6 +95,20 @@ struct BerryBoardWindowAnchor: UIViewRepresentable {
 final class BerryBoardWindowTrackingView: UIView {
     var onRect: ((CGRect) -> Void)?
     private var lastRect: CGRect = .null
+    private var scrollTracker: CADisplayLink?
+    var trackScrolling = false {
+        didSet { updateTracking() }
+    }
+    private func updateTracking() {
+        scrollTracker?.invalidate()
+        scrollTracker = nil
+        guard trackScrolling, window != nil else { return }
+        let link = CADisplayLink(target: self, selector: #selector(updateScrollFrame))
+        link.preferredFramesPerSecond = 30
+        link.add(to: .main, forMode: .common)
+        scrollTracker = link
+    }
+    @objc private func updateScrollFrame() { publishIfNeeded() }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -108,8 +124,10 @@ final class BerryBoardWindowTrackingView: UIView {
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
+        updateTracking()
         publishIfNeeded()
     }
+    deinit { scrollTracker?.invalidate() }
 
     override func layoutSubviews() {
         super.layoutSubviews()

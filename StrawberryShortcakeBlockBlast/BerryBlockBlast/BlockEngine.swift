@@ -41,7 +41,7 @@ struct BerryEngine: Codable {
 
     init() { refill() }
     init(side: Int, hard: Bool = false) {
-        precondition(side == 8 || side == 12)
+        precondition(side == 8 || side == 12 || side == 24)
         self.side = side
         self.hardPieces = hard
         board = Array(repeating: Array(repeating: nil, count: side), count: side)
@@ -86,7 +86,7 @@ struct BerryEngine: Codable {
         boardClears = try values.decodeIfPresent(Int.self, forKey: .boardClears) ?? 0
         randomState = try values.decodeIfPresent(UInt64.self, forKey: .randomState)
         cozyPieces = try values.decodeIfPresent(Bool.self, forKey: .cozyPieces)
-        guard (side == 8 || side == 12), board.count == side,
+        guard (side == 8 || side == 12 || side == 24), board.count == side,
               board.allSatisfy({ $0.count == side }),
               tray.count == 3 else {
             throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath,
@@ -97,7 +97,7 @@ struct BerryEngine: Codable {
     // Explicit initial state is useful for deterministic puzzle-rule tests.
     init(board: [[Int?]], tray: [BerryPiece?], score: Int = 0, hard: Bool = false) {
         let dimension = board.count
-        precondition((dimension == 8 || dimension == 12) && board.allSatisfy { $0.count == dimension })
+        precondition((dimension == 8 || dimension == 12 || dimension == 24) && board.allSatisfy { $0.count == dimension })
         precondition(tray.count == 3)
         self.board = board
         self.side = dimension
@@ -218,9 +218,23 @@ struct BerryEngine: Codable {
             [BerryPoint(row: 0, col: 0), BerryPoint(row: 1, col: 0), BerryPoint(row: 2, col: 0), BerryPoint(row: 3, col: 0),
              BerryPoint(row: 3, col: 1), BerryPoint(row: 3, col: 2), BerryPoint(row: 3, col: 3)]
         ]
+        // The 24x24 Mega Garden needs substantial pieces so full-line clears
+        // remain achievable rather than requiring dozens of single cells.
+        let megaShapes: [[BerryPoint]] = [
+            (0..<4).flatMap { r in (0..<4).map { c in BerryPoint(row: r, col: c) } },
+            (0..<5).flatMap { r in (0..<5).map { c in BerryPoint(row: r, col: c) } },
+            (0..<3).flatMap { r in (0..<6).map { c in BerryPoint(row: r, col: c) } },
+            (0..<6).flatMap { r in (0..<3).map { c in BerryPoint(row: r, col: c) } },
+            (0..<2).flatMap { r in (0..<8).map { c in BerryPoint(row: r, col: c) } },
+            (0..<8).flatMap { r in (0..<2).map { c in BerryPoint(row: r, col: c) } },
+            (0..<9).map { BerryPoint(row: 0, col: $0) },
+            (0..<9).map { BerryPoint(row: $0, col: 0) }
+        ]
         // A newly dealt tray always contains at least one legal move. Prefer
         // several playable choices instead of handing out impossible pieces.
-        let selection = cozyPieces == true ? Array(catalog.prefix(8)) : hardPieces == true ? Array(catalog.filter { $0.count >= 5 }) + nightmareShapes : classicCatalog
+        let selection = side == 24 ? (nightmareShapes + megaShapes) :
+            cozyPieces == true ? Array(catalog.prefix(8)) :
+            hardPieces == true ? Array(catalog.filter { $0.count >= 5 }) + nightmareShapes : classicCatalog
         let viable = selection.filter { shape in
             let piece = BerryPiece(points: shape, tint: 0)
             return (0..<side).contains { r in
@@ -229,7 +243,10 @@ struct BerryEngine: Codable {
         }
         var nextTray: [BerryPiece?] = []
         for index in 0..<3 {
-            let pool = cozyPieces == true ? (!viable.isEmpty ? viable : selection) : hardPieces == true ? (!viable.isEmpty ? viable : selection) : (!viable.isEmpty && (index < 2 || nextRandom(2) == 0) ? viable : classicCatalog)
+            let pool = side == 24 ? (!viable.isEmpty ? viable : selection) :
+                cozyPieces == true ? (!viable.isEmpty ? viable : selection) :
+                hardPieces == true ? (!viable.isEmpty ? viable : selection) :
+                (!viable.isEmpty && (index < 2 || nextRandom(2) == 0) ? viable : classicCatalog)
             let shape = pool[nextRandom(pool.count)]
             nextTray.append(BerryPiece(points: shape, tint: nextRandom(6)))
         }
