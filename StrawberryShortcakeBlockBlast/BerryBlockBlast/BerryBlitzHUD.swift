@@ -6,6 +6,7 @@ struct BerryBlitzHUD: View {
     let score: Int
     let best: Int
     let variant: BerryBlitzVariant
+    var overrideTitle: String? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -13,7 +14,7 @@ struct BerryBlitzHUD: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
                     Image(systemName: "timer")
-                    Text(variant.rawValue.uppercased())
+                    Text(overrideTitle ?? variant.rawValue.uppercased())
                 }
                 .font(.system(size: 10, weight: .black, design: .rounded))
                 .tracking(1.1)
@@ -54,6 +55,6 @@ struct BerryBlitzHUD: View {
             .strokeBorder(timeLeft <= 10 ? BerryStyle.strawberry : .white, lineWidth: 2))
         .shadow(color: BerryStyle.strawberry.opacity(0.12), radius: 8, y: 3)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(variant.rawValue), \(timeLeft) seconds remaining, \(score) points, personal best \(best)")
+        .accessibilityLabel("\(overrideTitle ?? variant.rawValue), \(timeLeft) seconds remaining, \(score) points, personal best \(best)")
     }
 }
