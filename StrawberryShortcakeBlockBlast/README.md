@@ -1,8 +1,14 @@
 # 🍓 Berry Block Blast for iPhone
 
-**Version 0.5.7 • Build 1 • iOS 16.0+ • Native SwiftUI + UIKit input • 51 original songs & 16 original effects**
+**Version 0.5.8 • Build 1 • iOS 16.0+ • Native SwiftUI + UIKit input • 51 original songs & 16 original effects**
 
 Berry Block Blast is an independent, original strawberry-themed block-placement puzzle for iPhone. Its classic three-piece 8×8 mechanics are inspired by Block Blast, but the original artwork, strawberry world, soundtrack and special modes are our own. This project is not affiliated with Hungry Studio or the Strawberry Shortcake brand owner.
+
+## 0.5.8 Build 1 development candidate
+
+This branch is for Codemagic iOS16 testing, not a published stable release. The sixteen original AI-generated image catalogs are stored as `BuildPayload/Berry-0.5.8-ArtCatalogs.zip` and are imported before XcodeGen. The bundle ID and all prior wallet, score, Story, skin and cottage-ownership keys remain unchanged.
+
+Other improvements include a dedicated My Strawberry Cottage home card instead of the duplicate Boutique card, automatically rotating strawberry-colored quotes, piece-size labels on each tray slot, updated unlock prices in Inventory, five new Boutique block skins, and lower-frequency UI timer updates. Voice announcements are **not** included.
 
 ## Play
 Choose one of three pieces. Drag from the tray to the board and release, or tap a piece followed by a placement square. Complete full rows and columns simultaneously, pursue streaks, and keep space open for large pieces. All play is offline.
@@ -12,9 +18,9 @@ Choose one of three pieces. Drag from the tray to the board and release, or tap 
 - **Sweet Endless:** The **only resumable mode**. Choose **8×8, 12×12, or 24×24** and return to your saved garden for that board size. When no move remains, a fresh season opens automatically while your score, lines and berry progress continue. The 24×24 Mega Garden uses larger pieces and a two-axis scrollable, enlarged board.
 - **Berry Story:** Chapter goals, progress and earned rewards.
 - **Daily Harvest:** Daily seeded puzzle, records and once-a-day rewards.
-- **Cozy Cottage:** Relaxing piece distribution and visibly upgraded cottage.
-- **Berry Blitz:** One family of fast modes: **Quick Jam (60 seconds)** and **Berry Rush (120 seconds)**, each with its own record. Fixed clocks, no automatic score target, bonus time or in-race power-ups.
-- **Strawberry Nightmare:** Separate 12×12 challenging shape distribution.
+- **Cozy Cottage:** Relaxing piece distribution and interactive decoration garden. Previously purchased items persist; drag owned decorations to reposition them, with positions saved locally.
+- **Berry Blitz:** Four timed score chases: **Quick Jam (1 minute)**, **Berry Rush (2 minutes)**, **Garden Sprint (5 minutes)** and **Berry Marathon (10 minutes)**, each with its own local record. No bonus time or power-ups. A stuck tray is rerolled, and a full board starts fresh without losing the run score; the run ends only when the timer expires.
+- **Strawberry Nightmare:** Three-minute, 12×12 hard mode with larger pieces and separate records. Unlike Blitz, running out of legal moves is a defeat.
 
 ### Saving
 Only **Sweet Endless** restores an unfinished board. Its 8×8, 12×12 and 24×24 sizes have independent safe continuation slots, clearly identified by strawberry bookmark badges. Sweet Endless never ends due to a full/stuck board: the next season automatically clears the garden while keeping the accumulated score and lifetime line stats. Berry Classic and all other modes start fresh, while retaining their separate records, Chapter progression, earned berries and purchased cosmetics. The previous Endless 8×8 save is migrated on first use, and original Build 1/Classic save keys remain untouched for rollback. Starting a New Garden intentionally resets only the selected Endless size.
@@ -24,7 +30,7 @@ The complete iOS-ready AAC-LC M4A soundtrack and original PCM WAV effects have b
 
 The full soundtrack now lives in the dedicated **Strawberry Jukebox**, not beneath the More Adventures list. Settings provide music On/Off, Cozy 90/10, Balanced 70/30 (default), Arcade 40/60, shuffle, previous/next, and independent volumes.
 
-Music uses one AVFoundation playback coordinator, no online stream and subtle non-overlapping fades. It honours the iOS Silent switch and suspends when actually backgrounded, not during a momentary screenshot interruption.
+Music uses one AVFoundation playback coordinator, no online stream and subtle non-overlapping fades. It honours the iOS Silent switch. From 0.5.8, music and lingering SFX are suspended as soon as iOS reports that the app is resigning active, preventing playback continuing through locking or backgrounding.
 
 ## Berry Boutique
 Spend **earned** strawberries on permanent board cosmetics, selectable block skins, frames, sparkles and visible Cottage progression. Purchase keys and currency live across restarts. Berry Classic's fair score challenge is never affected by upgrades. No real-money items, ads, or subscriptions.
