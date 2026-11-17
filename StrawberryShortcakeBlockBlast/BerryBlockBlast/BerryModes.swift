@@ -452,7 +452,7 @@ struct BerryHomeView: View {
             audio.setMusic(music)
             savedEndlessSizes = Set([8, 12, 24].filter { BerryGameSession.hasResumableEndless(side: $0) })
         }
-        .onChange(of: activeMode) { _, selected in
+        .onChange(of: activeMode) { selected in
             if selected == nil {
                 savedEndlessSizes = Set([8, 12, 24].filter { BerryGameSession.hasResumableEndless(side: $0) })
             }
