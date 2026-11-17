@@ -129,7 +129,7 @@ struct BerryCollectionView: View {
                     Spacer()
                     Text("×\(session.hints)").bold().foregroundStyle(BerryStyle.strawberry)
                 }
-                Text("Use these from the game toolbar. Berry Classic and Blitz do not allow helpers.")
+                Text("Use these from the game toolbar. Berry Classic, Berry Blitz and timed Nightmare do not allow helpers.")
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
