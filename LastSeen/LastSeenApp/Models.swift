@@ -15,6 +15,7 @@ struct GameMessage: Identifiable, Codable, Equatable {
     let kind: MessageKind
     let createdAt: Date
     var isRead: Bool
+    var photoAssetName: String? = nil
 
     var isOutgoing: Bool { sender == "player" }
 }
@@ -25,14 +26,16 @@ struct StoryBeat {
     let body: String
     let kind: MessageKind
     let delay: Double
+    let asset: String?
 
     init(_ thread: String, _ sender: String, _ body: String,
-         kind: MessageKind = .text, delay: Double = 1.7) {
+         kind: MessageKind = .text, delay: Double = 1.7, asset: String? = nil) {
         self.thread = thread
         self.sender = sender
         self.body = body
         self.kind = kind
         self.delay = delay
+        self.asset = asset
     }
 }
 
