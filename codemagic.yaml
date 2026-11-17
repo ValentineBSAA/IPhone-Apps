@@ -30,7 +30,8 @@ workflows:
             test -s BerryBlockBlast/Assets.xcassets/StrawberryCandyBlock.imageset/StrawberryCandyBlock.png
             test -s BerryBlockBlast/Assets.xcassets/CottageGardenBackground.imageset/CottageGardenBackground.png
           else
-            echo 'ART WARNING: 0.5.8 concept art pack has not been uploaded to BuildPayload; using SwiftUI fallbacks.'
+            echo 'ERROR: 0.5.8 artwork is missing. Upload Berry_Block_Blast_0.5.8_16_ArtCatalogs.zip to BuildPayload on this branch.'
+            exit 1
           fi
       - name: Verify approved icon and mascot, generate Xcode project
         script: |
