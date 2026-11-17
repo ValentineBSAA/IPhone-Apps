@@ -18,7 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
 DIST.mkdir(exist_ok=True)
-STATUS = DIST / "Berry-0.5.7-simulator-test-status.txt"
+STATUS = DIST / "Berry-0.5.8-simulator-test-status.txt"
 
 
 def record(label: str, details: str) -> None:
@@ -68,9 +68,9 @@ def main() -> int:
         device_id = chosen["udid"]
     else:
         try:
-            device_id = capture(["xcrun", "simctl", "create", "Berry-0.5.7-CI",
+            device_id = capture(["xcrun", "simctl", "create", "Berry-0.5.8-CI",
                                  "iPhone 17 Pro", runtime_id], timeout=45)
-            chosen = {"name": "Berry-0.5.7-CI", "state": "Shutdown"}
+            chosen = {"name": "Berry-0.5.8-CI", "state": "Shutdown"}
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
             record("NOT VERIFIED (SIMULATOR INFRASTRUCTURE)",
                    f"No available iPhone device for matching SDK {sdk}: {exc}")
@@ -91,7 +91,7 @@ def main() -> int:
                "Matching simulator did not become ready in 110 seconds")
         return 0
 
-    result_bundle = DIST / "Berry-0.5.7-simulator.xcresult"
+    result_bundle = DIST / "Berry-0.5.8-simulator.xcresult"
     cmd = [
         "xcodebuild", "-project", "BerryBlockBlast.xcodeproj",
         "-scheme", "BerryBlockBlast", "-configuration", "Debug",
