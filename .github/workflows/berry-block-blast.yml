@@ -4,6 +4,13 @@ name: Berry Block Blast 0.5.5 build 1 manual QA
 
 on:
   workflow_dispatch:
+  # Temporary branch-only CI trigger while validating 0.5.5 build 1.
+  push:
+    branches:
+      - fix/berry-055-native-touch
+    paths:
+      - 'StrawberryShortcakeBlockBlast/**'
+      - '.github/workflows/berry-block-blast.yml'
 
 concurrency:
   group: berry-block-blast-${{ github.ref }}
