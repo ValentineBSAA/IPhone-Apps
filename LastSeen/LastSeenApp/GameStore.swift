@@ -13,6 +13,7 @@ final class GameStore: ObservableObject {
 
     private var deliveryTask: Task<Void, Never>?
     private let synth = AVSpeechSynthesizer()
+    private let ambience = AudioAtmosphere()
     private let persistToDisk: Bool
 
     init(initial: SavedGame? = nil, persistToDisk: Bool = true) {
@@ -71,6 +72,7 @@ final class GameStore: ObservableObject {
     }
 
     func beginOrResume() {
+        if state.audioEnabled { ambience.start() }
         guard state.endingID == nil, !state.choiceReady else { return }
         deliveryTask?.cancel()
         deliveryTask = Task { [weak self] in
@@ -79,6 +81,7 @@ final class GameStore: ObservableObject {
     }
 
     func suspend() {
+        ambience.stop()
         deliveryTask?.cancel()
         deliveryTask = nil
         typingThread = nil
@@ -239,7 +242,11 @@ final class GameStore: ObservableObject {
             }
             save()
         }
+    }
+
+    func endCall() {
         presentedCall = nil
+        stopVoice()
     }
 
     func declineCall() {
@@ -275,7 +282,7 @@ final class GameStore: ObservableObject {
 
     func setAudio(_ enabled: Bool) {
         state.audioEnabled = enabled
-        if !enabled { stopVoice() }
+        if enabled { ambience.start() } else { stopVoice(); ambience.stop() }
         save()
     }
 
