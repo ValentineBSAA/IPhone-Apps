@@ -19,7 +19,7 @@ struct InboxView: View {
                     Text("LAST SEEN")
                         .font(.system(size: 41, weight: .black, design: .rounded))
                         .tracking(-1.2)
-                    Text("The Missing Floor")
+                    Text(game.activeContact.map { game.title(for: $0) } ?? "Choose a conversation")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(Night.muted)
                 }
@@ -29,18 +29,22 @@ struct InboxView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "moon.stars.fill")
                             .foregroundColor(Night.gold)
-                        Text("01:42 AM")
-                            .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                        TimelineView(.periodic(from: .now, by: 15)) { clock in
+                            Text(clock.date, style: .time)
+                                .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                        }
                         Spacer()
-                        Text(game.state.endingID == nil ? "CHAPTER ONE" : "STORY COMPLETE")
+                        Text(game.state.activeThread == nil ? "SELECT A STORY" : (game.state.endingID == nil ? "ACTIVE STORY" : "STORY COMPLETE"))
                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
                             .tracking(1.2)
                             .foregroundColor(Night.muted)
                     }
 
-                    Text(game.state.endingID == nil
-                         ? "Your building has four floors. Someone just texted you from the seventh."
-                         : "The building remembers what you chose.")
+                    Text(game.state.activeThread == nil
+                         ? "Choose Nora, Eli, or the unknown number. Each conversation tells its own story."
+                         : (game.state.endingID == nil
+                             ? "Only your selected conversation advances. The other stories stay paused."
+                             : "This story is finished. You can replay it or try another contact."))
                         .font(.system(size: 15))
                         .foregroundColor(.white.opacity(0.86))
                         .fixedSize(horizontal: false, vertical: true)
@@ -99,7 +103,7 @@ struct InboxView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Someone is waiting for your answer")
                                 .font(.system(size: 14, weight: .semibold))
-                            Text("Open Nora's conversation to decide what happens next.")
+                            Text("Open \(game.activeContact?.name ?? "your selected contact") to decide what happens next.")
                                 .font(.system(size: 12))
                                 .foregroundColor(Night.muted)
                         }
@@ -146,7 +150,7 @@ struct InboxView: View {
         ) {
             Button("Erase progress and replay", role: .destructive) { game.restart() }
         } message: {
-            Text("Your choices, messages and clues from this run will be reset. Settings stay the same.")
+            Text("Only the active conversation will restart. Your other stories and preferences are preserved.")
         }
     }
 
@@ -168,7 +172,7 @@ struct InboxView: View {
                     }
                 }
                 HStack(spacing: 7) {
-                    Text(latest.map { preview($0) } ?? contact.subtitle)
+                    Text(latest.map { preview($0) } ?? "Tap to start · \(game.title(for: contact))")
                         .font(.system(size: 13))
                         .foregroundColor(Night.muted)
                         .lineLimit(2)
@@ -197,8 +201,8 @@ struct InboxView: View {
         switch message.kind {
         case .text: return message.body
         case .photograph: return "📷 Photo attachment"
-        case .voiceNote: return "▶ Voice message"
-        case .call: return "Incoming call"
+        case .voiceNote: return "Voice note · transcript"
+        case .call: return "Call record (no audio)"
         }
     }
 
