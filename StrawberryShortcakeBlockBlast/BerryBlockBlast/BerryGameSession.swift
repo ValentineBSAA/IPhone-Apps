@@ -35,7 +35,13 @@ final class BerryGameSession: ObservableObject {
     }
     func selectMode(_ mode: BerryMode) {
         activeMode = mode
-        bestScore = UserDefaults.standard.integer(forKey: mode == .superHard ? nightmareBestKey : bestKey)
+        let scoreKey = bestScoreKey(for: mode)
+        if UserDefaults.standard.object(forKey: scoreKey) == nil {
+            // Earlier versions shared one best-score key for five modes.
+            // Seed independent records from it so an upgrade never loses that number.
+            UserDefaults.standard.set(UserDefaults.standard.integer(forKey: bestKey), forKey: scoreKey)
+        }
+        bestScore = UserDefaults.standard.integer(forKey: scoreKey)
         if mode == .endless {
             if let data = UserDefaults.standard.data(forKey: saveKey),
                let snapshot = try? JSONDecoder().decode(Save.self, from: data),
@@ -68,6 +74,16 @@ final class BerryGameSession: ObservableObject {
     private let saveKey = "berryblockblast.saved-game.v3"
     private let bestKey = "berryblockblast.best-score.v1"
     private let nightmareBestKey = "berryblockblast.nightmare.best-score.v1"
+    private func bestScoreKey(for mode: BerryMode) -> String {
+        switch mode {
+        case .endless: return bestKey
+        case .story: return "berryblockblast.story.best-score.v055"
+        case .daily: return "berryblockblast.daily.best-score.v055"
+        case .cozy: return "berryblockblast.cozy.best-score.v055"
+        case .challenge: return "berryblockblast.blitz.best-score.v055"
+        case .superHard: return nightmareBestKey
+        }
+    }
     private let inventoryKey = "berryblockblast.inventory.v3"
 
     private struct Inventory: Codable { var berries: Int; var undos: Int; var shuffles: Int; var totalEarnedBerries: Int }
@@ -111,7 +127,7 @@ final class BerryGameSession: ObservableObject {
         previousRewardEntry = nil
         if engine.score > bestScore {
             bestScore = engine.score
-            UserDefaults.standard.set(bestScore, forKey: activeMode == .superHard ? nightmareBestKey : bestKey)
+            UserDefaults.standard.set(bestScore, forKey: bestScoreKey(for: activeMode))
         }
         lastEarned = outcome.earned
         lastClearedLines = outcome.clearedLines

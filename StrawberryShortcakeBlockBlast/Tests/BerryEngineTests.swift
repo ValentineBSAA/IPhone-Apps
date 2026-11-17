@@ -169,6 +169,33 @@ final class BerryEngineTests: XCTestCase {
         XCTAssertTrue((0..<12).allSatisfy { game.board[$0][11] == nil })
     }
 
+    func testEmptyOrDuplicatedShapeCannotBePlaced() {
+        let game = BerryEngine()
+        let empty = BerryPiece(points: [], tint: 0)
+        let duplicate = BerryPiece(points: [
+            BerryPoint(row: 0, col: 0), BerryPoint(row: 0, col: 0)
+        ], tint: 0)
+        XCTAssertFalse(game.canPlace(empty, row: 0, col: 0))
+        XCTAssertFalse(game.canPlace(duplicate, row: 0, col: 0))
+    }
+
+    func testClassicCatalogCanDealThreeByThreeSquare() {
+        var found = false
+        for seed in 1...350 {
+            let game = BerryEngine(seed: UInt64(seed))
+            if game.tray.compactMap({ $0 }).contains(where: {
+                $0.points.count == 9 && $0.width == 3 && $0.height == 3
+            }) { found = true; break }
+        }
+        XCTAssertTrue(found, "Classic play should deal standard 3x3 blocks")
+    }
+
+    func testAllSixExistingModesRemainAvailable() {
+        XCTAssertEqual(BerryMode.allCases.count, 6)
+        XCTAssertTrue(BerryMode.allCases.contains(.superHard))
+        XCTAssertTrue(BerryMode.allCases.contains(.cozy))
+    }
+
     private func emptyBoard() -> [[Int?]] {
         Array(repeating: Array(repeating: nil, count: 8), count: 8)
     }
