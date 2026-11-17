@@ -22,7 +22,7 @@ struct BerryMusicSettingsView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("🍓 Strawberry Sound Studio")
                         .font(.system(size: 18, weight: .black, design: .rounded))
-                    Text("15 original songs · available offline")
+                    Text("51 original songs · available offline")
                         .font(.system(size: 11, weight: .medium, design: .rounded))
                         .foregroundStyle(BerryStyle.chocolate.opacity(0.65))
                 }
@@ -59,7 +59,7 @@ struct BerryMusicSettingsView: View {
                         .lineLimit(2)
                         .foregroundStyle(BerryStyle.chocolate)
                     Text(audio.currentTrackNumber > 0
-                         ? "Track \(audio.currentTrackNumber) of 15"
+                         ? "Track \(audio.currentTrackNumber) of \(BerryAudio.tracks.count)"
                          : "The strawberry playlist is ready")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(BerryStyle.chocolate.opacity(0.65))

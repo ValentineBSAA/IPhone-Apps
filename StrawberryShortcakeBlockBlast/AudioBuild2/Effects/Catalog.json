@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "originalSource": "BerryBlastBlast-SFX-v1.0-16Effects-iOS.zip",
+  "effects": [
+    {
+      "id": 1,
+      "file": "BerryEffect01.wav",
+      "title": "Strawberry Button Pop",
+      "eventKey": "menu_select",
+      "sha256": "aaf3c341306b5acf5cd927928ed0007a3cd2dd34b23973d8177e2474e4c378ea",
+      "bytes": 93486,
+      "durationSeconds": 0.486
+    },
+    {
+      "id": 2,
+      "file": "BerryEffect02.wav",
+      "title": "Berry Back Button",
+      "eventKey": "menu_back",
+      "sha256": "81c61fc0e88c0ab40b3ae2b14b4117083247b452e5c6ab88e537279036663a2d",
+      "bytes": 384078,
+      "durationSeconds": 2
+    },
+    {
+      "id": 3,
+      "file": "BerryEffect03.wav",
+      "title": "Let's Play!",
+      "eventKey": "game_start",
+      "sha256": "29f400ceed20b9b726e1225d9394b003f513643b81b33c69cb157fd7d29e4ca5",
+      "bytes": 576078,
+      "durationSeconds": 3
+    },
+    {
+      "id": 4,
+      "file": "BerryEffect04.wav",
+      "title": "Pick Up Block",
+      "eventKey": "block_pickup",
+      "sha256": "5c2d5d57bac1097616bec150605dc349679b1291b6f4a8d38d4b3e2706f0608b",
+      "bytes": 192078,
+      "durationSeconds": 1
+    },
+    {
+      "id": 5,
+      "file": "BerryEffect05.wav",
+      "title": "Place Block",
+      "eventKey": "block_place",
+      "sha256": "528693f69e9b5ea5a49cca153d6b47db3d7922664c94db07eedee8c3dfc15f40",
+      "bytes": 284238,
+      "durationSeconds": 1.48
+    },
+    {
+      "id": 6,
+      "file": "BerryEffect06.wav",
+      "title": "Invalid Placement",
+      "eventKey": "invalid_placement",
+      "sha256": "787d8a1ec107e2dd3475d522b5df16cef8f4c66c166c988c2e81552e75e11006",
+      "bytes": 192078,
+      "durationSeconds": 1
+    },
+    {
+      "id": 7,
+      "file": "BerryEffect07.wav",
+      "title": "Clear a Row",
+      "eventKey": "row_clear",
+      "sha256": "091a7fe7673de331637dbd088f6b823028bcb924d6d42c1465cd08ebb1903e97",
+      "bytes": 576078,
+      "durationSeconds": 3
+    },
+    {
+      "id": 8,
+      "file": "BerryEffect08.wav",
+      "title": "Berry Combo",
+      "eventKey": "berry_combo",
+      "sha256": "7efda2aabfd4ef6bff8647a71825a636e6b584569986064ec725b36e6d8c4bde",
+      "bytes": 768078,
+      "durationSeconds": 4
+    },
+    {
+      "id": 9,
+      "file": "BerryEffect09.wav",
+      "title": "New High Score!",
+      "eventKey": "new_high_score",
+      "sha256": "fb914e84a4b5530dab528d7b4d0b72b1ed31483a410d95fae168e580b7552b23",
+      "bytes": 960078,
+      "durationSeconds": 5
+    },
+    {
+      "id": 10,
+      "file": "BerryEffect10.wav",
+      "title": "Victory!",
+      "eventKey": "victory",
+      "sha256": "fa3853ba4b050d46da05b3beb517fa9a89e48b443f730a0506ecbf2e690be6f2",
+      "bytes": 768078,
+      "durationSeconds": 4
+    },
+    {
+      "id": 11,
+      "file": "BerryEffect11.wav",
+      "title": "No More Moves",
+      "eventKey": "no_more_moves",
+      "sha256": "948bead9a694e200a894451052e2e2b8403e7052262d2475b1a7b2f11a4284b4",
+      "bytes": 576078,
+      "durationSeconds": 3
+    },
+    {
+      "id": 12,
+      "file": "BerryEffect12.wav",
+      "title": "Reward Unlocked",
+      "eventKey": "reward_unlocked",
+      "sha256": "827798867a7da3186566a641a1f9d9bc4b6acbdb16388a05e378e686212e6232",
+      "bytes": 768078,
+      "durationSeconds": 4
+    },
+    {
+      "id": 13,
+      "file": "BerryEffect13.wav",
+      "title": "Blitz Start",
+      "eventKey": "blitz_start",
+      "sha256": "5bda0bf98ef4e9d7b5b3ffbeb3b8417b5d98c4b30a1bd45fb11a3daa1b2c6cdb",
+      "bytes": 576078,
+      "durationSeconds": 3
+    },
+    {
+      "id": 14,
+      "file": "BerryEffect14.wav",
+      "title": "Ten Seconds Left",
+      "eventKey": "ten_seconds_left",
+      "sha256": "9323d5b4e2d24f21c016467302149a32b4891023629f2b93c619a0e1e9020afc",
+      "bytes": 384078,
+      "durationSeconds": 2
+    },
+    {
+      "id": 15,
+      "file": "BerryEffect15.wav",
+      "title": "Final Countdown Tick",
+      "eventKey": "final_countdown_tick",
+      "sha256": "27f042913ca1a9267520bca837fe9c21e9841fe4682a1bc529ac80a498d9cd26",
+      "bytes": 384078,
+      "durationSeconds": 2
+    },
+    {
+      "id": 16,
+      "file": "BerryEffect16.wav",
+      "title": "Time's Up!",
+      "eventKey": "time_up",
+      "sha256": "8867b54bc3009048e07786a3779c45becfb0782cd304c63a4349b64c5b9de5b3",
+      "bytes": 576078,
+      "durationSeconds": 3
+    }
+  ]
+}

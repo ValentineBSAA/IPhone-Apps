@@ -19,14 +19,22 @@ private struct BerryBoard: View {
     let strawberryUnlocked: Bool
     let previewStyle: String
     let onBoardRect: (CGRect) -> Void
+    @AppStorage("berryblockblast.shop.equippedBorder.v056b2") private var borderSkin = "default"
     private let gap: CGFloat = 3
+    private var gardenBorder: Color {
+        switch borderSkin {
+        case "rose-border": return Color(red: 0.91, green: 0.25, blue: 0.55)
+        case "mint-border": return Color(red: 0.32, green: 0.73, blue: 0.58)
+        default: return Color(red: 0.98, green: 0.71, blue: 0.79)
+        }
+    }
 
     var body: some View {
         let side = engine.side
         let unit = (size - CGFloat(side - 1) * gap) / CGFloat(side)
         ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: 22)
-                .fill(Color(red: 0.98, green: 0.71, blue: 0.79))
+                .fill(gardenBorder)
                 .overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(.white.opacity(0.8), lineWidth: 3) }
                 .padding(-7)
                 .shadow(color: BerryStyle.strawberry.opacity(0.22), radius: 15, y: 8)
@@ -34,10 +42,10 @@ private struct BerryBoard: View {
                 let r = i / side
                 let c = i % side
                 ZStack {
-                    RoundedRectangle(cornerRadius: side == 12 ? 4 : 8)
+                    RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
                         .fill(Color.white.opacity(0.76))
                         .overlay(alignment: .topLeading) {
-                            RoundedRectangle(cornerRadius: side == 12 ? 4 : 8).strokeBorder(.white.opacity(0.58), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: side > 8 ? 4 : 8).strokeBorder(.white.opacity(0.58), lineWidth: 1)
                         }
                     if let tint = engine.board[r][c] { BerryTile(tint: tint, mode: mode, strawberryUnlocked: strawberryUnlocked) }
                 }
@@ -51,7 +59,7 @@ private struct BerryBoard: View {
                     if (0..<side).contains(r), (0..<side).contains(c) {
                         BerryTile(tint: preview.piece.tint, preview: true, mode: mode, strawberryUnlocked: strawberryUnlocked)
                             .opacity(previewStyle == "outline" ? 0.18 : 0.56)
-                            .overlay { RoundedRectangle(cornerRadius: side == 12 ? 4 : 8).strokeBorder(preview.allowed ? Color.green : Color.red, lineWidth: 2) }
+                            .overlay { RoundedRectangle(cornerRadius: side > 8 ? 4 : 8).strokeBorder(preview.allowed ? Color.green : Color.red, lineWidth: 2) }
                             .frame(width: unit, height: unit)
                             .offset(x: CGFloat(c) * (unit + gap), y: CGFloat(r) * (unit + gap))
                     }
@@ -60,7 +68,7 @@ private struct BerryBoard: View {
         }
         .frame(width: size, height: size, alignment: .topLeading)
         // Both the touch receiver and this anchor measure UIWindow coordinates.
-        .background(BerryBoardWindowAnchor(onRect: onBoardRect))
+        .background(BerryBoardWindowAnchor(onRect: onBoardRect, tracksScrolling: side == 24))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Berry garden, \(engine.side) by \(engine.side) puzzle board")
     }
@@ -74,9 +82,12 @@ struct BerryGameView: View {
     @State private var showVictory = false
     @State private var completedStoryChapter: Int?
     @State private var blitzRemaining = 120
+    @State private var blitzWarnedTenSeconds = false
+    @State private var blitzPlayedFinalTick = false
+    @State private var blitzFinished = false
     @State private var blitzRunning = false
     @State private var blitzDeadline: Date?
-    private let blitzDeadlineKey = "berryblockblast.blitz.deadline.v053"
+    private var blitzVariant: BerryBlitzVariant { BerryBlitzVariant.selected }
     @State private var isPaused = false
     @Environment(\.scenePhase) private var scenePhase
     private var canManuallyPause: Bool { mode != .challenge }
@@ -85,17 +96,17 @@ struct BerryGameView: View {
         if mode == .challenge { return blitzRunning && (blitzDeadline.map { $0 > Date() } ?? false) }
         return true
     }
-    private var goal: Int { mode == .story ? 100 + storyLevel * 55 : mode == .challenge ? 250 : 120 }
+    private var goal: Int { mode == .story ? 100 + storyLevel * 55 : 120 }
     private var storyTargetLines: Int { 2 + (storyLevel / 2) }
     private var storyIsLineQuest: Bool { storyLevel % 2 == 0 }
     private var objective: String {
         switch mode {
-        case .endless: "Fill a row or column. Grow your berry garden!"
+        case .endless: "🍓 SWEET ENDLESS • SEASON \(session.engine.seasons + 1) • PLAY FOREVER!"
         case .classic: "🍓 BERRY CLASSIC • Three pieces • Chase your best!"
         case .story: storyIsLineQuest ? "CHAPTER \(storyLevel) • Clear \(storyTargetLines) lines to bloom!" : "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
         case .daily: "DAILY HARVEST • Gather \(goal) points!"
         case .cozy: "COZY COTTAGE • \(session.cottageDecorations) decorations • Grow at your pace!"
-        case .challenge: "⚡ BERRY BLITZ • \(blitzRemaining)s left • Reach \(goal)!"
+        case .challenge: "⚡ \(blitzVariant.rawValue.uppercased()) • \(blitzRemaining)s • \(session.engine.score) points"
         case .superHard: "🍓 STRAWBERRY NIGHTMARE • 12 × 12 • Bigger pieces!"
         }
     }
@@ -149,7 +160,8 @@ struct BerryGameView: View {
             let top = geo.safeAreaInsets.top
             let bottom = geo.safeAreaInsets.bottom
             let compact = height < 740
-            let boardSize = max(185, min(width - 42, height - top - bottom - (compact ? 248 : 282), 475))
+            let boardSize = max(185, min(width - 42, height - top - bottom -
+                (mode == .challenge ? (compact ? 276 : 310) : (compact ? 248 : 282)), 475))
             let cell = (boardSize - CGFloat(session.engine.side - 1) * 3) / CGFloat(session.engine.side)
             ZStack {
                 background
@@ -157,6 +169,9 @@ struct BerryGameView: View {
                     topBar(compact: compact)
                     if mode == .classic {
                         BerryClassicScoreView(score: session.engine.score, best: session.bestScore, combo: session.engine.streak)
+                    } else if mode == .challenge {
+                        BerryBlitzHUD(timeLeft: blitzRemaining, score: session.engine.score,
+                                     best: session.bestScore, variant: blitzVariant)
                     } else {
                         scoreBar
                     }
@@ -169,49 +184,18 @@ struct BerryGameView: View {
                     .font(.system(size: compact ? 10 : 12, weight: .bold, design: .rounded))
                     .foregroundStyle(BerryStyle.chocolate)
                     .frame(height: 19)
-                    BerryBoard(engine: session.engine, preview: drag, size: boardSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle, onBoardRect: { rect in boardRect = rect })
-                        .overlay {
-                            if sparkle {
-                                Text(harvestCheer)
-                                    .font(.headline)
-                                    .foregroundStyle(BerryStyle.strawberry)
-                                    .padding(12)
-                                    .background(.regularMaterial, in: Capsule())
-                                    .transition(.scale.combined(with: .opacity))
-                                    .allowsHitTesting(false)
-                            }
+                    if session.engine.side == 24 {
+                        ScrollView([.horizontal, .vertical]) {
+                            boardInteraction(actualSize: max(580, boardSize * 1.75))
                         }
-                        .overlay {
-                            if showNewBestBanner {
-                                BerryNewBestBanner(score: session.engine.score)
-                                    .transition(.scale(scale: 0.78).combined(with: .opacity))
-                                    .allowsHitTesting(false)
-                                    .zIndex(3)
-                            }
-                        }
-                        .padding(7)
-                        .contentShape(Rectangle())
-                        .onTapGesture { location in
-                            guard canMakeMove, let slot = selectedSlot,
-                                  session.engine.tray.indices.contains(slot),
-                                  let piece = session.engine.tray[slot] else { return }
-                            // Tap coordinates are local to the 7-point padded board wrapper.
-                            // Resolve using the same cell-origin logic as drag placement.
-                            let local = CGPoint(x: location.x - 7, y: location.y - 7)
-                            let area = CGRect(origin: .zero, size: CGSize(width: boardSize, height: boardSize))
-                            guard let target = BerryDropGeometry.target(
-                                for: local, board: area, piece: piece, side: session.engine.side
-                            ) else {
-                                warningFeedback()
-                                return
-                            }
-                            if session.drop(slot: slot, row: target.row, col: target.col) {
-                                selectedSlot = nil
-                                successFeedback()
-                            } else {
-                                warningFeedback()
-                            }
-                        }
+                        .frame(width: boardSize + 14, height: boardSize + 14)
+                        .scrollIndicators(.visible)
+                        .defaultScrollAnchor(.center)
+                        .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 24))
+                        .accessibilityLabel("24 by 24 Mega Garden. Scroll to reach more cells.")
+                    } else {
+                        boardInteraction(actualSize: boardSize)
+                    }
                     HStack(spacing: 5) {
                         Image(systemName: "hand.draw.fill")
                         Text(selectedSlot == nil ? "DRAG UP TO PLACE  •  OR TAP A PIECE" : "TAP AN EMPTY SPACE TO PLACE")
@@ -301,7 +285,9 @@ struct BerryGameView: View {
         .sheet(isPresented: $showCottage) { cottageSheet }
         .sheet(isPresented: $showWelcome) { welcomeSheet }
         .onChange(of: scenePhase) { _, phase in
-            if phase != .active && canManuallyPause { isPaused = true; drag = nil; selectedSlot = nil }
+            // iOS screenshots and banners can temporarily mark the app inactive.
+            // Pause overlays appear only when Pause was pressed, not on screenshots.
+            if phase == .background { drag = nil; selectedSlot = nil }
             if phase == .active && mode == .challenge { refreshBlitzClock() }
         }
         .onReceive(Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()) { _ in
@@ -309,22 +295,23 @@ struct BerryGameView: View {
         }
         .onChange(of: session.gameOver) { _, ended in
             showGameOver = !showVictory && (ended || (mode == .challenge && !blitzRunning && blitzRemaining == 0))
+            if ended && sound && mode != .challenge { BerryAudio.shared.play(.gameOver) }
         }
         .onAppear {
-            BerryAudio.shared.setScreen(.gameplay)
+            BerryAudio.shared.setScreen(mode == .challenge ? .blitz : .gameplay)
             BerryAudio.shared.setMusic(music)
             session.selectMode(mode)
             scoreRecordAtEntry = max(session.bestScore, session.engine.score)
             celebratedRecordThisRun = false
             showNewBestBanner = false
             blitzRunning = mode == .challenge
+            blitzFinished = false
+            blitzWarnedTenSeconds = false
+            blitzPlayedFinalTick = false
             if mode == .challenge {
-                if let saved = UserDefaults.standard.object(forKey: blitzDeadlineKey) as? Date { blitzDeadline = saved }
-                else {
-                    blitzDeadline = Date().addingTimeInterval(TimeInterval(blitzRemaining))
-                    UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey)
-                }
-                refreshBlitzClock()
+                blitzRemaining = blitzVariant.seconds
+                blitzDeadline = Date().addingTimeInterval(TimeInterval(blitzVariant.seconds))
+                if sound { BerryAudio.shared.play(.blitzStart) }
             }
             showGameOver = session.gameOver || (mode == .challenge && blitzRemaining == 0)
             if mode == .daily && dailyCompleted == BerryGameSession.dailyDateKey() { showVictory = session.engine.score >= goal }
@@ -337,7 +324,8 @@ struct BerryGameView: View {
         .onChange(of: session.engine.totalLines) { _, _ in checkObjective() }
         .onChange(of: showSettings) { _, _ in if mode == .challenge { refreshBlitzClock() } }
         .onChange(of: showVictory) { _, victory in
-            BerryAudio.shared.setScreen(victory ? .results : .gameplay)
+            BerryAudio.shared.setScreen(victory ? .results : (mode == .challenge ? .blitz : .gameplay))
+            if victory && sound { BerryAudio.shared.play(.victory) }
         }
         .overlay {
             if isPaused && !showVictory && !showGameOver {
@@ -353,7 +341,7 @@ struct BerryGameView: View {
                             .font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
                         Button("Continue Gardening") { isPaused = false }
                             .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
-                        Button("Save & Return Home") { isPaused = false; onExit() }
+                        Button(mode == .endless ? "Save Forever Garden & Return" : "Return to Village") { isPaused = false; onExit() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
                     }
                     .padding(26).frame(maxWidth: 350)
@@ -370,19 +358,27 @@ struct BerryGameView: View {
                     VStack(spacing: 16) {
                         Text(showVictory ? "🍰 ✨ 🍓" : confirmRestart ? "🌱 🍓 🌱" : "🍓 🌸 🧺")
                             .font(.system(size: 38))
-                        Text(showVictory ? "Strawberry Spectacular!" : confirmRestart ? "Plant a Fresh Garden?" : "Our Berry Patch Is Full!")
+                        Text(showVictory ? "Strawberry Spectacular!" : confirmRestart ? "Plant a Fresh Garden?" :
+                             mode == .challenge ? "Time's Up, Berry Racer!" : "Our Berry Patch Is Full!")
                             .font(.system(size: 25, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry).multilineTextAlignment(.center)
                         Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "Your best score and earned berries stay safe." : "You harvested \(session.engine.score) sweet points and cleared \(session.engine.totalLines) lines. Every garden deserves another season!")
                             .font(.system(size: 15, weight: .medium, design: .rounded))
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
-                        Button(showVictory ? "🍓 Another Sweet Adventure" : "🍓 Plant a Fresh Garden") {
+                        Button(showVictory ? "🍓 Another Sweet Adventure" : mode == .challenge ? "⚡ Race Again" : "🍓 Plant a Fresh Garden") {
                             showVictory = false; showGameOver = false; confirmRestart = false
-                            completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil; lastBlitzTimeBonus = 0; blitzRemaining = 120; blitzRunning = mode == .challenge; blitzDeadline = mode == .challenge ? Date().addingTimeInterval(120) : nil; if mode == .challenge { UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey) }; celebratedRecordThisRun = false; scoreRecordAtEntry = session.bestScore; showNewBestBanner = false
+                            completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil
+                            blitzRemaining = blitzVariant.seconds; blitzRunning = mode == .challenge
+                            blitzDeadline = mode == .challenge ?
+                                Date().addingTimeInterval(TimeInterval(blitzVariant.seconds)) : nil
+                            blitzFinished = false; blitzWarnedTenSeconds = false; blitzPlayedFinalTick = false
+                            if mode == .challenge && sound { BerryAudio.shared.play(.blitzStart) }
+                            celebratedRecordThisRun = false; scoreRecordAtEntry = session.bestScore
+                            showNewBestBanner = false
                         }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
-                        Button("🏡 Return to Strawberry Village") { onExit() }
+                        Button("🏡 Return to Strawberry Village") { returnToVillage() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
-                        if showGameOver && session.shuffles > 0 && mode != .classic {
+                        if showGameOver && session.shuffles > 0 && mode != .classic && mode != .challenge {
                             Button("✨ Use Shuffle (\(session.shuffles) left)") { session.shuffle(); showGameOver = session.gameOver; selectedSlot = nil; drag = nil }
                                 .foregroundStyle(BerryStyle.strawberry)
                         }
@@ -435,7 +431,7 @@ struct BerryGameView: View {
                     Image(systemName: "pause.circle.fill").font(.system(size: 23)).foregroundStyle(BerryStyle.strawberry)
                 }.accessibilityLabel("Pause game")
             }
-            Button { onExit() } label: { Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.leaf) }.accessibilityLabel("Main menu")
+            Button { returnToVillage() } label: { Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.leaf) }.accessibilityLabel("Main menu")
             Button { showSettings = true } label: {
                 Image(systemName: "gearshape.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.strawberry)
             }.accessibilityLabel("Berry settings")
@@ -480,14 +476,14 @@ struct BerryGameView: View {
 
     private var toolBar: some View {
         HStack(spacing: 7) {
-            if mode != .classic {
+            if mode != .classic && mode != .challenge {
             toolButton("Undo", icon: "arrow.uturn.backward", count: session.undos, enabled: session.canUndo) {
                 if session.canUndo {
                     let revertedLines = session.undo()
                     lifetimeLines = max(0, lifetimeLines - revertedLines)
                     if mode == .challenge && lastBlitzTimeBonus > 0 {
                         blitzDeadline = blitzDeadline?.addingTimeInterval(TimeInterval(-lastBlitzTimeBonus))
-                        UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey)
+                        // No saved Blitz timer. This challenge restarts on re-entry.
                         lastBlitzTimeBonus = 0
                         refreshBlitzClock()
                     }
@@ -500,7 +496,7 @@ struct BerryGameView: View {
             toolButton("Shop", icon: "basket.fill", count: nil, enabled: true) { showShop = true }
             }
             toolButton(mode == .cozy ? "Cottage" : "Stats", icon: mode == .cozy ? "house.lodge.fill" : "chart.bar.fill", count: nil, enabled: true) { if mode == .cozy { showCottage = true } else { showStats = true } }
-            toolButton("Home", icon: "house.fill", count: nil, enabled: true) { onExit() }
+            toolButton("Home", icon: "house.fill", count: nil, enabled: true) { returnToVillage() }
         }.frame(height: 43)
     }
 
@@ -552,6 +548,7 @@ struct BerryGameView: View {
             touchStatus = "Picked up piece \(slot + 1)"
         case .moved:
             guard event.distanceSquared >= 64 else { return }
+            if activeDragSlot != slot && sound { BerryAudio.shared.play(.pickup) }
             activeDragSlot = slot
             activeDragFinger = event.location
             drag = placementForDrag(slot: slot, finger: event.location)
@@ -606,10 +603,75 @@ struct BerryGameView: View {
         }
     }
 
+    /// Identical drag and tap board to the physically verified 0.5.6 engine.
+    /// Only the 24x24 view enlarges and scrolls.
+    private func boardInteraction(actualSize: CGFloat) -> some View {
+            BerryBoard(engine: session.engine, preview: drag, size: actualSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle, onBoardRect: { rect in boardRect = rect })
+                .overlay {
+                    if sparkle {
+                        Text(harvestCheer)
+                            .font(.headline)
+                            .foregroundStyle(BerryStyle.strawberry)
+                            .padding(12)
+                            .background(.regularMaterial, in: Capsule())
+                            .transition(.scale.combined(with: .opacity))
+                            .allowsHitTesting(false)
+                    }
+                }
+                .overlay {
+                    if showNewBestBanner {
+                        BerryNewBestBanner(score: session.engine.score)
+                            .transition(.scale(scale: 0.78).combined(with: .opacity))
+                            .allowsHitTesting(false)
+                            .zIndex(3)
+                    }
+                }
+                .padding(7)
+                .contentShape(Rectangle())
+                .onTapGesture { location in
+                    guard canMakeMove, let slot = selectedSlot,
+                          session.engine.tray.indices.contains(slot),
+                          let piece = session.engine.tray[slot] else { return }
+                    // Tap coordinates are local to the 7-point padded board wrapper.
+                    // Resolve using the same cell-origin logic as drag placement.
+                    let local = CGPoint(x: location.x - 7, y: location.y - 7)
+                    let area = CGRect(origin: .zero, size: CGSize(width: actualSize, height: actualSize))
+                    guard let target = BerryDropGeometry.target(
+                        for: local, board: area, piece: piece, side: session.engine.side
+                    ) else {
+                        warningFeedback()
+                        return
+                    }
+                    if session.drop(slot: slot, row: target.row, col: target.col) {
+                        selectedSlot = nil
+                        successFeedback()
+                    } else {
+                        warningFeedback()
+                    }
+                }
+    }
+
     private func refreshBlitzClock() {
-        guard mode == .challenge, let deadline = blitzDeadline, !showVictory else { return }
+        guard mode == .challenge, blitzRunning, let deadline = blitzDeadline,
+              !showVictory else { return }
         blitzRemaining = max(0, Int(ceil(deadline.timeIntervalSinceNow)))
-        if blitzRemaining == 0 { blitzRunning = false; showGameOver = true; drag = nil; selectedSlot = nil }
+        if blitzRemaining <= 10 && blitzRemaining > 0 && !blitzWarnedTenSeconds {
+            blitzWarnedTenSeconds = true
+            if sound { BerryAudio.shared.play(.tenSeconds) }
+        }
+        // Uploaded final countdown WAV lasts two full seconds; fire ONCE.
+        if blitzRemaining <= 3 && blitzRemaining > 0 && !blitzPlayedFinalTick {
+            blitzPlayedFinalTick = true
+            if sound { BerryAudio.shared.play(.countdown) }
+        }
+        if blitzRemaining == 0 && !blitzFinished {
+            blitzFinished = true
+            blitzRunning = false
+            showGameOver = true
+            drag = nil
+            selectedSlot = nil
+            if sound { BerryAudio.shared.play(.timeUp) }
+        }
     }
     private func checkObjective() {
         guard !showVictory, !showGameOver else { return }
@@ -623,7 +685,7 @@ struct BerryGameView: View {
         switch mode {
         case .story: completed = storyIsLineQuest ? session.engine.totalLines >= storyTargetLines : session.engine.score >= goal
         case .daily: completed = session.engine.score >= goal
-        case .challenge: completed = session.engine.score >= goal && blitzRemaining > 0
+        case .challenge: completed = false // Timed score chase, no early win.
         case .superHard: completed = false
         default: completed = false
         }
@@ -639,6 +701,7 @@ struct BerryGameView: View {
         guard !celebratedRecordThisRun, score > scoreRecordAtEntry,
               score >= 20 else { return }
         celebratedRecordThisRun = true
+        if sound { BerryAudio.shared.play(.highScore) }
         BerryAudio.shared.duckForCelebration(duration: 1.6)
         withAnimation(reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.7)) {
             showNewBestBanner = true
@@ -650,21 +713,34 @@ struct BerryGameView: View {
         }
     }
 
+    private func returnToVillage() {
+        if sound { BerryAudio.shared.play(.menuBack) }
+        onExit()
+    }
+
     private func successFeedback() {
         lifetimeLines += session.lastClearedLines
+        // Genuine play milestones build longer-term progression without
+        // introducing yet another top-level mode.
+        for (lines, reward) in [(25, 15), (50, 30), (100, 60)] {
+            if lifetimeLines >= lines {
+                session.awardOnce("lifetime-lines-\(lines)", amount: reward,
+                                  reason: "Garden milestone: \(lines) lines")
+            }
+        }
         if lifetimeLines >= 10 && !strawberryUnlocked {
             strawberryUnlocked = true
             showUnlock = true
             session.awardOnce("strawberry-unlock", amount: 15, reason: "Strawberry blocks unlocked")
         }
-        lastBlitzTimeBonus = mode == .challenge ? min(15, session.lastClearedLines * 5) : 0
-        if mode == .challenge && lastBlitzTimeBonus > 0 {
-            blitzDeadline = blitzDeadline?.addingTimeInterval(TimeInterval(lastBlitzTimeBonus))
-            UserDefaults.standard.set(blitzDeadline, forKey: blitzDeadlineKey)
-            refreshBlitzClock()
-        }
+        // Fixed time: no extensions for clears.
+        lastBlitzTimeBonus = 0
         if haptics { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
-        if sound { BerryAudio.shared.play(session.lastEarned > 10 ? .clear : .place) }
+        if sound {
+            let cue: BerryAudio.Cue = session.lastClearedLines > 0 ?
+                (session.engine.streak > 1 ? .combo : .clear) : .place
+            BerryAudio.shared.play(cue)
+        }
         if session.lastEarned > 10 {
             withAnimation(.spring()) { sparkle = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) { withAnimation { sparkle = false } }
@@ -678,7 +754,7 @@ struct BerryGameView: View {
     private var welcomeSheet: some View {
         sheetBase("Welcome to Strawberry Village!", icon: "🍓") {
             Text("Make the sweetest garden one block at a time. Place berry pieces, complete rows and columns, and earn strawberries to stock your basket.")
-            Text("No timer, no pressure. Every three placed pieces bring a new batch. Your progress saves automatically.")
+            Text("Complete full lines and make combos. Sweet Endless saves your garden, and every blocked board blooms into a new season without ending your score!")
             primaryButton("Let's Grow!") { welcomed = true; showWelcome = false }
         }
     }
@@ -687,7 +763,9 @@ struct BerryGameView: View {
             Text("Touch a piece and slide it onto the \(session.engine.side) × \(session.engine.side) board, then release. Or tap a piece and tap the board to place it. Complete full rows or columns to clear them.")
             Text("Clear multiple lines together for bonus points. Keep clearing to grow your combo. Clear the entire board for +300!")
             if mode == .classic {
-                Text("Berry Classic uses three shapes at a time, with no timer, Undo or Shuffle. Build combos, clear rows or columns, and chase your personal record!")
+                Text("Berry Classic uses three shapes at a time, with no timer, Undo or Shuffle. When nothing fits, the run ends. Chase your best record!")
+            } else if mode == .endless {
+                Text("Sweet Endless has no final game over. When the pieces no longer fit, a new strawberry season starts automatically and keeps your score, line count, and berry rewards. Your garden saves so you can continue after leaving.")
             } else {
                 Text("Earn strawberries for line clears. Spend them in the basket on extra Undos and Shuffles. Keep playing until nothing fits.")
             }
@@ -708,63 +786,86 @@ struct BerryGameView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             BerryMusicSettingsView()
-            Text("Your game is saved automatically. The display uses the full iPhone screen.").font(.footnote)
+            Text(mode == .endless ?
+                "Sweet Endless saves this garden and your score automatically. When there are no moves, a new season begins without resetting your score." :
+                "Scores, strawberries and rewards are saved. Only Sweet Endless resumes a live board.")
+                .font(.footnote)
             Button("Start a New Garden", role: .destructive) { showSettings = false; confirmRestart = true }
             Text("🍓 v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev") • build \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?")").font(.footnote).foregroundStyle(.secondary)
             primaryButton("Done") { showSettings = false }
         }
     }
     private var shopSheet: some View {
-        sheetBase("The Berry Basket", icon: "🧺") {
-            Text("Your strawberries: 🍓 \(session.berries)").font(.system(size: 22, weight: .black, design: .rounded))
-            HStack {
-                VStack(alignment: .leading) { Text("Extra Undo").bold(); Text("🍓 25").font(.caption) }
-                Spacer()
-                Button("Buy") { session.buyUndo() }.disabled(session.berries < 25).buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
-            }
-            HStack {
-                VStack(alignment: .leading) { Text("Extra Shuffle").bold(); Text("🍓 25").font(.caption) }
-                Spacer()
-                Button("Buy") { session.buyShuffle() }.disabled(session.berries < 25).buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
-            }
-            HStack {
-                VStack(alignment: .leading) { Text("🏡 Cottage Decoration").bold(); Text("🍓 50 • Owned: \(session.cottageDecorations)").font(.caption) }
-                Spacer()
-                Button("Decorate") { session.buyCottageDecoration() }.disabled(session.berries < 50).buttonStyle(.borderedProminent).tint(BerryStyle.leaf)
-            }
-            Text("🍓 Clear lines to earn berries: +3 per line, plus combo and perfect-garden bonuses. Strawberry School earns +25, Daily Harvest +30, and Story chapters earn rewards.").font(.subheadline)
-            Text("🎀 Recent Berry Harvests").font(.headline).foregroundStyle(BerryStyle.strawberry)
-            ForEach(session.rewardsLog.prefix(6), id: \.self) { reward in Text(reward).font(.caption) }
-            Text(strawberryUnlocked ? "🍓 Strawberry blocks unlocked!" : "🔒 Clear \(max(0, 10 - lifetimeLines)) more lines across your gardens to unlock strawberry blocks and 15 berries.").font(.subheadline).foregroundStyle(BerryStyle.leaf)
-            Text("All strawberries are earned by playing. No purchases or ads.").font(.footnote)
-            primaryButton("Back to Garden") { showShop = false }
+        sheetBase("The Berry Boutique", icon: "🧺") {
+            BerryBoutiqueView(session: session)
+            primaryButton("Back to Your Berry Garden") { showShop = false }
         }
     }
+
     private var cottageSheet: some View {
-        sheetBase("My Strawberry Cottage", icon: "🏡") {
-            Text("A little home that grows with every harvest.").multilineTextAlignment(.center)
+        let completed = session.cottageDecorations
+        let upgrades = ["Berry Flowerbed 🌸", "Strawberry Garden Gate 🍓",
+                        "Jam Market Stall 🧺", "Village Fountain ⛲",
+                        "Rose Trellis 🌹", "Cottage Bakery 🍰"]
+        return sheetBase("My Strawberry Cottage", icon: "🏡") {
+            Text("Your little cottage becomes a sweeter home with every decoration.")
+                .multilineTextAlignment(.center)
             ZStack {
-                RoundedRectangle(cornerRadius: 24).fill(Color(red: 0.86, green: 0.96, blue: 0.81))
-                VStack(spacing: 8) {
-                    Text("☀️  ☁️  🌷  ☁️").font(.title2)
-                    Text("🏡").font(.system(size: 100))
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(LinearGradient(colors: [Color(red: 0.87, green: 0.97, blue: 0.83),
+                        Color(red: 1, green: 0.88, blue: 0.91)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing))
+                VStack(spacing: 7) {
+                    Text(completed >= 4 ? "☀️    🌺   ⛲   🌺    ☁️" : "☀️    🌸    ☁️")
+                        .font(.system(size: 23))
+                    Text("🏡")
+                        .font(.system(size: 94))
+                        .shadow(color: BerryStyle.strawberry.opacity(0.25), radius: 9, y: 5)
                     HStack(spacing: 8) {
-                        ForEach(0..<min(session.cottageDecorations, 12), id: \.self) { i in
-                            Text(["🍓", "🌷", "🪴", "🎀", "🍰", "🧺"][i % 6])
-                                .font(.system(size: 24))
-                        }
+                        if completed >= 1 { Text("🌷") }
+                        if completed >= 2 { Text("🍓") }
+                        if completed >= 3 { Text("🧺") }
+                        if completed >= 5 { Text("🌹") }
+                        if completed >= 6 { Text("🍰") }
                     }
-                    Text("🌿 🌸 🌿 🌸 🌿").font(.title2)
-                }.padding()
-            }.frame(height: 250)
-            Text("\(session.cottageDecorations) decorations collected").font(.headline).foregroundStyle(BerryStyle.leaf)
-            Button("Add a garden decoration • 🍓 50") { session.buyCottageDecoration() }
-                .disabled(session.berries < 50)
-                .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
-            Text("Your strawberry basket: 🍓 \(session.berries)").font(.caption)
+                    .font(.system(size: 27))
+                    Text(completed >= 6 ? "✨ THE SWEETEST COTTAGE ✨" :
+                        "🌿 A garden still growing 🌿")
+                        .font(.system(size: 12, weight: .black, design: .rounded))
+                        .foregroundStyle(BerryStyle.leaf)
+                }
+            }.frame(height: 256)
+            Text("🍓 \(completed) decorations collected")
+                .font(.headline)
+                .foregroundStyle(BerryStyle.leaf)
+            ForEach(0..<upgrades.count, id: \.self) { index in
+                HStack {
+                    Image(systemName: completed > index ? "checkmark.seal.fill" : "lock.fill")
+                        .foregroundStyle(completed > index ? BerryStyle.leaf : .gray)
+                    Text(upgrades[index])
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(BerryStyle.chocolate)
+                    Spacer()
+                    if completed > index { Text("Owned").font(.caption).foregroundStyle(BerryStyle.leaf) }
+                }
+                .padding(12)
+                .background(.white, in: RoundedRectangle(cornerRadius: 15))
+            }
+            Button(completed < upgrades.count ?
+                   "Decorate: \(upgrades[completed]) • 🍓 50" :
+                   "Add another garden bouquet • 🍓 50") {
+                session.buyCottageDecoration()
+                if sound { BerryAudio.shared.play(.reward) }
+            }
+            .disabled(session.berries < 50 || session.cottageDecorations >= 6)
+            .buttonStyle(.borderedProminent)
+            .tint(BerryStyle.strawberry)
+            Text("Your strawberry basket: 🍓 \(session.berries)")
+                .font(.caption)
             primaryButton("Back to the Garden") { showCottage = false }
         }
     }
+
     private var statsSheet: some View {
         sheetBase("Berry Scrapbook", icon: "📖") {
             statRow("Best score", "\(session.bestScore)")

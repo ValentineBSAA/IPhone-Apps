@@ -228,6 +228,19 @@ final class BerryEngineTests: XCTestCase {
         XCTAssertTrue(found, "Classic play should deal standard 3x3 blocks")
     }
 
+    func testTwentyFourByTwentyFourMegaGardenGeometryAndRestore() throws {
+        var game = BerryEngine(side: 24, hard: true)
+        XCTAssertEqual(game.board.count, 24)
+        XCTAssertEqual(game.board[0].count, 24)
+        XCTAssertTrue(game.hasMove())
+        XCTAssertTrue(game.tray.compactMap { $0 }.allSatisfy { $0.points.count >= 7 })
+        let first = game.tray.compactMap { $0 }.first!
+        XCTAssertTrue(game.hasPlacement(for: first))
+        let encoded = try JSONEncoder().encode(game)
+        let restored = try JSONDecoder().decode(BerryEngine.self, from: encoded)
+        XCTAssertEqual(restored.side, 24)
+    }
+
     func testAllSixExistingModesRemainAvailable() {
         XCTAssertEqual(BerryMode.allCases.count, 7)
         XCTAssertTrue(BerryMode.allCases.contains(.superHard))

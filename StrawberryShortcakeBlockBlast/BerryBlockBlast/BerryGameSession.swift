@@ -15,10 +15,58 @@ final class BerryGameSession: ObservableObject {
     @Published private(set) var totalEarnedBerries = 0
     @Published private(set) var rewardsLog: [String] = UserDefaults.standard.stringArray(forKey: "berryblockblast.rewards.v1") ?? []
     @Published private(set) var cottageDecorations = UserDefaults.standard.integer(forKey: "berryblockblast.cottage.decorations")
+    @Published private(set) var ownedCosmetics = UserDefaults.standard.stringArray(forKey: "berryblockblast.shop.owned.v056b2") ?? []
     private var previous: BerryEngine?
     private var previousBerryEarnings = 0
     private var previousRewardEntry: String?
     private var activeMode: BerryMode = .endless
+    static let classicSaveKey = "berryblockblast.classic.engine.v055"
+    static let classicSavedFlagKey = "berryblockblast.classic.savedFlag.v056b2"
+    private static let legacyEndlessSaveKey = "berryblockblast.saved-game.v3"
+    private static let legacyEndlessV1Key = "berryblockblast.saved-game.v1"
+    private static let legacyEndlessMigratedKey = "berryblockblast.endless.legacyMigrated.v056b2"
+
+    /// One resumable MODE, Sweet Endless, with independent safe slots for
+    /// 8×8, 12×12 and 24×24. Each size has its own personal-best score too.
+    static func endlessSaveKey(side: Int) -> String {
+        switch side {
+        case 12: return "berryblockblast.endless.saved-12.v056b2"
+        case 24: return "berryblockblast.endless.saved-24.v056b2"
+        default: return "berryblockblast.endless.saved-8.v056b2"
+        }
+    }
+
+    static func savedEndlessEngine(side: Int) -> BerryEngine? {
+        guard [8, 12, 24].contains(side) else { return nil }
+        let defaults = UserDefaults.standard
+        if let data = defaults.data(forKey: endlessSaveKey(side: side)),
+           let snapshot = try? JSONDecoder().decode(BerryEngine.self, from: data),
+           snapshot.side == side, snapshot.moves > 0 { return snapshot }
+
+        // Restore the old Build 1 Sweet Endless board once, without writing
+        // or deleting that original save. An intentional New Garden sets the
+        // migration flag, so the legacy board cannot silently reappear.
+        guard side == 8, !defaults.bool(forKey: legacyEndlessMigratedKey) else { return nil }
+        if let data = defaults.data(forKey: legacyEndlessSaveKey),
+           let snapshot = try? JSONDecoder().decode(Save.self, from: data),
+           snapshot.engine.side == 8, snapshot.engine.moves > 0 {
+            return snapshot.engine
+        }
+        if let data = defaults.data(forKey: legacyEndlessV1Key),
+           let snapshot = try? JSONDecoder().decode(BerryEngine.self, from: data),
+           snapshot.side == 8, snapshot.moves > 0 { return snapshot }
+        return nil
+    }
+
+    static func hasResumableEndless(side: Int) -> Bool {
+        savedEndlessEngine(side: side) != nil
+    }
+    static var hasResumableClassic: Bool {
+        guard let data = UserDefaults.standard.data(forKey: classicSaveKey),
+              let saved = try? JSONDecoder().decode(BerryEngine.self, from: data) else { return false }
+        return saved.side == 8 && saved.moves > 0 && saved.hasMove()
+    }
+
     static func dailyDateKey() -> String {
         let components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
         return String(format: "%04d-%02d-%02d", components.year ?? 2026, components.month ?? 1, components.day ?? 1)
@@ -31,29 +79,43 @@ final class BerryGameSession: ObservableObject {
         case .cozy: "berryblockblast.cozy.engine.v1"
         case .challenge: "berryblockblast.blitz.engine.v1"
         case .superHard: "berryblockblast.nightmare.engine.v1"
-        case .classic: "berryblockblast.classic.engine.v055"
+        case .classic: Self.classicSaveKey
         }
     }
     func selectMode(_ mode: BerryMode) {
         activeMode = mode
         let scoreKey = bestScoreKey(for: mode)
-        if mode != .superHard && mode != .classic && UserDefaults.standard.object(forKey: scoreKey) == nil {
+        // Preserve legacy scores for old modes only. The new 12×12 and 24×24
+        // scoreboards must start independently, not inherit an 8×8 record.
+        let hasNewBoardSize = mode == .endless &&
+            [12, 24].contains(UserDefaults.standard.integer(forKey: "berryblockblast.endless.boardSize.v056b2"))
+        if mode != .superHard && mode != .classic && mode != .challenge &&
+           !hasNewBoardSize && UserDefaults.standard.object(forKey: scoreKey) == nil {
             // Earlier versions shared one best-score key for five modes.
             // Seed independent records from it so an upgrade never loses that number.
             UserDefaults.standard.set(UserDefaults.standard.integer(forKey: bestKey), forKey: scoreKey)
         }
         bestScore = UserDefaults.standard.integer(forKey: scoreKey)
-        if mode == .endless {
-            if let data = UserDefaults.standard.data(forKey: saveKey),
-               let snapshot = try? JSONDecoder().decode(Save.self, from: data),
-               snapshot.engine.side == 8 { engine = snapshot.engine }
-            else { engine = freshEngine() }
-        } else if let data = UserDefaults.standard.data(forKey: modeKey(mode)),
-                  let restored = try? JSONDecoder().decode(BerryEngine.self, from: data),
-                  restored.side == (mode == .superHard ? 12 : 8) {
-            engine = restored
+        // Sweet Endless is the only mode that resumes its board. Keep legacy
+        // Classic/non-Endless saves on disk for safe rollback, but never resume
+        // them in this build. A selected garden size resumes only its own slot.
+        let requestedSize = UserDefaults.standard.integer(forKey: "berryblockblast.endless.boardSize.v056b2")
+        let size = [8, 12, 24].contains(requestedSize) ? requestedSize : 8
+        if mode == .endless, let saved = Self.savedEndlessEngine(side: size) {
+            engine = saved
+            if size == 8 {
+                UserDefaults.standard.set(true, forKey: Self.legacyEndlessMigratedKey)
+                if let data = try? JSONEncoder().encode(saved) {
+                    UserDefaults.standard.set(data, forKey: Self.endlessSaveKey(side: 8))
+                }
+            }
         } else {
             engine = freshEngine()
+        }
+        if mode == .endless && !engine.hasMove() {
+            // Older saves can be stuck; rescue the run without losing its score.
+            _ = engine.beginNextEndlessSeasonIfStuck()
+            save()
         }
         previous = nil
         previousBerryEarnings = 0
@@ -67,6 +129,11 @@ final class BerryGameSession: ObservableObject {
     private func freshEngine() -> BerryEngine {
         if activeMode == .cozy { return BerryEngine(cozy: true) }
         if activeMode == .superHard { return BerryEngine(side: 12, hard: true) }
+        if activeMode == .endless {
+            let requested = UserDefaults.standard.integer(forKey: "berryblockblast.endless.boardSize.v056b2")
+            let side = [8, 12, 24].contains(requested) ? requested : 8
+            return side == 8 ? BerryEngine() : BerryEngine(side: side, hard: side == 24)
+        }
         guard activeMode == .daily else { return BerryEngine() }
         let components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
         let number = (components.year ?? 2026) * 10000 + (components.month ?? 1) * 100 + (components.day ?? 1)
@@ -77,13 +144,22 @@ final class BerryGameSession: ObservableObject {
     private let nightmareBestKey = "berryblockblast.nightmare.best-score.v1"
     private func bestScoreKey(for mode: BerryMode) -> String {
         switch mode {
-        case .endless: return bestKey
+        case .endless:
+            let side = UserDefaults.standard.integer(forKey: "berryblockblast.endless.boardSize.v056b2")
+            return Self.endlessScoreKey(side: side)
         case .story: return "berryblockblast.story.best-score.v055"
         case .daily: return "berryblockblast.daily.best-score.v055"
         case .cozy: return "berryblockblast.cozy.best-score.v055"
-        case .challenge: return "berryblockblast.blitz.best-score.v055"
+        case .challenge: return BerryBlitzVariant.selected.bestScoreKey
         case .superHard: return nightmareBestKey
         case .classic: return "berryblockblast.classic.best-score.v055"
+        }
+    }
+    static func endlessScoreKey(side: Int) -> String {
+        switch side {
+        case 12: return "berryblockblast.endless.best-12.v056b2"
+        case 24: return "berryblockblast.endless.best-24.v056b2"
+        default: return "berryblockblast.best-score.v1" // Existing 8×8 record.
         }
     }
     private let inventoryKey = "berryblockblast.inventory.v3"
@@ -143,6 +219,16 @@ final class BerryGameSession: ObservableObject {
                 outcome.clearedLines >= 3 ? "BERRY SPECTACULAR! ✨" :
                 outcome.streak >= 2 ? "SWEET COMBO ×\(outcome.streak)! 🍓" : "BERRY DELICIOUS! 🍰"
         } else { lastMessage = nil }
+        let nextSeason = activeMode == .endless && !engine.hasMove() &&
+            engine.beginNextEndlessSeasonIfStuck()
+        if nextSeason {
+            // Undoing across a renewed season would restore an unwinnable
+            // full board. Keep the uninterrupted score and disable that undo.
+            previous = nil
+            previousBerryEarnings = 0
+            previousRewardEntry = nil
+            lastMessage = "🍓 A fresh berry season! Your score continues!"
+        }
         gameOver = !engine.hasMove()
         save()
         return true
@@ -163,6 +249,7 @@ final class BerryGameSession: ObservableObject {
         previousBerryEarnings = 0
         self.previous = nil
         undos -= 1
+        if activeMode == .endless { _ = engine.beginNextEndlessSeasonIfStuck() }
         gameOver = !engine.hasMove()
         lastMessage = "A little second chance! 💗"
         lastEarned = 0
@@ -175,6 +262,7 @@ final class BerryGameSession: ObservableObject {
         guard shuffles > 0 else { return }
         engine.reshuffleTray()
         shuffles -= 1
+        if activeMode == .endless { _ = engine.beginNextEndlessSeasonIfStuck() }
         gameOver = !engine.hasMove()
         previous = nil
         previousBerryEarnings = 0
@@ -209,7 +297,9 @@ final class BerryGameSession: ObservableObject {
         awardOnce("chapter-" + String(chapter), amount: 15 + min(35, chapter * 5), reason: "Story chapter")
     }
     func buyCottageDecoration() {
-        guard berries >= 50 else { return }
+        // There are six unique Cottage upgrades. Earlier buyers with more
+        // decorations keep them, but never spend berries for a duplicate.
+        guard berries >= 50, cottageDecorations < 6 else { return }
         // Purchases must invalidate the undo snapshot to prevent currency duplication.
         previous = nil
         previousBerryEarnings = 0
@@ -244,6 +334,10 @@ final class BerryGameSession: ObservableObject {
     var canUndo: Bool { undos > 0 && previous != nil }
 
     func newGame() {
+        if activeMode == .endless && engine.side == 8 {
+            // A deliberate restart must not resurrect the old pre-Build-2 save.
+            UserDefaults.standard.set(true, forKey: Self.legacyEndlessMigratedKey)
+        }
         engine = freshEngine()
         previous = nil
         previousBerryEarnings = 0
@@ -257,14 +351,38 @@ final class BerryGameSession: ObservableObject {
         save()
     }
 
+    /// Shop purchases are cosmetics only. Core rules and Berry Classic scoring
+    /// never depend on purchases; old earned strawberries remain spendable.
+    func buyCosmetic(id: String, cost: Int) -> Bool {
+        let valid: [String:Int] = ["blueberry-blocks":90,"vanilla-blocks":90,
+            "rose-border":75,"mint-border":75,"berry-sparkle":100]
+        guard valid[id] == cost, cost > 0, berries >= cost,
+              !ownedCosmetics.contains(id) else { return false }
+        previous = nil
+        previousBerryEarnings = 0
+        previousRewardEntry = nil
+        berries -= cost
+        ownedCosmetics.append(id)
+        UserDefaults.standard.set(ownedCosmetics, forKey: "berryblockblast.shop.owned.v056b2")
+        rewardsLog.insert("🧺 -\(cost) • Berry Boutique: \(id)", at: 0)
+        rewardsLog = Array(rewardsLog.prefix(20))
+        UserDefaults.standard.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
+        save()
+        return true
+    }
+
     private func save() {
         let inventory = Inventory(berries: berries, undos: undos, shuffles: shuffles, totalEarnedBerries: totalEarnedBerries)
         if let data = try? JSONEncoder().encode(inventory) { UserDefaults.standard.set(data, forKey: inventoryKey) }
-        let snapshot = Save(engine: engine, berries: berries, undos: undos, shuffles: shuffles, totalEarnedBerries: totalEarnedBerries)
-        if activeMode == .endless {
-            if let data = try? JSONEncoder().encode(snapshot) { UserDefaults.standard.set(data, forKey: saveKey) }
-        } else if let data = try? JSONEncoder().encode(engine) {
-            UserDefaults.standard.set(data, forKey: modeKey(activeMode))
+        // Only Sweet Endless persists an unfinished board. Each board size
+        // keeps its own ongoing run. Original Build 1 and Classic save keys
+        // are never overwritten, which preserves the stable rollback.
+        guard activeMode == .endless else { return }
+        let key = Self.endlessSaveKey(side: engine.side)
+        if engine.moves > 0, let data = try? JSONEncoder().encode(engine) {
+            UserDefaults.standard.set(data, forKey: key)
+        } else if engine.moves == 0 {
+            UserDefaults.standard.removeObject(forKey: key)
         }
     }
 }

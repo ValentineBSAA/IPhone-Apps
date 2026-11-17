@@ -4,22 +4,36 @@ import UIKit
 
 /// One native audio coordinator for the entire application.
 /// Music is decoded directly from the bundled original AAC-LC/M4A files.
-/// Short synthesized cues are retained for responsive puzzle sound effects.
+/// All music and game effects are the actual supplied, byte-verified recordings.
 @MainActor
 final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
     static let shared = BerryAudio()
 
-    enum Cue { case place, clear, invalid }
-    enum Screen { case menu, gameplay, results }
+    enum Cue: String {
+        case menuSelect = "menu_select", menuBack = "menu_back", gameStart = "game_start"
+        case pickup = "block_pickup", place = "block_place", invalid = "invalid_placement"
+        case clear = "row_clear", combo = "berry_combo", highScore = "new_high_score"
+        case victory = "victory", gameOver = "no_more_moves", reward = "reward_unlocked"
+        case blitzStart = "blitz_start", tenSeconds = "ten_seconds_left"
+        case countdown = "final_countdown_tick", timeUp = "time_up"
+    }
+    enum Screen { case menu, gameplay, blitz, results }
 
     static let tracks: [BerrySoundtrackTrack] = {
-        guard let url = Bundle.main.url(forResource: "Catalog", withExtension: "json", subdirectory: "Soundtrack"),
+        guard let url = Bundle.main.url(forResource: "Catalog", withExtension: "json", subdirectory: "Music"),
               let data = try? Data(contentsOf: url),
               let catalog = try? JSONDecoder().decode(BerrySoundtrackCatalog.self, from: data),
-              catalog.tracks.count == 15 else { return [] }
+              catalog.tracks.count == 51 else { return [] }
         return catalog.tracks.sorted { $0.id < $1.id }
     }()
     static var trackNames: [String] { tracks.map(\.title) }
+    static let effects: [BerryEffectTrack] = {
+        guard let url = Bundle.main.url(forResource: "Catalog", withExtension: "json", subdirectory: "Effects"),
+              let data = try? Data(contentsOf: url),
+              let catalog = try? JSONDecoder().decode(BerryEffectsCatalog.self, from: data),
+              catalog.effects.count == 16 else { return [] }
+        return catalog.effects.sorted { $0.id < $1.id }
+    }()
 
     @Published private(set) var currentTrackName = "Strawberry Soundtrack"
     @Published private(set) var currentTrackNumber = 0
@@ -30,6 +44,7 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     private var musicPlayer: AVAudioPlayer?
     private var effectPlayers: [AVAudioPlayer] = []
+    private var lastEffectTime: [String: TimeInterval] = [:]
     private var currentIndex: Int?
     private var pendingTrackIndex: Int?
     private var history: [Int] = []
@@ -78,7 +93,9 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
                                             object: AVAudioSession.sharedInstance(), queue: .main) { [weak self] _ in
             Task { @MainActor in self?.restoreAfterMediaReset() }
         })
-        observers.append(center.addObserver(forName: UIApplication.willResignActiveNotification,
+        // A screenshot can temporarily make an app inactive. Only actual
+        // backgrounding should suspend the soundtrack.
+        observers.append(center.addObserver(forName: UIApplication.didEnterBackgroundNotification,
                                             object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.setInactive(true) }
         })
@@ -156,28 +173,48 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
     func toggleShuffle() { setShuffle(!isShuffling) }
 
+    private func playlistForScreen() -> BerryPlaylistKind {
+        switch screen {
+        case .menu: return .menu
+        case .gameplay: return .gameplay
+        case .blitz: return .blitz
+        case .results: return .results
+        }
+    }
+
+    private func nextPlaylistIndex() -> Int? {
+        let kind = playlistForScreen()
+        let allowed = BerryPlaylistPicker.indices(Self.tracks, for: kind)
+            .filter { !failedIndices.contains($0) }
+        guard !allowed.isEmpty else { return nil }
+        let chosen = BerryPlaylistPicker.choose(
+            tracks: Self.tracks, lastIndex: currentIndex, history: history,
+            mode: musicMode, shuffle: isShuffling, playlist: kind
+        )
+        return chosen.flatMap { allowed.contains($0) ? $0 : allowed.first }
+    }
+
     func setScreen(_ target: Screen) {
         guard screen != target else { ensurePlaying(); return }
-        let prior = screen
         screen = target
-        if target == .results {
-            // Victory is a deliberate transition from active play, not a
-            // random gameplay shuffle. The supplied track #05 is full length.
-            if currentIndex != 4 && musicEnabled { switchTrack(to: 4) }
-        } else if prior == .results && (currentIndex == 4 || pendingTrackIndex == 4) {
-            // Even a rapid dismissal cancels a pending victory theme switch.
-            // Menu receives its reserved song; gameplay receives its own mix.
-            if target == .menu { switchTrack(to: 0) }
-            else if let next = nextGameplayIndex() { switchTrack(to: next) }
+        guard musicEnabled else { return }
+        // Keep the current track when it belongs to the new screen's playlist.
+        // Otherwise fade to the relevant menu, gameplay, victory or Blitz mix.
+        if let index = currentIndex,
+           Self.tracks.indices.contains(index),
+           BerryPlaylistPicker.indices(Self.tracks, for: playlistForScreen()).contains(index),
+           pendingTrackIndex == nil {
+            ensurePlaying()
+        } else if let chosen = nextPlaylistIndex() {
+            switchTrack(to: chosen)
         } else {
-            // Menu/gameplay transitions do NOT restart the current music.
             ensurePlaying()
         }
     }
 
     func nextTrack() {
         guard !Self.tracks.isEmpty else { return }
-        if let next = nextGameplayIndex() { switchTrack(to: next) }
+        if let next = nextPlaylistIndex() { switchTrack(to: next) }
     }
 
     func previousTrack() {
@@ -192,16 +229,6 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
         switchTrack(to: index)
     }
 
-    private func nextGameplayIndex() -> Int? {
-        let catalog = Self.tracks
-        let allowed = BerryPlaylistPicker.gameplayIndices(catalog).filter { !failedIndices.contains($0) }
-        guard !allowed.isEmpty else { return nil }
-        return BerryPlaylistPicker.choose(
-            tracks: catalog, lastIndex: currentIndex, history: history,
-            mode: musicMode, shuffle: isShuffling
-        ).flatMap { !failedIndices.contains($0) ? $0 : allowed.randomElement() }
-    }
-
     private func ensurePlaying() {
         guard canPlayMusic else { return }
         if let p = musicPlayer {
@@ -214,10 +241,8 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
                 return
             }
         }
-        let startIndex: Int?
-        if screen == .results { startIndex = Self.tracks.indices.contains(4) ? 4 : nil }
-        else if screen == .menu && currentIndex == nil { startIndex = Self.tracks.indices.contains(0) ? 0 : nil }
-        else { startIndex = nextGameplayIndex() }
+        let startIndex = (currentIndex == nil && screen == .menu) ? 
+            BerryPlaylistPicker.indices(Self.tracks, for: .menu).first : nextPlaylistIndex()
         if let startIndex { startTrack(startIndex) }
         else { playbackError = "The original soundtrack is missing from the app bundle." }
     }
@@ -259,8 +284,8 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
         pendingTrackIndex = nil
         guard activateSession() else { return }
         let track = Self.tracks[index]
-        guard let filename = URL(fileURLWithPath: track.file).deletingPathExtension().lastPathComponent as String?,
-              let url = Bundle.main.url(forResource: filename, withExtension: "m4a", subdirectory: "Soundtrack")
+        let filename = URL(fileURLWithPath: track.file).deletingPathExtension().lastPathComponent
+        guard let url = Bundle.main.url(forResource: filename, withExtension: "m4a", subdirectory: "Music")
         else {
             recoverFromTrackError(index, message: "Missing bundle audio: \(track.file)", attempt: attempt)
             return
@@ -296,7 +321,7 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
         isPlaying = false
         failedIndices.insert(index)
         guard attempt < Self.tracks.count - 1 else { return }
-        let alternatives = BerryPlaylistPicker.gameplayIndices(Self.tracks)
+        let alternatives = BerryPlaylistPicker.indices(Self.tracks, for: playlistForScreen())
             .filter { !failedIndices.contains($0) }
         if let index = alternatives.first { startTrack(index, attempt: attempt + 1) }
     }
@@ -326,11 +351,7 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
             if self.pendingTrackIndex != nil { return }
             if !flag { self.playbackError = "A soundtrack recording stopped unexpectedly." }
             guard self.canPlayMusic else { return }
-            if self.screen == .results && self.currentIndex == 4 {
-                self.startTrack(0) // Complete the full victory theme, then return to menu music.
-            } else if let next = self.nextGameplayIndex() {
-                self.startTrack(next)
-            }
+            if let next = self.nextPlaylistIndex() { self.startTrack(next) }
         }
     }
 
@@ -410,51 +431,34 @@ final class BerryAudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
     }
 
-    /// Retain responsive little berry chimes, WITHOUT synthesizing replacement songs.
-    private func effectWAV(_ notes: [(Double, Double)]) -> Data {
-        let sampleRate = 11025
-        let frameCount = notes.reduce(0) { $0 + Int($1.1 * Double(sampleRate)) }
-        var pcm = [Int16](repeating: 0, count: frameCount)
-        var offset = 0
-        for (pitch, duration) in notes {
-            let frameLength = Int(duration * Double(sampleRate))
-            for frame in 0..<frameLength {
-                let t = Double(frame) / Double(sampleRate)
-                let env = pow(max(0, 1 - Double(frame) / Double(max(1, frameLength))), 1.3)
-                let wave = sin(t * pitch * 2 * .pi) + 0.12 * sin(t * pitch * 4 * .pi)
-                pcm[offset + frame] = Int16(max(-32767, min(32767, wave * env * 4300)))
-            }
-            offset += frameLength
-        }
-        var data = Data()
-        func write16(_ n: UInt16) { var x=n.littleEndian; withUnsafeBytes(of:&x){ data.append(contentsOf:$0) } }
-        func write32(_ n: UInt32) { var x=n.littleEndian; withUnsafeBytes(of:&x){ data.append(contentsOf:$0) } }
-        data.append(contentsOf: "RIFF".utf8); write32(UInt32(36+frameCount*2))
-        data.append(contentsOf: "WAVEfmt ".utf8); write32(16)
-        write16(1); write16(1); write32(UInt32(sampleRate)); write32(UInt32(sampleRate*2))
-        write16(2); write16(16)
-        data.append(contentsOf: "data".utf8); write32(UInt32(frameCount*2))
-        pcm.withUnsafeBufferPointer { data.append(contentsOf: UnsafeRawBufferPointer($0)) }
-        return data
-    }
-
+    /// Real 48-kHz PCM WAV effects from the uploaded, source-verified 16-file pack.
+    /// Slight per-event cooldown prevents a finger and a gesture from double-firing.
     func play(_ cue: Cue) {
-        let notes: [(Double, Double)]
-        switch cue {
-        case .place: notes = [(523.25,0.075),(783.99,0.11)]
-        case .clear: notes = [(523.25,0.10),(659.25,0.10),(783.99,0.12),(1046.5,0.18)]
-        case .invalid: notes = [(246.94,0.12),(196,0.15)]
+        guard UserDefaults.standard.object(forKey: "berryblockblast.sound") == nil ||
+              UserDefaults.standard.bool(forKey: "berryblockblast.sound") else { return }
+        guard effectVolume > 0 else { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        let minimumGap: TimeInterval = cue == .place ? 0.055 : 0.12
+        if now - (lastEffectTime[cue.rawValue] ?? -100) < minimumGap { return }
+        lastEffectTime[cue.rawValue] = now
+        if [.clear, .combo, .highScore, .victory, .timeUp].contains(cue) {
+            duckForCelebration(duration: cue == .victory ? 2 : 1.0)
         }
-        if cue == .clear { duckForCelebration(duration: 0.85) }
-        guard effectVolume > 0, activateSession() else { return }
+        guard let effect = Self.effects.first(where: { $0.eventKey == cue.rawValue }),
+              let url = Bundle.main.url(forResource: URL(fileURLWithPath: effect.file)
+                    .deletingPathExtension().lastPathComponent,
+                    withExtension: "wav", subdirectory: "Effects"),
+              activateSession() else { return }
+        // Each effect is allowed one instance; limit global overlap as well.
         effectPlayers.removeAll { !$0.isPlaying }
+        if effectPlayers.count >= 4 { effectPlayers[0].stop(); effectPlayers.removeFirst() }
         do {
-            let p = try AVAudioPlayer(data: effectWAV(notes))
-            p.volume = effectVolume
-            p.prepareToPlay()
-            if p.play() { effectPlayers.append(p) }
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.volume = min(1, effectVolume * 0.76)
+            player.prepareToPlay()
+            if player.play() { effectPlayers.append(player) }
         } catch {
-            playbackError = "Sound effect failed: \(error.localizedDescription)"
+            playbackError = "Audio effect \(effect.title) could not play: \(error.localizedDescription)"
         }
     }
 }

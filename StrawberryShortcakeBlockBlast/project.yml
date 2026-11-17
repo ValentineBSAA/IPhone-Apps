@@ -17,16 +17,17 @@ settings:
     INFOPLIST_KEY_UIStatusBarHidden: YES
     INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance: NO
     MARKETING_VERSION: "0.5.6"
-    CURRENT_PROJECT_VERSION: "1"
+    CURRENT_PROJECT_VERSION: "2"
 targets:
   BerryBlockBlast:
     type: application
     platform: iOS
     sources:
       - path: BerryBlockBlast
-      # Blue folder reference: AVFoundation resolves Soundtrack/BerryTrackNN.m4a
-      # from Bundle.main without flattening or transcoding originals.
-      - path: Soundtrack
+      # Verbatim 51 M4A + 16 WAV sources with separate resource catalogs.
+      - path: AudioBuild2/Music
+        type: folder
+      - path: AudioBuild2/Effects
         type: folder
     settings:
       base:
