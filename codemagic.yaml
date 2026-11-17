@@ -24,16 +24,16 @@ workflows:
       - name: Import mandatory 0.5.8 19-artwork catalogs + approved character portraits
         script: |
           set -e
-          if [ -f ../BuildPayload/Berry_Block_Blast_0.5.8_19_ArtCatalogs_Including_New_Character.zip ]; then
+          if [ -f ../BuildPayload/Berry_Block_Blast_0.5.8_19_ArtCatalogs_CloudReady.zip ]; then
             echo 'Installing 16 game-art catalogs + 3 user-supplied character portraits...'
-            unzip -qo ../BuildPayload/Berry_Block_Blast_0.5.8_19_ArtCatalogs_Including_New_Character.zip -d ..
+            unzip -qo ../BuildPayload/Berry_Block_Blast_0.5.8_19_ArtCatalogs_CloudReady.zip -d ..
             test -s BerryBlockBlast/Assets.xcassets/StrawberryCandyBlock.imageset/StrawberryCandyBlock.png
             test -s BerryBlockBlast/Assets.xcassets/CottageGardenBackground.imageset/CottageGardenBackground.png
             test -s BerryBlockBlast/Assets.xcassets/BerryCharacterPortrait.imageset/BerryCharacterPortrait.jpg
             test -s BerryBlockBlast/Assets.xcassets/BerryCharacterStanding.imageset/BerryCharacterStanding.jpg
             test -s BerryBlockBlast/Assets.xcassets/BerryCharacterCelebrate.imageset/BerryCharacterCelebrate.jpg
           else
-            echo 'ERROR: 0.5.8 artwork is missing. Upload Berry_Block_Blast_0.5.8_19_ArtCatalogs_Including_New_Character.zip to BuildPayload on this branch.'
+            echo 'ERROR: 0.5.8 artwork is missing. Upload Berry_Block_Blast_0.5.8_19_ArtCatalogs_CloudReady.zip to BuildPayload on this branch.'
             exit 1
           fi
       - name: Verify approved icon and mascot, generate Xcode project
