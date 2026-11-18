@@ -57,10 +57,13 @@ assert "BerryQuestBoardView" in (root / "BerryBlockBlast" / "BerryProgression.sw
 assert (root / "Tests" / "BerryEndlessGardenSectionsTests.swift").is_file()
 assert (root / "Tests" / "BerryGoldenStrawberryTests.swift").is_file()
 assert 'clearBoardWithGoldenStrawberry' in engine
+assert (root / "Tests" / "BerryGoldenStrawberryTests.swift").read_text().count("func test") >= 5
 session = (root / "BerryBlockBlast" / "BerryGameSession.swift").read_text()
 shop = (root / "BerryBlockBlast" / "BerryBoutiqueView.swift").read_text()
 for source, needle in ((session, 'useGoldenStrawberry()'),
-                       (session, '"golden-strawberry": 350'),
+                       (session, 'static let goldenStrawberryCost = 250'),
+                       (session, 'buyAndUseGoldenStrawberry()'),
+                       (engine, 'goldenRescueUsed'),
                        (shop, 'Golden Strawberry'),
                        (game, 'Golden Strawberry Rescue')):
     assert needle in source, "Golden Strawberry gameplay integration missing: " + needle
