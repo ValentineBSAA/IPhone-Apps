@@ -13,7 +13,10 @@ final class BerryBuild58CorrectiveTests: XCTestCase {
 
     func testStoryNarrativeHasDistinctEarlyChaptersAndCyclesSafely() {
         XCTAssertNotEqual(BerryStoryNarrative.title(for: 1), BerryStoryNarrative.title(for: 2))
-        XCTAssertEqual(BerryStoryNarrative.title(for: 1), BerryStoryNarrative.title(for: 7))
+        // Chapter 7 no longer repeats Chapter 1. The Story now has twelve
+        // distinct chapters and only cycles after the twelfth.
+        XCTAssertNotEqual(BerryStoryNarrative.title(for: 1), BerryStoryNarrative.title(for: 7))
+        XCTAssertEqual(BerryStoryNarrative.title(for: 1), BerryStoryNarrative.title(for: 13))
         XCTAssertFalse(BerryStoryNarrative.opening(for: 100).isEmpty)
     }
 
