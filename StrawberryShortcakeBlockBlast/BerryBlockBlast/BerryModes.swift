@@ -41,6 +41,9 @@ struct BerryHomeView: View {
     @State private var showCollection = false
     @State private var showHomeShop = false
     @State private var showHomeCottage = false
+    @State private var showVillage = false
+    @State private var showQuests = false
+    @State private var showJournal = false
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showBoutiqueAfterCollection = false
@@ -70,6 +73,29 @@ struct BerryHomeView: View {
     @AppStorage("berryblockblast.haptics") private var haptics = true
     @AppStorage("berryblockblast.musicVolume") private var musicVolume = 0.22
     @AppStorage("berryblockblast.effectVolume") private var effectVolume = 0.65
+    private func villageLink(_ title: String, detail: String, icon: String,
+                             action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundStyle(BerryStyle.strawberry)
+                    .frame(width: 59, height: 59)
+                    .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 17))
+                Text(title).font(.system(size: 14, weight: .black, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate)
+                Text(detail).font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(BerryStyle.chocolate.opacity(0.7))
+            }
+            .frame(maxWidth: .infinity, minHeight: 147)
+            .padding(9)
+            .background(.white, in: RoundedRectangle(cornerRadius: 20))
+            .overlay(RoundedRectangle(cornerRadius: 20)
+                .strokeBorder(BerryStyle.strawberry.opacity(0.28)))
+        }
+        .buttonStyle(.plain)
+    }
     private var version: String { "🍓 v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev") • \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?")" }
     @AppStorage("berryblockblast.story.level") private var storyLevel = 1
     var body: some View {
@@ -93,11 +119,11 @@ struct BerryHomeView: View {
                             }
                             Text("🍓 ✨ 🍰 ✨ 🍓").font(.title2)
                                 .accessibilityLabel("Strawberry sweets")
-                            Text("✿ WELCOME TO STRAWBERRY VILLAGE ✿").font(.system(size: 12, weight: .black, design: .rounded)).tracking(2).foregroundStyle(BerryStyle.leaf)
+                            Text("✿ WELCOME TO BERRY VILLAGE ✿").font(.system(size: 12, weight: .black, design: .rounded)).tracking(2).foregroundStyle(BerryStyle.leaf)
                             BerryGirlView().frame(width: 174, height: 180)
                                 .background(Circle().fill(.white.opacity(0.45)).shadow(color: BerryStyle.strawberry.opacity(0.2), radius: 18, y: 6))
                                 .frame(maxWidth: .infinity, alignment: .center)
-                            Text("Berry Block Blast!").font(.system(size: 34, weight: .black, design: .rounded)).minimumScaleFactor(0.65).lineLimit(1).foregroundStyle(BerryStyle.strawberry)
+                            Text("Berry Berry Blast!").font(.system(size: 34, weight: .black, design: .rounded)).minimumScaleFactor(0.65).lineLimit(1).foregroundStyle(BerryStyle.strawberry)
                             Text("PICK • PLANT • POP • CELEBRATE").font(.system(size: 10, weight: .bold, design: .rounded)).tracking(1).foregroundStyle(BerryStyle.chocolate)
                             Text("What shall we bake up today? 🍰").font(.system(size: 19, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.chocolate).padding(.vertical, 8)
                             Button {
@@ -215,6 +241,14 @@ struct BerryHomeView: View {
                             }
                             .foregroundStyle(BerryStyle.chocolate)
                             .buttonStyle(.plain)
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                                villageLink("Berry Village", detail: "Watch our little world grow", icon: "house.fill") { showVillage = true }
+                                villageLink("Berry Quests", detail: "Three fresh daily goals", icon: "checklist") { showQuests = true }
+                                villageLink("Berry Journal", detail: "Your berry scrapbook", icon: "book.closed.fill") { showJournal = true }
+                                villageLink("Daily Streak", detail: "Rewards up to 50 berries", icon: "calendar") {
+                                    activeMode = .daily
+                                }
+                            }
                             Button {
                                 audio.play(.menuSelect)
                                 showJukebox = true
@@ -291,6 +325,15 @@ struct BerryHomeView: View {
         }
         .sheet(isPresented: $showHomeCottage) {
             BerryCottageGardenView(session: villageSession)
+        }
+        .sheet(isPresented: $showVillage, onDismiss: { villageSession.refreshEconomyFromDisk() }) {
+            BerryVillageView(session: villageSession)
+        }
+        .sheet(isPresented: $showQuests, onDismiss: { villageSession.refreshEconomyFromDisk() }) {
+            BerryQuestBoardView(session: villageSession)
+        }
+        .sheet(isPresented: $showJournal) {
+            BerryJournalView(session: villageSession)
         }
         .sheet(isPresented: $showSchool) { BerrySchoolView(onFinish: { graduated in showSchool = false; if graduated { BerryGameSession().rewardTutorial() } }) }
         .sheet(isPresented: $showMore, onDismiss: {
