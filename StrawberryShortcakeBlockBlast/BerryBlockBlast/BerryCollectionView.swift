@@ -76,7 +76,7 @@ struct BerryCollectionView: View {
                         .buttonStyle(.bordered)
                         .tint(BerryStyle.strawberry)
                         Spacer(minLength: 3)
-                        Text(["Collection", "Inventory", "Awards", "Records"][section])
+                        Text(["Collection", "Inventory", "Awards", "Records", "Playtime"][section])
                             .font(.system(size: 15, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry)
                     }
@@ -84,7 +84,8 @@ struct BerryCollectionView: View {
                     case 0: collectionContent
                     case 1: inventoryContent
                     case 2: awardsContent
-                    default: recordsContent
+                    case 3: recordsContent
+                    default: playtimeContent
                     }
                 } else {
                     Text("EXPLORE YOUR BERRY TREASURES")
@@ -114,6 +115,13 @@ struct BerryCollectionView: View {
                                 withAnimation { section = 3 }
                             }
                         BerryGridNavigationTile(
+                            title: "Playtime & Sessions",
+                            detail: "Mode timers, daily history and start/stop times",
+                            art: "DailyHarvest",
+                            caption: "⏱ My Playtime") {
+                                withAnimation { section = 4 }
+                            }
+                        BerryGridNavigationTile(
                             title: "Berry Boutique", detail: "Shop for new garden treasures",
                             art: "ShopBasket", caption: "Visit Shop") {
                                 onOpenBoutique()
@@ -125,7 +133,10 @@ struct BerryCollectionView: View {
             .frame(maxWidth: .infinity)
         }
         .background(BerryStyle.cream.ignoresSafeArea())
-        .onAppear { session.refreshEconomyFromDisk() }
+        .onAppear {
+            session.refreshEconomyFromDisk()
+            playtime.checkpoint()
+        }
     }
 
     private var collectionContent: some View {
@@ -281,39 +292,9 @@ struct BerryCollectionView: View {
     }
 
     private var recordsContent: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            sectionHeader("YOUR STRAWBERRY PLAYTIME")
-            Text("Counted while the app is active. Stored privately on this iPhone, starting with version 0.5.9.")
-                .font(.system(size: 11, weight: .medium, design: .rounded))
-                .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
-            LazyVGrid(columns: gridColumns, spacing: 11) {
-                BerryGridInfoTile(title: "Today", detail: "Time in Berry Berry Blast",
-                                 art: "DailyHarvest",
-                                 value: BerryPlaytimeTracker.display(playtime.todaySeconds))
-                BerryGridInfoTile(title: "Current Session",
-                                 detail: "This foreground visit",
-                                 art: "Milestone",
-                                 value: BerryPlaytimeTracker.display(playtime.sessionSeconds))
-                BerryGridInfoTile(title: "Lifetime Playtime",
-                                 detail: "Tracked on this device since 0.5.9",
-                                 art: "Champion",
-                                 value: BerryPlaytimeTracker.display(playtime.lifetimeSeconds))
-                BerryGridInfoTile(title: "Days Played",
-                                 detail: "Days with foreground activity",
-                                 art: "BerryCollection",
-                                 value: "\(playtime.daysPlayed)")
-            }
-            sectionHeader("LAST SEVEN DAYS")
-            LazyVGrid(columns: gridColumns, spacing: 11) {
-                ForEach(playtime.lastSevenDays) { day in
-                    BerryGridInfoTile(title: day.label,
-                                     detail: "On-device playtime",
-                                     art: "DailyHarvest",
-                                     value: BerryPlaytimeTracker.display(day.seconds))
-                }
-            }
+        VStack(alignment: .leading, spacing: 12) {
             sectionHeader("YOUR PERSONAL BEST SCORES")
-            Text("Your own device records, not an online leaderboard.")
+            Text("These are your real local scores, not an online leaderboard.")
                 .font(.system(size: 11, weight: .medium, design: .rounded))
                 .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
             LazyVGrid(columns: gridColumns, spacing: 11) {
@@ -324,6 +305,90 @@ struct BerryCollectionView: View {
                         detail: "#\(index + 1) Personal Best",
                         art: record.1,
                         value: record.2 > 0 ? BerryNumbers.compact(record.2) : "Not yet")
+                }
+            }
+            sectionHeader("YOUR PLAYTIME LEADERBOARD")
+            BerryGridNavigationTile(
+                title: "Playtime & Sessions",
+                detail: "Per-mode timers, start and stop times, and daily history",
+                art: "DailyHarvest",
+                caption: BerryPlaytimeTracker.display(playtime.todaySeconds) + " today") {
+                    withAnimation { section = 4 }
+                }
+        }
+    }
+
+    private var playtimeContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("YOUR STRAWBERRY PLAYTIME")
+            Text("Tracked privately on this iPhone since 0.5.9. Background and lock-screen time isn't counted. Mode timers also stop during Pause, menus and result screens.")
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
+            LazyVGrid(columns: gridColumns, spacing: 11) {
+                BerryGridInfoTile(title: "Today",
+                                 detail: "Time in Berry Berry Blast",
+                                 art: "DailyHarvest",
+                                 value: BerryPlaytimeTracker.display(playtime.todaySeconds))
+                BerryGridInfoTile(title: "Current Visit",
+                                 detail: "This foreground session",
+                                 art: "Milestone",
+                                 value: BerryPlaytimeTracker.display(playtime.sessionSeconds))
+                BerryGridInfoTile(title: "Lifetime Playtime",
+                                 detail: "All foreground app time since tracking began",
+                                 art: "Champion",
+                                 value: BerryPlaytimeTracker.display(playtime.lifetimeSeconds))
+                BerryGridInfoTile(title: "Days Played",
+                                 detail: "Days with recorded activity",
+                                 art: "BerryCollection",
+                                 value: "\(playtime.daysPlayed)")
+            }
+            sectionHeader("PLAYTIME BY GAME MODE")
+            Text("Separate totals for every board size and Blitz duration. Last-played times follow your device's 12-hour clock.")
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
+            LazyVGrid(columns: gridColumns, spacing: 11) {
+                ForEach(BerryPlaytimeTracker.modeCatalog) { mode in
+                    let latest = playtime.latestModeSession(for: mode.id)
+                    let total = playtime.modeSeconds(for: mode.id)
+                    let today = playtime.modeSecondsToday(for: mode.id)
+                    BerryGridInfoTile(
+                        title: mode.title,
+                        detail: total > 0 ?
+                            "Today \(BerryPlaytimeTracker.display(today)) · Last \(latest.map { BerryPlaytimeTracker.clock($0.startedAt) } ?? "—")" :
+                            "Not played since tracking began",
+                        art: mode.art,
+                        value: total > 0 ? BerryPlaytimeTracker.display(total) : "Not yet")
+                }
+            }
+            sectionHeader("RECENT GAME SESSIONS")
+            Text("Actual start and stop times while playing. Pausing or leaving the app ends a timed session.")
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
+            if playtime.recentSessions.isEmpty {
+                BerryGridInfoTile(
+                    title: "No sessions yet",
+                    detail: "Play any game mode to start your private playtime journal.",
+                    art: "DailyHarvest", value: "Ready")
+            } else {
+                LazyVGrid(columns: gridColumns, spacing: 11) {
+                    ForEach(Array(playtime.recentSessions.prefix(20))) { visit in
+                        BerryGridInfoTile(
+                            title: visit.title,
+                            detail: visit.dayLabel + " · " + visit.timeRange,
+                            art: BerryPlaytimeTracker.modeCatalog.first(where: {
+                                $0.id == visit.modeID
+                            })?.art ?? "Milestone",
+                            value: BerryPlaytimeTracker.display(visit.activeSeconds))
+                    }
+                }
+            }
+            sectionHeader("LAST SEVEN DAYS")
+            LazyVGrid(columns: gridColumns, spacing: 11) {
+                ForEach(playtime.lastSevenDays) { day in
+                    BerryGridInfoTile(
+                        title: day.label, detail: "Total app playtime",
+                        art: "DailyHarvest",
+                        value: BerryPlaytimeTracker.display(day.seconds))
                 }
             }
         }
