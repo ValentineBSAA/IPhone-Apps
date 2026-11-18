@@ -103,7 +103,8 @@ struct BerryQuestBoardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    BerryIcon(name: "BerryStory", size: 93)
+                    Image("BerryQuestBoardArt").resizable().scaledToFit()
+                        .frame(height: 125).accessibilityHidden(true)
                     Text("Berry Quest Board")
                         .font(.system(size: 28, weight: .black, design: .rounded))
                         .foregroundStyle(BerryStyle.strawberry)
@@ -181,7 +182,12 @@ struct BerryVillageView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 15) {
-                    BerryIcon(name: "CottageDecorations", size: 105)
+                    Image("BerryVillageMap").resizable().scaledToFit()
+                        .frame(maxWidth: 355).frame(height: 215)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .overlay(RoundedRectangle(cornerRadius: 20)
+                            .strokeBorder(BerryStyle.strawberry.opacity(0.4), lineWidth: 2))
+                        .accessibilityHidden(true)
                     Text("Strawberry Village")
                         .font(.system(size: 27, weight: .black, design: .rounded))
                         .foregroundStyle(BerryStyle.strawberry)
@@ -237,7 +243,8 @@ struct BerryJournalView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 13) {
-                    BerryIcon(name: "BerryCollection", size: 104)
+                    Image("BerryJournalArt").resizable().scaledToFit()
+                        .frame(height: 118).accessibilityHidden(true)
                     Text("Berry Journal")
                         .font(.system(size: 28, weight: .black, design: .rounded))
                         .foregroundStyle(BerryStyle.strawberry)
