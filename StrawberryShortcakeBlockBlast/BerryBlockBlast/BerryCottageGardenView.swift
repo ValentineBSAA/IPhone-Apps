@@ -156,13 +156,13 @@ struct BerryCottageGardenView: View {
                         }
                     }
                     if session.cottageDecorations < 6 {
-                        Button("🍓 Get the Next Cottage Decoration · 50") {
+                        Button("🍓 Get the Next Cottage Decoration · \(session.nextCottageDecorationPrice ?? 0)") {
                             session.buyCottageDecoration()
                             savePositions()
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(BerryStyle.strawberry)
-                        .disabled(session.berries < 50)
+                        .disabled(session.nextCottageDecorationPrice.map { session.berries < $0 } ?? true)
                     }
                     Text("Your basket: 🍓 \(session.berries). All decorations are earned through play.")
                         .font(.caption.bold())
