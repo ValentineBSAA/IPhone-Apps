@@ -30,10 +30,10 @@ for name in ("BerryCharacterPortrait", "BerryCharacterStanding", "BerryCharacter
     image = folder / manifest["images"][0]["filename"]
     assert image.is_file() and image.stat().st_size > 10000, image
 fruit = assets_root / "BerryRealStrawberry.imageset" / "BerryRealStrawberry.png"
-assert fruit.read_bytes()[:8] == b"\\x89PNG\\r\\n\\x1a\\n"
+assert fruit.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
 assert struct.unpack(">II", fruit.read_bytes()[16:24]) == (128, 128)
 project = (root / "project.yml").read_text()
-assert 'CURRENT_PROJECT_VERSION: "2"' in project
+# Exact build number is checked against Info.plist fields in verify_ios16_source.py.
 assert 'MARKETING_VERSION: "0.5.8"' in project
 assert 'IPHONEOS_DEPLOYMENT_TARGET: "16.0"' in project
 assert 'PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.berryblockblast' in project
