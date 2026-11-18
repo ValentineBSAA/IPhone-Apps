@@ -73,10 +73,10 @@ struct PhoneHomeView: View {
                                     .tracking(2)
                                     .foregroundColor(.white.opacity(0.65))
                             }
-                            Text("Your world, one message at a time.")
+                            Text("Elevator inspection this week")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.white.opacity(0.89))
-                            Text(unread == 0 ? "Nothing urgent right now." :
+                            Text(unread == 0 ? "Check Calendar for the building schedule." :
                                     "\(unread) unread \(unread == 1 ? "message" : "messages")")
                                 .font(.system(size: 12))
                                 .foregroundColor(.white.opacity(0.62))
@@ -253,8 +253,6 @@ struct PhoneMessagesView: View {
                 }
             } header: {
                 Text("Conversations")
-            } footer: {
-                Text("All messages and contacts are fictional and exist only inside LAST SEEN.")
             }
             .listRowBackground(Night.surface)
         }
@@ -463,7 +461,7 @@ struct NeighborProfileView: View {
                 }
                 Text(neighbor == .maya
                      ? "You met Maya through friends in the neighborhood. She sends ordinary updates and makes plans."
-                     : "Denise handles notices and maintenance for the building. This is an in-game contact, not a real phone number.")
+                     : "Denise manages notices and maintenance for Ash Street residents.")
                     .font(.system(size: 14))
                     .foregroundColor(Night.muted)
                     .frame(maxWidth: .infinity, alignment: .leading)
