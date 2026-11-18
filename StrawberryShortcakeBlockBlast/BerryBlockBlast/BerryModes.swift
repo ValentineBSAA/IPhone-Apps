@@ -57,6 +57,7 @@ struct BerryHomeView: View {
         "The sweetest harvest is the one you grow."
     ]
     @State private var showJukebox = false
+    @State private var showDailyCalendar = false
     @State private var showBoardPicker = false
     @State private var showBlitzPicker = false
     @State private var launchBlitzAfterMoreDismissal = false
@@ -175,12 +176,20 @@ struct BerryHomeView: View {
                                         detail: mode.description,
                                         art: mode == .endless ? "SweetEndless" :
                                              mode == .story ? "BerryStory" : "DailyHarvest",
-                                        caption: mode == .story ? "Chapter \(storyLevel) Ready" :
-                                                 mode == .endless && !savedEndlessSizes.isEmpty ?
-                                                 "Saved Forever Garden" : "Play Now") {
+                                        caption: mode == .daily ?
+                                            (BerryDailyHistory.outcome() == .won ? "✓ Completed Today" :
+                                             BerryDailyHistory.outcome() == .lost ? "Daily Attempt Used" :
+                                             BerryDailyHistory.outcome() == .active ? "Resume Today" : "Play Today") :
+                                            mode == .story ? "Chapter \(storyLevel) Ready" :
+                                            mode == .endless && !savedEndlessSizes.isEmpty ?
+                                            "Saved Forever Garden" : "Play Now") {
                                         audio.setMusic(music)
                                         if mode == .endless {
                                             showBoardPicker = true
+                                        } else if mode == .daily &&
+                                            (BerryDailyHistory.outcome() == .won ||
+                                             BerryDailyHistory.outcome() == .lost) {
+                                            showDailyCalendar = true
                                         } else {
                                             audio.play(.gameStart)
                                             activeMode = mode
@@ -234,9 +243,9 @@ struct BerryHomeView: View {
                                     showJournal = true
                                 }
                                 BerryGridNavigationTile(
-                                    title: "Daily Streak", detail: "Daily rewards up to 50 strawberries",
-                                    art: "DailyHarvest", caption: "Harvest Today") {
-                                    activeMode = .daily
+                                    title: "Daily Streak", detail: "Calendar, win streak and daily outcome",
+                                    art: "DailyHarvest", caption: "View Calendar") {
+                                    showDailyCalendar = true
                                 }
                                 BerryGridNavigationTile(
                                     title: "Strawberry Jukebox", detail: "51 original songs stored offline",
@@ -361,6 +370,9 @@ struct BerryHomeView: View {
             }
         }
         .sheet(isPresented: $showJukebox) { BerryJukeboxView() }
+        .sheet(isPresented: $showDailyCalendar) {
+            BerryDailyHarvestView(goal: 120)
+        }
         .sheet(isPresented: $showBoardPicker) {
             NavigationStack {
                 ScrollView {
