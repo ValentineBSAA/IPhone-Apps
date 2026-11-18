@@ -110,7 +110,7 @@ struct SettingsView: View {
                 HStack {
                     Text("Version")
                     Spacer()
-                    Text("1.1.1 · iOS 16+")
+                    Text("1.1.2 (8) · iOS 16+")
                         .foregroundColor(Night.muted)
                 }
             }
