@@ -133,6 +133,27 @@ rescue_tests = (root / "Tests" / "BerryContinueRescueTests.swift").read_text()
 assert rescue_tests.count("func test") >= 5, "Missing Shuffle/Golden Continue regression coverage"
 assert "Continue with Shuffle" in session, "Shuffle game-over message missing"
 assert "BerryEconomy.shufflePrice" in session, "Shuffle pricing is inconsistent"
+
+# Playtime is an additive offline journal, never a fabricated score or upload.
+playtime = (root / "BerryBlockBlast" / "BerryPlaytimeTracker.swift").read_text()
+app = (root / "BerryBlockBlast" / "BerryBlockBlastApp.swift").read_text()
+for marker in ("berryberryblast.playtime.days.v059",
+               "berryberryblast.playtime.lifetime.v059",
+               "berryberryblast.playtime.modes.v059",
+               "berryberryblast.playtime.modeDays.v059",
+               "berryberryblast.playtime.sessions.v059",
+               "secondsByDayAndMode", "modeSessions",
+               "scenePhaseDidChange", "beginModeSegment", 'dateFormat = "h:mm a"'):
+    assert marker in playtime, "Missing separate local playtime session tracking: " + marker
+assert "playtime.scenePhaseDidChange" in app, "App foreground/background playtime wiring missing"
+for marker in ("BerryPlaytimeTracker.shared.enterMode", "BerryPlaytimeTracker.shared.leaveMode",
+               "setModePlaying(activePuzzle)", "updateModePlaytime()"):
+    assert marker in game, "Mode playtime tracking missing: " + marker
+for marker in ("Playtime & Sessions", "ForEach(BerryPlaytimeTracker.modeCatalog)",
+               "playtime.recentSessions", "RECENT GAME SESSIONS"):
+    assert marker in collection, "Missing Playtime leaderboard section: " + marker
+assert (root / "Tests" / "BerryPlaytimeTrackerTests.swift").read_text().count("func test") >= 5
+
 story_source = (root / "BerryBlockBlast" / "BerryStoryNarrative.swift").read_text()
 story_tests = (root / "Tests" / "BerryStoryNarrativeTests.swift").read_text()
 assert 'The Village in Full Bloom' in story_source, "Twelve-chapter Story progression missing"
