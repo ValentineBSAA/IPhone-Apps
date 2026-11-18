@@ -1,8 +1,8 @@
-# Berry Block Blast 0.5.8 iOS16 native cloud build on Codemagic.
+# Berry Berry Blast 0.5.9 Build 1 - unsigned iOS 16 Cloud build.
 # Test branch only; no Windows PC, Apple signing credentials, or main branch changes.
 workflows:
-  berry-block-blast-058-build2-unsigned:
-    name: Berry Block Blast 0.5.8 BUILD 2 - corrective iOS 16 IPA
+  berry-berry-blast-059-build1-unsigned:
+    name: Berry Berry Blast 0.5.9 BUILD 1 - full rebrand and Endless auto-gardens
     instance_type: mac_mini_m2
     max_build_duration: 60
     working_directory: StrawberryShortcakeBlockBlast
@@ -10,7 +10,7 @@ workflows:
       events:
         - push
       branch_patterns:
-        - pattern: 'feature/berry-058-corrective'
+        - pattern: 'feature/berry-berry-blast-059-integration'
           include: true
           source: true
       cancel_previous_builds: true
@@ -86,6 +86,38 @@ workflows:
           python3 Tools/verify_build57.py
           python3 Tools/verify_build58.py
           xcodegen generate --spec project.yml
+      - name: Install original Berry Berry Blast mascot, logo, Boutique and village artwork
+        script: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, zipfile
+          root = Path.cwd().parent.resolve()
+          pack = root / "BuildPayload" / "Berry_Berry_Blast_0.5.9_Art_Integration_Cloud.zip"
+          if not pack.is_file():
+              raise SystemExit("Missing 0.5.9 rebrand asset pack from GitHub")
+          digest = hashlib.sha256(pack.read_bytes()).hexdigest()
+          expected = "0129663d88df5b2504449e156eaf7252e4536e9e2afa05b835fdb49062336760"
+          if digest != expected:
+              raise SystemExit("Berry Berry Blast art payload SHA-256 mismatch")
+          with zipfile.ZipFile(pack) as z:
+              catalogs = [n for n in z.namelist() if n.endswith(".imageset/Contents.json")]
+              if len(catalogs) != 17:
+                  raise SystemExit(f"Expected 17 image catalogs, found {len(catalogs)}")
+              for filename in z.namelist():
+                  resolved = (root / filename).resolve()
+                  if not resolved.is_relative_to(root):
+                      raise SystemExit("Refusing unsafe archive entry: " + filename)
+              z.extractall(root)
+          art = Path.cwd() / "BerryBlockBlast" / "Assets.xcassets"
+          for name in ("BerryCharacterPortrait", "BerryCharacterStanding", "BerryCharacterCelebrate"):
+              # New art is PNG; remove superseded JPG from the same imageset,
+              # otherwise actool can warn about ambiguous unassigned files.
+              (art / (name + ".imageset") / (name + ".jpg")).unlink(missing_ok=True)
+          print("PASS: 17 new image catalogs, same save keys and approved mascot")
+          PY
+          swift Tools/generate_berry_berry_app_icon.swift
+          python3 Tools/verify_build59.py
       - name: Compile native iPhone app without signing
         script: |
           set -e
@@ -97,18 +129,18 @@ workflows:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             build
-      - name: Package unsigned IPA for iPhone 14 Pro testing
+      - name: Package Berry Berry Blast 0.5.9 native unsigned IPA for iPhone 14 Pro
         script: |
           set -e
           mkdir -p dist/Payload
           cp -R build/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
           python3 Tools/verify_audio_build2.py --app build/Build/Products/Release-iphoneos/BerryBlockBlast.app
           cd dist
-          zip -qr Berry-Block-Blast-v0.5.8-build2-unsigned.ipa Payload
-          test -s Berry-Block-Blast-v0.5.8-build2-unsigned.ipa
-          unzip -l Berry-Block-Blast-v0.5.8-build2-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
+          zip -qr Berry-Berry-Blast-v0.5.9-build1-unsigned.ipa Payload
+          test -s Berry-Berry-Blast-v0.5.9-build1-unsigned.ipa
+          unzip -l Berry-Berry-Blast-v0.5.9-build1-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
           cd ..
-          python3 Tools/verify_audio_build2.py --ipa dist/Berry-Block-Blast-v0.5.8-build2-unsigned.ipa
+          python3 Tools/verify_audio_build2.py --ipa dist/Berry-Berry-Blast-v0.5.9-build1-unsigned.ipa
           echo '--- Verified IPA output ---'
           ls -lh dist/*.ipa
           shasum -a 256 dist/*.ipa
