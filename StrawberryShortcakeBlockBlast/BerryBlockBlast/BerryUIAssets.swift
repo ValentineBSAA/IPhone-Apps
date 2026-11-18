@@ -123,7 +123,7 @@ struct BerryGridInfoTile: View {
             if let value {
                 Text(value)
                     .font(.system(size: 17, weight: .black, design: .rounded))
-                    .foregroundStyle(complete ? BerryStyle.leaf : BerryStyle.strawberry)
+                    .foregroundStyle(BerryStyle.candyNumberGradient)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.65)
