@@ -266,8 +266,7 @@ struct BerryEngine: Codable {
     /// chapter progress are awarded. Empty boards are rejected.
     @discardableResult
     mutating func clearBoardWithGoldenStrawberry() -> Bool {
-        guard !goldenRescueUsed,
-              board.contains(where: { row in row.contains(where: { $0 != nil }) }) else {
+        guard canRescueWithGoldenStrawberry else {
             return false
         }
         board = Array(repeating: Array<Int?>(repeating: nil, count: side), count: side)
@@ -404,13 +403,15 @@ struct BerryEngine: Codable {
     /// It can rescue isolated free cells by offering a one-square piece.
     @discardableResult
     mutating func reshuffleTray() -> Bool {
-        guard side == 24 ? sectionHasFreeCell(activeGardenSection) :
-              board.contains(where: { $0.contains(nil) }) else { return false }
-        refill()
-        if !hasMove() {
-            tray[0] = BerryPiece(points: [BerryPoint(row: 0, col: 0)], tint: nextRandom(6))
-        }
-        return hasMove()
+        guard canRescueWithShuffle else { return false }
+        // Commit only a playable hand. Failed recovery must leave the garden
+        // untouched so the player cannot spend an unusable Shuffle.
+        var candidate = self
+        candidate.refill()
+        if !candidate.hasMove() { candidate.forcePlayableEndlessHand() }
+        guard candidate.hasMove() else { return false }
+        self = candidate
+        return true
     }
 
     /// Timed Blitz must only end when its timer reaches zero.
@@ -430,7 +431,15 @@ struct BerryEngine: Codable {
     }
 
     var canRescueWithShuffle: Bool {
-        board.contains { $0.contains(nil) }
+        // In the non-scrolling Mega Garden, only the current 12x12 patch can
+        // accept a piece. An empty square in an off-screen patch is not enough.
+        side == 24 ? sectionHasFreeCell(activeGardenSection) :
+            board.contains(where: { $0.contains(nil) })
+    }
+
+    var canRescueWithGoldenStrawberry: Bool {
+        !goldenRescueUsed &&
+            board.contains(where: { $0.contains(where: { $0 != nil }) })
     }
 
     /// Endless has no terminal loss. A stuck tray is NOT a reason to charge
