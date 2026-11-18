@@ -40,6 +40,9 @@ struct BerryEngine: Codable {
     private var randomState: UInt64? = nil
     private var cozyPieces: Bool? = nil
     private var hardPieces: Bool? = nil
+    /// These optional fields decode to nil in all 0.5.x saves.
+    private(set) var pantryPiece: BerryPiece? = nil
+    private(set) var spyglassNext: BerryPiece? = nil
 
     init() { refill() }
     init(side: Int, hard: Bool = false) {
@@ -71,7 +74,7 @@ struct BerryEngine: Codable {
     // Decode the optional mode metadata explicitly so older saves survive upgrades.
     private enum CodingKeys: String, CodingKey {
         case board, tray, score, streak, moves, totalLines, bestCombo
-        case dryMoves, boardClears, seasons, randomState, cozyPieces, side, hardPieces
+        case dryMoves, boardClears, seasons, randomState, cozyPieces, side, hardPieces, pantryPiece, spyglassNext
     }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -89,6 +92,8 @@ struct BerryEngine: Codable {
         seasons = try values.decodeIfPresent(Int.self, forKey: .seasons) ?? 0
         randomState = try values.decodeIfPresent(UInt64.self, forKey: .randomState)
         cozyPieces = try values.decodeIfPresent(Bool.self, forKey: .cozyPieces)
+        pantryPiece = try values.decodeIfPresent(BerryPiece.self, forKey: .pantryPiece)
+        spyglassNext = try values.decodeIfPresent(BerryPiece.self, forKey: .spyglassNext)
         guard (side == 8 || side == 12 || side == 24), board.count == side,
               board.allSatisfy({ $0.count == side }),
               tray.count == 3 else {
@@ -157,6 +162,70 @@ struct BerryEngine: Codable {
             }
         }
         return best?.hint
+    }
+
+    /// Permanent pantry reserve and paid tools use these safe operations.
+    /// Failures NEVER change board state or consume inventory.
+    @discardableResult
+    mutating func removeOneOccupiedCell(row: Int, col: Int) -> Bool {
+        guard (0..<side).contains(row), (0..<side).contains(col),
+              board[row][col] != nil else { return false }
+        board[row][col] = nil
+        return true
+    }
+
+    @discardableResult
+    mutating func plantOneSeed(row: Int, col: Int) -> BerryPlacement? {
+        guard (0..<side).contains(row), (0..<side).contains(col),
+              board[row][col] == nil else { return nil }
+        board[row][col] = 0
+        let rows = (0..<side).filter { r in board[r].allSatisfy { $0 != nil } }
+        let columns = (0..<side).filter { c in (0..<side).allSatisfy { board[$0][c] != nil } }
+        let cleared = rows.count + columns.count
+        if cleared > 0 {
+            totalLines += cleared
+            streak += 1
+            dryMoves = 0
+            bestCombo = max(streak, bestCombo)
+            for r in rows { for c in 0..<side { board[r][c] = nil } }
+            for c in columns { for r in 0..<side { board[r][c] = nil } }
+        }
+        moves += 1
+        let bonus = cleared * 10
+        score += 1 + bonus
+        let clear = cleared > 0 && board.flatMap { $0 }.allSatisfy { $0 == nil }
+        if clear { boardClears += 1 }
+        return BerryPlacement(clearedRows: rows, clearedColumns: columns,
+                              earned: 1 + bonus, streak: streak, boardClear: clear)
+    }
+
+    @discardableResult
+    mutating func rotateTrayPiece(slot: Int) -> Bool {
+        guard tray.indices.contains(slot), let piece = tray[slot] else { return false }
+        let rotated = piece.points.map { BerryPoint(row: $0.col,
+                                                      col: piece.height - 1 - $0.row) }
+        let minRow = rotated.map(\.row).min() ?? 0
+        let minCol = rotated.map(\.col).min() ?? 0
+        let normalized = rotated.map {
+            BerryPoint(row: $0.row - minRow, col: $0.col - minCol)
+        }
+        guard Set(normalized) != Set(piece.points) else { return false }
+        let newPiece = BerryPiece(points: normalized, tint: piece.tint)
+        guard hasPlacement(for: newPiece) else { return false }
+        tray[slot] = newPiece
+        return true
+    }
+
+    @discardableResult
+    mutating func swapPantry(slot: Int) -> Bool {
+        guard tray.indices.contains(slot), tray[slot] != nil || pantryPiece != nil else { return false }
+        let old = tray[slot]
+        tray[slot] = pantryPiece
+        pantryPiece = old
+        // If the last piece was stashed, deal a fresh tray instead of
+        // declaring a loss while the pantry contains a valid reserve.
+        if tray.allSatisfy({ $0 == nil }) { refill() }
+        return true
     }
 
     func hasMove() -> Bool {
@@ -338,6 +407,11 @@ struct BerryEngine: Codable {
             nextTray.append(BerryPiece(points: shape, tint: tint))
         }
         tray = nextTray
+        // Store a real forecast based on the same current piece catalog.
+        // The preview is informational, with no change to puzzle balance.
+        if let upcoming = selection.randomElement() {
+            spyglassNext = BerryPiece(points: upcoming, tint: 1)
+        }
     }
 }
 
