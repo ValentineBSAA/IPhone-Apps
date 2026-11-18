@@ -232,42 +232,42 @@ struct BerryPieceGlyph: View {
     var strawberryUnlocked = false
 
     var body: some View {
-        let width = max(3, CGFloat(piece.width) * unit)
-        let height = max(3, CGFloat(piece.height) * unit)
         let tileSide = max(3, unit - 2)
+        let fill = BerryStyle.color(for: piece.tint)
 
-        // Critical: give the ZStack a real sized layout anchor BEFORE
-        // offsetting any tiles. A ForEach of only offset GeometryReaders
-        // can collapse to a one-cell or zero-sized measured surface when
-        // the hand is dealt a single-row or single-column piece.
-        //
-        // These vanilla colored squares are independently visible even if
-        // the optional cosmetics fail to load. The positions stay square,
-        // preserving the same hit targets, rules and placement geometry.
-        ZStack(alignment: .topLeading) {
-            Color.clear.frame(width: width, height: height)
-
-            ForEach(piece.points, id: \.self) { cell in
-                ZStack {
-                    RoundedRectangle(cornerRadius: max(2, unit * 0.17),
-                                     style: .continuous)
-                        .fill(BerryStyle.color(for: piece.tint))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: max(2, unit * 0.17),
-                                             style: .continuous)
-                                .strokeBorder(.white.opacity(0.82), lineWidth: max(1, unit * 0.07))
+        // Deterministic actual-grid layout: no offsets, no .position, and no
+        // expanding ZStacks. A three-slot tray is only as reliable as every
+        // child being measured at its *real* width and height.
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach(0..<piece.height, id: \.self) { row in
+                HStack(spacing: 2) {
+                    ForEach(0..<piece.width, id: \.self) { col in
+                        if piece.points.contains(where: { $0.row == row && $0.col == col }) {
+                            BerryTile(tint: piece.tint, mode: mode,
+                                      strawberryUnlocked: strawberryUnlocked)
+                                .frame(width: tileSide, height: tileSide)
+                                // A solid colored square remains visible if
+                                // an optional cosmetic has transparent pixels
+                                // or SwiftUI fails to resolve an asset.
+                                .background(
+                                    RoundedRectangle(cornerRadius: max(2, unit * 0.17))
+                                        .fill(fill)
+                                )
+                                .accessibilityHidden(true)
+                        } else {
+                            Color.clear
+                                .frame(width: tileSide, height: tileSide)
+                                .accessibilityHidden(true)
                         }
-                    BerryTile(tint: piece.tint, mode: mode,
-                              strawberryUnlocked: strawberryUnlocked)
-                        .frame(width: tileSide, height: tileSide)
+                    }
                 }
-                .frame(width: tileSide, height: tileSide)
-                .offset(x: CGFloat(cell.col) * unit,
-                        y: CGFloat(cell.row) * unit)
-                .allowsHitTesting(false)
+                .frame(height: tileSide, alignment: .leading)
             }
         }
-        .frame(width: width, height: height, alignment: .topLeading)
+        .frame(width: CGFloat(piece.width) * unit - 2,
+               height: CGFloat(piece.height) * unit - 2,
+               alignment: .topLeading)
+        .fixedSize(horizontal: true, vertical: true)
         .accessibilityLabel("Visible \(piece.points.count)-square berry piece")
     }
 }
