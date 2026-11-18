@@ -19,7 +19,9 @@ final class BerryGameplayGeometryRegressionTests: XCTestCase {
                     megaGarden: mode == .endless)
                 XCTAssertTrue(board.isFinite, "\(name): \(mode)")
                 XCTAssertGreaterThanOrEqual(board, 150, "\(name): \(mode)")
-                XCTAssertLessThanOrEqual(board, width - 12 + 0.01, "\(name): \(mode)")
+                XCTAssertLessThanOrEqual(
+                    BerryBoardContainment.fullFrameSide(playableSide: board) + 6,
+                    width + 0.01, "\(name): \(mode) frame overflow")
                 XCTAssertLessThanOrEqual(board, height - 110, "\(name): \(mode)")
             }
         }
@@ -31,7 +33,9 @@ final class BerryGameplayGeometryRegressionTests: XCTestCase {
                 width: width, height: 759,
                 topInset: 59, bottomInset: 34, mode: .classic)
             XCTAssertGreaterThanOrEqual(board, 350)
-            XCTAssertLessThanOrEqual(board + 12, width + 0.01)
+            XCTAssertLessThanOrEqual(
+                BerryBoardContainment.fullFrameSide(playableSide: board) + 6,
+                width + 0.01)
         }
     }
 
