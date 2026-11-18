@@ -22,7 +22,7 @@ struct BerryClassicScoreView: View {
                 .foregroundStyle(BerryStyle.chocolate)
 
                 Text(score.formatted())
-                    .font(.system(size: 43, weight: .black, design: .rounded))
+                    .font(.system(size: 39, weight: .black, design: .rounded))
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.57)
@@ -53,7 +53,7 @@ struct BerryClassicScoreView: View {
             .frame(minWidth: 76, alignment: .trailing)
         }
         .padding(.horizontal, 16)
-        .frame(height: 79)
+        .frame(height: 69)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(LinearGradient(
