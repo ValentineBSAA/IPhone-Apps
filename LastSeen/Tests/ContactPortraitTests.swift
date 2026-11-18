@@ -42,9 +42,12 @@ final class ContactPortraitTests: XCTestCase {
     }
 
     func testNeighborPortraitsAreDistinctAndStable() {
-        XCTAssertEqual(Neighbor.maya.portraitAssetName, "Contact_Nora_04")
-        XCTAssertEqual(Neighbor.denise.portraitAssetName, "Contact_Nora_03")
+        XCTAssertEqual(Neighbor.maya.portraitAssetName, "Contact_Maya")
+        XCTAssertEqual(Neighbor.denise.portraitAssetName, "Contact_Denise")
         XCTAssertNotEqual(Neighbor.maya.portraitAssetName,
                           Neighbor.denise.portraitAssetName)
+        XCTAssertFalse(Neighbor.maya.portraitAssetName.hasPrefix("Contact_Nora"))
+        XCTAssertFalse(Neighbor.denise.portraitAssetName.hasPrefix("Contact_Nora"))
+
     }
 }
