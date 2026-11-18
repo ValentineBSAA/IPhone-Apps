@@ -110,3 +110,35 @@ jobs:
             -derivedDataPath .build/Derived \
             CODE_SIGNING_ALLOWED=NO build 2>&1 | tee .build-log.txt
           echo "PASS: 0.5.10 iOS app compiled successfully"
+
+      - name: Compile unsigned iPhone device application
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath .build/Device \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tee .device-build-log.txt
+          echo "PASS: actual iPhone device app compiled with signing disabled"
+      - name: Package and verify the unsigned iOS 16 IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/Payload
+          cp -R ".build/Device/Build/Products/Release-iphoneos/BerryBlockBlast.app" dist/Payload/
+          cd dist
+          zip -qr Berry-Berry-Blast-v0.5.10-build1-unsigned.ipa Payload
+          unzip -t Berry-Berry-Blast-v0.5.10-build1-unsigned.ipa | tail -2
+          cd ..
+          python3 Tools/verify_audio_build2.py --ipa dist/Berry-Berry-Blast-v0.5.10-build1-unsigned.ipa
+          shasum -a 256 dist/Berry-Berry-Blast-v0.5.10-build1-unsigned.ipa
+      - name: Share the actual unsigned IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-Berry-Blast-v0.5.10-build1-unsigned-IPA
+          path: StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-v0.5.10-build1-unsigned.ipa
+          retention-days: 14
+
