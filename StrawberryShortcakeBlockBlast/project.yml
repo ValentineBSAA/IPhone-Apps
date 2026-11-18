@@ -17,9 +17,9 @@ settings:
     INFOPLIST_KEY_UIStatusBarHidden: YES
     INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance: NO
     MARKETING_VERSION: "0.5.12"
-    CURRENT_PROJECT_VERSION: "2"
+    CURRENT_PROJECT_VERSION: "3"
     INFOPLIST_KEY_CFBundleShortVersionString: "0.5.12"
-    INFOPLIST_KEY_CFBundleVersion: "2"
+    INFOPLIST_KEY_CFBundleVersion: "3"
 targets:
   BerryBlockBlast:
     type: application
