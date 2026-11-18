@@ -17,6 +17,18 @@ workflows:
     environment:
       xcode: 26.5
     scripts:
+      # This runs BEFORE image unpacking, Homebrew, and Xcode.
+      # It catches stale build-number pins and broken validator syntax cheaply.
+      - name: Fast preflight - versions, iOS16 APIs, Python syntax and existing assets
+        script: |
+          set -euo pipefail
+          python3 -m compileall -q Tools
+          python3 Tools/verify_ios16_source.py
+          python3 Tools/check_ios16_compat.py
+          python3 Tools/verify_artwork.py
+          python3 Tools/verify_build57.py
+          python3 Tools/verify_audio_build2.py
+          echo "PREFLIGHT PASS: build version, iOS16, validator syntax, approved art, 51 M4A and 16 WAV"
       - name: Install XcodeGen
         script: |
           set -e
