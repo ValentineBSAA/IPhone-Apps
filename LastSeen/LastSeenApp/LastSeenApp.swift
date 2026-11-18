@@ -4,17 +4,26 @@ import SwiftUI
 struct LastSeenApp: App {
     @UIApplicationDelegateAdaptor(LastSeenAppDelegate.self) private var appDelegate
     @StateObject private var game = GameStore()
+    @StateObject private var world = PhoneWorldStore()
     @Environment(\.scenePhase) private var phase
 
     var body: some Scene {
         WindowGroup {
             NavigationStack {
-                InboxView()
+                PhoneHomeView()
                     .navigationDestination(for: Contact.self) { contact in
                         ConversationView(contact: contact)
                     }
                     .navigationDestination(for: AppPage.self) { page in
                         switch page {
+                        case .messages: PhoneMessagesView()
+                        case .photos: PhonePhotoLibraryView()
+                        case .notes: PhoneNotesView()
+                        case .calendar: PhoneCalendarView()
+                        case .mail: PhoneMailView()
+                        case .worldThread(let neighbor): NeighborConversationView(neighbor: neighbor)
+                        case .worldProfile(let neighbor): NeighborProfileView(neighbor: neighbor)
+                        case .note(let id): PhoneNoteEditorView(noteID: id)
                         case .settings: SettingsView()
                         case .evidence: EvidenceView()
                         case .contacts: ContactBookView()
@@ -24,6 +33,7 @@ struct LastSeenApp: App {
                     }
             }
             .environmentObject(game)
+            .environmentObject(world)
             .tint(Night.accent)
             .preferredColorScheme(.dark)
             .onAppear {
@@ -50,6 +60,14 @@ struct LastSeenApp: App {
 }
 
 enum AppPage: Hashable {
+    case messages
+    case photos
+    case notes
+    case calendar
+    case mail
+    case worldThread(Neighbor)
+    case worldProfile(Neighbor)
+    case note(String)
     case settings
     case evidence
     case contacts
