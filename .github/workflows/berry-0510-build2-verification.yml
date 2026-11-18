@@ -1,0 +1,144 @@
+name: Berry Berry Blast 0.5.10 Build 2 Layout and IPA Verification
+
+on:
+  push:
+    branches:
+      - feature/berry-berry-blast-0510-layout-build2
+    paths:
+      - 'StrawberryShortcakeBlockBlast/**'
+      - 'BuildPayload/**'
+      - '.github/workflows/berry-0510-build2-verification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: berry-0510-build2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-art-gate:
+    name: Swift 5 syntax + 0.5.10 restoration source and artwork integrity
+    runs-on: macos-15
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    steps:
+      - name: Checkout the exact feature-branch commit
+        uses: actions/checkout@v4
+      - name: Check Python syntax and iOS 16 declarations
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m compileall -q Tools
+          python3 Tools/verify_ios16_source.py
+          python3 Tools/check_ios16_compat.py
+          python3 Tools/verify_audio_build2.py
+          python3 Tools/verify_polish_source.py
+      - name: Parse every Swift source file and XCTest with Apple Swift 5 frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          find BerryBlockBlast Tests -name '*.swift' -type f -print0 |
+            xargs -0 xcrun swiftc -frontend -parse -swift-version 5
+          echo "PASS: complete iOS app and test suite parse as Swift 5"
+      - name: Verify the actual GitHub artwork ZIP bytes and CRCs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import zipfile
+          payloads = {
+              "Berry_Berry_Blast_0.5.9_Art_Integration_Cloud.zip":
+                  "0129663d88df5b2504449e156eaf7252e4536e9e2afa05b835fdb49062336760",
+              "BerryBerryBlast_0.5.9_PolishedPlayfield_CloudReady.zip":
+                  "f0aedd94661c4b3d821c5d39d070b9d741846ad4f4e900c8cb370b97fa1fce77",
+              "Berry_Berry_Blast_GoldenStrawberry_CloudPatch.zip":
+                  "4f73d536af342d1640f3554bf83c479336c38a3a6910cf21c90db02fbdcd0da7"
+          }
+          base = Path.cwd().parent / "BuildPayload"
+          for filename, expected in payloads.items():
+              item = base / filename
+              if not item.is_file():
+                  raise SystemExit("Missing ZIP: " + filename)
+              actual = hashlib.sha256(item.read_bytes()).hexdigest()
+              if actual != expected:
+                  raise SystemExit(f"{filename}: SHA-256 mismatch: {actual}")
+              with zipfile.ZipFile(item) as art:
+                  bad = art.testzip()
+                  if bad:
+                      raise SystemExit(f"{filename}: broken ZIP member: {bad}")
+                  for name in art.namelist():
+                      if not (base.parent / name).resolve().is_relative_to(base.parent.resolve()):
+                          raise SystemExit("Unsafe archive entry: " + name)
+              print("PASS:", filename, item.stat().st_size, "bytes")
+          PY
+
+  compile-ios-simulator:
+    name: Compile 0.5.10 iOS app with restored art
+    needs: source-art-gate
+    runs-on: macos-15
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    steps:
+      - name: Checkout polish source
+        uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Install all verified original and optional artwork
+        run: |
+          set -euo pipefail
+          python3 Tools/install_art510.py
+          python3 Tools/verify_build510.py
+      - name: Generate Xcode project
+        run: xcodegen generate --spec project.yml
+      - name: Compile for iOS Simulator without signing
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath .build/Derived \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tee .build-log.txt
+          echo "PASS: 0.5.10 iOS app compiled successfully"
+
+      - name: Compile unsigned iPhone device application
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath .build/Device \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tee .device-build-log.txt
+          echo "PASS: actual iPhone device app compiled with signing disabled"
+      - name: Package and verify the unsigned iOS 16 IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/Payload
+          cp -R ".build/Device/Build/Products/Release-iphoneos/BerryBlockBlast.app" dist/Payload/
+          cd dist
+          zip -qr Berry-Berry-Blast-v0.5.10-build2-unsigned.ipa Payload
+          unzip -t Berry-Berry-Blast-v0.5.10-build2-unsigned.ipa | tail -2
+          cd ..
+          python3 Tools/verify_audio_build2.py --ipa dist/Berry-Berry-Blast-v0.5.10-build2-unsigned.ipa
+          shasum -a 256 dist/Berry-Berry-Blast-v0.5.10-build2-unsigned.ipa
+      - name: Share the actual unsigned IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-Berry-Blast-v0.5.10-build2-unsigned-IPA
+          path: StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-v0.5.10-build2-unsigned.ipa
+          retention-days: 14
+
