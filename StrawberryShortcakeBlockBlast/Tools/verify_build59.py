@@ -33,6 +33,10 @@ names = [
     "GoldenStrawberry",
     "BerryCharacterPortrait", "BerryCharacterStanding",
     "BerryCharacterCelebrate",
+    "BerryBoardCreamCell", "BerryBoardCandyGlassCell", "BerryBoardPicnicCell",
+    "BerryBoardGardenCell", "BerryBoardSeedMosaicCell",
+    "BerryFruitStrawberry", "BerryFruitBlueberry", "BerryFruitRaspberry",
+    "BerryFruitLemon", "BerryFruitMint", "BerryMascotCenteredCircle",
 ]
 for name in names:
     imageset = assets / (name + ".imageset")
@@ -44,7 +48,21 @@ for name in names:
     assert len(blob) > 200, "Empty art payload: " + name
 
 icon = assets / "AppIcon.appiconset" / "AppIcon.png"
-assert icon.read_bytes()[:8] == bytes([137, 80, 78, 71, 13, 10, 26, 10])
+icon_data = icon.read_bytes()
+assert icon_data[:8] == bytes([137, 80, 78, 71, 13, 10, 26, 10])
+assert (int.from_bytes(icon_data[16:20], "big"),
+        int.from_bytes(icon_data[20:24], "big")) == (1024, 1024)
+assert icon_data[25] == 2, "AppIcon must use opaque RGB PNG data"
+for art in ("BerryMascotCenteredCircle", "BerryBoardCreamCell",
+            "BerryFruitStrawberry", "BerryFruitBlueberry"):
+    # Paletted PNGs retain transparency in the tRNS chunk.
+    raw = (assets / (art + ".imageset") / (art + ".png")).read_bytes()
+    assert b"tRNS" in raw, art + " lost its transparent edges"
+assert 'BerryBoardCreamCell' in game and 'BerryBoardCandyGlassCell' in game
+tileSource = (root / "BerryBlockBlast" / "BerryStyle.swift").read_text()
+for art in ("BerryFruitStrawberry", "BerryFruitBlueberry",
+            "BerryFruitRaspberry", "BerryFruitLemon", "BerryFruitMint"):
+    assert art in tileSource, "Fruit asset not connected: " + art
 assert "ScrollView([.horizontal, .vertical])" not in game, "Endless must not scroll"
 for needle in ("visibleSide", "activeGardenSection", "gardenPatchMoves",
                "gardenPatchLines", "advanceCompletedGardenPatch",
