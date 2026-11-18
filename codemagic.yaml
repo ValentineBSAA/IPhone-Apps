@@ -1,8 +1,8 @@
-# Berry Berry Blast 0.5.10 Build 2 - original board visibility and compact iPhone layout.
+# Berry Berry Blast 0.5.11 Build 1 - Seasonal Board Studio, illustrated controls and nested grid menus.
 # Test branch only; no Windows PC, Apple signing credentials, or main branch changes.
 workflows:
-  berry-berry-blast-0510-polish-unsigned:
-    name: Berry Berry Blast 0.5.10 BUILD 2 - clear board, restore settings and HUD layout
+  berry-berry-blast-0511-board-studio-unsigned:
+    name: Berry Berry Blast 0.5.11 BUILD 1 - board studio, seasonal frames and grid UI
     instance_type: mac_mini_m2
     max_build_duration: 60
     working_directory: StrawberryShortcakeBlockBlast
@@ -10,7 +10,7 @@ workflows:
       events:
         - push
       branch_patterns:
-        - pattern: 'feature/berry-berry-blast-0510-layout-build2'
+        - pattern: 'feature/berry-berry-blast-0511-board-studio'
           include: true
           source: true
       cancel_previous_builds: true
@@ -28,7 +28,7 @@ workflows:
           python3 Tools/verify_artwork.py
           python3 Tools/verify_build57.py
           python3 Tools/verify_audio_build2.py
-          python3 Tools/verify_polish_source.py
+          python3 Tools/verify_build511.py
           # Syntax-only Swift check requires no XcodeGen project and catches
           # malformed Swift source BEFORE invoking expensive xcodebuild jobs.
           python3 - <<'PY'
@@ -183,7 +183,7 @@ workflows:
               z.extractall(root)
           print("PASS: Golden Strawberry original game icon installed")
           PY
-          python3 Tools/verify_build510.py
+          python3 Tools/verify_build511.py
       - name: Compile native iPhone app without signing
         script: |
           set -e
@@ -202,11 +202,11 @@ workflows:
           cp -R build/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
           python3 Tools/verify_audio_build2.py --app build/Build/Products/Release-iphoneos/BerryBlockBlast.app
           cd dist
-          zip -qr Berry-Berry-Blast-v0.5.10-build2-unsigned.ipa Payload
-          test -s Berry-Berry-Blast-v0.5.10-build2-unsigned.ipa
-          unzip -l Berry-Berry-Blast-v0.5.10-build2-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
+          zip -qr Berry-Berry-Blast-v0.5.11-build1-unsigned.ipa Payload
+          test -s Berry-Berry-Blast-v0.5.11-build1-unsigned.ipa
+          unzip -l Berry-Berry-Blast-v0.5.11-build1-unsigned.ipa | grep -q 'Payload/BerryBlockBlast.app/Info.plist'
           cd ..
-          python3 Tools/verify_audio_build2.py --ipa dist/Berry-Berry-Blast-v0.5.10-build2-unsigned.ipa
+          python3 Tools/verify_audio_build2.py --ipa dist/Berry-Berry-Blast-v0.5.11-build1-unsigned.ipa
           echo '--- Verified IPA output ---'
           ls -lh dist/*.ipa
           shasum -a 256 dist/*.ipa
