@@ -17,6 +17,9 @@ final class BerryGameSession: ObservableObject {
     @Published private(set) var rewardsLog: [String] = UserDefaults.standard.stringArray(forKey: "berryblockblast.rewards.v1") ?? []
     @Published private(set) var cottageDecorations = UserDefaults.standard.integer(forKey: "berryblockblast.cottage.decorations")
     @Published private(set) var ownedCosmetics = UserDefaults.standard.stringArray(forKey: "berryblockblast.shop.owned.v056b2") ?? []
+    // New premium supplies have their own keys, independent of old inventory.
+    @Published private(set) var premiumCharges = UserDefaults.standard.dictionary(forKey: "berryberryblast.premium.charges.v059") as? [String: Int] ?? [:]
+    @Published private(set) var premiumOwned = UserDefaults.standard.stringArray(forKey: "berryberryblast.premium.permanent.v059") ?? []
     private var previous: BerryEngine?
     private var previousBerryEarnings = 0
     private var previousRewardEntry: String?
@@ -281,6 +284,8 @@ final class BerryGameSession: ObservableObject {
         ownedCosmetics = UserDefaults.standard.stringArray(forKey: "berryblockblast.shop.owned.v056b2") ?? []
         cottageDecorations = UserDefaults.standard.integer(forKey: "berryblockblast.cottage.decorations")
         rewardsLog = UserDefaults.standard.stringArray(forKey: "berryblockblast.rewards.v1") ?? []
+        premiumCharges = UserDefaults.standard.dictionary(forKey: "berryberryblast.premium.charges.v059") as? [String: Int] ?? [:]
+        premiumOwned = UserDefaults.standard.stringArray(forKey: "berryberryblast.premium.permanent.v059") ?? []
     }
 
     @discardableResult
@@ -367,6 +372,101 @@ final class BerryGameSession: ObservableObject {
         UserDefaults.standard.set(cottageDecorations, forKey: "berryblockblast.cottage.decorations")
         save()
     }
+    private func persistPremium() {
+        UserDefaults.standard.set(premiumCharges, forKey: "berryberryblast.premium.charges.v059")
+        UserDefaults.standard.set(premiumOwned, forKey: "berryberryblast.premium.permanent.v059")
+        save()
+    }
+
+    /// Golden Trowel 150, Ribbon Twister 200 (three uses), Starberry Seed 230,
+    /// Picnic Pantry 600 (permanent), Berry Spyglass 900 (permanent).
+    @discardableResult
+    func buyPremium(_ id: String) -> Bool {
+        let prices = ["trowel": 150, "twister": 200, "seed": 230,
+                      "pantry": 600, "spyglass": 900]
+        guard let price = prices[id], berries >= price else { return false }
+        let permanent = id == "pantry" || id == "spyglass"
+        if permanent && premiumOwned.contains(id) { return false }
+        previous = nil
+        previousBerryEarnings = 0
+        previousRewardEntry = nil
+        berries -= price
+        if permanent {
+            premiumOwned.append(id)
+        } else {
+            premiumCharges[id, default: 0] += id == "twister" ? 3 : 1
+        }
+        persistPremium()
+        return true
+    }
+
+    var canUsePremium: Bool {
+        activeMode == .endless || activeMode == .story || activeMode == .cozy
+    }
+
+    var pantryPiece: BerryPiece? { engine.pantryPiece }
+    var spyglassPiece: BerryPiece? {
+        guard premiumOwned.contains("spyglass"), canUsePremium else { return nil }
+        return engine.spyglassNext
+    }
+
+    @discardableResult
+    func useGoldenTrowel(row: Int, col: Int) -> Bool {
+        guard canUsePremium, premiumCharges["trowel", default: 0] > 0,
+              engine.removeOneOccupiedCell(row: row, col: col) else { return false }
+        premiumCharges["trowel", default: 0] -= 1
+        previous = nil
+        gameOver = !engine.hasMove()
+        lastMessage = "✨ A little garden space!"
+        persistPremium()
+        return true
+    }
+
+    @discardableResult
+    func useStarberrySeed(row: Int, col: Int) -> Bool {
+        guard canUsePremium, premiumCharges["seed", default: 0] > 0,
+              let outcome = engine.plantOneSeed(row: row, col: col) else { return false }
+        premiumCharges["seed", default: 0] -= 1
+        previous = nil
+        lastClearedLines = outcome.clearedLines
+        if outcome.clearedLines > 0 {
+            earn(outcome.clearedLines * 3, reason: "Starberry Seed line clearing")
+            BerryProgression.shared.recordPlacement(mode: activeMode,
+                                                     clearedLines: outcome.clearedLines)
+        }
+        if engine.score > bestScore {
+            bestScore = engine.score
+            UserDefaults.standard.set(bestScore, forKey: bestScoreKey(for: activeMode))
+        }
+        gameOver = !engine.hasMove()
+        lastMessage = "🌱 Starberry Seed planted!"
+        persistPremium()
+        return true
+    }
+
+    @discardableResult
+    func useRibbonTwister(slot: Int) -> Bool {
+        guard canUsePremium, premiumCharges["twister", default: 0] > 0,
+              engine.rotateTrayPiece(slot: slot) else { return false }
+        premiumCharges["twister", default: 0] -= 1
+        previous = nil
+        gameOver = !engine.hasMove()
+        lastMessage = "🎀 Berry piece rotated!"
+        persistPremium()
+        return true
+    }
+
+    @discardableResult
+    func usePicnicPantry(slot: Int) -> Bool {
+        guard canUsePremium, premiumOwned.contains("pantry"),
+              engine.swapPantry(slot: slot) else { return false }
+        previous = nil
+        gameOver = !engine.hasMove()
+        lastMessage = "🧺 A piece saved for later!"
+        save()
+        return true
+    }
+
     func buyUndo() {
         guard berries >= 25 else { return }
         // Purchases must invalidate the undo snapshot to prevent currency duplication.
