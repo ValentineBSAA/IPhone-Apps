@@ -112,7 +112,7 @@ struct BerryTrophyGardenView: View {
         guard isUnlocked(reward) else { return }
         if reward.id == "strawberry-red" {
             blockSkin = "default"
-            strawberryEnabled.toggle()
+            strawberryEnabled = !isEquipped(reward)
         } else {
             blockSkin = isEquipped(reward) ? "default" : "reward-" + reward.id
             if blockSkin == "default" { strawberryEnabled = false }
@@ -214,7 +214,7 @@ struct BerryTrophyGardenView: View {
                 ProgressView(value: Double(min(lifetimeLines, reward.requiredLines)),
                              total: Double(max(1, reward.requiredLines)))
                     .tint(BerryStyle.strawberry)
-                Text("\(min(lifetimeLines, reward.requiredLines)) / \(reward.requiredLines) lines")
+                Text("\(min(max(lifetimeLines, (legacyStrawberry && reward.id == "strawberry-red") ? 10 : 0), reward.requiredLines)) / \(reward.requiredLines) lines")
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                 if reward.id == "royal-berry" {
                     Text(storyChapter >= 6 ? "✓ Chapter 5 finished" : "🔒 Complete Story Chapter 5")
