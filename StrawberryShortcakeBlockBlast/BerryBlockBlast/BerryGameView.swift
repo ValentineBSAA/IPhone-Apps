@@ -645,6 +645,14 @@ struct BerryGameView: View {
                             .tint(Color(red: 0.79, green: 0.49, blue: 0.08))
                             .controlSize(.large)
                         }
+                        if showGameOver && session.canUsePremium &&
+                           session.premiumCharges["golden-strawberry", default: 0] == 0 {
+                            Button("🍓 Get a Golden Strawberry in the Boutique") {
+                                showShop = true
+                            }
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(BerryStyle.strawberry)
+                        }
                         if showGameOver && session.shuffles > 0 && session.engine.canRescueWithShuffle && mode != .classic && !isTimedMode {
                             Button("✨ Continue with Shuffle (\(session.shuffles) left)") {
                                 session.shuffle(); showGameOver = session.gameOver; selectedSlot = nil; drag = nil
