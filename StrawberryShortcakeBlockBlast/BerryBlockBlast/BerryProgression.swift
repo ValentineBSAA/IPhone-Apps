@@ -111,40 +111,49 @@ struct BerryQuestBoardView: View {
                     Text("Three little adventures each day. Earn berries by actually playing, not by opening menus.")
                         .multilineTextAlignment(.center).font(.subheadline)
                         .foregroundStyle(BerryStyle.chocolate)
-                    ForEach(progress.quests) { quest in
-                        VStack(alignment: .leading, spacing: 10) {
-                            HStack(spacing: 10) {
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 11),
+                                        GridItem(.flexible(), spacing: 11)], spacing: 11) {
+                        ForEach(progress.quests) { quest in
+                            VStack(spacing: 8) {
                                 Image(systemName: quest.symbol)
-                                    .font(.system(size: 27))
+                                    .font(.system(size: 28, weight: .bold))
                                     .foregroundStyle(BerryStyle.strawberry)
-                                    .frame(width: 44, height: 48)
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(quest.title).font(.headline)
-                                    Text(quest.detail).font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                            }
-                            ProgressView(value: Double(progress.progress(for: quest)), total: Double(quest.target))
-                                .tint(BerryStyle.strawberry)
-                            HStack {
-                                Text("\(progress.progress(for: quest))/\(quest.target)")
-                                    .font(.caption.bold()).monospacedDigit()
-                                Spacer()
-                                Button(progress.isClaimed(quest) ? "✓ Collected" : "🍓 \(quest.reward) · Claim") {
+                                    .frame(width: 64, height: 64)
+                                    .background(BerryStyle.softPink,
+                                                in: RoundedRectangle(cornerRadius: 18))
+                                Text(quest.title)
+                                    .font(.system(size: 14, weight: .black, design: .rounded))
+                                    .foregroundStyle(BerryStyle.chocolate)
+                                    .multilineTextAlignment(.center)
+                                    .lineLimit(2)
+                                Text(quest.detail)
+                                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                                    .foregroundStyle(BerryStyle.chocolate.opacity(0.72))
+                                    .multilineTextAlignment(.center)
+                                    .lineLimit(3)
+                                Spacer(minLength: 0)
+                                ProgressView(value: Double(progress.progress(for: quest)),
+                                             total: Double(quest.target))
+                                    .tint(BerryStyle.strawberry)
+                                BerryCandyNumber(value:
+                                    "\(progress.progress(for: quest))/\(quest.target)",
+                                    size: 15, label: "Quest Progress")
+                                Button(progress.isClaimed(quest) ? "✓ Collected" :
+                                       "🍓 \(quest.reward) · Claim") {
                                     _ = progress.claim(quest, into: session)
                                 }
+                                .font(.system(size: 11, weight: .heavy, design: .rounded))
                                 .buttonStyle(.borderedProminent)
                                 .tint(BerryStyle.strawberry)
                                 .disabled(progress.isClaimed(quest) ||
                                           progress.progress(for: quest) < quest.target)
                             }
+                            .frame(maxWidth: .infinity, minHeight: 240)
+                            .padding(9)
+                            .background(.white, in: RoundedRectangle(cornerRadius: 19))
+                            .overlay(RoundedRectangle(cornerRadius: 19)
+                                .strokeBorder(BerryStyle.strawberry.opacity(0.28)))
                         }
-                        .foregroundStyle(BerryStyle.chocolate)
-                        .padding(15)
-                        .background(.white, in: RoundedRectangle(cornerRadius: 19))
-                        .overlay(RoundedRectangle(cornerRadius: 19)
-                            .strokeBorder(BerryStyle.strawberry.opacity(0.23)))
                     }
                     Text("Quests refresh at local midnight. Rewards are collected only once per completed quest.")
                         .font(.caption).multilineTextAlignment(.center)
