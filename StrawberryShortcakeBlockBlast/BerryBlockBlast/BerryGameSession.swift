@@ -345,6 +345,8 @@ final class BerryGameSession: ObservableObject {
         engine = previous
         berries = max(0, berries - previousBerryEarnings)
         totalEarnedBerries = max(0, totalEarnedBerries - previousBerryEarnings)
+        BerryEconomyLedger.shared.reverseUndoneLineEarnings(
+            previousBerryEarnings, mode: activeMode)
         if let entry = previousRewardEntry, let index = rewardsLog.firstIndex(of: entry) {
             rewardsLog.remove(at: index)
             UserDefaults.standard.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
@@ -398,6 +400,8 @@ final class BerryGameSession: ObservableObject {
               berries >= BerryEconomy.shufflePrice,
               engine.reshuffleTray() else { return false }
         berries -= BerryEconomy.shufflePrice
+        BerryEconomyLedger.shared.recordSpend(BerryEconomy.shufflePrice,
+                                              item: "Shuffle Continue")
         ensureEndlessPlayable()
         gameOver = !engine.hasMove()
         previous = nil
@@ -417,6 +421,9 @@ final class BerryGameSession: ObservableObject {
         guard amount > 0 else { return }
         berries = amount > Int.max - berries ? Int.max : berries + amount
         totalEarnedBerries = amount > Int.max - totalEarnedBerries ? Int.max : totalEarnedBerries + amount
+        if reason == "Completed berry lines" {
+            BerryEconomyLedger.shared.recordLineEarnings(amount, mode: activeMode)
+        }
         rewardsLog.insert("🍓 +\(amount) • \(reason)", at: 0)
         rewardsLog = Array(rewardsLog.prefix(20))
         UserDefaults.standard.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
@@ -459,6 +466,7 @@ final class BerryGameSession: ObservableObject {
         previousBerryEarnings = 0
         previousRewardEntry = nil
         berries -= price
+        BerryEconomyLedger.shared.recordSpend(price, item: "Cottage Decoration")
         cottageDecorations += 1
         UserDefaults.standard.set(cottageDecorations, forKey: "berryblockblast.cottage.decorations")
         save()
@@ -483,6 +491,7 @@ final class BerryGameSession: ObservableObject {
         previousBerryEarnings = 0
         previousRewardEntry = nil
         berries -= price
+        BerryEconomyLedger.shared.recordSpend(price, item: id)
         if permanent {
             premiumOwned.append(id)
             BerryProgression.shared.celebrate("✨ Lifetime upgrade unlocked: " + id.capitalized)
@@ -537,6 +546,8 @@ final class BerryGameSession: ObservableObject {
               !engine.goldenRescueUsed,
               engine.clearBoardWithGoldenStrawberry() else { return false }
         berries -= Self.goldenStrawberryCost
+        BerryEconomyLedger.shared.recordSpend(Self.goldenStrawberryCost,
+                                              item: "Golden Strawberry Continue")
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
@@ -619,6 +630,7 @@ final class BerryGameSession: ObservableObject {
         previousBerryEarnings = 0
         previousRewardEntry = nil
         berries -= BerryEconomy.undoPrice
+        BerryEconomyLedger.shared.recordSpend(BerryEconomy.undoPrice, item: "Undo")
         undos += 1
         save()
     }
@@ -630,6 +642,7 @@ final class BerryGameSession: ObservableObject {
         previousBerryEarnings = 0
         previousRewardEntry = nil
         berries -= BerryEconomy.shufflePrice
+        BerryEconomyLedger.shared.recordSpend(BerryEconomy.shufflePrice, item: "Shuffle")
         shuffles += 1
         save()
     }
@@ -640,6 +653,7 @@ final class BerryGameSession: ObservableObject {
         previousBerryEarnings = 0
         previousRewardEntry = nil
         berries -= BerryEconomy.hintPrice
+        BerryEconomyLedger.shared.recordSpend(BerryEconomy.hintPrice, item: "Hint")
         hints += 1
         save()
     }
@@ -688,6 +702,7 @@ final class BerryGameSession: ObservableObject {
         previousBerryEarnings = 0
         previousRewardEntry = nil
         berries -= cost
+        BerryEconomyLedger.shared.recordSpend(cost, item: id)
         ownedCosmetics.append(id)
         UserDefaults.standard.set(ownedCosmetics, forKey: "berryblockblast.shop.owned.v056b2")
         rewardsLog.insert("🧺 -\(cost) • Berry Boutique: \(id)", at: 0)
