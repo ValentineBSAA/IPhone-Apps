@@ -334,6 +334,10 @@ struct BerryGameView: View {
             ZStack {
                 background
                 VStack(spacing: compact ? 4 : 5) {
+                    // Distribute surplus vertical space around the gameplay
+                    // as phones grow taller; never leave it all below the
+                    // counters while shrinking the board unnecessarily.
+                    Spacer(minLength: 0)
                     topBar(compact: compact)
                     if mode == .classic {
                         BerryClassicScoreView(score: session.engine.score, best: session.bestScore, combo: session.engine.streak)
@@ -471,8 +475,8 @@ struct BerryGameView: View {
                 }
                 .disabled(isPaused)
                 .padding(.horizontal, 5)
-                .padding(.top, max(8, top * 0.48))
-                .padding(.bottom, max(8, bottom * 0.55))
+                .padding(.top, max(6, top * 0.18))
+                .padding(.bottom, max(6, bottom * 0.18))
                 .frame(maxWidth: 510)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 // Always show the piece being carried, even in Mystery
@@ -908,7 +912,7 @@ struct BerryGameView: View {
             BerryCandyToolbarButton(symbol: "questionmark", title: "How to Play",
                                     size: diameter) { showHelp = true }
         }
-        .frame(height: compact ? 43 : 49)
+        .frame(height: compact ? 40 : 45)
     }
 
     /// An unobstructed, compact Story line stays above the board. Tapping
@@ -1201,7 +1205,7 @@ struct BerryGameView: View {
                     showShop = true
                 }
             }
-        }.frame(height: 46)
+        }.frame(height: 48)
     }
 
     private func toolSymbol(_ icon: String) -> String {
