@@ -13,6 +13,23 @@ enum BerryCountdownMath {
         return max(0, Int(ceil(deadline.timeIntervalSince(effectiveNow))))
     }
 
+    /// Pauses are measured against wall-clock time exactly once on resume.
+    /// This handles a locked iPhone that wakes long after the original
+    /// deadline, without consuming the remaining Nightmare seconds.
+    static func restoredDeadline(_ deadline: Date?, pausedAt: Date?,
+                                 resumedAt: Date) -> Date? {
+        guard let deadline, let pausedAt else { return deadline }
+        return deadline.addingTimeInterval(max(0, resumedAt.timeIntervalSince(pausedAt)))
+    }
+
+    /// A displayed menu must never remain responsive while an expired,
+    /// unadjusted deadline silently rejects every gameplay touch.
+    static func canAcceptTimedMove(running: Bool, deadline: Date?,
+                                   pausedAt: Date?, now: Date) -> Bool {
+        guard running, pausedAt == nil, let deadline else { return false }
+        return deadline > now
+    }
+
     static func text(_ seconds: Int) -> String {
         String(format: "%d:%02d", max(0, seconds) / 60, max(0, seconds) % 60)
     }
