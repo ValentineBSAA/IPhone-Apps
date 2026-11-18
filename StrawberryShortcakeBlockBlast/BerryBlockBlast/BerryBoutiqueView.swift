@@ -307,31 +307,56 @@ struct BerryBoutiqueView: View {
             .padding(18)
             .background(.white, in: RoundedRectangle(cornerRadius: 18))
         case .inventory:
-            VStack(alignment: .leading, spacing: 12) {
-                Label("Garden Supplies", systemImage: "shippingbox.fill")
-                    .font(.headline)
-                    .foregroundStyle(BerryStyle.strawberry)
-                Text("Undo ×\(session.undos)   •   Shuffle ×\(session.shuffles)   •   Hint ×\(session.hints)")
-                    .font(.system(size: 14, weight: .heavy, design: .rounded))
-                    .foregroundStyle(BerryStyle.strawberry)
-                Text("Cottage decorations: \(min(session.cottageDecorations, 6)) / 6")
-                Text("Premium: Trowel ×\(session.premiumCharges["trowel", default: 0]) • Twister ×\(session.premiumCharges["twister", default: 0]) • Seed ×\(session.premiumCharges["seed", default: 0])")
-                    .font(.caption.bold()).foregroundStyle(BerryStyle.strawberry)
-                Text("Golden Strawberry ×\(session.premiumCharges["golden-strawberry", default: 0])")
-                    .font(.caption.bold()).foregroundStyle(BerryStyle.strawberry)
-                Text("Pantry: \(session.premiumOwned.contains("pantry") ? "Owned" : "Locked")  •  Spyglass: \(session.premiumOwned.contains("spyglass") ? "Owned" : "Locked")")
-                    .font(.caption.bold()).foregroundStyle(BerryStyle.leaf)
-                    .foregroundStyle(BerryStyle.chocolate)
-                if items.allSatisfy({ !session.ownedCosmetics.contains($0.id) }) {
-                    Text("Your permanent cosmetic collection is waiting. Browse the Boutique to unlock your first style!")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
+            Text("YOUR BERRY COLLECTION")
+                .font(.system(size: 12, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.strawberry)
+            Text("Owned tools and your existing block styles stay saved.")
+                .font(.caption)
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                BerryGridInfoTile(title: "Undo", detail: "Garden Helper",
+                                 art: "UndoIcon", value: "×\(session.undos)")
+                BerryGridInfoTile(title: "Shuffle", detail: "Garden Helper",
+                                 art: "ShuffleIcon", value: "×\(session.shuffles)")
+                BerryGridInfoTile(title: "Berry Hint", detail: "Garden Helper",
+                                 art: "BerryHint", value: "×\(session.hints)")
+                BerryGridInfoTile(title: "Golden Strawberry",
+                                 detail: "One continue per run",
+                                 art: "GoldenStrawberry",
+                                 value: "×\(session.premiumCharges["golden-strawberry", default: 0])")
+                BerryGridInfoTile(title: "Golden Trowel", detail: "Remove one square",
+                                 art: "GoldenTrowel",
+                                 value: "×\(session.premiumCharges["trowel", default: 0])")
+                BerryGridInfoTile(title: "Ribbon Twister", detail: "Rotate pieces",
+                                 art: "RibbonTwister",
+                                 value: "×\(session.premiumCharges["twister", default: 0])")
+                BerryGridInfoTile(title: "Starberry Seed", detail: "Plant a square",
+                                 art: "StarberrySeed",
+                                 value: "×\(session.premiumCharges["seed", default: 0])")
+                BerryGridInfoTile(title: "Picnic Pantry", detail: "Lifetime upgrade",
+                                 art: "PicnicPantry",
+                                 value: session.premiumOwned.contains("pantry") ? "✓ Owned" : "Locked")
+                BerryGridInfoTile(title: "Berry Spyglass", detail: "Lifetime upgrade",
+                                 art: "BerrySpyglass",
+                                 value: session.premiumOwned.contains("spyglass") ? "✓ Owned" : "Locked")
+                BerryGridInfoTile(title: "Cottage Decorations",
+                                 detail: "Unique garden treasures",
+                                 art: "CottageDecorations",
+                                 value: "\(min(session.cottageDecorations, 6))/6")
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
-            .background(.white, in: RoundedRectangle(cornerRadius: 18))
-            ForEach(items.filter { session.ownedCosmetics.contains($0.id) }) { item in
-                itemCard(item)
+            Text("MY OWNED COSMETICS")
+                .font(.system(size: 12, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.strawberry)
+            if items.allSatisfy({ !session.ownedCosmetics.contains($0.id) }) {
+                Text("Your permanent cosmetic collection is waiting. Browse the Boutique to unlock a style!")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                ForEach(items.filter { session.ownedCosmetics.contains($0.id) }) { item in
+                    itemCard(item)
+                }
             }
         }
     }
