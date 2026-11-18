@@ -138,7 +138,7 @@ struct BerryBoutiqueView: View {
                             self.selectedCategory = nil
                         }
                     } label: {
-                        Label("Categories", systemImage: "chevron.left")
+                        Label("Back to Boutique", systemImage: "chevron.left")
                             .font(.system(size: 12, weight: .heavy, design: .rounded))
                     }
                     .buttonStyle(.bordered)
@@ -180,7 +180,7 @@ struct BerryBoutiqueView: View {
                 Group {
                     switch category {
                     case .blocks: BerryIcon(name: "BerryClassic", size: 73)
-                    case .frames: BerryIcon(name: "RosePetalFrame", size: 73)
+                    case .frames: BerryIcon(name: "Milestone", size: 73)
                     case .helpers: BerryIcon(name: "BerryHint", size: 73)
                     case .special: Image("PremiumToolsCategory").resizable().scaledToFit()
                     case .cottage: BerryIcon(name: "CottageDecorations", size: 73)
