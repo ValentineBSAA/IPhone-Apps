@@ -173,6 +173,7 @@ struct BerryGameView: View {
     let onExit: () -> Void
     @AppStorage("berryblockblast.story.level") private var storyLevel = 1
     @AppStorage("berryblockblast.daily.completed") private var dailyCompleted = ""
+    @State private var dailyAttemptDay = ""
     @State private var showVictory = false
     @State private var completedStoryChapter: Int?
     @State private var blitzRemaining = 120
@@ -568,12 +569,24 @@ struct BerryGameView: View {
             // iOS screenshots and banners can temporarily mark the app inactive.
             // Pause overlays appear only when Pause was pressed, not on screenshots.
             if phase == .background { drag = nil; selectedSlot = nil }
+            if phase == .active && mode == .daily && !dailyAttemptDay.isEmpty &&
+               BerryDailyHistory.dateKey(for: Date()) != dailyAttemptDay {
+                BerryDailyHistory.expirePriorAttemptIfNeeded()
+                returnToVillage()
+                return
+            }
             if isTimedMode {
                 if phase != .active { pauseTimedClock() }
                 else { resumeTimedClockIfPossible() }
             }
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
+            if mode == .daily && scenePhase == .active && !dailyAttemptDay.isEmpty &&
+               BerryDailyHistory.dateKey(for: Date()) != dailyAttemptDay {
+                BerryDailyHistory.expirePriorAttemptIfNeeded()
+                returnToVillage()
+                return
+            }
             if isTimedMode && scenePhase == .active && !isPaused && pausedTimerAt == nil {
                 refreshBlitzClock()
             }
@@ -612,6 +625,9 @@ struct BerryGameView: View {
             BerryAudio.shared.setScreen(isTimedMode ? .blitz : .gameplay)
             BerryAudio.shared.setMusic(music)
             session.selectMode(mode)
+            if mode == .daily {
+                dailyAttemptDay = BerryDailyHistory.dateKey(for: Date())
+            }
             BerryPlaytimeTracker.shared.enterMode(playtimeModeID, title: playtimeModeTitle)
             scoreRecordAtEntry = max(session.bestScore, session.engine.score)
             celebratedRecordThisRun = false
