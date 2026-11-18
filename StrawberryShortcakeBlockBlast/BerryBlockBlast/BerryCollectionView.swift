@@ -134,6 +134,45 @@ struct BerryCollectionView: View {
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            card("Special Tools & Upgrades", icon: "PremiumToolsCategory") {
+                HStack(spacing: 10) {
+                    BerryIcon(name: "GoldenStrawberry", size: 45)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Golden Strawberry")
+                            .font(.system(size: 14, weight: .heavy, design: .rounded))
+                            .foregroundStyle(BerryStyle.chocolate)
+                        Text("Continue a run · one use per run")
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Text("×\(session.premiumCharges["golden-strawberry", default: 0])")
+                        .font(.system(size: 16, weight: .black, design: .rounded))
+                        .foregroundStyle(BerryStyle.strawberry)
+                }
+                HStack(spacing: 10) {
+                    BerryIcon(name: "GoldenTrowel", size: 30)
+                    Text("Golden Trowel")
+                    Spacer()
+                    Text("×\(session.premiumCharges["trowel", default: 0])")
+                }
+                HStack(spacing: 10) {
+                    BerryIcon(name: "RibbonTwister", size: 30)
+                    Text("Ribbon Twister")
+                    Spacer()
+                    Text("×\(session.premiumCharges["twister", default: 0])")
+                }
+                HStack(spacing: 10) {
+                    BerryIcon(name: "StarberrySeed", size: 30)
+                    Text("Starberry Seed")
+                    Spacer()
+                    Text("×\(session.premiumCharges["seed", default: 0])")
+                }
+                Text("Picnic Pantry: \(session.premiumOwned.contains("pantry") ? "Owned" : "Locked")  •  Berry Spyglass: \(session.premiumOwned.contains("spyglass") ? "Owned" : "Locked")")
+                    .font(.caption.bold()).foregroundStyle(BerryStyle.leaf)
+                Text("Shop for new tools in the Berry Boutique. Golden Strawberry clears a blocked board without awarding extra points or lines.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             ForEach(skins) { skin in
                 let owned = skin.id == "default" || session.ownedCosmetics.contains(skin.id)
                 let equipped = active(skin)
