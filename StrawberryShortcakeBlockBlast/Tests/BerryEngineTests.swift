@@ -233,12 +233,32 @@ final class BerryEngineTests: XCTestCase {
         XCTAssertEqual(game.board.count, 24)
         XCTAssertEqual(game.board[0].count, 24)
         XCTAssertTrue(game.hasMove())
-        XCTAssertTrue(game.tray.compactMap { $0 }.allSatisfy { $0.points.count >= 7 })
+        XCTAssertTrue(game.tray.compactMap { $0 }.allSatisfy {
+            !$0.points.isEmpty && game.hasPlacement(for: $0)
+        }, "Mixed-size Mega Garden pieces must all be legal in their visible patch")
         let first = game.tray.compactMap { $0 }.first!
         XCTAssertTrue(game.hasPlacement(for: first))
         let encoded = try JSONEncoder().encode(game)
         let restored = try JSONDecoder().decode(BerryEngine.self, from: encoded)
         XCTAssertEqual(restored.side, 24)
+    }
+
+    func testMegaGardenPreservesBothLargeShapesAndSmallRescuePossibilities() {
+        var sawGiant = false
+        var sawSmall = false
+        // Sample independent fresh hands to ensure the large-shape catalog
+        // remains reachable while practical rescue pieces are also offered.
+        for _ in 0..<120 {
+            let game = BerryEngine(side: 24, hard: true)
+            XCTAssertTrue(game.hasMove())
+            XCTAssertEqual(game.tray.compactMap { $0 }.count, 3)
+            let pieces = game.tray.compactMap { $0 }
+            XCTAssertTrue(pieces.allSatisfy { game.hasPlacement(for: $0) })
+            sawGiant = sawGiant || pieces.contains(where: { $0.points.count >= 7 })
+            sawSmall = sawSmall || pieces.contains(where: { $0.points.count <= 3 })
+        }
+        XCTAssertTrue(sawGiant, "24x24 Mega Garden lost large puzzle shapes")
+        XCTAssertTrue(sawSmall, "24x24 Mega Garden lost its small rescue shapes")
     }
 
     func testAllSixExistingModesRemainAvailable() {
