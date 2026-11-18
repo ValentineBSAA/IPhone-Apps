@@ -239,7 +239,8 @@ struct BerryDailyHarvestView: View {
                                           to: Calendar.current.startOfDay(for: now)) ?? now
                         let seconds = max(0, Int(next.timeIntervalSince(now)))
                         Text("Next challenge in \(seconds / 3600)h \((seconds % 3600) / 60)m")
-                            .font(.subheadline.bold()).foregroundStyle(BerryStyle.strawberry)
+                            .font(.subheadline.bold())
+                            .foregroundStyle(BerryStyle.timerGradient)
                     }
                     HStack {
                         Button { changeMonth(-1) } label: { Image(systemName: "chevron.left") }
