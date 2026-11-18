@@ -5,7 +5,7 @@ struct BerryCollectionView: View {
     @ObservedObject var session: BerryGameSession
     let lifetimeLines: Int
     let onOpenBoutique: () -> Void
-    @State private var section = 0
+    @State private var section: Int? = nil
     @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
     @AppStorage("berryblockblast.shop.equippedBorder.v056b2") private var borderSkin = "default"
     @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkleSkin = "default"
@@ -48,205 +48,263 @@ struct BerryCollectionView: View {
             ("Berry Blitz: Berry Marathon", "Milestone", defaults.integer(forKey: BerryBlitzVariant.marathon600.bestScoreKey))
         ].sorted { $0.2 > $1.2 }
     }
+
+    private let gridColumns = [GridItem(.flexible(), spacing: 11),
+                               GridItem(.flexible(), spacing: 11)]
+
     var body: some View {
         ScrollView {
-            VStack(spacing: 15) {
-                BerryIcon(name: "BerryCollection", size: 88)
+            VStack(spacing: 14) {
+                BerryIcon(name: "BerryCollection", size: 76)
                 Text("Your Berry Collection")
-                    .font(.system(size: 25, weight: .black, design: .rounded))
+                    .font(.system(size: 24, weight: .black, design: .rounded))
                     .foregroundStyle(BerryStyle.strawberry)
                     .multilineTextAlignment(.center)
                 BerryWalletPill(berries: session.berries)
-                Picker("Collection sections", selection: $section) {
-                    Text("Collection").tag(0)
-                    Text("Inventory").tag(1)
-                    Text("Awards").tag(2)
-                    Text("Records").tag(3)
+
+                if let section {
+                    HStack(spacing: 9) {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.18)) {
+                                self.section = nil
+                            }
+                        } label: {
+                            Label("Back to Collection", systemImage: "chevron.left")
+                                .font(.system(size: 12, weight: .heavy, design: .rounded))
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(BerryStyle.strawberry)
+                        Spacer(minLength: 3)
+                        Text(["Collection", "Inventory", "Awards", "Records"][section])
+                            .font(.system(size: 15, weight: .black, design: .rounded))
+                            .foregroundStyle(BerryStyle.strawberry)
+                    }
+                    switch section {
+                    case 0: collectionContent
+                    case 1: inventoryContent
+                    case 2: awardsContent
+                    default: recordsContent
+                    }
+                } else {
+                    Text("EXPLORE YOUR BERRY TREASURES")
+                        .font(.system(size: 12, weight: .black, design: .rounded))
+                        .tracking(0.5)
+                        .foregroundStyle(BerryStyle.strawberry)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    LazyVGrid(columns: gridColumns, spacing: 12) {
+                        BerryGridNavigationTile(
+                            title: "Collection", detail: "Harvest, unlocks and cottage progress",
+                            art: "BerryCollection", caption: "My Progress") {
+                                withAnimation { section = 0 }
+                            }
+                        BerryGridNavigationTile(
+                            title: "Inventory", detail: "Helpers, power-ups and equipped skins",
+                            art: "PremiumToolsCategory", caption: "Owned Items") {
+                                withAnimation { section = 1 }
+                            }
+                        BerryGridNavigationTile(
+                            title: "Awards", detail: "Your unlocked berry achievements",
+                            art: "Champion", caption: "\(lifetimeLines) Lines") {
+                                withAnimation { section = 2 }
+                            }
+                        BerryGridNavigationTile(
+                            title: "Personal Records", detail: "Best scores in every game mode",
+                            art: "Milestone", caption: "12 Modes") {
+                                withAnimation { section = 3 }
+                            }
+                        BerryGridNavigationTile(
+                            title: "Berry Boutique", detail: "Shop for new garden treasures",
+                            art: "ShopBasket", caption: "Visit Shop") {
+                                onOpenBoutique()
+                            }
+                    }
                 }
-                .pickerStyle(.segmented)
-                if section == 0 { collectionContent }
-                if section == 1 { inventoryContent }
-                if section == 2 { awardsContent }
-                if section == 3 { recordsContent }
-                Button { onOpenBoutique() } label: {
-                    HStack {
-                        BerryIcon(name: "ShopBasket", size: 33)
-                        Text("Visit the Berry Boutique").font(.headline)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                    }.foregroundStyle(BerryStyle.chocolate)
-                        .padding(12)
-                        .background(.white, in: RoundedRectangle(cornerRadius: 18))
-                }.buttonStyle(.plain)
             }
-            .padding(18)
+            .padding(16)
             .frame(maxWidth: .infinity)
         }
         .background(BerryStyle.cream.ignoresSafeArea())
         .onAppear { session.refreshEconomyFromDisk() }
     }
+
     private var collectionContent: some View {
-        VStack(spacing: 13) {
-            card("Lifetime Harvest", icon: "HarvestReward") {
-                Text("🍓 \(BerryNumbers.compact(session.totalEarnedBerries)) earned")
-                    .font(.title3.bold())
-                Text("\(lifetimeLines) total lines cleared")
-                ProgressView(value: Double(min(lifetimeLines, 100)), total: 100)
-                    .tint(BerryStyle.strawberry)
-                Text("Next collection milestones: 10, 25, 50 and 100 lines")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            card("Strawberry Blocks", icon: "CollectionBadge") {
-                Text(strawberryUnlocked ? "✓ Unlocked by clearing 10 lines" :
-                        "🔒 Clear 10 lines to unlock strawberry decorations")
-                ProgressView(value: Double(min(lifetimeLines, 10)), total: 10)
-                    .tint(BerryStyle.leaf)
-            }
-            card("Your Sweet Cottage", icon: "CottageDecorations") {
-                Text("\(min(session.cottageDecorations, 6)) of 6 decorations owned")
-                Text("Build your garden in My Strawberry Cottage on the home screen.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
+        LazyVGrid(columns: gridColumns, spacing: 11) {
+            BerryGridInfoTile(
+                title: "Lifetime Harvest",
+                detail: "\(lifetimeLines) total lines cleared",
+                art: "HarvestReward",
+                value: "🍓 \(BerryNumbers.compact(session.totalEarnedBerries))")
+            BerryGridInfoTile(
+                title: "Strawberry Blocks",
+                detail: strawberryUnlocked ? "Unlocked after 10 lines" :
+                    "\(max(0, 10 - lifetimeLines)) lines until unlock",
+                art: "CollectionBadge",
+                value: strawberryUnlocked ? "Unlocked" : "\(min(lifetimeLines, 10))/10",
+                complete: strawberryUnlocked)
+            BerryGridInfoTile(
+                title: "Sweet Cottage",
+                detail: "Arrange owned decorations in the Village",
+                art: "CottageDecorations",
+                value: "\(min(session.cottageDecorations, 6))/6")
+            BerryGridInfoTile(
+                title: "Next Milestone",
+                detail: "Reach 10, 25, 50 and 100 lifetime lines",
+                art: "Milestone",
+                value: "\(lifetimeLines) Lines",
+                complete: lifetimeLines >= 100)
         }
     }
+
     private var inventoryContent: some View {
-        VStack(spacing: 12) {
-            card("Garden Helpers", icon: "UndoHelper") {
-                HStack {
-                    BerryIcon(name: "UndoIcon", size: 35)
-                    Text("Undo")
-                    Spacer()
-                    Text("×\(session.undos)").bold().foregroundStyle(BerryStyle.strawberry)
-                }
-                HStack {
-                    BerryIcon(name: "ShuffleIcon", size: 35)
-                    Text("Shuffle")
-                    Spacer()
-                    Text("×\(session.shuffles)").bold().foregroundStyle(BerryStyle.strawberry)
-                }
-                HStack {
-                    BerryIcon(name: "BerryHint", size: 35)
-                    Text("Berry Hint")
-                    Spacer()
-                    Text("×\(session.hints)").bold().foregroundStyle(BerryStyle.strawberry)
-                }
-                Text("Use these from the game toolbar. Berry Classic and timed challenges do not allow helpers.")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("GARDEN HELPERS")
+            LazyVGrid(columns: gridColumns, spacing: 11) {
+                BerryGridInfoTile(title: "Undo", detail: "Return to the last move",
+                                 art: "UndoIcon", value: "×\(session.undos)")
+                BerryGridInfoTile(title: "Shuffle", detail: "Refresh a blocked hand",
+                                 art: "ShuffleIcon", value: "×\(session.shuffles)")
+                BerryGridInfoTile(title: "Berry Hint", detail: "Find a legal placement",
+                                 art: "BerryHint", value: "×\(session.hints)")
             }
-            card("Special Tools & Upgrades", icon: "PremiumToolsCategory") {
-                HStack(spacing: 10) {
-                    BerryIcon(name: "GoldenStrawberry", size: 45)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Golden Strawberry")
-                            .font(.system(size: 14, weight: .heavy, design: .rounded))
-                            .foregroundStyle(BerryStyle.chocolate)
-                        Text("Continue a run · one use per run")
-                            .font(.caption2).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Text("×\(session.premiumCharges["golden-strawberry", default: 0])")
-                        .font(.system(size: 16, weight: .black, design: .rounded))
-                        .foregroundStyle(BerryStyle.strawberry)
-                }
-                HStack(spacing: 10) {
-                    BerryIcon(name: "GoldenTrowel", size: 30)
-                    Text("Golden Trowel")
-                    Spacer()
-                    Text("×\(session.premiumCharges["trowel", default: 0])")
-                }
-                HStack(spacing: 10) {
-                    BerryIcon(name: "RibbonTwister", size: 30)
-                    Text("Ribbon Twister")
-                    Spacer()
-                    Text("×\(session.premiumCharges["twister", default: 0])")
-                }
-                HStack(spacing: 10) {
-                    BerryIcon(name: "StarberrySeed", size: 30)
-                    Text("Starberry Seed")
-                    Spacer()
-                    Text("×\(session.premiumCharges["seed", default: 0])")
-                }
-                Text("Picnic Pantry: \(session.premiumOwned.contains("pantry") ? "Owned" : "Locked")  •  Berry Spyglass: \(session.premiumOwned.contains("spyglass") ? "Owned" : "Locked")")
-                    .font(.caption.bold()).foregroundStyle(BerryStyle.leaf)
-                Text("Shop for new tools in the Berry Boutique. Golden Strawberry clears a blocked board without awarding extra points or lines.")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+            sectionHeader("SPECIAL TOOLS & UPGRADES")
+            LazyVGrid(columns: gridColumns, spacing: 11) {
+                BerryGridInfoTile(title: "Golden Strawberry", detail: "One continue per run",
+                                 art: "GoldenStrawberry",
+                                 value: "×\(session.premiumCharges["golden-strawberry", default: 0])")
+                BerryGridInfoTile(title: "Golden Trowel", detail: "Remove a filled square",
+                                 art: "GoldenTrowel",
+                                 value: "×\(session.premiumCharges["trowel", default: 0])")
+                BerryGridInfoTile(title: "Ribbon Twister", detail: "Rotate a tray piece",
+                                 art: "RibbonTwister",
+                                 value: "×\(session.premiumCharges["twister", default: 0])")
+                BerryGridInfoTile(title: "Starberry Seed", detail: "Fill one empty square",
+                                 art: "StarberrySeed",
+                                 value: "×\(session.premiumCharges["seed", default: 0])")
+                BerryGridInfoTile(title: "Picnic Pantry", detail: "Permanent piece storage",
+                                 art: "PicnicPantry",
+                                 value: session.premiumOwned.contains("pantry") ? "Owned" : "Locked",
+                                 complete: session.premiumOwned.contains("pantry"))
+                BerryGridInfoTile(title: "Berry Spyglass", detail: "See the next piece",
+                                 art: "BerrySpyglass",
+                                 value: session.premiumOwned.contains("spyglass") ? "Owned" : "Locked",
+                                 complete: session.premiumOwned.contains("spyglass"))
             }
-            ForEach(skins) { skin in
-                let owned = skin.id == "default" || session.ownedCosmetics.contains(skin.id)
-                let equipped = active(skin)
-                HStack(spacing: 12) {
-                    if skin.category == "blocks" {
-                        BerryTile(tint: skin.id == "blueberry-blocks" ? 3 : 0,
-                                  mode: .classic, skinOverride: skin.id)
-                            .frame(width: 54, height: 54)
-                    } else {
-                        BerryIcon(name: skin.category == "frames" ? "CottageDecorations" : "Milestone", size: 54)
-                    }
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(skin.title).font(.system(size: 14, weight: .heavy, design: .rounded))
-                        Text(skin.detail).font(.caption2)
-                            .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                        if equipped { Text("✓ Currently equipped").font(.caption2).foregroundStyle(BerryStyle.strawberry) }
-                    }
-                    Spacer(minLength: 2)
-                    if owned {
-                        Button(equipped ? "Unequip" : "Equip") { setEquipped(skin, enabled: !equipped) }
-                            .font(.caption.bold()).buttonStyle(.borderedProminent)
-                            .tint(equipped ? BerryStyle.leaf : BerryStyle.strawberry)
-                    } else {
-                        Label(skin.id == "strawberry-fruit" ? "Free in Boutique" : "Boutique • \(shopPrice(skin.id)) 🍓", systemImage: "lock.fill")
-                            .font(.caption2).foregroundStyle(BerryStyle.strawberry)
-                    }
+            Text("Helpers aren't available in Berry Classic or timed challenges.")
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.7))
+            sectionHeader("MY BLOCKS, FRAMES & SPARKLES")
+            LazyVGrid(columns: gridColumns, spacing: 11) {
+                ForEach(skins) { skin in
+                    cosmeticTile(skin)
                 }
-                .foregroundStyle(BerryStyle.chocolate)
-                .padding(12)
-                .background(.white, in: RoundedRectangle(cornerRadius: 18))
             }
         }
     }
+
+    private func cosmeticTile(_ skin: Skin) -> some View {
+        let owned = skin.id == "default" || session.ownedCosmetics.contains(skin.id)
+        let equipped = active(skin)
+        return VStack(spacing: 7) {
+            if skin.category == "blocks" {
+                BerryTile(tint: skin.id == "blueberry-blocks" ? 3 : 0,
+                          mode: .classic, skinOverride: skin.id)
+                    .frame(width: 58, height: 58)
+            } else {
+                BerryIcon(name: skin.category == "frames" ? "CottageDecorations" : "Milestone",
+                          size: 58)
+            }
+            Text(skin.title)
+                .font(.system(size: 13, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+            Text(skin.detail)
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.73))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+            Spacer(minLength: 0)
+            if owned {
+                Button(equipped ? "✓ Equipped" : "Equip") {
+                    setEquipped(skin, enabled: !equipped)
+                }
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .buttonStyle(.borderedProminent)
+                .tint(equipped ? BerryStyle.leaf : BerryStyle.strawberry)
+            } else {
+                Text(skin.id == "strawberry-fruit" ? "Free in Boutique" :
+                     "🔒 🍓 \(shopPrice(skin.id))")
+                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .foregroundStyle(BerryStyle.strawberry)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, minHeight: 215)
+        .background(.white, in: RoundedRectangle(cornerRadius: 19))
+        .overlay(RoundedRectangle(cornerRadius: 19)
+            .strokeBorder(BerryStyle.strawberry.opacity(equipped ? 0.58 : 0.25),
+                          lineWidth: equipped ? 2 : 1.2))
+    }
+
     private var awardsContent: some View {
-        VStack(spacing: 12) {
-            ForEach([10, 25, 50, 100], id: \.self) { target in
-                HStack(spacing: 13) {
-                    BerryIcon(name: lifetimeLines >= target ? "Champion" : "Milestone", size: 60)
-                        .opacity(lifetimeLines >= target ? 1 : 0.5)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("\(target)-Line Harvest").font(.headline)
-                        Text(lifetimeLines >= target ? "Achievement unlocked!" : "\(max(0, target-lifetimeLines)) more lines to go")
-                            .font(.caption).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 11) {
+            sectionHeader("YOUR REAL OFFLINE ACHIEVEMENTS")
+            LazyVGrid(columns: gridColumns, spacing: 11) {
+                ForEach([10, 25, 50, 100], id: \.self) { target in
+                    let unlocked = lifetimeLines >= target
+                    VStack(spacing: 8) {
+                        BerryIcon(name: unlocked ? "Champion" : "Milestone", size: 61)
+                            .opacity(unlocked ? 1 : 0.6)
+                        Text("\(target)-Line Harvest")
+                            .font(.system(size: 14, weight: .black, design: .rounded))
+                            .foregroundStyle(BerryStyle.chocolate)
+                            .multilineTextAlignment(.center)
+                        Text(unlocked ? "✓ Unlocked" : "\(max(0, target - lifetimeLines)) lines left")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundStyle(unlocked ? BerryStyle.leaf : BerryStyle.strawberry)
+                        ProgressView(value: Double(min(lifetimeLines, target)), total: Double(target))
+                            .tint(unlocked ? BerryStyle.leaf : BerryStyle.strawberry)
                     }
-                    Spacer()
-                    if lifetimeLines >= target { Image(systemName: "checkmark.seal.fill").foregroundStyle(BerryStyle.leaf) }
+                    .frame(maxWidth: .infinity, minHeight: 160)
+                    .padding(12)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 19))
+                    .overlay(RoundedRectangle(cornerRadius: 19)
+                        .strokeBorder(BerryStyle.strawberry.opacity(0.25)))
                 }
-                .padding(12).background(.white, in: RoundedRectangle(cornerRadius: 18))
             }
-            Text("Awards reflect your actual offline progress. Your earned berries and best scores are preserved.")
-                .font(.caption).foregroundStyle(.secondary)
+            Text("All awards reflect your actual offline gameplay. Scores and strawberries are unchanged.")
+                .font(.caption)
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.7))
         }
     }
+
     private var recordsContent: some View {
-        VStack(spacing: 12) {
-            Text("🏆 Personal Best Leaderboard")
-                .font(.headline).foregroundStyle(BerryStyle.strawberry)
-            Text("These are your own local records, not online players.")
-                .font(.caption).foregroundStyle(.secondary)
-            ForEach(0..<records.count, id: \.self) { position in
-                let record = records[position]
-                HStack(spacing: 9) {
-                    Text("\(position + 1)").font(.headline).frame(width: 22)
-                    BerryIcon(name: record.1, size: 34)
-                    Text(record.0).font(.system(size: 12, weight: .bold, design: .rounded))
-                    Spacer(minLength: 4)
-                    Text(BerryNumbers.compact(record.2)).font(.system(size: 14, weight: .black, design: .rounded))
+        VStack(alignment: .leading, spacing: 11) {
+            sectionHeader("YOUR PERSONAL BEST SCORES")
+            Text("Your own device records, not an online leaderboard.")
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
+            LazyVGrid(columns: gridColumns, spacing: 11) {
+                ForEach(Array(records.enumerated()), id: \.offset) { index, record in
+                    BerryGridInfoTile(
+                        title: record.0,
+                        detail: "#\(index + 1) Personal Best",
+                        art: record.1,
+                        value: record.2 > 0 ? BerryNumbers.compact(record.2) : "Not yet")
                 }
-                .foregroundStyle(BerryStyle.chocolate)
-                .padding(10)
-                .background(.white, in: RoundedRectangle(cornerRadius: 14))
             }
         }
     }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 12, weight: .black, design: .rounded))
+            .tracking(0.6)
+            .foregroundStyle(BerryStyle.strawberry)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     private func shopPrice(_ id: String) -> Int {
         switch id {
         case "blueberry-blocks", "vanilla-blocks": return 90
