@@ -275,6 +275,7 @@ struct BerryEngine: Codable {
         }
         // A previously blocked hand should become playable on a clear board.
         if !hasMove() { refill() }
+        if !hasMove() { forcePlayableEndlessHand() }
         return hasMove()
     }
 
