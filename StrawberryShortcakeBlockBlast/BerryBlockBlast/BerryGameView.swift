@@ -475,8 +475,13 @@ struct BerryGameView: View {
                 .padding(.bottom, max(8, bottom * 0.55))
                 .frame(maxWidth: 510)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                // Always show the piece being carried, even in Mystery
+                // Garden. That setting may suppress the target-square
+                // ghost, NEVER the actual piece in the player's hand.
+                // Previously "drag == nil" hid the floating piece just
+                // as the board ghost was also suppressed, making pieces
+                // become entirely invisible during a legitimate drag.
                 if let slot = activeDragSlot,
-                   drag == nil,
                    let finger = activeDragFinger,
                    session.engine.tray.indices.contains(slot),
                    let piece = session.engine.tray[slot] {
@@ -488,6 +493,7 @@ struct BerryGameView: View {
                                   y: finger.y - geo.frame(in: .global).minY - 58)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
+                        .zIndex(40)
                 }
             // Screen-space celebrations never follow garden section changes.
             // Incoming notifications cannot move these banners.
