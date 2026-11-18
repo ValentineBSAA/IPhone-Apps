@@ -607,6 +607,20 @@ struct BerryEngine: Codable {
             hasPlacement(for: BerryPiece(points: shape, tint: 0))
         }
         let rowFinisher = side == 24 ? bestLineFinishingPiece() : nil
+        // Count occupancy of the visible patch once, outside of the
+        // selection condition. This avoids Swift trailing-closure parsing
+        // ambiguities and makes the 12x12 boundary explicit.
+        let patchStart = sectionOrigin
+        var occupiedInCurrentPatch = 0
+        if side == 24 {
+            for row in patchStart.row..<(patchStart.row + visibleSide) {
+                for col in patchStart.col..<(patchStart.col + visibleSide) {
+                    if board[row][col] != nil {
+                        occupiedInCurrentPatch += 1
+                    }
+                }
+            }
+        }
         var nextTray: [BerryPiece?] = []
         var used: [[BerryPoint]] = []
         var usedTints: Set<Int> = []
@@ -626,11 +640,7 @@ struct BerryEngine: Codable {
                 hasPlacement(for: BerryPiece(points: finishing, tint: 0)) {
                 shape = finishing
             } else if side == 24 && index == 0 &&
-                        (sectionOrigin.row..<(sectionOrigin.row + visibleSide)).reduce(0) { total, row in
-                            total + (sectionOrigin.col..<(sectionOrigin.col + visibleSide)).reduce(0) {
-                                $0 + (board[row][$1] == nil ? 0 : 1)
-                            }
-                        } > (visibleSide * visibleSide) / 3) {
+                        occupiedInCurrentPatch > (visibleSide * visibleSide) / 3 {
                 let small = viable.filter { $0.count <= 3 }
                 shape = small.isEmpty ? [BerryPoint(row: 0, col: 0)] :
                     small[nextRandom(small.count)]
