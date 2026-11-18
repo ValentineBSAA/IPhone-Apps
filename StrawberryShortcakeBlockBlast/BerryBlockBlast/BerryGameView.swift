@@ -30,7 +30,8 @@ private struct BerryBoard: View {
     }
 
     var body: some View {
-        let side = engine.side
+        let side = engine.visibleSide
+        let origin = engine.sectionOrigin
         let unit = (size - CGFloat(side - 1) * gap) / CGFloat(side)
         ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: 22)
@@ -43,13 +44,26 @@ private struct BerryBoard: View {
                 let c = i % side
                 ZStack {
                     RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
-                        .fill(Color.white.opacity(0.76))
-                        .overlay(alignment: .topLeading) {
-                            RoundedRectangle(cornerRadius: side > 8 ? 4 : 8).strokeBorder(.white.opacity(0.58), lineWidth: 1)
+                        .fill(LinearGradient(colors: [
+                            .white.opacity(0.98),
+                            Color(red: 1, green: 0.90, blue: 0.94),
+                            Color(red: 0.99, green: 0.81, blue: 0.87)
+                        ], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
+                                .strokeBorder(Color(red: 0.91, green: 0.54, blue: 0.68).opacity(0.5),
+                                              lineWidth: max(0.75, unit * 0.035))
                         }
-                    if let tint = engine.board[r][c] {
+                        .overlay(alignment: .topLeading) {
+                            Circle().fill(.white.opacity(0.72))
+                                .frame(width: max(2, unit * 0.14), height: max(2, unit * 0.14))
+                                .padding(.top, unit * 0.12)
+                                .padding(.leading, unit * 0.13)
+                        }
+                    if let tint = engine.visibleCell(row: r, col: c) {
                         let blocked = preview?.piece.points.contains(where: {
-                            preview!.row + $0.row == r && preview!.col + $0.col == c
+                            preview!.row + $0.row == r + origin.row &&
+                            preview!.col + $0.col == c + origin.col
                         }) ?? false
                         BerryTile(tint: tint, mode: mode, strawberryUnlocked: strawberryUnlocked)
                             .opacity(blocked && !((preview?.allowed) ?? true) ? 0.24 : 1)
@@ -60,10 +74,10 @@ private struct BerryBoard: View {
             }
             if let preview, previewStyle != "mystery" {
                 ForEach(preview.piece.points, id: \.self) { p in
-                    let r = preview.row + p.row
-                    let c = preview.col + p.col
+                    let r = preview.row + p.row - origin.row
+                    let c = preview.col + p.col - origin.col
                     if (0..<side).contains(r), (0..<side).contains(c) {
-                        let occupied = engine.board[r][c] != nil
+                        let occupied = engine.visibleCell(row: r, col: c) != nil
                         ZStack {
                             if preview.allowed {
                                 BerryTile(tint: preview.piece.tint, preview: true,
@@ -109,7 +123,7 @@ private struct BerryBoard: View {
             }
         }
         // Both the touch receiver and this anchor measure UIWindow coordinates.
-        .background(BerryBoardWindowAnchor(onRect: onBoardRect, tracksScrolling: side == 24))
+        .background(BerryBoardWindowAnchor(onRect: onBoardRect, tracksScrolling: false))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Berry garden, \(engine.side) by \(engine.side) puzzle board")
     }
@@ -268,6 +282,9 @@ struct BerryGameView: View {
                     .font(.system(size: compact ? 10 : 12, weight: .bold, design: .rounded))
                     .foregroundStyle(BerryStyle.chocolate)
                     .frame(height: 19)
+                    if mode == .endless && session.engine.side == 24 {
+                        endlessSectionHUD
+                    }
                     if mode == .story {
                         storyProgressCard
                     }
@@ -286,14 +303,13 @@ struct BerryGameView: View {
                             .background(.white.opacity(0.87), in: Capsule())
                         }.buttonStyle(.plain)
                     }
-                    if session.engine.side == 24 {
-                        ScrollView([.horizontal, .vertical]) {
-                            boardInteraction(actualSize: max(580, boardSize * 1.75))
-                        }
-                        .frame(width: boardSize + 14, height: boardSize + 14)
-                        .scrollIndicators(.visible)
-                        .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 24))
-                        .accessibilityLabel("24 by 24 Mega Garden. Scroll to reach more cells.")
+                    if mode == .endless && session.engine.side == 24 {
+                        boardInteraction(actualSize: boardSize)
+                            .id(session.engine.activeGardenSection)
+                            .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                            .animation(reduceMotion ? nil : .easeInOut(duration: 0.26),
+                                       value: session.engine.activeGardenSection)
+                            .accessibilityLabel("Mega Garden, section \(session.engine.activeGardenSection + 1) of 4. This section changes automatically.")
                     } else {
                         boardInteraction(actualSize: boardSize)
                     }
@@ -389,8 +405,8 @@ struct BerryGameView: View {
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }
-            // Screen-space celebrations, never attached to the scrollable
-            // 24×24 board. Incoming notifications cannot move these banners.
+            // Screen-space celebrations never follow garden section changes.
+            // Incoming notifications cannot move these banners.
             if sparkle {
                 Text(harvestCheer)
                     .font(.system(size: 14, weight: .black, design: .rounded))
@@ -746,6 +762,32 @@ struct BerryGameView: View {
         }
     }
 
+    private var endlessSectionHUD: some View {
+        let section = session.engine.activeGardenSection
+        let names = ["Rose Garden", "Berry Patch", "Flower Meadow", "Cottage Orchard"]
+        return HStack(spacing: 7) {
+            Image(systemName: "leaf.fill")
+                .foregroundStyle(BerryStyle.leaf)
+            Text("PATCH \(section + 1) OF 4 · \(names[section])")
+                .font(.system(size: 11, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Spacer(minLength: 5)
+            ForEach(0..<4, id: \.self) { index in
+                Circle()
+                    .fill(index == section ? BerryStyle.strawberry :
+                          Color(red: 0.96, green: 0.73, blue: 0.80))
+                    .frame(width: index == section ? 12 : 8, height: index == section ? 12 : 8)
+                    .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: 1))
+            }
+        }
+        .padding(.horizontal, 11)
+        .frame(height: 27)
+        .background(.white.opacity(0.95), in: RoundedRectangle(cornerRadius: 12))
+        .accessibilityLabel("Garden patch \(section + 1) of 4. The game automatically changes patches.")
+    }
+
     private var scoreBar: some View {
         HStack(spacing: 8) {
             scorePill("SCORE", value: session.engine.score, icon: "ScoreHeart")
@@ -841,16 +883,19 @@ struct BerryGameView: View {
         guard canMakeMove, session.engine.tray.indices.contains(slot),
               let piece = session.engine.tray[slot] else { return nil }
         let candidates = BerryDropGeometry.candidates(
-            for: finger, board: boardPosition.rect, piece: piece, side: session.engine.side
+            for: finger, board: boardPosition.rect, piece: piece,
+            side: session.engine.visibleSide
         )
         // Preview and release MUST use the same lifted anchor. Choosing a
         // different candidate just because it is legal silently moves an L
         // piece away from the location the player is pointing at.
         let target = candidates.first
         guard let target else { return nil }
+        let origin = session.engine.sectionOrigin
+        let row = target.row + origin.row, col = target.col + origin.col
         return BerryDragState(
-            slot: slot, piece: piece, row: target.row, col: target.col,
-            allowed: session.engine.canPlace(piece, row: target.row, col: target.col)
+            slot: slot, piece: piece, row: row, col: col,
+            allowed: session.engine.canPlace(piece, row: row, col: col)
         )
     }
 
@@ -942,8 +987,8 @@ struct BerryGameView: View {
         }
     }
 
-    /// Identical drag and tap board to the physically verified 0.5.6 engine.
-    /// Only the 24x24 view enlarges and scrolls.
+    /// Identical drag and tap physics to verified 0.5.6.
+    /// The 24x24 Endless engine presents one full-size 12x12 sector at a time.
     private func boardInteraction(actualSize: CGFloat) -> some View {
             BerryBoard(engine: session.engine, preview: drag ?? hintPreview, size: actualSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle, onBoardRect: { rect in boardPosition.rect = rect })
                 .overlay {
@@ -957,9 +1002,11 @@ struct BerryGameView: View {
                 .gesture(SpatialTapGesture().onEnded { tap in
                     let location = tap.location
                     if let special = specialTargetTool {
-                        let cell = actualSize / CGFloat(max(1, session.engine.side))
-                        let row = Int(floor((location.y - 7) / cell))
-                        let col = Int(floor((location.x - 7) / cell))
+                        let side = session.engine.visibleSide
+                        let cell = (actualSize - CGFloat(side - 1) * 3) / CGFloat(side) + 3
+                        let origin = session.engine.sectionOrigin
+                        let row = Int(floor((location.y - 7) / cell)) + origin.row
+                        let col = Int(floor((location.x - 7) / cell)) + origin.col
                         let worked = special == "trowel" ?
                             session.useGoldenTrowel(row: row, col: col) :
                             session.useStarberrySeed(row: row, col: col)
@@ -979,12 +1026,15 @@ struct BerryGameView: View {
                     let local = CGPoint(x: location.x - 7, y: location.y - 7)
                     let area = CGRect(origin: .zero, size: CGSize(width: actualSize, height: actualSize))
                     guard let target = BerryDropGeometry.target(
-                        for: local, board: area, piece: piece, side: session.engine.side
+                        for: local, board: area, piece: piece,
+                        side: session.engine.visibleSide
                     ) else {
                         warningFeedback()
                         return
                     }
-                    if session.drop(slot: slot, row: target.row, col: target.col) {
+                    let origin = session.engine.sectionOrigin
+                    if session.drop(slot: slot, row: target.row + origin.row,
+                                    col: target.col + origin.col) {
                         hintPreview = nil
                         selectedSlot = nil
                         successFeedback()
