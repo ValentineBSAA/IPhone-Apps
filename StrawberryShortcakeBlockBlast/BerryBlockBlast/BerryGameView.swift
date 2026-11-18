@@ -27,6 +27,16 @@ private struct BerryBoard: View {
         case "picnic": return "BerryBoardPicnicCell"
         case "garden": return "BerryBoardGardenCell"
         case "seed": return "BerryBoardSeedMosaicCell"
+        case "concept-01": return "BBBBoardCell01"
+        case "concept-02": return "BBBBoardCell02"
+        case "concept-03": return "BBBBoardCell03"
+        case "concept-04": return "BBBBoardCell04"
+        case "concept-05": return "BBBBoardCell05"
+        case "concept-06": return "BBBBoardCell06"
+        case "concept-07": return "BBBBoardCell07"
+        case "concept-08": return "BBBBoardCell08"
+        case "concept-09": return "BBBBoardCell09"
+        case "concept-10": return "BBBBoardCell10"
         default: return "BerryBoardCreamCell"
         }
     }
