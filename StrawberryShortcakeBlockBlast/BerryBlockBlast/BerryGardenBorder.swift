@@ -66,7 +66,6 @@ struct BerryGardenBorder: View {
                     .padding(.bottom, 4)
             }
             .clipShape(RoundedRectangle(cornerRadius: 23, style: .continuous))
-            .shadow(color: frameBottom.opacity(0.18), radius: 3, y: 2)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
     }
