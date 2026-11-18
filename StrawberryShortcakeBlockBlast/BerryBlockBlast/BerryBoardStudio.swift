@@ -162,3 +162,77 @@ struct BerryBoardFrameGrid: View {
         }
     }
 }
+
+
+/// The ten originally approved portrait board concepts are shown as their own
+/// grid. Selecting one changes only the empty-square art, using a cropped
+/// texture derived from that concept. Never stretch the entire portrait
+/// mockup over the live 8x8/12x12 board or paint over occupied game squares.
+struct BerryBoardConceptGrid: View {
+    @AppStorage("berryberryblast.board.surface.v059") private var selected = "original"
+    private struct Concept: Identifiable {
+        let id: String
+        let title: String
+        let image: String
+    }
+    private let themes: [Concept] = [
+        .init(id: "concept-01", title: "Strawberry Cream", image: "BBBBoardConcept01"),
+        .init(id: "concept-02", title: "Picnic Basket", image: "BBBBoardConcept02"),
+        .init(id: "concept-03", title: "Garden Meadow", image: "BBBBoardConcept03"),
+        .init(id: "concept-04", title: "Candy Glass", image: "BBBBoardConcept04"),
+        .init(id: "concept-05", title: "Seed Mosaic", image: "BBBBoardConcept05"),
+        .init(id: "concept-06", title: "Royal Berry", image: "BBBBoardConcept06"),
+        .init(id: "concept-07", title: "Berry Garden", image: "BBBBoardConcept07"),
+        .init(id: "concept-08", title: "Strawberry Jam", image: "BBBBoardConcept08"),
+        .init(id: "concept-09", title: "Berry Sunset", image: "BBBBoardConcept09"),
+        .init(id: "concept-10", title: "Blackberry Night", image: "BBBBoardConcept10")
+    ]
+    private let cols = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
+    var body: some View {
+        VStack(spacing: 10) {
+            Text("10 COLLECTIBLE BOARD SURFACES")
+                .font(.system(size: 12, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.strawberry)
+            Text("These themes decorate the empty squares only. Your board remains the exact same puzzle grid.")
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
+            LazyVGrid(columns: cols, spacing: 10) {
+                ForEach(themes) { theme in
+                    Button {
+                        selected = theme.id
+                    } label: {
+                        VStack(spacing: 6) {
+                            if UIImage(named: theme.image) != nil {
+                                Image(theme.image)
+                                    .resizable()
+                                    .interpolation(.high)
+                                    .scaledToFit()
+                                    .frame(height: 155)
+                            } else {
+                                Image(systemName: "square.grid.3x3.fill")
+                                    .font(.system(size: 44))
+                                    .frame(height: 155)
+                            }
+                            Text(theme.title)
+                                .font(.system(size: 13, weight: .black, design: .rounded))
+                                .foregroundStyle(BerryStyle.chocolate)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                            Text(selected == theme.id ? "✓ EQUIPPED" : "USE BOARD")
+                                .font(.system(size: 11, weight: .black, design: .rounded))
+                                .foregroundStyle(selected == theme.id ? BerryStyle.leaf : BerryStyle.strawberry)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 225)
+                        .padding(7)
+                        .background(.white, in: RoundedRectangle(cornerRadius: 18))
+                        .overlay(RoundedRectangle(cornerRadius: 18)
+                            .strokeBorder(selected == theme.id ? BerryStyle.leaf : BerryStyle.strawberry.opacity(0.25),
+                                          lineWidth: selected == theme.id ? 2 : 1))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+}
