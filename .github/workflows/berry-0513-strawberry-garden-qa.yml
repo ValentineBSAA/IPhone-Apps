@@ -39,12 +39,47 @@ jobs:
           for name in names: assert (Path('Tests')/name).is_file(),name
           print('QA source suite present. Dynamic tests run on real simulators below.')
           PY
-  simulators:
+  engine-regression:
     needs: integrity
-    runs-on: macos-15
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    steps:
+      - uses: actions/checkout@v4
+      - name: Type-check production engine and run deterministic regression
+        run: |
+          set -euo pipefail
+          command -v swiftc
+          swiftc -swift-version 5 \
+            BerryBlockBlast/BlockEngine.swift \
+            BerryBlockBlast/BerryPieceCatalog.swift \
+            BerryBlockBlast/BerryDifficultyPolicy.swift \
+            Tools/verify_0513_engine_regression.swift \
+            -o /tmp/berry-0513-engine-regression
+          /tmp/berry-0513-engine-regression
+      - name: Catch macOS runner configuration regressions
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          workflow=Path('../.github/workflows/berry-0513-strawberry-garden-qa.yml').read_text()
+          assert 'runs-on: macos-15-intel' in workflow, 'Runner fallback accidentally removed'
+          assert 'max-parallel: 1' in workflow, 'Simulators may compete for scarce runners'
+          assert 'needs: [integrity, engine-regression]' in workflow
+          assert 'needs: [integrity, engine-regression, simulators]' in workflow
+          print('PASS: regression gate is independent of macOS runner availability')
+          PY
+  simulators:
+    needs: [integrity, engine-regression]
+    # Intel is a supported runner; the previous ARM macos-15 jobs
+    # were both cancelled before any step (runner allocation failure).
+    runs-on: macos-15-intel
     timeout-minutes: 70
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         include:
           - slug: iphone14pro
@@ -128,7 +163,7 @@ jobs:
             StrawberryShortcakeBlockBlast/.build/QA/${{ matrix.slug }}-captures/
           retention-days: 30
   candidate:
-    needs: [integrity, simulators]
+    needs: [integrity, engine-regression, simulators]
     runs-on: macos-15
     timeout-minutes: 45
     defaults:
