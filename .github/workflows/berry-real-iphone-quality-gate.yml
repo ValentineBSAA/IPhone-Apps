@@ -1,7 +1,7 @@
 name: Berry Berry Blast 0.5.12 Real iPhone Quality Gate
 on:
   push:
-    branches: [qa/berry-0512-real-display-release-gate]
+    branches: [qa/berry-0512-real-display-release-gate, fix/berry-berry-blast-0512-build3-tray-layout-regression]
   workflow_dispatch:
 permissions:
   contents: read
