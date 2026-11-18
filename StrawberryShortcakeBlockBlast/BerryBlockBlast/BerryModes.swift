@@ -97,7 +97,7 @@ struct BerryHomeView: View {
         }
         .buttonStyle(.plain)
     }
-    private var version: String { "🍓 v0.5.9 • 1" }
+    private var version: String { "🍓 v0.5.10 • 1" }
     @AppStorage("berryblockblast.story.level") private var storyLevel = 1
     var body: some View {
         ZStack {
