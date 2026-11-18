@@ -106,7 +106,19 @@ final class BerryGameSession: ObservableObject {
         // them in this build. A selected garden size resumes only its own slot.
         let requestedSize = UserDefaults.standard.integer(forKey: "berryblockblast.endless.boardSize.v056b2")
         let size = [8, 12, 24].contains(requestedSize) ? requestedSize : 8
-        if mode == .endless, let saved = Self.savedEndlessEngine(side: size) {
+        if mode == .daily {
+            // A daily attempt is consumed when the player enters play, not
+            // only when they win. Save the exact engine for same-day resume.
+            guard BerryDailyHistory.beginToday() else {
+                engine = freshEngine()
+                previous = nil
+                gameOver = true
+                lastMessage = "Today's Daily Harvest is finished. A new attempt unlocks at midnight."
+                return
+            }
+            engine = BerryDailyHistory.activeEngine() ?? freshEngine()
+            BerryDailyHistory.saveActiveEngine(engine)
+        } else if mode == .endless, let saved = Self.savedEndlessEngine(side: size) {
             engine = saved
             if size == 8 {
                 UserDefaults.standard.set(true, forKey: Self.legacyEndlessMigratedKey)
@@ -131,6 +143,7 @@ final class BerryGameSession: ObservableObject {
         previousBerryEarnings = 0
         previousRewardEntry = nil
         gameOver = !engine.hasMove()
+        if mode == .daily && gameOver { BerryDailyHistory.markLostToday() }
         lastEarned = 0
         lastClearedLines = 0
     }
@@ -353,7 +366,9 @@ final class BerryGameSession: ObservableObject {
     /// at least one empty square. Never rescue Classic or timed score trials.
     var canContinueWithShuffle: Bool {
         activeMode != .classic && activeMode != .challenge &&
-            activeMode != .superHard && engine.canRescueWithShuffle
+            activeMode != .superHard &&
+            !(activeMode == .daily && gameOver) &&
+            engine.canRescueWithShuffle
     }
 
     @discardableResult
@@ -640,6 +655,9 @@ final class BerryGameSession: ObservableObject {
     var canUndo: Bool { undos > 0 && previous != nil }
 
     func newGame() {
+        // A lost (or completed) Daily Harvest cannot be restarted. Leaving
+        // the unfinished run and returning the same day resumes its save.
+        guard activeMode != .daily else { return }
         if activeMode == .endless && engine.side == 8 {
             // A deliberate restart must not resurrect the old pre-Build-2 save.
             UserDefaults.standard.set(true, forKey: Self.legacyEndlessMigratedKey)
@@ -683,9 +701,13 @@ final class BerryGameSession: ObservableObject {
         let inventory = Inventory(berries: berries, undos: undos, shuffles: shuffles,
                                   totalEarnedBerries: totalEarnedBerries, hints: hints)
         if let data = try? JSONEncoder().encode(inventory) { UserDefaults.standard.set(data, forKey: inventoryKey) }
-        // Only Sweet Endless persists an unfinished board. Each board size
-        // keeps its own ongoing run. Original Build 1 and Classic save keys
-        // are never overwritten, which preserves the stable rollback.
+        // Daily Harvest has exactly one resumable same-day attempt.
+        // Never overwrite the existing legacy Endless / Classic save keys.
+        if activeMode == .daily {
+            BerryDailyHistory.saveActiveEngine(engine)
+            return
+        }
+        // Only Sweet Endless persists an unfinished indefinite board.
         guard activeMode == .endless else { return }
         let key = Self.endlessSaveKey(side: engine.side)
         if engine.moves > 0, let data = try? JSONEncoder().encode(engine) {
