@@ -81,7 +81,9 @@ struct BerryDailyHarvestView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    BerryIcon(name: "DailyHarvest", size: 96)
+                    Image("BerryDailyHarvestHeader").resizable().scaledToFit()
+                        .frame(maxWidth: 330).frame(height: 103)
+                        .accessibilityHidden(true)
                     Text("Daily Harvest Calendar")
                         .font(.system(size: 26, weight: .black, design: .rounded))
                         .foregroundStyle(BerryStyle.strawberry)
