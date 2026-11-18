@@ -240,7 +240,6 @@ struct BerryGameView: View {
                 (isTimedMode ? (compact ? 276 : 310) : (compact ? 248 : 282)) -
                 (mode == .story ? 42 : 0), 475))
             let boardSize = stableBoardSize ?? fittedBoardSize
-            let cell = (boardSize - CGFloat(session.engine.side - 1) * 3) / CGFloat(session.engine.side)
             ZStack {
                 background
                 VStack(spacing: compact ? 5 : 8) {
