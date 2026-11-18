@@ -74,7 +74,7 @@ struct BerryBoard: View {
                 ForEach(preview.piece.points, id: \.self) { p in
                     let r = preview.row + p.row - origin.row
                     let c = preview.col + p.col - origin.col
-                    if (0..<side).contains(r), (0..<side).contains(c) {
+                    if BerryBoardContainment.contains(row: r, col: c, side: side) {
                         let occupied = engine.visibleCell(row: r, col: c) != nil
                         ZStack {
                             if preview.allowed {
@@ -119,12 +119,17 @@ struct BerryBoard: View {
                     .overlay(alignment: .top) {
                         Text("Outside the garden")
                             .font(.system(size: 10, weight: .bold, design: .rounded))
-                            .padding(6).background(.white, in: Capsule())
+                            .padding(.horizontal, 7).padding(.vertical, 3)
+                            .background(.white, in: Capsule())
                             .foregroundStyle(Color.red)
+                            .padding(.top, 5)
                     }
                     .allowsHitTesting(false)
             }
         }
+        // Crop occupied cells, off-edge previews, glows, shadows, and the
+        // warning at the exact same rounded silhouette, on every board mode.
+        .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Berry garden, \(engine.side) by \(engine.side) puzzle board")
     }
