@@ -11,24 +11,24 @@ enum StoryScript {
                 id: "opening",
                 beats: [
                     .init("nora", "nora", "Hey, quick question. Did maintenance mention an elevator inspection?", delay: 1.0),
-                    .init("nora", "nora", "It keeps stopping on my floor even when nobody calls it.", delay: 2.0),
-                    .init("nora", "nora", "It's Nora from 402, by the way.", delay: 2.1),
-                    .init("nora", "nora", "I was going to ask Eli, but there's something else. I keep hearing furniture dragging upstairs.", delay: 2.2),
-                    .init("nora", "nora", "Except we're on the top floor."),
-                    .init("nora", "nora", "Tell me you hear it too.")
+                    .init("nora", "nora", "It stops on four even when nobody is waiting. Denise said there was supposed to be an inspection.", delay: 2.0),
+                    .init("nora", "nora", "It's Nora from 402, btw. We talked by the mailboxes last week 😅", delay: 2.1),
+                    .init("nora", "nora", "I was going to ask Eli, but he hasn't been at the desk today.", delay: 2.2),
+                    .init("nora", "nora", "Anyway I can take a photo of the door if that helps."),
+                    .init("nora", "nora", "You still have the number for maintenance, right?")
                 ],
                 choices: [
-                    .init(id: "opening_kind", title: "I hear something. Are you okay?", next: "kind_response"),
-                    .init(id: "opening_direct", title: "There isn't another floor. Who is this?", next: "direct_response"),
-                    .init(id: "opening_ignore", title: "You're probably hearing the pipes.", next: "dismiss_response")
+                    .init(id: "opening_kind", title: "I can ask around. Are you okay?", next: "kind_response"),
+                    .init(id: "opening_direct", title: "Have you checked the noticeboard?", next: "direct_response"),
+                    .init(id: "opening_ignore", title: "Probably just a faulty sensor.", next: "dismiss_response")
                 ]
             ),
             StoryScene(
                 id: "kind_response",
                 beats: [
-                    .init("nora", "nora", "Thank you. I thought I was losing it."),
-                    .init("nora", "nora", "Whatever it is, it stops whenever I move toward my door."),
-                    .init("nora", "nora", "Look at this. I took it through the peephole.")
+                    .init("nora", "nora", "Thanks. It's probably nothing, but I appreciate it."),
+                    .init("nora", "nora", "It's a little annoying because the doors keep opening while I'm trying to carry groceries."),
+                    .init("nora", "nora", "I took a photo a minute ago. Hang on.")
                 ],
                 choices: [],
                 next: "evidence"
@@ -36,10 +36,10 @@ enum StoryScript {
             StoryScene(
                 id: "direct_response",
                 beats: [
-                    .init("nora", "nora", "What? It's Nora."),
-                    .init("nora", "nora", "We've shared an elevator for six months."),
-                    .init("nora", "nora", "Okay, you're right to be suspicious. Something's wrong here."),
-                    .init("nora", "nora", "I took a picture so you'd believe me.")
+                    .init("nora", "nora", "Oh, I haven't checked the noticeboard today."),
+                    .init("nora", "nora", "I should really have looked before bothering everyone 😂"),
+                    .init("nora", "nora", "I sent Denise a message earlier. She hasn't answered."),
+                    .init("nora", "nora", "Here's what the elevator looked like when I got home.")
                 ],
                 choices: [],
                 next: "evidence"
@@ -47,10 +47,10 @@ enum StoryScript {
             StoryScene(
                 id: "dismiss_response",
                 beats: [
-                    .init("nora", "nora", "I know what pipes sound like."),
-                    .init("nora", "nora", "Pipes don't drag chairs."),
-                    .init("nora", "nora", "And pipes don't whisper your name."),
-                    .init("nora", "nora", "Please look at this before you decide I'm crazy.")
+                    .init("nora", "nora", "Yeah, that's what I figured at first."),
+                    .init("nora", "nora", "It still makes this awful scraping sound, though."),
+                    .init("nora", "nora", "It was fine yesterday. Maybe somebody's repairing the motor."),
+                    .init("nora", "nora", "Here, this is what I mean. Nothing dramatic.")
                 ],
                 choices: [],
                 next: "evidence"
@@ -58,18 +58,18 @@ enum StoryScript {
             StoryScene(
                 id: "evidence",
                 beats: [
-                    .init("nora", "nora", "This is the elevator right now. Look at its reflection.", kind: .photograph, asset: "Story_02_Elevator_Reflection"),
-                    .init("nora", "nora", "I was standing alone when I took that. Does it look like someone is in the reflection?"),
-                    .init("eli", "eli", "Building notice: maintenance on the north stairwell. Avoid the elevator tonight.", delay: 3.6),
-                    .init("nora", "nora", "Why is Eli messaging you too?"),
-                    .init("nora", "nora", "He doesn't usually work nights."),
-                    .init("unit7", "unit7", "THERE IS ROOM FOR ONE MORE.", delay: 3.5),
-                    .init("unit7", "unit7", "SEVENTH FLOOR. LEFT DOOR.")
+                    .init("nora", "nora", "Photo from outside the elevator. Can you tell if there's a service sticker?", kind: .photograph, asset: "Story_02_Elevator_Reflection"),
+                    .init("nora", "nora", "I thought I saw somebody near the door, but I might be seeing things in the metal."),
+                    .init("eli", "eli", "Eli said the contractor didn't show up. The lift is still being inspected.", delay: 3.6),
+                    .init("nora", "nora", "Eli's usually good about these things. I'll ask him again."),
+                    .init("nora", "nora", "He's covering the evening shift this week."),
+                    .init("unit7", "unit7", "Hi, sorry. Is this the building office? I found an old notice with this number.", delay: 3.5),
+                    .init("unit7", "unit7", "I think I have the wrong number. Thanks anyway.")
                 ],
                 choices: [
-                    .init(id: "photo_path", title: "Nora, what does the elevator say?", next: "photo_path"),
-                    .init(id: "caretaker_path", title: "Eli, explain the elevator warning.", next: "caretaker_path"),
-                    .init(id: "unknown_path", title: "Who gave this number to you?", next: "unknown_path")
+                    .init(id: "photo_path", title: "Can you see anything unusual in the photo?", next: "photo_path"),
+                    .init(id: "caretaker_path", title: "What did Eli say about the inspection?", next: "caretaker_path"),
+                    .init(id: "unknown_path", title: "Who was that other number?", next: "unknown_path")
                 ]
             ),
             StoryScene(
@@ -100,11 +100,11 @@ enum StoryScript {
             StoryScene(
                 id: "unknown_path",
                 beats: [
-                    .init("unit7", "unit7", "YOU DID."),
-                    .init("unit7", "unit7", "TOMORROW."),
-                    .init("nora", "nora", "You need to block that number."),
-                    .init("eli", "eli", "Don't respond to unknown numbers. The building records who answers."),
-                    .init("unit7", "unit7", "TOO LATE.")
+                    .init("unit7", "unit7", "I don't know who gave me the number. Sorry."),
+                    .init("unit7", "unit7", "I used to live in that building. I thought they'd changed the numbers."),
+                    .init("nora", "nora", "That is a little weird. Maybe it was an old tenant?"),
+                    .init("eli", "eli", "Eli said the old directory was replaced years ago."),
+                    .init("unit7", "unit7", "Wait. Does the building still have that little stairwell by the elevator?")
                 ],
                 choices: [],
                 next: "voicemail"
