@@ -6,6 +6,10 @@ import CoreGraphics
 /// visual gutters actually applied by the view and leave all touch controls
 /// fully accessible on 393-point iPhone 14 Pro and iPhone 16 screens.
 enum BerryGameplayLayout {
+    /// Shared inset of the physical board wrapper around its painted cells.
+    /// Used identically for board touches, drag geometry and size budgeting.
+    static let boardTouchMargin: CGFloat = 3
+
     /// A no-ghost game setting cannot make a piece in hand invisible.
     /// The same rule applies to Mystery, Outline and Sweet Assist.
     static func showsCarriedPiece(previewStyle: String,
@@ -38,7 +42,7 @@ enum BerryGameplayLayout {
         // Smaller gap budget for seven common blocks, extra for chapters.
         let gaps: CGFloat = spacing * (mode == .story ? 8 : 7)
         // Board touch wrapper now has only 3-point padding on each side.
-        let border: CGFloat = 6
+        let border: CGFloat = boardTouchMargin * 2
         // Defensive margin for differences in the internal HUD layout,
         // Dynamic Type and rounding. All listed controls remain tappable.
         let cushion: CGFloat = 12
@@ -48,7 +52,7 @@ enum BerryGameplayLayout {
         let byHeight = max(150, height - occupied)
         // Six horizontal points of outer content padding plus 6-point board
         // interaction frame must fit fully inside the safe-area width.
-        let byWidth = max(150, min(width, 510) - 12)
+        let byWidth = max(150, min(width, 510) - 6 - boardTouchMargin * 2)
         return min(465, byWidth, byHeight)
     }
 }
