@@ -8,7 +8,7 @@ struct BerrySettingsHubView: View {
 
     @State private var selected: Section?
     @State private var confirmAllAppearance = false
-    @StateObject private var rewards = BerryGameSession()
+
 
     @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
     @AppStorage("berryblockblast.shop.equippedBorder.v056b2") private var borderSkin = "default"
@@ -22,6 +22,8 @@ struct BerrySettingsHubView: View {
     @AppStorage("berryblockblast.music") private var music = true
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.musicVolume") private var musicVolume = 0.22
+    @AppStorage("berryblockblast.musicMode.v056") private var musicMode = BerryMusicMode.balanced.rawValue
+    @AppStorage("berryblockblast.shuffleEnabled.v056") private var shuffleSongs = true
     @AppStorage("berryblockblast.effectVolume") private var effectVolume = 0.65
     @AppStorage("berryberryblast.birthday.month.v0511") private var birthdayMonth = 0
     @AppStorage("berryberryblast.birthday.day.v0511") private var birthdayDay = 0
@@ -199,6 +201,15 @@ struct BerrySettingsHubView: View {
                            value: $music)
                 toggleCard("Sound Effects", detail: "Berry chimes and pops", icon: "speaker.wave.2.fill",
                            value: $sound)
+                toggleCard("Shuffle Songs", detail: "Avoid repeating the same berry track",
+                           icon: "shuffle", value: $shuffleSongs)
+                ForEach(BerryMusicMode.allCases) { mode in
+                    choice(mode.shortLabel, detail: mode.description,
+                           icon: "music.note.list", selected: musicMode == mode.rawValue) {
+                        musicMode = mode.rawValue
+                        BerryAudio.shared.setMusicMode(mode)
+                    }
+                }
                 sliderCard("Music Volume", value: $musicVolume, icon: "music.note.list")
                 sliderCard("Effect Volume", value: $effectVolume, icon: "speaker.wave.3.fill")
                 choice("Test Berry Chimes", detail: "Hear the current effect volume",
@@ -207,6 +218,7 @@ struct BerrySettingsHubView: View {
                 }
             }
             .onChange(of: music) { BerryAudio.shared.setMusic($0) }
+            .onChange(of: shuffleSongs) { BerryAudio.shared.setShuffle($0) }
             .onChange(of: musicVolume) { BerryAudio.shared.setMusicVolume(Float($0)) }
             .onChange(of: effectVolume) { BerryAudio.shared.setEffectVolume(Float($0)) }
         case .celebration:
@@ -272,10 +284,12 @@ struct BerrySettingsHubView: View {
                        icon: "arrow.uturn.backward.circle.fill", selected: false) {
                     confirmAllAppearance = true
                 }
-                choice("Saved Games", detail: "Your saves and wallet remain local",
-                       icon: "externaldrive.fill", selected: true) {}
-                choice("Version", detail: "0.5.11 Build 1", icon: "info.circle.fill",
-                       selected: true) {}
+                BerryGridInfoTile(title: "Saved Games",
+                                 detail: "Your saves and wallet remain local and untouched",
+                                 art: "BerryCollection", value: "Protected")
+                BerryGridInfoTile(title: "App Version",
+                                 detail: "iOS 16 compatible",
+                                 art: "Milestone", value: "0.5.11 • 1")
             }
         }
     }
