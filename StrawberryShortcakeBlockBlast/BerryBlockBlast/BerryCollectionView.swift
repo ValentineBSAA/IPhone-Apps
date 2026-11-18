@@ -6,6 +6,7 @@ struct BerryCollectionView: View {
     let lifetimeLines: Int
     let onOpenBoutique: () -> Void
     @State private var section: Int? = nil
+    @ObservedObject private var playtime = BerryPlaytimeTracker.shared
     @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
     @AppStorage("berryblockblast.shop.equippedBorder.v056b2") private var borderSkin = "default"
     @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkleSkin = "default"
@@ -281,6 +282,36 @@ struct BerryCollectionView: View {
 
     private var recordsContent: some View {
         VStack(alignment: .leading, spacing: 11) {
+            sectionHeader("YOUR STRAWBERRY PLAYTIME")
+            Text("Counted while the app is active. Stored privately on this iPhone, starting with version 0.5.9.")
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
+            LazyVGrid(columns: gridColumns, spacing: 11) {
+                BerryGridInfoTile(title: "Today", detail: "Time in Berry Berry Blast",
+                                 art: "DailyHarvest",
+                                 value: BerryPlaytimeTracker.display(playtime.todaySeconds))
+                BerryGridInfoTile(title: "Current Session",
+                                 detail: "This foreground visit",
+                                 art: "Milestone",
+                                 value: BerryPlaytimeTracker.display(playtime.sessionSeconds))
+                BerryGridInfoTile(title: "Lifetime Playtime",
+                                 detail: "Tracked on this device since 0.5.9",
+                                 art: "Champion",
+                                 value: BerryPlaytimeTracker.display(playtime.lifetimeSeconds))
+                BerryGridInfoTile(title: "Days Played",
+                                 detail: "Days with foreground activity",
+                                 art: "BerryCollection",
+                                 value: "\(playtime.daysPlayed)")
+            }
+            sectionHeader("LAST SEVEN DAYS")
+            LazyVGrid(columns: gridColumns, spacing: 11) {
+                ForEach(playtime.lastSevenDays) { day in
+                    BerryGridInfoTile(title: day.label,
+                                     detail: "On-device playtime",
+                                     art: "DailyHarvest",
+                                     value: BerryPlaytimeTracker.display(day.seconds))
+                }
+            }
             sectionHeader("YOUR PERSONAL BEST SCORES")
             Text("Your own device records, not an online leaderboard.")
                 .font(.system(size: 11, weight: .medium, design: .rounded))
