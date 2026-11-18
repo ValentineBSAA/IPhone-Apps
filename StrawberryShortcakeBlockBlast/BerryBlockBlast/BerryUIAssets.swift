@@ -156,20 +156,92 @@ struct BerryCandyToolbarButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: size * 0.44, weight: .bold))
+                .font(.system(size: size * 0.45, weight: .bold))
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(.white)
+                .foregroundStyle(tint)
                 .frame(width: size, height: size)
                 .background(
-                    LinearGradient(colors: [tint.opacity(0.83), tint],
+                    LinearGradient(colors: [.white, tint.opacity(0.14)],
                                    startPoint: .topLeading,
                                    endPoint: .bottomTrailing),
                     in: Circle())
-                .overlay(Circle().strokeBorder(.white.opacity(0.95), lineWidth: 1.5))
-                .shadow(color: tint.opacity(0.22), radius: 4, y: 2)
+                .overlay(Circle().strokeBorder(tint.opacity(0.76), lineWidth: 1.6))
+                .overlay(Circle().inset(by: 2.9).strokeBorder(.white.opacity(0.88), lineWidth: 1))
+                .shadow(color: tint.opacity(0.20), radius: 4, y: 2)
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
+    }
+}
+
+
+/// One clear, consistent restore location for both Home Settings and the
+/// in-game Settings sheet. Board-only restoration deliberately DOES NOT touch
+/// the player's chosen block skin, strawberries, save files, audio or scores.
+struct BerryBoardAppearanceControls: View {
+    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "original"
+    @AppStorage("berryblockblast.shop.equippedBorder.v056b2") private var borderSkin = "default"
+    @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
+    @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkleSkin = "default"
+    @State private var confirmAllCosmetics = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("BOARD APPEARANCE", systemImage: "square.grid.3x3.fill")
+                .font(.system(size: 13, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.strawberry)
+            Picker("Empty Board Squares", selection: $boardSurface) {
+                Text("Original Clear Squares · Default").tag("original")
+                Text("Strawberry Cream").tag("cream")
+                Text("Frosted Candy Glass").tag("glass")
+                Text("Berry Picnic").tag("picnic")
+                Text("Garden Patch").tag("garden")
+                Text("Seed Mosaic").tag("seed")
+            }
+            .pickerStyle(.menu)
+            .tint(BerryStyle.strawberry)
+            Text("Board surfaces change empty spaces only. Your selected puzzle blocks stay as they are.")
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
+            Button {
+                boardSurface = "original"
+                borderSkin = "default"
+            } label: {
+                Label("Restore Original Board Only", systemImage: "arrow.uturn.backward.circle.fill")
+                    .font(.system(size: 13, weight: .heavy, design: .rounded))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(BerryStyle.leaf)
+            .accessibilityHint("Restore the clear default board and frame without changing your puzzle blocks.")
+            Button {
+                confirmAllCosmetics = true
+            } label: {
+                Label("Restore All Appearance Defaults", systemImage: "paintpalette")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .tint(BerryStyle.strawberry)
+            .confirmationDialog(
+                "Restore original board, blocks, border and sparkle?",
+                isPresented: $confirmAllCosmetics,
+                titleVisibility: .visible) {
+                    Button("Restore All Cosmetic Defaults") {
+                        boardSurface = "original"
+                        blockSkin = "default"
+                        borderSkin = "default"
+                        sparkleSkin = "default"
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Owned items, strawberries, scores, game saves, music and purchased upgrades will remain untouched.")
+                }
+        }
+        .padding(13)
+        .background(.white.opacity(0.93), in: RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18)
+            .strokeBorder(BerryStyle.strawberry.opacity(0.22), lineWidth: 1))
     }
 }
