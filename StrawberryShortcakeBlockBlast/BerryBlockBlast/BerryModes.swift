@@ -97,7 +97,7 @@ struct BerryHomeView: View {
         }
         .buttonStyle(.plain)
     }
-    private var version: String { "🍓 v0.5.12 • 2" }
+    private var version: String { "🍓 v0.5.12 • 3" }
     @AppStorage("berryblockblast.story.level") private var storyLevel = 1
     @AppStorage("berryberryblast.birthday.month.v0511") private var birthdayMonth = 0
     @AppStorage("berryberryblast.birthday.day.v0511") private var birthdayDay = 0
