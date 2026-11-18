@@ -130,7 +130,7 @@ struct BerrySettingsHubView: View {
                         }
                     }
                 }
-                Text("Berry Berry Blast 0.5.11 • Build 1")
+                Text("Berry Berry Blast 0.5.12 • Build 1")
                     .font(.system(size: 11, weight: .bold, design: .rounded))
                     .foregroundStyle(BerryStyle.chocolate.opacity(0.67))
             }
