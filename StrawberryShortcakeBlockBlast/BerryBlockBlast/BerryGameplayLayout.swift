@@ -5,6 +5,14 @@ import CoreGraphics
 /// safe-area insets from that height a second time. Instead reserve only the
 /// top/bottom padding actually applied by the view.
 enum BerryGameplayLayout {
+    /// A no-ghost game setting cannot make a piece in hand invisible.
+    /// The same rule applies to Mystery, Outline and Sweet Assist.
+    static func showsCarriedPiece(previewStyle: String,
+                                  dragging: Bool,
+                                  fingerKnown: Bool) -> Bool {
+        dragging && fingerKnown
+    }
+
     static func boardSize(width: CGFloat, height: CGFloat, topInset: CGFloat,
                           bottomInset: CGFloat, mode: BerryMode,
                           megaGarden: Bool = false) -> CGFloat {
