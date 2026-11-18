@@ -236,11 +236,12 @@ struct BerryGameView: View {
     }
 
     private func updateModePlaytime() {
-        let activePuzzle = !isPaused && !showGameOver && !showVictory &&
-            !confirmRestart && !showSettings && !showHelp && !showShop &&
+        let activePuzzle = scenePhase == .active && !isPaused &&
+            !showGameOver && !showVictory && !confirmRestart &&
+            !showSettings && !showHelp && !showShop &&
             !showStats && !showCottage && !showWelcome && !showDailyCalendar &&
             !showPremiumActions && !confirmGoldenStrawberry &&
-            (!isTimedMode || blitzRunning)
+            (!isTimedMode || (blitzRunning && pausedTimerAt == nil))
         BerryPlaytimeTracker.shared.setModePlaying(activePuzzle)
     }
     @State private var isPaused = false
@@ -641,6 +642,7 @@ struct BerryGameView: View {
                     resumeTimedClockIfPossible(foreground: true)
                 }
             }
+            updateModePlaytime()
         }
         // UIKit lifecycle notifications cover lock/unlock transitions where
         // SwiftUI's scenePhase can arrive late. Both paths are idempotent.
