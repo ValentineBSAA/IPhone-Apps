@@ -74,8 +74,11 @@ final class BerryTrayVisibilityTests: XCTestCase {
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.045))
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
-        let image = UIGraphicsImageRenderer(size: size, format: format).image { _ in
-            host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
+        // Do not ask a detached simulator window to wait for a future
+        // screen refresh: on CI that can hang indefinitely. Render the
+        // already laid-out hierarchy synchronously instead.
+        let image = UIGraphicsImageRenderer(size: size, format: format).image { output in
+            host.view.layer.render(in: output.cgContext)
         }
         window.isHidden = true
         return image
