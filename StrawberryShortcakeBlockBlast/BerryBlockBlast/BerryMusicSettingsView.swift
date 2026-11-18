@@ -11,131 +11,115 @@ struct BerryMusicSettingsView: View {
     @AppStorage("berryblockblast.musicMode.v056") private var musicMode = BerryMusicMode.balanced.rawValue
     @AppStorage("berryblockblast.shuffleEnabled.v056") private var shuffle = true
 
+    private let columns = [GridItem(.flexible(), spacing: 10),
+                           GridItem(.flexible(), spacing: 10)]
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .center, spacing: 9) {
-                Image(systemName: "music.note.list")
-                    .font(.system(size: 23, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 44, height: 44)
-                    .background(BerryStyle.strawberry, in: RoundedRectangle(cornerRadius: 14))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("🍓 Strawberry Sound Studio")
-                        .font(.system(size: 18, weight: .black, design: .rounded))
-                    Text("51 original songs · available offline")
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .foregroundStyle(BerryStyle.chocolate.opacity(0.65))
+        VStack(spacing: 12) {
+            Text("🍓 Strawberry Sound Studio")
+                .font(.system(size: 19, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.strawberry)
+            Text("51 original tracks · all on your iPhone")
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.72))
+            LazyVGrid(columns: columns, spacing: 10) {
+                audioCard("Music", icon: "music.note") {
+                    Toggle("Soundtrack", isOn: $music)
+                        .labelsHidden().tint(BerryStyle.leaf)
+                        .onChange(of: music) { audio.setMusic($0) }
                 }
-            }
-            Toggle("Original Berry soundtrack", isOn: $music)
-                .onChange(of: music) { value in audio.setMusic(value) }
-            VStack(alignment: .leading, spacing: 7) {
-                Text("YOUR BERRY MIX").font(.system(size: 10, weight: .heavy, design: .rounded))
-                    .tracking(1).foregroundStyle(BerryStyle.strawberry)
-                Picker("Berry music mode", selection: $musicMode) {
-                    ForEach(BerryMusicMode.allCases) { mode in
-                        Text(mode.shortLabel).tag(mode.rawValue)
+                audioCard("Sound Effects", icon: "speaker.wave.2.fill") {
+                    Toggle("Effects", isOn: $sound)
+                        .labelsHidden().tint(BerryStyle.leaf)
+                }
+                audioCard("Shuffle Songs", icon: "shuffle") {
+                    Toggle("Shuffle", isOn: $shuffle)
+                        .labelsHidden().tint(BerryStyle.leaf)
+                        .onChange(of: shuffle) { audio.setShuffle($0) }
+                }
+                audioCard("Berry Music Mix", icon: "music.note.list") {
+                    Picker("Mix", selection: $musicMode) {
+                        ForEach(BerryMusicMode.allCases) { mode in
+                            Text(mode.shortLabel).tag(mode.rawValue)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .onChange(of: musicMode) {
+                        audio.setMusicMode(BerryMusicMode(rawValue: $0) ?? .balanced)
                     }
                 }
-                .pickerStyle(.segmented)
-                .onChange(of: musicMode) { value in
-                    audio.setMusicMode(BerryMusicMode(rawValue: value) ?? .balanced)
+                audioCard("Music Volume", icon: "music.note") {
+                    Slider(value: $musicVolume, in: 0...1)
+                        .onChange(of: musicVolume) { audio.setMusicVolume(Float($0)) }
+                    Text("\(Int(musicVolume * 100))%")
+                        .font(.caption.bold())
                 }
-                Text((BerryMusicMode(rawValue: musicMode) ?? .balanced).description)
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate.opacity(0.70))
+                audioCard("Effects Volume", icon: "speaker.wave.3.fill") {
+                    Slider(value: $effectsVolume, in: 0...1)
+                        .onChange(of: effectsVolume) { audio.setEffectVolume(Float($0)) }
+                    Text("\(Int(effectsVolume * 100))%")
+                        .font(.caption.bold())
+                }
             }
-            HStack(spacing: 10) {
+            HStack(spacing: 9) {
                 Image(systemName: "music.note")
-                    .font(.system(size: 19, weight: .bold))
                     .foregroundStyle(BerryStyle.strawberry)
-                    .frame(width: 26)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("NOW PLAYING")
-                        .font(.system(size: 9, weight: .heavy, design: .rounded))
-                        .tracking(1).foregroundStyle(BerryStyle.chocolate.opacity(0.65))
+                        .font(.system(size: 10, weight: .black, design: .rounded))
                     Text(audio.currentTrackName)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
                         .lineLimit(2)
-                        .foregroundStyle(BerryStyle.chocolate)
-                    Text(audio.currentTrackNumber > 0
-                         ? "Track \(audio.currentTrackNumber) of \(BerryAudio.tracks.count)"
-                         : "The strawberry playlist is ready")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(BerryStyle.chocolate.opacity(0.65))
+                    Text(audio.currentTrackNumber > 0 ?
+                         "Track \(audio.currentTrackNumber) of \(BerryAudio.tracks.count)" :
+                         "Berry playlist is ready")
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
                 }
-                Spacer(minLength: 4)
-                Button {
-                    audio.previousTrack()
-                } label: {
+                Spacer(minLength: 0)
+                Button { audio.previousTrack() } label: {
                     Image(systemName: "backward.end.fill")
-                        .font(.system(size: 15, weight: .bold))
-                        .frame(width: 35, height: 43)
                 }
-                .buttonStyle(.bordered)
-                .tint(BerryStyle.strawberry)
                 .disabled(!music)
-                .accessibilityLabel("Previous Berry song")
-                Button {
-                    audio.nextTrack()
-                } label: {
+                Button { audio.nextTrack() } label: {
                     Image(systemName: "forward.end.fill")
-                        .font(.system(size: 17, weight: .bold))
-                        .frame(width: 47, height: 43)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(BerryStyle.strawberry)
                 .disabled(!music)
-                .accessibilityLabel("Play next Berry song")
             }
-            .padding(12)
-            .background(Color(red: 1, green: 0.92, blue: 0.94),
-                        in: RoundedRectangle(cornerRadius: 16))
-
-            Toggle("Shuffle without repeating songs", isOn: $shuffle)
-                .onChange(of: shuffle) { value in audio.setShuffle(value) }
-
-            VStack(alignment: .leading, spacing: 5) {
-                HStack {
-                    Text("🎶 Music Volume").font(.subheadline.bold())
-                    Spacer()
-                    Text("\(Int(musicVolume * 100))%")
-                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                }
-                Slider(value: $musicVolume, in: 0...1)
-                    .onChange(of: musicVolume) { value in audio.setMusicVolume(Float(value)) }
-                    .accessibilityLabel("Music volume")
-            }
-            Toggle("Berry sound effects", isOn: $sound)
-            VStack(alignment: .leading, spacing: 5) {
-                HStack {
-                    Text("🍰 Sound Effects Volume").font(.subheadline.bold())
-                    Spacer()
-                    Text("\(Int(effectsVolume * 100))%")
-                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                }
-                Slider(value: $effectsVolume, in: 0...1)
-                    .onChange(of: effectsVolume) { value in audio.setEffectVolume(Float(value)) }
-                    .accessibilityLabel("Sound effects volume")
-            }
+            .padding(13)
+            .background(.white, in: RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(BerryStyle.strawberry.opacity(0.22), lineWidth: 1))
             if let error = audio.playbackError {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
                     .foregroundStyle(BerryStyle.strawberry)
-                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .tint(BerryStyle.strawberry)
         .foregroundStyle(BerryStyle.chocolate)
-        .padding(18)
-        .background(.white.opacity(0.94), in: RoundedRectangle(cornerRadius: 23))
-        .overlay(RoundedRectangle(cornerRadius: 23)
-            .strokeBorder(BerryStyle.strawberry.opacity(0.18), lineWidth: 1.5))
+        .tint(BerryStyle.strawberry)
         .onAppear {
             audio.setMusicMode(BerryMusicMode(rawValue: musicMode) ?? .balanced)
             audio.setShuffle(shuffle)
             audio.setMusicVolume(Float(musicVolume))
             audio.setEffectVolume(Float(effectsVolume))
         }
+    }
+
+    private func audioCard<Content: View>(_ title: String, icon: String,
+                 @ViewBuilder content: () -> Content) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(BerryStyle.strawberry)
+            Text(title)
+                .font(.system(size: 12, weight: .black, design: .rounded))
+                .multilineTextAlignment(.center)
+            content()
+        }
+        .frame(maxWidth: .infinity, minHeight: 113)
+        .padding(10)
+        .background(.white, in: RoundedRectangle(cornerRadius: 17))
+        .overlay(RoundedRectangle(cornerRadius: 17)
+            .strokeBorder(BerryStyle.strawberry.opacity(0.22), lineWidth: 1))
     }
 }
