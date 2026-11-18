@@ -46,15 +46,9 @@ struct BerryClassicScoreView: View {
                 Label("BEST", systemImage: "crown.fill")
                     .foregroundStyle(Color(red: 0.76, green: 0.43, blue: 0.08))
                     .font(.system(size: 11, weight: .black, design: .rounded))
-                Text(best.formatted())
-                    .font(.system(size: 22, weight: .black, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate)
-                    .monospacedDigit()
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(1)
-                Text("COMBO ×\(max(1, combo))")
-                    .font(.system(size: 10, weight: .heavy, design: .rounded))
-                    .foregroundStyle(BerryStyle.strawberry)
+                BerryCandyNumber(value: best.formatted(), size: 22, label: "Personal Best")
+                BerryCandyNumber(value: "COMBO ×\(max(1, combo))", size: 11,
+                                 label: "Combo")
             }
             .frame(minWidth: 76, alignment: .trailing)
         }
