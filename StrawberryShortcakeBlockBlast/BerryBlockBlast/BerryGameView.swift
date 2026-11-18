@@ -481,7 +481,8 @@ struct BerryGameView: View {
             Button("✨ Golden Strawberry · \(session.premiumCharges["golden-strawberry", default: 0]) left") {
                 confirmGoldenStrawberry = true
             }
-            .disabled(session.premiumCharges["golden-strawberry", default: 0] < 1)
+            .disabled(session.premiumCharges["golden-strawberry", default: 0] < 1 ||
+                      !session.canContinueWithGoldenStrawberry)
             Button("Ribbon Twister · \(session.premiumCharges["twister", default: 0]) left") {
                 guard let slot = selectedSlot else { return }
                 if session.useRibbonTwister(slot: slot) { successFeedback() }
@@ -664,7 +665,7 @@ struct BerryGameView: View {
                                     .font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
                             }
                         }
-                        if showGameOver && !showVictory {
+                        if showGameOver && !showVictory && !confirmRestart {
                             continueRescueOptions
                         }
                         Button(showVictory ? "🍓 Another Sweet Adventure" : isTimedMode ? "⚡ Race Again" : "🍓 Plant a Fresh Garden") {
@@ -1010,8 +1011,12 @@ struct BerryGameView: View {
                     selectedSlot = nil; drag = nil
                 } else { showShop = true }
             }
-            toolButton("Shuffle", icon: "ShuffleIcon", count: session.shuffles, enabled: session.shuffles > 0) {
-                if session.shuffles > 0 { session.shuffle(); selectedSlot = nil; drag = nil } else { showShop = true }
+            toolButton("Shuffle", icon: "ShuffleIcon", count: session.shuffles,
+                       enabled: session.shuffles > 0 && session.canContinueWithShuffle) {
+                if session.shuffles > 0 && session.canContinueWithShuffle {
+                    if session.shuffle() { selectedSlot = nil; drag = nil }
+                    else { warningFeedback() }
+                } else { showShop = true }
             }
             toolButton("Hint", icon: "BerryHint", count: session.hints, enabled: session.hints > 0) {
                 if session.hints > 0 { showHint() } else { showShop = true }
