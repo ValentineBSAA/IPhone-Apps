@@ -341,60 +341,75 @@ struct BerryBoutiqueView: View {
         let permanent = id == "pantry" || id == "spyglass"
         let owned = session.premiumOwned.contains(id)
         let charges = session.premiumCharges[id, default: 0]
-        return HStack(spacing: 12) {
+        return VStack(spacing: 7) {
             Group {
                 if UIImage(named: icon) != nil {
                     Image(icon).resizable().scaledToFit()
                 } else {
                     Image(systemName: fallback)
-                        .font(.system(size: 27, weight: .medium))
+                        .font(.system(size: 28, weight: .bold))
                         .foregroundStyle(BerryStyle.strawberry)
                 }
             }
-            .frame(width: 56, height: 56)
-            .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 15))
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.system(size: 14, weight: .black, design: .rounded))
-                Text(detail).font(.system(size: 11, weight: .medium, design: .rounded))
-                    .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                Text(permanent ? (owned ? "✓ Permanently owned" : "Lifetime upgrade") :
-                     "\(charges) charges remaining")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .foregroundStyle(BerryStyle.leaf)
-            }
-            Spacer(minLength: 2)
-            Button(owned ? "Owned" : "🍓 \(cost)") {
+            .frame(width: 65, height: 65)
+            .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 17))
+            Text(title)
+                .font(.system(size: 14, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.75)
+            Text(detail)
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.72))
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+            Text(permanent ? (owned ? "✓ Permanently owned" : "Lifetime upgrade") :
+                 "\(charges) charges remaining")
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .foregroundStyle(BerryStyle.leaf)
+            Spacer(minLength: 0)
+            Button(owned ? "✓ Owned" : "🍓 \(cost)") {
                 if session.buyPremium(id) && sound { BerryAudio.shared.play(.reward) }
             }
+            .font(.system(size: 12, weight: .black, design: .rounded))
             .buttonStyle(.borderedProminent)
             .tint(owned ? BerryStyle.leaf : BerryStyle.strawberry)
             .disabled(owned || session.berries < cost)
         }
-        .foregroundStyle(BerryStyle.chocolate)
-        .padding(11)
-        .background(.white, in: RoundedRectangle(cornerRadius: 17))
-        .overlay(RoundedRectangle(cornerRadius: 17)
-            .strokeBorder(BerryStyle.strawberry.opacity(0.18)))
+        .padding(10)
+        .frame(maxWidth: .infinity, minHeight: 238)
+        .background(.white, in: RoundedRectangle(cornerRadius: 19))
+        .overlay(RoundedRectangle(cornerRadius: 19)
+            .strokeBorder(BerryStyle.strawberry.opacity(0.26), lineWidth: 1.2))
     }
 
-    private func helperRow(_ name: String, icon: String, count: Int, cost: Int, purchase: @escaping () -> Void) -> some View {
-        HStack(spacing: 10) {
-            BerryIcon(name: icon, size: 37)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(name).font(.system(size: 14, weight: .bold, design: .rounded))
-                Text("Owned ×\(count)")
-                    .font(.caption.bold()).foregroundStyle(BerryStyle.strawberry)
-            }
-            Spacer()
+    private func helperRow(_ name: String, icon: String, count: Int, cost: Int,
+                           purchase: @escaping () -> Void) -> some View {
+        VStack(spacing: 8) {
+            BerryIcon(name: icon, size: 62)
+                .frame(width: 70, height: 70)
+                .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 17))
+            Text(name)
+                .font(.system(size: 14, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate)
+                .multilineTextAlignment(.center)
+            BerryCandyNumber(value: "×\(count)", size: 20, label: "Owned " + name)
+            Spacer(minLength: 0)
             Button("🍓 \(cost)") {
                 purchase()
                 if sound { BerryAudio.shared.play(.reward) }
             }
+            .font(.system(size: 12, weight: .black, design: .rounded))
             .buttonStyle(.borderedProminent)
             .tint(BerryStyle.strawberry)
             .disabled(session.berries < cost)
         }
-        .foregroundStyle(BerryStyle.chocolate)
+        .padding(11)
+        .frame(maxWidth: .infinity, minHeight: 179)
+        .background(.white, in: RoundedRectangle(cornerRadius: 19))
+        .overlay(RoundedRectangle(cornerRadius: 19)
+            .strokeBorder(BerryStyle.strawberry.opacity(0.26), lineWidth: 1.2))
     }
 
     private func surfaceArt(for id: String) -> String {
