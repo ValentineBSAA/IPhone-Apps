@@ -1,0 +1,110 @@
+name: DaySix - Clean unsigned IPA for 3uTools
+
+on:
+  push:
+    branches: [feature/daysix-ios-signing-dashboard]
+    paths:
+      - ".github/workflows/daysix-3utools-clean-ipa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  repackage:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - name: Fetch last successful upstream signer build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p input
+          # Pin the approved Signer Lab build, not a mutable external IPA.
+          gh run download 43907737751 \
+            --repo "${GITHUB_REPOSITORY}" \
+            --name DaySix-Upstream-Signer-Probe \
+            --dir input
+          test -s input/DaySix-Signer-Lab-unsigned.ipa
+
+      - name: Strip ad-hoc placeholder signatures and optional widget
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p staging helper
+          unzip -q input/DaySix-Signer-Lab-unsigned.ipa -d staging
+          app=staging/Payload/SideStore.app
+          test -f "$app/Info.plist"
+          test -f "$app/SideStore"
+          test -f "$app/SideBackup.ipa"
+
+          # This diagnostic variant uses only one installable App ID.
+          rm -rf "$app/PlugIns"
+
+          # The embedded helper is needed for signing/backup flows. Keep it,
+          # but strip GitHub's hard-coded ad-hoc signature from its executable.
+          unzip -q "$app/SideBackup.ipa" -d helper
+          test -f helper/Payload/SideBackup.app/SideBackup
+          if codesign -dv helper/Payload/SideBackup.app/SideBackup >/dev/null 2>&1; then
+            codesign --remove-signature helper/Payload/SideBackup.app/SideBackup
+          fi
+          find helper -type d -name _CodeSignature -prune -exec rm -rf {} +
+          rm -f "$app/SideBackup.ipa"
+          (cd helper && zip -qry "../$app/SideBackup.ipa" Payload)
+
+          # 3uTools must sign clean binaries with the real iPhone's Apple ID.
+          # Remove, rather than try to edit, ldid's XYZ0123456 placeholder.
+          while IFS= read -r -d '' binary; do
+            if file -b "$binary" | grep -q "Mach-O"; then
+              if codesign -dv "$binary" >/dev/null 2>&1; then
+                codesign --remove-signature "$binary"
+              fi
+            fi
+          done < <(find "$app" -type f -print0)
+          find "$app" -type d -name _CodeSignature -prune -exec rm -rf {} +
+          find "$app" -name embedded.mobileprovision -type f -delete
+
+          if codesign -dv "$app/SideStore" >/dev/null 2>&1; then
+            echo "ERROR: hard-coded build signature remains in the main app" >&2
+            exit 1
+          fi
+          if codesign -dv helper/Payload/SideBackup.app/SideBackup >/dev/null 2>&1; then
+            echo "ERROR: hard-coded build signature remains in backup helper" >&2
+            exit 1
+          fi
+
+          python3 - <<'PY'
+          import plistlib
+          from pathlib import Path
+          info = plistlib.loads(Path("staging/Payload/SideStore.app/Info.plist").read_bytes())
+          assert info["CFBundleIdentifier"] == "com.valentinebsaa.daysix.signerlab"
+          assert info["CFBundleDisplayName"] == "DaySix Signer Lab"
+          assert not Path("staging/Payload/SideStore.app/PlugIns").exists()
+          assert Path("staging/Payload/SideStore.app/SideBackup.ipa").is_file()
+          print("3uTools package: 1 main app, no widget, no CI ad-hoc signatures")
+          PY
+
+          (cd staging && zip -qry ../DaySix-3uTools-clean-no-widget-UNSIGNED.ipa Payload)
+          unzip -tqq DaySix-3uTools-clean-no-widget-UNSIGNED.ipa
+          cat > README-3uTools.txt <<'EOF'
+          DaySix 3uTools compatibility diagnostic (NOT DEVICE TESTED).
+          This is an UNSIGNED IPA. Use 3uTools Apple ID signing for the actual
+          connected iPhone and install the newly SIGNED output from 3uTools.
+          This diagnostic has no optional widget and no placeholder signatures.
+          Its real signer/backup engine is preserved but not device-verified.
+          Apple free account app limits and supported entitlements still apply.
+          Do not delete a working SideStore installation to test this.
+          If 3uTools still says "one app installation failed", obtain the
+          real installd error from device logs; do not infer that signing passed.
+          EOF
+
+      - name: Upload 3uTools diagnostic package
+        uses: actions/upload-artifact@v4
+        with:
+          name: DaySix-3uTools-Clean-No-Widget
+          path: |
+            DaySix-3uTools-clean-no-widget-UNSIGNED.ipa
+            README-3uTools.txt
+          retention-days: 7

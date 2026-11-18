@@ -1,0 +1,121 @@
+name: DaySix Signer Lab - Upstream Integration Probe
+
+on:
+  push:
+    branches: [feature/daysix-ios-signing-dashboard]
+    paths:
+      - "DaySix/SignerLab/**"
+      - ".github/workflows/daysix-signer-lab.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "DaySix/SignerLab/**"
+      - ".github/workflows/daysix-signer-lab.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: daysix-signerlab-${{ github.event_name }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  upstream-signer-probe:
+    runs-on: xcode-27
+    timeout-minutes: 50
+    steps:
+      - name: Checkout audit and test files
+        uses: actions/checkout@v4
+
+      - name: Checkout official SideStore signing code and submodules
+        uses: actions/checkout@v4
+        with:
+          repository: SideStore/SideStore
+          # The previously compiled official SideStore source snapshot.
+          # Pin source so a future upstream commit cannot silently change
+          # the signing engine or invalidate our narrowly audited patches.
+          ref: 4f3d18d98c5fbee72c80f787ceb2e8e09ded60a6
+          path: upstream-sidestore
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Prepare auditable DaySix Signer Lab preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd upstream-sidestore
+          git rev-parse HEAD | tee ../daysix-upstream-sha.txt
+          test -e LICENSE || test -e LICENSE.md || test -e COPYING
+          test -e CodeSigning.xcconfig || cp CodeSigning.xcconfig.sample CodeSigning.xcconfig
+          xcodebuild -version
+          git submodule status --recursive | tee ../daysix-upstream-submodules.txt
+          cd ..
+          python3 DaySix/SignerLab/preview_brand.py \
+            --root upstream-sidestore \
+            --sha "$(cat daysix-upstream-sha.txt)"
+          command -v ldid || brew install ldid
+
+      - name: Install original DaySix icon artwork into signer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/daysix-signer-python
+          /tmp/daysix-signer-python/bin/python -m pip install Pillow
+          /tmp/daysix-signer-python/bin/python DaySix/scripts/make_icon.py
+          /tmp/daysix-signer-python/bin/python DaySix/SignerLab/brand_icons.py \
+            --source DaySix/Assets.xcassets/AppIcon.appiconset/AppIcon.png \
+            --catalog upstream-sidestore/AltStore/Resources/Icons.xcassets/AppIcon.appiconset \
+            | tee daysix-icon-assets.json
+
+      - name: Compile SideStore-derived engine under patched DaySix identity
+        working-directory: upstream-sidestore
+        shell: bash
+        run: |
+          set -o pipefail
+          # Build.xcconfig and Makefile were patched and audited above.
+          # BUNDLE_ID_SUFFIX is intentionally NOT used: upstream Release
+          # ignores it, which caused the previous identity collision.
+          make build fakesign ipa 2>&1 | tee ../daysix-upstream-build.log
+
+      - name: Confirm distinct bundle ID and experimental preview label
+        working-directory: upstream-sidestore
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ../DaySix/SignerLab/preview_brand.py --verify-ipa SideStore.ipa \
+            | tee ../daysix-preview-inspection.json
+          # Check the actual ad-hoc entitlements embedded in the executable.
+          # They must use our lab identity, not the original SideStore app group.
+          for app in SideStore.xcarchive/Products/Applications/SideStore.app/SideStore \
+                     SideStore.xcarchive/Products/Applications/SideStore.app/PlugIns/AltWidgetExtension.appex/AltWidgetExtension; do
+            ldid -e "$app" | tee -a ../daysix-signerlab-entitlements.txt
+          done
+          if grep -q 'group.com.SideStore.SideStore' ../daysix-signerlab-entitlements.txt; then
+            echo 'ERROR: original SideStore app group in packaged binary' >&2
+            exit 1
+          fi
+          if ! grep -q 'group.com.valentinebsaa.daysix.signerlab' ../daysix-signerlab-entitlements.txt; then
+            echo 'ERROR: missing isolated signing app group' >&2
+            exit 1
+          fi
+          cp SideStore.ipa ../DaySix-Signer-Lab-unsigned.ipa
+
+      - name: Collect build outputs
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p upstream-probe-outputs
+          cp -f daysix-upstream-*.txt upstream-probe-outputs/ 2>/dev/null || true
+          cp -f daysix-upstream-build.log upstream-probe-outputs/ 2>/dev/null || true
+          cp -f daysix-signerlab-provenance.json daysix-preview-inspection.json daysix-signerlab-entitlements.txt daysix-icon-assets.json upstream-probe-outputs/ 2>/dev/null || true
+          test ! -f DaySix-Signer-Lab-unsigned.ipa || cp -f DaySix-Signer-Lab-unsigned.ipa upstream-probe-outputs/
+          # Never publish unverified SideStore.ipa or embedded signing material.
+
+      - name: Publish integration evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DaySix-Upstream-Signer-Probe
+          path: upstream-probe-outputs/
+          retention-days: 7

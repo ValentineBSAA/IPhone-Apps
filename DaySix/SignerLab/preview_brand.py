@@ -1,0 +1,322 @@
+#!/usr/bin/env python3
+"""Clearly identify an experimental AGPL-licensed SideStore derivative.
+
+This is a build-time experiment, not an iPhone signing bypass. It only changes
+the application display name and writes non-secret provenance information.
+
+Do not replace a functioning official SideStore with this technical preview.
+"""
+from __future__ import annotations
+import argparse
+import json
+import plistlib
+import runpy
+from pathlib import Path
+
+DISPLAY_NAME = "DaySix Signer Lab"
+PREVIEW_ORG = "com.valentinebsaa.daysix"
+PREVIEW_BUNDLE_ID = PREVIEW_ORG + ".signerlab"
+PREVIEW_URL_SCHEME = "daysixlab"
+UPSTREAM_BUNDLE_ID = "com.SideStore.SideStore"
+PREVIEW_TEAM_ID = "XYZ0123456"  # upstream's ad-hoc CI placeholder, not a real certificate
+
+
+def replace_exact(path: Path, old: str, new: str) -> None:
+    """Reject unknown upstream versions instead of making unsafe guesses."""
+    if not path.is_file():
+        raise FileNotFoundError(path)
+    text = path.read_text(encoding="utf-8")
+    count = text.count(old)
+    if count != 1:
+        raise RuntimeError(
+            f"Expected one match in {path}, found {count}: {old}")
+    path.write_text(text.replace(old, new), encoding="utf-8")
+
+
+def patch_build_identifiers(root: Path) -> None:
+    """Patch actual Xcode build settings, not the unused Makefile suffix flag."""
+    # This runtime bundle helper controls what SideStore considers to be
+    # *itself*. Leaving the original ID here breaks self-app recognition,
+    # even when Xcode has built the main app under a new bundle identifier.
+    bundle_helper = root / "Shared" / "Extensions" / "Bundle+AltStore.swift"
+    for property_name in ["storeAppBundleIdentifier", "appbundleIdentifier"]:
+        replace_exact(
+            bundle_helper,
+            f'@objc dynamic static let {property_name} = "{UPSTREAM_BUNDLE_ID}"',
+            f'@objc dynamic static let {property_name} = "{PREVIEW_BUNDLE_ID}"')
+    replace_exact(root / "Build.xcconfig",
+                  "ORG_IDENTIFIER = com.SideStore",
+                  f"ORG_IDENTIFIER = {PREVIEW_ORG}")
+    replace_exact(root / "Build.xcconfig",
+                  "BASE_BUNDLE_ID                                  = $(ORG_IDENTIFIER).SideStore",
+                  "BASE_BUNDLE_ID                                  = $(ORG_IDENTIFIER).signerlab")
+    replace_exact(root / "Makefile", "ORG_IDENTIFIER=com.SideStore",
+                  f"ORG_IDENTIFIER={PREVIEW_ORG}")
+
+    # Backup/restore must send its completion to THIS app. Retaining
+    # sidestore:// here silently directs the response to official SideStore,
+    # or loses the callback on iOS with both apps installed.
+    replace_exact(
+        root / "SideStore" / "Core" / "Operations" / "PipelineOperations"
+        / "PerformBackupRestoreOperation.swift",
+        'URL(string: "sidestore://")',
+        f'URL(string: "{PREVIEW_URL_SCHEME}://")')
+
+    # SideBackup validates the URL scheme before returning control. Permit
+    # the lab's public callback as well as SideStore's *unique per-app*
+    # sidestore-<bundleID> URL generated for managed applications. Never
+    # accept bare sidestore://, which belongs to the official signer.
+    backup_app = root / "SideBackup" / "SideBackupApp.swift"
+    replace_exact(
+        backup_app,
+        'guard let scheme = responseURL.scheme, scheme.hasPrefix("sidestore") else {',
+        ('guard let scheme = responseURL.scheme, '
+         f'(scheme == "{PREVIEW_URL_SCHEME}" || scheme.hasPrefix("sidestore-")) else {{'))
+    replace_exact(
+        backup_app,
+        "does not start with 'sidestore'. Aborting launch.",
+        f"is not a supported '{PREVIEW_URL_SCHEME}' or per-app callback. Aborting launch.")
+
+    # The bundled backup app's own public sidebackup:// handler is a second
+    # global URL collision, even though its per-app URL scheme is distinct.
+    backup_plist = root / "SideBackup" / "Info.plist"
+    with backup_plist.open("rb") as stream:
+        backup_info = plistlib.load(stream)
+    backup_urltypes = backup_info.get("CFBundleURLTypes", [])
+    original_backup_count = 0
+    for url_type in backup_urltypes:
+        schemes = url_type.get("CFBundleURLSchemes", [])
+        if "sidebackup" in schemes:
+            original_backup_count += 1
+            url_type["CFBundleURLSchemes"] = [
+                "daysixbackup" if scheme == "sidebackup" else scheme
+                for scheme in schemes
+            ]
+    if original_backup_count != 1:
+        raise RuntimeError(
+            f"Expected one SideBackup public URL handler, got {original_backup_count}")
+    with backup_plist.open("wb") as stream:
+        plistlib.dump(backup_info, stream, sort_keys=False)
+
+    # The Makefile uses ldid -S directly, so Xcode cannot expand this variable.
+    replace_exact(
+        root / "SideBackup" / "SideBackup.entitlements",
+        "group.$(APP_GROUP_IDENTIFIER)",
+        f"group.{PREVIEW_BUNDLE_ID}")
+
+    # The real signing engine already asks iOS for alert, badge and sound
+    # authorization. Rename the messages it sends so a user running both
+    # the official SideStore and lab can identify the correct native banner.
+    notifier = (root / "SideStore" / "Core" / "Operations"
+                / "StandaloneOperations"
+                / "ScheduleExpirationWarningNotificationOperation.swift")
+    for old_text, new_text in [
+        ("SideStore Expiring Soon", "DaySix Signer Lab Expiring Soon"),
+        ("SideStore Expiring Extremely Soon", "DaySix Signer Lab Expiring in 6 Hours"),
+        ("SideStore Expired", "DaySix Signer Lab Expired"),
+        ("SideStore will expire in 24 hours.", "DaySix Signer Lab will expire in 24 hours."),
+        ("SideStore will expire in 6 hours!", "DaySix Signer Lab will expire in 6 hours!"),
+        ("SideStore has expired.", "DaySix Signer Lab has expired."),
+    ]:
+        replace_exact(notifier, old_text, new_text)
+
+    # SideStore's ad-hoc ldid release targets embed static app identifiers
+    # and static application group names even though the Info.plist uses Xcode
+    # variables. Update BOTH main and widget values consistently.
+    for relative in [
+        "AltStore/Resources/ReleaseEntitlements.plist",
+        "AltWidget/Resources/ReleaseEntitlements.plist",
+    ]:
+        target = root / relative
+        replace_exact(target, f"{PREVIEW_TEAM_ID}.{UPSTREAM_BUNDLE_ID}",
+                      f"{PREVIEW_TEAM_ID}.{PREVIEW_BUNDLE_ID}")
+        replace_exact(target, f"group.{UPSTREAM_BUNDLE_ID}",
+                      f"group.{PREVIEW_BUNDLE_ID}")
+
+
+def patch(root: Path, upstream_sha: str) -> Path:
+    plist_path = root / "AltStore" / "Info.plist"
+    if not plist_path.is_file():
+        raise FileNotFoundError(f"Upstream SideStore Info.plist absent: {plist_path}")
+
+    patch_build_identifiers(root)
+    # Keep the real signing and refresh engines. Only simplify their UI shell.
+    simple_nav = Path(__file__).with_name("simple_nav.py")
+    runpy.run_path(str(simple_nav))["patch"](root)
+
+    with plist_path.open("rb") as source:
+        info = plistlib.load(source)
+    original_name = info.get("CFBundleDisplayName", info.get("CFBundleName", "SideStore"))
+    types = info.get("CFBundleURLTypes")
+    if not isinstance(types, list):
+        raise RuntimeError("Upstream main app has no URL types; refusing preview")
+    general_count = 0
+    for entry in types:
+        schemes = entry.get("CFBundleURLSchemes", [])
+        if "sidestore" in schemes:
+            general_count += 1
+            entry["CFBundleURLSchemes"] = [
+                PREVIEW_URL_SCHEME if scheme == "sidestore" else scheme
+                for scheme in schemes
+            ]
+    if general_count != 1:
+        raise RuntimeError(
+            f"Expected exactly one public SideStore URL scheme, got {general_count}")
+    # The visible name and internal bundle name should both identify DaySix.
+    # Xcode otherwise retains "SideStore" under CFBundleName in the IPA.
+    info["CFBundleName"] = DISPLAY_NAME
+    for entry in types:
+        schemes = entry.get("CFBundleURLSchemes", [])
+        if PREVIEW_URL_SCHEME in schemes:
+            entry["CFBundleURLName"] = "DaySix Signer Lab General"
+        elif any(scheme.startswith("sidestore-") for scheme in schemes):
+            entry["CFBundleURLName"] = "DaySix Signer Lab Backup"
+    info["CFBundleDisplayName"] = DISPLAY_NAME
+    # This marker is informational, not a security or entitlement claim.
+    info["DaySixSignerLabPreview"] = True
+    with plist_path.open("wb") as dest:
+        plistlib.dump(info, dest, sort_keys=False)
+
+    with plist_path.open("rb") as source:
+        result = plistlib.load(source)
+    if result.get("CFBundleDisplayName") != DISPLAY_NAME:
+        raise RuntimeError("Display-name patch failed")
+    if not result.get("DaySixSignerLabPreview"):
+        raise RuntimeError("Preview marker absent")
+    schemes = [
+        scheme
+        for entry in result.get("CFBundleURLTypes", [])
+        for scheme in entry.get("CFBundleURLSchemes", [])
+    ]
+    if PREVIEW_URL_SCHEME not in schemes or "sidestore" in schemes:
+        raise RuntimeError("Experimental public URL scheme not isolated")
+
+    evidence = {
+        "product": DISPLAY_NAME,
+        "purpose": "technical preview only, not a verified iPhone signer",
+        "upstream_repository": "https://github.com/SideStore/SideStore",
+        "upstream_commit": upstream_sha.strip(),
+        "upstream_license": "AGPL-3.0",
+        "modification": "Simplified native DaySix signer home wired to real IPA import and refresh; Xcode/runtime identities, backup callbacks, native alert branding and app-group isolation",
+        "expected_bundle_id": PREVIEW_BUNDLE_ID,
+        "preview_primary_url_scheme": PREVIEW_URL_SCHEME,
+        "preview_backup_url_scheme": "daysixbackup",
+        "ad_hoc_team_placeholder": PREVIEW_TEAM_ID,
+        "install_warning": "Experimental signer may still conflict with SideStore URL schemes and installer callbacks",
+        "dependency_licenses": "Check upstream source and nested package licenses",
+        "iphone_signing_tested": False,
+        "iphone_self_renewal_tested": False,
+    }
+    provenance = root.parent / "daysix-signerlab-provenance.json"
+    provenance.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
+    return provenance
+
+
+def verify_ipa(path: Path) -> dict:
+    import io
+    import zipfile
+
+    if not path.exists():
+        raise FileNotFoundError(path)
+    main_path = "Payload/SideStore.app/Info.plist"
+    widget_path = "Payload/SideStore.app/PlugIns/AltWidgetExtension.appex/Info.plist"
+    backup_path = "Payload/SideStore.app/SideBackup.ipa"
+    nested_path = "Payload/SideBackup.app/Info.plist"
+    nested_executable = "Payload/SideBackup.app/SideBackup"
+
+    with zipfile.ZipFile(path) as archive:
+        if archive.namelist().count(main_path) != 1:
+            raise RuntimeError("Expected exactly one primary app in the IPA")
+        info = plistlib.loads(archive.read(main_path))
+        if widget_path not in archive.namelist():
+            raise RuntimeError("Missing the expected widget extension Info.plist")
+        widget = plistlib.loads(archive.read(widget_path))
+        if backup_path not in archive.namelist():
+            raise RuntimeError("Missing the nested SideBackup IPA")
+        with zipfile.ZipFile(io.BytesIO(archive.read(backup_path))) as backup:
+            if nested_path not in backup.namelist():
+                raise RuntimeError("Missing nested backup app Info.plist")
+            backup_info = plistlib.loads(backup.read(nested_path))
+            if nested_executable not in backup.namelist():
+                raise RuntimeError("Nested backup executable missing")
+            backup_binary = backup.read(nested_executable)
+
+    if info.get("CFBundleDisplayName") != DISPLAY_NAME:
+        raise RuntimeError("Packaged IPA lost DaySix Signer Lab label")
+    if info.get("CFBundleName") != DISPLAY_NAME:
+        raise RuntimeError("Packaged IPA retained its old internal SideStore name")
+    url_names = [
+        entry.get("CFBundleURLName")
+        for entry in info.get("CFBundleURLTypes", [])
+    ]
+    if "DaySix Signer Lab General" not in url_names or "DaySix Signer Lab Backup" not in url_names:
+        raise RuntimeError("Packaged IPA retained old URL handler labels")
+    primary_schemes = [
+        scheme
+        for entry in info.get("CFBundleURLTypes", [])
+        for scheme in entry.get("CFBundleURLSchemes", [])
+    ]
+    if primary_schemes.count(PREVIEW_URL_SCHEME) != 1 or "sidestore" in primary_schemes:
+        raise RuntimeError("Lab IPA cannot claim the official sidestore:// handler")
+    if not info.get("DaySixSignerLabPreview"):
+        raise RuntimeError("Packaged IPA missing its experimental marker")
+
+    expected_ids = {
+        "main": PREVIEW_BUNDLE_ID,
+        "widget": PREVIEW_BUNDLE_ID + ".AltWidget",
+        "backup": PREVIEW_BUNDLE_ID + ".SideBackup",
+    }
+    actual_ids = {
+        "main": info.get("CFBundleIdentifier", ""),
+        "widget": widget.get("CFBundleIdentifier", ""),
+        "backup": backup_info.get("CFBundleIdentifier", ""),
+    }
+    for key, expected in expected_ids.items():
+        actual = actual_ids[key]
+        if actual != expected:
+            raise RuntimeError(
+                f"{key} bundle ID {actual!r}; expected {expected!r}. Refuse packaging.")
+
+    # The backup helper must not claim the public sidebackup:// scheme used
+    # by the official SideStore helper when both installers are present.
+    backup_schemes = [
+        scheme
+        for entry in backup_info.get("CFBundleURLTypes", [])
+        for scheme in entry.get("CFBundleURLSchemes", [])
+    ]
+    if "daysixbackup" not in backup_schemes or "sidebackup" in backup_schemes:
+        raise RuntimeError("Packaged backup helper has a conflicting URL scheme")
+
+    expected_group = ("group." + PREVIEW_BUNDLE_ID).encode("utf-8")
+    if (expected_group not in backup_binary
+            or b"APP_GROUP_IDENTIFIER" in backup_binary
+            or b"group.com.SideStore.SideStore" in backup_binary):
+        raise RuntimeError(
+            "Nested SideBackup executable has invalid app-group entitlements")
+
+    return {
+        "bundle_id": actual_ids["main"],
+        "embedded_bundle_ids": actual_ids,
+        "display_name": info.get("CFBundleDisplayName"),
+        "version": info.get("CFBundleShortVersionString"),
+        "note": "Packaged successfully; actual signing and installation are untested",
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", type=Path)
+    parser.add_argument("--sha")
+    parser.add_argument("--verify-ipa", type=Path)
+    args = parser.parse_args()
+
+    if args.verify_ipa:
+        print(json.dumps(verify_ipa(args.verify_ipa), indent=2))
+        return
+    if not args.root or not args.sha:
+        parser.error("Use --root and --sha together, or --verify-ipa")
+    print(patch(args.root, args.sha))
+
+
+if __name__ == "__main__":
+    main()
