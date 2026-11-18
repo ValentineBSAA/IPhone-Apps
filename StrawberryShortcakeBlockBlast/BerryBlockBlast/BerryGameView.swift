@@ -429,59 +429,25 @@ struct BerryGameView: View {
                     .tracking(0.35)
                     .foregroundStyle(BerryStyle.chocolate.opacity(0.76))
                     .frame(height: 13)
-                    HStack(spacing: 8) {
-                        ForEach(0..<3, id: \.self) { slot in
-                            let piece = session.engine.tray[slot]
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 17)
-                                    .fill(Color.white.opacity(0.86))
-                                    .overlay {
-                                        RoundedRectangle(cornerRadius: 17)
-                                            .strokeBorder(selectedSlot == slot ? BerryStyle.strawberry : .white, lineWidth: selectedSlot == slot ? 3 : 1.5)
-                                    }
-                                    .shadow(color: BerryStyle.strawberry.opacity(0.12), radius: 5, y: 3)
-                                if let piece {
-                                    BerryPieceGlyph(piece: piece, unit: min(19, (width - 55) / CGFloat(3 * max(piece.width, 3)), CGFloat(compact ? 57 : 68) / CGFloat(max(piece.height, 1))), mode: mode, strawberryUnlocked: strawberryUnlocked)
-                                        // Never make a selectable piece almost
-                                        // invisible, including while dragging.
-                                        .opacity(activeDragSlot == slot ? 0.80 : 1.0)
-                                        .layoutPriority(2)
-                                    Text("\(piece.points.count)")
-                                        .font(.system(size: 11, weight: .black, design: .rounded))
-                                        .foregroundStyle(BerryStyle.strawberry)
-                                        .padding(.horizontal, 6).padding(.vertical, 2)
-                                        .background(.white.opacity(0.95), in: Capsule())
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                                        .padding(5)
-                                        .allowsHitTesting(false)
-                                } else {
-                                    Image(systemName: "checkmark.seal.fill")
-                                        .foregroundStyle(BerryStyle.leaf.opacity(0.6))
-                                        .font(.title2)
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: compact ? 58 : 65)
-                            .contentShape(Rectangle())
-                            // Dedicated UIKit touch delivery persists after the finger
-                            // leaves the tray and cannot conflict with board tap gestures.
-                            .overlay {
-                                BerryTrayTouchCapture(slot: slot) { capturedSlot, event in
-                                    handleTrayTouch(slot: capturedSlot, event: event)
-                                }
-                            }
-                            .accessibilityLabel("Berry piece \(slot + 1)")
-                            .accessibilityAddTraits(.isButton)
-                            .accessibilityAction {
-                                if canMakeMove && piece != nil {
-                                    selectedSlot = selectedSlot == slot ? nil : slot
-                                }
+                    BerryThreePieceTray(
+                        pieces: session.engine.tray,
+                        availableWidth: max(1, min(width, 510) - 10),
+                        height: compact ? 58 : 65,
+                        selectedSlot: selectedSlot,
+                        draggingSlot: activeDragSlot,
+                        mode: mode,
+                        strawberryUnlocked: strawberryUnlocked,
+                        canMakeMove: canMakeMove,
+                        onTouch: { slot, event in
+                            handleTrayTouch(slot: slot, event: event)
+                        },
+                        onAccessibilitySelect: { slot in
+                            if canMakeMove && session.engine.tray[slot] != nil {
+                                selectedSlot = selectedSlot == slot ? nil : slot
                             }
                         }
-                    }
-                    .frame(height: compact ? 58 : 65)
-                    .layoutPriority(3) // tray cannot collapse behind the board
-                    .accessibilityIdentifier("berry-three-piece-tray")
+                    )
+                    .layoutPriority(3)
                     toolBar
                     if touchDiagnostics {
                         Text(touchStatus)
