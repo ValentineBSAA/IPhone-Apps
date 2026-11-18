@@ -24,7 +24,7 @@ final class BerryGameSession: ObservableObject {
     private var previousBerryEarnings = 0
     private var previousRewardEntry: String?
     private var activeMode: BerryMode = .endless
-    static let goldenStrawberryCost = 250
+    nonisolated static let goldenStrawberryCost = 250
     static let classicSaveKey = "berryblockblast.classic.engine.v055"
     static let classicSavedFlagKey = "berryblockblast.classic.savedFlag.v056b2"
     private static let legacyEndlessSaveKey = "berryblockblast.saved-game.v3"
