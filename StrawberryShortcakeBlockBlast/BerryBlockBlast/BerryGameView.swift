@@ -585,7 +585,13 @@ struct BerryGameView: View {
         }
         .onChange(of: session.gameOver) { ended in
             if ended && mode == .daily {
-                BerryDailyHistory.markLostToday()
+                // A final move might both reach the score goal AND exhaust
+                // the board. Count that as a victory before locking the day.
+                if session.engine.score >= goal {
+                    checkObjective()
+                } else {
+                    BerryDailyHistory.markLostToday()
+                }
             }
             if ended && mode == .superHard {
                 // Nightmare is survival: a blocked board ends the race NOW.
