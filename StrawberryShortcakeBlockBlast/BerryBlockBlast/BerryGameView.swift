@@ -470,9 +470,14 @@ struct BerryGameView: View {
             Text(session.spyglassPiece.map { "Spyglass forecast: \($0.points.count) squares. Select a piece first for rotation or storage. For Trowel and Seed, tap an occupied or empty board square." } ??
                  "Select a tray piece for rotation/storage. For Trowel and Seed, choose a board cell. Invalid actions never spend charges.")
         }
-        .alert("Use Golden Strawberry?", isPresented: $confirmGoldenStrawberry) {
-            Button("Clear Entire Board", role: .destructive) {
-                if session.useGoldenStrawberry() {
+        .alert("Continue with Golden Strawberry?", isPresented: $confirmGoldenStrawberry) {
+            Button(session.premiumCharges["golden-strawberry", default: 0] > 0
+                   ? "Use Golden Strawberry"
+                   : "Buy & Continue · 🍓 \(BerryGameSession.goldenStrawberryCost)") {
+                let ownsOne = session.premiumCharges["golden-strawberry", default: 0] > 0
+                let resumed = ownsOne ? session.useGoldenStrawberry()
+                    : session.buyAndUseGoldenStrawberry()
+                if resumed {
                     showGameOver = false
                     specialTargetTool = nil
                     hintPreview = nil
@@ -483,9 +488,9 @@ struct BerryGameView: View {
                     warningFeedback()
                 }
             }
-            Button("Keep Strawberry", role: .cancel) {}
+            Button("Keep My Strawberries", role: .cancel) {}
         } message: {
-            Text("Spend one Golden Strawberry to clear all occupied squares, including all four Mega Garden patches. Keep your score and level progress. You won't earn free points or completed lines.")
+            Text("Clear the occupied board and continue your current run. Keep your score, chapter and earned berries. Only one Golden Strawberry can be used per run. No points or lines are awarded for clearing.")
         }
         .sheet(isPresented: $showHelp) { helpSheet }
         .sheet(isPresented: $showSettings) { settingsSheet }
@@ -621,7 +626,7 @@ struct BerryGameView: View {
                              isTimedMode && blitzRemaining == 0 ? "Time's Up, Berry Racer!" : "No More Moves!")
                             .font(.system(size: 25, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry).multilineTextAlignment(.center)
-                        Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "A fresh board starts this chapter again. Your records and earned berries stay safe." : isTimedMode && blitzRemaining == 0 ? "Your timer reached zero. See your results below!" : "None of your remaining pieces can fit. Try a Shuffle to continue, or start this chapter again.")
+                        Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "A fresh board starts this chapter again. Your records and earned berries stay safe." : isTimedMode && blitzRemaining == 0 ? "Your timer reached zero. See your results below!" : "No pieces fit. A Golden Strawberry can rescue this run, or you can restart for free.")
                             .font(.system(size: 15, weight: .medium, design: .rounded))
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
                         if !confirmRestart {
@@ -636,22 +641,43 @@ struct BerryGameView: View {
                                     .font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
                             }
                         }
-                        if showGameOver && session.canUsePremium &&
-                           session.premiumCharges["golden-strawberry", default: 0] > 0 {
-                            Button("✨ Golden Strawberry Rescue (\(session.premiumCharges["golden-strawberry", default: 0]) left)") {
-                                confirmGoldenStrawberry = true
+                        if showGameOver && session.canUsePremium {
+                            if session.engine.goldenRescueUsed {
+                                Text("✨ Golden Strawberry already used this run")
+                                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                                    .foregroundStyle(BerryStyle.chocolate.opacity(0.7))
+                            } else {
+                                let ownsGolden = session.premiumCharges["golden-strawberry", default: 0] > 0
+                                let affordable = ownsGolden ||
+                                    session.berries >= BerryGameSession.goldenStrawberryCost
+                                Button {
+                                    confirmGoldenStrawberry = true
+                                } label: {
+                                    HStack(spacing: 10) {
+                                        BerryIcon(name: "GoldenStrawberry", size: 38)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(ownsGolden ? "CONTINUE · USE GOLDEN STRAWBERRY" :
+                                                 "CONTINUE · 🍓 \(BerryGameSession.goldenStrawberryCost)")
+                                                .font(.system(size: 13, weight: .black, design: .rounded))
+                                                .lineLimit(1)
+                                                .minimumScaleFactor(0.74)
+                                            Text("Keep this run, clear your board")
+                                                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                        }
+                                        Spacer(minLength: 0)
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .frame(maxWidth: 320, minHeight: 54)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(Color(red: 0.79, green: 0.49, blue: 0.08))
+                                .disabled(!affordable)
+                                if !affordable {
+                                    Text("Earn \(BerryGameSession.goldenStrawberryCost - session.berries) more strawberries to continue")
+                                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                        .foregroundStyle(BerryStyle.chocolate)
+                                }
                             }
-                            .buttonStyle(.borderedProminent)
-                            .tint(Color(red: 0.79, green: 0.49, blue: 0.08))
-                            .controlSize(.large)
-                        }
-                        if showGameOver && session.canUsePremium &&
-                           session.premiumCharges["golden-strawberry", default: 0] == 0 {
-                            Button("🍓 Get a Golden Strawberry in the Boutique") {
-                                showShop = true
-                            }
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
-                            .foregroundStyle(BerryStyle.strawberry)
                         }
                         if showGameOver && session.shuffles > 0 && session.engine.canRescueWithShuffle && mode != .classic && !isTimedMode {
                             Button("✨ Continue with Shuffle (\(session.shuffles) left)") {
