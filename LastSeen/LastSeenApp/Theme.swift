@@ -12,6 +12,14 @@ enum Night {
     static let gold = Color(red: 0.90, green: 0.72, blue: 0.45)
 }
 
+/// Resolve artwork from the app bundle explicitly. This matches the asset
+/// lookup used by simulator regression tests and avoids test-host ambiguity.
+enum PortraitImages {
+    static func load(_ name: String) -> UIImage? {
+        UIImage(named: name, in: Bundle(for: GameStore.self), compatibleWith: nil)
+    }
+}
+
 struct ContactAvatar: View {
     let contact: Contact
     var size: CGFloat = 52
@@ -50,7 +58,7 @@ struct ContactAvatar: View {
 
     var body: some View {
         ZStack {
-            if let photo = UIImage(named: assetName) {
+            if let photo = PortraitImages.load(assetName) {
                 Image(uiImage: photo)
                     .resizable()
                     .scaledToFill()
