@@ -302,42 +302,41 @@ struct BerryEngine: Codable {
         board.contains { $0.contains(nil) }
     }
 
-    /// A healthy Sweet Endless garden NEVER loses its run or paid items because
-    /// its random tray cannot fit. Keep its board, score and every earned line,
-    /// and replace ONE unusable slot with a legal, free rescue piece instead.
-    /// Old 0.5.x saves with impossible trays are rescued by the same path.
+    /// Endless has no terminal loss. A stuck tray is NOT a reason to charge
+    /// for Shuffle or erase a saved garden: replace all three pieces with
+    /// legal shapes, preserving the board, score, lines, moves and inventory.
+    /// If a corrupted legacy save has a completely full board, begin a new
+    /// garden season while retaining the accumulated run and its records.
     @discardableResult
     mutating func beginNextEndlessSeasonIfStuck() -> Bool {
         guard !hasMove() else { return false }
         if board.contains(where: { $0.contains(nil) }) {
-            let rescue = bestLineFinishingPiece() ??
-                [BerryPoint(row: 0, col: 0)]
-            let piece = BerryPiece(points: rescue, tint: nextRandom(6))
-            guard hasPlacement(for: piece) else {
-                // A single free square always exists at this point, so this
-                // is only defensive handling of unexpected corrupt metadata.
-                return injectSingleCellRescue()
-            }
-            let slot = tray.firstIndex(where: { $0 == nil }) ?? 0
-            tray[slot] = piece
-            return hasMove()
+            refill()
+            // Refill is viability-filtered. The final fallback always fits
+            // any empty square, including isolated holes on the 24x24 board.
+            if !hasMove() { forcePlayableEndlessHand() }
+        } else {
+            board = Array(repeating: Array<Int?>(repeating: nil, count: side), count: side)
+            streak = 0
+            dryMoves = 0
+            refill()
         }
-        // Defensive recovery for a legacy full board. Normally a full row or
-        // column auto-clears at placement time before it can remain full.
-        board = Array(repeating: Array<Int?>(repeating: nil, count: side), count: side)
-        tray = []
-        streak = 0
-        dryMoves = 0
         seasons += 1
-        refill()
         return hasMove()
     }
 
-    private mutating func injectSingleCellRescue() -> Bool {
-        guard board.contains(where: { $0.contains(nil) }) else { return false }
-        let slot = tray.firstIndex(where: { $0 == nil }) ?? 0
-        tray[slot] = BerryPiece(points: [BerryPoint(row: 0, col: 0)], tint: nextRandom(6))
-        return hasMove()
+    /// Emergency hand for unusual older saves. Never consume berries, paid
+    /// helpers, points, completed lines, achievements, or a saved position.
+    private mutating func forcePlayableEndlessHand() {
+        guard board.contains(where: { $0.contains(nil) }) else { return }
+        let one = [BerryPoint(row: 0, col: 0)]
+        let pair = [BerryPoint(row: 0, col: 0), BerryPoint(row: 0, col: 1)]
+        tray = [
+            BerryPiece(points: one, tint: nextRandom(6)),
+            BerryPiece(points: one, tint: nextRandom(6)),
+            BerryPiece(points: hasPlacement(for: BerryPiece(points: pair, tint: 0))
+                       ? pair : one, tint: nextRandom(6))
+        ]
     }
 
     /// Prefer a short, connected piece that fills an entire almost-complete
@@ -425,8 +424,9 @@ struct BerryEngine: Codable {
             (0..<9).map { BerryPoint(row: 0, col: $0) },
             (0..<9).map { BerryPoint(row: $0, col: 0) }
         ]
-        // A newly dealt tray always contains at least one legal move. Prefer
-        // several playable choices instead of handing out impossible pieces.
+        // Newly dealt Endless hands contain legal choices, not just one
+        // legal shape among two traps. Full-size giant pieces remain available
+        // early, but thin rescue pieces become more frequent as space fills.
         // Mega Garden should offer small and medium pieces, not exclusively
         // impossible giant pieces. Existing larger shapes remain available.
         let selection = side == 24 ? (classicCatalog + nightmareShapes + megaShapes) :
@@ -467,6 +467,25 @@ struct BerryEngine: Codable {
             let tint = freshTints.isEmpty ? nextRandom(6) : freshTints[nextRandom(freshTints.count)]
             usedTints.insert(tint)
             nextTray.append(BerryPiece(points: shape, tint: tint))
+        }
+        if side == 24 && board.contains(where: { $0.contains(nil) }) {
+            let occupied = board.reduce(0) { $0 + $1.reduce(0) { $0 + ($1 == nil ? 0 : 1) } }
+            // At 30% occupancy, protect a practical rescue slot. The other
+            // two shapes stay varied and are still checked for legal fit.
+            if occupied >= (side * side * 3) / 10 {
+                let helpful = bestLineFinishingPiece() ?? [BerryPoint(row: 0, col: 0)]
+                let legal = hasPlacement(for: BerryPiece(points: helpful, tint: 0))
+                    ? helpful : [BerryPoint(row: 0, col: 0)]
+                nextTray[0] = BerryPiece(points: legal, tint: nextRandom(6))
+            }
+            // Replace any remaining unusable pieces; a legal move hidden on
+            // the far edge of the scrolling board must never be the sole hope.
+            for slot in 1..<nextTray.count {
+                if let piece = nextTray[slot], !hasPlacement(for: piece) {
+                    nextTray[slot] = BerryPiece(
+                        points: [BerryPoint(row: 0, col: 0)], tint: nextRandom(6))
+                }
+            }
         }
         tray = nextTray
         // Store a real forecast based on the same current piece catalog.
