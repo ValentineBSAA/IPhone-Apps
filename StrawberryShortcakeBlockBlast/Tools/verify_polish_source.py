@@ -29,7 +29,7 @@ for marker in ('private let gap: CGFloat = 3',
     assert marker in board, marker
 for marker in ('surface-original', 'surface-cream', 'surface-glass',
                'surface-picnic', 'surface-garden', 'surface-seed',
-               'RESTORE ORIGINAL 0.5.8 APPEARANCE'):
+               'RESTORE ORIGINAL BOARD ONLY'):
     assert marker in shop, marker
 for marker in ('beginToday(', 'markLostToday(', 'saveActiveEngine(',
                'enum Outcome: String, Codable', 'struct Attempt: Codable'):
