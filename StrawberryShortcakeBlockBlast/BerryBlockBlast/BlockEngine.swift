@@ -340,7 +340,8 @@ struct BerryEngine: Codable {
     /// It can rescue isolated free cells by offering a one-square piece.
     @discardableResult
     mutating func reshuffleTray() -> Bool {
-        guard board.contains(where: { $0.contains(nil) }) else { return false }
+        guard side == 24 ? sectionHasFreeCell(activeGardenSection) :
+              board.contains(where: { $0.contains(nil) }) else { return false }
         refill()
         if !hasMove() {
             tray[0] = BerryPiece(points: [BerryPoint(row: 0, col: 0)], tint: nextRandom(6))
@@ -376,18 +377,53 @@ struct BerryEngine: Codable {
     @discardableResult
     mutating func beginNextEndlessSeasonIfStuck() -> Bool {
         guard !hasMove() else { return false }
+        if side == 24 {
+            // First try another section using the existing hand. This is
+            // a fully automatic, between-turn switch, never a scroll view.
+            for offset in 1..<4 {
+                let next = (activeGardenSection + offset) % 4
+                if hasMove(in: next) {
+                    activeGardenSection = next
+                    return true
+                }
+            }
+            // If nothing fits anywhere, advance to the next section with
+            // space and deal a free playable hand. No purchase required.
+            for offset in 1..<4 {
+                let next = (activeGardenSection + offset) % 4
+                guard sectionHasFreeCell(next) else { continue }
+                activeGardenSection = next
+                refill()
+                if !hasMove() { forcePlayableEndlessHand() }
+                return hasMove()
+            }
+            // Only the current section still has free cells.
+            if sectionHasFreeCell(activeGardenSection) {
+                refill()
+                if !hasMove() { forcePlayableEndlessHand() }
+                return hasMove()
+            }
+            // All four 12x12 sections are fully occupied. Start a new
+            // season without resetting score, line count, moves or berries.
+            board = Array(repeating: Array<Int?>(repeating: nil, count: 24), count: 24)
+            activeGardenSection = 0
+            seasons += 1
+            streak = 0
+            dryMoves = 0
+            refill()
+            return hasMove()
+        }
+        // The older 8x8 and 12x12 Endless rules stay unchanged.
         if board.contains(where: { $0.contains(nil) }) {
             refill()
-            // Refill is viability-filtered. The final fallback always fits
-            // any empty square, including isolated holes on the 24x24 board.
             if !hasMove() { forcePlayableEndlessHand() }
         } else {
             board = Array(repeating: Array<Int?>(repeating: nil, count: side), count: side)
             streak = 0
             dryMoves = 0
             refill()
+            seasons += 1
         }
-        seasons += 1
         return hasMove()
     }
 
@@ -410,17 +446,20 @@ struct BerryEngine: Codable {
     /// players still choose where to drop the offered puzzle shape.
     /// A one-square bridge also reaches disconnected near-finished rows.
     private func bestLineFinishingPiece() -> [BerryPoint]? {
+        let start = sectionOrigin
+        let rows = start.row..<(start.row + visibleSide)
+        let cols = start.col..<(start.col + visibleSide)
         var best: [BerryPoint]?
-        for row in 0..<side {
-            let gaps = (0..<side).filter { board[row][$0] == nil }
+        for row in rows {
+            let gaps = cols.filter { board[row][$0] == nil }
             if !gaps.isEmpty && gaps.count <= 9 &&
                 gaps.last! - gaps.first! + 1 == gaps.count {
                 let points = gaps.map { BerryPoint(row: 0, col: $0 - gaps[0]) }
                 if best == nil || points.count < best!.count { best = points }
             }
         }
-        for col in 0..<side {
-            let gaps = (0..<side).filter { board[$0][col] == nil }
+        for col in cols {
+            let gaps = rows.filter { board[$0][col] == nil }
             if !gaps.isEmpty && gaps.count <= 9 &&
                 gaps.last! - gaps.first! + 1 == gaps.count {
                 let points = gaps.map { BerryPoint(row: $0 - gaps[0], col: 0) }
@@ -521,7 +560,11 @@ struct BerryEngine: Codable {
                 hasPlacement(for: BerryPiece(points: finishing, tint: 0)) {
                 shape = finishing
             } else if side == 24 && index == 0 &&
-                        board.flatMap({ $0 }).filter({ $0 != nil }).count > (side * side) / 3 {
+                        (sectionOrigin.row..<(sectionOrigin.row + visibleSide)).reduce(0) { total, row in
+                            total + (sectionOrigin.col..<(sectionOrigin.col + visibleSide)).reduce(0) {
+                                $0 + (board[row][$1] == nil ? 0 : 1)
+                            }
+                        } > (visibleSide * visibleSide) / 3) {
                 let small = viable.filter { $0.count <= 3 }
                 shape = small.isEmpty ? [BerryPoint(row: 0, col: 0)] :
                     small[nextRandom(small.count)]
@@ -535,10 +578,15 @@ struct BerryEngine: Codable {
             nextTray.append(BerryPiece(points: shape, tint: tint))
         }
         if side == 24 && board.contains(where: { $0.contains(nil) }) {
-            let occupied = board.reduce(0) { $0 + $1.reduce(0) { $0 + ($1 == nil ? 0 : 1) } }
+            let start = sectionOrigin
+            let occupied = (start.row..<(start.row + 12)).reduce(0) { total, row in
+                total + (start.col..<(start.col + 12)).reduce(0) { count, col in
+                    count + (board[row][col] == nil ? 0 : 1)
+                }
+            }
             // At 30% occupancy, protect a practical rescue slot. The other
             // two shapes stay varied and are still checked for legal fit.
-            if occupied >= (side * side * 3) / 10 {
+            if occupied >= (visibleSide * visibleSide * 3) / 10 {
                 let helpful = bestLineFinishingPiece() ?? [BerryPoint(row: 0, col: 0)]
                 let legal = hasPlacement(for: BerryPiece(points: helpful, tint: 0))
                     ? helpful : [BerryPoint(row: 0, col: 0)]
