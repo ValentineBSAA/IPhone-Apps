@@ -77,3 +77,36 @@ jobs:
                           raise SystemExit("Unsafe archive entry: " + name)
               print("PASS:", filename, item.stat().st_size, "bytes")
           PY
+
+  compile-ios-simulator:
+    name: Compile 0.5.10 iOS app with restored art
+    needs: source-art-gate
+    runs-on: macos-15
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    steps:
+      - name: Checkout polish source
+        uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Install all verified original and optional artwork
+        run: |
+          set -euo pipefail
+          python3 Tools/install_art510.py
+          python3 Tools/verify_build510.py
+      - name: Generate Xcode project
+        run: xcodegen generate --spec project.yml
+      - name: Compile for iOS Simulator without signing
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath .build/Derived \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tee .build-log.txt
+          echo "PASS: 0.5.10 iOS app compiled successfully"
