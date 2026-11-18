@@ -153,22 +153,43 @@ struct BerryCandyToolbarButton: View {
     var tint: Color = BerryStyle.strawberry
     let action: () -> Void
 
+    private var approvedImage: String {
+        let normalized = title.lowercased()
+        if normalized.contains("pause") { return "BBBIconPause" }
+        if normalized.contains("village") || normalized.contains("home") {
+            return "BBBIconHome"
+        }
+        if normalized.contains("settings") { return "BBBIconSettings" }
+        if normalized.contains("help") || normalized.contains("how to") {
+            return "BBBIconHelp"
+        }
+        if normalized.contains("boutique") || normalized.contains("shop") {
+            return "BBBIconShop"
+        }
+        if normalized.contains("tool") { return "BBBIconTools" }
+        return ""
+    }
+
     var body: some View {
         Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: size * 0.45, weight: .bold))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(tint)
-                .frame(width: size, height: size)
-                .background(
-                    LinearGradient(colors: [.white, tint.opacity(0.14)],
-                                   startPoint: .topLeading,
-                                   endPoint: .bottomTrailing),
-                    in: Circle())
-                .overlay(Circle().strokeBorder(tint.opacity(0.76), lineWidth: 1.6))
-                .overlay(Circle().inset(by: 2.9).strokeBorder(.white.opacity(0.88), lineWidth: 1))
-                .shadow(color: tint.opacity(0.20), radius: 4, y: 2)
-                .contentShape(Circle())
+            Group {
+                if !approvedImage.isEmpty, let art = UIImage(named: approvedImage) {
+                    Image(uiImage: art)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                        .frame(width: size, height: size)
+                } else {
+                    Image(systemName: symbol)
+                        .font(.system(size: size * 0.45, weight: .bold))
+                        .foregroundStyle(tint)
+                        .frame(width: size, height: size)
+                        .background(.white.opacity(0.88), in: Circle())
+                        .overlay(Circle().strokeBorder(tint.opacity(0.73), lineWidth: 1.5))
+                }
+            }
+            .shadow(color: tint.opacity(0.18), radius: 3, y: 1)
+            .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
