@@ -74,7 +74,12 @@ final class BerryBuild2Tests: XCTestCase {
         XCTAssertEqual(mega.board.count, 24)
         XCTAssertTrue(mega.board.allSatisfy { $0.count == 24 })
         XCTAssertTrue(mega.hasMove())
-        XCTAssertTrue(mega.tray.compactMap { $0 }.allSatisfy { $0.points.count >= 7 })
+        // The modern Mega Garden deliberately offers smaller rescue pieces
+        // as well as giant blocks. The invariant is a fully playable hand.
+        XCTAssertEqual(mega.tray.compactMap { $0 }.count, 3)
+        XCTAssertTrue(mega.tray.compactMap { $0 }.allSatisfy {
+            !$0.points.isEmpty && mega.hasPlacement(for: $0)
+        })
         let restored = try JSONDecoder().decode(BerryEngine.self, from: JSONEncoder().encode(mega))
         XCTAssertEqual(restored.side, 24)
         let classic = BerryEngine()
@@ -125,7 +130,10 @@ final class BerryBuild2Tests: XCTestCase {
         XCTAssertEqual(endless.score, 8000)
         XCTAssertEqual(endless.side, 24)
         XCTAssertTrue(endless.hasMove())
-        XCTAssertTrue(endless.tray.compactMap { $0 }.allSatisfy { $0.points.count >= 7 })
+        XCTAssertEqual(endless.tray.compactMap { $0 }.count, 3)
+        XCTAssertTrue(endless.tray.compactMap { $0 }.allSatisfy {
+            !$0.points.isEmpty && endless.hasPlacement(for: $0)
+        })
     }
 
     func testLegacySaveDecodesWithoutEndlessSeasonsField() throws {
