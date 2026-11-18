@@ -76,7 +76,7 @@ struct PhonePhotoLibraryView: View {
                 .font(.system(size: 37))
             Text("No photos yet")
                 .font(.system(size: 17, weight: .medium))
-            Text("Open Messages and explore. Shared images will collect here automatically, without accessing your real iPhone Photos.")
+            Text("Shared images will appear here as your conversations continue.")
                 .font(.system(size: 13))
                 .multilineTextAlignment(.center)
         }
@@ -197,8 +197,6 @@ struct PhoneNotesView: View {
                 }
             } header: {
                 Text("\(notes.count) Notes")
-            } footer: {
-                Text("These are fictional phone notes. They are stored locally, not in your real Notes or iCloud.")
             }
             .listRowBackground(Night.surface)
         }
@@ -300,9 +298,7 @@ struct PhoneCalendarView: View {
                         .background(Night.surface, in: RoundedRectangle(cornerRadius: 14))
                     }
                 }
-                Text("This calendar belongs to the fictional phone, not your personal iPhone calendar.")
-                    .font(.system(size: 11))
-                    .foregroundColor(Night.muted)
+
             }
             .padding(18)
         }
