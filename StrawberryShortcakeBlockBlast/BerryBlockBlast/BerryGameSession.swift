@@ -129,6 +129,16 @@ final class BerryGameSession: ObservableObject {
         } else {
             engine = freshEngine()
         }
+        // Only these three modes opt into bounded adaptive hand selection.
+        // Existing saved trays never regenerate upon mode entry.
+        switch mode {
+        case .endless: engine.configureDifficulty(.endlessAdaptive, stage: engine.seasons)
+        case .cozy: engine.configureDifficulty(.cozyGentle)
+        case .story:
+            engine.configureDifficulty(.storyProgressive,
+                stage: UserDefaults.standard.integer(forKey: "berryblockblast.story.level"))
+        default: engine.configureDifficulty(nil)
+        }
         lastMessage = nil
         if mode == .endless && !engine.hasMove() {
             // Legacy 24x24 saves remain intact and automatically resume on

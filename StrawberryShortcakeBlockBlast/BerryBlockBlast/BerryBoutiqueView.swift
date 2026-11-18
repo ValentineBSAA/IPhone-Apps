@@ -24,6 +24,8 @@ struct BerryBoutiqueView: View {
     @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkleSkin = "default"
     @AppStorage("berryblockblast.sound") private var sound = true
     @State private var selectedCategory: Category?
+    /// Direct entry from an empty Hint / Shuffle / Undo action.
+    var opensWithHelpers = false
     @State private var confirmRestoreAllAppearance = false
 
     @State private var boardSubmenu: BoardSubmenu?
@@ -221,6 +223,10 @@ struct BerryBoutiqueView: View {
             }
         }
         .padding(.vertical, 8)
+        .onAppear {
+            selectedCategory = opensWithHelpers ? .helpers : nil
+            boardSubmenu = nil
+        }
     }
 
     private func categoryTile(_ category: Category) -> some View {
