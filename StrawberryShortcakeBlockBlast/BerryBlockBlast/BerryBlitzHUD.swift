@@ -33,13 +33,10 @@ struct BerryBlitzHUD: View {
                     .font(.system(size: 10, weight: .black, design: .rounded))
                     .tracking(1)
                     .foregroundStyle(BerryStyle.strawberry)
-                Text(score.formatted())
-                    .font(.system(size: 30, weight: .black, design: .rounded))
+                BerryCandyNumber(value: score.formatted(), size: 30, label: "Blitz Score")
                     .contentTransition(.numericText())
-                    .foregroundStyle(BerryStyle.chocolate)
-                Text("🏆 BEST \(best.formatted())")
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate.opacity(0.65))
+                BerryCandyNumber(value: "🏆 BEST \(best.formatted())", size: 11,
+                                 label: "Blitz Best")
             }
         }
         .padding(.horizontal, 17)
