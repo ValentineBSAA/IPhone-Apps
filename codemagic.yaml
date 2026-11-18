@@ -248,3 +248,110 @@ workflows:
       - StrawberryShortcakeBlockBlast/dist/*.xcresult
       - StrawberryShortcakeBlockBlast/build/Logs/Build/*.xcactivitylog
       - StrawberryShortcakeBlockBlast/build-simulator/Logs/Test/*.xcresult
+
+  berry-berry-blast-0512-build3-stabilized-unsigned:
+    name: Berry Berry Blast 0.5.12 Build 3 - unsigned iOS 16 QA IPA
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    working_directory: StrawberryShortcakeBlockBlast
+    # Manual build only. No push webhooks, no publishing, no Apple signing keys.
+    triggering:
+      events: []
+    environment:
+      xcode: latest
+    scripts:
+      - name: Check exact simulator-approved source and all 0.5.12 assets
+        script: |
+          set -euo pipefail
+          expected_tree='8cacd66378cd93d06d52b6bcc32f1d23ad88d5f3'
+          actual_tree="$(git rev-parse HEAD:StrawberryShortcakeBlockBlast)"
+          if [ "$actual_tree" != "$expected_tree" ]; then
+            echo "BLOCKED: game source differs from dual-device-tested Build 3"
+            echo "Expected: $expected_tree"
+            echo "Actual:   $actual_tree"
+            exit 1
+          fi
+          python3 -m compileall -q Tools
+          python3 Tools/verify_ios16_source.py
+          python3 Tools/check_ios16_compat.py
+          python3 Tools/verify_audio_build2.py
+          python3 Tools/verify_0512_art_in_repo.py
+          python3 - <<'PY'
+          from pathlib import Path
+          project=Path("project.yml").read_text()
+          for part in ('iOS: "16.0"', 'MARKETING_VERSION: "0.5.12"',
+                       'CURRENT_PROJECT_VERSION: "3"'):
+              assert part in project, f"Incorrect iOS/Build 3 metadata: {part}"
+          print("Preflight passed: identical tested game source, iOS 16, artwork and audio")
+          PY
+      - name: Prepare verified artwork and generate the native Xcode project
+        script: |
+          set -euo pipefail
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+          python3 Tools/install_art510.py
+          xcodegen generate --spec project.yml
+          find BerryBlockBlast Tests -type f -name '*.swift' -print0 |
+            xargs -0 xcrun swiftc -frontend -parse -swift-version 5
+      - name: Compile unsigned native iPhone application (Release, arm64)
+        script: |
+          set -euo pipefail
+          mkdir -p dist
+          xcodebuild \
+            -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath .build/Codemagic \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build 2>&1 | tee dist/QA-xcodebuild.log
+      - name: Package and inspect unsigned 0.5.12 Build 3 IPA
+        script: |
+          set -euo pipefail
+          app=".build/Codemagic/Build/Products/Release-iphoneos/BerryBlockBlast.app"
+          ipa="dist/Berry-Berry-Blast-v0.5.12-Build3-STABILIZED-unsigned.ipa"
+          test -f "$app/Info.plist"
+          test -f "$app/Assets.car"
+          xcrun lipo -archs "$app/BerryBlockBlast" | grep -qw arm64
+          python3 Tools/verify_audio_build2.py --app "$app"
+          mkdir -p dist/Payload
+          cp -R "$app" dist/Payload/BerryBlockBlast.app
+          (cd dist && zip -qry "$(basename "$ipa")" Payload)
+          python3 Tools/verify_audio_build2.py --ipa "$ipa"
+          python3 - <<'PY'
+          from pathlib import Path
+          import plistlib, zipfile, hashlib, subprocess
+          ipa=Path('dist/Berry-Berry-Blast-v0.5.12-Build3-STABILIZED-unsigned.ipa')
+          assert ipa.is_file() and ipa.stat().st_size > 100_000
+          with zipfile.ZipFile(ipa) as z:
+              assert z.testzip() is None, 'IPA CRC failure'
+              entries=set(z.namelist())
+              root='Payload/BerryBlockBlast.app/'
+              assert root+'Assets.car' in entries, 'Compiled artwork missing'
+              assert root+'BerryBlockBlast' in entries, 'Native executable missing'
+              assert not any('/_CodeSignature/' in name for name in entries), 'Unexpected signing'
+              info=plistlib.loads(z.read(root+'Info.plist'))
+              assert info['CFBundleIdentifier']=='com.valentinebsaa.berryblockblast'
+              assert info['CFBundleShortVersionString']=='0.5.12'
+              assert str(info['CFBundleVersion'])=='3'
+              assert info.get('MinimumOSVersion')=='16.0'
+          digest=hashlib.sha256(ipa.read_bytes()).hexdigest()
+          commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          Path('dist/QA-BUILD-INFO.txt').write_text(
+              'Berry Berry Blast 0.5.12 Build 3\n'
+              'Unsigned iPhoneOS IPA, iOS 16 minimum, arm64\n'
+              'Source commit: '+commit+'\n'
+              'Approved source tree: 8cacd66378cd93d06d52b6bcc32f1d23ad88d5f3\n'
+              'SHA-256: '+digest+'\n'
+              'NOT A PUBLIC RELEASE. Requires signing or jailbreak-compatible installation '
+              'and real iPhone hardware testing.\n')
+          print('PASS: validated native unsigned IPA:',ipa,ipa.stat().st_size,'bytes')
+          print('SHA-256:',digest)
+          PY
+    artifacts:
+      - $CM_BUILD_DIR/StrawberryShortcakeBlockBlast/dist/*.ipa
+      - $CM_BUILD_DIR/StrawberryShortcakeBlockBlast/dist/QA-*.txt
+      - $CM_BUILD_DIR/StrawberryShortcakeBlockBlast/dist/QA-*.log
