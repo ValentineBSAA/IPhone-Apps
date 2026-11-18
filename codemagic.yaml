@@ -28,7 +28,20 @@ workflows:
           python3 Tools/verify_artwork.py
           python3 Tools/verify_build57.py
           python3 Tools/verify_audio_build2.py
-          echo "PREFLIGHT PASS: build version, iOS16, validator syntax, approved art, 51 M4A and 16 WAV"
+          # Syntax-only Swift check requires no XcodeGen project and catches
+          # malformed Swift source BEFORE invoking expensive xcodebuild jobs.
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+          files = sorted([str(p) for folder in ("BerryBlockBlast", "Tests")
+                          for p in Path(folder).rglob("*.swift")])
+          if not files:
+              raise SystemExit("PREFLIGHT FAILED: no Swift source files found")
+          subprocess.run(["xcrun", "swiftc", "-frontend", "-parse",
+                          "-swift-version", "5", *files], check=True)
+          print(f"PASS: Swift parser checked {len(files)} source and test files")
+          PY
+          echo "PREFLIGHT PASS: version, iOS16, Python syntax, Swift syntax, approved art, 51 M4A and 16 WAV"
       - name: Install XcodeGen
         script: |
           set -e
