@@ -209,6 +209,9 @@ struct BerryGameView: View {
     @State private var blitzRunning = false
     @State private var blitzDeadline: Date?
     @State private var pausedTimerAt: Date?
+    // @State survives SwiftUI view reappearance after a device lock.
+    // Otherwise onAppear could accidentally restart a live Nightmare run.
+    @State private var didInitializeRun = false
     @State private var storyMessage: String?
     @State private var showFullStory = false
     private var blitzVariant: BerryBlitzVariant { BerryBlitzVariant.selected }
@@ -245,7 +248,12 @@ struct BerryGameView: View {
     private var canManuallyPause: Bool { true }
     private var canMakeMove: Bool {
         guard !isPaused, !showGameOver, !showVictory, !session.gameOver else { return false }
-        if isTimedMode { return blitzRunning && (blitzDeadline.map { $0 > Date() } ?? false) }
+        if isTimedMode {
+            return BerryTimedLifecycle.canPlay(
+                now: Date(), deadline: blitzDeadline, running: blitzRunning,
+                foreground: scenePhase == .active, pausedAt: pausedTimerAt
+            )
+        }
         return true
     }
     private var goal: Int { mode == .story ? 100 + storyLevel * 55 : 120 }
@@ -607,9 +615,16 @@ struct BerryGameView: View {
         .sheet(isPresented: $showCottage) { BerryCottageGardenView(session: session) }
         .sheet(isPresented: $showWelcome) { welcomeSheet }
         .onChange(of: scenePhase) { phase in
-            // iOS screenshots and banners can temporarily mark the app inactive.
-            // Pause overlays appear only when Pause was pressed, not on screenshots.
-            if phase == .background { drag = nil; selectedSlot = nil }
+            // Locking the phone cancels the in-flight touch immediately,
+            // regardless of whether UIKit delivers touchesCancelled. The
+            // occupied board and all three remaining tray pieces survive.
+            if phase != .active {
+                drag = nil
+                activeDragSlot = nil
+                activeDragFinger = nil
+                hintPreview = nil
+                if phase == .background { selectedSlot = nil }
+            }
             if phase == .active && mode == .daily && !dailyAttemptDay.isEmpty &&
                BerryDailyHistory.dateKey(for: Date()) != dailyAttemptDay {
                 BerryDailyHistory.expirePriorAttemptIfNeeded()
@@ -617,8 +632,14 @@ struct BerryGameView: View {
                 return
             }
             if isTimedMode {
-                if phase != .active { pauseTimedClock() }
-                else { resumeTimedClockIfPossible() }
+                if phase != .active {
+                    pauseTimedClock()
+                } else {
+                    // Use the new phase argument. Reading scenePhase from
+                    // inside its own change callback can still return the
+                    // previous inactive value and leave timed moves locked.
+                    resumeTimedClockIfPossible(foreground: true)
+                }
             }
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
@@ -628,8 +649,11 @@ struct BerryGameView: View {
                 returnToVillage()
                 return
             }
-            if isTimedMode && scenePhase == .active && !isPaused && pausedTimerAt == nil {
-                refreshBlitzClock()
+            if isTimedMode && scenePhase == .active {
+                // Recovery if a scene transition callback was missed or
+                // arrived before SwiftUI updated its environment value.
+                if pausedTimerAt != nil { resumeTimedClockIfPossible(foreground: true) }
+                if !isPaused && pausedTimerAt == nil { refreshBlitzClock() }
             }
         }
         .onChange(of: session.engine.activeGardenSection) { _ in
@@ -665,6 +689,17 @@ struct BerryGameView: View {
         .onAppear {
             BerryAudio.shared.setScreen(isTimedMode ? .blitz : .gameplay)
             BerryAudio.shared.setMusic(music)
+            if didInitializeRun {
+                // A lock/unlock must never call selectMode() again and
+                // replace the in-progress board, timer or rewards.
+                BerryPlaytimeTracker.shared.enterMode(playtimeModeID, title: playtimeModeTitle)
+                if isTimedMode && scenePhase == .active {
+                    resumeTimedClockIfPossible(foreground: true)
+                }
+                updateModePlaytime()
+                return
+            }
+            didInitializeRun = true
             session.selectMode(mode)
             if mode == .daily {
                 dailyAttemptDay = BerryDailyHistory.dateKey(for: Date())
@@ -1484,14 +1519,27 @@ struct BerryGameView: View {
 
     private func pauseTimedClock() {
         guard isTimedMode, blitzRunning, pausedTimerAt == nil else { return }
-        pausedTimerAt = Date()
+        let pausedAt = Date()
+        pausedTimerAt = pausedAt
+        blitzRemaining = BerryTimedLifecycle.pausedSeconds(
+            deadline: blitzDeadline, pausedAt: pausedAt, fallback: blitzRemaining)
     }
 
-    private func resumeTimedClockIfPossible() {
-        guard isTimedMode, blitzRunning, !isPaused,
-              !showHelp, !showSettings, scenePhase == .active,
-              let began = pausedTimerAt else { return }
-        blitzDeadline = blitzDeadline?.addingTimeInterval(Date().timeIntervalSince(began))
+    private func resumeTimedClockIfPossible(foreground: Bool? = nil) {
+        let canResume = BerryTimedLifecycle.canResume(
+            foreground: foreground ?? (scenePhase == .active),
+            running: isTimedMode && blitzRunning,
+            manualPause: isPaused,
+            anyOverlayOpen: showHelp || showSettings || showGameOver ||
+                showVictory || showWelcome || confirmRestart ||
+                showShop || showStats || showDailyCalendar ||
+                showPremiumActions || confirmGoldenStrawberry,
+            pausedAt: pausedTimerAt
+        )
+        guard canResume, let began = pausedTimerAt else { return }
+        let resumedAt = Date()
+        blitzDeadline = BerryTimedLifecycle.restoredDeadline(
+            blitzDeadline, pausedAt: began, resumedAt: resumedAt)
         pausedTimerAt = nil
         refreshBlitzClock()
     }
