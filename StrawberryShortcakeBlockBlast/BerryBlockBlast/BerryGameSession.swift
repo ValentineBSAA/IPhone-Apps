@@ -349,19 +349,51 @@ final class BerryGameSession: ObservableObject {
         return revertedLines
     }
 
+    /// Shuffle is a valid Game Over Continue only when the current board has
+    /// at least one empty square. Never rescue Classic or timed score trials.
+    var canContinueWithShuffle: Bool {
+        activeMode != .classic && activeMode != .challenge &&
+            activeMode != .superHard && engine.canRescueWithShuffle
+    }
+
     @discardableResult
     func shuffle() -> Bool {
-        guard shuffles > 0, engine.canRescueWithShuffle else { return false }
-        guard engine.reshuffleTray() else { return false }
+        guard shuffles > 0, canContinueWithShuffle,
+              engine.reshuffleTray() else { return false }
+        // An owned Shuffle is consumed only AFTER a legal hand was produced.
         shuffles -= 1
         ensureEndlessPlayable()
         gameOver = !engine.hasMove()
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
-        lastMessage = "Freshly picked berry blocks! 🍓"
+        lastMessage = "🍓 Continue with Shuffle! Three fresh playable pieces."
         lastEarned = 0
         lastClearedLines = 0
+        save()
+        return true
+    }
+
+    /// Purchase and apply a Shuffle directly from Game Over when the player
+    /// doesn't already own one. Both the berry debit and the board change
+    /// happen only after the replacement tray is confirmed legal.
+    @discardableResult
+    func buyAndContinueWithShuffle() -> Bool {
+        guard shuffles == 0, canContinueWithShuffle,
+              berries >= BerryEconomy.shufflePrice,
+              engine.reshuffleTray() else { return false }
+        berries -= BerryEconomy.shufflePrice
+        ensureEndlessPlayable()
+        gameOver = !engine.hasMove()
+        previous = nil
+        previousBerryEarnings = 0
+        previousRewardEntry = nil
+        lastEarned = 0
+        lastClearedLines = 0
+        lastMessage = "🍓 Shuffle Continue! Your garden and score are safe."
+        rewardsLog.insert("🍓 -\(BerryEconomy.shufflePrice) • Shuffle Continue", at: 0)
+        rewardsLog = Array(rewardsLog.prefix(20))
+        UserDefaults.standard.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
         save()
         return true
     }
@@ -450,6 +482,10 @@ final class BerryGameSession: ObservableObject {
         activeMode == .endless || activeMode == .story || activeMode == .cozy
     }
 
+    var canContinueWithGoldenStrawberry: Bool {
+        canUsePremium && engine.canRescueWithGoldenStrawberry
+    }
+
     var pantryPiece: BerryPiece? { engine.pantryPiece }
     var spyglassPiece: BerryPiece? {
         guard premiumOwned.contains("spyglass"), canUsePremium else { return nil }
@@ -461,7 +497,8 @@ final class BerryGameSession: ObservableObject {
     /// Saving through persistPremium keeps the currency and board atomic.
     @discardableResult
     func useGoldenStrawberry() -> Bool {
-        guard canUsePremium, premiumCharges["golden-strawberry", default: 0] > 0,
+        guard canContinueWithGoldenStrawberry,
+              premiumCharges["golden-strawberry", default: 0] > 0,
               engine.clearBoardWithGoldenStrawberry() else { return false }
         premiumCharges["golden-strawberry", default: 0] -= 1
         previous = nil
@@ -479,7 +516,7 @@ final class BerryGameSession: ObservableObject {
     /// avoiding a paid but unusable item and keeping the run intact.
     @discardableResult
     func buyAndUseGoldenStrawberry() -> Bool {
-        guard canUsePremium,
+        guard canContinueWithGoldenStrawberry,
               premiumCharges["golden-strawberry", default: 0] == 0,
               berries >= Self.goldenStrawberryCost,
               !engine.goldenRescueUsed,
