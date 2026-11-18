@@ -326,11 +326,16 @@ struct BerryGameView: View {
             // Reserve real space for the tray, tools, statistics and Story
             // dialogue BEFORE choosing the board size. The old width-first
             // sizing pushed the final row and controls below the screen.
+            // Build 1 grew the board without reserving the full tray, HUD,
+            // controls and safe areas. On real 393-point iPhones SwiftUI
+            // could compress the three-piece row, making live pieces vanish
+            // visually while UIKit still received their touches.
+            // Account for ALL fixed-height rows, gaps and insets first.
             let layoutReserve: CGFloat =
-                mode == .story ? 374 :
-                mode == .daily ? 340 :
-                (mode == .endless && session.engine.side == 24) ? 350 :
-                isTimedMode ? 320 : 305
+                mode == .story ? 455 :
+                mode == .daily ? 410 :
+                (mode == .endless && session.engine.side == 24) ? 415 :
+                isTimedMode ? 400 : 390
             // Leave 7pt for the untouched touch-coordinate wrapper on each
             // side, plus 5pt page gutters. Fits both 393pt-class iPhones.
             let fittedBoardSize = max(192, min(width - 24,
@@ -437,7 +442,10 @@ struct BerryGameView: View {
                                     .shadow(color: BerryStyle.strawberry.opacity(0.12), radius: 5, y: 3)
                                 if let piece {
                                     BerryPieceGlyph(piece: piece, unit: min(19, (width - 55) / CGFloat(3 * max(piece.width, 3)), CGFloat(compact ? 57 : 68) / CGFloat(max(piece.height, 1))), mode: mode, strawberryUnlocked: strawberryUnlocked)
-                                        .opacity(activeDragSlot == slot ? 0.3 : session.engine.hasPlacement(for: piece) ? 1 : 0.3)
+                                        // Never make a selectable piece almost
+                                        // invisible, including while dragging.
+                                        .opacity(activeDragSlot == slot ? 0.80 : 1.0)
+                                        .layoutPriority(2)
                                     Text("\(piece.points.count)")
                                         .font(.system(size: 11, weight: .black, design: .rounded))
                                         .foregroundStyle(BerryStyle.strawberry)
@@ -471,6 +479,9 @@ struct BerryGameView: View {
                             }
                         }
                     }
+                    .frame(height: compact ? 58 : 65)
+                    .layoutPriority(3) // tray cannot collapse behind the board
+                    .accessibilityIdentifier("berry-three-piece-tray")
                     toolBar
                     if touchDiagnostics {
                         Text(touchStatus)
@@ -515,7 +526,7 @@ struct BerryGameView: View {
                    let piece = session.engine.tray[slot] {
                     BerryPieceGlyph(piece: piece, unit: min(28, 90 / CGFloat(max(piece.width, piece.height))),
                                     mode: mode, strawberryUnlocked: strawberryUnlocked)
-                        .opacity(0.79)
+                        .opacity(1)
                         .shadow(color: BerryStyle.strawberry.opacity(0.3), radius: 9, y: 3)
                         .position(x: finger.x - geo.frame(in: .global).minX,
                                   y: finger.y - geo.frame(in: .global).minY - 58)
