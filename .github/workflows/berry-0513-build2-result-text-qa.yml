@@ -1,0 +1,211 @@
+name: Berry Berry Blast 0.5.13 DEV Build 2 Result Text Reliability
+on:
+  push:
+    branches: [fix/berry-0513-build2-result-text-reliability]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: berry-0513-build2-result-text-qa
+  cancel-in-progress: false
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    steps:
+      - uses: actions/checkout@v4
+      - name: Source, iOS 16, 48 approved artworks and 67 original audio files
+        run: |
+          set -euo pipefail
+          python3 Tools/verify_ios16_source.py
+          python3 Tools/check_ios16_compat.py
+          python3 Tools/verify_audio_build2.py
+          python3 Tools/verify_0512_art_in_repo.py
+          test -f BerryBlockBlast/BerryBoardVisual.swift
+          test -f BerryBlockBlast/BerryBoardPersonality.swift
+          test -f BerryBlockBlast/BerryPieceCatalog.swift
+          test -f BerryBlockBlast/BerryDifficultyPolicy.swift
+          test -f BerryBlockBlast/BerryResultText.swift
+          test -f Tests/BerryResultTextReliabilityTests.swift
+          test -f Tests/BerryDifficultyPolicyTests.swift
+          test -f Tests/BerryBoardPersonalityTests.swift
+          python3 - <<'PY'
+          from pathlib import Path
+          names=['BerryFullTrayRegressionTests.swift','BerryTrayVisibilityTests.swift',
+                 'BerryBoardTouchMappingTests.swift','BerryFullScreenGameplayTests.swift',
+                 'BerryPhysicalScreenGeometryTests.swift','BerryLiveCountdownTests.swift',
+                 'BerryTimedLifecycleTests.swift','BerryDailyHarvestAlmanacTests.swift',
+                 'BerryTrophyGardenTests.swift']
+          for name in names: assert (Path('Tests')/name).is_file(),name
+          print('QA source suite present. Dynamic tests run on real simulators below.')
+          PY
+  engine-regression:
+    needs: integrity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    steps:
+      - uses: actions/checkout@v4
+      - name: Type-check production engine and run deterministic regression
+        run: |
+          set -euo pipefail
+          command -v swiftc
+          swiftc -swift-version 5 \
+            BerryBlockBlast/BlockEngine.swift \
+            BerryBlockBlast/BerryPieceCatalog.swift \
+            BerryBlockBlast/BerryDifficultyPolicy.swift \
+            Tools/verify_0513_engine_regression.swift \
+            -o /tmp/berry-0513-engine-regression
+          /tmp/berry-0513-engine-regression
+      - name: Catch macOS runner configuration regressions
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          workflow=Path('../.github/workflows/berry-0513-build2-result-text-qa.yml').read_text()
+          assert 'runs-on: macos-15-intel' in workflow, 'Runner fallback accidentally removed'
+          assert 'max-parallel: 1' in workflow, 'Simulators may compete for scarce runners'
+          assert 'needs: [integrity, engine-regression]' in workflow
+          assert 'needs: [integrity, engine-regression, simulators]' in workflow
+          print('PASS: regression gate is independent of macOS runner availability')
+          PY
+  simulators:
+    needs: [integrity, engine-regression]
+    # Intel is a supported runner; the previous ARM macos-15 jobs
+    # were both cancelled before any step (runner allocation failure).
+    runs-on: macos-15-intel
+    timeout-minutes: 70
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - slug: iphone14pro
+            model: iPhone 14 Pro
+          - slug: iphone16
+            model: iPhone 16
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    env:
+      DEVICE_NAME: ${{ matrix.model }}
+      DEVICE_SLUG: ${{ matrix.slug }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate Xcode project and validate syntax
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          python3 Tools/install_art510.py
+          xcodegen generate --spec project.yml
+          find BerryBlockBlast Tests -name '*.swift' -type f -print0 |
+            xargs -0 xcrun swiftc -frontend -parse -swift-version 5
+      - name: Require named iPhone model, never silently substitute
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,subprocess
+          def listed(*parts):
+              return json.loads(subprocess.check_output(
+                 ['xcrun','simctl','list',*parts,'-j'],text=True))
+          name=os.environ['DEVICE_NAME']
+          available=[d for group in listed('devices','available')['devices'].values()
+                     for d in group if d.get('isAvailable') and d.get('name')==name]
+          if available:
+              udid=available[0]['udid']
+          else:
+              types=[d for d in listed('devicetypes')['devicetypes'] if d['name']==name]
+              runtimes=[r for r in listed('runtimes')['runtimes']
+                        if r.get('isAvailable') and r['identifier'].split('.')[-1].startswith('iOS-')]
+              if not types: raise SystemExit('BLOCKED: missing exact device type '+name)
+              if not runtimes: raise SystemExit('BLOCKED: missing iOS simulator runtime')
+              runtime=sorted(runtimes,key=lambda r:tuple(int(n) for n in r['version'].split('.')))[-1]
+              udid=subprocess.check_output([
+                  'xcrun','simctl','create','Berry QA '+name,
+                  types[0]['identifier'],runtime['identifier']],text=True).strip()
+          print('Actual simulator selected:',name,udid)
+          with open(os.environ['GITHUB_ENV'],'a') as f: f.write('SIM_UDID='+udid+'\n')
+          PY
+      - name: Run entire XCTest suite on actual simulator screen
+        run: |
+          set -euo pipefail
+          xcrun simctl bootstatus "$SIM_UDID" -b
+          mkdir -p .build/QA
+          xcodebuild -project BerryBlockBlast.xcodeproj -scheme BerryBlockBlast \
+            -configuration Debug -destination "platform=iOS Simulator,id=$SIM_UDID" \
+            -derivedDataPath ".build/QA/$DEVICE_SLUG-derived" \
+            -resultBundlePath ".build/QA/$DEVICE_SLUG.xcresult" \
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO test
+      - name: Export screenshots of full iPhone screen and require evidence
+        run: |
+          set -euo pipefail
+          mkdir -p ".build/QA/$DEVICE_SLUG-captures"
+          xcrun xcresulttool export attachments \
+            --path ".build/QA/$DEVICE_SLUG.xcresult" \
+            --output-path ".build/QA/$DEVICE_SLUG-captures"
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          root=Path('.build/QA')/(os.environ['DEVICE_SLUG']+'-captures')
+          images=[p for p in root.rglob('*') if p.suffix.lower() in ('.png','.jpg','.jpeg')]
+          print('Simulator screenshot attachments:',[p.name for p in images])
+          if len(images)<2: raise SystemExit('BLOCKED: not enough visual evidence')
+          PY
+      - name: Save actual geometry and screenshots, even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-${{ matrix.slug }}-real-window-regression
+          path: |
+            StrawberryShortcakeBlockBlast/.build/QA/${{ matrix.slug }}.xcresult
+            StrawberryShortcakeBlockBlast/.build/QA/${{ matrix.slug }}-captures/
+          retention-days: 30
+  candidate:
+    needs: [integrity, engine-regression, simulators]
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native iOS 16 device compilation and unsigned IPA inspection
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          python3 Tools/install_art510.py
+          xcodegen generate --spec project.yml
+          xcodebuild -project BerryBlockBlast.xcodeproj -scheme BerryBlockBlast \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath .build/Candidate CODE_SIGNING_ALLOWED=NO build
+          mkdir -p dist/Payload
+          cp -R .build/Candidate/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
+          (cd dist && zip -qr Berry-Berry-Blast-v0.5.13-build2-TEXT-RELIABILITY-unsigned.ipa Payload)
+          python3 Tools/verify_audio_build2.py \
+            --ipa dist/Berry-Berry-Blast-v0.5.13-build2-TEXT-RELIABILITY-unsigned.ipa
+          unzip -t dist/Berry-Berry-Blast-v0.5.13-build2-TEXT-RELIABILITY-unsigned.ipa | tail -2
+          python3 - <<'PY'
+          import zipfile,plistlib
+          filename='dist/Berry-Berry-Blast-v0.5.13-build2-TEXT-RELIABILITY-unsigned.ipa'
+          with zipfile.ZipFile(filename) as z:
+              assert 'Payload/BerryBlockBlast.app/Assets.car' in z.namelist()
+              info=plistlib.loads(z.read('Payload/BerryBlockBlast.app/Info.plist'))
+              assert info['CFBundleShortVersionString']=='0.5.13'
+              assert info['CFBundleVersion']=='2'
+              assert info.get('MinimumOSVersion','16.0')=='16.0'
+          print('Simulator QA passed. Still requires physical-device signoff.')
+          PY
+          echo '0.5.13 Build 2 DEV. Verify game-over text on physical iPhone; not public release.' \
+            > dist/HARDWARE-SIGNOFF-REQUIRED.txt
+      - name: Upload candidate only, never auto-publish release
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-0513-Build2-UNSIGNED-TEXT-RELIABILITY-IPA
+          path: |
+            StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-v0.5.13-build2-TEXT-RELIABILITY-unsigned.ipa
+            StrawberryShortcakeBlockBlast/dist/HARDWARE-SIGNOFF-REQUIRED.txt
+          retention-days: 14
