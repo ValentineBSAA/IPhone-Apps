@@ -243,6 +243,7 @@ struct BerryBoutiqueView: View {
                 premiumOffer(id: "trowel", title: "Golden Trowel", detail: "Remove an occupied square · one use", icon: "GoldenTrowel", fallback: "shovel.fill", cost: 150)
                 premiumOffer(id: "twister", title: "Ribbon Twister", detail: "Rotate a tray piece · three uses", icon: "RibbonTwister", fallback: "arrow.triangle.2.circlepath", cost: 200)
                 premiumOffer(id: "seed", title: "Starberry Seed", detail: "Plant one square, potentially clear a line", icon: "StarberrySeed", fallback: "leaf.circle.fill", cost: 230)
+                premiumOffer(id: "golden-strawberry", title: "Golden Strawberry", detail: "Clear the entire board in Story, Endless or Cottage · one-use rescue · no free score", icon: "GoldenStrawberry", fallback: "star.circle.fill", cost: 350)
                 premiumOffer(id: "pantry", title: "Picnic Pantry", detail: "Permanent piece storage slot", icon: "PicnicPantry", fallback: "basket.fill", cost: 600)
                 premiumOffer(id: "spyglass", title: "Berry Spyglass", detail: "Permanent preview of an upcoming piece", icon: "BerrySpyglass", fallback: "scope", cost: 900)
             }
@@ -280,6 +281,8 @@ struct BerryBoutiqueView: View {
                     .foregroundStyle(BerryStyle.strawberry)
                 Text("Cottage decorations: \(min(session.cottageDecorations, 6)) / 6")
                 Text("Premium: Trowel ×\(session.premiumCharges["trowel", default: 0]) • Twister ×\(session.premiumCharges["twister", default: 0]) • Seed ×\(session.premiumCharges["seed", default: 0])")
+                    .font(.caption.bold()).foregroundStyle(BerryStyle.strawberry)
+                Text("Golden Strawberry ×\(session.premiumCharges["golden-strawberry", default: 0])")
                     .font(.caption.bold()).foregroundStyle(BerryStyle.strawberry)
                 Text("Pantry: \(session.premiumOwned.contains("pantry") ? "Owned" : "Locked")  •  Spyglass: \(session.premiumOwned.contains("spyglass") ? "Owned" : "Locked")")
                     .font(.caption.bold()).foregroundStyle(BerryStyle.leaf)
