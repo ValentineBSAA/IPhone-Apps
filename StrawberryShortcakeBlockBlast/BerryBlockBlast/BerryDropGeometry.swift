@@ -19,17 +19,24 @@ enum BerryDropGeometry {
                        side: Int, gap: CGFloat = 3) -> (row: Int, col: Int)? {
         guard side > 0, board.width > 0, board.height > 0,
               finger.x.isFinite, finger.y.isFinite, !piece.points.isEmpty else { return nil }
-        let cell = (board.width - CGFloat(side - 1) * gap) / CGFloat(side)
+        // Board anchors measure the *outer* UIKit touch wrapper. The live
+        // cells begin three points inside it on every side. Previously we
+        // calculated a 12x12 grid using the outer size, accumulating about
+        // 5.5pt of error at the far side of an iPhone screen.
+        let rim = BerryGameplayLayout.boardTouchMargin
+        let inner = board.insetBy(dx: rim, dy: rim)
+        guard inner.width > 0, inner.height > 0 else { return nil }
+        let cell = (inner.width - CGFloat(side - 1) * gap) / CGFloat(side)
         guard cell > 0 else { return nil }
         let step = cell + gap
         let margin = max(CGFloat(12), step * 0.6)
-        guard board.insetBy(dx: -margin, dy: -margin).contains(finger) else { return nil }
+        guard inner.insetBy(dx: -margin, dy: -margin).contains(finger) else { return nil }
         let minRow = piece.points.map(\.row).min() ?? 0
         let maxRow = piece.points.map(\.row).max() ?? 0
         let minCol = piece.points.map(\.col).min() ?? 0
         let maxCol = piece.points.map(\.col).max() ?? 0
-        let col = Int(floor((finger.x - board.minX) / step - CGFloat(minCol + maxCol) / 2))
-        let row = Int(floor((finger.y - board.minY) / step - CGFloat(minRow + maxRow) / 2))
+        let col = Int(floor((finger.x - inner.minX) / step - CGFloat(minCol + maxCol) / 2))
+        let row = Int(floor((finger.y - inner.minY) / step - CGFloat(minRow + maxRow) / 2))
         return (row, col)
     }
 }
