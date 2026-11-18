@@ -49,6 +49,25 @@ final class BerryDailyAttemptTests: XCTestCase {
         XCTAssertFalse(BerryDailyHistory.beginToday(defaults: store))
     }
 
+    func testYesterdayActiveGameExpiresAsLossWithoutUsingToday() throws {
+        let store = isolatedDefaults()
+        let yesterday = try XCTUnwrap(Calendar.current.date(
+            byAdding: .day, value: -1, to: Date()))
+        let key = BerryDailyHistory.dateKey(for: yesterday)
+        let saved = BerryDailyHistory.Attempt(
+            day: key, outcome: .active, engine: BerryEngine(seed: 20261117))
+        store.set(try JSONEncoder().encode(saved),
+                  forKey: "berryberryblast.daily.attempt.v0510")
+        store.set([key: "active"], forKey: "berryberryblast.daily.outcomes.v0510")
+        BerryDailyHistory.expirePriorAttemptIfNeeded(defaults: store)
+        let results = try XCTUnwrap(store.dictionary(
+            forKey: "berryberryblast.daily.outcomes.v0510") as? [String:String])
+        XCTAssertEqual(results[key], "lost")
+        XCTAssertNil(BerryDailyHistory.outcome(defaults: store),
+                     "Today's attempt must remain unspent")
+        XCTAssertTrue(BerryDailyHistory.beginToday(defaults: store))
+    }
+
     func testNewDayDoesNotInheritPreviousDayLoss() throws {
         let store = isolatedDefaults()
         let yesterday = try XCTUnwrap(Calendar.current.date(
