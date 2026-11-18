@@ -3,16 +3,21 @@ import SwiftUI
 @main
 struct BerryBlockBlastApp: App {
     @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var playtime = BerryPlaytimeTracker.shared
 
     var body: some Scene {
         WindowGroup {
             BerryHomeView()
                 .overlay(alignment: .top) { BerryMilestoneBanner() }
-                .onAppear { BerryAudio.shared.appSceneDidChange(scenePhase) }
+                .onAppear {
+                    BerryAudio.shared.appSceneDidChange(scenePhase)
+                    playtime.scenePhaseDidChange(scenePhase)
+                }
                 .onChange(of: scenePhase) { phase in
                     // Handles lock button, notification banners, home gesture
                     // and unlocking before any delayed app callbacks.
                     BerryAudio.shared.appSceneDidChange(phase)
+                    playtime.scenePhaseDidChange(phase)
                 }
         }
     }
