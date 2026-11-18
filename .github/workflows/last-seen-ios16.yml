@@ -121,6 +121,16 @@ jobs:
           echo "Compiled MinimumOSVersion: $MIN_OS"
           test "$MIN_OS" = "16.0"
           test -f "$APP/Assets.car"
+          MARKETING_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist")"
+          BUILD_NUMBER="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")"
+          BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")"
+          echo "Actual app version: $MARKETING_VERSION ($BUILD_NUMBER)"
+          test "$MARKETING_VERSION" = "1.1.2"
+          test "$BUILD_NUMBER" = "8"
+          test "$BUNDLE_ID" = "com.valentinebsaa.lastseen.horror"
+          test -s "LastSeenApp/Assets.xcassets/Contact_Maya.imageset/photo.jpg"
+          test -s "LastSeenApp/Assets.xcassets/Contact_Denise.imageset/photo.jpg"
+          test "$(find LastSeenApp/Assets.xcassets -maxdepth 1 -type d -name 'Contact_*.imageset' | wc -l | tr -d ' ')" = "12"
 
       - name: Run full story-engine tests on iPhone simulator
         timeout-minutes: 20
