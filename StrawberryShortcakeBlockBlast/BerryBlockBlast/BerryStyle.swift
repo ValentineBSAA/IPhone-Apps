@@ -54,6 +54,7 @@ struct BerryTile: View {
     var skinOverride: String? = nil
     @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
     @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkles = "default"
+    @AppStorage("berryberryblast.trophies.strawberry-red-on.v0512") private var strawberryRewardOn = true
 
     private var skin: String { skinOverride ?? blockSkin }
     /// Restored original 0.5.8 square candy blocks for the default style.
@@ -69,7 +70,15 @@ struct BerryTile: View {
         default: return "BerryFruitMint"
         }
     }
-    private var decorated: Bool { strawberryUnlocked && (tint % 6 + 6) % 6 == 0 && skin == "default" }
+    private var rewardArt: String? {
+        BerryTrophyCatalog.enabledArt(skin: skin, tint: tint,
+                                      legacyStrawberry: strawberryUnlocked,
+                                      strawberryEnabled: strawberryRewardOn)
+    }
+    private var decorated: Bool {
+        strawberryUnlocked && strawberryRewardOn && (tint % 6 + 6) % 6 == 0 &&
+        skin == "default" && (rewardArt == nil || UIImage(named: rewardArt!) == nil)
+    }
     /// Prepared 0.5.8 art catalog: each square remains an exact grid cell.
     private var artName: String? {
         switch skin {
@@ -118,7 +127,18 @@ struct BerryTile: View {
         GeometryReader { geometry in
             let side = min(geometry.size.width, geometry.size.height)
             let radius = max(3, side * 0.19)
-            if let art = fruitImage, UIImage(named: art) != nil {
+            if let art = rewardArt, UIImage(named: art) != nil {
+                // Cosmetic replaces ONLY the matching tinted square, never its
+                // hitbox, engine value or accessibility position. Remaining
+                // colors keep their classic appearance for legibility.
+                Image(art)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: side, height: side)
+                    .shadow(color: palette.opacity(0.20), radius: max(0.5, side * 0.06), y: 1)
+                    .accessibilityLabel("Unlocked special candy block")
+            } else if let art = fruitImage, UIImage(named: art) != nil {
                 // Transparent fruit silhouettes, while square grid cells
                 // remain unchanged for drag/drop placement and scoring.
                 Image(art)
