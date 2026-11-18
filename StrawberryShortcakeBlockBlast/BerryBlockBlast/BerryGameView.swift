@@ -347,6 +347,7 @@ struct BerryGameView: View {
                     }
                     if mode == .story {
                         storyProgressCard
+                        storyDialogueCard(compact: compact)
                     }
                     if mode == .daily {
                         Button {
@@ -814,53 +815,81 @@ struct BerryGameView: View {
     }
 
     private func topBar(compact: Bool) -> some View {
-        HStack(spacing: 8) {
-            BerryGirlView().frame(width: compact ? 45 : 54, height: compact ? 45 : 54).clipped()
-            VStack(alignment: .leading, spacing: 0) {
-                Text("STRAWBERRY SWEET").font(.system(size: 7, weight: .black, design: .rounded)).tracking(1.7).foregroundStyle(BerryStyle.leaf)
+        HStack(spacing: compact ? 4 : 6) {
+            BerryGirlView()
+                .frame(width: compact ? 36 : 42, height: compact ? 36 : 42)
+                .clipped()
+            VStack(alignment: .leading, spacing: 1) {
                 Text("Berry Berry Blast!")
-                    .font(.system(size: compact ? 15 : 17, weight: .black, design: .rounded))
+                    .font(.system(size: compact ? 14 : 16,
+                                  weight: .black, design: .rounded))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.56)
+                    .minimumScaleFactor(0.72)
                     .foregroundStyle(BerryStyle.strawberry)
-                Text(mode == .endless ? "\(session.engine.side)×\(session.engine.side) • SEASON \(session.engine.seasons + 1)" : mode.rawValue.uppercased()).font(.system(size: 8, weight: .bold, design: .rounded)).tracking(0.7).foregroundStyle(BerryStyle.chocolate.opacity(0.7))
+                    .layoutPriority(1)
+                Text(mode == .endless ?
+                     "\(session.engine.side)×\(session.engine.side) · SEASON \(session.engine.seasons + 1)" :
+                     mode.rawValue.uppercased())
+                    .font(.system(size: 8, weight: .heavy, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate.opacity(0.7))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.68)
             }
-            Spacer(minLength: 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            let diameter: CGFloat = compact ? 33 : 37
             if canManuallyPause {
-                Button {
+                BerryCandyToolbarButton(symbol: "pause.fill", title: "Pause game",
+                                        size: diameter) {
                     isPaused = true
                     pauseTimedClock()
-                    drag = nil; selectedSlot = nil
-                } label: {
-                    Image(systemName: "pause.circle.fill").font(.system(size: 23)).foregroundStyle(BerryStyle.strawberry)
-                }.accessibilityLabel("Pause game")
+                    drag = nil
+                    selectedSlot = nil
+                }
             }
-            Button { returnToVillage() } label: { Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.leaf) }.accessibilityLabel("Main menu")
-            Button { showSettings = true } label: {
-                Image(systemName: "gearshape.fill").font(.system(size: 20)).foregroundStyle(BerryStyle.strawberry)
-            }.accessibilityLabel("Berry settings")
-            Button { showHelp = true } label: {
-                Image(systemName: "questionmark.circle.fill").font(.system(size: 23)).foregroundStyle(BerryStyle.strawberry)
-            }.accessibilityLabel("How to play")
+            BerryCandyToolbarButton(symbol: "house.fill", title: "Return to Village",
+                                    size: diameter, tint: BerryStyle.leaf) {
+                returnToVillage()
+            }
+            BerryCandyToolbarButton(symbol: "gearshape.fill", title: "Berry Settings",
+                                    size: diameter) { showSettings = true }
+            BerryCandyToolbarButton(symbol: "questionmark", title: "How to Play",
+                                    size: diameter) { showHelp = true }
         }
-        .frame(height: compact ? 48 : 56)
-        .overlay(alignment: .bottomLeading) {
-            if mode == .story, let storyMessage {
-                Text(storyMessage)
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate)
-                    .padding(.horizontal, 10).padding(.vertical, 7)
-                    .background(.white, in: RoundedRectangle(cornerRadius: 13))
-                    .overlay(RoundedRectangle(cornerRadius: 13)
-                        .strokeBorder(BerryStyle.strawberry.opacity(0.40), lineWidth: 1))
-                    .shadow(color: BerryStyle.strawberry.opacity(0.2), radius: 6, y: 2)
-                    .frame(maxWidth: 270, alignment: .leading)
-                    .offset(x: 34, y: 38)
-                    .allowsHitTesting(false)
-                    .zIndex(10)
-                    .transition(.opacity)
+        .frame(height: compact ? 43 : 49)
+    }
+
+    /// A permanent slot above the board prevents dialogue from drifting behind
+    /// the grid or shifting the board geometry while speech fades away.
+    private func storyDialogueCard(compact: Bool) -> some View {
+        Group {
+            if let storyMessage {
+                HStack(spacing: 8) {
+                    Image(systemName: "text.bubble.fill")
+                        .foregroundStyle(BerryStyle.strawberry)
+                    Text(storyMessage)
+                        .font(.system(size: compact ? 10 : 11,
+                                      weight: .semibold, design: .rounded))
+                        .foregroundStyle(BerryStyle.chocolate)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.88)
+                        .multilineTextAlignment(.leading)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 10)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.white.opacity(0.94),
+                            in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(BerryStyle.strawberry.opacity(0.45),
+                                  lineWidth: 1.2))
+            } else {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.white.opacity(0.26))
             }
         }
+        .frame(height: compact ? 45 : 53)
+        .allowsHitTesting(false)
+        .accessibilityLabel(storyMessage ?? "Berry Story message")
     }
 
     private var storyProgressCard: some View {
