@@ -18,6 +18,9 @@ final class BerryGoldenStrawberryTests: XCTestCase {
         XCTAssertEqual(engine.moves, 0)
         XCTAssertEqual(engine.seasons, 0)
         XCTAssertTrue(engine.hasMove())
+        XCTAssertTrue(engine.goldenRescueUsed)
+        XCTAssertFalse(engine.clearBoardWithGoldenStrawberry(),
+                       "A second rescue must not be allowed in the same run")
     }
 
     func testEmptyBoardCannotWasteGoldenStrawberry() {
@@ -25,6 +28,7 @@ final class BerryGoldenStrawberryTests: XCTestCase {
         XCTAssertFalse(engine.clearBoardWithGoldenStrawberry())
         XCTAssertEqual(engine.score, 0)
         XCTAssertEqual(engine.moves, 0)
+        XCTAssertFalse(engine.goldenRescueUsed)
     }
 
     func testGoldBerryResetsAllFourMegaGardenPatchesWithoutTouchingScore() {
@@ -42,5 +46,28 @@ final class BerryGoldenStrawberryTests: XCTestCase {
         XCTAssertEqual(engine.seasons, 0)
         XCTAssertTrue(engine.board.flatMap { $0 }.allSatisfy { $0 == nil })
         XCTAssertTrue(engine.hasMove())
+        XCTAssertTrue(engine.goldenRescueUsed)
+    }
+
+    func testGoldenRescueLimitSurvivesSavedEndlessGarden() throws {
+        var board = Array(repeating: Array<Int?>(repeating: nil, count: 24), count: 24)
+        board[2][3] = 2
+        var engine = BerryEngine(board: board, tray: [one, nil, nil], score: 412)
+        XCTAssertTrue(engine.clearBoardWithGoldenStrawberry())
+        let encoded = try JSONEncoder().encode(engine)
+        var restored = try JSONDecoder().decode(BerryEngine.self, from: encoded)
+        XCTAssertTrue(restored.goldenRescueUsed)
+        XCTAssertEqual(restored.score, 412)
+        XCTAssertFalse(restored.clearBoardWithGoldenStrawberry())
+    }
+
+    func testOldSavesWithoutGoldenRescueFieldStartUnused() throws {
+        let original = BerryEngine(side: 24, hard: true)
+        let data = try JSONEncoder().encode(original)
+        var document = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        document.removeValue(forKey: "goldenRescueUsed")
+        let restored = try JSONDecoder().decode(
+            BerryEngine.self, from: JSONSerialization.data(withJSONObject: document))
+        XCTAssertFalse(restored.goldenRescueUsed)
     }
 }
