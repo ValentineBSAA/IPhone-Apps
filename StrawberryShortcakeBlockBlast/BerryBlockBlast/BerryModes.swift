@@ -96,7 +96,7 @@ struct BerryHomeView: View {
         }
         .buttonStyle(.plain)
     }
-    private var version: String { "🍓 v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev") • \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?")" }
+    private var version: String { "🍓 v0.5.9 • 1" }
     @AppStorage("berryblockblast.story.level") private var storyLevel = 1
     var body: some View {
         ZStack {
@@ -123,7 +123,17 @@ struct BerryHomeView: View {
                             BerryGirlView().frame(width: 174, height: 180)
                                 .background(Circle().fill(.white.opacity(0.45)).shadow(color: BerryStyle.strawberry.opacity(0.2), radius: 18, y: 6))
                                 .frame(maxWidth: .infinity, alignment: .center)
-                            Text("Berry Berry Blast!").font(.system(size: 34, weight: .black, design: .rounded)).minimumScaleFactor(0.65).lineLimit(1).foregroundStyle(BerryStyle.strawberry)
+                            Group {
+                                if UIImage(named: "BerryBerryBlastLogo") != nil {
+                                    Image("BerryBerryBlastLogo").resizable().scaledToFit()
+                                        .frame(maxWidth: 330).frame(height: 82)
+                                } else {
+                                    Text("Berry Berry Blast!")
+                                        .font(.system(size: 34, weight: .black, design: .rounded))
+                                        .minimumScaleFactor(0.65).lineLimit(1)
+                                        .foregroundStyle(BerryStyle.strawberry)
+                                }
+                            }
                             Text("PICK • PLANT • POP • CELEBRATE").font(.system(size: 10, weight: .bold, design: .rounded)).tracking(1).foregroundStyle(BerryStyle.chocolate)
                             Text("What shall we bake up today? 🍰").font(.system(size: 19, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.chocolate).padding(.vertical, 8)
                             Button {
