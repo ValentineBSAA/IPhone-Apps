@@ -1,0 +1,59 @@
+name: Berry Berry Blast 0.5.11 Source-Only Device Build (not artwork-complete)
+on:
+  push:
+    branches: [feature/berry-berry-blast-0511-source-smoke]
+    paths:
+      - 'StrawberryShortcakeBlockBlast/**'
+      - '.github/workflows/berry-0511-source-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check-and-compile:
+    runs-on: macos-15
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate source and original audio
+        run: |
+          set -euo pipefail
+          python3 -m compileall -q Tools
+          python3 Tools/verify_ios16_source.py
+          python3 Tools/check_ios16_compat.py
+          python3 Tools/verify_audio_build2.py
+          python3 Tools/verify_build511.py
+          find BerryBlockBlast Tests -name '*.swift' -type f -print0 | xargs -0 xcrun swiftc -frontend -parse -swift-version 5
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Restore all previous approved art (0.5.11 art intentionally not available)
+        run: |
+          set -euo pipefail
+          python3 Tools/install_art510.py
+          xcodegen generate --spec project.yml
+      - name: Compile iOS Simulator app
+        run: |
+          set -euo pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj -scheme BerryBlockBlast \
+            -configuration Debug -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath .build/Simulator CODE_SIGNING_ALLOWED=NO build
+      - name: Compile unsigned iOS 16 device IPA
+        run: |
+          set -euo pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj -scheme BerryBlockBlast \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath .build/Device CODE_SIGNING_ALLOWED=NO build
+          mkdir -p dist/Payload
+          cp -R .build/Device/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
+          (cd dist && zip -qr Berry-Berry-Blast-v0.5.11-build1-SOURCE-PREVIEW-unsigned.ipa Payload)
+          python3 Tools/verify_audio_build2.py --ipa dist/Berry-Berry-Blast-v0.5.11-build1-SOURCE-PREVIEW-unsigned.ipa
+          unzip -t dist/Berry-Berry-Blast-v0.5.11-build1-SOURCE-PREVIEW-unsigned.ipa
+      - name: Upload provisional device build, not final approved-art release
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-Berry-Blast-0511-SOURCE-PREVIEW-NOT-FINAL-IPA
+          path: StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-v0.5.11-build1-SOURCE-PREVIEW-unsigned.ipa
+          retention-days: 14
