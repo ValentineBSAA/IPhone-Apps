@@ -99,6 +99,18 @@ struct BerryHomeView: View {
     }
     private var version: String { "🍓 v0.5.11 • 1" }
     @AppStorage("berryblockblast.story.level") private var storyLevel = 1
+    @AppStorage("berryberryblast.birthday.month.v0511") private var birthdayMonth = 0
+    @AppStorage("berryberryblast.birthday.day.v0511") private var birthdayDay = 0
+    private var birthdayToday: Bool {
+        let today = Date()
+        return birthdayMonth > 0 && birthdayDay > 0 &&
+            Calendar.current.component(.month, from: today) == birthdayMonth &&
+            Calendar.current.component(.day, from: today) == birthdayDay
+    }
+    private var birthdayClaimed: Bool {
+        UserDefaults.standard.bool(forKey: "berryblockblast.award.birthday-" +
+            String(Calendar.current.component(.year, from: Date())))
+    }
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(red: 1, green: 0.86, blue: 0.91), Color(red: 1, green: 0.97, blue: 0.88), Color(red: 1, green: 0.78, blue: 0.84)], startPoint: .topLeading, endPoint: .bottomTrailing).ignoresSafeArea()
@@ -142,6 +154,38 @@ struct BerryHomeView: View {
                             }
                             Text("PICK • PLANT • POP • CELEBRATE").font(.system(size: 10, weight: .bold, design: .rounded)).tracking(1).foregroundStyle(BerryStyle.chocolate)
                             Text("What shall we bake up today? 🍰").font(.system(size: 19, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.chocolate).padding(.vertical, 8)
+                            if birthdayToday {
+                                Button {
+                                    let year = Calendar.current.component(.year, from: Date())
+                                    villageSession.awardOnce("birthday-" + String(year),
+                                        amount: 100, reason: "Birthday Berry Bash")
+                                    villageSession.refreshEconomyFromDisk()
+                                } label: {
+                                    HStack(spacing: 10) {
+                                        BerryApprovedArtwork(name: "BBBIconBirthday",
+                                                             fallback: "birthday.cake.fill", size: 60)
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("🎂 HAPPY BERRY BIRTHDAY!")
+                                                .font(.system(size: 14, weight: .black, design: .rounded))
+                                            Text(birthdayClaimed ? "Your annual birthday gift was collected!" :
+                                                 "Claim your one-time annual gift of 100 strawberries!")
+                                                .font(.system(size: 11, weight: .medium, design: .rounded))
+                                        }
+                                        Spacer(minLength: 0)
+                                    }
+                                    .foregroundStyle(BerryStyle.chocolate)
+                                    .padding(12)
+                                    .background(.white, in: RoundedRectangle(cornerRadius: 19))
+                                    .overlay(RoundedRectangle(cornerRadius: 19)
+                                        .strokeBorder(BerryStyle.strawberry.opacity(0.48), lineWidth: 1.4))
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(birthdayClaimed)
+                            }
+                            Text("PLAY YOUR BERRY GAMES")
+                                .font(.system(size: 12, weight: .black, design: .rounded))
+                                .foregroundStyle(BerryStyle.strawberry)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             Button {
                                 BerryAudio.shared.setMusic(music)
                                 audio.play(.gameStart)
@@ -252,6 +296,14 @@ struct BerryHomeView: View {
                                     art: "DailyHarvest", caption: "View Calendar") {
                                     showDailyCalendar = true
                                 }
+
+                            }
+                            Text("MUSIC, STYLE & EXTRAS")
+                                .font(.system(size: 12, weight: .black, design: .rounded))
+                                .foregroundStyle(BerryStyle.strawberry)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 11),
+                                                GridItem(.flexible(), spacing: 11)], spacing: 11) {
                                 BerryGridNavigationTile(
                                     title: "Strawberry Jukebox", detail: "51 original songs stored offline",
                                     art: "StrawberryJukebox",
@@ -260,7 +312,7 @@ struct BerryHomeView: View {
                                     showJukebox = true
                                 }
                                 BerryGridNavigationTile(
-                                    title: "Berry Boutique", detail: "Boards, blocks and garden upgrades",
+                                    title: "Berry Boutique", detail: "Boards, frames and garden upgrades",
                                     art: "ShopBasket", caption: "Visit Market") {
                                     audio.play(.menuSelect)
                                     showHomeShop = true
