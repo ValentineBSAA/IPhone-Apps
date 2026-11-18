@@ -287,7 +287,9 @@ struct BerryGameView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("berryblockblast.strawberry-unlocked") private var strawberryUnlocked = false
     @AppStorage("berryblockblast.lifetime-lines") private var lifetimeLines = 0
-    @State private var showUnlock = false
+    @State private var rewardToast: String?
+    @AppStorage(BerryTrophyCatalog.nightmareSurvivalsKey) private var nightmareSurvivals = 0
+    @AppStorage(BerryTrophyCatalog.nightmareBestLinesKey) private var nightmareBestLines = 0
     @State private var lastBlitzTimeBonus = 0
     @AppStorage("berryblockblast.previewStyle") private var previewStyle = "ghost"
     @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "original"
@@ -315,11 +317,13 @@ struct BerryGameView: View {
             // dialogue BEFORE choosing the board size. The old width-first
             // sizing pushed the final row and controls below the screen.
             let layoutReserve: CGFloat =
-                mode == .story ? 426 :
-                mode == .daily ? 391 :
-                (mode == .endless && session.engine.side == 24) ? 402 :
-                isTimedMode ? 360 : 350
-            let fittedBoardSize = max(192, min(width - 48,
+                mode == .story ? 374 :
+                mode == .daily ? 340 :
+                (mode == .endless && session.engine.side == 24) ? 350 :
+                isTimedMode ? 320 : 305
+            // Leave 7pt for the untouched touch-coordinate wrapper on each
+            // side, plus 5pt page gutters. Fits both 393pt-class iPhones.
+            let fittedBoardSize = max(192, min(width - 24,
                 height - top - bottom - layoutReserve, 465))
             let boardSize = stableBoardSize ?? fittedBoardSize
             ZStack {
@@ -422,7 +426,7 @@ struct BerryGameView: View {
                                     }
                                     .shadow(color: BerryStyle.strawberry.opacity(0.12), radius: 5, y: 3)
                                 if let piece {
-                                    BerryPieceGlyph(piece: piece, unit: min(17, (width - 86) / CGFloat(3 * max(piece.width, 3)), CGFloat(compact ? 57 : 68) / CGFloat(max(piece.height, 1))), mode: mode, strawberryUnlocked: strawberryUnlocked)
+                                    BerryPieceGlyph(piece: piece, unit: min(19, (width - 55) / CGFloat(3 * max(piece.width, 3)), CGFloat(compact ? 57 : 68) / CGFloat(max(piece.height, 1))), mode: mode, strawberryUnlocked: strawberryUnlocked)
                                         .opacity(activeDragSlot == slot ? 0.3 : session.engine.hasPlacement(for: piece) ? 1 : 0.3)
                                     Text("\(piece.points.count)")
                                         .font(.system(size: 11, weight: .black, design: .rounded))
@@ -489,9 +493,9 @@ struct BerryGameView: View {
                     Spacer(minLength: 0)
                 }
                 .disabled(isPaused)
-                .padding(.horizontal, 15)
-                .padding(.top, max(10, top + 6))
-                .padding(.bottom, max(10, bottom))
+                .padding(.horizontal, 5)
+                .padding(.top, max(8, top * 0.48))
+                .padding(.bottom, max(8, bottom * 0.55))
                 .frame(maxWidth: 510)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 if let slot = activeDragSlot,
@@ -526,6 +530,22 @@ struct BerryGameView: View {
                     .allowsHitTesting(false)
                     .zIndex(9)
             }
+            if let rewardToast {
+                Text(rewardToast)
+                    .font(.system(size: 13, weight: .black, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 15)
+                    .padding(.vertical, 11)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+                    .overlay(RoundedRectangle(cornerRadius: 18)
+                        .strokeBorder(BerryStyle.strawberry.opacity(0.7), lineWidth: 2))
+                    .frame(maxWidth: min(335, width - 36))
+                    .position(x: width / 2, y: height * 0.23)
+                    .allowsHitTesting(false)
+                    .zIndex(11)
+                    .accessibilityLabel(rewardToast)
+            }
             }
             .frame(width: width, height: height)
             .onAppear {
@@ -535,12 +555,6 @@ struct BerryGameView: View {
         .preferredColorScheme(.light)
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
-        .sheet(isPresented: $showUnlock) {
-            sheetBase("Strawberry Blocks Unlocked!", icon: "🍓") {
-                Text("You cleared 10 lines! Your red blocks now grow strawberry decorations across every game mode. Plus, you earned 15 berries!")
-                primaryButton("Sweet! 🍓") { showUnlock = false }
-            }
-        }
         .sheet(isPresented: $showDailyCalendar) { BerryDailyHarvestView(goal: goal) }
         .confirmationDialog("Special Tools", isPresented: $showPremiumActions,
                             titleVisibility: .visible) {
@@ -1470,6 +1484,14 @@ struct BerryGameView: View {
             if sound { BerryAudio.shared.play(.countdown) }
         }
         if blitzRemaining == 0 && !blitzFinished {
+            // Count only a legitimate full Nightmare survival. An early board
+            // lock never qualifies. A second timer tick cannot double-award.
+            if mode == .superHard && !session.gameOver && session.engine.moves > 0 {
+                nightmareSurvivals = min(9999, nightmareSurvivals + 1)
+                if nightmareSurvivals >= 5 && nightmareBestLines >= 12 {
+                    showRewardToast("🌙 Moonberry Nightmare unlocked! Visit Trophy Garden to equip.")
+                }
+            }
             blitzFinished = true
             blitzRunning = false
             showGameOver = true
@@ -1501,6 +1523,9 @@ struct BerryGameView: View {
             session.rewardStory(completedChapter)
             tellStory(BerryStoryNarrative.victory(for: completedChapter))
             storyLevel += 1
+            if completedChapter == 5 && lifetimeLines >= 2500 {
+                showRewardToast("👑 Royal Berry unlocked! Visit Trophy Garden to equip.")
+            }
         }
         if mode == .daily {
             // Completed outcomes can never reward or replay twice.
@@ -1535,8 +1560,19 @@ struct BerryGameView: View {
         onExit()
     }
 
+    private func showRewardToast(_ message: String) {
+        rewardToast = message
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.8) {
+            if rewardToast == message { rewardToast = nil }
+        }
+    }
+
     private func successFeedback() {
+        let previousLines = lifetimeLines
         lifetimeLines += session.lastClearedLines
+        if mode == .superHard {
+            nightmareBestLines = max(nightmareBestLines, session.engine.totalLines)
+        }
         // Genuine play milestones build longer-term progression without
         // introducing yet another top-level mode.
         for (lines, reward) in [(25, 15), (50, 30), (100, 60)] {
@@ -1547,8 +1583,16 @@ struct BerryGameView: View {
         }
         if lifetimeLines >= 10 && !strawberryUnlocked {
             strawberryUnlocked = true
-            showUnlock = true
             session.awardOnce("strawberry-unlock", amount: 15, reason: "Strawberry blocks unlocked")
+            showRewardToast("🍓 Strawberry Red unlocked! +15 berries. View it in Trophy Garden.")
+        } else if let earned = BerryTrophyCatalog.rewards.last(where: { reward in
+            reward.requiredLines > 10 && previousLines < reward.requiredLines &&
+            lifetimeLines >= reward.requiredLines &&
+            BerryTrophyCatalog.unlocked(reward, lifetimeLines: lifetimeLines,
+                    chapter: storyLevel, survivals: nightmareSurvivals,
+                    nightmareBest: nightmareBestLines, legacy: strawberryUnlocked)
+        }) {
+            showRewardToast("🍓 \(earned.title) unlocked! Visit Trophy Garden to equip.")
         }
         // Fixed time: no extensions for clears.
         lastBlitzTimeBonus = 0
