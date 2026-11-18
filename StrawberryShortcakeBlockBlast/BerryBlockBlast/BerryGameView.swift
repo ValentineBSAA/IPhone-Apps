@@ -486,6 +486,14 @@ struct BerryGameView: View {
                 refreshBlitzClock()
             }
         }
+        .onChange(of: session.engine.activeGardenSection) { _ in
+            // Never carry a selected shape or preview across patch changes.
+            selectedSlot = nil
+            hintPreview = nil
+            activeDragSlot = nil
+            activeDragFinger = nil
+            drag = nil
+        }
         .onChange(of: session.gameOver) { ended in
             if ended && mode == .superHard {
                 // Nightmare is survival: a blocked board ends the race NOW.
@@ -673,7 +681,11 @@ struct BerryGameView: View {
             BerryGirlView().frame(width: compact ? 45 : 54, height: compact ? 45 : 54).clipped()
             VStack(alignment: .leading, spacing: 0) {
                 Text("STRAWBERRY SWEET").font(.system(size: 7, weight: .black, design: .rounded)).tracking(1.7).foregroundStyle(BerryStyle.leaf)
-                Text("Berry Blast!").font(.system(size: compact ? 19 : 21, weight: .black, design: .rounded)).lineLimit(1).minimumScaleFactor(0.6).foregroundStyle(BerryStyle.strawberry)
+                Text("Berry Berry Blast!")
+                    .font(.system(size: compact ? 15 : 17, weight: .black, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.56)
+                    .foregroundStyle(BerryStyle.strawberry)
                 Text(mode == .endless ? "\(session.engine.side)×\(session.engine.side) • SEASON \(session.engine.seasons + 1)" : mode.rawValue.uppercased()).font(.system(size: 8, weight: .bold, design: .rounded)).tracking(0.7).foregroundStyle(BerryStyle.chocolate.opacity(0.7))
             }
             Spacer(minLength: 0)
@@ -768,22 +780,36 @@ struct BerryGameView: View {
         return HStack(spacing: 7) {
             Image(systemName: "leaf.fill")
                 .foregroundStyle(BerryStyle.leaf)
-            Text("PATCH \(section + 1) OF 4 · \(names[section])")
-                .font(.system(size: 11, weight: .black, design: .rounded))
-                .foregroundStyle(BerryStyle.chocolate)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            Spacer(minLength: 5)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("PATCH \(section + 1) OF 4 · \(names[section])")
+                    .font(.system(size: 10, weight: .black, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Text("\(min(session.engine.gardenPatchMoves, 18))/18 plants · \(session.engine.gardenPatchLines)/3 lines")
+                    .font(.system(size: 8, weight: .bold, design: .rounded))
+                    .foregroundStyle(BerryStyle.strawberry)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 3)
             ForEach(0..<4, id: \.self) { index in
                 Circle()
                     .fill(index == section ? BerryStyle.strawberry :
                           Color(red: 0.96, green: 0.73, blue: 0.80))
-                    .frame(width: index == section ? 12 : 8, height: index == section ? 12 : 8)
+                    .frame(width: index == section ? 10 : 7, height: index == section ? 10 : 7)
                     .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: 1))
             }
+            Button(action: showEndlessMove) {
+                Image(systemName: "scope")
+                    .font(.system(size: 18, weight: .heavy))
+                    .foregroundStyle(BerryStyle.strawberry)
+                    .frame(width: 30, height: 30)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Find a legal move without spending a Hint")
         }
-        .padding(.horizontal, 11)
-        .frame(height: 27)
+        .padding(.horizontal, 9)
+        .frame(height: 38)
         .background(.white.opacity(0.95), in: RoundedRectangle(cornerRadius: 12))
         .accessibilityLabel("Garden patch \(section + 1) of 4. The game automatically changes patches.")
     }
@@ -943,6 +969,21 @@ struct BerryGameView: View {
             activeDragSlot = nil
             activeDragFinger = nil
             drag = nil
+        }
+    }
+
+    private func showEndlessMove() {
+        guard mode == .endless, session.engine.side == 24,
+              let suggested = session.engine.suggestedEndlessMove(),
+              let piece = session.engine.tray[suggested.slot] else { return }
+        selectedSlot = suggested.slot
+        hintPreview = BerryDragState(slot: suggested.slot, piece: piece,
+                                    row: suggested.row, col: suggested.col,
+                                    allowed: true)
+        hintSerial += 1
+        let serial = hintSerial
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+            if hintSerial == serial { hintPreview = nil }
         }
     }
 
@@ -1186,7 +1227,7 @@ struct BerryGameView: View {
             if mode == .classic {
                 Text("Berry Classic uses three shapes at a time, with no timer, Undo or Shuffle. When nothing fits, the run ends. Chase your best record!")
             } else if mode == .endless {
-                Text("Sweet Endless has no final game over. When the pieces no longer fit, a new strawberry season starts automatically and keeps your score, line count, and berry rewards. Your garden saves so you can continue after leaving.")
+                Text("Sweet Endless has no final game over. The 24×24 Mega Garden appears as four full-size 12×12 patches. Every 18 placements or three cleared lines, it automatically moves to the next patch, with no scrolling or manual navigation. A blocked patch moves on for free, and after patch four a fresh season begins. Scores, strawberries and your garden save stay intact. Tap the scope icon to find a legal move without spending a Hint.")
             } else {
                 Text("Earn strawberries for line clears. Buy Undo, Shuffle and Berry Hint from the Boutique. Use helpers from the bottom toolbar in Story, Daily, Endless and Cozy modes. Berry Classic, Blitz and Nightmare stay power-up free.")
             Text("Blitz offers 1, 2, 5 and 10-minute score races. When the tray gets stuck, fresh playable pieces appear, so the clock determines the finish. Nightmare is a separate three-minute challenge and still ends if no piece can fit.")
