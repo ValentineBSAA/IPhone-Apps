@@ -189,7 +189,7 @@ struct BerryGameView: View {
     @State private var blitzDeadline: Date?
     @State private var pausedTimerAt: Date?
     @State private var storyMessage: String?
-    @State private var storyMessageGeneration = 0
+    @State private var showFullStory = false
     private var blitzVariant: BerryBlitzVariant { BerryBlitzVariant.selected }
     private var isTimedMode: Bool { mode == .challenge || mode == .superHard }
     private var timedDuration: Int { mode == .superHard ? 180 : blitzVariant.seconds }
@@ -903,38 +903,42 @@ struct BerryGameView: View {
         .frame(height: compact ? 43 : 49)
     }
 
-    /// A permanent slot above the board prevents dialogue from drifting behind
-    /// the grid or shifting the board geometry while speech fades away.
+    /// An unobstructed, compact Story line stays above the board. Tapping
+    /// it opens the complete dialogue without covering placement squares.
     private func storyDialogueCard(compact: Bool) -> some View {
-        Group {
-            if let storyMessage {
-                HStack(spacing: 8) {
-                    Image(systemName: "text.bubble.fill")
-                        .foregroundStyle(BerryStyle.strawberry)
-                    Text(storyMessage)
-                        .font(.system(size: compact ? 10 : 11,
-                                      weight: .semibold, design: .rounded))
-                        .foregroundStyle(BerryStyle.chocolate)
-                        .lineLimit(3)
-                        .minimumScaleFactor(0.88)
-                        .multilineTextAlignment(.leading)
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, 10)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(.white.opacity(0.94),
-                            in: RoundedRectangle(cornerRadius: 12))
-                .overlay(RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(BerryStyle.strawberry.opacity(0.45),
-                                  lineWidth: 1.2))
-            } else {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(.white.opacity(0.26))
+        let message = storyMessage ?? BerryStoryNarrative.opening(for: storyLevel)
+        return Button { showFullStory = true } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "text.bubble.fill")
+                    .foregroundStyle(BerryStyle.strawberry)
+                Text(message)
+                    .font(.system(size: compact ? 10 : 11,
+                                  weight: .semibold, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.86)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(BerryStyle.strawberry)
             }
+            .padding(.horizontal, 9)
+            .frame(maxWidth: .infinity)
+            .frame(height: compact ? 36 : 40)
+            .background(.white.opacity(0.94),
+                        in: RoundedRectangle(cornerRadius: 11))
+            .overlay(RoundedRectangle(cornerRadius: 11)
+                .strokeBorder(BerryStyle.strawberry.opacity(0.42),
+                              lineWidth: 1))
         }
-        .frame(height: compact ? 45 : 53)
-        .allowsHitTesting(false)
-        .accessibilityLabel(storyMessage ?? "Berry Story message")
+        .buttonStyle(.plain)
+        .accessibilityLabel("Berry Story dialogue. Tap to read complete message.")
+        .alert("Berry Story", isPresented: $showFullStory) {
+            Button("Back to the Garden", role: .cancel) {}
+        } message: {
+            Text(message)
+        }
     }
 
     private var storyProgressCard: some View {
@@ -972,17 +976,9 @@ struct BerryGameView: View {
     }
 
     private func tellStory(_ message: String) {
-        storyMessageGeneration += 1
-        let generation = storyMessageGeneration
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) {
-            storyMessage = message
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
-            guard storyMessageGeneration == generation else { return }
-            withAnimation(reduceMotion ? nil : .easeIn(duration: 0.20)) {
-                storyMessage = nil
-            }
-        }
+        // Never clear after five seconds: it previously left an empty band
+        // above the board and made chapter dialogue vanish.
+        storyMessage = message
     }
 
     private var endlessSectionHUD: some View {
