@@ -20,7 +20,7 @@ struct BerryBoutiqueView: View {
     @ObservedObject var session: BerryGameSession
     @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
     @AppStorage("berryblockblast.shop.equippedBorder.v056b2") private var borderSkin = "default"
-    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "cream"
+    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "original"
     @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkleSkin = "default"
     @AppStorage("berryblockblast.sound") private var sound = true
     @State private var selectedCategory: Category?
@@ -62,6 +62,8 @@ struct BerryBoutiqueView: View {
 
 
     private let items = [
+        BerryBoutiqueItem(id: "default", name: "Original Candy Squares",
+                          detail: "The classic glossy square puzzle pieces", emoji: "🍬", price: 0, type: "blocks"),
         BerryBoutiqueItem(id: "strawberry-fruit", name: "True Strawberry",
                           detail: "Actual strawberry-shaped fruit blocks, not square tiles", emoji: "🍓", price: 0, type: "blocks"),
         BerryBoutiqueItem(id: "blueberry-blocks", name: "Blueberry Velvet",
@@ -78,8 +80,9 @@ struct BerryBoutiqueView: View {
                           detail: "Cool mint leaves and candy glass", emoji: "🍃", price: 110, type: "blocks"),
         BerryBoutiqueItem(id: "blackberry-blocks", name: "Blackberry Jam",
                           detail: "Deep-purple jam and blackberry shine", emoji: "🫐", price: 130, type: "blocks"),
-        // All five visual surfaces are included, not newly monetized.
-        // Reuse the same selection key already saved by Berry Settings.
+        // Preserve the 0.5.8 original alongside five optional looks.
+        BerryBoutiqueItem(id: "surface-original", name: "Original 0.5.8 Board",
+                          detail: "Crisp empty squares and classic placement outlines", emoji: "🤍", price: 0, type: "surfaces"),
         BerryBoutiqueItem(id: "surface-cream", name: "Strawberry Cream",
                           detail: "Soft pink berry cream", emoji: "🍓", price: 0, type: "surfaces"),
         BerryBoutiqueItem(id: "surface-glass", name: "Frosted Candy Glass",
@@ -234,10 +237,23 @@ struct BerryBoutiqueView: View {
                 ForEach(items.filter { $0.type == "blocks" }) { item in itemCard(item) }
             }
         case .frames:
-            Text("ILLUSTRATED BOARD SURFACES")
+            Button {
+                blockSkin = "default"
+                boardSurface = "original"
+                borderSkin = "default"
+                sparkleSkin = "default"
+                if sound { BerryAudio.shared.play(.menuSelect) }
+            } label: {
+                Label("RESTORE ORIGINAL 0.5.8 APPEARANCE", systemImage: "arrow.uturn.backward.circle.fill")
+                    .font(.system(size: 12, weight: .black, design: .rounded))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(BerryStyle.strawberry)
+            Text("BOARD SURFACES · ORIGINAL + OPTIONAL")
                 .font(.system(size: 12, weight: .black, design: .rounded))
                 .foregroundStyle(BerryStyle.strawberry)
-            Text("All five new board surfaces are included. Your existing frames and sparkles are preserved.")
+            Text("The original 0.5.8 board and all five illustrated surfaces are included. Every look keeps clear square outlines.")
                 .font(.caption).foregroundStyle(BerryStyle.chocolate)
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
                                 GridItem(.flexible(), spacing: 10)], spacing: 10) {
@@ -457,10 +473,18 @@ struct BerryBoutiqueView: View {
                               mode: .classic, strawberryUnlocked: true,
                               skinOverride: item.id)
                         .padding(6)
+                } else if included && item.id == "surface-original" {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.76))
+                        .overlay(RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(.white.opacity(0.58), lineWidth: 1))
+                        .overlay(RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(BerryStyle.strawberry.opacity(0.35), lineWidth: 1))
                 } else if included {
                     Image(surfaceArt(for: item.id))
                         .resizable()
                         .scaledToFit()
+                        .opacity(0.50)
                 } else {
                     BerryIcon(name: item.type == "frames" ? "CottageDecorations" : "Milestone",
                               size: 62)
