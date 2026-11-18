@@ -1498,7 +1498,10 @@ struct BerryGameView: View {
             // lock never qualifies. A second timer tick cannot double-award.
             if mode == .superHard && !session.gameOver && session.engine.moves > 0 {
                 nightmareSurvivals = min(9999, nightmareSurvivals + 1)
-                if nightmareSurvivals >= 5 && nightmareBestLines >= 12 {
+                if nightmareSurvivals >= 5 && nightmareBestLines >= 12,
+                   let reward = BerryTrophyCatalog.rewards.first(where: { $0.id == "moonberry-nightmare" }),
+                   !BerryTrophyCatalog.permanentlyEarned(reward) {
+                    BerryTrophyCatalog.recordPermanentUnlock(reward)
                     showRewardToast("🌙 Moonberry Nightmare unlocked! Visit Trophy Garden to equip.")
                 }
             }
@@ -1533,7 +1536,10 @@ struct BerryGameView: View {
             session.rewardStory(completedChapter)
             tellStory(BerryStoryNarrative.victory(for: completedChapter))
             storyLevel += 1
-            if completedChapter == 5 && lifetimeLines >= 2500 {
+            if completedChapter == 5 && lifetimeLines >= 2500,
+               let reward = BerryTrophyCatalog.rewards.first(where: { $0.id == "royal-berry" }),
+               !BerryTrophyCatalog.permanentlyEarned(reward) {
+                BerryTrophyCatalog.recordPermanentUnlock(reward)
                 showRewardToast("👑 Royal Berry unlocked! Visit Trophy Garden to equip.")
             }
         }
@@ -1594,14 +1600,23 @@ struct BerryGameView: View {
         if lifetimeLines >= 10 && !strawberryUnlocked {
             strawberryUnlocked = true
             session.awardOnce("strawberry-unlock", amount: 15, reason: "Strawberry blocks unlocked")
+            if let reward = BerryTrophyCatalog.rewards.first {
+                BerryTrophyCatalog.recordPermanentUnlock(reward)
+            }
             showRewardToast("🍓 Strawberry Red unlocked! +15 berries. View it in Trophy Garden.")
-        } else if let earned = BerryTrophyCatalog.rewards.last(where: { reward in
+        }
+        let newlyEarned = BerryTrophyCatalog.rewards.filter { reward in
             reward.requiredLines > 10 && previousLines < reward.requiredLines &&
             lifetimeLines >= reward.requiredLines &&
+            !BerryTrophyCatalog.permanentlyEarned(reward) &&
             BerryTrophyCatalog.unlocked(reward, lifetimeLines: lifetimeLines,
-                    chapter: storyLevel, survivals: nightmareSurvivals,
-                    nightmareBest: nightmareBestLines, legacy: strawberryUnlocked)
-        }) {
+                     chapter: storyLevel, survivals: nightmareSurvivals,
+                     nightmareBest: nightmareBestLines, legacy: strawberryUnlocked)
+        }
+        for reward in newlyEarned {
+            BerryTrophyCatalog.recordPermanentUnlock(reward)
+        }
+        if let earned = newlyEarned.last {
             showRewardToast("🍓 \(earned.title) unlocked! Visit Trophy Garden to equip.")
         }
         // Fixed time: no extensions for clears.
