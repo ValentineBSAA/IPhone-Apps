@@ -187,6 +187,15 @@ struct BerryVillageView: View {
         .init(name: "Berry Bakery", symbol: "birthday.cake.fill", detail: "Help the ovens come alive", level: 4),
         .init(name: "Festival Square", symbol: "sparkles", detail: "A cheerful village celebration", level: 5)
     ]
+    private func villageArt(for level: Int) -> String {
+        switch level {
+        case 1: return "CottageDecorations"
+        case 2: return "BerryVillageGate"
+        case 3: return "ShopBasket"
+        case 4: return "BerryStory"
+        default: return "Champion"
+        }
+    }
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -203,30 +212,27 @@ struct BerryVillageView: View {
                     Text("Restore the village through Story chapters, daily harvests and garden adventures.")
                         .multilineTextAlignment(.center).font(.subheadline)
                         .foregroundStyle(BerryStyle.chocolate)
-                    ForEach(places) { place in
-                        let unlocked = progress.villageLevel >= place.level
-                        HStack(spacing: 14) {
-                            Image(systemName: unlocked ? place.symbol : "lock.fill")
-                                .font(.system(size: 26)).foregroundStyle(unlocked ? BerryStyle.leaf : .gray)
-                                .frame(width: 50, height: 54)
-                                .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 13))
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(place.name).font(.headline)
-                                Text(unlocked ? place.detail : "Unlock at Village Level \(place.level)")
-                                    .font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer()
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 11),
+                                        GridItem(.flexible(), spacing: 11)], spacing: 11) {
+                        ForEach(places) { place in
+                            let unlocked = progress.villageLevel >= place.level
                             if unlocked && place.level == 1 {
-                                Button("Visit") { showCottage = true }
-                                    .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
+                                BerryGridNavigationTile(
+                                    title: place.name, detail: place.detail,
+                                    art: "CottageDecorations",
+                                    caption: "Visit Cottage") {
+                                    showCottage = true
+                                }
                             } else {
-                                Image(systemName: unlocked ? "checkmark.seal.fill" : "lock")
-                                    .foregroundStyle(unlocked ? BerryStyle.leaf : .gray)
+                                BerryGridInfoTile(
+                                    title: place.name,
+                                    detail: unlocked ? place.detail :
+                                        "Unlock at Village Level \(place.level)",
+                                    art: villageArt(for: place.level),
+                                    value: unlocked ? "✓ Restored" : "🔒 Level \(place.level)",
+                                    complete: unlocked)
                             }
                         }
-                        .foregroundStyle(BerryStyle.chocolate)
-                        .padding(13)
-                        .background(.white, in: RoundedRectangle(cornerRadius: 18))
                     }
                     Text("VILLAGE LEVEL \(progress.villageLevel) / 5")
                         .font(.headline).foregroundStyle(BerryStyle.strawberry)
