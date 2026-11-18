@@ -192,6 +192,7 @@ struct BerrySettingsHubView: View {
                 .font(.system(size: 12, weight: .black, design: .rounded))
                 .foregroundStyle(BerryStyle.strawberry)
             BerryBoardFrameGrid()
+            BerryBoardConceptGrid()
             Text("Blocks remain independent. Pick any frame without changing your squares or puzzle pieces.")
                 .font(.system(size: 11, weight: .medium, design: .rounded))
                 .foregroundStyle(BerryStyle.chocolate)
