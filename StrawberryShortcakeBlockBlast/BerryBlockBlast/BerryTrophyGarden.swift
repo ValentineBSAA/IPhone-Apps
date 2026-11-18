@@ -135,8 +135,9 @@ struct BerryTrophyGardenView: View {
     private func toggle(_ reward: BerryTrophyCatalog.Reward) {
         guard isUnlocked(reward) else { return }
         if reward.id == "strawberry-red" {
+            let wasEquipped = isEquipped(reward)
             blockSkin = "default"
-            strawberryEnabled = !isEquipped(reward)
+            strawberryEnabled = !wasEquipped
         } else {
             blockSkin = isEquipped(reward) ? "default" : "reward-" + reward.id
             if blockSkin == "default" { strawberryEnabled = false }
