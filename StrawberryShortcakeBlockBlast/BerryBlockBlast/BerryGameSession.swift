@@ -399,15 +399,19 @@ final class BerryGameSession: ObservableObject {
         awardOnce("chapter-" + String(chapter), amount: 15 + min(35, chapter * 5), reason: "Story chapter")
         BerryProgression.shared.recordStoryChapter(chapter)
     }
+    var nextCottageDecorationPrice: Int? {
+        BerryEconomy.nextCottagePrice(owned: cottageDecorations)
+    }
+
     func buyCottageDecoration() {
-        // There are six unique Cottage upgrades. Earlier buyers with more
-        // decorations keep them, but never spend berries for a duplicate.
-        guard berries >= 50, cottageDecorations < 6 else { return }
+        // Old purchases remain owned; rising prices apply ONLY to the next
+        // undecorated slot, without altering anybody's existing berry wallet.
+        guard let price = nextCottageDecorationPrice, berries >= price else { return }
         // Purchases must invalidate the undo snapshot to prevent currency duplication.
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
-        berries -= 50
+        berries -= price
         cottageDecorations += 1
         UserDefaults.standard.set(cottageDecorations, forKey: "berryblockblast.cottage.decorations")
         save()
@@ -557,33 +561,33 @@ final class BerryGameSession: ObservableObject {
     }
 
     func buyUndo() {
-        guard berries >= 25 else { return }
+        guard berries >= BerryEconomy.undoPrice else { return }
         // Purchases must invalidate the undo snapshot to prevent currency duplication.
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
-        berries -= 25
+        berries -= BerryEconomy.undoPrice
         undos += 1
         save()
     }
 
     func buyShuffle() {
-        guard berries >= 25 else { return }
+        guard berries >= BerryEconomy.shufflePrice else { return }
         // Purchases must invalidate the undo snapshot to prevent currency duplication.
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
-        berries -= 25
+        berries -= BerryEconomy.shufflePrice
         shuffles += 1
         save()
     }
 
     func buyHint() {
-        guard berries >= 20 else { return }
+        guard berries >= BerryEconomy.hintPrice else { return }
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
-        berries -= 20
+        berries -= BerryEconomy.hintPrice
         hints += 1
         save()
     }
