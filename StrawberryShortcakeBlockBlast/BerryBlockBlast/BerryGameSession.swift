@@ -282,6 +282,20 @@ final class BerryGameSession: ObservableObject {
         return true
     }
 
+    /// Apply the same no-cost recovery after every inventory action, not
+    /// only after a normal drag-drop. Endless must never display Game Over.
+    private func ensureEndlessPlayable() {
+        guard activeMode == .endless, !engine.hasMove() else { return }
+        let oldSection = engine.activeGardenSection
+        let oldSeason = engine.seasons
+        if engine.beginNextEndlessSeasonIfStuck() {
+            previous = nil
+            previousBerryEarnings = 0
+            previousRewardEntry = nil
+            endlessRecoveryMessage(previousSection: oldSection, previousSeason: oldSeason)
+        }
+    }
+
     private func endlessRecoveryMessage(previousSection: Int, previousSeason: Int) {
         if engine.seasons > previousSeason {
             lastMessage = "🍓 New garden season! Your score and berries continue!"
@@ -325,7 +339,7 @@ final class BerryGameSession: ObservableObject {
         previousBerryEarnings = 0
         self.previous = nil
         undos -= 1
-        if activeMode == .endless { _ = engine.beginNextEndlessSeasonIfStuck() }
+        ensureEndlessPlayable()
         gameOver = !engine.hasMove()
         lastMessage = "A little second chance! 💗"
         lastEarned = 0
@@ -339,7 +353,7 @@ final class BerryGameSession: ObservableObject {
         guard shuffles > 0, engine.canRescueWithShuffle else { return false }
         guard engine.reshuffleTray() else { return false }
         shuffles -= 1
-        if activeMode == .endless { _ = engine.beginNextEndlessSeasonIfStuck() }
+        ensureEndlessPlayable()
         gameOver = !engine.hasMove()
         previous = nil
         previousBerryEarnings = 0
@@ -442,6 +456,7 @@ final class BerryGameSession: ObservableObject {
               engine.removeOneOccupiedCell(row: row, col: col) else { return false }
         premiumCharges["trowel", default: 0] -= 1
         previous = nil
+        ensureEndlessPlayable()
         gameOver = !engine.hasMove()
         lastMessage = "✨ A little garden space!"
         persistPremium()
@@ -464,6 +479,7 @@ final class BerryGameSession: ObservableObject {
             bestScore = engine.score
             UserDefaults.standard.set(bestScore, forKey: bestScoreKey(for: activeMode))
         }
+        ensureEndlessPlayable()
         gameOver = !engine.hasMove()
         lastMessage = "🌱 Starberry Seed planted!"
         persistPremium()
@@ -476,6 +492,7 @@ final class BerryGameSession: ObservableObject {
               engine.rotateTrayPiece(slot: slot) else { return false }
         premiumCharges["twister", default: 0] -= 1
         previous = nil
+        ensureEndlessPlayable()
         gameOver = !engine.hasMove()
         lastMessage = "🎀 Berry piece rotated!"
         persistPremium()
@@ -487,6 +504,7 @@ final class BerryGameSession: ObservableObject {
         guard canUsePremium, premiumOwned.contains("pantry"),
               engine.swapPantry(slot: slot) else { return false }
         previous = nil
+        ensureEndlessPlayable()
         gameOver = !engine.hasMove()
         lastMessage = "🧺 A piece saved for later!"
         save()
