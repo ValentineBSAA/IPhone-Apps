@@ -302,12 +302,28 @@ struct BerryEngine: Codable {
         board.contains { $0.contains(nil) }
     }
 
-    /// Sweet Endless never ends for lack of legal moves. Once a board is stuck,
-    /// begin the next garden season without wiping the run score, line history,
-    /// high score, piece count or berry rewards.
+    /// A healthy Sweet Endless garden NEVER loses its run or paid items because
+    /// its random tray cannot fit. Keep its board, score and every earned line,
+    /// and replace ONE unusable slot with a legal, free rescue piece instead.
+    /// Old 0.5.x saves with impossible trays are rescued by the same path.
     @discardableResult
     mutating func beginNextEndlessSeasonIfStuck() -> Bool {
         guard !hasMove() else { return false }
+        if board.contains(where: { $0.contains(nil) }) {
+            let rescue = bestLineFinishingPiece() ??
+                [BerryPoint(row: 0, col: 0)]
+            let piece = BerryPiece(points: rescue, tint: nextRandom(6))
+            guard hasPlacement(for: piece) else {
+                // A single free square always exists at this point, so this
+                // is only defensive handling of unexpected corrupt metadata.
+                return injectSingleCellRescue()
+            }
+            let slot = tray.firstIndex(where: { $0 == nil }) ?? 0
+            tray[slot] = piece
+            return hasMove()
+        }
+        // Defensive recovery for a legacy full board. Normally a full row or
+        // column auto-clears at placement time before it can remain full.
         board = Array(repeating: Array<Int?>(repeating: nil, count: side), count: side)
         tray = []
         streak = 0
@@ -315,6 +331,38 @@ struct BerryEngine: Codable {
         seasons += 1
         refill()
         return hasMove()
+    }
+
+    private mutating func injectSingleCellRescue() -> Bool {
+        guard board.contains(where: { $0.contains(nil) }) else { return false }
+        let slot = tray.firstIndex(where: { $0 == nil }) ?? 0
+        tray[slot] = BerryPiece(points: [BerryPoint(row: 0, col: 0)], tint: nextRandom(6))
+        return hasMove()
+    }
+
+    /// Prefer a short, connected piece that fills an entire almost-complete
+    /// row or column. No cells are automatically removed or placed for free:
+    /// players still choose where to drop the offered puzzle shape.
+    /// A one-square bridge also reaches disconnected near-finished rows.
+    private func bestLineFinishingPiece() -> [BerryPoint]? {
+        var best: [BerryPoint]?
+        for row in 0..<side {
+            let gaps = (0..<side).filter { board[row][$0] == nil }
+            if !gaps.isEmpty && gaps.count <= 9 &&
+                gaps.last! - gaps.first! + 1 == gaps.count {
+                let points = gaps.map { BerryPoint(row: 0, col: $0 - gaps[0]) }
+                if best == nil || points.count < best!.count { best = points }
+            }
+        }
+        for col in 0..<side {
+            let gaps = (0..<side).filter { board[$0][col] == nil }
+            if !gaps.isEmpty && gaps.count <= 9 &&
+                gaps.last! - gaps.first! + 1 == gaps.count {
+                let points = gaps.map { BerryPoint(row: $0 - gaps[0], col: 0) }
+                if best == nil || points.count < best!.count { best = points }
+            }
+        }
+        return best
     }
 
     private mutating func refill() {
@@ -379,27 +427,41 @@ struct BerryEngine: Codable {
         ]
         // A newly dealt tray always contains at least one legal move. Prefer
         // several playable choices instead of handing out impossible pieces.
-        let selection = side == 24 ? (nightmareShapes + megaShapes) :
+        // Mega Garden should offer small and medium pieces, not exclusively
+        // impossible giant pieces. Existing larger shapes remain available.
+        let selection = side == 24 ? (classicCatalog + nightmareShapes + megaShapes) :
             cozyPieces == true ? Array(catalog.prefix(8)) :
             hardPieces == true ? Array(catalog.filter { $0.count >= 5 }) + nightmareShapes : classicCatalog
         let viable = selection.filter { shape in
-            let piece = BerryPiece(points: shape, tint: 0)
-            return (0..<side).contains { r in
-                (0..<side).contains { c in canPlace(piece, row: r, col: c) }
-            }
+            hasPlacement(for: BerryPiece(points: shape, tint: 0))
         }
+        let rowFinisher = side == 24 ? bestLineFinishingPiece() : nil
         var nextTray: [BerryPiece?] = []
         var used: [[BerryPoint]] = []
         var usedTints: Set<Int> = []
         for index in 0..<3 {
-            let pool = side == 24 ? (!viable.isEmpty ? viable : selection) :
+            let pool = side == 24 ? (!viable.isEmpty ? viable : [[BerryPoint(row: 0, col: 0)]]) :
                 cozyPieces == true ? (!viable.isEmpty ? viable : selection) :
                 hardPieces == true ? (!viable.isEmpty ? viable : selection) :
                 (!viable.isEmpty && (index < 2 || nextRandom(2) == 0) ? viable : classicCatalog)
             // A full hand should not repeat the identical L/line three times.
             let unique = pool.filter { candidate in !used.contains(candidate) }
             let choices = unique.isEmpty ? pool : unique
-            let shape = choices[nextRandom(choices.count)]
+            // As a large Endless board fills, always offer a practical small
+            // piece in the tray. A near-finished line gets a bridge piece.
+            // No other modes have their difficulty rules changed.
+            let shape: [BerryPoint]
+            if side == 24 && index == 0, let finishing = rowFinisher,
+                hasPlacement(for: BerryPiece(points: finishing, tint: 0)) {
+                shape = finishing
+            } else if side == 24 && index == 0 &&
+                        board.flatMap({ $0 }).filter({ $0 != nil }).count > (side * side) / 3 {
+                let small = viable.filter { $0.count <= 3 }
+                shape = small.isEmpty ? [BerryPoint(row: 0, col: 0)] :
+                    small[nextRandom(small.count)]
+            } else {
+                shape = choices[nextRandom(choices.count)]
+            }
             used.append(shape)
             let freshTints = (0..<6).filter { !usedTints.contains($0) }
             let tint = freshTints.isEmpty ? nextRandom(6) : freshTints[nextRandom(freshTints.count)]
