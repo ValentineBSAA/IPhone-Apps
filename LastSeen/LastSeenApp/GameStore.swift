@@ -158,8 +158,8 @@ final class GameStore: ObservableObject {
     private func pacing(_ beat: StoryBeat, index: Int) -> (pause: Double, typing: Double) {
         let count = Double(beat.body.count)
         let scramble = Double((index * 17 + beat.body.utf8.reduce(0) { ($0 + Int($1)) % 97 }) % 7)
-        let pause = 0.4 + scramble * 0.39 + (index % 5 == 0 ? 1.7 : 0.0)
-        let composing = min(7.5, max(0.7, count / 15.0 + Double(index % 3) * 0.25))
+        let pause = 0.3 + scramble * 0.22 + (index % 7 == 0 ? 1.1 : 0.0)
+        let composing = min(4.7, max(0.35, count / 22.0 + Double(index % 4) * 0.18))
         let dramatic = state.slowerText ? 1.6 : 1.0
         return (pause * dramatic, composing * dramatic)
     }
@@ -177,7 +177,7 @@ final class GameStore: ObservableObject {
                 do {
                     try await Task.sleep(nanoseconds: UInt64(times.pause * 1_000_000_000))
                     guard !Task.isCancelled else { return }
-                    typingThread = beat.thread
+                    typingThread = (beat.body.count > 17 && index % 4 != 1) ? beat.thread : nil
                     try await Task.sleep(nanoseconds: UInt64(times.typing * 1_000_000_000))
                 } catch {
                     typingThread = nil
@@ -270,11 +270,19 @@ final class GameStore: ObservableObject {
     }
 
     func inspect(_ message: GameMessage) {
-        guard message.thread == state.activeThread else { return }
+        let clue: String
         switch message.kind {
-        case .photograph: state.clues.insert("photograph")
-        case .voiceNote: state.clues.insert("voiceNote")
-        case .text, .call: break
+        case .photograph: clue = "photograph"
+        case .voiceNote: clue = "voiceNote"
+        case .text, .call: return
+        }
+        if message.thread == state.activeThread {
+            state.clues.insert(clue)
+        } else if var slot = state.stories?[message.thread] {
+            slot.clues.insert(clue)
+            state.stories?[message.thread] = slot
+        } else {
+            return
         }
         save()
     }
