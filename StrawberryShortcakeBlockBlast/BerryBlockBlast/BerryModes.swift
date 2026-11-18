@@ -357,53 +357,26 @@ struct BerryHomeView: View {
                     VStack(spacing: 18) {
                         Text("🍓 More Sweet Adventures").font(.title.bold()).foregroundStyle(BerryStyle.strawberry)
                         Text("🌸 A basket of new adventures 🌸").font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
-                        ForEach(Array(BerryMode.allCases.dropFirst(3).filter { $0 != .classic })) { mode in
-                            Button {
-                                showMore = false
-                                audio.play(.menuSelect)
-                                if mode == .challenge {
-                                    // Wait for More Adventures to finish closing
-                                    // before presenting the Blitz picker.
-                                    launchBlitzAfterMoreDismissal = true
-                                } else {
-                                    audio.play(.gameStart)
-                                    activeMode = mode
-                                }
-                            } label: {
-                                HStack(spacing: 14) {
-                                    BerryIcon(name: mode == .cozy ? "CottageDecorations" :
-                                             mode == .challenge ? "Milestone" : "MoreAdventures", size: 55)
-                                    VStack(alignment: .leading, spacing: 5) {
-                                        Text(mode.rawValue)
-                                            .font(.system(size: 19, weight: .black, design: .rounded))
-                                        Text(mode.description)
-                                            .font(.system(size: 12, weight: .medium, design: .rounded))
-                                            .fixedSize(horizontal: false, vertical: true)
-                                            .multilineTextAlignment(.leading)
-                                        if mode == .superHard {
-                                            Text("12 × 12  •  144 squares  •  Larger pieces")
-                                                .font(.system(size: 11, weight: .bold, design: .rounded))
-                                                .foregroundStyle(BerryStyle.strawberry)
-                                        }
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 11),
+                                            GridItem(.flexible(), spacing: 11)], spacing: 11) {
+                            ForEach(Array(BerryMode.allCases.dropFirst(3).filter { $0 != .classic })) { mode in
+                                BerryGridNavigationTile(
+                                    title: mode.rawValue,
+                                    detail: mode.description,
+                                    art: mode == .cozy ? "CottageDecorations" :
+                                         mode == .challenge ? "Milestone" : "MoreAdventures",
+                                    caption: mode == .superHard ? "12×12 · 3 Minutes" :
+                                             mode == .challenge ? "4 Time Trials" : "Cozy Play") {
+                                    showMore = false
+                                    audio.play(.menuSelect)
+                                    if mode == .challenge {
+                                        launchBlitzAfterMoreDismissal = true
+                                    } else {
+                                        audio.play(.gameStart)
+                                        activeMode = mode
                                     }
-                                    Spacer(minLength: 4)
-                                    Image(systemName: "chevron.right")
-                                        .font(.subheadline.bold())
                                 }
-                                .foregroundStyle(BerryStyle.chocolate)
-                                .padding(14)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(
-                                    LinearGradient(colors: [.white,
-                                        mode == .challenge ? Color(red: 1, green: 0.91, blue: 0.75) :
-                                        mode == .superHard ? Color(red: 0.94, green: 0.86, blue: 1) :
-                                        Color(red: 0.87, green: 0.97, blue: 0.83)],
-                                        startPoint: .topLeading, endPoint: .bottomTrailing),
-                                    in: RoundedRectangle(cornerRadius: 22))
-                                .overlay(RoundedRectangle(cornerRadius: 22)
-                                    .strokeBorder(BerryStyle.strawberry.opacity(0.35), lineWidth: 1.7))
                             }
-                            .buttonStyle(.plain)
                         }
                         Text("🌸 Choose your adventure. The Jukebox has its own home.")
                             .font(.system(size: 11, weight: .semibold, design: .rounded))
