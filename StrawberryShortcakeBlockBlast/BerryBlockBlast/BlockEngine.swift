@@ -256,6 +256,28 @@ struct BerryEngine: Codable {
 
     /// Permanent pantry reserve and paid tools use these safe operations.
     /// Failures NEVER change board state or consume inventory.
+    /// Clears the entire active puzzle board, including all four saved
+    /// 12x12 Mega Garden sections when the underlying board is 24x24.
+    /// A rescue, NOT a line clear: no points, lines, berries, moves, or
+    /// chapter progress are awarded. Empty boards are rejected.
+    @discardableResult
+    mutating func clearBoardWithGoldenStrawberry() -> Bool {
+        guard board.contains(where: { row in row.contains(where: { $0 != nil }) }) else {
+            return false
+        }
+        board = Array(repeating: Array<Int?>(repeating: nil, count: side), count: side)
+        streak = 0
+        dryMoves = 0
+        if side == 24 {
+            activeGardenSection = 0
+            gardenPatchMoves = 0
+            gardenPatchLines = 0
+        }
+        // A previously blocked hand should become playable on a clear board.
+        if !hasMove() { refill() }
+        return hasMove()
+    }
+
     @discardableResult
     mutating func removeOneOccupiedCell(row: Int, col: Int) -> Bool {
         guard (0..<side).contains(row), (0..<side).contains(col),
