@@ -202,6 +202,7 @@ struct BerryGameView: View {
     @State private var showWelcome = false
     @State private var showDailyCalendar = false
     @State private var showPremiumActions = false
+    @State private var confirmGoldenStrawberry = false
     @State private var specialTargetTool: String? = nil
     @AppStorage("berryblockblast.haptics") private var haptics = true
     @AppStorage("berryblockblast.sound") private var sound = true
@@ -448,6 +449,10 @@ struct BerryGameView: View {
                 specialTargetTool = "seed"
             }
             .disabled(session.premiumCharges["seed", default: 0] < 1)
+            Button("✨ Golden Strawberry · \(session.premiumCharges["golden-strawberry", default: 0]) left") {
+                confirmGoldenStrawberry = true
+            }
+            .disabled(session.premiumCharges["golden-strawberry", default: 0] < 1)
             Button("Ribbon Twister · \(session.premiumCharges["twister", default: 0]) left") {
                 guard let slot = selectedSlot else { return }
                 if session.useRibbonTwister(slot: slot) { successFeedback() }
@@ -464,6 +469,23 @@ struct BerryGameView: View {
         } message: {
             Text(session.spyglassPiece.map { "Spyglass forecast: \($0.points.count) squares. Select a piece first for rotation or storage. For Trowel and Seed, tap an occupied or empty board square." } ??
                  "Select a tray piece for rotation/storage. For Trowel and Seed, choose a board cell. Invalid actions never spend charges.")
+        }
+        .alert("Use Golden Strawberry?", isPresented: $confirmGoldenStrawberry) {
+            Button("Clear Entire Board", role: .destructive) {
+                if session.useGoldenStrawberry() {
+                    showGameOver = false
+                    specialTargetTool = nil
+                    hintPreview = nil
+                    selectedSlot = nil
+                    drag = nil
+                    successFeedback()
+                } else {
+                    warningFeedback()
+                }
+            }
+            Button("Keep Strawberry", role: .cancel) {}
+        } message: {
+            Text("Spend one Golden Strawberry to clear all occupied squares, including all four Mega Garden patches. Keep your score and level progress. You won't earn free points or completed lines.")
         }
         .sheet(isPresented: $showHelp) { helpSheet }
         .sheet(isPresented: $showSettings) { settingsSheet }
@@ -613,6 +635,15 @@ struct BerryGameView: View {
                                 Text("Chapter \(storyLevel): \(storyIsLineQuest ? "\(session.engine.totalLines)/\(storyTargetLines) lines" : "\(session.engine.score)/\(goal) points")")
                                     .font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
                             }
+                        }
+                        if showGameOver && session.canUsePremium &&
+                           session.premiumCharges["golden-strawberry", default: 0] > 0 {
+                            Button("✨ Golden Strawberry Rescue (\(session.premiumCharges["golden-strawberry", default: 0]) left)") {
+                                confirmGoldenStrawberry = true
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Color(red: 0.79, green: 0.49, blue: 0.08))
+                            .controlSize(.large)
                         }
                         if showGameOver && session.shuffles > 0 && session.engine.canRescueWithShuffle && mode != .classic && !isTimedMode {
                             Button("✨ Continue with Shuffle (\(session.shuffles) left)") {
@@ -870,7 +901,7 @@ struct BerryGameView: View {
             }
             toolButton(mode == .cozy ? "Cottage" : "Stats", icon: mode == .cozy ? "CottageDecorations" : "StatsChart", count: nil, enabled: true) { if mode == .cozy { showCottage = true } else { showStats = true } }
             if session.canUsePremium {
-                toolButton("Tools", icon: "BerryHint", count: nil, enabled: true) {
+                toolButton("Tools", icon: "GoldenStrawberry", count: nil, enabled: true) {
                     showPremiumActions = true
                 }
             }
