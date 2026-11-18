@@ -45,6 +45,9 @@ struct BerryEngine: Codable {
     /// completed rows automatically clear and would prevent that condition.
     private(set) var gardenPatchMoves = 0
     private(set) var gardenPatchLines = 0
+    /// One rescue per puzzle run. Persist this in old Endless save slots so
+    /// leaving and reopening cannot reset the Golden Strawberry limit.
+    private(set) var goldenRescueUsed = false
     var visibleSide: Int { side == 24 ? 12 : side }
     var sectionOrigin: (row: Int, col: Int) {
         guard side == 24 else { return (0, 0) }
@@ -123,7 +126,7 @@ struct BerryEngine: Codable {
     // Decode the optional mode metadata explicitly so older saves survive upgrades.
     private enum CodingKeys: String, CodingKey {
         case board, tray, score, streak, moves, totalLines, bestCombo
-        case dryMoves, boardClears, seasons, activeGardenSection, gardenPatchMoves, gardenPatchLines, randomState, cozyPieces, side, hardPieces, pantryPiece, spyglassNext
+        case dryMoves, boardClears, seasons, activeGardenSection, gardenPatchMoves, gardenPatchLines, goldenRescueUsed, randomState, cozyPieces, side, hardPieces, pantryPiece, spyglassNext
     }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -142,6 +145,7 @@ struct BerryEngine: Codable {
         activeGardenSection = min(3, max(0, try values.decodeIfPresent(Int.self, forKey: .activeGardenSection) ?? 0))
         gardenPatchMoves = max(0, try values.decodeIfPresent(Int.self, forKey: .gardenPatchMoves) ?? 0)
         gardenPatchLines = max(0, try values.decodeIfPresent(Int.self, forKey: .gardenPatchLines) ?? 0)
+        goldenRescueUsed = try values.decodeIfPresent(Bool.self, forKey: .goldenRescueUsed) ?? false
         randomState = try values.decodeIfPresent(UInt64.self, forKey: .randomState)
         cozyPieces = try values.decodeIfPresent(Bool.self, forKey: .cozyPieces)
         pantryPiece = try values.decodeIfPresent(BerryPiece.self, forKey: .pantryPiece)
@@ -262,7 +266,8 @@ struct BerryEngine: Codable {
     /// chapter progress are awarded. Empty boards are rejected.
     @discardableResult
     mutating func clearBoardWithGoldenStrawberry() -> Bool {
-        guard board.contains(where: { row in row.contains(where: { $0 != nil }) }) else {
+        guard !goldenRescueUsed,
+              board.contains(where: { row in row.contains(where: { $0 != nil }) }) else {
             return false
         }
         board = Array(repeating: Array<Int?>(repeating: nil, count: side), count: side)
@@ -276,7 +281,9 @@ struct BerryEngine: Codable {
         // A previously blocked hand should become playable on a clear board.
         if !hasMove() { refill() }
         if !hasMove() { forcePlayableEndlessHand() }
-        return hasMove()
+        guard hasMove() else { return false }
+        goldenRescueUsed = true
+        return true
     }
 
     @discardableResult
