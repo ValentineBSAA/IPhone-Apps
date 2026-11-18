@@ -80,12 +80,12 @@ struct BerryDecorativeBoardFrame: View {
                         .resizable()
                         .interpolation(.high)
                         .scaledToFill()
-                        .frame(width: boardSize + 24, height: boardSize + 24)
+                        .frame(width: boardSize + 12, height: boardSize + 12)
                         .clipped()
                 } else {
                     RoundedRectangle(cornerRadius: 19)
                         .strokeBorder(theme.color.opacity(0.75), lineWidth: 5)
-                        .frame(width: boardSize + 15, height: boardSize + 15)
+                        .frame(width: boardSize + 10, height: boardSize + 10)
                 }
             }
         }
