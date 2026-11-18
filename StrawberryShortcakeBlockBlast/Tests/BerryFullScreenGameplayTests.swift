@@ -18,13 +18,16 @@ final class BerryFullScreenGameplayTests: XCTestCase {
                 UserDefaults.standard.removeObject(forKey: "berryblockblast.welcomed.v3")
             }
         }
-        // iPhone 14 Pro and iPhone 16 both use 393pt screen width.
-        // Render at realistic safe-area content heights for both.
+        // iPhone 14 Pro and iPhone 16 share 393x852pt hardware
+        // coordinates. Compare the safe-area height after the 59pt
+        // Dynamic Island/status and 34pt home-indicator reserves.
+        // Render EVERY game mode, not just Classic.
+        for mode in BerryMode.allCases {
         for (label, width, height) in [
             ("iPhone-14-Pro", CGFloat(393), CGFloat(759)),
             ("iPhone-16", CGFloat(393), CGFloat(759))
         ] {
-            let view = BerryGameView(mode: .classic, onExit: {})
+            let view = BerryGameView(mode: mode, onExit: {})
                 .frame(width: width, height: height)
             let host = UIHostingController(rootView: view)
             let window = UIWindow(frame: CGRect(x: 0, y: 0, width: width, height: height))
@@ -79,10 +82,11 @@ final class BerryFullScreenGameplayTests: XCTestCase {
                 host.view.layer.render(in: renderer.cgContext)
             }
             let attachment = XCTAttachment(image: image)
-            attachment.name = "Full-Game-\(label)-393pt"
+            attachment.name = "Full-Game-\(label)-\(mode.id)-393pt"
             attachment.lifetime = .keepAlways
             add(attachment)
             window.isHidden = true
+        }
         }
     }
 
