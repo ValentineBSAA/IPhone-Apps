@@ -418,11 +418,11 @@ final class BerryGameSession: ObservableObject {
     }
 
     /// Golden Trowel 150, Ribbon Twister 200 (three uses), Starberry Seed 230,
-    /// Picnic Pantry 600 (permanent), Berry Spyglass 900 (permanent).
+    /// Golden Strawberry 350, Picnic Pantry 600 and Berry Spyglass 900 (permanent).
     @discardableResult
     func buyPremium(_ id: String) -> Bool {
         let prices = ["trowel": 150, "twister": 200, "seed": 230,
-                      "pantry": 600, "spyglass": 900]
+                      "golden-strawberry": 350, "pantry": 600, "spyglass": 900]
         guard let price = prices[id], berries >= price else { return false }
         let permanent = id == "pantry" || id == "spyglass"
         if permanent && premiumOwned.contains(id) { return false }
@@ -448,6 +448,25 @@ final class BerryGameSession: ObservableObject {
     var spyglassPiece: BerryPiece? {
         guard premiumOwned.contains("spyglass"), canUsePremium else { return nil }
         return engine.spyglassNext
+    }
+
+    /// The emergency rescue may be triggered even from the Story Game Over
+    /// screen. One purchased charge is spent only after actual cells clear.
+    /// Saving through persistPremium keeps the currency and board atomic.
+    @discardableResult
+    func useGoldenStrawberry() -> Bool {
+        guard canUsePremium, premiumCharges["golden-strawberry", default: 0] > 0,
+              engine.clearBoardWithGoldenStrawberry() else { return false }
+        premiumCharges["golden-strawberry", default: 0] -= 1
+        previous = nil
+        previousBerryEarnings = 0
+        previousRewardEntry = nil
+        gameOver = !engine.hasMove()
+        lastClearedLines = 0
+        lastEarned = 0
+        lastMessage = "✨ Golden Strawberry! Your garden is clear!"
+        persistPremium()
+        return true
     }
 
     @discardableResult
