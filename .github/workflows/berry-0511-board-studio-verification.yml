@@ -95,6 +95,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 Tools/install_art510.py
+          python3 Tools/install_art511.py
           python3 Tools/verify_build511.py
       - name: Generate Xcode project
         run: xcodegen generate --spec project.yml
