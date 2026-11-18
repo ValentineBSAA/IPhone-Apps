@@ -481,7 +481,12 @@ struct BerryGameView: View {
                 // Previously "drag == nil" hid the floating piece just
                 // as the board ghost was also suppressed, making pieces
                 // become entirely invisible during a legitimate drag.
-                if let slot = activeDragSlot,
+                if BerryGameplayLayout.showsCarriedPiece(
+                    previewStyle: previewStyle,
+                    dragging: activeDragSlot != nil,
+                    fingerKnown: activeDragFinger != nil
+                ),
+                   let slot = activeDragSlot,
                    let finger = activeDragFinger,
                    session.engine.tray.indices.contains(slot),
                    let piece = session.engine.tray[slot] {
