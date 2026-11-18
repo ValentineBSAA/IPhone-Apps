@@ -2,126 +2,6 @@ import SwiftUI
 import UIKit
 import AudioToolbox
 
-private struct BerryDragState {
-    var slot: Int
-    var piece: BerryPiece
-    var row: Int
-    var col: Int
-    var allowed: Bool
-}
-
-private struct BerryBoard: View {
-    let engine: BerryEngine
-    let preview: BerryDragState?
-    let size: CGFloat
-    let selected: Int?
-    let mode: BerryMode
-    let strawberryUnlocked: Bool
-    let previewStyle: String
-    // Removed rejected decorative board surfaces and frames in Build 3.
-    // Saved cosmetic entitlements remain in storage, but the playable board
-    // always uses a clean, high-contrast grid with a single thin rim.
-    private let gap: CGFloat = 3
-
-    var body: some View {
-        let side = engine.visibleSide
-        let origin = engine.sectionOrigin
-        let unit = (size - CGFloat(side - 1) * gap) / CGFloat(side)
-        ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 15)
-                .fill(Color(red: 0.96, green: 0.69, blue: 0.76))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 15)
-                        .strokeBorder(Color(red: 0.69, green: 0.34, blue: 0.45)
-                            .opacity(0.72), lineWidth: 1.25)
-                }
-                .shadow(color: BerryStyle.strawberry.opacity(0.10),
-                        radius: 3, y: 1)
-            ForEach(0..<(side * side), id: \.self) { i in
-                let r = i / side
-                let c = i % side
-                ZStack {
-                    RoundedRectangle(cornerRadius: side > 8 ? 4 : 7)
-                        .fill(Color.white.opacity(0.97))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: side > 8 ? 4 : 7)
-                                .strokeBorder(
-                                    Color(red: 0.64, green: 0.32, blue: 0.46)
-                                        .opacity(0.85),
-                                    lineWidth: side > 8 ? 1 : 1.5)
-                        }
-                    if let tint = engine.visibleCell(row: r, col: c) {
-                        let blocked = preview?.piece.points.contains(where: {
-                            preview!.row + $0.row == r + origin.row &&
-                            preview!.col + $0.col == c + origin.col
-                        }) ?? false
-                        BerryTile(tint: tint, mode: mode, strawberryUnlocked: strawberryUnlocked)
-                            .opacity(blocked && !((preview?.allowed) ?? true) ? 0.24 : 1)
-                    }
-                }
-                .frame(width: unit, height: unit)
-                .offset(x: CGFloat(c) * (unit + gap), y: CGFloat(r) * (unit + gap))
-            }
-            if let preview, previewStyle != "mystery" {
-                ForEach(preview.piece.points, id: \.self) { p in
-                    let r = preview.row + p.row - origin.row
-                    let c = preview.col + p.col - origin.col
-                    if (0..<side).contains(r), (0..<side).contains(c) {
-                        let occupied = engine.visibleCell(row: r, col: c) != nil
-                        ZStack {
-                            if preview.allowed {
-                                BerryTile(tint: preview.piece.tint, preview: true,
-                                          mode: mode, strawberryUnlocked: strawberryUnlocked)
-                                    .opacity(previewStyle == "outline" ? 0.33 : 0.80)
-                            } else {
-                                RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
-                                    .fill(Color.red.opacity(occupied ? 0.28 : 0.12))
-                                if !preview.allowed {
-                                    Image(systemName: "xmark")
-                                        .font(.system(size: max(8, unit * 0.30), weight: .black))
-                                        .foregroundStyle(Color(red: 0.72, green: 0.07, blue: 0.22))
-                                }
-                            }
-                        }
-                            .overlay {
-                                RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
-                                    .strokeBorder(preview.allowed ?
-                                        Color(red: 0.09, green: 0.68, blue: 0.33) :
-                                        Color(red: 0.94, green: 0.13, blue: 0.28),
-                                        lineWidth: preview.allowed ? 2.5 : 3.2)
-                                    .shadow(color: preview.allowed ?
-                                        Color.green.opacity(0.54) : Color.red.opacity(0.54),
-                                        radius: 4)
-                            }
-                            .frame(width: unit, height: unit)
-                            .offset(x: CGFloat(c) * (unit + gap), y: CGFloat(r) * (unit + gap))
-                    }
-                }
-            }
-        }
-        .frame(width: size, height: size, alignment: .topLeading)
-        .overlay {
-            if let preview, !preview.allowed,
-               preview.piece.points.contains(where: {
-                   !(0..<engine.side).contains(preview.row + $0.row) ||
-                   !(0..<engine.side).contains(preview.col + $0.col)
-               }) {
-                RoundedRectangle(cornerRadius: 22)
-                    .strokeBorder(Color.red.opacity(0.82), lineWidth: 3)
-                    .overlay(alignment: .top) {
-                        Text("Outside the garden")
-                            .font(.system(size: 10, weight: .bold, design: .rounded))
-                            .padding(6).background(.white, in: Capsule())
-                            .foregroundStyle(Color.red)
-                    }
-                    .allowsHitTesting(false)
-            }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Berry garden, \(engine.side) by \(engine.side) puzzle board")
-    }
-}
-
 /// UIKit geometry changes while the 24×24 garden scrolls are stored in a
 /// reference object, not @State, preventing 576 SwiftUI cells from rebuilding
 /// for every subpixel of movement or transient notification safe-area change.
@@ -225,6 +105,7 @@ struct BerryGameView: View {
     @State private var showHelp = false
     @State private var showSettings = false
     @State private var showShop = false
+    @State private var shopStartsWithHelpers = false
     @State private var showStats = false
     @State private var showCottage = false
     @State private var confirmRestart = false
@@ -1042,41 +923,45 @@ struct BerryGameView: View {
             Text("KEEP YOUR GARDEN & SCORE")
                 .font(.system(size: 12, weight: .black, design: .rounded))
                 .foregroundStyle(BerryStyle.strawberry)
-            HStack(alignment: .top, spacing: 10) {
-                rescueChoice(
-                    title: "CONTINUE WITH SHUFFLE",
-                    detail: !session.canContinueWithShuffle ?
-                        "Board is full · won't work" : "Replace stuck pieces",
-                    price: ownsShuffle ? "Use 1 owned · \(session.shuffles) left" :
-                        "Buy & Use · 🍓 \(BerryEconomy.shufflePrice)",
-                    icon: "ShuffleIcon", available: shuffleAvailable,
-                    accent: BerryStyle.leaf) {
-                    let rescued = ownsShuffle ?
-                        session.shuffle() : session.buyAndContinueWithShuffle()
-                    if rescued {
-                        dismissRescueAfterSuccess()
-                    } else {
-                        warningFeedback()
+            if shuffleAvailable || goldenAvailable {
+                HStack(alignment: .top, spacing: 10) {
+                    if shuffleAvailable {
+                        rescueChoice(
+                            title: "CONTINUE WITH SHUFFLE",
+                            detail: "Replace stuck pieces",
+                            price: ownsShuffle ? "Use 1 owned · \(session.shuffles) left" :
+                                "Buy & Use · 🍓 \(BerryEconomy.shufflePrice)",
+                            icon: "ShuffleIcon", available: true,
+                            accent: BerryStyle.leaf) {
+                            let rescued = ownsShuffle ?
+                                session.shuffle() : session.buyAndContinueWithShuffle()
+                            if rescued { dismissRescueAfterSuccess() }
+                            else { warningFeedback() }
+                        }
+                    }
+                    if goldenAvailable {
+                        rescueChoice(
+                            title: "GOLDEN STRAWBERRY",
+                            detail: "Clear board & continue",
+                            price: ownsGold ? "Use 1 owned" :
+                                "Buy & Use · 🍓 \(BerryGameSession.goldenStrawberryCost)",
+                            icon: "GoldenStrawberry", available: true,
+                            accent: Color(red: 0.75, green: 0.45, blue: 0.08)) {
+                            confirmGoldenStrawberry = true
+                        }
                     }
                 }
-                if session.canUsePremium {
-                    rescueChoice(
-                        title: "GOLDEN STRAWBERRY",
-                        detail: session.engine.goldenRescueUsed ?
-                            "Already used this run" : "Clear board & continue",
-                        price: ownsGold ? "Use 1 owned" :
-                            "Buy & Use · 🍓 \(BerryGameSession.goldenStrawberryCost)",
-                        icon: "GoldenStrawberry", available: goldenAvailable,
-                        accent: Color(red: 0.75, green: 0.45, blue: 0.08)) {
-                        confirmGoldenStrawberry = true
-                    }
-                }
-            }
-            if !shuffleAvailable && !goldenAvailable {
-                Text("No rescue available. Starting a new garden is free.")
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate.opacity(0.8))
+            } else {
+                Label("No rescue is available for this board. A fresh garden is free.",
+                      systemImage: "leaf.circle")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate.opacity(0.82))
                     .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity)
+                    .background(BerryStyle.cream.opacity(0.86),
+                                in: RoundedRectangle(cornerRadius: 14))
             }
         }
     }
@@ -1130,7 +1015,7 @@ struct BerryGameView: View {
 
     private var scoreBar: some View {
         HStack(spacing: 8) {
-            scorePill("SCORE", value: session.engine.score, icon: "ScoreHeart")
+            scorePill("SCORE", value: session.engine.score, icon: "StrawberryCandyBlock")
             scorePill("BEST", value: session.bestScore, icon: "BestCrown")
             HStack(spacing: 3) {
                 Text("🍓").font(.system(size: 18))
@@ -1175,17 +1060,17 @@ struct BerryGameView: View {
                         refreshBlitzClock()
                     }
                     selectedSlot = nil; drag = nil
-                } else { showShop = true }
+                } else { openBoutique(helpers: true) }
             }
             toolButton("Shuffle", icon: "ShuffleIcon", count: session.shuffles,
                        enabled: session.shuffles > 0 && session.canContinueWithShuffle) {
                 if session.shuffles > 0 && session.canContinueWithShuffle {
                     if session.shuffle() { selectedSlot = nil; drag = nil }
                     else { warningFeedback() }
-                } else { showShop = true }
+                } else { openBoutique(helpers: true) }
             }
             toolButton("Hint", icon: "BerryHint", count: session.hints, enabled: session.hints > 0) {
-                if session.hints > 0 { showHint() } else { showShop = true }
+                if session.hints > 0 { showHint() } else { openBoutique(helpers: true) }
             }
             }
             toolButton(mode == .cozy ? "Cottage" : "Stats", icon: mode == .cozy ? "CottageDecorations" : "StatsChart", count: nil, enabled: true) { if mode == .cozy { showCottage = true } else { showStats = true } }
@@ -1196,10 +1081,15 @@ struct BerryGameView: View {
             }
             if !isTimedMode {
                 toolButton("Boutique", icon: "ShopBasket", count: nil, enabled: true) {
-                    showShop = true
+                    openBoutique()
                 }
             }
         }.frame(height: 48)
+    }
+
+    private func openBoutique(helpers: Bool = false) {
+        shopStartsWithHelpers = helpers
+        showShop = true
     }
 
     private func toolSymbol(_ icon: String) -> String {
@@ -1721,7 +1611,8 @@ struct BerryGameView: View {
     private var shopSheet: some View {
         NavigationStack {
             ScrollView {
-                BerryBoutiqueView(session: session)
+                BerryBoutiqueView(session: session,
+                                  opensWithHelpers: shopStartsWithHelpers)
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
                     .padding(.bottom, 35)
