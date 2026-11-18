@@ -1255,16 +1255,43 @@ struct BerryGameView: View {
 
     private func toolButton(_ title: String, icon: String, count: Int?,
                             enabled: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        let approvedArt: String = {
+            switch title {
+            case "Boutique": return "BBBIconShop"
+            case "Tools": return "BBBIconTools"
+            case "Cottage": return "CottageDecorations"
+            case "Stats": return "StatsChart"
+            case "Undo": return "UndoIcon"
+            case "Shuffle": return "ShuffleIcon"
+            case "Hint": return "BerryHint"
+            default: return icon
+            }
+        }()
+        return Button(action: action) {
             VStack(spacing: 2) {
                 ZStack(alignment: .topTrailing) {
-                    Image(systemName: toolSymbol(icon))
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(enabled ? BerryStyle.strawberry : BerryStyle.chocolate)
-                        .frame(width: 28, height: 28)
-                        .background(BerryStyle.softPink.opacity(0.75), in: Circle())
-                        .overlay(Circle()
-                            .strokeBorder(BerryStyle.strawberry.opacity(0.44), lineWidth: 1))
+                    Group {
+                        if let art = UIImage(named: approvedArt) {
+                            Image(uiImage: art)
+                                .resizable()
+                                .interpolation(.high)
+                                .scaledToFit()
+                        } else {
+                            Image(systemName: toolSymbol(icon))
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(BerryStyle.strawberry)
+                        }
+                    }
+                    .frame(width: 32, height: 32)
+                    .background(
+                        LinearGradient(colors: [.white,
+                                               BerryStyle.softPink.opacity(0.94)],
+                                       startPoint: .topLeading,
+                                       endPoint: .bottomTrailing),
+                        in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(.white.opacity(0.92), lineWidth: 1.25))
+                    .shadow(color: BerryStyle.strawberry.opacity(0.18), radius: 2, y: 1)
                     if let count {
                         Text("\(count)")
                             .font(.system(size: 9, weight: .black, design: .rounded))
@@ -1272,26 +1299,30 @@ struct BerryGameView: View {
                             .padding(.horizontal, 4)
                             .padding(.vertical, 2)
                             .background(BerryStyle.strawberry, in: Capsule())
-                            .offset(x: 8, y: -3)
+                            .offset(x: 8, y: -2)
                     }
                 }
                 Text(title)
-                    .font(.system(size: 9, weight: .heavy, design: .rounded))
+                    .font(.system(size: 9, weight: .black, design: .rounded))
                     .foregroundStyle(BerryStyle.chocolate)
                     .lineLimit(1)
                     .minimumScaleFactor(0.80)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 44)
-            .background(.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 12))
+            .frame(height: 47)
+            .background(
+                LinearGradient(colors: [.white.opacity(0.98),
+                                        BerryStyle.cream.opacity(0.94)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing),
+                in: RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(BerryStyle.strawberry.opacity(0.17), lineWidth: 1))
-            .opacity(enabled ? 1 : 0.70)
+                .strokeBorder(enabled ? BerryStyle.strawberry.opacity(0.37) :
+                              BerryStyle.chocolate.opacity(0.18), lineWidth: 1))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(count.map { "\(title), \($0) available" } ?? title)
-        // Keep unavailable helper tiles tappable so the Boutique remains
-        // accessible. Their handlers already guard actual use.
+        // Never hide an icon because the tool is unavailable. The original
+        // action still opens the Boutique or preserves the mode restriction.
     }
 
     // Both board measurement and touch events use UIWindow coordinates.
