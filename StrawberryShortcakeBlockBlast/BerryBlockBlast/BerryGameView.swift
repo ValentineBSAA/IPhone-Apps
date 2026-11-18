@@ -187,6 +187,8 @@ struct BerryGameView: View {
     @State private var showGameOver = false
     @State private var showWelcome = false
     @State private var showDailyCalendar = false
+    @State private var showPremiumActions = false
+    @State private var specialTargetTool: String? = nil
     @AppStorage("berryblockblast.haptics") private var haptics = true
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.music") private var music = true
@@ -421,6 +423,33 @@ struct BerryGameView: View {
             }
         }
         .sheet(isPresented: $showDailyCalendar) { BerryDailyHarvestView(goal: goal) }
+        .confirmationDialog("Special Tools", isPresented: $showPremiumActions,
+                            titleVisibility: .visible) {
+            Button("Golden Trowel · \(session.premiumCharges["trowel", default: 0]) left") {
+                specialTargetTool = "trowel"
+            }
+            .disabled(session.premiumCharges["trowel", default: 0] < 1)
+            Button("Starberry Seed · \(session.premiumCharges["seed", default: 0]) left") {
+                specialTargetTool = "seed"
+            }
+            .disabled(session.premiumCharges["seed", default: 0] < 1)
+            Button("Ribbon Twister · \(session.premiumCharges["twister", default: 0]) left") {
+                guard let slot = selectedSlot else { return }
+                if session.useRibbonTwister(slot: slot) { successFeedback() }
+                else { warningFeedback() }
+            }
+            .disabled(session.premiumCharges["twister", default: 0] < 1 || selectedSlot == nil)
+            Button("Picnic Pantry · \(session.premiumOwned.contains("pantry") ? "Owned" : "Locked")") {
+                guard let slot = selectedSlot else { return }
+                if session.usePicnicPantry(slot: slot) { successFeedback() }
+                else { warningFeedback() }
+            }
+            .disabled(!session.premiumOwned.contains("pantry") || selectedSlot == nil)
+            Button("Cancel", role: .cancel) { specialTargetTool = nil }
+        } message: {
+            Text(session.spyglassPiece.map { "Spyglass forecast: \($0.points.count) squares. Select a piece first for rotation or storage. For Trowel and Seed, tap an occupied or empty board square." } ??
+                 "Select a tray piece for rotation/storage. For Trowel and Seed, choose a board cell. Invalid actions never spend charges.")
+        }
         .sheet(isPresented: $showHelp) { helpSheet }
         .sheet(isPresented: $showSettings) { settingsSheet }
         .sheet(isPresented: $showShop) { shopSheet }
@@ -773,6 +802,11 @@ struct BerryGameView: View {
             }
             }
             toolButton(mode == .cozy ? "Cottage" : "Stats", icon: mode == .cozy ? "CottageDecorations" : "StatsChart", count: nil, enabled: true) { if mode == .cozy { showCottage = true } else { showStats = true } }
+            if session.canUsePremium {
+                toolButton("Tools", icon: "BerryHint", count: nil, enabled: true) {
+                    showPremiumActions = true
+                }
+            }
             if !isTimedMode {
                 toolButton("Boutique", icon: "ShopBasket", count: nil, enabled: true) {
                     showShop = true
@@ -922,6 +956,21 @@ struct BerryGameView: View {
                 .contentShape(Rectangle())
                 .gesture(SpatialTapGesture().onEnded { tap in
                     let location = tap.location
+                    if let special = specialTargetTool {
+                        let cell = actualSize / CGFloat(max(1, session.engine.side))
+                        let row = Int(floor((location.y - 7) / cell))
+                        let col = Int(floor((location.x - 7) / cell))
+                        let worked = special == "trowel" ?
+                            session.useGoldenTrowel(row: row, col: col) :
+                            session.useStarberrySeed(row: row, col: col)
+                        if worked {
+                            specialTargetTool = nil
+                            hintPreview = nil
+                            checkObjective()
+                            successFeedback()
+                        } else { warningFeedback() }
+                        return
+                    }
                     guard canMakeMove, let slot = selectedSlot,
                           session.engine.tray.indices.contains(slot),
                           let piece = session.engine.tray[slot] else { return }
