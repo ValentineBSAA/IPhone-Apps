@@ -1,0 +1,50 @@
+name: Berry Berry Blast 0.5.12 Trophy Tests on iPhone Simulator
+on:
+  push:
+    branches: [feature/berry-berry-blast-0512-reward-garden-test]
+    paths:
+      - '.github/workflows/berry-0512-trophy-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  trophy-xctest:
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Xcode project with original production assets
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          python3 Tools/install_art510.py
+          xcodegen generate --spec project.yml
+      - name: Discover an available iPhone Simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available -j > .simdevices.json
+          python3 - <<'PY'
+          import json,os
+          data=json.load(open('.simdevices.json'))
+          devices=[item for devices in data['devices'].values() for item in devices
+                   if item.get('isAvailable',False) and 'iPhone' in item.get('name','')]
+          if not devices:
+              raise SystemExit("NO AVAILABLE IPHONE SIMULATOR")
+          print("Using",devices[0]['name'],devices[0]['udid'])
+          with open(os.environ['GITHUB_ENV'],'a') as output:
+              output.write("TEST_DEVICE_UDID="+devices[0]['udid']+"\n")
+          PY
+      - name: Run six real trophy XCTest cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj -scheme BerryBlockBlast \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=$TEST_DEVICE_UDID" \
+            -derivedDataPath .build/Tests \
+            -only-testing:BerryBlockBlastTests/BerryTrophyGardenTests \
+            CODE_SIGNING_ALLOWED=NO test
