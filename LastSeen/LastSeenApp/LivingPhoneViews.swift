@@ -31,118 +31,163 @@ struct NeighborAvatar: View {
     }
 }
 
+/// One launcher, one set of app icons. No duplicated dock, clipped icons, fake
+/// system widgets or initial flood of unread *messages* on the home screen.
 struct PhoneHomeView: View {
     @EnvironmentObject private var game: GameStore
     @EnvironmentObject private var world: PhoneWorldStore
 
-    private var unread: Int {
-        let a = Contact.allCases.reduce(0) { $0 + game.unreadCount(in: $1.id) }
-        let b = Neighbor.allCases.reduce(0) { $0 + world.countUnread($1) }
-        return a + b
+    private var unreadThreads: Int {
+        let storyCount = Contact.allCases.filter { game.unreadCount(in: $0.id) > 0 }.count
+        let ordinaryCount = Neighbor.allCases.filter { world.countUnread($0) > 0 }.count
+        return storyCount + ordinaryCount
+    }
+
+    private var latestNeighbor: Neighbor {
+        let maya = world.messages(.maya).last?.at ?? .distantPast
+        let denise = world.messages(.denise).last?.at ?? .distantPast
+        return maya >= denise ? .maya : .denise
+    }
+
+    private var upcoming: PhoneEvent? {
+        let now = Date()
+        return world.state.events
+            .filter { $0.endsAt > now }
+            .sorted { $0.startsAt < $1.startsAt }
+            .first
     }
 
     var body: some View {
-        GeometryReader { size in
-            ZStack {
-                LinearGradient(
-                    colors: [Color(red: 0.12, green: 0.15, blue: 0.25),
-                             Color(red: 0.06, green: 0.07, blue: 0.11),
-                             Color(red: 0.14, green: 0.13, blue: 0.18)],
-                    startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .ignoresSafeArea()
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.13, green: 0.17, blue: 0.25),
+                    Color(red: 0.075, green: 0.095, blue: 0.16),
+                    Color(red: 0.07, green: 0.075, blue: 0.12)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
 
-                Circle()
-                    .fill(Color(red: 0.33, green: 0.36, blue: 0.52).opacity(0.17))
-                    .frame(width: 420, height: 420)
-                    .blur(radius: 94)
-                    .offset(x: -140, y: -210)
-                    .accessibilityHidden(true)
-
+            GeometryReader { geometry in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
-                        TimelineView(.periodic(from: .now, by: 20)) { clock in
-                            VStack(alignment: .leading, spacing: 7) {
-                                Text(clock.date, format: .dateTime.weekday(.wide).month(.wide).day())
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.73))
-                                Text(clock.date, style: .time)
-                                    .font(.system(size: 54, weight: .light, design: .rounded))
+                        TimelineView(.periodic(from: .now, by: 20)) { context in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(context.date, format: .dateTime.weekday(.wide).month(.wide).day())
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.66))
+                                Text(context.date, style: .time)
+                                    .font(.system(size: 38, weight: .light, design: .rounded))
                                     .monospacedDigit()
                                     .foregroundColor(.white)
-                                    .minimumScaleFactor(0.7)
-                                    .lineLimit(1)
                             }
                         }
-                        .padding(.top, 12)
-                        .accessibilityElement(children: .combine)
+                        .padding(.top, 18)
 
-                        VStack(alignment: .leading, spacing: 8) {
+                        if let event = upcoming {
+                            NavigationLink(value: AppPage.calendar) {
+                                HStack(alignment: .center, spacing: 13) {
+                                    Image(systemName: "calendar")
+                                        .font(.system(size: 22))
+                                        .foregroundColor(.white.opacity(0.82))
+                                        .frame(width: 40, height: 40)
+                                        .background(.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 12))
+                                    VStack(alignment: .leading, spacing: 5) {
+                                        Text(event.title)
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundColor(.white)
+                                            .lineLimit(1)
+                                        Text(event.startsAt, format: .dateTime.month(.abbreviated).day().hour().minute())
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.white.opacity(0.60))
+                                    }
+                                    Spacer(minLength: 4)
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundColor(.white.opacity(0.55))
+                                }
+                                .padding(14)
+                                .background(.white.opacity(0.065), in: RoundedRectangle(cornerRadius: 19))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 19)
+                                        .strokeBorder(.white.opacity(0.06), lineWidth: 1)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 24) {
+                            appIcon("Messages", symbol: "message.fill",
+                                    tint: Color(red: 0.24, green: 0.62, blue: 0.43),
+                                    destination: .messages, badge: unreadThreads)
+                            appIcon("Contacts", symbol: "person.crop.circle.fill",
+                                    tint: Color(red: 0.42, green: 0.49, blue: 0.67),
+                                    destination: .contacts)
+                            appIcon("Photos", symbol: "photo.on.rectangle.angled",
+                                    tint: Color(red: 0.78, green: 0.49, blue: 0.39),
+                                    destination: .photos)
+                            appIcon("Notes", symbol: "note.text",
+                                    tint: Color(red: 0.79, green: 0.63, blue: 0.34),
+                                    destination: .notes)
+                            appIcon("Calendar", symbol: "calendar",
+                                    tint: Color(red: 0.68, green: 0.41, blue: 0.46),
+                                    destination: .calendar)
+                            appIcon("Mail", symbol: "envelope.fill",
+                                    tint: Color(red: 0.35, green: 0.49, blue: 0.76),
+                                    destination: .mail)
+                            appIcon("Settings", symbol: "gearshape.fill",
+                                    tint: Color(red: 0.45, green: 0.46, blue: 0.54),
+                                    destination: .settings)
+                        }
+                        .padding(.top, 8)
+
+                        VStack(alignment: .leading, spacing: 13) {
                             HStack {
-                                Image(systemName: "building.2")
-                                    .foregroundColor(Night.accent)
-                                Text("ASH STREET")
-                                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                                    .tracking(2)
-                                    .foregroundColor(.white.opacity(0.65))
+                                Text("Recent")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.70))
+                                Spacer()
+                                NavigationLink(value: AppPage.messages) {
+                                    Text("Messages")
+                                        .font(.system(size: 12, weight: .medium))
+                                }
                             }
-                            Text("Elevator inspection this week")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white.opacity(0.89))
-                            Text(unread == 0 ? "Check Calendar for the building schedule." :
-                                    "\(unread) unread \(unread == 1 ? "message" : "messages")")
-                                .font(.system(size: 12))
-                                .foregroundColor(.white.opacity(0.62))
-                        }
-                        .padding(18)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 22))
-                        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(.white.opacity(0.09)))
 
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 4), spacing: 22) {
-                            phoneApp("Messages", "message.fill", Color(red: 0.26, green: 0.61, blue: 0.48), .messages, badge: unread)
-                            phoneApp("Contacts", "person.crop.rectangle.stack.fill", Color(red: 0.44, green: 0.52, blue: 0.66), .contacts)
-                            phoneApp("Photos", "photo.on.rectangle.angled", Color(red: 0.77, green: 0.51, blue: 0.44), .photos)
-                            phoneApp("Notes", "note.text", Color(red: 0.75, green: 0.61, blue: 0.35), .notes)
-                            phoneApp("Calendar", "calendar", Color(red: 0.67, green: 0.40, blue: 0.45), .calendar)
-                            phoneApp("Mail", "envelope.fill", Color(red: 0.38, green: 0.52, blue: 0.78), .mail)
-                            phoneApp("Settings", "gearshape.fill", Color(red: 0.45, green: 0.46, blue: 0.55), .settings)
+                            NavigationLink(value: AppPage.worldThread(latestNeighbor)) {
+                                HStack(spacing: 11) {
+                                    NeighborAvatar(neighbor: latestNeighbor, size: 43)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(latestNeighbor.name)
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundColor(.white)
+                                        Text(world.messages(latestNeighbor).last?.text ?? "")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.white.opacity(0.64))
+                                            .lineLimit(2)
+                                    }
+                                    Spacer(minLength: 0)
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(.white.opacity(0.40))
+                                }
+                                .padding(13)
+                                .background(.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 17))
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .padding(.vertical, 13)
+                        .padding(.top, 10)
 
-                        Spacer(minLength: max(0, size.size.height * 0.10))
-
-                        HStack(spacing: 24) {
-                            NavigationLink(value: AppPage.messages) {
-                                dockApp("message.fill", tint: Color(red: 0.26, green: 0.61, blue: 0.48), label: "Messages")
-                            }
-                            NavigationLink(value: AppPage.contacts) {
-                                dockApp("person.crop.circle", tint: Color(red: 0.43, green: 0.52, blue: 0.67), label: "Contacts")
-                            }
-                            NavigationLink(value: AppPage.photos) {
-                                dockApp("photo.fill.on.rectangle.fill", tint: Color(red: 0.70, green: 0.50, blue: 0.49), label: "Photos")
-                            }
-                            VStack(spacing: 6) {
-                                Image(systemName: "phone.slash.fill")
-                                    .font(.system(size: 23))
-                                    .foregroundColor(.white.opacity(0.44))
-                                    .frame(width: 58, height: 58)
-                                    .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 17))
-                                Text("Phone")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.white.opacity(0.55))
-                            }
-                            .accessibilityLabel("Phone calls are unavailable")
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .padding(.horizontal, 9)
-                        .background(.white.opacity(0.09), in: RoundedRectangle(cornerRadius: 27))
+                        Spacer(minLength: 5)
                     }
-                    .padding(.horizontal, 23)
-                    .padding(.bottom, 18)
-                    .frame(maxWidth: 600)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 28)
+                    .frame(maxWidth: 530)
                     .frame(maxWidth: .infinity)
+                    .frame(minHeight: geometry.size.height, alignment: .top)
                 }
+                .scrollIndicators(.hidden)
             }
         }
         .toolbar(.hidden, for: .navigationBar)
@@ -150,52 +195,41 @@ struct PhoneHomeView: View {
         .onChange(of: game.state.clues) { _ in world.reconcile(with: game) }
     }
 
-    private func phoneApp(_ title: String, _ symbol: String, _ tint: Color,
-                          _ destination: AppPage, badge: Int = 0) -> some View {
+    private func appIcon(_ name: String, symbol: String, tint: Color,
+                         destination: AppPage, badge: Int = 0) -> some View {
         NavigationLink(value: destination) {
-            VStack(spacing: 7) {
+            VStack(spacing: 8) {
                 ZStack(alignment: .topTrailing) {
-                    RoundedRectangle(cornerRadius: 18)
-                        .fill(LinearGradient(colors: [tint.opacity(0.96), tint.opacity(0.59)],
-                                             startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .frame(width: 62, height: 62)
+                    RoundedRectangle(cornerRadius: 17)
+                        .fill(LinearGradient(colors: [tint, tint.opacity(0.68)],
+                                             startPoint: .topLeading,
+                                             endPoint: .bottomTrailing))
+                        .frame(width: 59, height: 59)
                         .overlay {
                             Image(systemName: symbol)
-                                .font(.system(size: 27, weight: .medium))
+                                .font(.system(size: 25, weight: .medium))
                                 .foregroundColor(.white)
                         }
                     if badge > 0 {
-                        Text("\(min(badge, 99))")
+                        Text(badge > 9 ? "9+" : String(badge))
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.white)
                             .padding(.horizontal, 6)
                             .frame(minHeight: 19)
-                            .background(Night.danger, in: Capsule())
-                            .offset(x: 8, y: -8)
+                            .background(Color(red: 0.85, green: 0.24, blue: 0.30), in: Capsule())
+                            .offset(x: 6, y: -7)
                     }
                 }
-                Text(title)
+                Text(name)
                     .font(.system(size: 11, weight: .medium))
-                    .lineLimit(1)
                     .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .buttonStyle(.plain)
-    }
-
-    private func dockApp(_ symbol: String, tint: Color, label: String) -> some View {
-        VStack(spacing: 6) {
-            RoundedRectangle(cornerRadius: 17)
-                .fill(tint)
-                .frame(width: 58, height: 58)
-                .overlay {
-                    Image(systemName: symbol)
-                        .font(.system(size: 23))
-                        .foregroundColor(.white)
-                }
-            Text(label).font(.system(size: 11)).foregroundColor(.white)
-        }
+        .accessibilityLabel(name)
     }
 }
 
