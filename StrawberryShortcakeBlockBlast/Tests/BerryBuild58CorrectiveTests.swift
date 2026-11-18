@@ -11,9 +11,10 @@ final class BerryBuild58CorrectiveTests: XCTestCase {
         XCTAssertFalse(BerryStoryNarrative.victory(for: 2).isEmpty)
     }
 
-    func testStoryNarrativeHasDistinctEarlyChaptersAndCyclesSafely() {
+    func testStoryNarrativeHasTwelveDistinctChaptersAndCyclesSafely() {
         XCTAssertNotEqual(BerryStoryNarrative.title(for: 1), BerryStoryNarrative.title(for: 2))
-        XCTAssertEqual(BerryStoryNarrative.title(for: 1), BerryStoryNarrative.title(for: 7))
+        XCTAssertNotEqual(BerryStoryNarrative.title(for: 1), BerryStoryNarrative.title(for: 7))
+        XCTAssertEqual(BerryStoryNarrative.title(for: 1), BerryStoryNarrative.title(for: 13))
         XCTAssertFalse(BerryStoryNarrative.opening(for: 100).isEmpty)
     }
 
