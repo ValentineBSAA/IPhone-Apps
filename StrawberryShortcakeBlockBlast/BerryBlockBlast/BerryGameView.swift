@@ -1390,12 +1390,12 @@ struct BerryGameView: View {
                 .background(.white, in: RoundedRectangle(cornerRadius: 15))
             }
             Button(completed < upgrades.count ?
-                   "Decorate: \(upgrades[completed]) • 🍓 50" :
-                   "Add another garden bouquet • 🍓 50") {
+                   "Decorate: \(upgrades[completed]) • 🍓 \(session.nextCottageDecorationPrice ?? 0)" :
+                   "Collection Complete") {
                 session.buyCottageDecoration()
                 if sound { BerryAudio.shared.play(.reward) }
             }
-            .disabled(session.berries < 50 || session.cottageDecorations >= 6)
+            .disabled(session.nextCottageDecorationPrice.map { session.berries < $0 } ?? true)
             .buttonStyle(.borderedProminent)
             .tint(BerryStyle.strawberry)
             Text("Your strawberry basket: 🍓 \(session.berries)")
