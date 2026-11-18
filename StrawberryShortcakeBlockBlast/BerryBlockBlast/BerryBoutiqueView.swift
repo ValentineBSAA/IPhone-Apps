@@ -177,11 +177,19 @@ struct BerryBoutiqueView: View {
             }
         } label: {
             VStack(spacing: 8) {
-                Image(systemName: category.symbol)
-                    .font(.system(size: 32, weight: .semibold))
-                    .foregroundStyle(category == .cottage ? BerryStyle.leaf : BerryStyle.strawberry)
-                    .frame(width: 73, height: 73)
-                    .background(BerryStyle.softPink.opacity(0.8), in: RoundedRectangle(cornerRadius: 17))
+                Group {
+                    switch category {
+                    case .blocks: BerryIcon(name: "BerryClassic", size: 73)
+                    case .frames: BerryIcon(name: "RosePetalFrame", size: 73)
+                    case .helpers: BerryIcon(name: "BerryHint", size: 73)
+                    case .special: Image("PremiumToolsCategory").resizable().scaledToFit()
+                    case .cottage: BerryIcon(name: "CottageDecorations", size: 73)
+                    case .inventory: BerryIcon(name: "BerryCollection", size: 73)
+                    }
+                }
+                .frame(width: 73, height: 73)
+                .background(BerryStyle.softPink.opacity(0.8),
+                            in: RoundedRectangle(cornerRadius: 17))
                 Text(category.title)
                     .font(.system(size: 15, weight: .black, design: .rounded))
                     .foregroundStyle(BerryStyle.chocolate)
