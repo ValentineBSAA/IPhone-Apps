@@ -19,96 +19,38 @@ private struct BerryBoard: View {
     let strawberryUnlocked: Bool
     let previewStyle: String
     let onBoardRect: (CGRect) -> Void
-    @AppStorage("berryblockblast.shop.equippedBorder.v056b2") private var borderSkin = "default"
-    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "original"
-    private var boardCellArt: String {
-        switch boardSurface {
-        case "glass": return "BerryBoardCandyGlassCell"
-        case "picnic": return "BerryBoardPicnicCell"
-        case "garden": return "BerryBoardGardenCell"
-        case "seed": return "BerryBoardSeedMosaicCell"
-        case "concept-01": return "BBBBoardCell01"
-        case "concept-02": return "BBBBoardCell02"
-        case "concept-03": return "BBBBoardCell03"
-        case "concept-04": return "BBBBoardCell04"
-        case "concept-05": return "BBBBoardCell05"
-        case "concept-06": return "BBBBoardCell06"
-        case "concept-07": return "BBBBoardCell07"
-        case "concept-08": return "BBBBoardCell08"
-        case "concept-09": return "BBBBoardCell09"
-        case "concept-10": return "BBBBoardCell10"
-        default: return "BerryBoardCreamCell"
-        }
-    }
+    // Removed rejected decorative board surfaces and frames in Build 3.
+    // Saved cosmetic entitlements remain in storage, but the playable board
+    // always uses a clean, high-contrast grid with a single thin rim.
     private let gap: CGFloat = 3
-    private var gardenBorder: Color {
-        switch borderSkin {
-        case "rose-border": return Color(red: 0.91, green: 0.25, blue: 0.55)
-        case "mint-border": return Color(red: 0.32, green: 0.73, blue: 0.58)
-        default:
-            // Original appearance always uses its own stable 0.5.8 frame.
-            // A mode's decorative frame only applies to optional surfaces.
-            if boardSurface == "original" {
-                return Color(red: 0.98, green: 0.71, blue: 0.79)
-            }
-            switch mode {
-            case .daily: return Color(red: 0.85, green: 0.24, blue: 0.41)
-            case .superHard: return Color(red: 0.43, green: 0.22, blue: 0.60)
-            case .story: return Color(red: 0.95, green: 0.64, blue: 0.76)
-            case .cozy: return Color(red: 0.70, green: 0.79, blue: 0.61)
-            default: return Color(red: 0.98, green: 0.71, blue: 0.79)
-            }
-        }
-    }
 
     var body: some View {
         let side = engine.visibleSide
         let origin = engine.sectionOrigin
         let unit = (size - CGFloat(side - 1) * gap) / CGFloat(side)
         ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 22)
-                .fill(gardenBorder)
-                .overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(.white.opacity(0.8), lineWidth: 3) }
-                // A compact frame around real playable cells, rather than
-                // a second huge invisible edge that competes for space.
-                .padding(-3)
-                .shadow(color: BerryStyle.strawberry.opacity(0.15), radius: 5, y: 2)
+            RoundedRectangle(cornerRadius: 15)
+                .fill(Color(red: 0.96, green: 0.69, blue: 0.76))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 15)
+                        .strokeBorder(Color(red: 0.69, green: 0.34, blue: 0.45)
+                            .opacity(0.72), lineWidth: 1.25)
+                }
+                .shadow(color: BerryStyle.strawberry.opacity(0.10),
+                        radius: 3, y: 1)
             ForEach(0..<(side * side), id: \.self) { i in
                 let r = i / side
                 let c = i % side
                 ZStack {
-                    if boardSurface == "original" {
-                        // Original bare, undecorated squares restored with
-                        // clearer high-contrast outlines for small iPhones.
-                        RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
-                            .fill(Color.white.opacity(0.96))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
-                                    .strokeBorder(
-                                        Color(red: 0.64, green: 0.32, blue: 0.46).opacity(0.83),
-                                        lineWidth: side > 8 ? 1.0 : 1.6)
-                            }
-                    } else {
-                        // Optional boards use restrained art *beneath* visible
-                        // empty-square outlines, not bright fruit-like cells.
-                        RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
-                            .fill(Color.white.opacity(0.76))
-                            .overlay {
-                                if UIImage(named: boardCellArt) != nil {
-                                    Image(boardCellArt)
-                                        .resizable()
-                                        .interpolation(.high)
-                                        .scaledToFit()
-                                        .opacity(0.25)
-                                        .allowsHitTesting(false)
-                                }
-                            }
-                            .overlay {
-                                RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
-                                    .strokeBorder(Color(red: 0.65, green: 0.30, blue: 0.45)
-                                        .opacity(0.82), lineWidth: max(1.15, unit * 0.040))
-                            }
-                    }
+                    RoundedRectangle(cornerRadius: side > 8 ? 4 : 7)
+                        .fill(Color.white.opacity(0.97))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: side > 8 ? 4 : 7)
+                                .strokeBorder(
+                                    Color(red: 0.64, green: 0.32, blue: 0.46)
+                                        .opacity(0.85),
+                                    lineWidth: side > 8 ? 1 : 1.5)
+                        }
                     if let tint = engine.visibleCell(row: r, col: c) {
                         let blocked = preview?.piece.points.contains(where: {
                             preview!.row + $0.row == r + origin.row &&
@@ -159,10 +101,6 @@ private struct BerryBoard: View {
             }
         }
         .frame(width: size, height: size, alignment: .topLeading)
-        .overlay {
-            BerryDecorativeBoardFrame(boardSize: size)
-                .allowsHitTesting(false)
-        }
         .overlay {
             if let preview, !preview.allowed,
                preview.piece.points.contains(where: {
@@ -314,7 +252,6 @@ struct BerryGameView: View {
     @AppStorage(BerryTrophyCatalog.nightmareBestLinesKey) private var nightmareBestLines = 0
     @State private var lastBlitzTimeBonus = 0
     @AppStorage("berryblockblast.previewStyle") private var previewStyle = "ghost"
-    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "original"
     private let harvestCheers = [
         "🍓 A berry sweet harvest!", "🍰 Piece of strawberry cake!",
         "🌸 The garden is blooming!", "✨ Sweet as sunshine!",
@@ -1756,9 +1693,9 @@ struct BerryGameView: View {
                 BerryGridInfoTile(title: "Garden Helpers",
                                  detail: "Undo, Shuffle and Hint work in supported modes",
                                  art: "BerryHint", value: "Optional")
-                BerryGridInfoTile(title: "Board Studio",
-                                 detail: "Choose board, decorative frame and block styles independently",
-                                 art: "ShopBasket", value: "Cosmetics")
+                BerryGridInfoTile(title: "Candy Block Collection",
+                                 detail: "Collect and equip your earned block styles in the Trophy Garden",
+                                 art: "BBBIconBlocks", value: "Rewards")
             }
             primaryButton("Back to Playing") { showHelp = false }
         }
