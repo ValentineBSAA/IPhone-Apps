@@ -46,6 +46,31 @@ final class BerryFullScreenGameplayTests: XCTestCase {
             XCTAssertEqual(trays.count, 3, "\(label): must have 3 actual touch targets")
             if let board = boards.first {
                 let rect = board.convert(board.bounds, to: window)
+                if mode == .classic {
+                    let expectedInnerSide = BerryGameplayLayout.boardSize(
+                        width: width, height: height, topInset: 0,
+                        bottomInset: 0, mode: .classic)
+                    XCTAssertEqual(rect.width,
+                                   expectedInnerSide + 2 * BerryGameplayLayout.boardTouchMargin,
+                                   accuracy: 2,
+                                   "\(label): board anchor must include the outer touch rim exactly once")
+                    // Sample the real board tracking frame at both corners.
+                    // Visible cell centers must map back to those same cells.
+                    let rim = BerryGameplayLayout.boardTouchMargin
+                    let cell = (rect.width - 2 * rim - 7 * 3) / 8
+                    let one = BerryPiece(points: [.init(row: 0, col: 0)], tint: 0)
+                    for (row, col) in [(0, 0), (7, 7)] {
+                        let point = CGPoint(
+                            x: rect.minX + rim + CGFloat(col) * (cell + 3) + cell / 2,
+                            y: rect.minY + rim + CGFloat(row) * (cell + 3) + cell / 2)
+                        let mapped = BerryDropGeometry.target(
+                            for: point, board: rect, piece: one, side: 8)
+                        XCTAssertEqual(mapped?.row, row,
+                                       "\(label): visible cell center maps to wrong row")
+                        XCTAssertEqual(mapped?.col, col,
+                                       "\(label): visible cell center maps to wrong column")
+                    }
+                }
                 XCTAssertGreaterThan(rect.width, 350,
                     "\(label): game board is too small inside available width")
                 XCTAssertGreaterThan(rect.height, 350,
