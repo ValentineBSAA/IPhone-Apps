@@ -283,8 +283,9 @@ struct BerryGameView: View {
                             Spacer()
                             VStack(alignment: .trailing, spacing: 3) {
                                 Text("SCORE").font(.caption.bold())
-                                Text(session.engine.score.formatted()).font(.title.bold())
-                                Text("BEST \(session.bestScore)").font(.caption.bold())
+                                BerryCandyNumber(value: session.engine.score.formatted(), size: 30, label: "Score")
+                                BerryCandyNumber(value: "BEST \(session.bestScore.formatted())", size: 13,
+                                                 label: "Best")
                             }
                         }
                         .foregroundStyle(Color(red: 0.49, green: 0.09, blue: 0.35))
@@ -400,10 +401,17 @@ struct BerryGameView: View {
                     HStack {
                         BerryWalletPill(berries: session.berries)
                         Spacer()
-                        Text("\(session.engine.totalLines) lines • \(session.engine.moves) moves")
+                        HStack(spacing: 5) {
+                            BerryCandyNumber(value: session.engine.totalLines.formatted(),
+                                             size: 13, label: "Lines")
+                            Text("LINES ·")
+                            BerryCandyNumber(value: session.engine.moves.formatted(),
+                                             size: 13, label: "Moves")
+                            Text("MOVES")
+                        }
+                        .font(.system(size: 9, weight: .heavy, design: .rounded))
+                        .foregroundStyle(BerryStyle.chocolate.opacity(0.7))
                     }
-                    .font(.system(size: 10, weight: .heavy, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate.opacity(0.65))
                     Spacer(minLength: 0)
                 }
                 .disabled(isPaused)
@@ -651,12 +659,11 @@ struct BerryGameView: View {
                             .font(.system(size: 15, weight: .medium, design: .rounded))
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
                         if !confirmRestart {
-                            HStack(spacing: 18) {
-                                VStack { Text("\(session.engine.score)").font(.title2.bold()); Text("SCORE").font(.caption2) }
-                                VStack { Text("\(session.engine.totalLines)").font(.title2.bold()); Text("LINES").font(.caption2) }
-                                VStack { Text("\(session.engine.moves)").font(.title2.bold()); Text("MOVES").font(.caption2) }
+                            HStack(spacing: 12) {
+                                BerryCandyResultCounter(title: "SCORE", value: session.engine.score)
+                                BerryCandyResultCounter(title: "LINES", value: session.engine.totalLines)
+                                BerryCandyResultCounter(title: "MOVES", value: session.engine.moves)
                             }
-                            .foregroundStyle(BerryStyle.chocolate)
                             if mode == .story && !showVictory {
                                 Text("Chapter \(storyLevel): \(storyIsLineQuest ? "\(session.engine.totalLines)/\(storyTargetLines) lines" : "\(session.engine.score)/\(goal) points")")
                                     .font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
@@ -826,7 +833,7 @@ struct BerryGameView: View {
                 Text(storyIsLineQuest ?
                      "\(current) / \(target) LINES" : "\(current) / \(target) POINTS")
                     .monospacedDigit()
-                    .foregroundStyle(BerryStyle.strawberry)
+                    .foregroundStyle(BerryStyle.candyNumberGradient)
                     .lineLimit(1)
             }
             .font(.system(size: 10, weight: .heavy, design: .rounded))
@@ -873,7 +880,7 @@ struct BerryGameView: View {
                     .minimumScaleFactor(0.8)
                 Text("\(min(session.engine.gardenPatchMoves, 18))/18 plants · \(session.engine.gardenPatchLines)/3 lines")
                     .font(.system(size: 8, weight: .bold, design: .rounded))
-                    .foregroundStyle(BerryStyle.strawberry)
+                    .foregroundStyle(BerryStyle.candyNumberGradient)
                     .lineLimit(1)
             }
             Spacer(minLength: 3)
@@ -907,7 +914,8 @@ struct BerryGameView: View {
                 Text("🍓").font(.system(size: 18))
                 VStack(alignment: .leading, spacing: 0) {
                     Text("COMBO").font(.system(size: 8, weight: .heavy))
-                    Text("×\(max(1, session.engine.streak))").font(.system(size: 19, weight: .black, design: .rounded))
+                    BerryCandyNumber(value: "×\(max(1, session.engine.streak))",
+                                     size: 19, label: "Combo")
                 }
             }
             .foregroundStyle(BerryStyle.chocolate)
@@ -921,7 +929,7 @@ struct BerryGameView: View {
             BerryIcon(name: icon, size: 27)
             VStack(alignment: .leading, spacing: 0) {
                 Text(title).font(.system(size: 8, weight: .heavy, design: .rounded)).foregroundStyle(BerryStyle.chocolate.opacity(0.65))
-                Text(BerryNumbers.compact(value)).font(.system(size: 20, weight: .black, design: .rounded)).foregroundStyle(BerryStyle.chocolate).lineLimit(1).minimumScaleFactor(0.5)
+                BerryCandyNumber(value: BerryNumbers.compact(value), size: 20, label: title)
             }
             Spacer(minLength: 0)
         }
