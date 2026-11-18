@@ -73,10 +73,26 @@ struct BerryCottageGardenView: View {
                                     Color(red: 0.89, green: 0.97, blue: 0.83),
                                     Color(red: 1.00, green: 0.91, blue: 0.91)],
                                     startPoint: .top, endPoint: .bottom))
-                            if UIImage(named: "CottageGardenBackground") != nil {
-                                Image("CottageGardenBackground")
-                                    .resizable().scaledToFill()
-                                    .frame(width: w, height: h).clipped()
+                            // The old painted background already contained
+                            // purchased decorations. Start with an EMPTY garden;
+                            // owned objects are composited individually below.
+                            VStack(spacing: 0) {
+                                Rectangle().fill(Color(red: 0.77, green: 0.94, blue: 0.97))
+                                    .frame(height: h * 0.34)
+                                Rectangle().fill(
+                                    LinearGradient(colors: [Color(red: 0.82, green: 0.93, blue: 0.60),
+                                                           Color(red: 0.57, green: 0.79, blue: 0.46)],
+                                                   startPoint: .top, endPoint: .bottom))
+                            }
+                            .frame(width: w, height: h)
+                            .overlay(alignment: .bottom) {
+                                Path { path in
+                                    path.move(to: CGPoint(x: w * 0.46, y: h * 0.66))
+                                    path.addQuadCurve(to: CGPoint(x: w * 0.54, y: h),
+                                                      control: CGPoint(x: w * 0.24, y: h * 0.85))
+                                }
+                                .stroke(Color(red: 0.98, green: 0.85, blue: 0.73),
+                                        style: StrokeStyle(lineWidth: 42, lineCap: .round))
                             }
                             image("StrawberryCottage", fallback: "🏡")
                                 .frame(width: w * 0.43, height: h * 0.46)
