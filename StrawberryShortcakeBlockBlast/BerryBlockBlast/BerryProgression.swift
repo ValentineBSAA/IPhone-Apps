@@ -5,6 +5,17 @@ import SwiftUI
 final class BerryProgression: ObservableObject {
     static let shared = BerryProgression()
     @Published private(set) var revision = 0
+    @Published private(set) var celebrationText: String? = nil
+    private var celebrationToken = 0
+    func celebrate(_ message: String) {
+        celebrationToken += 1
+        let token = celebrationToken
+        celebrationText = message
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.6) { [weak self] in
+            guard let self = self, self.celebrationToken == token else { return }
+            self.celebrationText = nil
+        }
+    }
     private let namespace = "berryberryblast.progression.v059."
     private init() {}
 
@@ -60,6 +71,7 @@ final class BerryProgression: ObservableObject {
             UserDefaults.standard.set(true, forKey: key(name))
             add("chapters")
         }
+        celebrate("📖 Story chapter complete! The village is growing.")
         revision &+= 1
     }
 
@@ -72,6 +84,7 @@ final class BerryProgression: ObservableObject {
         UserDefaults.standard.set(claimedTotal + 1, forKey: namespace + "claimed.total")
         // Historical payout keys are never re-used for new daily quests.
         session.awardOnce("quest-" + today + "-" + quest.id, amount: quest.reward, reason: "Berry Quest: " + quest.title)
+        celebrate("🍓 " + quest.title + " · +" + String(quest.reward) + " strawberries!")
         revision &+= 1
         return true
     }
