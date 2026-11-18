@@ -142,3 +142,34 @@ struct BerryGridInfoTile: View {
             .strokeBorder(BerryStyle.strawberry.opacity(0.25), lineWidth: 1.2))
     }
 }
+
+
+/// Unified tiny premium toolbar control without an opaque gray square.
+/// Both Home and gameplay reuse the same tappable circular candy badge.
+struct BerryCandyToolbarButton: View {
+    let symbol: String
+    let title: String
+    var size: CGFloat = 36
+    var tint: Color = BerryStyle.strawberry
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: size * 0.44, weight: .bold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.white)
+                .frame(width: size, height: size)
+                .background(
+                    LinearGradient(colors: [tint.opacity(0.83), tint],
+                                   startPoint: .topLeading,
+                                   endPoint: .bottomTrailing),
+                    in: Circle())
+                .overlay(Circle().strokeBorder(.white.opacity(0.95), lineWidth: 1.5))
+                .shadow(color: tint.opacity(0.22), radius: 4, y: 2)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+    }
+}
