@@ -1539,16 +1539,7 @@ struct BerryGameView: View {
                 Text("Outline Only").tag("outline")
                 Text("Mystery Garden").tag("mystery")
             }
-            Picker("🍓 Board Background", selection: $boardSurface) {
-                Text("Strawberry Cream").tag("cream")
-                Text("Frosted Candy Glass").tag("glass")
-                Text("Picnic Cloth").tag("picnic")
-                Text("Garden Patch").tag("garden")
-                Text("Seed Mosaic").tag("seed")
-            }
-            Text("Board backgrounds change the empty cells only. All block hitboxes and saved games stay the same.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            BerryBoardAppearanceControls()
             Toggle("Haptic feedback", isOn: $haptics).tint(BerryStyle.strawberry)
             Toggle("Touch diagnostics (testing)", isOn: $touchDiagnostics).tint(BerryStyle.strawberry)
             if touchDiagnostics {
