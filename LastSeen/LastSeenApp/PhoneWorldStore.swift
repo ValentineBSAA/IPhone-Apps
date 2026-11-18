@@ -26,8 +26,8 @@ enum Neighbor: String, CaseIterable, Identifiable, Codable {
     // Keep these assignments stable across relaunch and story progression.
     var portraitAssetName: String {
         switch self {
-        case .maya: return "Contact_Nora_04"
-        case .denise: return "Contact_Nora_03"
+        case .maya: return "Contact_Maya"
+        case .denise: return "Contact_Denise"
         }
     }
 
