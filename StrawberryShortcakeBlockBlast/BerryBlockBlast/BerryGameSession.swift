@@ -116,16 +116,20 @@ final class BerryGameSession: ObservableObject {
         } else {
             engine = freshEngine()
         }
+        lastMessage = nil
         if mode == .endless && !engine.hasMove() {
-            // Older saves can be stuck; rescue the run without losing its score.
+            // Legacy 24x24 saves remain intact and automatically resume on
+            // whichever full-size 12x12 patch can accept a piece.
+            let previousSeason = engine.seasons
+            let previousSection = engine.activeGardenSection
             _ = engine.beginNextEndlessSeasonIfStuck()
+            endlessRecoveryMessage(previousSection: previousSection, previousSeason: previousSeason)
             save()
         }
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
         gameOver = !engine.hasMove()
-        lastMessage = nil
         lastEarned = 0
         lastClearedLines = 0
     }
@@ -244,15 +248,17 @@ final class BerryGameSession: ObservableObject {
                 outcome.clearedLines >= 3 ? "BERRY SPECTACULAR! ✨" :
                 outcome.streak >= 2 ? "SWEET COMBO ×\(outcome.streak)! 🍓" : "BERRY DELICIOUS! 🍰"
         } else { lastMessage = nil }
-        let nextSeason = activeMode == .endless && !engine.hasMove() &&
-            engine.beginNextEndlessSeasonIfStuck()
-        if nextSeason {
-            // Undoing across a renewed season would restore an unwinnable
-            // full board. Keep the uninterrupted score and disable that undo.
-            previous = nil
-            previousBerryEarnings = 0
-            previousRewardEntry = nil
-            lastMessage = "🍓 A fresh berry season! Your score continues!"
+        if activeMode == .endless && !engine.hasMove() {
+            let oldSection = engine.activeGardenSection
+            let oldSeason = engine.seasons
+            if engine.beginNextEndlessSeasonIfStuck() {
+                // The same saved 24x24 garden is preserved on patch changes.
+                // Undo cannot return the player to an unplayable patch.
+                previous = nil
+                previousBerryEarnings = 0
+                previousRewardEntry = nil
+                endlessRecoveryMessage(previousSection: oldSection, previousSeason: oldSeason)
+            }
         }
         // Never terminate a timed score chase just because the tray is stuck.
         // Keep score, records, moves and earned berries. Nightmare remains
@@ -269,6 +275,17 @@ final class BerryGameSession: ObservableObject {
         BerryProgression.shared.recordPlacement(mode: activeMode, clearedLines: outcome.clearedLines)
         save()
         return true
+    }
+
+    private func endlessRecoveryMessage(previousSection: Int, previousSeason: Int) {
+        if engine.seasons > previousSeason {
+            lastMessage = "🍓 New garden season! Your score and berries continue!"
+        } else if engine.side == 24 && engine.activeGardenSection != previousSection {
+            let names = ["Rose Garden", "Berry Patch", "Flower Meadow", "Cottage Orchard"]
+            lastMessage = "🌷 Next patch: \(names[engine.activeGardenSection])!"
+        } else {
+            lastMessage = "🍓 Fresh playable pieces, on the house!"
+        }
     }
 
     /// A separate menu-level session can refresh currency after leaving play.
