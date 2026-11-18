@@ -22,8 +22,8 @@ struct BerryBlitzHUD: View {
                     .font(.system(size: 40, weight: .black, design: .rounded))
                     .monospacedDigit()
                     .contentTransition(.numericText())
-                    .foregroundStyle(timeLeft <= 10 ? BerryStyle.strawberry :
-                        Color(red: 0.70, green: 0.28, blue: 0.48))
+                    .foregroundStyle(timeLeft <= 10 ?
+                        BerryStyle.urgentTimerGradient : BerryStyle.timerGradient)
                     .shadow(color: BerryStyle.strawberry.opacity(timeLeft <= 10 ? 0.42 : 0.16), radius: 5)
                     .animation(reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled ? nil : .easeInOut(duration: 0.18), value: timeLeft)
             }
