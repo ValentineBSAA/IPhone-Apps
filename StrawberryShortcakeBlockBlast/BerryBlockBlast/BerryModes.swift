@@ -399,46 +399,24 @@ struct BerryHomeView: View {
                         Text("Sweet Endless never ends. Each garden size resumes its own saved run, even after a full board.")
                             .font(.subheadline)
                             .multilineTextAlignment(.center)
-                        ForEach([8,12,24], id: \.self) { side in
-                            Button {
-                                endlessSize = side
-                                showBoardPicker = false
-                                audio.play(.gameStart)
-                                activeMode = .endless
-                            } label: {
-                                HStack(spacing: 16) {
-                                    Image(systemName: side == 24 ? "square.grid.4x3.fill" : "square.grid.3x3.fill")
-                                        .font(.system(size: 26))
-                                        .foregroundStyle(.white)
-                                        .frame(width: 54, height: 54)
-                                        .background(side == 24 ? BerryStyle.chocolate : BerryStyle.strawberry,
-                                                    in: RoundedRectangle(cornerRadius: 15))
-                                    VStack(alignment: .leading, spacing: 5) {
-                                        Text("\(side) × \(side) Garden")
-                                            .font(.system(size: 21, weight: .black, design: .rounded))
-                                        Text(side == 8 ? "Classic-sized, easy to read" :
-                                            side == 12 ? "More planning, bigger puzzles" :
-                                            "Mega Garden • pan the zoomed board")
-                                            .font(.system(size: 12, weight: .medium))
-                                        if savedEndlessSizes.contains(side) {
-                                            Label("🍓 CONTINUE SAVED GARDEN", systemImage: "bookmark.fill")
-                                                .font(.system(size: 10, weight: .heavy, design: .rounded))
-                                                .foregroundStyle(BerryStyle.leaf)
-                                        } else {
-                                            Text("START NEW GARDEN")
-                                                .font(.system(size: 10, weight: .heavy, design: .rounded))
-                                                .foregroundStyle(BerryStyle.strawberry)
-                                        }
-                                    }
-                                    Spacer()
-                                    if endlessSize == side { Image(systemName: "checkmark.circle.fill") }
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 11),
+                                            GridItem(.flexible(), spacing: 11)], spacing: 11) {
+                            ForEach([8, 12, 24], id: \.self) { side in
+                                BerryGridNavigationTile(
+                                    title: "\(side) × \(side) Garden",
+                                    detail: side == 8 ? "Classic-sized, easy to read" :
+                                        side == 12 ? "More room for puzzle planning" :
+                                        "Four automatic 12×12 patches · no scrolling",
+                                    art: "SweetEndless",
+                                    caption: savedEndlessSizes.contains(side) ?
+                                        "Resume Saved Garden" : "Start New Garden",
+                                    selected: endlessSize == side) {
+                                    endlessSize = side
+                                    showBoardPicker = false
+                                    audio.play(.gameStart)
+                                    activeMode = .endless
                                 }
-                                .foregroundStyle(BerryStyle.chocolate)
-                                .padding(14)
-                                .background(.white, in: RoundedRectangle(cornerRadius: 20))
-                                .overlay(RoundedRectangle(cornerRadius: 20)
-                                    .strokeBorder(BerryStyle.strawberry.opacity(0.42), lineWidth: 1.7))
-                            }.buttonStyle(.plain)
+                            }
                         }
                     }.padding(20)
                 }
@@ -460,38 +438,23 @@ struct BerryHomeView: View {
                         Text("Race the clock, not a fixed score. No saving, no power-ups and no extra time.")
                             .font(.subheadline)
                             .multilineTextAlignment(.center)
-                        ForEach(BerryBlitzVariant.allCases) { variant in
-                            Button {
-                                selectedBlitz = variant.rawValue
-                                showBlitzPicker = false
-                                audio.play(.gameStart)
-                                activeMode = .challenge
-                            } label: {
-                                HStack(spacing: 13) {
-                                    Image(systemName: variant.icon)
-                                        .font(.system(size: 24))
-                                        .foregroundStyle(.white)
-                                        .frame(width: 52, height: 52)
-                                        .background(BerryStyle.strawberry, in: RoundedRectangle(cornerRadius: 16))
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(variant.rawValue)
-                                            .font(.system(size: 21, weight: .black, design: .rounded))
-                                        Text(variant.subtitle)
-                                            .font(.system(size: 12, weight: .medium))
-                                        Text("🏆 Best: \(UserDefaults.standard.integer(forKey: variant.bestScoreKey))")
-                                            .font(.system(size: 12, weight: .heavy))
-                                            .foregroundStyle(BerryStyle.leaf)
-                                    }
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 11),
+                                            GridItem(.flexible(), spacing: 11)], spacing: 11) {
+                            ForEach(BerryBlitzVariant.allCases) { variant in
+                                BerryGridNavigationTile(
+                                    title: variant.rawValue,
+                                    detail: variant.subtitle,
+                                    art: variant == .quick60 ? "Milestone" :
+                                         variant == .rush120 ? "MoreAdventures" :
+                                         variant == .garden300 ? "HarvestReward" : "Champion",
+                                    caption: "🏆 \(BerryNumbers.compact(UserDefaults.standard.integer(forKey: variant.bestScoreKey)))",
+                                    selected: selectedBlitz == variant.rawValue) {
+                                    selectedBlitz = variant.rawValue
+                                    showBlitzPicker = false
+                                    audio.play(.gameStart)
+                                    activeMode = .challenge
                                 }
-                                .foregroundStyle(BerryStyle.chocolate)
-                                .padding(14)
-                                .background(.white, in: RoundedRectangle(cornerRadius: 21))
-                                .overlay(RoundedRectangle(cornerRadius: 21)
-                                    .strokeBorder(BerryStyle.strawberry.opacity(0.5), lineWidth: 1.8))
                             }
-                            .buttonStyle(.plain)
                         }
                     }.padding(20)
                 }
