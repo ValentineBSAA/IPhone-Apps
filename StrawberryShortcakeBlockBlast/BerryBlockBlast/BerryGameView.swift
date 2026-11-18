@@ -1596,28 +1596,19 @@ struct BerryGameView: View {
         }
     }
     private var settingsSheet: some View {
-        sheetBase("Berry Settings", icon: "⚙️") {
-            Picker("🍓 Placement Preview", selection: $previewStyle) {
-                Text("Sweet Assist").tag("ghost")
-                Text("Outline Only").tag("outline")
-                Text("Mystery Garden").tag("mystery")
+        NavigationStack {
+            BerrySettingsHubView(onRestart: {
+                showSettings = false
+                confirmRestart = true
+            })
+            .navigationTitle("🍓 Berry Settings")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { showSettings = false }
+                }
             }
-            BerryBoardAppearanceControls()
-            Toggle("Haptic feedback", isOn: $haptics).tint(BerryStyle.strawberry)
-            Toggle("Touch diagnostics (testing)", isOn: $touchDiagnostics).tint(BerryStyle.strawberry)
-            if touchDiagnostics {
-                Text("A small status line appears below your tools for testing drag releases.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            BerryMusicSettingsView()
-            Text(mode == .endless ?
-                "Sweet Endless saves this garden and your score automatically. When there are no moves, a new season begins without resetting your score." :
-                "Scores, strawberries and rewards are saved. Only Sweet Endless resumes a live board.")
-                .font(.footnote)
-            Button("Start a New Garden", role: .destructive) { showSettings = false; confirmRestart = true }
-            Text("🍓 v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev") • build \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?")").font(.footnote).foregroundStyle(.secondary)
-            primaryButton("Done") { showSettings = false }
         }
+        .presentationDetents([.large])
     }
     private var shopSheet: some View {
         NavigationStack {
