@@ -1,0 +1,258 @@
+import SwiftUI
+
+/// Offline, local-only progression. All existing game/save/currency keys remain intact.
+@MainActor
+final class BerryProgression: ObservableObject {
+    static let shared = BerryProgression()
+    @Published private(set) var revision = 0
+    private let namespace = "berryberryblast.progression.v059."
+    private init() {}
+
+    struct Quest: Identifiable {
+        let id: String
+        let title: String
+        let detail: String
+        let symbol: String
+        let target: Int
+        let reward: Int
+    }
+
+    private var today: String { BerryDailyHistory.dateKey(for: Date()) }
+    private func key(_ suffix: String) -> String { namespace + today + "." + suffix }
+    private func count(_ name: String) -> Int { UserDefaults.standard.integer(forKey: key(name)) }
+    private func add(_ name: String, amount: Int = 1) {
+        let value = min(1000000, count(name) + max(0, amount))
+        UserDefaults.standard.set(value, forKey: key(name))
+        revision &+= 1
+    }
+
+    var quests: [Quest] {
+        let base = [
+            Quest(id: "lines", title: "Blooming Lines", detail: "Clear 12 complete lines", symbol: "square.grid.3x3.fill", target: 12, reward: 25),
+            Quest(id: "modes", title: "Village Explorer", detail: "Place blocks in two different modes", symbol: "map.fill", target: 2, reward: 25),
+            Quest(id: "moves", title: "Garden Gardener", detail: "Place 18 puzzle pieces", symbol: "hand.tap.fill", target: 18, reward: 20),
+            Quest(id: "chapters", title: "Story Keeper", detail: "Finish a Berry Story chapter", symbol: "book.closed.fill", target: 1, reward: 35)
+        ]
+        let offset = (Calendar.current.ordinality(of: .day, in: .era, for: Date()) ?? 0) % base.count
+        return (0..<3).map { base[(offset + $0) % base.count] }
+    }
+
+    func progress(for quest: Quest) -> Int { min(quest.target, count(quest.id)) }
+    func isClaimed(_ quest: Quest) -> Bool { UserDefaults.standard.bool(forKey: key("claimed." + quest.id)) }
+    var claimedToday: Int { quests.filter(isClaimed).count }
+    var claimedTotal: Int { UserDefaults.standard.integer(forKey: namespace + "claimed.total") }
+
+    func recordPlacement(mode: BerryMode, clearedLines: Int) {
+        add("moves")
+        if clearedLines > 0 { add("lines", amount: clearedLines) }
+        let modeName = mode.rawValue
+        var modes = UserDefaults.standard.stringArray(forKey: key("playedModes")) ?? []
+        if !modes.contains(modeName) {
+            modes.append(modeName)
+            UserDefaults.standard.set(modes, forKey: key("playedModes"))
+            add("modes")
+        }
+    }
+
+    func recordStoryChapter(_ chapter: Int) {
+        let name = "chapter." + String(chapter)
+        if !UserDefaults.standard.bool(forKey: key(name)) {
+            UserDefaults.standard.set(true, forKey: key(name))
+            add("chapters")
+        }
+        revision &+= 1
+    }
+
+    @discardableResult
+    func claim(_ quest: Quest, into session: BerryGameSession) -> Bool {
+        guard quests.contains(where: { $0.id == quest.id }),
+              progress(for: quest) >= quest.target,
+              !isClaimed(quest) else { return false }
+        UserDefaults.standard.set(true, forKey: key("claimed." + quest.id))
+        UserDefaults.standard.set(claimedTotal + 1, forKey: namespace + "claimed.total")
+        // Historical payout keys are never re-used for new daily quests.
+        session.awardOnce("quest-" + today + "-" + quest.id, amount: quest.reward, reason: "Berry Quest: " + quest.title)
+        revision &+= 1
+        return true
+    }
+
+    var villageLevel: Int {
+        let chapter = max(1, UserDefaults.standard.integer(forKey: "berryblockblast.story.level"))
+        return min(5, 1 + (chapter - 1) / 2 + min(2, BerryDailyHistory.completed.count / 7))
+    }
+}
+
+struct BerryQuestBoardView: View {
+    @ObservedObject var session: BerryGameSession
+    @ObservedObject private var progress = BerryProgression.shared
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 14) {
+                    BerryIcon(name: "BerryStory", size: 93)
+                    Text("Berry Quest Board")
+                        .font(.system(size: 28, weight: .black, design: .rounded))
+                        .foregroundStyle(BerryStyle.strawberry)
+                    Text("Three little adventures each day. Earn berries by actually playing, not by opening menus.")
+                        .multilineTextAlignment(.center).font(.subheadline)
+                        .foregroundStyle(BerryStyle.chocolate)
+                    ForEach(progress.quests) { quest in
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack(spacing: 10) {
+                                Image(systemName: quest.symbol)
+                                    .font(.system(size: 27))
+                                    .foregroundStyle(BerryStyle.strawberry)
+                                    .frame(width: 44, height: 48)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(quest.title).font(.headline)
+                                    Text(quest.detail).font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                            }
+                            ProgressView(value: Double(progress.progress(for: quest)), total: Double(quest.target))
+                                .tint(BerryStyle.strawberry)
+                            HStack {
+                                Text("\(progress.progress(for: quest))/\(quest.target)")
+                                    .font(.caption.bold()).monospacedDigit()
+                                Spacer()
+                                Button(progress.isClaimed(quest) ? "✓ Collected" : "🍓 \(quest.reward) · Claim") {
+                                    _ = progress.claim(quest, into: session)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(BerryStyle.strawberry)
+                                .disabled(progress.isClaimed(quest) ||
+                                          progress.progress(for: quest) < quest.target)
+                            }
+                        }
+                        .foregroundStyle(BerryStyle.chocolate)
+                        .padding(15)
+                        .background(.white, in: RoundedRectangle(cornerRadius: 19))
+                        .overlay(RoundedRectangle(cornerRadius: 19)
+                            .strokeBorder(BerryStyle.strawberry.opacity(0.23)))
+                    }
+                    Text("Quests refresh at local midnight. Rewards are collected only once per completed quest.")
+                        .font(.caption).multilineTextAlignment(.center)
+                        .foregroundStyle(BerryStyle.chocolate)
+                }
+                .padding(17)
+            }
+            .background(BerryStyle.cream.ignoresSafeArea())
+            .navigationTitle("Berry Quests")
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+    }
+}
+
+struct BerryVillageView: View {
+    @ObservedObject var session: BerryGameSession
+    @ObservedObject private var progress = BerryProgression.shared
+    @Environment(\.dismiss) private var dismiss
+    @State private var showCottage = false
+    private let places: [(String, String, String, Int)] = [
+        ("Strawberry Cottage", "home.sparkles", "Your growing little home", 1),
+        ("Blooming Path", "leaf.fill", "Restore paths with Story chapters", 2),
+        ("Jam Market", "basket.fill", "Bring treats back to the village", 3),
+        ("Berry Bakery", "birthday.cake.fill", "Help the ovens come alive", 4),
+        ("Festival Square", "sparkles", "A cheerful village celebration", 5)
+    ]
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 15) {
+                    BerryIcon(name: "CottageDecorations", size: 105)
+                    Text("Strawberry Village")
+                        .font(.system(size: 27, weight: .black, design: .rounded))
+                        .foregroundStyle(BerryStyle.strawberry)
+                    Text("Restore the village through Story chapters, daily harvests and garden adventures.")
+                        .multilineTextAlignment(.center).font(.subheadline)
+                        .foregroundStyle(BerryStyle.chocolate)
+                    ForEach(places, id: \.0) { place in
+                        let unlocked = progress.villageLevel >= place.3
+                        HStack(spacing: 14) {
+                            Image(systemName: unlocked ? place.1 : "lock.fill")
+                                .font(.system(size: 26)).foregroundStyle(unlocked ? BerryStyle.leaf : .gray)
+                                .frame(width: 50, height: 54)
+                                .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 13))
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(place.0).font(.headline)
+                                Text(unlocked ? place.2 : "Unlock at Village Level \(place.3)")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if unlocked && place.3 == 1 {
+                                Button("Visit") { showCottage = true }
+                                    .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
+                            } else {
+                                Image(systemName: unlocked ? "checkmark.seal.fill" : "lock")
+                                    .foregroundStyle(unlocked ? BerryStyle.leaf : .gray)
+                            }
+                        }
+                        .foregroundStyle(BerryStyle.chocolate)
+                        .padding(13)
+                        .background(.white, in: RoundedRectangle(cornerRadius: 18))
+                    }
+                    Text("VILLAGE LEVEL \(progress.villageLevel) / 5")
+                        .font(.headline).foregroundStyle(BerryStyle.strawberry)
+                }
+                .padding(17)
+            }
+            .background(BerryStyle.cream.ignoresSafeArea())
+            .navigationTitle("Berry Village")
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .sheet(isPresented: $showCottage) { BerryCottageGardenView(session: session) }
+        }
+    }
+}
+
+struct BerryJournalView: View {
+    @ObservedObject var session: BerryGameSession
+    @ObservedObject private var progress = BerryProgression.shared
+    @AppStorage("berryblockblast.lifetime-lines") private var lifetimeLines = 0
+    @AppStorage("berryblockblast.story.level") private var storyLevel = 1
+    @Environment(\.dismiss) private var dismiss
+    private var chapters: Int { max(0, storyLevel - 1) }
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 13) {
+                    BerryIcon(name: "BerryCollection", size: 104)
+                    Text("Berry Journal")
+                        .font(.system(size: 28, weight: .black, design: .rounded))
+                        .foregroundStyle(BerryStyle.strawberry)
+                    Text("A scrapbook of everything you've grown and earned.")
+                        .font(.subheadline).foregroundStyle(BerryStyle.chocolate)
+                    record("Story Chapters", value: "\(chapters) completed", symbol: "book.closed.fill")
+                    record("Village", value: "Level \(progress.villageLevel) of 5", symbol: "house.fill")
+                    record("Sweet Harvest", value: "\(lifetimeLines) lifetime lines", symbol: "leaf.fill")
+                    record("Daily Harvest", value: "\(BerryDailyHistory.completed.count) completed days", symbol: "calendar")
+                    record("Quest Rewards", value: "\(progress.claimedTotal) claimed", symbol: "checklist")
+                    record("Berry Collection", value: "\(session.ownedCosmetics.count) cosmetics", symbol: "square.stack.fill")
+                    record("My Cottage", value: "\(session.cottageDecorations) of 6 decorations", symbol: "house.lodge.fill")
+                    record("Strawberries Earned", value: "\(session.totalEarnedBerries) lifetime", symbol: "star.fill")
+                }
+                .padding(17)
+            }
+            .background(BerryStyle.cream.ignoresSafeArea())
+            .navigationTitle("Berry Journal")
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+    }
+    private func record(_ title: String, value: String, symbol: String) -> some View {
+        HStack(spacing: 13) {
+            Image(systemName: symbol)
+                .font(.title2).foregroundStyle(BerryStyle.strawberry)
+                .frame(width: 48, height: 48)
+                .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 14))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.headline)
+                Text(value).font(.subheadline).foregroundStyle(BerryStyle.leaf)
+            }
+            Spacer()
+        }
+        .foregroundStyle(BerryStyle.chocolate)
+        .padding(13)
+        .background(.white, in: RoundedRectangle(cornerRadius: 17))
+    }
+}
