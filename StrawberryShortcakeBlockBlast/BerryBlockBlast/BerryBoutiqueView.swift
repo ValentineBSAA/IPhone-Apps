@@ -222,13 +222,13 @@ struct BerryBoutiqueView: View {
                 Text("Helpers are unavailable in Berry Classic and timed modes.")
                     .font(.caption.bold())
                     .foregroundStyle(BerryStyle.chocolate)
-                helperRow("Extra Undo", icon: "UndoIcon", count: session.undos, cost: 25) {
+                helperRow("Extra Undo", icon: "UndoIcon", count: session.undos, cost: BerryEconomy.undoPrice) {
                     session.buyUndo()
                 }
-                helperRow("Extra Shuffle", icon: "ShuffleIcon", count: session.shuffles, cost: 25) {
+                helperRow("Extra Shuffle", icon: "ShuffleIcon", count: session.shuffles, cost: BerryEconomy.shufflePrice) {
                     session.buyShuffle()
                 }
-                helperRow("Berry Hint", icon: "BerryHint", count: session.hints, cost: 20) {
+                helperRow("Berry Hint", icon: "BerryHint", count: session.hints, cost: BerryEconomy.hintPrice) {
                     session.buyHint()
                 }
             }
@@ -260,13 +260,13 @@ struct BerryBoutiqueView: View {
                     .font(.caption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(BerryStyle.chocolate)
-                Button(session.cottageDecorations >= 6 ? "Collection Complete" : "Buy Next Decoration • 🍓 50") {
+                Button(session.cottageDecorations >= 6 ? "Collection Complete" : "Buy Next Decoration • 🍓 \(session.nextCottageDecorationPrice ?? 0)") {
                     session.buyCottageDecoration()
                     if sound { BerryAudio.shared.play(.reward) }
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(BerryStyle.strawberry)
-                .disabled(session.cottageDecorations >= 6 || session.berries < 50)
+                .disabled(session.nextCottageDecorationPrice.map { session.berries < $0 } ?? true)
             }
             .frame(maxWidth: .infinity)
             .padding(18)
