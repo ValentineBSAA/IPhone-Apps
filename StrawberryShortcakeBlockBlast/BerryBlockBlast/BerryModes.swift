@@ -464,6 +464,7 @@ struct BerryHomeView: View {
                         Text("Strawberry Sound Studio")
                             .font(.system(size: 25, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry)
+                        BerryBoardAppearanceControls()
                         BerryMusicSettingsView()
                         VStack(spacing: 14) {
                             Toggle("Haptic feedback", isOn: $haptics)
