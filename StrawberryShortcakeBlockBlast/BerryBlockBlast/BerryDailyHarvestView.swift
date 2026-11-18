@@ -18,6 +18,29 @@ enum BerryDailyHistory {
         values.insert(dateKey(for: Date()))
         UserDefaults.standard.set(values.sorted(), forKey: key)
     }
+    /// Award for a new challenge completion, based on yesterday's intact
+    /// streak. Day 7 and every further consecutive day pay 50 berries.
+    static let rewardLadder = [10, 15, 20, 25, 30, 40, 50]
+    static func reward(forStreakDay day: Int) -> Int {
+        rewardLadder[min(6, max(0, day - 1))]
+    }
+    static var nextStreakDay: Int {
+        let today = Calendar.current.startOfDay(for: Date())
+        guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today) else { return 1 }
+        guard completed.contains(dateKey(for: yesterday)) else { return 1 }
+        var cursor = yesterday
+        var count = 0
+        while completed.contains(dateKey(for: cursor)) {
+            count += 1
+            guard let previous = Calendar.current.date(byAdding: .day, value: -1, to: cursor) else { break }
+            cursor = previous
+        }
+        return min(10000, count + 1)
+    }
+    static var rewardToday: Int {
+        if completed.contains(dateKey(for: Date())) { return 0 }
+        return reward(forStreakDay: nextStreakDay)
+    }
     static var streak: Int {
         let dates = completed
         var day = Calendar.current.startOfDay(for: Date())
@@ -62,13 +85,39 @@ struct BerryDailyHarvestView: View {
                     Text("Daily Harvest Calendar")
                         .font(.system(size: 26, weight: .black, design: .rounded))
                         .foregroundStyle(BerryStyle.strawberry)
-                    Text("One daily challenge, refreshed at local midnight.")
+                    Text("One daily challenge, refreshed at local midnight. Seven sweet days unlock the biggest harvest.")
                         .font(.subheadline).multilineTextAlignment(.center)
                     HStack(spacing: 8) {
                         info("Today", value: Date().formatted(.dateTime.month(.abbreviated).day()))
                         info("Streak", value: "🍓 \(BerryDailyHistory.streak)")
                         info("Completed", value: "\(BerryDailyHistory.completed.count)")
                     }
+                    VStack(spacing: 9) {
+                        Text("🍓 STREAK REWARD LADDER")
+                            .font(.system(size: 12, weight: .black, design: .rounded))
+                            .foregroundStyle(BerryStyle.strawberry)
+                        HStack(spacing: 3) {
+                            ForEach(1...7, id: \.self) { day in
+                                VStack(spacing: 3) {
+                                    Text("Day \(day)").font(.system(size: 9, weight: .bold))
+                                    Text("🍓\(BerryDailyHistory.reward(forStreakDay: day))")
+                                        .font(.system(size: 10, weight: .black))
+                                        .minimumScaleFactor(0.7)
+                                }
+                                .foregroundStyle(day <= BerryDailyHistory.streak ? BerryStyle.leaf : BerryStyle.strawberry)
+                                .frame(maxWidth: .infinity, minHeight: 46)
+                                .background(day == min(7, BerryDailyHistory.nextStreakDay) ?
+                                            BerryStyle.softPink : Color.white, in: RoundedRectangle(cornerRadius: 9))
+                            }
+                        }
+                        Text(BerryDailyHistory.rewardToday > 0 ?
+                             "Complete today's harvest for 🍓 \(BerryDailyHistory.rewardToday)" :
+                             "Today's reward collected. Come back tomorrow!")
+                            .font(.system(size: 12, weight: .heavy, design: .rounded))
+                            .foregroundStyle(BerryStyle.strawberry)
+                    }
+                    .padding(11)
+                    .background(.white.opacity(0.86), in: RoundedRectangle(cornerRadius: 17))
                     VStack(spacing: 7) {
                         Text("TODAY'S OBJECTIVE").font(.caption.bold())
                         Text("Score \(goal) points").font(.title3.bold())
