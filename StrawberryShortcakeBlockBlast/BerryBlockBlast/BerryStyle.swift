@@ -7,6 +7,17 @@ enum BerryStyle {
     static let cream = Color(red: 1.00, green: 0.97, blue: 0.92)
     static let softPink = Color(red: 1.00, green: 0.87, blue: 0.90)
     static let leaf = Color(red: 0.34, green: 0.63, blue: 0.36)
+    /// The glowing Classic Score's palette, reused on all numerical progress.
+    /// Text remains rendered with SwiftUI so dynamic scores and accessibility
+    /// work normally on iOS 16.
+    static let candyNumberGradient = LinearGradient(
+        colors: [strawberry,
+                 Color(red: 1.00, green: 0.36, blue: 0.48),
+                 Color(red: 0.92, green: 0.50, blue: 0.14)],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
 
     static func color(for tint: Int) -> Color {
         switch (tint % 6 + 6) % 6 {
@@ -196,5 +207,39 @@ struct BerryPieceGlyph: View {
             }
         }
         .frame(width: CGFloat(piece.width) * unit, height: CGFloat(piece.height) * unit, alignment: .topLeading)
+    }
+}
+
+
+/// Shared readable gradient for Score, Best, Lines, Moves, Combo, records and
+/// chapter counters. Does not alter the scoring engine or saved preferences.
+struct BerryCandyNumber: View {
+    let value: String
+    var size: CGFloat = 20
+    var label: String? = nil
+
+    var body: some View {
+        Text(value)
+            .font(.system(size: size, weight: .black, design: .rounded))
+            .foregroundStyle(BerryStyle.candyNumberGradient)
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.55)
+            .accessibilityLabel(label.map { $0 + ": " + value } ?? value)
+    }
+}
+
+/// Consistent vertical result tile used on Game Over / Chapter Complete.
+struct BerryCandyResultCounter: View {
+    let title: String
+    let value: Int
+    var body: some View {
+        VStack(spacing: 3) {
+            BerryCandyNumber(value: value.formatted(), size: 24, label: title)
+            Text(title)
+                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.78))
+        }
+        .frame(maxWidth: .infinity)
     }
 }
