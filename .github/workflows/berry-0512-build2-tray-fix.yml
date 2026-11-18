@@ -1,0 +1,91 @@
+name: Berry Berry Blast 0.5.12 Build 2 Tray Visibility Regression Gate
+on:
+  push:
+    branches: [fix/berry-berry-blast-0512-build2-visible-tray]
+    paths:
+      - 'StrawberryShortcakeBlockBlast/**'
+      - '.github/workflows/berry-0512-build2-tray-fix.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: berry-0512-build2-tray
+  cancel-in-progress: true
+jobs:
+  validate-and-package:
+    name: Render Test + Native 0.5.12 Build 2 unsigned IPA
+    runs-on: macos-15
+    timeout-minutes: 55
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Swift 5, iOS 16, source and 67 original audio resources
+        run: |
+          set -euo pipefail
+          python3 Tools/verify_ios16_source.py
+          python3 Tools/check_ios16_compat.py
+          python3 Tools/verify_audio_build2.py
+          find BerryBlockBlast Tests -type f -name '*.swift' -print0 | xargs -0 xcrun swiftc -frontend -parse -swift-version 5
+      - name: Install XcodeGen and compile original production assets
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          python3 Tools/install_art510.py
+          xcodegen generate --spec project.yml
+      - name: Select iPhone simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available -j > .simdevices.json
+          python3 - <<'PY'
+          import os,json
+          devices=[d for ds in json.load(open('.simdevices.json'))["devices"].values()
+                   for d in ds if d.get("isAvailable") and "iPhone" in d.get("name","")]
+          if not devices: raise SystemExit("No iPhone simulator available")
+          print("Testing",devices[0]["name"],devices[0]["udid"])
+          with open(os.environ["GITHUB_ENV"],"a") as f:
+              f.write("SIM_UDID="+devices[0]["udid"]+"\n")
+          PY
+      - name: Run visual tray pixels and trophy regression tests on simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj -scheme BerryBlockBlast \
+            -configuration Debug -destination "platform=iOS Simulator,id=$SIM_UDID" \
+            -derivedDataPath .build/Simulator \
+            -resultBundlePath .build/BerryTrayBuild2.xcresult \
+            -only-testing:BerryBlockBlastTests/BerryTrayVisibilityTests \
+            -only-testing:BerryBlockBlastTests/BerryTrophyGardenTests \
+            CODE_SIGNING_ALLOWED=NO test
+      - name: Compile iOS 16 native iPhone application
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj -scheme BerryBlockBlast \
+            -configuration Release -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath .build/Device CODE_SIGNING_ALLOWED=NO build
+      - name: Package and inspect device IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/Payload
+          cp -R .build/Device/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
+          (cd dist && zip -qr Berry-Berry-Blast-v0.5.12-build2-BASE-unsigned.ipa Payload)
+          python3 Tools/verify_audio_build2.py --ipa dist/Berry-Berry-Blast-v0.5.12-build2-BASE-unsigned.ipa
+          unzip -t dist/Berry-Berry-Blast-v0.5.12-build2-BASE-unsigned.ipa | tail -2
+      - name: Save reproducible simulator test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-0512-Build2-Tray-Visual-XCTest-Results
+          path: StrawberryShortcakeBlockBlast/.build/BerryTrayBuild2.xcresult
+          retention-days: 14
+      - name: Save unsigned native base for exact approved artwork insertion
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-Berry-Blast-v0.5.12-build2-BASE-unsigned-IPA
+          path: StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-v0.5.12-build2-BASE-unsigned.ipa
+          retention-days: 14
