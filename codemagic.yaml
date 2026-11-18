@@ -147,13 +147,13 @@ workflows:
                   if filename != "Berry_Berry_Blast_0.5.9_AppIcon_Cloud.zip":
                       raise
                   raw = item.read_bytes()
-                  end = raw.rfind(b"PK\\x05\\x06")
+                  end = raw.rfind(b"PK\x05\x06")
                   if end < 0 or end + 22 != len(raw):
                       raise SystemExit("App icon ZIP lacks a normal end record")
                   cd_size = int.from_bytes(raw[end + 12:end + 16], "little")
                   cd_offset = int.from_bytes(raw[end + 16:end + 20], "little")
                   cd_end = cd_offset + cd_size
-                  if raw[cd_offset:cd_offset + 4] != b"PK\\x01\\x02" or end - cd_end != 39:
+                  if raw[cd_offset:cd_offset + 4] != b"PK\x01\x02" or end - cd_end != 39:
                       raise SystemExit("App icon ZIP has unexpected corruption")
                   repaired = raw[:cd_end] + raw[end:]
                   archive = zipfile.ZipFile(io.BytesIO(repaired))
