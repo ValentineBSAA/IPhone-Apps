@@ -286,9 +286,8 @@ struct BerryCollectionView: View {
                 .font(.system(size: 11, weight: .medium, design: .rounded))
                 .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
             LazyVGrid(columns: gridColumns, spacing: 11) {
-                ForEach(Array(records.enumerated()), id: \.offset) { entry in
-                    let index = entry.offset
-                    let record = entry.element
+                ForEach(0..<records.count, id: \.self) { index in
+                    let record = records[index]
                     BerryGridInfoTile(
                         title: record.0,
                         detail: "#\(index + 1) Personal Best",
