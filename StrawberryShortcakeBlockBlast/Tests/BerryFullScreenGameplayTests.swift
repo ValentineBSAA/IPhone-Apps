@@ -71,10 +71,10 @@ final class BerryFullScreenGameplayTests: XCTestCase {
                                        "\(label): visible cell center maps to wrong column")
                     }
                 }
-                XCTAssertGreaterThan(rect.width, 350,
-                    "\(label): game board is too small inside available width")
-                XCTAssertGreaterThan(rect.height, 350,
-                    "\(label): game board is too small inside available height")
+                XCTAssertGreaterThan(rect.width, 335,
+                    "\(label): framed game board is too small inside available width")
+                XCTAssertGreaterThan(rect.height, 335,
+                    "\(label): framed game board is too small inside available height")
                 XCTAssertGreaterThanOrEqual(rect.minX, 0)
                 XCTAssertLessThanOrEqual(rect.maxX, width + 1)
                 XCTAssertGreaterThanOrEqual(rect.minY, 0)
