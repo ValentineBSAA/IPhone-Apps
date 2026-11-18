@@ -354,6 +354,9 @@ final class BerryGameSession: ObservableObject {
         let amount = BerryDailyHistory.reward(forStreakDay: dayNumber)
         awardOnce("daily-" + day, amount: amount,
                   reason: "Daily Harvest · Day \(dayNumber) streak")
+        if dayNumber == 7 {
+            BerryProgression.shared.celebrate("🏆 Seven-day berry streak! +50 strawberries!")
+        }
     }
     func rewardStory(_ chapter: Int) {
         awardOnce("chapter-" + String(chapter), amount: 15 + min(35, chapter * 5), reason: "Story chapter")
@@ -393,6 +396,7 @@ final class BerryGameSession: ObservableObject {
         berries -= price
         if permanent {
             premiumOwned.append(id)
+            BerryProgression.shared.celebrate("✨ Lifetime upgrade unlocked: " + id.capitalized)
         } else {
             premiumCharges[id, default: 0] += id == "twister" ? 3 : 1
         }
