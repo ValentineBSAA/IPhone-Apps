@@ -167,72 +167,41 @@ struct BerryHomeView: View {
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("Play Berry Classic, the endless 8 by 8 block puzzle")
-                            ForEach(Array(BerryMode.allCases.prefix(3))) { mode in
-                                Button {
-                                    audio.setMusic(music)
-                                    if mode == .endless { showBoardPicker = true }
-                                    else { audio.play(.gameStart); activeMode = mode }
-                                } label: {
-                                    HStack(spacing: 14) {
-                                        BerryIcon(name: mode == .endless ? "SweetEndless" : mode == .story ? "BerryStory" : "DailyHarvest", size: 56)
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(mode.rawValue).font(.system(size: 20, weight: .black, design: .rounded))
-                                            Text(mode.description).font(.system(size: 12, weight: .medium, design: .rounded)).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
-                                            if mode == .story {
-                                                Text("Chapter \(storyLevel) ready")
-                                                    .font(.system(size: 11, weight: .bold))
-                                                    .foregroundStyle(BerryStyle.leaf)
-                                            }
-                                            if mode == .endless && !savedEndlessSizes.isEmpty {
-                                                Label("🍓 SAVED FOREVER GARDEN", systemImage: "bookmark.fill")
-                                                    .font(.system(size: 11, weight: .heavy, design: .rounded))
-                                                    .foregroundStyle(BerryStyle.leaf)
-                                            }
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 11),
+                                                GridItem(.flexible(), spacing: 11)], spacing: 11) {
+                                ForEach(Array(BerryMode.allCases.prefix(3))) { mode in
+                                    BerryGridNavigationTile(
+                                        title: mode.rawValue,
+                                        detail: mode.description,
+                                        art: mode == .endless ? "SweetEndless" :
+                                             mode == .story ? "BerryStory" : "DailyHarvest",
+                                        caption: mode == .story ? "Chapter \(storyLevel) Ready" :
+                                                 mode == .endless && !savedEndlessSizes.isEmpty ?
+                                                 "Saved Forever Garden" : "Play Now") {
+                                        audio.setMusic(music)
+                                        if mode == .endless {
+                                            showBoardPicker = true
+                                        } else {
+                                            audio.play(.gameStart)
+                                            activeMode = mode
                                         }
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
                                     }
-                                    .foregroundStyle(BerryStyle.chocolate)
-                                    .padding(14)
-                                    .background(.white.opacity(0.9), in: RoundedRectangle(cornerRadius: 21))
-                                    .overlay(RoundedRectangle(cornerRadius: 21).stroke(.white, lineWidth: 2))
-                                }.buttonStyle(.plain)
+                                }
+                                BerryGridNavigationTile(
+                                    title: "My Strawberry Cottage",
+                                    detail: "Arrange your purchased garden decorations",
+                                    art: "CottageDecorations", caption: "Decorate") {
+                                    audio.play(.menuSelect)
+                                    showHomeCottage = true
+                                }
+                                BerryGridNavigationTile(
+                                    title: "More Adventures",
+                                    detail: "Berry Blitz, Cozy Cottage and Nightmare",
+                                    art: "MoreAdventures", caption: "Explore") {
+                                    audio.play(.menuSelect)
+                                    showMore = true
+                                }
                             }
-                            Button {
-                                audio.play(.menuSelect)
-                                showHomeCottage = true
-                            } label: {
-                                HStack(spacing: 12) {
-                                    BerryIcon(name: "CottageDecorations", size: 53)
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("My Strawberry Cottage").font(.headline)
-                                        Text("Decorate your garden and arrange your collection")
-                                            .font(.caption).foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                }
-                                .foregroundStyle(BerryStyle.chocolate)
-                                .padding(12)
-                                .background(.white, in: RoundedRectangle(cornerRadius: 19))
-                            }.buttonStyle(.plain)
-                            Button {
-                                audio.play(.menuSelect)
-                                showMore = true
-                            } label: {
-                                HStack(spacing: 12) {
-                                    BerryIcon(name: "MoreAdventures", size: 52)
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text("More Adventures").font(.headline)
-                                        Text("Blitz • Cozy Cottage • Nightmare").font(.caption)
-                                    }
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                }
-                                .foregroundStyle(BerryStyle.chocolate)
-                                .padding(12)
-                                .background(.white, in: RoundedRectangle(cornerRadius: 19))
-                            }.buttonStyle(.plain)
                             HStack(spacing: 12) {
                                 Button { showCollection = true } label: {
                                     VStack(spacing: 4) {
