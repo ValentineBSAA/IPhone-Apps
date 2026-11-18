@@ -183,7 +183,7 @@ struct BerryDailyHarvestView: View {
                     Text("Daily Harvest Calendar")
                         .font(.system(size: 26, weight: .black, design: .rounded))
                         .foregroundStyle(BerryStyle.strawberry)
-                    Text("One daily challenge, refreshed at local midnight. Seven sweet days unlock the biggest harvest.")
+                    Text("One attempt per day. Win or lose, there are no retries. An unfinished game can resume later today. New challenges unlock at local midnight.")
                         .font(.subheadline).multilineTextAlignment(.center)
                     HStack(spacing: 8) {
                         info("Today", value: Date().formatted(.dateTime.month(.abbreviated).day()))
@@ -218,10 +218,18 @@ struct BerryDailyHarvestView: View {
                     .background(.white.opacity(0.86), in: RoundedRectangle(cornerRadius: 17))
                     VStack(spacing: 7) {
                         Text("TODAY'S OBJECTIVE").font(.caption.bold())
-                        Text("Score \(goal) points").font(.title3.bold())
-                        Text(BerryDailyHistory.completed.contains(BerryDailyHistory.dateKey(for: Date())) ?
-                             "✓ Today's challenge completed" : "Not completed yet")
-                            .foregroundStyle(BerryStyle.leaf)
+                        BerryCandyNumber(value: "Score \(goal) points", size: 21)
+                        Text(BerryDailyHistory.outcome() == .won ? "✓ Won today!" :
+                             BerryDailyHistory.outcome() == .lost ? "✕ Lost today · No retries" :
+                             BerryDailyHistory.outcome() == .active ? "▶ Your one attempt is in progress" :
+                             "Ready for your one daily attempt")
+                            .font(.system(size: 13, weight: .heavy, design: .rounded))
+                            .foregroundStyle(BerryDailyHistory.outcome() == .lost ?
+                                BerryStyle.strawberry : BerryStyle.leaf)
+                        HStack(spacing: 10) {
+                            BerryCandyNumber(value: "\(BerryDailyHistory.wins) Wins", size: 15)
+                            BerryCandyNumber(value: "\(BerryDailyHistory.losses) Losses", size: 15)
+                        }
                     }
                     .padding(14).frame(maxWidth: .infinity)
                     .background(.white, in: RoundedRectangle(cornerRadius: 20))
@@ -253,26 +261,29 @@ struct BerryDailyHarvestView: View {
                         ForEach(0..<42, id: \.self) { index in
                             if let day = date(at: index) {
                                 let complete = BerryDailyHistory.completed.contains(BerryDailyHistory.dateKey(for: day))
+                                let lost = BerryDailyHistory.outcome(on: day) == .lost
                                 let today = Calendar.current.isDateInToday(day)
                                 let future = day > Date()
                                 VStack(spacing: 3) {
                                     Text("\(Calendar.current.component(.day, from: day))")
                                         .font(.system(size: 12, weight: .bold))
-                                    Image(systemName: complete ? "checkmark.seal.fill" : today ? "leaf.fill" : "circle")
+                                    Image(systemName: complete ? "checkmark.seal.fill" :
+                                          lost ? "xmark.circle.fill" : today ? "leaf.fill" : "circle")
                                         .font(.system(size: 11))
                                 }
-                                .foregroundStyle(today ? BerryStyle.strawberry : complete ? BerryStyle.leaf : BerryStyle.chocolate)
+                                .foregroundStyle(lost ? Color(red: 0.70, green: 0.18, blue: 0.31) :
+                                    today ? BerryStyle.strawberry : complete ? BerryStyle.leaf : BerryStyle.chocolate)
                                 .opacity(future ? 0.3 : 1)
                                 .frame(maxWidth: .infinity, minHeight: 42)
                                 .background(today ? BerryStyle.softPink : Color.white,
                                             in: RoundedRectangle(cornerRadius: 11))
-                                .accessibilityLabel("\(day.formatted(date: .abbreviated, time: .omitted)), \(complete ? "complete" : (future ? "upcoming" : "not completed"))")
+                                .accessibilityLabel("\(day.formatted(date: .abbreviated, time: .omitted)), \(complete ? "won" : lost ? "lost" : (future ? "upcoming" : "not attempted"))")
                             } else { Color.clear.frame(height: 42) }
                         }
                     }
-                    Text("✓ Completed   🌱 Today   ○ Not completed")
+                    Text("✓ Won   ✕ Lost   🌱 Today   ○ Not attempted")
                         .font(.caption).foregroundStyle(.secondary)
-                    Text("Rewards are awarded once per completed daily challenge. Missed days stay visible, but aren't retroactively playable.")
+                    Text("One attempt per calendar day. Only a win earns the streak reward. Losing ends the attempt; leaving early preserves the same day's board.")
                         .font(.footnote).multilineTextAlignment(.center).foregroundStyle(.secondary)
                 }
                 .padding(20)
