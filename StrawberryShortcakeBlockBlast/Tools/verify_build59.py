@@ -82,6 +82,36 @@ for marker in ("undoPrice = 40", "shufflePrice = 50", "hintPrice = 35",
     assert marker in economy, "Missing 0.5.9 economy rule: " + marker
 assert (root / "Tests" / "BerryEconomyTests.swift").read_text().count("func test") >= 4
 
+# The user's approved Boutique navigation must stay consistent everywhere.
+collection = (root / "BerryBlockBlast" / "BerryCollectionView.swift").read_text()
+village = (root / "BerryBlockBlast" / "BerryProgression.swift").read_text()
+home = (root / "BerryBlockBlast" / "BerryModes.swift").read_text()
+jukebox = (root / "BerryBlockBlast" / "BerryJukeboxView.swift").read_text()
+ui_assets = (root / "BerryBlockBlast" / "BerryUIAssets.swift").read_text()
+score_views = [(root / "BerryBlockBlast" / name).read_text()
+               for name in ("BerryScoreSpotlight.swift", "BerryBlitzHUD.swift")]
+for name, contents in (("Collection", collection), ("Village/Journal/Quests", village),
+                       ("Home", home), ("Jukebox", jukebox)):
+    assert "LazyVGrid(columns:" in contents, name + " lost Boutique-style navigation"
+assert "Picker(\"Collection sections\"" not in collection, "Collection reverted to segmented list"
+assert "BerryGridNavigationTile" in ui_assets and "BerryGridInfoTile" in ui_assets
+for screen, markers in ((collection, ("Personal Records", "LazyVGrid", "BerryGridInfoTile")),
+                        (village, ("Berry Quest Board", "Strawberry Village", "Berry Journal")),
+                        (home, ("More Adventures", "Garden Size", "Berry Blitz Challenges"))):
+    for marker in markers:
+        assert marker in screen, "Missing grid/menu content: " + marker
+for surface in ("surface-cream", "surface-glass", "surface-picnic",
+                "surface-garden", "surface-seed"):
+    assert surface in (root / "BerryBlockBlast" / "BerryBoutiqueView.swift").read_text(), (
+        "Board must be selectable in Frames & Sparkles: " + surface)
+assert "ILLUSTRATED BOARD SURFACES" in (root / "BerryBlockBlast" / "BerryBoutiqueView.swift").read_text()
+for code in (game, ui_assets, *score_views):
+    assert "BerryCandyNumber" in code or "candyNumberGradient" in code, (
+        "Numeric game results lost candy-gradient rendering")
+assert "BerryCandyResultCounter" in game
+print("PASS: Boutique-style card grids, five equip-ready board backgrounds, "
+      "gradient Score/Best/Lines/Moves/Combo and personal records")
+
 session = (root / "BerryBlockBlast" / "BerryGameSession.swift").read_text()
 shop = (root / "BerryBlockBlast" / "BerryBoutiqueView.swift").read_text()
 for source, needle in ((session, 'useGoldenStrawberry()'),
