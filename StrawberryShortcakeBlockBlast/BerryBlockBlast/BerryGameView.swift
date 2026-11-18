@@ -322,6 +322,10 @@ struct BerryGameView: View {
                     dragging: activeDragSlot != nil,
                     fingerKnown: activeDragFinger != nil
                 ),
+                   // The board's clipped ghost takes over for normal modes
+                   // once a target is resolved. Mystery keeps its carried
+                   // piece visible, but masks it to the playable rectangle.
+                   (drag == nil || previewStyle == "mystery"),
                    let slot = activeDragSlot,
                    let finger = activeDragFinger,
                    session.engine.tray.indices.contains(slot),
@@ -332,6 +336,21 @@ struct BerryGameView: View {
                         .shadow(color: BerryStyle.strawberry.opacity(0.3), radius: 9, y: 3)
                         .position(x: finger.x - geo.frame(in: .global).minX,
                                   y: finger.y - geo.frame(in: .global).minY - 58)
+                        .mask {
+                            if drag != nil && boardPosition.rect.width >
+                               BerryGameplayLayout.boardTouchMargin * 2 {
+                                let inner = BerryBoardContainment.playableRect(
+                                    from: boardPosition.rect)
+                                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                                    .frame(width: inner.width, height: inner.height)
+                                    .position(x: inner.midX - geo.frame(in: .global).minX,
+                                              y: inner.midY - geo.frame(in: .global).minY)
+                            } else {
+                                // The carry animation must stay visible while
+                                // travelling from the tray to the board.
+                                Rectangle()
+                            }
+                        }
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
                         .zIndex(40)
@@ -1319,6 +1338,9 @@ struct BerryGameView: View {
                         BerryStrawberryRain().allowsHitTesting(false)
                     }
                 }
+                // Fruit rain and line-clear decorations are confined to the
+                // actual rounded board, never painted over the exterior frame.
+                .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
 
                 // Measure the OUTER touch wrapper, not just the inner painted grid.
                 // Drop geometry subtracts this same rim exactly once for drags and taps.
@@ -1371,6 +1393,12 @@ struct BerryGameView: View {
                         warningFeedback()
                     }
                 })
+                // This decoration is outside the touch tracker and gesture:
+                // altering its appearance cannot shift legal placement cells.
+                .padding(BerryGameplayLayout.gardenFrameInset)
+                .background {
+                    BerryGardenBorder(mode: mode)
+                }
     }
 
     private func pauseTimedClock() {
