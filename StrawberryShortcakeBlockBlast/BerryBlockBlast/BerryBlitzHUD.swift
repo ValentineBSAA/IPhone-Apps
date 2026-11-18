@@ -6,6 +6,9 @@ struct BerryBlitzHUD: View {
     let score: Int
     let best: Int
     let variant: BerryBlitzVariant
+    let deadline: Date?
+    let pausedAt: Date?
+    let running: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -18,14 +21,10 @@ struct BerryBlitzHUD: View {
                 .font(.system(size: 10, weight: .black, design: .rounded))
                 .tracking(1.1)
                 .foregroundStyle(BerryStyle.chocolate.opacity(0.76))
-                Text(String(format: "%01d:%02d", timeLeft / 60, timeLeft % 60))
-                    .font(.system(size: 40, weight: .black, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                    .foregroundStyle(timeLeft <= 10 ?
-                        BerryStyle.urgentTimerGradient : BerryStyle.timerGradient)
-                    .shadow(color: BerryStyle.strawberry.opacity(timeLeft <= 10 ? 0.42 : 0.16), radius: 5)
-                    .animation(reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled ? nil : .easeInOut(duration: 0.18), value: timeLeft)
+                BerryLiveCountdown(deadline: deadline, pausedAt: pausedAt,
+                                   fallbackSeconds: timeLeft, running: running,
+                                   fontSize: 40, label: "Blitz time remaining")
+                    .shadow(color: BerryStyle.strawberry.opacity(0.16), radius: 3)
             }
             Spacer(minLength: 6)
             VStack(alignment: .trailing, spacing: 4) {
