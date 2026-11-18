@@ -19,6 +19,20 @@ enum BerryStyle {
     )
 
 
+    /// Distinct timers: purple berry-glass under normal conditions and
+    /// red-to-gold urgency for the final ten seconds.
+    static let timerGradient = LinearGradient(
+        colors: [Color(red: 0.49, green: 0.18, blue: 0.65),
+                 Color(red: 0.83, green: 0.22, blue: 0.55),
+                 Color(red: 0.94, green: 0.34, blue: 0.43)],
+        startPoint: .topLeading, endPoint: .bottomTrailing)
+
+    static let urgentTimerGradient = LinearGradient(
+        colors: [Color(red: 0.84, green: 0.06, blue: 0.25),
+                 Color(red: 1.00, green: 0.34, blue: 0.17),
+                 Color(red: 1.00, green: 0.66, blue: 0.18)],
+        startPoint: .topLeading, endPoint: .bottomTrailing)
+
     static func color(for tint: Int) -> Color {
         switch (tint % 6 + 6) % 6 {
         case 0: return Color(red: 0.96, green: 0.26, blue: 0.38) // berry red
