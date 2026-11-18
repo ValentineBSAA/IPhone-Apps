@@ -157,7 +157,7 @@ assert (root / "Tests" / "BerryPlaytimeTrackerTests.swift").read_text().count("f
 story_source = (root / "BerryBlockBlast" / "BerryStoryNarrative.swift").read_text()
 story_tests = (root / "Tests" / "BerryStoryNarrativeTests.swift").read_text()
 assert 'The Village in Full Bloom' in story_source, "Twelve-chapter Story progression missing"
-assert 'The Lantern Orchard' in story_source, "Story arc reset too early"
+assert 'Light the Lantern Orchard' in story_source, "Story chapter 7 missing or renamed"
 assert story_tests.count("func test") >= 3, "Story narrative regression tests missing"
 assert 'Chapter story conclusion' in game, "Story victory needs visible narrative text"
 print(f"PASS: Berry Berry Blast 0.5.9 Build 1, {len(names)} art catalogs, "
