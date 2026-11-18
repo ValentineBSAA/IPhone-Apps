@@ -1,0 +1,74 @@
+name: Export Berry Berry Blast 0.5.12 complete source and assets handoff
+on:
+  push:
+    branches: [handoff/berry-berry-blast-0512-20261118]
+    paths:
+      - '.github/workflows/berry-0512-handoff-export.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: berry-0512-full-handoff-export
+  cancel-in-progress: false
+jobs:
+  source-export:
+    name: Archive full reproducible source plus every tracked artwork/audio asset
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact source revision and tracked media
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+          persist-credentials: false
+      - name: Export full project, assets, tests, tools, workflows, and provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p export/PROVENANCE
+          git rev-parse HEAD > export/PROVENANCE/SOURCE_COMMIT.txt
+          git show --no-patch --format=fuller HEAD > export/PROVENANCE/HEAD_COMMIT.txt
+          git log --date=iso-strict --pretty=format:'%H | %ad | %s' -150 \
+            -- StrawberryShortcakeBlockBlast .github/workflows/berry-0512* \
+            .github/workflows/berry-real-iphone-quality-gate.yml \
+            > export/PROVENANCE/RECENT_SOURCE_HISTORY.txt
+          git branch -r > export/PROVENANCE/REMOTE_BRANCHES.txt
+          git status --porcelain=v1 > export/PROVENANCE/WORKTREE_STATUS.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          base=Path("StrawberryShortcakeBlockBlast")
+          required=[
+            "project.yml","BerryBlockBlast/BerryGameView.swift",
+            "BerryBlockBlast/BlockEngine.swift","BerryBlockBlast/BerryTrophyGarden.swift",
+            "BerryBlockBlast/BerryThreePieceTray.swift","BerryBlockBlast/BerryTimedLifecycle.swift",
+            "BerryBlockBlast/BerryLiveCountdown.swift","BerryBlockBlast/BerryDailyHarvestView.swift",
+            "Tests/BerryPhysicalScreenGeometryTests.swift",
+            "Tests/BerryFullTrayRegressionTests.swift",
+            "Tools/verify_0512_art_in_repo.py",
+          ]
+          bad=[f for f in required if not (base/f).is_file()]
+          if bad: raise SystemExit("Incomplete source: "+str(bad))
+          music=list((base/"AudioBuild2/Music").glob("*.m4a"))
+          effects=list((base/"AudioBuild2/Effects").glob("*.wav"))
+          if len(music)<51 or len(effects)<16:
+            raise SystemExit(f"Audio incomplete: {len(music)} music, {len(effects)} effects")
+          image_sets=list((base/"BerryBlockBlast/Assets.xcassets").glob("*.imageset"))
+          print(f"Checked {len(music)} music, {len(effects)} sound effects, {len(image_sets)} image sets")
+          (Path("export")/"PROVENANCE"/"MEDIA_COUNTS.txt").write_text(
+            f"AudioBuild2/Music: {len(music)} .m4a\n"
+            f"AudioBuild2/Effects: {len(effects)} .wav\n"
+            f"Assets.xcassets: {len(image_sets)} .imageset\n")
+          PY
+          find StrawberryShortcakeBlockBlast .github/workflows \
+            -type f -print0 | sort -z | xargs -0 sha256sum > export/PROVENANCE/SOURCE_FILE_SHA256.txt
+          tar -cf - StrawberryShortcakeBlockBlast .github/workflows | gzip -1 > export/Berry_0512_FULL_SOURCE_AND_MEDIA.tar.gz
+          sha256sum export/Berry_0512_FULL_SOURCE_AND_MEDIA.tar.gz > export/PROVENANCE/SOURCE_ARCHIVE_SHA256.txt
+          ls -lh export/Berry_0512_FULL_SOURCE_AND_MEDIA.tar.gz
+      - name: Upload complete source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-Berry-Blast-v0.5.12-HANDOFF-FULL-SOURCE-AND-MEDIA
+          path: export/
+          retention-days: 30
+          compression-level: 0
