@@ -18,7 +18,6 @@ private struct BerryBoard: View {
     let mode: BerryMode
     let strawberryUnlocked: Bool
     let previewStyle: String
-    let onBoardRect: (CGRect) -> Void
     // Removed rejected decorative board surfaces and frames in Build 3.
     // Saved cosmetic entitlements remain in storage, but the playable board
     // always uses a clean, high-contrast grid with a single thin rim.
@@ -118,8 +117,6 @@ private struct BerryBoard: View {
                     .allowsHitTesting(false)
             }
         }
-        // Both the touch receiver and this anchor measure UIWindow coordinates.
-        .background(BerryBoardWindowAnchor(onRect: onBoardRect, tracksScrolling: false))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Berry garden, \(engine.side) by \(engine.side) puzzle board")
     }
@@ -1419,14 +1416,19 @@ struct BerryGameView: View {
     /// Identical drag and tap physics to verified 0.5.6.
     /// The 24x24 Endless engine presents one full-size 12x12 sector at a time.
     private func boardInteraction(actualSize: CGFloat) -> some View {
-            BerryBoard(engine: session.engine, preview: drag ?? hintPreview, size: actualSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle, onBoardRect: { rect in boardPosition.rect = rect })
+            BerryBoard(engine: session.engine, preview: drag ?? hintPreview, size: actualSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle)
                 .overlay {
                     if strawberryRain && !reduceMotion {
                         BerryStrawberryRain().allowsHitTesting(false)
                     }
                 }
 
-                .padding(3)
+                // Measure the OUTER touch wrapper, not just the inner painted grid.
+                // Drop geometry subtracts this same rim exactly once for drags and taps.
+                .padding(BerryGameplayLayout.boardTouchMargin)
+                .background(BerryBoardWindowAnchor(
+                    onRect: { rect in boardPosition.rect = rect },
+                    tracksScrolling: false))
                 .contentShape(Rectangle())
                 .gesture(SpatialTapGesture().onEnded { tap in
                     let location = tap.location
@@ -1450,12 +1452,13 @@ struct BerryGameView: View {
                     guard canMakeMove, let slot = selectedSlot,
                           session.engine.tray.indices.contains(slot),
                           let piece = session.engine.tray[slot] else { return }
-                    // Tap coordinates are local to the 3-point padded board wrapper.
-                    // Resolve using the same cell-origin logic as drag placement.
-                    let local = CGPoint(x: location.x - 3, y: location.y - 3)
-                    let area = CGRect(origin: .zero, size: CGSize(width: actualSize, height: actualSize))
+                    // SpatialTapGesture uses wrapper-local coordinates. Do not
+                    // pre-subtract the rim: DropGeometry handles it exactly once.
+                    let wrapperSize = actualSize + 2 * BerryGameplayLayout.boardTouchMargin
+                    let area = CGRect(origin: .zero,
+                                      size: CGSize(width: wrapperSize, height: wrapperSize))
                     guard let target = BerryDropGeometry.target(
-                        for: local, board: area, piece: piece,
+                        for: location, board: area, piece: piece,
                         side: session.engine.visibleSide
                     ) else {
                         warningFeedback()
