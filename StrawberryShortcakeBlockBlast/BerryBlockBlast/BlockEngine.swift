@@ -137,6 +137,24 @@ struct BerryEngine: Codable {
         let row: Int
         let col: Int
     }
+    /// An accessibility guide for the scrolling 24x24 Endless board. Prefer
+    /// a placement in the initial visible corner (roughly 12x12 cells) and
+    /// only search the rest of the board if those positions are occupied.
+    /// This never spends a purchased hint or modifies puzzle state.
+    func suggestedEndlessMove() -> BerryHint? {
+        guard side == 24 else { return suggestedMove() }
+        for row in 0..<min(side, 12) {
+            for col in 0..<min(side, 12) {
+                for (slot, candidate) in tray.enumerated() {
+                    if let piece = candidate, canPlace(piece, row: row, col: col) {
+                        return BerryHint(slot: slot, row: row, col: col)
+                    }
+                }
+            }
+        }
+        return suggestedMove()
+    }
+
     /// Offer a legal slot and exact position. Prefer completing lines; never
     /// rotate or resize pieces. Hint is advisory and does not place a piece.
     func suggestedMove() -> BerryHint? {
