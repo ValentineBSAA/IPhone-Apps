@@ -26,41 +26,68 @@ struct BerryBoutiqueView: View {
     @State private var selectedCategory: Category?
     @State private var confirmRestoreAllAppearance = false
 
+    @State private var boardSubmenu: BoardSubmenu?
+    @State private var cosmeticFilter = 0
+    @AppStorage("berryberryblast.frame.overlay.v0511") private var overlayFrame = "original"
+
+    private enum BoardSubmenu { case surfaces, frames }
+
     private enum Category: String, CaseIterable, Identifiable {
-        case blocks, frames, helpers, special, cottage, inventory
+        case boardStudio, blocks, sparkleStudio, seasonal, helpers, special, cottage, inventory, restore
         var id: String { rawValue }
         var title: String {
             switch self {
+            case .boardStudio: return "Board Studio"
             case .blocks: return "Block Styles"
-            case .frames: return "Frames & Sparkles"
+            case .sparkleStudio: return "Sparkle Studio"
+            case .seasonal: return "Seasonal Shop"
             case .helpers: return "Garden Helpers"
-            case .special: return "Special Tools & Upgrades"
+            case .special: return "Special Tools"
             case .cottage: return "Cottage Decor"
-            case .inventory: return "My Items"
+            case .inventory: return "My Inventory"
+            case .restore: return "Restore Looks"
             }
         }
         var subtitle: String {
             switch self {
-            case .blocks: return "Make every berry block yours"
-            case .frames: return "Illustrated boards, borders and effects"
-            case .helpers: return "Undo, Shuffle and Berry Hint"
-            case .special: return "Powerful one-use tools and permanent abilities"
-            case .cottage: return "Build your strawberry garden"
-            case .inventory: return "Owned cosmetics and supplies"
+            case .boardStudio: return "Surfaces & outside frames"
+            case .blocks: return "Your glossy candy squares"
+            case .sparkleStudio: return "Glows and finishing effects"
+            case .seasonal: return "Birthdays, Christmas & more"
+            case .helpers: return "Undo, Shuffle & Berry Hint"
+            case .special: return "Premium garden powers"
+            case .cottage: return "Village decorations"
+            case .inventory: return "Owned and equipped items"
+            case .restore: return "Original appearance"
             }
         }
         var symbol: String {
             switch self {
-            case .blocks: return "square.grid.3x3.fill"
-            case .frames: return "sparkles"
+            case .boardStudio: return "square.grid.3x3.fill"
+            case .blocks: return "square.stack.3d.up.fill"
+            case .sparkleStudio: return "sparkles"
+            case .seasonal: return "gift.fill"
             case .helpers: return "wand.and.stars"
             case .special: return "crown.fill"
             case .cottage: return "house.fill"
             case .inventory: return "shippingbox.fill"
+            case .restore: return "arrow.uturn.backward.circle.fill"
+            }
+        }
+        var artwork: String {
+            switch self {
+            case .boardStudio: return "BBBIconBoard"
+            case .blocks: return "BBBIconBlocks"
+            case .sparkleStudio: return "BBBIconSparkle"
+            case .seasonal: return "BBBIconSeasonal"
+            case .helpers: return "BBBIconTools"
+            case .special: return "BBBIconTools"
+            case .cottage: return "BBBIconHome"
+            case .inventory: return "BBBIconInventory"
+            case .restore: return "BBBIconRestore"
             }
         }
     }
-
 
     private let items = [
         BerryBoutiqueItem(id: "default", name: "Original Candy Squares",
@@ -154,10 +181,12 @@ struct BerryBoutiqueView: View {
                 HStack(spacing: 9) {
                     Button {
                         withAnimation(.easeInOut(duration: 0.18)) {
-                            self.selectedCategory = nil
+                            if boardSubmenu != nil { boardSubmenu = nil }
+                            else { self.selectedCategory = nil }
                         }
                     } label: {
-                        Label("Back to Boutique", systemImage: "chevron.left")
+                        Label(boardSubmenu != nil ? "Back to Board Studio" : "Back to Boutique",
+                              systemImage: "chevron.left")
                             .font(.system(size: 12, weight: .heavy, design: .rounded))
                     }
                     .buttonStyle(.bordered)
@@ -192,20 +221,14 @@ struct BerryBoutiqueView: View {
     private func categoryTile(_ category: Category) -> some View {
         Button {
             withAnimation(.easeInOut(duration: 0.18)) {
+                boardSubmenu = nil
+                cosmeticFilter = 0
                 selectedCategory = category
             }
         } label: {
             VStack(spacing: 8) {
-                Group {
-                    switch category {
-                    case .blocks: BerryIcon(name: "BerryClassic", size: 73)
-                    case .frames: BerryIcon(name: "Milestone", size: 73)
-                    case .helpers: BerryIcon(name: "BerryHint", size: 73)
-                    case .special: Image("PremiumToolsCategory").resizable().scaledToFit()
-                    case .cottage: BerryIcon(name: "CottageDecorations", size: 73)
-                    case .inventory: BerryIcon(name: "BerryCollection", size: 73)
-                    }
-                }
+                BerryApprovedArtwork(name: category.artwork,
+                                    fallback: category.symbol, size: 73)
                 .frame(width: 73, height: 73)
                 .background(BerryStyle.softPink.opacity(0.8),
                             in: RoundedRectangle(cornerRadius: 17))
@@ -233,65 +256,96 @@ struct BerryBoutiqueView: View {
     private func section(_ category: Category) -> some View {
         switch category {
         case .blocks:
+            filterPicker
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
                                 GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                ForEach(items.filter { $0.type == "blocks" }) { item in itemCard(item) }
+                ForEach(filteredItems(type: "blocks")) { item in itemCard(item) }
             }
-        case .frames:
-            Button {
-                boardSurface = "original"
-                borderSkin = "default"
-            } label: {
-                Label("RESTORE ORIGINAL BOARD ONLY", systemImage: "square.grid.3x3.fill")
-                    .font(.system(size: 12, weight: .black, design: .rounded))
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(BerryStyle.leaf)
-            Text("This restores empty squares and their frame. Your selected puzzle blocks stay unchanged.")
-                .font(.caption)
-                .foregroundStyle(BerryStyle.chocolate.opacity(0.74))
-            Button {
-                confirmRestoreAllAppearance = true
-            } label: {
-                Label("RESTORE ALL COSMETIC DEFAULTS", systemImage: "paintpalette.fill")
-                    .font(.system(size: 12, weight: .black, design: .rounded))
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .tint(BerryStyle.strawberry)
-            .confirmationDialog(
-                "Also restore your selected block skin?",
-                isPresented: $confirmRestoreAllAppearance,
-                titleVisibility: .visible) {
-                    Button("Restore All Cosmetic Defaults") {
-                        blockSkin = "default"
-                        boardSurface = "original"
-                        borderSkin = "default"
-                        sparkleSkin = "default"
-                        if sound { BerryAudio.shared.play(.menuSelect) }
+        case .boardStudio:
+            if let boardSubmenu {
+                if boardSubmenu == .surfaces {
+                    filterPicker
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                        GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                        ForEach(filteredItems(type: "surfaces")) { item in itemCard(item) }
                     }
-                    Button("Cancel", role: .cancel) {}
-                } message: {
-                    Text("Your chosen blocks will return to the original style. Purchased cosmetics, scores and strawberries are not erased.")
+                } else {
+                    Text("Frames sit outside your grid. Original empty squares and your selected candy blocks never change.")
+                        .font(.caption).foregroundStyle(BerryStyle.chocolate)
+                    BerryBoardFrameGrid()
+                    Text("ORIGINAL COLOR FRAMES")
+                        .font(.system(size: 12, weight: .black, design: .rounded))
+                        .foregroundStyle(BerryStyle.strawberry)
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                        GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                        ForEach(items.filter { $0.type == "frames" }) { item in itemCard(item) }
+                    }
                 }
-            Text("BOARD SURFACES · ORIGINAL + OPTIONAL")
-                .font(.system(size: 12, weight: .black, design: .rounded))
-                .foregroundStyle(BerryStyle.strawberry)
-            Text("The original 0.5.8 board and all five illustrated surfaces are included. Every look keeps clear square outlines.")
+            } else {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                    GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                    Button {
+                        withAnimation { boardSubmenu = .surfaces }
+                    } label: {
+                        BerryGridInfoTile(title: "Board Surfaces", detail: "Original + five optional empty square designs",
+                                         art: "BerryBoardCreamCell", value: "Open Studio")
+                    }.buttonStyle(.plain)
+                    Button {
+                        withAnimation { boardSubmenu = .frames }
+                    } label: {
+                        BerryGridInfoTile(title: "Decorative Frames", detail: "Christmas, birthday, blossoms and more",
+                                         art: "Milestone", value: "Open Frames")
+                    }.buttonStyle(.plain)
+                }
+            }
+        case .sparkleStudio:
+            Text("Your current sparkles remain equipped until you change them.")
                 .font(.caption).foregroundStyle(BerryStyle.chocolate)
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
                                 GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                ForEach(items.filter { $0.type == "surfaces" }) { item in itemCard(item) }
+                ForEach(items.filter { $0.type == "sparkles" }) { item in itemCard(item) }
+                BerryGridInfoTile(title: "Original Sparkles",
+                                 detail: "Default subtle clear and combo effects",
+                                 art: "Milestone", value: sparkleSkin == "default" ? "Equipped" : "Included")
             }
-            Text("FRAMES & SPARKLES")
-                .font(.system(size: 12, weight: .black, design: .rounded))
-                .foregroundStyle(BerryStyle.strawberry)
+            Button("Restore Original Sparkles") { sparkleSkin = "default" }
+                .buttonStyle(.bordered)
+                .tint(BerryStyle.leaf)
+        case .seasonal:
+            BerryBoardFrameGrid(seasonalOnly: true)
+        case .restore:
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
                                 GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                ForEach(items.filter { $0.type == "frames" || $0.type == "sparkles" }) {
-                    item in itemCard(item)
+                Button {
+                    boardSurface = "original"
+                    overlayFrame = "original"
+                    borderSkin = "default"
+                } label: {
+                    BerryGridInfoTile(title: "Original Board Only",
+                                     detail: "Keeps your chosen block style",
+                                     art: "BerryClassic", value: "Restore")
+                }.buttonStyle(.plain)
+                Button {
+                    confirmRestoreAllAppearance = true
+                } label: {
+                    BerryGridInfoTile(title: "All Cosmetic Defaults",
+                                     detail: "Blocks, board, frames and sparkles",
+                                     art: "BerryCollection", value: "Confirm")
+                }.buttonStyle(.plain)
+            }
+            .confirmationDialog("Restore original cosmetic appearance?",
+                                isPresented: $confirmRestoreAllAppearance,
+                                titleVisibility: .visible) {
+                Button("Restore All Cosmetics") {
+                    boardSurface = "original"
+                    overlayFrame = "original"
+                    blockSkin = "default"
+                    borderSkin = "default"
+                    sparkleSkin = "default"
                 }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Your wallet, inventory, scores and saves will not be erased.")
             }
         case .helpers:
             Text("Helpers are unavailable in Berry Classic and timed modes.")
@@ -398,6 +452,39 @@ struct BerryBoutiqueView: View {
                 ForEach(items.filter { session.ownedCosmetics.contains($0.id) }) { item in
                     itemCard(item)
                 }
+            }
+        }
+    }
+
+    private var filterPicker: some View {
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 8),
+                            GridItem(.flexible(), spacing: 8)], spacing: 8) {
+            ForEach(0..<3, id: \.self) { state in
+                Button {
+                    cosmeticFilter = state
+                } label: {
+                    Text(["All Looks", "Owned", "Equipped"][state])
+                        .font(.system(size: 12, weight: .heavy, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(cosmeticFilter == state ? BerryStyle.softPink : .white,
+                                    in: RoundedRectangle(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(cosmeticFilter == state ? BerryStyle.leaf :
+                                          BerryStyle.strawberry.opacity(0.25), lineWidth: 1.2))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func filteredItems(type: String) -> [BerryBoutiqueItem] {
+        items.filter { item in
+            guard item.type == type else { return false }
+            switch cosmeticFilter {
+            case 1: return item.price == 0 || session.ownedCosmetics.contains(item.id)
+            case 2: return active(item)
+            default: return true
             }
         }
     }
