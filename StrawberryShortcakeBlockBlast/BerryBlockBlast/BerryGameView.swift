@@ -69,8 +69,10 @@ private struct BerryBoard: View {
             RoundedRectangle(cornerRadius: 22)
                 .fill(gardenBorder)
                 .overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(.white.opacity(0.8), lineWidth: 3) }
-                .padding(-7)
-                .shadow(color: BerryStyle.strawberry.opacity(0.22), radius: 15, y: 8)
+                // A compact frame around real playable cells, rather than
+                // a second huge invisible edge that competes for space.
+                .padding(-3)
+                .shadow(color: BerryStyle.strawberry.opacity(0.15), radius: 5, y: 2)
             ForEach(0..<(side * side), id: \.self) { i in
                 let r = i / side
                 let c = i % side
@@ -478,7 +480,7 @@ struct BerryGameView: View {
                     Spacer(minLength: 0)
                 }
                 .disabled(isPaused)
-                .padding(.horizontal, 5)
+                .padding(.horizontal, 3)
                 .padding(.top, max(6, top * 0.18))
                 .padding(.bottom, max(6, bottom * 0.18))
                 .frame(maxWidth: 510)
@@ -1433,7 +1435,7 @@ struct BerryGameView: View {
                     }
                 }
 
-                .padding(7)
+                .padding(3)
                 .contentShape(Rectangle())
                 .gesture(SpatialTapGesture().onEnded { tap in
                     let location = tap.location
@@ -1441,8 +1443,8 @@ struct BerryGameView: View {
                         let side = session.engine.visibleSide
                         let cell = (actualSize - CGFloat(side - 1) * 3) / CGFloat(side) + 3
                         let origin = session.engine.sectionOrigin
-                        let row = Int(floor((location.y - 7) / cell)) + origin.row
-                        let col = Int(floor((location.x - 7) / cell)) + origin.col
+                        let row = Int(floor((location.y - 3) / cell)) + origin.row
+                        let col = Int(floor((location.x - 3) / cell)) + origin.col
                         let worked = special == "trowel" ?
                             session.useGoldenTrowel(row: row, col: col) :
                             session.useStarberrySeed(row: row, col: col)
@@ -1457,9 +1459,9 @@ struct BerryGameView: View {
                     guard canMakeMove, let slot = selectedSlot,
                           session.engine.tray.indices.contains(slot),
                           let piece = session.engine.tray[slot] else { return }
-                    // Tap coordinates are local to the 7-point padded board wrapper.
+                    // Tap coordinates are local to the 3-point padded board wrapper.
                     // Resolve using the same cell-origin logic as drag placement.
-                    let local = CGPoint(x: location.x - 7, y: location.y - 7)
+                    let local = CGPoint(x: location.x - 3, y: location.y - 3)
                     let area = CGRect(origin: .zero, size: CGSize(width: actualSize, height: actualSize))
                     guard let target = BerryDropGeometry.target(
                         for: local, board: area, piece: piece,
