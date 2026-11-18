@@ -40,10 +40,29 @@ enum BerryDailyHistory {
         return record.engine
     }
 
+    /// At local midnight, a still-open attempt from yesterday expires as
+    /// a loss. The new calendar day remains unspent and may start normally.
+    static func expirePriorAttemptIfNeeded(defaults: UserDefaults = .standard) {
+        guard var record = loadAttempt(defaults: defaults),
+              record.outcome == .active,
+              record.day != dateKey(for: Date()) else { return }
+        var results = defaults.dictionary(forKey: resultsKey) as? [String:String] ?? [:]
+        if results[record.day] == nil || results[record.day] == Outcome.active.rawValue {
+            results[record.day] = Outcome.lost.rawValue
+            defaults.set(results, forKey: resultsKey)
+        }
+        record.outcome = .lost
+        record.engine = nil
+        if let saved = try? JSONEncoder().encode(record) {
+            defaults.set(saved, forKey: attemptKey)
+        }
+    }
+
     /// Consumes the day's attempt immediately, before the first placement.
     /// Existing in-progress attempts can resume, but finished ones cannot.
     @discardableResult
     static func beginToday(defaults: UserDefaults = .standard) -> Bool {
+        expirePriorAttemptIfNeeded(defaults: defaults)
         if let current = outcome(defaults: defaults) { return current == .active }
         let attempt = Attempt(day: dateKey(for: Date()), outcome: .active, engine: nil)
         if let encoded = try? JSONEncoder().encode(attempt) {
@@ -121,6 +140,7 @@ enum BerryDailyHistory {
         rewardLadder[min(6, max(0, day - 1))]
     }
     static var nextStreakDay: Int {
+        if outcome() == .lost { return 1 }
         let today = Calendar.current.startOfDay(for: Date())
         guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today) else { return 1 }
         guard completed.contains(dateKey(for: yesterday)) else { return 1 }
@@ -134,10 +154,11 @@ enum BerryDailyHistory {
         return min(10000, count + 1)
     }
     static var rewardToday: Int {
-        if completed.contains(dateKey(for: Date())) { return 0 }
+        if outcome() == .won || outcome() == .lost { return 0 }
         return reward(forStreakDay: nextStreakDay)
     }
     static var streak: Int {
+        if outcome() == .lost { return 0 }
         let dates = completed
         var day = Calendar.current.startOfDay(for: Date())
         if !dates.contains(dateKey(for: day)),
@@ -208,7 +229,9 @@ struct BerryDailyHarvestView: View {
                                             BerryStyle.softPink : Color.white, in: RoundedRectangle(cornerRadius: 9))
                             }
                         }
-                        Text(BerryDailyHistory.rewardToday > 0 ?
+                        Text(BerryDailyHistory.outcome() == .lost ?
+                             "Today's attempt ended in a loss. New challenge tomorrow!" :
+                             BerryDailyHistory.rewardToday > 0 ?
                              "Complete today's harvest for 🍓 \(BerryDailyHistory.rewardToday)" :
                              "Today's reward collected. Come back tomorrow!")
                             .font(.system(size: 12, weight: .heavy, design: .rounded))
