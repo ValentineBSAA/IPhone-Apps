@@ -232,14 +232,46 @@ struct BerryPieceGlyph: View {
     var strawberryUnlocked = false
 
     var body: some View {
+        let width = CGFloat(piece.width) * unit
+        let height = CGFloat(piece.height) * unit
+        let tileSide = max(3, unit - 2)
+
+        // The fallback is drawn by Canvas independently of the dynamic
+        // images used by BerryTile. A valid, tappable piece can therefore
+        // never disappear because an asset, theme, or GeometryReader fails
+        // to produce visible pixels. This also uses explicit cell coordinates
+        // rather than relying on SwiftUI's offset layout negotiation.
         ZStack(alignment: .topLeading) {
+            Canvas { context, _ in
+                for cell in piece.points {
+                    let rect = CGRect(
+                        x: CGFloat(cell.col) * unit,
+                        y: CGFloat(cell.row) * unit,
+                        width: tileSide, height: tileSide
+                    )
+                    let shape = Path(roundedRect: rect,
+                                     cornerRadius: max(2, unit * 0.16))
+                    context.fill(shape, with: .color(BerryStyle.color(for: piece.tint)))
+                    context.stroke(shape, with: .color(.white.opacity(0.88)),
+                                   lineWidth: max(1, unit * 0.065))
+                }
+            }
+            .frame(width: width, height: height)
+            .allowsHitTesting(false)
+
             ForEach(piece.points, id: \.self) { cell in
-                BerryTile(tint: piece.tint, mode: mode, strawberryUnlocked: strawberryUnlocked)
-                    .frame(width: unit - 2, height: unit - 2)
-                    .offset(x: CGFloat(cell.col) * unit, y: CGFloat(cell.row) * unit)
+                BerryTile(tint: piece.tint, mode: mode,
+                          strawberryUnlocked: strawberryUnlocked)
+                    .frame(width: tileSide, height: tileSide)
+                    .position(
+                        x: CGFloat(cell.col) * unit + tileSide / 2,
+                        y: CGFloat(cell.row) * unit + tileSide / 2
+                    )
+                    .allowsHitTesting(false)
             }
         }
-        .frame(width: CGFloat(piece.width) * unit, height: CGFloat(piece.height) * unit, alignment: .topLeading)
+        .frame(width: width, height: height, alignment: .topLeading)
+        .accessibilityLabel("Visible \(piece.points.count)-square berry piece")
     }
 }
 
