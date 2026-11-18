@@ -7,6 +7,7 @@ struct BerryCollectionView: View {
     let onOpenBoutique: () -> Void
     @State private var section: Int? = nil
     @ObservedObject private var playtime = BerryPlaytimeTracker.shared
+    @ObservedObject private var economy = BerryEconomyLedger.shared
     @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
     @AppStorage("berryblockblast.shop.equippedBorder.v056b2") private var borderSkin = "default"
     @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkleSkin = "default"
@@ -76,7 +77,7 @@ struct BerryCollectionView: View {
                         .buttonStyle(.bordered)
                         .tint(BerryStyle.strawberry)
                         Spacer(minLength: 3)
-                        Text(["Collection", "Inventory", "Awards", "Records", "Playtime"][section])
+                        Text(["Collection", "Inventory", "Awards", "Records", "Playtime", "Economy"][section])
                             .font(.system(size: 15, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry)
                     }
@@ -85,7 +86,8 @@ struct BerryCollectionView: View {
                     case 1: inventoryContent
                     case 2: awardsContent
                     case 3: recordsContent
-                    default: playtimeContent
+                    case 4: playtimeContent
+                    default: economyContent
                     }
                 } else {
                     Text("EXPLORE YOUR BERRY TREASURES")
@@ -120,6 +122,12 @@ struct BerryCollectionView: View {
                             art: "DailyHarvest",
                             caption: "⏱ My Playtime") {
                                 withAnimation { section = 4 }
+                            }
+                        BerryGridNavigationTile(
+                            title: "Berry Economy",
+                            detail: "Real earnings, purchases and savings goals",
+                            art: "HarvestReward", caption: "My Strawberry Wallet") {
+                                withAnimation { section = 5 }
                             }
                         BerryGridNavigationTile(
                             title: "Berry Boutique", detail: "Shop for new garden treasures",
@@ -307,6 +315,12 @@ struct BerryCollectionView: View {
                         value: record.2 > 0 ? BerryNumbers.compact(record.2) : "Not yet")
                 }
             }
+            sectionHeader("BERRY ECONOMY & PLAYTIME")
+            BerryGridNavigationTile(
+                title: "Berry Economy", detail: "Balance, income and recorded spending",
+                art: "HarvestReward", caption: "My Wallet") {
+                    withAnimation { section = 5 }
+                }
             sectionHeader("YOUR PLAYTIME LEADERBOARD")
             BerryGridNavigationTile(
                 title: "Playtime & Sessions",
@@ -389,6 +403,62 @@ struct BerryCollectionView: View {
                         title: day.label, detail: "Total app playtime",
                         art: "DailyHarvest",
                         value: BerryPlaytimeTracker.display(day.seconds))
+                }
+            }
+        }
+    }
+
+    private var economyContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("YOUR STRAWBERRY ECONOMY")
+            Text("Prices are unchanged. The balance and lifetime earnings are real; spending and mode breakdowns are recorded only from 0.5.10 onward, without inventing past purchases.")
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.76))
+            LazyVGrid(columns: gridColumns, spacing: 11) {
+                BerryGridInfoTile(title: "Berry Wallet",
+                                 detail: "Available strawberries to spend",
+                                 art: "HarvestReward",
+                                 value: BerryNumbers.compact(session.berries))
+                BerryGridInfoTile(title: "Lifetime Earned",
+                                 detail: "Preserved from previous versions",
+                                 art: "Champion",
+                                 value: BerryNumbers.compact(session.totalEarnedBerries))
+                BerryGridInfoTile(title: "Spent Since 0.5.10",
+                                 detail: "Actual purchases tracked after this update",
+                                 art: "ShopBasket",
+                                 value: BerryNumbers.compact(economy.spent))
+                BerryGridInfoTile(title: "Daily Rescue Budget",
+                                 detail: "Golden Strawberry: 250; Shuffle: 50",
+                                 art: "GoldenStrawberry",
+                                 value: session.berries >= 250 ? "Rescue Ready" :
+                                     "\(max(0, 250 - session.berries)) to Go")
+            }
+            sectionHeader("LINE EARNINGS BY MODE · FROM 0.5.10")
+            LazyVGrid(columns: gridColumns, spacing: 11) {
+                ForEach(BerryMode.allCases) { mode in
+                    BerryGridInfoTile(title: mode.rawValue,
+                                     detail: "Strawberries earned from cleared lines",
+                                     art: mode == .story ? "BerryStory" :
+                                          mode == .daily ? "DailyHarvest" :
+                                          mode == .challenge ? "Milestone" : "SweetEndless",
+                                     value: BerryNumbers.compact(
+                                        economy.earnedByMode[mode.rawValue, default: 0]))
+                }
+            }
+            sectionHeader("ACTUAL SPENDING BY ITEM")
+            if economy.spentByItem.isEmpty {
+                BerryGridInfoTile(title: "No purchases tracked yet",
+                                 detail: "Your existing purchases are preserved; new spending will appear here.",
+                                 art: "ShopBasket", value: "0 🍓")
+            } else {
+                LazyVGrid(columns: gridColumns, spacing: 11) {
+                    ForEach(economy.spentByItem.keys.sorted(), id: \.self) { item in
+                        BerryGridInfoTile(title: item,
+                                         detail: "Strawberries spent since 0.5.10",
+                                         art: "ShopBasket",
+                                         value: BerryNumbers.compact(
+                                            economy.spentByItem[item, default: 0]))
+                    }
                 }
             }
         }
