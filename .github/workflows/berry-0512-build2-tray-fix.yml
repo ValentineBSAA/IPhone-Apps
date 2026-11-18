@@ -8,9 +8,6 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-concurrency:
-  group: berry-0512-build2-tray
-  cancel-in-progress: true
 jobs:
   validate-and-package:
     name: Render Test + Complete 48-Image Native 0.5.12 Build 2 IPA
