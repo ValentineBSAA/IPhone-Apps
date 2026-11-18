@@ -464,7 +464,7 @@ struct BerryBoutiqueView: View {
     }
 
     private func itemCard(_ item: BerryBoutiqueItem) -> some View {
-        let included = item.type == "surfaces"
+        let included = item.type == "surfaces" || item.id == "default"
         let owned = included || session.ownedCosmetics.contains(item.id)
         return VStack(spacing: 7) {
             Group {
@@ -526,7 +526,8 @@ struct BerryBoutiqueView: View {
                     if sound { BerryAudio.shared.play(.reward) }
                 }
             } label: {
-                Text(included ? (active(item) ? "✓ Selected" : "Use Board") :
+                Text(included ? (active(item) ? "✓ Selected" :
+                                  item.id == "default" ? "Use Original Blocks" : "Use Board") :
                      owned ? (active(item) ? "Unequip" : "Equip") : "🍓 \(item.price)")
                     .font(.system(size: 11, weight: .black, design: .rounded))
                     .lineLimit(1)
