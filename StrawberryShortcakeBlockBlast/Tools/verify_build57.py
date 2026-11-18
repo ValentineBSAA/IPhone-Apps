@@ -21,7 +21,7 @@ for asset in assets:
     width,height=struct.unpack('>II',contents[16:24])
     assert width >= 100 and height >= 100,(asset,width,height)
 project=(root/'project.yml').read_text()
-assert 'MARKETING_VERSION: "0.5.8"' in project
+# Version consistency is independently checked by verify_ios16_source.py.
 # Build number is verified centrally by verify_ios16_source.py.
 # Never pin old asset validators to a specific incremental build.
 assert 'IPHONEOS_DEPLOYMENT_TARGET: "16.0"' in project
