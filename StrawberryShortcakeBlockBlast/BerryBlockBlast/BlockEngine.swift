@@ -92,6 +92,14 @@ struct BerryEngine: Codable {
     private var randomState: UInt64? = nil
     private var cozyPieces: Bool? = nil
     private var hardPieces: Bool? = nil
+    private var adaptiveProfile: BerryDifficultyProfile? = nil
+    private var adaptiveStage: Int? = nil
+
+    /// Profiles never regenerate the current hand, scores or board.
+    mutating func configureDifficulty(_ profile: BerryDifficultyProfile?, stage: Int = 0) {
+        adaptiveProfile = profile
+        adaptiveStage = max(0, stage)
+    }
     /// These optional fields decode to nil in all 0.5.x saves.
     private(set) var pantryPiece: BerryPiece? = nil
     private(set) var spyglassNext: BerryPiece? = nil
@@ -126,7 +134,8 @@ struct BerryEngine: Codable {
     // Decode the optional mode metadata explicitly so older saves survive upgrades.
     private enum CodingKeys: String, CodingKey {
         case board, tray, score, streak, moves, totalLines, bestCombo
-        case dryMoves, boardClears, seasons, activeGardenSection, gardenPatchMoves, gardenPatchLines, goldenRescueUsed, randomState, cozyPieces, side, hardPieces, pantryPiece, spyglassNext
+        case dryMoves, boardClears, seasons, activeGardenSection, gardenPatchMoves, gardenPatchLines, goldenRescueUsed, randomState, cozyPieces, side, hardPieces, pantryPiece, spyglassNext,
+             adaptiveProfile, adaptiveStage
     }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -148,6 +157,9 @@ struct BerryEngine: Codable {
         goldenRescueUsed = try values.decodeIfPresent(Bool.self, forKey: .goldenRescueUsed) ?? false
         randomState = try values.decodeIfPresent(UInt64.self, forKey: .randomState)
         cozyPieces = try values.decodeIfPresent(Bool.self, forKey: .cozyPieces)
+        adaptiveProfile = try values.decodeIfPresent(BerryDifficultyProfile.self,
+                                                    forKey: .adaptiveProfile)
+        adaptiveStage = try values.decodeIfPresent(Int.self, forKey: .adaptiveStage)
         pantryPiece = try values.decodeIfPresent(BerryPiece.self, forKey: .pantryPiece)
         spyglassNext = try values.decodeIfPresent(BerryPiece.self, forKey: .spyglassNext)
         guard (side == 8 || side == 12 || side == 24), board.count == side,
@@ -545,65 +557,10 @@ struct BerryEngine: Codable {
     }
 
     private mutating func refill() {
-        let catalog: [[BerryPoint]] = [
-            [BerryPoint(row: 0, col: 0)], [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1)], [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0)],
-            [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 0, col: 2)], [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0),BerryPoint(row: 2, col: 0)],
-            [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 1, col: 0),BerryPoint(row: 1, col: 1)],
-            [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0),BerryPoint(row: 1, col: 1)], [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 1, col: 1)],
-            [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0),BerryPoint(row: 2, col: 0),BerryPoint(row: 3, col: 0)], [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 0, col: 2),BerryPoint(row: 0, col: 3)],
-            [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 0, col: 2),BerryPoint(row: 1, col: 1)], [BerryPoint(row: 0, col: 1),BerryPoint(row: 1, col: 0),BerryPoint(row: 1, col: 1),BerryPoint(row: 1, col: 2)],
-            [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0),BerryPoint(row: 2, col: 0),BerryPoint(row: 2, col: 1)], [BerryPoint(row: 0, col: 1),BerryPoint(row: 1, col: 1),BerryPoint(row: 2, col: 0),BerryPoint(row: 2, col: 1)],
-            [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 1, col: 1),BerryPoint(row: 1, col: 2)], [BerryPoint(row: 0, col: 1),BerryPoint(row: 0, col: 2),BerryPoint(row: 1, col: 0),BerryPoint(row: 1, col: 1)],
-            [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 0, col: 2),BerryPoint(row: 1, col: 0),BerryPoint(row: 1, col: 1),BerryPoint(row: 1, col: 2)],
-            [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0),BerryPoint(row: 2, col: 0),BerryPoint(row: 2, col: 1),BerryPoint(row: 2, col: 2)],
-            [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 1, col: 0),BerryPoint(row: 1, col: 1),BerryPoint(row: 2, col: 0),BerryPoint(row: 2, col: 1)],
-            [BerryPoint(row: 0, col: 0),BerryPoint(row: 0, col: 1),BerryPoint(row: 0, col: 2),BerryPoint(row: 0, col: 3),BerryPoint(row: 0, col: 4)],
-            [BerryPoint(row: 0, col: 0),BerryPoint(row: 1, col: 0),BerryPoint(row: 2, col: 0),BerryPoint(row: 3, col: 0),BerryPoint(row: 4, col: 0)]
-        ]
-        // Classic now includes the 3x3 square, 2x3/3x2 rectangles, corners
-        // and zigzags. Old saved trays remain untouched; these appear on refill.
-        let classicExtras: [[BerryPoint]] = [
-            (0..<3).flatMap { r in (0..<3).map { c in BerryPoint(row: r, col: c) } },
-            (0..<2).flatMap { r in (0..<3).map { c in BerryPoint(row: r, col: c) } },
-            (0..<3).flatMap { r in (0..<2).map { c in BerryPoint(row: r, col: c) } },
-            [BerryPoint(0, 0), BerryPoint(1, 0), BerryPoint(2, 0),
-             BerryPoint(2, 1), BerryPoint(2, 2)],
-            [BerryPoint(0, 2), BerryPoint(1, 2), BerryPoint(2, 0),
-             BerryPoint(2, 1), BerryPoint(2, 2)],
-            [BerryPoint(0, 0), BerryPoint(0, 1), BerryPoint(1, 1), BerryPoint(1, 2)],
-            [BerryPoint(0, 1), BerryPoint(0, 2), BerryPoint(1, 0), BerryPoint(1, 1)],
-            [BerryPoint(0, 0), BerryPoint(0, 1), BerryPoint(0, 2),
-             BerryPoint(1, 0), BerryPoint(1, 2)],
-            [BerryPoint(0, 0), BerryPoint(1, 0), BerryPoint(2, 0),
-             BerryPoint(2, 1)],
-            [BerryPoint(0, 1), BerryPoint(1, 1), BerryPoint(2, 1),
-             BerryPoint(2, 0)]
-        ]
-        let classicCatalog = catalog + classicExtras
-
-        // Nightmare uses genuinely larger shapes instead of just more empty
-        // squares. These long and wide pieces demand deliberate space planning.
-        let nightmareShapes: [[BerryPoint]] = [
-            (0..<7).map { BerryPoint(row: 0, col: $0) },
-            (0..<7).map { BerryPoint(row: $0, col: 0) },
-            (0..<3).flatMap { row in (0..<3).map { col in BerryPoint(row: row, col: col) } },
-            (0..<4).flatMap { row in (0..<2).map { col in BerryPoint(row: row, col: col) } },
-            (0..<2).flatMap { row in (0..<4).map { col in BerryPoint(row: row, col: col) } },
-            [BerryPoint(row: 0, col: 0), BerryPoint(row: 1, col: 0), BerryPoint(row: 2, col: 0), BerryPoint(row: 3, col: 0),
-             BerryPoint(row: 3, col: 1), BerryPoint(row: 3, col: 2), BerryPoint(row: 3, col: 3)]
-        ]
-        // The 24x24 Mega Garden needs substantial pieces so full-line clears
-        // remain achievable rather than requiring dozens of single cells.
-        let megaShapes: [[BerryPoint]] = [
-            (0..<4).flatMap { r in (0..<4).map { c in BerryPoint(row: r, col: c) } },
-            (0..<5).flatMap { r in (0..<5).map { c in BerryPoint(row: r, col: c) } },
-            (0..<3).flatMap { r in (0..<6).map { c in BerryPoint(row: r, col: c) } },
-            (0..<6).flatMap { r in (0..<3).map { c in BerryPoint(row: r, col: c) } },
-            (0..<2).flatMap { r in (0..<8).map { c in BerryPoint(row: r, col: c) } },
-            (0..<8).flatMap { r in (0..<2).map { c in BerryPoint(row: r, col: c) } },
-            (0..<9).map { BerryPoint(row: 0, col: $0) },
-            (0..<9).map { BerryPoint(row: $0, col: 0) }
-        ]
+        let catalog = BerryPieceCatalog.standard
+        let classicCatalog = BerryPieceCatalog.classic
+        let nightmareShapes = BerryPieceCatalog.nightmare
+        let megaShapes = BerryPieceCatalog.mega
         // Newly dealt Endless hands contain legal choices, not just one
         // legal shape among two traps. Full-size giant pieces remain available
         // early, but thin rescue pieces become more frequent as space fills.
@@ -630,6 +587,10 @@ struct BerryEngine: Codable {
                 }
             }
         }
+        let visibleOccupied = side == 24 ? occupiedInCurrentPatch :
+            (0..<visibleSide).reduce(0) { count, row in
+                count + (0..<visibleSide).filter { visibleCell(row: row, col: $0) != nil }.count
+            }
         var nextTray: [BerryPiece?] = []
         var used: [[BerryPoint]] = []
         var usedTints: Set<Int> = []
@@ -639,8 +600,16 @@ struct BerryEngine: Codable {
                 hardPieces == true ? (!viable.isEmpty ? viable : selection) :
                 (!viable.isEmpty && (index < 2 || nextRandom(2) == 0) ? viable : classicCatalog)
             // A full hand should not repeat the identical L/line three times.
-            let unique = pool.filter { candidate in !used.contains(candidate) }
-            let choices = unique.isEmpty ? pool : unique
+            let tailored = BerryDifficultyPolicy.preferredShapes(
+                from: pool, profile: adaptiveProfile,
+                occupancy: Double(visibleOccupied) / Double(visibleSide * visibleSide),
+                dryMoves: dryMoves,
+                stage: adaptiveProfile == .endlessAdaptive ? max(adaptiveStage ?? 0, seasons) : (adaptiveStage ?? 0),
+                slot: index,
+                isLegal: { shape in hasPlacement(for: BerryPiece(points: shape, tint: 0)) })
+            let selectedPool = tailored.isEmpty ? pool : tailored
+            let unique = selectedPool.filter { candidate in !used.contains(candidate) }
+            let choices = unique.isEmpty ? selectedPool : unique
             // As a large Endless board fills, always offer a practical small
             // piece in the tray. A near-finished line gets a bridge piece.
             // No other modes have their difficulty rules changed.
@@ -695,6 +664,3 @@ struct BerryEngine: Codable {
     }
 }
 
-private extension BerryPoint {
-    init(_ row: Int, _ col: Int) { self.row = row; self.col = col }
-}
