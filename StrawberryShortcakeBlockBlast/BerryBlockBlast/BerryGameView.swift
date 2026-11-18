@@ -20,7 +20,7 @@ private struct BerryBoard: View {
     let previewStyle: String
     let onBoardRect: (CGRect) -> Void
     @AppStorage("berryblockblast.shop.equippedBorder.v056b2") private var borderSkin = "default"
-    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "cream"
+    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "original"
     private var boardCellArt: String {
         switch boardSurface {
         case "glass": return "BerryBoardCandyGlassCell"
@@ -35,7 +35,16 @@ private struct BerryBoard: View {
         switch borderSkin {
         case "rose-border": return Color(red: 0.91, green: 0.25, blue: 0.55)
         case "mint-border": return Color(red: 0.32, green: 0.73, blue: 0.58)
-        default: return Color(red: 0.98, green: 0.71, blue: 0.79)
+        default:
+            // Mode personality belongs to the *frame*, never to the
+            // readability-critical empty cells or player block choice.
+            switch mode {
+            case .daily: return Color(red: 0.85, green: 0.24, blue: 0.41)
+            case .superHard: return Color(red: 0.43, green: 0.22, blue: 0.60)
+            case .story: return Color(red: 0.95, green: 0.64, blue: 0.76)
+            case .cozy: return Color(red: 0.70, green: 0.79, blue: 0.61)
+            default: return Color(red: 0.98, green: 0.71, blue: 0.79)
+            }
         }
     }
 
@@ -53,33 +62,36 @@ private struct BerryBoard: View {
                 let r = i / side
                 let c = i % side
                 ZStack {
-                    RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
-                        .fill(LinearGradient(colors: [
-                            .white.opacity(0.98),
-                            Color(red: 1, green: 0.90, blue: 0.94),
-                            Color(red: 0.99, green: 0.81, blue: 0.87)
-                        ], startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
-                                .strokeBorder(Color(red: 0.91, green: 0.54, blue: 0.68).opacity(0.5),
-                                              lineWidth: max(0.75, unit * 0.035))
-                        }
-                        .overlay(alignment: .topLeading) {
-                            Circle().fill(.white.opacity(0.72))
-                                .frame(width: max(2, unit * 0.14), height: max(2, unit * 0.14))
-                                .padding(.top, unit * 0.12)
-                                .padding(.leading, unit * 0.13)
-                        }
-                        .overlay {
-                            if UIImage(named: boardCellArt) != nil {
-                                Image(boardCellArt)
-                                    .resizable()
-                                    .interpolation(.high)
-                                    .scaledToFit()
-                                    .frame(width: unit, height: unit)
-                                    .opacity(0.73)
+                    if boardSurface == "original" {
+                        // Exact 0.5.8 corrective board cell: clear, pale,
+                        // square boundaries. Decorative art never covers it.
+                        RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
+                            .fill(Color.white.opacity(0.76))
+                            .overlay(alignment: .topLeading) {
+                                RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
+                                    .strokeBorder(.white.opacity(0.58), lineWidth: 1)
                             }
-                        }
+                    } else {
+                        // Optional boards use restrained art *beneath* visible
+                        // empty-square outlines, not bright fruit-like cells.
+                        RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
+                            .fill(Color.white.opacity(0.76))
+                            .overlay {
+                                if UIImage(named: boardCellArt) != nil {
+                                    Image(boardCellArt)
+                                        .resizable()
+                                        .interpolation(.high)
+                                        .scaledToFit()
+                                        .opacity(0.25)
+                                        .allowsHitTesting(false)
+                                }
+                            }
+                            .overlay {
+                                RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
+                                    .strokeBorder(Color(red: 0.76, green: 0.37, blue: 0.52)
+                                        .opacity(0.48), lineWidth: max(1, unit * 0.045))
+                            }
+                    }
                     if let tint = engine.visibleCell(row: r, col: c) {
                         let blocked = preview?.piece.points.contains(where: {
                             preview!.row + $0.row == r + origin.row &&
@@ -263,7 +275,7 @@ struct BerryGameView: View {
     @State private var showUnlock = false
     @State private var lastBlitzTimeBonus = 0
     @AppStorage("berryblockblast.previewStyle") private var previewStyle = "ghost"
-    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "cream"
+    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "original"
     private let harvestCheers = [
         "🍓 A berry sweet harvest!", "🍰 Piece of strawberry cake!",
         "🌸 The garden is blooming!", "✨ Sweet as sunshine!",
