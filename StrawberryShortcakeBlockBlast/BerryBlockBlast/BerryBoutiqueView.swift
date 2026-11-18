@@ -25,13 +25,14 @@ struct BerryBoutiqueView: View {
     @State private var selectedCategory: Category?
 
     private enum Category: String, CaseIterable, Identifiable {
-        case blocks, frames, helpers, cottage, inventory
+        case blocks, frames, helpers, special, cottage, inventory
         var id: String { rawValue }
         var title: String {
             switch self {
             case .blocks: return "Block Styles"
             case .frames: return "Frames & Sparkles"
             case .helpers: return "Garden Helpers"
+            case .special: return "Special Tools & Upgrades"
             case .cottage: return "Cottage Decor"
             case .inventory: return "My Items"
             }
@@ -41,6 +42,7 @@ struct BerryBoutiqueView: View {
             case .blocks: return "Make every berry block yours"
             case .frames: return "Beautiful borders and effects"
             case .helpers: return "Undo, Shuffle and Berry Hint"
+            case .special: return "Powerful one-use tools and permanent abilities"
             case .cottage: return "Build your strawberry garden"
             case .inventory: return "Owned cosmetics and supplies"
             }
@@ -50,6 +52,7 @@ struct BerryBoutiqueView: View {
             case .blocks: return "square.grid.3x3.fill"
             case .frames: return "sparkles"
             case .helpers: return "wand.and.stars"
+            case .special: return "crown.fill"
             case .cottage: return "house.fill"
             case .inventory: return "shippingbox.fill"
             }
@@ -223,6 +226,18 @@ struct BerryBoutiqueView: View {
             }
             .padding(14)
             .background(.white, in: RoundedRectangle(cornerRadius: 18))
+        case .special:
+            VStack(spacing: 11) {
+                Text("Premium powers for Endless, Berry Story and Cozy Cottage. Classic and timed challenges stay fair.")
+                    .font(.caption.bold())
+                    .foregroundStyle(BerryStyle.chocolate)
+                    .multilineTextAlignment(.center)
+                premiumOffer(id: "trowel", title: "Golden Trowel", detail: "Remove an occupied square · one use", icon: "GoldenTrowel", fallback: "shovel.fill", cost: 150)
+                premiumOffer(id: "twister", title: "Ribbon Twister", detail: "Rotate a tray piece · three uses", icon: "RibbonTwister", fallback: "arrow.triangle.2.circlepath", cost: 200)
+                premiumOffer(id: "seed", title: "Starberry Seed", detail: "Plant one square, potentially clear a line", icon: "StarberrySeed", fallback: "leaf.circle.fill", cost: 230)
+                premiumOffer(id: "pantry", title: "Picnic Pantry", detail: "Permanent piece storage slot", icon: "PicnicPantry", fallback: "basket.fill", cost: 600)
+                premiumOffer(id: "spyglass", title: "Berry Spyglass", detail: "Permanent preview of an upcoming piece", icon: "BerrySpyglass", fallback: "scope", cost: 900)
+            }
         case .cottage:
             VStack(spacing: 11) {
                 BerryIcon(name: "CottageDecorations", size: 87)
@@ -256,6 +271,10 @@ struct BerryBoutiqueView: View {
                     .font(.system(size: 14, weight: .heavy, design: .rounded))
                     .foregroundStyle(BerryStyle.strawberry)
                 Text("Cottage decorations: \(min(session.cottageDecorations, 6)) / 6")
+                Text("Premium: Trowel ×\(session.premiumCharges["trowel", default: 0]) • Twister ×\(session.premiumCharges["twister", default: 0]) • Seed ×\(session.premiumCharges["seed", default: 0])")
+                    .font(.caption.bold()).foregroundStyle(BerryStyle.strawberry)
+                Text("Pantry: \(session.premiumOwned.contains("pantry") ? "Owned" : "Locked")  •  Spyglass: \(session.premiumOwned.contains("spyglass") ? "Owned" : "Locked")")
+                    .font(.caption.bold()).foregroundStyle(BerryStyle.leaf)
                     .foregroundStyle(BerryStyle.chocolate)
                 if items.allSatisfy({ !session.ownedCosmetics.contains($0.id) }) {
                     Text("Your permanent cosmetic collection is waiting. Browse the Boutique to unlock your first style!")
@@ -269,6 +288,47 @@ struct BerryBoutiqueView: View {
                 itemCard(item)
             }
         }
+    }
+
+    private func premiumOffer(id: String, title: String, detail: String,
+                              icon: String, fallback: String, cost: Int) -> some View {
+        let permanent = id == "pantry" || id == "spyglass"
+        let owned = session.premiumOwned.contains(id)
+        let charges = session.premiumCharges[id, default: 0]
+        return HStack(spacing: 12) {
+            Group {
+                if UIImage(named: icon) != nil {
+                    Image(icon).resizable().scaledToFit()
+                } else {
+                    Image(systemName: fallback)
+                        .font(.system(size: 27, weight: .medium))
+                        .foregroundStyle(BerryStyle.strawberry)
+                }
+            }
+            .frame(width: 56, height: 56)
+            .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 15))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.system(size: 14, weight: .black, design: .rounded))
+                Text(detail).font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Text(permanent ? (owned ? "✓ Permanently owned" : "Lifetime upgrade") :
+                     "\(charges) charges remaining")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(BerryStyle.leaf)
+            }
+            Spacer(minLength: 2)
+            Button(owned ? "Owned" : "🍓 \(cost)") {
+                if session.buyPremium(id) && sound { BerryAudio.shared.play(.reward) }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(owned ? BerryStyle.leaf : BerryStyle.strawberry)
+            .disabled(owned || session.berries < cost)
+        }
+        .foregroundStyle(BerryStyle.chocolate)
+        .padding(11)
+        .background(.white, in: RoundedRectangle(cornerRadius: 17))
+        .overlay(RoundedRectangle(cornerRadius: 17)
+            .strokeBorder(BerryStyle.strawberry.opacity(0.18)))
     }
 
     private func helperRow(_ name: String, icon: String, count: Int, cost: Int, purchase: @escaping () -> Void) -> some View {
