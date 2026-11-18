@@ -264,8 +264,10 @@ struct BerryDailyHarvestView: View {
                 RoundedRectangle(cornerRadius: 25)
                     .strokeBorder(berryGold.opacity(0.65), lineWidth: 2)
                 HStack(spacing: 11) {
-                    BerryIcon(name: "BerryDailyHarvestHeader", size: 110)
-                        .frame(width: 112, height: 108)
+                    // Existing approved, square Daily Harvest artwork:
+                    // the older header strip is not a square icon.
+                    BerryIcon(name: "DailyHarvest", size: 100)
+                        .frame(width: 106, height: 108)
                     VStack(alignment: .leading, spacing: 5) {
                         Text("THE DAILY")
                             .font(.system(size: 12, weight: .black, design: .rounded))
