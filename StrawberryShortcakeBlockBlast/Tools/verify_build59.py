@@ -117,9 +117,21 @@ shop = (root / "BerryBlockBlast" / "BerryBoutiqueView.swift").read_text()
 for source, needle in ((session, 'useGoldenStrawberry()'),
                        (session, 'nonisolated static let goldenStrawberryCost = 250'),
                        (session, 'buyAndUseGoldenStrawberry()'),
+                       (session, 'buyAndContinueWithShuffle()'),
+                       (session, 'canContinueWithShuffle'),
+                       (session, 'canContinueWithGoldenStrawberry'),
                        (engine, 'goldenRescueUsed'),
+                       (engine, 'canRescueWithGoldenStrawberry'),
+                       (engine, 'var candidate = self'),
                        (shop, 'Golden Strawberry'),
-                       (game, 'Golden Strawberry Rescue')):
-    assert needle in source, "Golden Strawberry gameplay integration missing: " + needle
+                       (game, 'CONTINUE WITH SHUFFLE'),
+                       (game, 'GOLDEN STRAWBERRY'),
+                       (game, 'continueRescueOptions'),
+                       (game, 'dismissRescueAfterSuccess')):
+    assert needle in source, "Game Over Continue integration missing: " + needle
+rescue_tests = (root / "Tests" / "BerryContinueRescueTests.swift").read_text()
+assert rescue_tests.count("func test") >= 5, "Missing Shuffle/Golden Continue regression coverage"
+assert "Continue with Shuffle" in session, "Shuffle game-over message missing"
+assert "BerryEconomy.shufflePrice" in session, "Shuffle pricing is inconsistent"
 print(f"PASS: Berry Berry Blast 0.5.9 Build 1, {len(names)} art catalogs, "
       "iOS16, four no-scroll 12x12 Endless patches, tests and app icon")
