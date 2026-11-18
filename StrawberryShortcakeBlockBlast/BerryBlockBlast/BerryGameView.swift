@@ -642,6 +642,20 @@ struct BerryGameView: View {
                 }
             }
         }
+        // UIKit lifecycle notifications cover lock/unlock transitions where
+        // SwiftUI's scenePhase can arrive late. Both paths are idempotent.
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIApplication.willResignActiveNotification)) { _ in
+            activeDragSlot = nil
+            activeDragFinger = nil
+            drag = nil
+            hintPreview = nil
+            if isTimedMode { pauseTimedClock() }
+        }
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIApplication.didBecomeActiveNotification)) { _ in
+            if isTimedMode { resumeTimedClockIfPossible(foreground: true) }
+        }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             if mode == .daily && scenePhase == .active && !dailyAttemptDay.isEmpty &&
                BerryDailyHistory.dateKey(for: Date()) != dailyAttemptDay {
