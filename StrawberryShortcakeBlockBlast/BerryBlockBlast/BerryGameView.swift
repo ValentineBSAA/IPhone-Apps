@@ -36,8 +36,11 @@ private struct BerryBoard: View {
         case "rose-border": return Color(red: 0.91, green: 0.25, blue: 0.55)
         case "mint-border": return Color(red: 0.32, green: 0.73, blue: 0.58)
         default:
-            // Mode personality belongs to the *frame*, never to the
-            // readability-critical empty cells or player block choice.
+            // Original appearance always uses its own stable 0.5.8 frame.
+            // A mode's decorative frame only applies to optional surfaces.
+            if boardSurface == "original" {
+                return Color(red: 0.98, green: 0.71, blue: 0.79)
+            }
             switch mode {
             case .daily: return Color(red: 0.85, green: 0.24, blue: 0.41)
             case .superHard: return Color(red: 0.43, green: 0.22, blue: 0.60)
@@ -63,13 +66,15 @@ private struct BerryBoard: View {
                 let c = i % side
                 ZStack {
                     if boardSurface == "original" {
-                        // Exact 0.5.8 corrective board cell: clear, pale,
-                        // square boundaries. Decorative art never covers it.
+                        // Original bare, undecorated squares restored with
+                        // clearer high-contrast outlines for small iPhones.
                         RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
-                            .fill(Color.white.opacity(0.76))
-                            .overlay(alignment: .topLeading) {
+                            .fill(Color.white.opacity(0.96))
+                            .overlay {
                                 RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
-                                    .strokeBorder(.white.opacity(0.58), lineWidth: 1)
+                                    .strokeBorder(
+                                        Color(red: 0.64, green: 0.32, blue: 0.46).opacity(0.83),
+                                        lineWidth: side > 8 ? 1.0 : 1.6)
                             }
                     } else {
                         // Optional boards use restrained art *beneath* visible
@@ -88,8 +93,8 @@ private struct BerryBoard: View {
                             }
                             .overlay {
                                 RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
-                                    .strokeBorder(Color(red: 0.76, green: 0.37, blue: 0.52)
-                                        .opacity(0.48), lineWidth: max(1, unit * 0.045))
+                                    .strokeBorder(Color(red: 0.65, green: 0.30, blue: 0.45)
+                                        .opacity(0.82), lineWidth: max(1.15, unit * 0.040))
                             }
                     }
                     if let tint = engine.visibleCell(row: r, col: c) {
