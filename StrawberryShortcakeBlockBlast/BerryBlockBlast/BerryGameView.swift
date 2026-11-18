@@ -252,7 +252,9 @@ struct BerryGameView: View {
         if isTimedMode {
             return BerryTimedLifecycle.canPlay(
                 now: Date(), deadline: blitzDeadline, running: blitzRunning,
-                foreground: scenePhase == .active, pausedAt: pausedTimerAt
+                foreground: scenePhase == .active ||
+                    UIApplication.shared.applicationState == .active,
+                pausedAt: pausedTimerAt
             )
         }
         return true
@@ -665,7 +667,8 @@ struct BerryGameView: View {
                 returnToVillage()
                 return
             }
-            if isTimedMode && scenePhase == .active {
+            if isTimedMode && (scenePhase == .active ||
+                               UIApplication.shared.applicationState == .active) {
                 // Recovery if a scene transition callback was missed or
                 // arrived before SwiftUI updated its environment value.
                 if pausedTimerAt != nil { resumeTimedClockIfPossible(foreground: true) }
