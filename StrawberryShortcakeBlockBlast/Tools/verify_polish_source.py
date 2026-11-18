@@ -15,15 +15,15 @@ daily = source("BerryDailyHarvestView.swift")
 home = source("BerryModes.swift")
 
 for marker in ('MARKETING_VERSION: "0.5.10"',
-               'CURRENT_PROJECT_VERSION: "1"',
+               'CURRENT_PROJECT_VERSION: "2"',
                'iOS: "16.0"',
                'PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.berryblockblast'):
     assert marker in project, marker
 assert 'guard skin == "strawberry-fruit" else' in tile
 assert 'skin == "default" || skin == "strawberry-fruit"' not in tile
 for marker in ('private let gap: CGFloat = 3',
-               '.fill(Color.white.opacity(0.76))',
-               '.strokeBorder(.white.opacity(0.58), lineWidth: 1)',
+               '.fill(Color.white.opacity(0.96))',
+               'Color(red: 0.64, green: 0.32, blue: 0.46).opacity(0.83)',
                'boardSurface == "original"', 'storyDialogueCard(compact: compact)',
                'BerryCandyToolbarButton', 'BerryStyle.urgentTimerGradient'):
     assert marker in board, marker
@@ -44,3 +44,23 @@ assert source("BerrySchoolView.swift")
 assert (root / "Tests" / "BerryDailyAttemptTests.swift").is_file()
 print("PASS: 0.5.10 original board/blocks, optional skins, one Daily attempt, "
       "timers, Story dialogue, school and economy checks")
+
+# 0.5.10 Build 2: no change to selected block styles or placement grid.
+appearance = (root / "BerryBlockBlast" / "BerryUIAssets.swift").read_text()
+assert 'struct BerryBoardAppearanceControls: View' in appearance
+assert 'Restore Original Board Only' in appearance
+assert 'Restore All Appearance Defaults' in appearance
+assert 'boardSurface = "original"' in appearance
+assert 'borderSkin = "default"' in appearance
+assert 'BerryBoardAppearanceControls()' in game
+assert 'BerryBoardAppearanceControls()' in home
+assert 'storyDialogueCard(compact: compact)' in game
+assert 'showFullStory' in game
+assert 'private let gap: CGFloat = 3' in game
+assert 'layoutReserve' in game and 'mode == .story ? 426' in game
+assert 'DRAG OR TAP TO PLACE' in game
+assert 'private func toolSymbol(' in game
+assert 'BerryWalletPill(berries: session.berries)' not in game, (
+    "Full-size second wallet row returned, crowding the board")
+print("PASS: build 2 original-board controls, Story layout, tool icons, "
+      "compact counters and unchanged game grid")
