@@ -52,15 +52,15 @@ assert 'Restore Original Board Only' in appearance
 assert 'Restore All Appearance Defaults' in appearance
 assert 'boardSurface = "original"' in appearance
 assert 'borderSkin = "default"' in appearance
-assert 'BerryBoardAppearanceControls()' in game
+assert 'BerryBoardAppearanceControls()' in board
 assert 'BerryBoardAppearanceControls()' in home
-assert 'storyDialogueCard(compact: compact)' in game
-assert 'showFullStory' in game
-assert 'private let gap: CGFloat = 3' in game
-assert 'layoutReserve' in game and 'mode == .story ? 426' in game
-assert 'DRAG OR TAP TO PLACE' in game
-assert 'private func toolSymbol(' in game
-assert 'BerryWalletPill(berries: session.berries)' not in game, (
+assert 'storyDialogueCard(compact: compact)' in board
+assert 'showFullStory' in board
+assert 'private let gap: CGFloat = 3' in board
+assert 'layoutReserve' in board and 'mode == .story ? 426' in board
+assert 'DRAG OR TAP TO PLACE' in board
+assert 'private func toolSymbol(' in board
+assert 'BerryWalletPill(berries: session.berries)' not in board, (
     "Full-size second wallet row returned, crowding the board")
 print("PASS: build 2 original-board controls, Story layout, tool icons, "
       "compact counters and unchanged game grid")
