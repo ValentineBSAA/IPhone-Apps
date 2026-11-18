@@ -122,7 +122,7 @@ workflows:
           root = Path.cwd().parent.resolve()
           extras = [
               ("Berry_Berry_Blast_0.5.9_AppIcon_Cloud.zip",
-               "a98861bbb9ac21098c9a6f7a7663fc43e6a7b629ae5ffe0e04803dc462bd6660"),
+               "155a349b20d1a8089adf46bb250259e6256fa77b8754bae55e0effbbdcec8cf4"),
               ("Berry_Berry_Blast_GoldenStrawberry_CloudPatch.zip",
                "4f73d536af342d1640f3554bf83c479336c38a3a6910cf21c90db02fbdcd0da7"),
           ]
@@ -130,10 +130,25 @@ workflows:
               item = root / "BuildPayload" / filename
               if not item.is_file():
                   raise SystemExit("Missing extra game artwork: " + str(item))
-              if hashlib.sha256(item.read_bytes()).hexdigest() != expected_hash:
-                  raise SystemExit("Artwork checksum mismatch: " + filename)
+              digest = hashlib.sha256(item.read_bytes()).hexdigest()
+              if digest != expected_hash:
+                  raise SystemExit(
+                      "Artwork checksum mismatch: " + filename +
+                      "\\nExpected: " + expected_hash + "\\nFound: " + digest
+                  )
               with zipfile.ZipFile(item) as z:
-                  for entry in z.namelist():
+                  if z.testzip() is not None:
+                      raise SystemExit("Corrupted ZIP artwork: " + filename)
+                  names = set(z.namelist())
+                  if filename.endswith("_AppIcon_Cloud.zip"):
+                      prefix = "StrawberryShortcakeBlockBlast/BerryBlockBlast/Assets.xcassets/AppIcon.appiconset/"
+                      png_name = prefix + "AppIcon.png"
+                      if names != {png_name, prefix + "Contents.json"}:
+                          raise SystemExit("Unexpected app icon files: " + str(sorted(names)))
+                      png = z.read(png_name)
+                      if png[:8] != bytes([137,80,78,71,13,10,26,10]) or int.from_bytes(png[16:20], "big") != 1024 or int.from_bytes(png[20:24], "big") != 1024:
+                          raise SystemExit("App icon must be a valid 1024 x 1024 PNG")
+                  for entry in names:
                       resolved = (root / entry).resolve()
                       if not resolved.is_relative_to(root):
                           raise SystemExit("Unsafe artwork path: " + entry)
