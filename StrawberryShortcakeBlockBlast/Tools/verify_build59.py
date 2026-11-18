@@ -30,6 +30,7 @@ names = [
     "BerryDailyHarvestHeader", "BerryStreakTrophy",
     "GoldenTrowel", "RibbonTwister", "StarberrySeed",
     "PicnicPantry", "BerrySpyglass", "PremiumToolsCategory",
+    "GoldenStrawberry",
     "BerryCharacterPortrait", "BerryCharacterStanding",
     "BerryCharacterCelebrate",
 ]
@@ -54,5 +55,14 @@ assert "side: session.engine.visibleSide" in game
 assert "showEndlessMove()" in game
 assert "BerryQuestBoardView" in (root / "BerryBlockBlast" / "BerryProgression.swift").read_text()
 assert (root / "Tests" / "BerryEndlessGardenSectionsTests.swift").is_file()
+assert (root / "Tests" / "BerryGoldenStrawberryTests.swift").is_file()
+assert 'clearBoardWithGoldenStrawberry' in engine
+session = (root / "BerryBlockBlast" / "BerryGameSession.swift").read_text()
+shop = (root / "BerryBlockBlast" / "BerryBoutiqueView.swift").read_text()
+for source, needle in ((session, 'useGoldenStrawberry()'),
+                       (session, '"golden-strawberry": 350'),
+                       (shop, 'Golden Strawberry'),
+                       (game, 'Golden Strawberry Rescue')):
+    assert needle in source, "Golden Strawberry gameplay integration missing: " + needle
 print(f"PASS: Berry Berry Blast 0.5.9 Build 1, {len(names)} art catalogs, "
       "iOS16, four no-scroll 12x12 Endless patches, tests and app icon")
