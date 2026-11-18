@@ -123,7 +123,7 @@ private struct BerryBoard: View {
                             } else {
                                 RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
                                     .fill(Color.red.opacity(occupied ? 0.28 : 0.12))
-                                if occupied {
+                                if !preview.allowed {
                                     Image(systemName: "xmark")
                                         .font(.system(size: max(8, unit * 0.30), weight: .black))
                                         .foregroundStyle(Color(red: 0.72, green: 0.07, blue: 0.22))
@@ -132,8 +132,13 @@ private struct BerryBoard: View {
                         }
                             .overlay {
                                 RoundedRectangle(cornerRadius: side > 8 ? 4 : 8)
-                                    .strokeBorder(preview.allowed ? Color.green : Color.red,
-                                                  lineWidth: preview.allowed ? 2 : 2.8)
+                                    .strokeBorder(preview.allowed ?
+                                        Color(red: 0.09, green: 0.68, blue: 0.33) :
+                                        Color(red: 0.94, green: 0.13, blue: 0.28),
+                                        lineWidth: preview.allowed ? 2.5 : 3.2)
+                                    .shadow(color: preview.allowed ?
+                                        Color.green.opacity(0.54) : Color.red.opacity(0.54),
+                                        radius: 4)
                             }
                             .frame(width: unit, height: unit)
                             .offset(x: CGFloat(c) * (unit + gap), y: CGFloat(r) * (unit + gap))
@@ -142,6 +147,10 @@ private struct BerryBoard: View {
             }
         }
         .frame(width: size, height: size, alignment: .topLeading)
+        .overlay {
+            BerryDecorativeBoardFrame(boardSize: size)
+                .allowsHitTesting(false)
+        }
         .overlay {
             if let preview, !preview.allowed,
                preview.piece.points.contains(where: {
