@@ -116,7 +116,30 @@ workflows:
               (art / (name + ".imageset") / (name + ".jpg")).unlink(missing_ok=True)
           print("PASS: 17 new image catalogs, same save keys and approved mascot")
           PY
-          swift Tools/generate_berry_berry_app_icon.swift
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, zipfile
+          root = Path.cwd().parent.resolve()
+          extras = [
+              ("Berry_Berry_Blast_0.5.9_AppIcon_Cloud.zip",
+               "a98861bbb9ac21098c9a6f7a7663fc43e6a7b629ae5ffe0e04803dc462bd6660"),
+              ("Berry_Berry_Blast_GoldenStrawberry_CloudPatch.zip",
+               "2a8e4c50c91f58be27be05278ca42659fd97b21673344987e154a56f99a7846e"),
+          ]
+          for filename, expected_hash in extras:
+              item = root / "BuildPayload" / filename
+              if not item.is_file():
+                  raise SystemExit("Missing extra game artwork: " + str(item))
+              if hashlib.sha256(item.read_bytes()).hexdigest() != expected_hash:
+                  raise SystemExit("Artwork checksum mismatch: " + filename)
+              with zipfile.ZipFile(item) as z:
+                  for entry in z.namelist():
+                      resolved = (root / entry).resolve()
+                      if not resolved.is_relative_to(root):
+                          raise SystemExit("Unsafe artwork path: " + entry)
+                  z.extractall(root)
+          print("PASS: original app icon + Golden Strawberry are installed")
+          PY
           python3 Tools/verify_build59.py
       - name: Compile native iPhone app without signing
         script: |
