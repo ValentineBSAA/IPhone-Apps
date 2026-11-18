@@ -507,12 +507,7 @@ struct BerryGameView: View {
                 let resumed = ownsOne ? session.useGoldenStrawberry()
                     : session.buyAndUseGoldenStrawberry()
                 if resumed {
-                    showGameOver = false
-                    specialTargetTool = nil
-                    hintPreview = nil
-                    selectedSlot = nil
-                    drag = nil
-                    successFeedback()
+                    dismissRescueAfterSuccess()
                 } else {
                     warningFeedback()
                 }
@@ -655,7 +650,7 @@ struct BerryGameView: View {
                              isTimedMode && blitzRemaining == 0 ? "Time's Up, Berry Racer!" : "No More Moves!")
                             .font(.system(size: 25, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry).multilineTextAlignment(.center)
-                        Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "A fresh board starts this chapter again. Your records and earned berries stay safe." : isTimedMode && blitzRemaining == 0 ? "Your timer reached zero. See your results below!" : "No pieces fit. A Golden Strawberry can rescue this run, or you can restart for free.")
+                        Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "A fresh board starts this chapter again. Your records and earned berries stay safe." : isTimedMode && blitzRemaining == 0 ? "Your timer reached zero. See your results below!" : "No pieces fit. Use a Shuffle to refresh pieces, or a Golden Strawberry to clear the board. Your score continues!")
                             .font(.system(size: 15, weight: .medium, design: .rounded))
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
                         if !confirmRestart {
@@ -669,49 +664,8 @@ struct BerryGameView: View {
                                     .font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
                             }
                         }
-                        if showGameOver && session.canUsePremium {
-                            if session.engine.goldenRescueUsed {
-                                Text("✨ Golden Strawberry already used this run")
-                                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                                    .foregroundStyle(BerryStyle.chocolate.opacity(0.7))
-                            } else {
-                                let ownsGolden = session.premiumCharges["golden-strawberry", default: 0] > 0
-                                let affordable = ownsGolden ||
-                                    session.berries >= BerryGameSession.goldenStrawberryCost
-                                Button {
-                                    confirmGoldenStrawberry = true
-                                } label: {
-                                    HStack(spacing: 10) {
-                                        BerryIcon(name: "GoldenStrawberry", size: 38)
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(ownsGolden ? "CONTINUE · USE GOLDEN STRAWBERRY" :
-                                                 "CONTINUE · 🍓 \(BerryGameSession.goldenStrawberryCost)")
-                                                .font(.system(size: 13, weight: .black, design: .rounded))
-                                                .lineLimit(1)
-                                                .minimumScaleFactor(0.74)
-                                            Text("Keep this run, clear your board")
-                                                .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                        }
-                                        Spacer(minLength: 0)
-                                    }
-                                    .padding(.horizontal, 12)
-                                    .frame(maxWidth: 320, minHeight: 54)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(Color(red: 0.79, green: 0.49, blue: 0.08))
-                                .disabled(!affordable)
-                                if !affordable {
-                                    Text("Earn \(BerryGameSession.goldenStrawberryCost - session.berries) more strawberries to continue")
-                                        .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                        .foregroundStyle(BerryStyle.chocolate)
-                                }
-                            }
-                        }
-                        if showGameOver && session.shuffles > 0 && session.engine.canRescueWithShuffle && mode != .classic && !isTimedMode {
-                            Button("✨ Continue with Shuffle (\(session.shuffles) left)") {
-                                session.shuffle(); showGameOver = session.gameOver; selectedSlot = nil; drag = nil
-                            }
-                            .buttonStyle(.borderedProminent).tint(BerryStyle.leaf).controlSize(.large)
+                        if showGameOver && !showVictory {
+                            continueRescueOptions
                         }
                         Button(showVictory ? "🍓 Another Sweet Adventure" : isTimedMode ? "⚡ Race Again" : "🍓 Plant a Fresh Garden") {
                             showVictory = false; showGameOver = false; confirmRestart = false
@@ -904,6 +858,107 @@ struct BerryGameView: View {
         .frame(height: 38)
         .background(.white.opacity(0.95), in: RoundedRectangle(cornerRadius: 12))
         .accessibilityLabel("Garden patch \(section + 1) of 4. The game automatically changes patches.")
+    }
+
+    /// Two equally discoverable rescue routes. Shuffle can refill a tray
+    /// when the active garden has space. Golden Strawberry clears a crowded
+    /// board. Both preserve the running chapter and score.
+    private var continueRescueOptions: some View {
+        let ownsShuffle = session.shuffles > 0
+        let shuffleAvailable = session.canContinueWithShuffle &&
+            (ownsShuffle || session.berries >= BerryEconomy.shufflePrice)
+        let ownsGold = session.premiumCharges["golden-strawberry", default: 0] > 0
+        let goldenAvailable = session.canContinueWithGoldenStrawberry &&
+            (ownsGold || session.berries >= BerryGameSession.goldenStrawberryCost)
+
+        return VStack(spacing: 7) {
+            Text("KEEP YOUR GARDEN & SCORE")
+                .font(.system(size: 12, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.strawberry)
+            HStack(alignment: .top, spacing: 10) {
+                rescueChoice(
+                    title: "CONTINUE WITH SHUFFLE",
+                    detail: !session.canContinueWithShuffle ?
+                        "Board is full · won't work" : "Replace stuck pieces",
+                    price: ownsShuffle ? "Use 1 owned · \(session.shuffles) left" :
+                        "Buy & Use · 🍓 \(BerryEconomy.shufflePrice)",
+                    icon: "ShuffleIcon", available: shuffleAvailable,
+                    accent: BerryStyle.leaf) {
+                    let rescued = ownsShuffle ?
+                        session.shuffle() : session.buyAndContinueWithShuffle()
+                    if rescued {
+                        dismissRescueAfterSuccess()
+                    } else {
+                        warningFeedback()
+                    }
+                }
+                if session.canUsePremium {
+                    rescueChoice(
+                        title: "GOLDEN STRAWBERRY",
+                        detail: session.engine.goldenRescueUsed ?
+                            "Already used this run" : "Clear board & continue",
+                        price: ownsGold ? "Use 1 owned" :
+                            "Buy & Use · 🍓 \(BerryGameSession.goldenStrawberryCost)",
+                        icon: "GoldenStrawberry", available: goldenAvailable,
+                        accent: Color(red: 0.75, green: 0.45, blue: 0.08)) {
+                        confirmGoldenStrawberry = true
+                    }
+                }
+            }
+            if !shuffleAvailable && !goldenAvailable {
+                Text("No rescue available. Starting a new garden is free.")
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate.opacity(0.8))
+                    .multilineTextAlignment(.center)
+            }
+        }
+    }
+
+    private func rescueChoice(title: String, detail: String, price: String,
+                              icon: String, available: Bool, accent: Color,
+                              action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 5) {
+                BerryIcon(name: icon, size: 43)
+                Text(title)
+                    .font(.system(size: 11, weight: .black, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.74)
+                Text(detail)
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                Text(price)
+                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+            }
+            .foregroundStyle(BerryStyle.chocolate)
+            .frame(maxWidth: .infinity, minHeight: 138)
+            .padding(7)
+            .background(.white, in: RoundedRectangle(cornerRadius: 17))
+            .overlay {
+                RoundedRectangle(cornerRadius: 17)
+                    .strokeBorder(accent.opacity(0.84), lineWidth: 2)
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(!available)
+        .opacity(available ? 1 : 0.48)
+        .accessibilityLabel(title + ". " + detail + ". " + price)
+    }
+
+    private func dismissRescueAfterSuccess() {
+        showGameOver = false
+        specialTargetTool = nil
+        hintPreview = nil
+        selectedSlot = nil
+        drag = nil
+        activeDragSlot = nil
+        activeDragFinger = nil
+        successFeedback()
     }
 
     private var scoreBar: some View {
