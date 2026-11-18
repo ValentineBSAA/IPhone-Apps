@@ -61,7 +61,7 @@ assert (root / "Tests" / "BerryGoldenStrawberryTests.swift").read_text().count("
 session = (root / "BerryBlockBlast" / "BerryGameSession.swift").read_text()
 shop = (root / "BerryBlockBlast" / "BerryBoutiqueView.swift").read_text()
 for source, needle in ((session, 'useGoldenStrawberry()'),
-                       (session, 'static let goldenStrawberryCost = 250'),
+                       (session, 'nonisolated static let goldenStrawberryCost = 250'),
                        (session, 'buyAndUseGoldenStrawberry()'),
                        (engine, 'goldenRescueUsed'),
                        (shop, 'Golden Strawberry'),
