@@ -20,6 +20,17 @@ enum Neighbor: String, CaseIterable, Identifiable, Codable {
         }
     }
     var initials: String { self == .maya ? "MB" : "DH" }
+
+    // Both portraits are existing, approved images. They are assigned as
+    // unique character headshots rather than leaving new contacts as initials.
+    // Keep these assignments stable across relaunch and story progression.
+    var portraitAssetName: String {
+        switch self {
+        case .maya: return "Contact_Nora_04"
+        case .denise: return "Contact_Nora_03"
+        }
+    }
+
     var hue: Color { self == .maya ? Color(red: 0.49, green: 0.52, blue: 0.78) : Color(red: 0.40, green: 0.60, blue: 0.56) }
 }
 
