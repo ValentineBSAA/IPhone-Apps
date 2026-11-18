@@ -40,12 +40,37 @@ struct BerryEngine: Codable {
     /// Four 12x12 sections in the 24x24 endless garden. Persisted with
     /// the existing engine save so older players keep their whole garden.
     private(set) var activeGardenSection = 0
+    /// A patch blooms after 18 placements or three completed 12-cell lines,
+    /// whichever happens first. Never require a permanently full board:
+    /// completed rows automatically clear and would prevent that condition.
+    private(set) var gardenPatchMoves = 0
+    private(set) var gardenPatchLines = 0
     var visibleSide: Int { side == 24 ? 12 : side }
     var sectionOrigin: (row: Int, col: Int) {
         guard side == 24 else { return (0, 0) }
         let section = max(0, min(3, activeGardenSection))
         return ((section / 2) * 12, (section % 2) * 12)
     }
+    /// A completed patch advances in reading order with no user interaction.
+    /// Fourth patch completion starts a fresh garden season, keeping score.
+    private mutating func advanceCompletedGardenPatch() {
+        guard side == 24 else { return }
+        gardenPatchMoves = 0
+        gardenPatchLines = 0
+        if activeGardenSection == 3 {
+            activeGardenSection = 0
+            board = Array(repeating: Array<Int?>(repeating: nil, count: 24), count: 24)
+            seasons += 1
+            streak = 0
+            dryMoves = 0
+            refill()
+        } else {
+            activeGardenSection += 1
+            // Keep unplaced tray pieces, unless none fits the fresh section.
+            if !hasMove() { refill() }
+        }
+    }
+
     private func origin(for section: Int) -> (row: Int, col: Int) {
         ((section / 2) * 12, (section % 2) * 12)
     }
@@ -98,7 +123,7 @@ struct BerryEngine: Codable {
     // Decode the optional mode metadata explicitly so older saves survive upgrades.
     private enum CodingKeys: String, CodingKey {
         case board, tray, score, streak, moves, totalLines, bestCombo
-        case dryMoves, boardClears, seasons, activeGardenSection, randomState, cozyPieces, side, hardPieces, pantryPiece, spyglassNext
+        case dryMoves, boardClears, seasons, activeGardenSection, gardenPatchMoves, gardenPatchLines, randomState, cozyPieces, side, hardPieces, pantryPiece, spyglassNext
     }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -115,6 +140,8 @@ struct BerryEngine: Codable {
         boardClears = try values.decodeIfPresent(Int.self, forKey: .boardClears) ?? 0
         seasons = try values.decodeIfPresent(Int.self, forKey: .seasons) ?? 0
         activeGardenSection = min(3, max(0, try values.decodeIfPresent(Int.self, forKey: .activeGardenSection) ?? 0))
+        gardenPatchMoves = max(0, try values.decodeIfPresent(Int.self, forKey: .gardenPatchMoves) ?? 0)
+        gardenPatchLines = max(0, try values.decodeIfPresent(Int.self, forKey: .gardenPatchLines) ?? 0)
         randomState = try values.decodeIfPresent(UInt64.self, forKey: .randomState)
         cozyPieces = try values.decodeIfPresent(Bool.self, forKey: .cozyPieces)
         pantryPiece = try values.decodeIfPresent(BerryPiece.self, forKey: .pantryPiece)
@@ -332,6 +359,13 @@ struct BerryEngine: Codable {
         let lineBase = lines <= 1 ? 10 * lines : 10 * lines * (lines - 1)
         let earned = piece.points.count + lineBase * min(streak, 8) + (boardClear ? 300 : 0)
         score += earned
+        if side == 24 {
+            gardenPatchMoves += 1
+            gardenPatchLines += lines
+            if gardenPatchMoves >= 18 || gardenPatchLines >= 3 {
+                advanceCompletedGardenPatch()
+            }
+        }
         if tray.allSatisfy({ $0 == nil }) { refill() }
         return BerryPlacement(clearedRows: rows, clearedColumns: cols, earned: earned, streak: streak, boardClear: boardClear)
     }
@@ -407,6 +441,8 @@ struct BerryEngine: Codable {
             // season without resetting score, line count, moves or berries.
             board = Array(repeating: Array<Int?>(repeating: nil, count: 24), count: 24)
             activeGardenSection = 0
+            gardenPatchMoves = 0
+            gardenPatchLines = 0
             seasons += 1
             streak = 0
             dryMoves = 0
