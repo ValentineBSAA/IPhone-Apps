@@ -3,6 +3,100 @@ import SwiftUI
 /// Local-date based challenge history. Uses existing completion key for migration.
 enum BerryDailyHistory {
     static let key = "berryblockblast.daily.history.v057"
+    private static let attemptKey = "berryberryblast.daily.attempt.v0510"
+    private static let resultsKey = "berryberryblast.daily.outcomes.v0510"
+
+    enum Outcome: String, Codable { case active, won, lost }
+
+    /// One dated active attempt. Loss/win status is also stored separately so
+    /// a cleared or malformed snapshot cannot grant a second attempt.
+    struct Attempt: Codable {
+        let day: String
+        var outcome: Outcome
+        var engine: BerryEngine?
+    }
+
+    static func outcome(on date: Date = Date(),
+                        defaults: UserDefaults = .standard) -> Outcome? {
+        let day = dateKey(for: date)
+        let old = defaults.string(forKey: "berryblockblast.daily.completed") ?? ""
+        let previouslyCompleted = defaults.stringArray(forKey: key) ?? []
+        if old == day || previouslyCompleted.contains(day) { return .won }
+        if let result = (defaults.dictionary(forKey: resultsKey) as? [String: String])?[day],
+           let decoded = Outcome(rawValue: result) { return decoded }
+        guard let record = loadAttempt(defaults: defaults), record.day == day else { return nil }
+        return record.outcome
+    }
+
+    private static func loadAttempt(defaults: UserDefaults = .standard) -> Attempt? {
+        guard let data = defaults.data(forKey: attemptKey) else { return nil }
+        return try? JSONDecoder().decode(Attempt.self, from: data)
+    }
+
+    static func activeEngine(defaults: UserDefaults = .standard) -> BerryEngine? {
+        guard outcome(defaults: defaults) == .active,
+              let record = loadAttempt(defaults: defaults),
+              record.day == dateKey(for: Date()) else { return nil }
+        return record.engine
+    }
+
+    /// Consumes the day's attempt immediately, before the first placement.
+    /// Existing in-progress attempts can resume, but finished ones cannot.
+    @discardableResult
+    static func beginToday(defaults: UserDefaults = .standard) -> Bool {
+        if let current = outcome(defaults: defaults) { return current == .active }
+        let attempt = Attempt(day: dateKey(for: Date()), outcome: .active, engine: nil)
+        if let encoded = try? JSONEncoder().encode(attempt) {
+            defaults.set(encoded, forKey: attemptKey)
+            var outcomes = defaults.dictionary(forKey: resultsKey) as? [String:String] ?? [:]
+            outcomes[attempt.day] = Outcome.active.rawValue
+            defaults.set(outcomes, forKey: resultsKey)
+            return true
+        }
+        return false
+    }
+
+    static func saveActiveEngine(_ engine: BerryEngine,
+                                 defaults: UserDefaults = .standard) {
+        guard outcome(defaults: defaults) == .active,
+              let record = loadAttempt(defaults: defaults),
+              record.day == dateKey(for: Date()) else { return }
+        let update = Attempt(day: record.day, outcome: .active, engine: engine)
+        if let encoded = try? JSONEncoder().encode(update) {
+            defaults.set(encoded, forKey: attemptKey)
+        }
+    }
+
+    private static func finishToday(_ outcome: Outcome,
+                                    defaults: UserDefaults = .standard) {
+        guard outcome == .won || outcome == .lost,
+              self.outcome(defaults: defaults) == .active else { return }
+        let day = dateKey(for: Date())
+        var outcomes = defaults.dictionary(forKey: resultsKey) as? [String:String] ?? [:]
+        outcomes[day] = outcome.rawValue
+        defaults.set(outcomes, forKey: resultsKey)
+        let completed = Attempt(day: day, outcome: outcome, engine: nil)
+        if let encoded = try? JSONEncoder().encode(completed) {
+            defaults.set(encoded, forKey: attemptKey)
+        }
+    }
+
+    static func markLostToday(defaults: UserDefaults = .standard) {
+        finishToday(.lost, defaults: defaults)
+    }
+
+    static var losses: Int {
+        let results = UserDefaults.standard.dictionary(forKey: resultsKey) as? [String:String] ?? [:]
+        return results.values.filter { $0 == Outcome.lost.rawValue }.count
+    }
+
+    static var wins: Int {
+        let old = completed
+        let results = UserDefaults.standard.dictionary(forKey: resultsKey) as? [String:String] ?? [:]
+        return Set(results.filter { $0.value == Outcome.won.rawValue }.map { $0.key })
+            .union(old).count
+    }
+
     static func dateKey(for date: Date) -> String {
         let components = Calendar.current.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", components.year ?? 1970,
@@ -14,6 +108,8 @@ enum BerryDailyHistory {
         return Set(entries + (legacy.isEmpty ? [] : [legacy]))
     }
     static func markCompleteToday() {
+        guard outcome() == .active else { return }
+        finishToday(.won)
         var values = completed
         values.insert(dateKey(for: Date()))
         UserDefaults.standard.set(values.sorted(), forKey: key)
