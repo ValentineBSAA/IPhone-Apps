@@ -202,53 +202,56 @@ struct BerryHomeView: View {
                                     showMore = true
                                 }
                             }
-                            HStack(spacing: 12) {
-                                Button { showCollection = true } label: {
-                                    VStack(spacing: 4) {
-                                        BerryIcon(name: "BerryCollection", size: 65)
-                                        Text("Collection").font(.caption.bold())
-                                    }.frame(maxWidth: .infinity).padding(10)
-                                        .background(.white, in: RoundedRectangle(cornerRadius: 17))
+                            Text("EXPLORE YOUR STRAWBERRY VILLAGE")
+                                .font(.system(size: 12, weight: .black, design: .rounded))
+                                .foregroundStyle(BerryStyle.strawberry)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 11),
+                                                GridItem(.flexible(), spacing: 11)], spacing: 11) {
+                                BerryGridNavigationTile(
+                                    title: "Berry Collection", detail: "Inventory, awards and personal records",
+                                    art: "BerryCollection", caption: "My Treasures") {
+                                    showCollection = true
                                 }
-                                Button { showSchool = true } label: {
-                                    VStack(spacing: 4) {
-                                        BerryIcon(name: "StrawberrySchool", size: 65)
-                                        Text("Strawberry School").font(.caption.bold())
-                                    }.frame(maxWidth: .infinity).padding(10)
-                                        .background(.white, in: RoundedRectangle(cornerRadius: 17))
+                                BerryGridNavigationTile(
+                                    title: "Strawberry School", detail: "Learn the berry basics",
+                                    art: "StrawberrySchool", caption: "5 Lessons") {
+                                    showSchool = true
                                 }
-                            }
-                            .foregroundStyle(BerryStyle.chocolate)
-                            .buttonStyle(.plain)
-                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                                villageLink("Berry Village", detail: "Watch our little world grow", icon: "house.fill") { showVillage = true }
-                                villageLink("Berry Quests", detail: "Three fresh daily goals", icon: "checklist") { showQuests = true }
-                                villageLink("Berry Journal", detail: "Your berry scrapbook", icon: "book.closed.fill") { showJournal = true }
-                                villageLink("Daily Streak", detail: "Rewards up to 50 berries", icon: "calendar") {
+                                BerryGridNavigationTile(
+                                    title: "Berry Village", detail: "Watch our little world grow",
+                                    art: "BerryVillageMap", caption: "Explore Village") {
+                                    showVillage = true
+                                }
+                                BerryGridNavigationTile(
+                                    title: "Berry Quests", detail: "Three real goals every day",
+                                    art: "BerryQuestBoardArt", caption: "Daily Quests") {
+                                    showQuests = true
+                                }
+                                BerryGridNavigationTile(
+                                    title: "Berry Journal", detail: "Your personal berry scrapbook",
+                                    art: "BerryJournalArt", caption: "My Progress") {
+                                    showJournal = true
+                                }
+                                BerryGridNavigationTile(
+                                    title: "Daily Streak", detail: "Daily rewards up to 50 strawberries",
+                                    art: "DailyHarvest", caption: "Harvest Today") {
                                     activeMode = .daily
                                 }
-                            }
-                            Button {
-                                audio.play(.menuSelect)
-                                showJukebox = true
-                            } label: {
-                                HStack(spacing: 10) {
-                                    BerryIcon(name: "StrawberryJukebox", size: 45)
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text("🎶 Strawberry Jukebox")
-                                            .font(.system(size: 15, weight: .black, design: .rounded))
-                                        Text(music ? audio.currentTrackName : "Music paused")
-                                            .font(.system(size: 11, weight: .medium, design: .rounded))
-                                            .lineLimit(1)
-                                    }
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
+                                BerryGridNavigationTile(
+                                    title: "Strawberry Jukebox", detail: "51 original songs stored offline",
+                                    art: "StrawberryJukebox",
+                                    caption: music ? "Play Music" : "Music Paused") {
+                                    audio.play(.menuSelect)
+                                    showJukebox = true
                                 }
-                                .foregroundStyle(BerryStyle.chocolate)
-                                .padding(12)
-                                .background(.white.opacity(0.91), in: RoundedRectangle(cornerRadius: 18))
+                                BerryGridNavigationTile(
+                                    title: "Berry Boutique", detail: "Boards, blocks and garden upgrades",
+                                    art: "ShopBasket", caption: "Visit Market") {
+                                    audio.play(.menuSelect)
+                                    showHomeShop = true
+                                }
                             }
-                            .buttonStyle(.plain)
                             HStack(spacing: 7) {
                                 Image(systemName: "quote.bubble.fill")
                                 Text(gardenQuotes[quoteIndex % gardenQuotes.count])
