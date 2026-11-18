@@ -99,6 +99,16 @@ struct BerryQuestBoardView: View {
     @ObservedObject var session: BerryGameSession
     @ObservedObject private var progress = BerryProgression.shared
     @Environment(\.dismiss) private var dismiss
+    private func questArt(for id: String) -> String {
+        switch id {
+        case "lines": return "HarvestReward"
+        case "modes": return "BerryVillageMap"
+        case "moves": return "CottageDecorations"
+        case "chapters": return "BerryStory"
+        default: return "Milestone"
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -115,12 +125,21 @@ struct BerryQuestBoardView: View {
                                         GridItem(.flexible(), spacing: 11)], spacing: 11) {
                         ForEach(progress.quests) { quest in
                             VStack(spacing: 8) {
-                                Image(systemName: quest.symbol)
-                                    .font(.system(size: 28, weight: .bold))
-                                    .foregroundStyle(BerryStyle.strawberry)
-                                    .frame(width: 64, height: 64)
-                                    .background(BerryStyle.softPink,
-                                                in: RoundedRectangle(cornerRadius: 18))
+                                ZStack(alignment: .bottomTrailing) {
+                                    BerryIcon(name: questArt(for: quest.id), size: 61)
+                                        .frame(width: 64, height: 64)
+                                        .background(BerryStyle.softPink,
+                                                    in: RoundedRectangle(cornerRadius: 18))
+                                        .overlay(RoundedRectangle(cornerRadius: 18)
+                                            .strokeBorder(BerryStyle.strawberry.opacity(0.35),
+                                                          lineWidth: 1.4))
+                                    Image(systemName: quest.symbol)
+                                        .font(.system(size: 11, weight: .black))
+                                        .foregroundStyle(.white)
+                                        .padding(5)
+                                        .background(BerryStyle.strawberry, in: Circle())
+                                        .offset(x: 2, y: 2)
+                                }
                                 Text(quest.title)
                                     .font(.system(size: 14, weight: .black, design: .rounded))
                                     .foregroundStyle(BerryStyle.chocolate)
