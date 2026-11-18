@@ -6,6 +6,7 @@ struct BerryJukeboxView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var audio = BerryAudio.shared
     @AppStorage("berryblockblast.music") private var musicOn = true
+    @State private var selectedRole: String? = nil
 
     private let sections: [(title: String, role: String, icon: String, subtitle: String)] = [
         ("🍓 Strawberry Village", "menu", "house.fill", "11 menu themes"),
@@ -17,71 +18,101 @@ struct BerryJukeboxView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 18) {
+                VStack(spacing: 16) {
                     BerryMusicSettingsView()
                     Text("🎼 51 Original Berry Songs")
                         .font(.system(size: 23, weight: .black, design: .rounded))
                         .foregroundStyle(BerryStyle.strawberry)
-                    Text("Every recording is bundled inside your iPhone. No Wi-Fi or streaming required.")
+                    Text("Your entire soundtrack is stored on the iPhone, ready to play offline.")
                         .font(.system(size: 12, weight: .medium, design: .rounded))
                         .foregroundStyle(BerryStyle.chocolate.opacity(0.72))
                         .multilineTextAlignment(.center)
-                    ForEach(sections, id: \.role) { section in
-                        VStack(alignment: .leading, spacing: 9) {
-                            Label(section.title, systemImage: section.icon)
-                                .font(.system(size: 18, weight: .black, design: .rounded))
-                                .foregroundStyle(BerryStyle.strawberry)
-                            Text(section.subtitle)
-                                .font(.system(size: 11, weight: .medium, design: .rounded))
-                                .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
-                            ForEach(BerryAudio.tracks.filter { $0.role == section.role }) { track in
+                    if let role = selectedRole {
+                        HStack {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.18)) {
+                                    selectedRole = nil
+                                }
+                            } label: {
+                                Label("All Playlists", systemImage: "chevron.left")
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(BerryStyle.strawberry)
+                            Spacer()
+                            Text(sections.first(where: { $0.role == role })?.title ?? "Berry Songs")
+                                .font(.system(size: 13, weight: .black, design: .rounded))
+                                .foregroundStyle(BerryStyle.chocolate)
+                                .lineLimit(1)
+                        }
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 11),
+                                            GridItem(.flexible(), spacing: 11)], spacing: 11) {
+                            ForEach(BerryAudio.tracks.filter { $0.role == role }) { track in
                                 Button {
-                                    if !musicOn { musicOn = true; audio.setMusic(true) }
+                                    if !musicOn {
+                                        musicOn = true
+                                        audio.setMusic(true)
+                                    }
                                     audio.selectTrack(track.id - 1)
                                     audio.play(.menuSelect)
                                 } label: {
-                                    HStack(spacing: 11) {
-                                        Image(systemName: audio.currentTrackNumber == track.id
-                                              ? "waveform" : "music.note")
-                                            .font(.system(size: 16, weight: .bold))
-                                            .foregroundStyle(.white)
-                                            .frame(width: 39, height: 39)
-                                            .background(audio.currentTrackNumber == track.id
-                                                ? BerryStyle.strawberry : BerryStyle.leaf,
-                                                in: RoundedRectangle(cornerRadius: 11))
-                                        VStack(alignment: .leading, spacing: 3) {
-                                            Text(track.title)
-                                                .font(.system(size: 14, weight: .bold, design: .rounded))
-                                                .lineLimit(2)
-                                            Text(String(format: "%02d", track.id) + " • " +
-                                                (track.mood == "calm" ? "Cozy" : "Upbeat"))
-                                                .font(.caption2)
-                                                .foregroundStyle(BerryStyle.chocolate.opacity(0.62))
-                                        }
-                                        Spacer()
-                                        if audio.currentTrackNumber == track.id {
-                                            Image(systemName: "speaker.wave.2.fill")
-                                                .foregroundStyle(BerryStyle.strawberry)
-                                        } else {
-                                            Image(systemName: "play.fill")
-                                                .foregroundStyle(BerryStyle.strawberry.opacity(0.75))
-                                        }
+                                    VStack(spacing: 7) {
+                                        Image(systemName: audio.currentTrackNumber == track.id ?
+                                              "waveform" : "music.note")
+                                            .font(.system(size: 29, weight: .bold))
+                                            .foregroundStyle(BerryStyle.strawberry)
+                                            .frame(width: 66, height: 66)
+                                            .background(BerryStyle.softPink,
+                                                        in: RoundedRectangle(cornerRadius: 18))
+                                        Text(track.title)
+                                            .font(.system(size: 13, weight: .black, design: .rounded))
+                                            .foregroundStyle(BerryStyle.chocolate)
+                                            .multilineTextAlignment(.center)
+                                            .lineLimit(3)
+                                        Text(String(format: "Track %02d", track.id))
+                                            .font(.system(size: 10, weight: .medium, design: .rounded))
+                                            .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
+                                        Text(audio.currentTrackNumber == track.id ?
+                                             "♫ Now Playing" : "▶ Play Track")
+                                            .font(.system(size: 11, weight: .heavy, design: .rounded))
+                                            .foregroundStyle(audio.currentTrackNumber == track.id ?
+                                                BerryStyle.leaf : BerryStyle.strawberry)
                                     }
-                                    .foregroundStyle(BerryStyle.chocolate)
+                                    .frame(maxWidth: .infinity, minHeight: 165)
                                     .padding(10)
-                                    .background(.white, in: RoundedRectangle(cornerRadius: 16))
-                                    .overlay(RoundedRectangle(cornerRadius: 16)
-                                        .strokeBorder(BerryStyle.strawberry.opacity(0.16), lineWidth: 1))
+                                    .background(.white, in: RoundedRectangle(cornerRadius: 19))
+                                    .overlay(RoundedRectangle(cornerRadius: 19)
+                                        .strokeBorder(BerryStyle.strawberry.opacity(
+                                            audio.currentTrackNumber == track.id ? 0.72 : 0.25),
+                                            lineWidth: audio.currentTrackNumber == track.id ? 2 : 1))
                                 }
                                 .buttonStyle(.plain)
+                                .accessibilityLabel("Play " + track.title)
                             }
                         }
-                        .padding(16)
-                        .background(Color(red: 1, green: 0.91, blue: 0.93).opacity(0.75),
-                                    in: RoundedRectangle(cornerRadius: 22))
+                    } else {
+                        Text("CHOOSE A BERRY PLAYLIST")
+                            .font(.system(size: 12, weight: .black, design: .rounded))
+                            .foregroundStyle(BerryStyle.strawberry)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 11),
+                                            GridItem(.flexible(), spacing: 11)], spacing: 11) {
+                            ForEach(sections, id: \.role) { section in
+                                BerryGridNavigationTile(
+                                    title: section.title,
+                                    detail: section.subtitle,
+                                    art: section.role == "menu" ? "StrawberryJukebox" :
+                                         section.role == "gameplay" ? "SweetEndless" :
+                                         section.role == "blitz" ? "Milestone" : "Champion",
+                                    caption: "\(BerryAudio.tracks.filter { $0.role == section.role }.count) Tracks") {
+                                    withAnimation(.easeInOut(duration: 0.18)) {
+                                        selectedRole = section.role
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-                .padding(20)
+                .padding(18)
                 .frame(maxWidth: 560)
                 .frame(maxWidth: .infinity)
             }
