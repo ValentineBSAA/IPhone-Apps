@@ -20,6 +20,16 @@ private struct BerryBoard: View {
     let previewStyle: String
     let onBoardRect: (CGRect) -> Void
     @AppStorage("berryblockblast.shop.equippedBorder.v056b2") private var borderSkin = "default"
+    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "cream"
+    private var boardCellArt: String {
+        switch boardSurface {
+        case "glass": return "BerryBoardCandyGlassCell"
+        case "picnic": return "BerryBoardPicnicCell"
+        case "garden": return "BerryBoardGardenCell"
+        case "seed": return "BerryBoardSeedMosaicCell"
+        default: return "BerryBoardCreamCell"
+        }
+    }
     private let gap: CGFloat = 3
     private var gardenBorder: Color {
         switch borderSkin {
@@ -59,6 +69,16 @@ private struct BerryBoard: View {
                                 .frame(width: max(2, unit * 0.14), height: max(2, unit * 0.14))
                                 .padding(.top, unit * 0.12)
                                 .padding(.leading, unit * 0.13)
+                        }
+                        .overlay {
+                            if UIImage(named: boardCellArt) != nil {
+                                Image(boardCellArt)
+                                    .resizable()
+                                    .interpolation(.high)
+                                    .scaledToFit()
+                                    .frame(width: unit, height: unit)
+                                    .opacity(0.73)
+                            }
                         }
                     if let tint = engine.visibleCell(row: r, col: c) {
                         let blocked = preview?.piece.points.contains(where: {
@@ -217,6 +237,7 @@ struct BerryGameView: View {
     @State private var showUnlock = false
     @State private var lastBlitzTimeBonus = 0
     @AppStorage("berryblockblast.previewStyle") private var previewStyle = "ghost"
+    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "cream"
     private let harvestCheers = [
         "🍓 A berry sweet harvest!", "🍰 Piece of strawberry cake!",
         "🌸 The garden is blooming!", "✨ Sweet as sunshine!",
@@ -1307,6 +1328,16 @@ struct BerryGameView: View {
                 Text("Outline Only").tag("outline")
                 Text("Mystery Garden").tag("mystery")
             }
+            Picker("🍓 Board Background", selection: $boardSurface) {
+                Text("Strawberry Cream").tag("cream")
+                Text("Frosted Candy Glass").tag("glass")
+                Text("Picnic Cloth").tag("picnic")
+                Text("Garden Patch").tag("garden")
+                Text("Seed Mosaic").tag("seed")
+            }
+            Text("Board backgrounds change the empty cells only. All block hitboxes and saved games stay the same.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
             Toggle("Haptic feedback", isOn: $haptics).tint(BerryStyle.strawberry)
             Toggle("Touch diagnostics (testing)", isOn: $touchDiagnostics).tint(BerryStyle.strawberry)
             if touchDiagnostics {
