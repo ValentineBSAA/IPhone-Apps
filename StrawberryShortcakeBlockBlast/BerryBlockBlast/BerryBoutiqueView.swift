@@ -269,6 +269,7 @@ struct BerryBoutiqueView: View {
                                         GridItem(.flexible(), spacing: 10)], spacing: 10) {
                         ForEach(filteredItems(type: "surfaces")) { item in itemCard(item) }
                     }
+                    BerryBoardConceptGrid()
                 } else {
                     Text("Frames sit outside your grid. Original empty squares and your selected candy blocks never change.")
                         .font(.caption).foregroundStyle(BerryStyle.chocolate)
