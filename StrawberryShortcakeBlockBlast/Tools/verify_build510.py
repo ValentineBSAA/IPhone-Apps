@@ -183,7 +183,7 @@ for marker in ('.fill(Color.white.opacity(0.96))',
     assert marker in game, "Original 0.5.8 empty board square changed: " + marker
 for marker in ('surface-original', 'surface-cream', 'surface-glass',
                'surface-picnic', 'surface-garden', 'surface-seed',
-               'RESTORE ORIGINAL 0.5.8 APPEARANCE'):
+               'RESTORE ORIGINAL BOARD ONLY'):
     assert marker in boutique, "Missing restored Boutique board option: " + marker
 assert 'storyDialogueCard(compact: compact)' in game
 assert '.offset(x: 34, y: 38)' not in game, "Story dialogue must not overlap the board"
