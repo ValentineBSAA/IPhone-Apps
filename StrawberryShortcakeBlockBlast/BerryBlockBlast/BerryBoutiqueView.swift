@@ -204,7 +204,12 @@ struct BerryBoutiqueView: View {
                     .foregroundStyle(BerryStyle.strawberry)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    ForEach(Category.allCases) { category in
+                    // Keep old board cosmetic purchases and saved data, but
+                    // do not offer rejected Board Studio / Seasonal Frame
+                    // artwork as active choices in a new test release.
+                    ForEach(Category.allCases.filter {
+                        $0 != .boardStudio && $0 != .seasonal
+                    }) { category in
                         categoryTile(category)
                     }
                 }
@@ -262,42 +267,13 @@ struct BerryBoutiqueView: View {
                 ForEach(filteredItems(type: "blocks")) { item in itemCard(item) }
             }
         case .boardStudio:
-            if let boardSubmenu {
-                if boardSubmenu == .surfaces {
-                    filterPicker
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
-                                        GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                        ForEach(filteredItems(type: "surfaces")) { item in itemCard(item) }
-                    }
-                    BerryBoardConceptGrid()
-                } else {
-                    Text("Frames sit outside your grid. Original empty squares and your selected candy blocks never change.")
-                        .font(.caption).foregroundStyle(BerryStyle.chocolate)
-                    BerryBoardFrameGrid()
-                    Text("ORIGINAL COLOR FRAMES")
-                        .font(.system(size: 12, weight: .black, design: .rounded))
-                        .foregroundStyle(BerryStyle.strawberry)
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
-                                        GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                        ForEach(items.filter { $0.type == "frames" }) { item in itemCard(item) }
-                    }
-                }
-            } else {
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
-                                    GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                    Button {
-                        withAnimation { boardSubmenu = .surfaces }
-                    } label: {
-                        BerryGridInfoTile(title: "Board Surfaces", detail: "Original + five optional empty square designs",
-                                         art: "BerryBoardCreamCell", value: "Open Studio")
-                    }.buttonStyle(.plain)
-                    Button {
-                        withAnimation { boardSubmenu = .frames }
-                    } label: {
-                        BerryGridInfoTile(title: "Decorative Frames", detail: "Christmas, birthday, blossoms and more",
-                                         art: "Milestone", value: "Open Frames")
-                    }.buttonStyle(.plain)
-                }
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                BerryGridInfoTile(
+                    title: "Clean Classic Board",
+                    detail: "Decorative surface and frame options retired after iPhone testing. Your old purchases remain saved.",
+                    art: "BerryClassic", value: "Active"
+                )
             }
         case .sparkleStudio:
             Text("Your current sparkles remain equipped until you change them.")
@@ -313,7 +289,14 @@ struct BerryBoutiqueView: View {
                 .buttonStyle(.bordered)
                 .tint(BerryStyle.leaf)
         case .seasonal:
-            BerryBoardFrameGrid(seasonalOnly: true)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                BerryGridInfoTile(
+                    title: "Seasonal Memories",
+                    detail: "Frame art is currently retired. Your prior collections and berries remain safe.",
+                    art: "BBBIconSeasonal", value: "Archived"
+                )
+            }
         case .restore:
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
                                 GridItem(.flexible(), spacing: 10)], spacing: 10) {
