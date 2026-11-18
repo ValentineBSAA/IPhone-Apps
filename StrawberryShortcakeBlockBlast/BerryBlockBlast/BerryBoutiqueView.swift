@@ -238,6 +238,19 @@ struct BerryBoutiqueView: View {
             }
         case .frames:
             Button {
+                boardSurface = "original"
+                borderSkin = "default"
+            } label: {
+                Label("RESTORE ORIGINAL BOARD ONLY", systemImage: "square.grid.3x3.fill")
+                    .font(.system(size: 12, weight: .black, design: .rounded))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(BerryStyle.leaf)
+            Text("This restores empty squares and their frame. Your selected puzzle blocks stay unchanged.")
+                .font(.caption)
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.74))
+            Button {
                 blockSkin = "default"
                 boardSurface = "original"
                 borderSkin = "default"
@@ -515,7 +528,7 @@ struct BerryBoutiqueView: View {
                         switch item.type {
                         case "blocks": blockSkin = "default"
                         case "frames": borderSkin = "default"
-                        case "surfaces": boardSurface = "cream"
+                        case "surfaces": boardSurface = "original"
                         default: sparkleSkin = "default"
                         }
                     } else {
