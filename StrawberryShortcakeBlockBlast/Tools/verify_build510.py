@@ -104,7 +104,7 @@ for surface in ("surface-cream", "surface-glass", "surface-picnic",
                 "surface-garden", "surface-seed"):
     assert surface in (root / "BerryBlockBlast" / "BerryBoutiqueView.swift").read_text(), (
         "Board must be selectable in Frames & Sparkles: " + surface)
-assert "ILLUSTRATED BOARD SURFACES" in (root / "BerryBlockBlast" / "BerryBoutiqueView.swift").read_text()
+assert "BOARD SURFACES · ORIGINAL + OPTIONAL" in (root / "BerryBlockBlast" / "BerryBoutiqueView.swift").read_text()
 for code in (game, ui_assets, *score_views):
     assert "BerryCandyNumber" in code or "candyNumberGradient" in code, (
         "Numeric game results lost candy-gradient rendering")
