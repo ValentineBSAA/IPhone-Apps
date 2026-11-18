@@ -112,11 +112,16 @@ struct BerryHomeView: View {
                                 Text(version).font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(BerryStyle.strawberry).padding(10).background(.white.opacity(0.9), in: Capsule())
                                 Spacer()
                                 BerryWalletPill(berries: villageSession.berries)
-                                Button { showHomeShop = true } label: {
-                                    BerryIcon(name: "ShopBasket", size: 39)
-                                        .frame(width: 43, height: 43)
-                                }.accessibilityLabel("Open Berry Boutique")
-                                Button { showSettings = true } label: { Image(systemName: "gearshape.fill").font(.title2).foregroundStyle(BerryStyle.strawberry).frame(width: 46, height: 46).background(.white, in: Circle()) }.accessibilityLabel("Settings")
+                                BerryCandyToolbarButton(
+                                    symbol: "basket.fill", title: "Open Berry Boutique",
+                                    size: 41, tint: BerryStyle.leaf) {
+                                    showHomeShop = true
+                                }
+                                BerryCandyToolbarButton(
+                                    symbol: "gearshape.fill", title: "Settings",
+                                    size: 41) {
+                                    showSettings = true
+                                }
                             }
                             Text("🍓 ✨ 🍰 ✨ 🍓").font(.title2)
                                 .accessibilityLabel("Strawberry sweets")
