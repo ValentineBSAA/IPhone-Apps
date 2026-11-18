@@ -1,0 +1,548 @@
+{
+  "version": "0.5.12",
+  "description": "48 authored and derived PNG resources for the unsigned iPhone test IPA",
+  "source_archives": {
+    "art18": {
+      "file": "BerryBerryBlast_0511_Regenerated_18_AssetPack.zip",
+      "sha256": "c18bb92f2da1c7a57b72cab1f41e8e1f6bee9035ec1183094468337fa3be351d"
+    },
+    "rewards10": {
+      "file": "BerryBerryBlast_10_Special_Block_Rewards.zip",
+      "sha256": "487f15071d3795bdfca79ddd6fc0bffcae036507e07856978eeb9fec952a9915"
+    },
+    "boards10": {
+      "file": "BerryBerryBlast_10_Separate_Board_Concepts.zip",
+      "sha256": "43cc3af09c735892f4e8e379260820bf86d241fe9d304eddc9d2a9260c27aaa6"
+    }
+  },
+  "assets": [
+    {
+      "name": "BBBFrameBirthday",
+      "filename": "BBBFrameBirthday.png",
+      "size": [
+        900,
+        900
+      ],
+      "bytes": 165867,
+      "sha256": "35f97ed37380b92b0fba0a45c810547b64bcc907ff46943cedd3fa675d0b8494",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBFrameChristmas",
+      "filename": "BBBFrameChristmas.png",
+      "size": [
+        900,
+        900
+      ],
+      "bytes": 201271,
+      "sha256": "20097da8d138f812eec123de779e636533d4c7c41957de157fd0a5ff70a9ba74",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBFrameMidnight",
+      "filename": "BBBFrameMidnight.png",
+      "size": [
+        900,
+        900
+      ],
+      "bytes": 188012,
+      "sha256": "96b8a2ec863d418c15f87c9cc823bf18c8b8decf6360b6edfac6c00503bd9b03",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBFramePicnic",
+      "filename": "BBBFramePicnic.png",
+      "size": [
+        900,
+        900
+      ],
+      "bytes": 189301,
+      "sha256": "e5ccb63b21ff93bd2bc768ddcd7c96f39f851cdbc399c09a07853622f69bb815",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBFrameSpring",
+      "filename": "BBBFrameSpring.png",
+      "size": [
+        900,
+        900
+      ],
+      "bytes": 220321,
+      "sha256": "8db7550de040693225c65f2f775fb9a97ac65c90d5c506ec23e9c02e82f505e7",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBIconBirthday",
+      "filename": "BBBIconBirthday.png",
+      "size": [
+        384,
+        384
+      ],
+      "bytes": 208860,
+      "sha256": "f1d8e285e06f2ca4ca95f0784b487638c856a3da7a297cdc1184ad7d431a7ea3",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBIconBlocks",
+      "filename": "BBBIconBlocks.png",
+      "size": [
+        384,
+        384
+      ],
+      "bytes": 175487,
+      "sha256": "7bee4d301fbb1800494a38ade19743a0b196a202e788bf5ba1d71a66fc02e983",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBIconBoard",
+      "filename": "BBBIconBoard.png",
+      "size": [
+        384,
+        384
+      ],
+      "bytes": 203690,
+      "sha256": "e46564ec053231a4533a2b160cb213d2b02f7b1f9e2810ac86e993fd4c93b8d9",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBIconHelp",
+      "filename": "BBBIconHelp.png",
+      "size": [
+        384,
+        384
+      ],
+      "bytes": 159127,
+      "sha256": "4d0356269ff1355eb152ca56175b74ce60fa19ec6a5d5122f5eedbdcb3907fa6",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBIconHome",
+      "filename": "BBBIconHome.png",
+      "size": [
+        384,
+        384
+      ],
+      "bytes": 212570,
+      "sha256": "69dbfd61aa9c0f6f43cfca23a27c4032425c00e27b60e4bfbb54712a03454dbc",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBIconInventory",
+      "filename": "BBBIconInventory.png",
+      "size": [
+        384,
+        384
+      ],
+      "bytes": 212572,
+      "sha256": "5315c0f6bba90627ab7191e37f135798e7badc0d73626d7fda6a2cfc64025a1e",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBIconPause",
+      "filename": "BBBIconPause.png",
+      "size": [
+        384,
+        384
+      ],
+      "bytes": 163486,
+      "sha256": "a49749e9121cb94039cf18f03c849ac8a6f8f6408298804f334f3dc3269f9206",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBIconRestore",
+      "filename": "BBBIconRestore.png",
+      "size": [
+        384,
+        384
+      ],
+      "bytes": 179462,
+      "sha256": "9b243c27bfddfb4385729483ee7efffe383cb5c13e9e95ba0132d603190b39d1",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBIconSeasonal",
+      "filename": "BBBIconSeasonal.png",
+      "size": [
+        384,
+        384
+      ],
+      "bytes": 194401,
+      "sha256": "bc58f748b5a036c407054622f5a850f46cca6bb42ae89ba97a461b3f596517f2",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBIconSettings",
+      "filename": "BBBIconSettings.png",
+      "size": [
+        384,
+        384
+      ],
+      "bytes": 141242,
+      "sha256": "665ffb4e5c8f5165b03399f5d15ad42a42ec28ffaf7cfcd25726abaed1434b82",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBIconShop",
+      "filename": "BBBIconShop.png",
+      "size": [
+        384,
+        384
+      ],
+      "bytes": 203545,
+      "sha256": "197960086d28453c58e0a6eeb1482ff98465e94a00b8f7a724f1704c7c4342cc",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBIconSparkle",
+      "filename": "BBBIconSparkle.png",
+      "size": [
+        384,
+        384
+      ],
+      "bytes": 197617,
+      "sha256": "54f28f427e34ff6bc64994bc6c8a8cb17d41e382fcc242df8b45f56a00e3e002",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BBBIconTools",
+      "filename": "BBBIconTools.png",
+      "size": [
+        384,
+        384
+      ],
+      "bytes": 181189,
+      "sha256": "c6a228d532c355c2232db914a107b3285574c347bed896eb4bf787a1ed44fd49",
+      "origin": "approved-18-icons-frames"
+    },
+    {
+      "name": "BerryRewardStrawberryRed",
+      "filename": "BerryRewardStrawberryRed.png",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 345540,
+      "sha256": "6e6f3aa4457ee0a43ee0cc5b3c4d3e939bed49e84064e50a1842a7bc19965f6a",
+      "origin": "approved-special-reward"
+    },
+    {
+      "name": "BerryRewardGoldenHoney",
+      "filename": "BerryRewardGoldenHoney.png",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 297290,
+      "sha256": "e7bacb3325b0d8d8965c66ee26a7a2730b2a224fc219295f9a4ceb466a833c2b",
+      "origin": "approved-special-reward"
+    },
+    {
+      "name": "BerryRewardBlueberrySparkle",
+      "filename": "BerryRewardBlueberrySparkle.png",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 350125,
+      "sha256": "0d29ecb8e89ba1417e89c110286937887e292c46cecea70d8cc3f16f962388e3",
+      "origin": "approved-special-reward"
+    },
+    {
+      "name": "BerryRewardRoyalBerry",
+      "filename": "BerryRewardRoyalBerry.png",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 387312,
+      "sha256": "e0f047f8d3e2612e6a20fce9cdba895c6dfe08a71fe6da2ddbb4a4627017c0cd",
+      "origin": "approved-special-reward"
+    },
+    {
+      "name": "BerryRewardMoonberryNightmare",
+      "filename": "BerryRewardMoonberryNightmare.png",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 339596,
+      "sha256": "0749e98c30c1d6c40cf09442620b21961e722045bc8d79960afcfb1dd57fc926",
+      "origin": "approved-special-reward"
+    },
+    {
+      "name": "BerryRewardMintLeafJelly",
+      "filename": "BerryRewardMintLeafJelly.png",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 312004,
+      "sha256": "e4ef1339673d2cf2d24830f7ee095a6f9e5d5106e9b1ea1d258c0d25054576a2",
+      "origin": "approved-special-reward"
+    },
+    {
+      "name": "BerryRewardRaspberryBloom",
+      "filename": "BerryRewardRaspberryBloom.png",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 321337,
+      "sha256": "a01a115a6fb2f06835be83f602183a99bf35bf71d25940c0304fd80a831ef4fe",
+      "origin": "approved-special-reward"
+    },
+    {
+      "name": "BerryRewardPeachFizz",
+      "filename": "BerryRewardPeachFizz.png",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 321005,
+      "sha256": "fd192516149b294c80a1d2f5184eb8df488af2bf5092f46d2b38d20cba43af34",
+      "origin": "approved-special-reward"
+    },
+    {
+      "name": "BerryRewardLavenderDream",
+      "filename": "BerryRewardLavenderDream.png",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 299648,
+      "sha256": "091711de7c9d10ee82c9624c1e757bae073fbe94ad3bc591ddb2de4b091ac920",
+      "origin": "approved-special-reward"
+    },
+    {
+      "name": "BerryRewardCoconutCream",
+      "filename": "BerryRewardCoconutCream.png",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 309744,
+      "sha256": "e24c0e43b0925f50aa0cede65e6badb1f570914daf2b831108ddb4a909cf0905",
+      "origin": "approved-special-reward"
+    },
+    {
+      "name": "BBBBoardConcept01",
+      "filename": "BBBBoardConcept01.png",
+      "size": [
+        247,
+        621
+      ],
+      "bytes": 289471,
+      "sha256": "c10d0115e90c2aaefe15d29163183e335facee02f6615c7e63f11656a8e00636",
+      "origin": "approved-portrait-concept"
+    },
+    {
+      "name": "BBBBoardCell01",
+      "filename": "BBBBoardCell01.png",
+      "size": [
+        192,
+        192
+      ],
+      "bytes": 42124,
+      "sha256": "84314f443b3367127aaf32d68fba2394e9242b1d41760c7d1a42a86f35b3ba27",
+      "origin": "derived-empty-cell-texture"
+    },
+    {
+      "name": "BBBBoardConcept02",
+      "filename": "BBBBoardConcept02.png",
+      "size": [
+        248,
+        621
+      ],
+      "bytes": 309781,
+      "sha256": "9b594e547244ba5f0f614b17d186e900233243dad4dc999f6fce8ac44ecc8999",
+      "origin": "approved-portrait-concept"
+    },
+    {
+      "name": "BBBBoardCell02",
+      "filename": "BBBBoardCell02.png",
+      "size": [
+        192,
+        192
+      ],
+      "bytes": 49794,
+      "sha256": "39943b0e3879c1ec008a47e3a6245bda0c251cbb90ae8703b20fef67dcca14a7",
+      "origin": "derived-empty-cell-texture"
+    },
+    {
+      "name": "BBBBoardConcept03",
+      "filename": "BBBBoardConcept03.png",
+      "size": [
+        249,
+        621
+      ],
+      "bytes": 302273,
+      "sha256": "a6e2ae7ff98028667dd4026693b93890505ecef4c0d03cfc2165abad34d30463",
+      "origin": "approved-portrait-concept"
+    },
+    {
+      "name": "BBBBoardCell03",
+      "filename": "BBBBoardCell03.png",
+      "size": [
+        192,
+        192
+      ],
+      "bytes": 51142,
+      "sha256": "9c4a1e3950f33390cc062cc29b93ccf5b7bff2f290c84e0ff49ca32f297c7426",
+      "origin": "derived-empty-cell-texture"
+    },
+    {
+      "name": "BBBBoardConcept04",
+      "filename": "BBBBoardConcept04.png",
+      "size": [
+        249,
+        621
+      ],
+      "bytes": 293225,
+      "sha256": "c3e51da289729f1a9b291460504d870164e788f6835d475d6df1ba8dcf0a786c",
+      "origin": "approved-portrait-concept"
+    },
+    {
+      "name": "BBBBoardCell04",
+      "filename": "BBBBoardCell04.png",
+      "size": [
+        192,
+        192
+      ],
+      "bytes": 51826,
+      "sha256": "b0488be28bdad04defaaf66f63d7c414de144a606cb6da954ed15c22a9f90593",
+      "origin": "derived-empty-cell-texture"
+    },
+    {
+      "name": "BBBBoardConcept05",
+      "filename": "BBBBoardConcept05.png",
+      "size": [
+        248,
+        621
+      ],
+      "bytes": 296690,
+      "sha256": "7d94043488b749f14f3eb3f9e00e7a9462f3dc7d41543f203169cbce27670c6c",
+      "origin": "approved-portrait-concept"
+    },
+    {
+      "name": "BBBBoardCell05",
+      "filename": "BBBBoardCell05.png",
+      "size": [
+        192,
+        192
+      ],
+      "bytes": 54013,
+      "sha256": "cf947eff2f765719572e5d8ce9e5c055ec8c8398c5bb53e99e42c65124ba60a2",
+      "origin": "derived-empty-cell-texture"
+    },
+    {
+      "name": "BBBBoardConcept06",
+      "filename": "BBBBoardConcept06.png",
+      "size": [
+        247,
+        624
+      ],
+      "bytes": 310792,
+      "sha256": "1ba8cd643846c44b44e924c772f8602c2707e51203313697948c2db25428bf5d",
+      "origin": "approved-portrait-concept"
+    },
+    {
+      "name": "BBBBoardCell06",
+      "filename": "BBBBoardCell06.png",
+      "size": [
+        192,
+        192
+      ],
+      "bytes": 53082,
+      "sha256": "f578807d27a88478d802de569e63f742642e92e4b79a78d0765bb8558ea4d0a9",
+      "origin": "derived-empty-cell-texture"
+    },
+    {
+      "name": "BBBBoardConcept07",
+      "filename": "BBBBoardConcept07.png",
+      "size": [
+        248,
+        624
+      ],
+      "bytes": 325934,
+      "sha256": "c988807b175f086b22b4196470e9dfd1ca943e1af032e818281fdd84ce544914",
+      "origin": "approved-portrait-concept"
+    },
+    {
+      "name": "BBBBoardCell07",
+      "filename": "BBBBoardCell07.png",
+      "size": [
+        192,
+        192
+      ],
+      "bytes": 51436,
+      "sha256": "ef77c5b5a1ba1b6eeceb709ed75acbd8265eea3e95c1137c3f9cba0d9d65ec86",
+      "origin": "derived-empty-cell-texture"
+    },
+    {
+      "name": "BBBBoardConcept08",
+      "filename": "BBBBoardConcept08.png",
+      "size": [
+        249,
+        624
+      ],
+      "bytes": 284180,
+      "sha256": "aae1cd9ecfdf84585e502e5a725383722eb9c6e839d0a4bcea012877a00d6c1a",
+      "origin": "approved-portrait-concept"
+    },
+    {
+      "name": "BBBBoardCell08",
+      "filename": "BBBBoardCell08.png",
+      "size": [
+        192,
+        192
+      ],
+      "bytes": 47793,
+      "sha256": "d9490404ed21a58e9c6ab061d27b711c4a5558e4bf681e11d3e289583f43b9fc",
+      "origin": "derived-empty-cell-texture"
+    },
+    {
+      "name": "BBBBoardConcept09",
+      "filename": "BBBBoardConcept09.png",
+      "size": [
+        249,
+        624
+      ],
+      "bytes": 306621,
+      "sha256": "77113a3656e6f308a85fc890c8a46ac93d9179e459e34f368cb820a897769413",
+      "origin": "approved-portrait-concept"
+    },
+    {
+      "name": "BBBBoardCell09",
+      "filename": "BBBBoardCell09.png",
+      "size": [
+        192,
+        192
+      ],
+      "bytes": 48902,
+      "sha256": "44136cd692e249f0584a0ce9954239f0bf70d4c66845b1f045296120d05bb2bb",
+      "origin": "derived-empty-cell-texture"
+    },
+    {
+      "name": "BBBBoardConcept10",
+      "filename": "BBBBoardConcept10.png",
+      "size": [
+        248,
+        624
+      ],
+      "bytes": 304175,
+      "sha256": "3ed74f533ae306533c1ef8d4b836e1df78de3c1dd80c3dcec859830f864241d6",
+      "origin": "approved-portrait-concept"
+    },
+    {
+      "name": "BBBBoardCell10",
+      "filename": "BBBBoardCell10.png",
+      "size": [
+        192,
+        192
+      ],
+      "bytes": 54197,
+      "sha256": "995d741c8132a34606f62150586efced3388a42ed0e44cbb9c5463768532362a",
+      "origin": "derived-empty-cell-texture"
+    }
+  ]
+}
