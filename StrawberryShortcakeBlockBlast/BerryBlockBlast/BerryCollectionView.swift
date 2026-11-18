@@ -77,7 +77,7 @@ struct BerryCollectionView: View {
                         .buttonStyle(.bordered)
                         .tint(BerryStyle.strawberry)
                         Spacer(minLength: 3)
-                        Text(["Collection", "Inventory", "Awards", "Records", "Playtime", "Economy"][section])
+                        Text(["Collection", "Inventory", "Awards", "Records", "Playtime", "Economy", "Trophy Garden"][section])
                             .font(.system(size: 15, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry)
                     }
@@ -87,7 +87,8 @@ struct BerryCollectionView: View {
                     case 2: awardsContent
                     case 3: recordsContent
                     case 4: playtimeContent
-                    default: economyContent
+                    case 5: economyContent
+                    default: BerryTrophyGardenView()
                     }
                 } else {
                     Text("EXPLORE YOUR BERRY TREASURES")
@@ -110,6 +111,12 @@ struct BerryCollectionView: View {
                             title: "Awards", detail: "Your unlocked berry achievements",
                             art: "Champion", caption: "\(lifetimeLines) Lines") {
                                 withAnimation { section = 2 }
+                            }
+                        BerryGridNavigationTile(
+                            title: "Strawberry Trophy Garden",
+                            detail: "10 special candy block rewards, locked goals and Equip buttons",
+                            art: "BBBIconBlocks", caption: "Permanent Rewards") {
+                                withAnimation { section = 6 }
                             }
                         BerryGridNavigationTile(
                             title: "Personal Records", detail: "Best scores in every game mode",
@@ -212,6 +219,12 @@ struct BerryCollectionView: View {
             Text("Helpers aren't available in Berry Classic or timed challenges.")
                 .font(.system(size: 11, weight: .medium, design: .rounded))
                 .foregroundStyle(BerryStyle.chocolate.opacity(0.7))
+            sectionHeader("SPECIAL COLLECTIBLE BLOCKS")
+            BerryGridNavigationTile(
+                title: "Strawberry Trophy Garden", detail: "Earn rare block styles and manage your unlocked trophies",
+                art: "BBBIconBlocks", caption: "View All 10 Rewards") {
+                    withAnimation { section = 6 }
+                }
             sectionHeader("MY BLOCKS, FRAMES & SPARKLES")
             LazyVGrid(columns: gridColumns, spacing: 11) {
                 ForEach(skins) { skin in
