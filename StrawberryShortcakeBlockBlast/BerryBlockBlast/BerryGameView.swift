@@ -265,7 +265,6 @@ struct BerryGameView: View {
 
     @StateObject private var session = BerryGameSession()
     @State private var boardPosition = BerryBoardPositionCache()
-    @State private var stableBoardSize: CGFloat?
     @State private var drag: BerryDragState?
     @State private var hintPreview: BerryDragState?
     @State private var hintSerial = 0
@@ -323,24 +322,15 @@ struct BerryGameView: View {
             let top = geo.safeAreaInsets.top
             let bottom = geo.safeAreaInsets.bottom
             let compact = height < 740
-            // Reserve real space for the tray, tools, statistics and Story
-            // dialogue BEFORE choosing the board size. The old width-first
-            // sizing pushed the final row and controls below the screen.
-            // Build 1 grew the board without reserving the full tray, HUD,
-            // controls and safe areas. On real 393-point iPhones SwiftUI
-            // could compress the three-piece row, making live pieces vanish
-            // visually while UIKit still received their touches.
-            // Account for ALL fixed-height rows, gaps and insets first.
-            let layoutReserve: CGFloat =
-                mode == .story ? 455 :
-                mode == .daily ? 410 :
-                (mode == .endless && session.engine.side == 24) ? 415 :
-                isTimedMode ? 400 : 390
-            // Leave 7pt for the untouched touch-coordinate wrapper on each
-            // side, plus 5pt page gutters. Fits both 393pt-class iPhones.
-            let fittedBoardSize = max(192, min(width - 24,
-                height - top - bottom - layoutReserve, 465))
-            let boardSize = stableBoardSize ?? fittedBoardSize
+            // GeometryReader's height is already the safe content region.
+            // Do not subtract top/bottom safe-area insets twice. Reserve the
+            // true HUD and tray heights with a consistent screen-size budget.
+            let boardSize = BerryGameplayLayout.boardSize(
+                width: width, height: height,
+                topInset: top, bottomInset: bottom,
+                mode: mode,
+                megaGarden: mode == .endless && session.engine.side == 24
+            )
             ZStack {
                 background
                 VStack(spacing: compact ? 4 : 5) {
@@ -535,9 +525,6 @@ struct BerryGameView: View {
             }
             }
             .frame(width: width, height: height)
-            .onAppear {
-                if stableBoardSize == nil { stableBoardSize = fittedBoardSize }
-            }
         }
         .preferredColorScheme(.light)
         .statusBarHidden()
