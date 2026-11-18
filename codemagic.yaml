@@ -183,6 +183,7 @@ workflows:
               z.extractall(root)
           print("PASS: Golden Strawberry original game icon installed")
           PY
+          python3 Tools/install_art511.py
           python3 Tools/verify_build511.py
       - name: Compile native iPhone app without signing
         script: |
