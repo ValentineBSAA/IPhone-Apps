@@ -42,11 +42,10 @@ struct BerryTile: View {
     @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkles = "default"
 
     private var skin: String { skinOverride ?? blockSkin }
-    /// Sculpted fruit artwork is the original default block set. Purchased
-    /// Blueberry Velvet and other skins continue using their existing
-    /// persistent selection and display logic.
+    /// Restored original 0.5.8 square candy blocks for the default style.
+    /// Sculpted fruit shapes are kept only for the optional Boutique skin.
     private var fruitImage: String? {
-        guard skin == "default" || skin == "strawberry-fruit" else { return nil }
+        guard skin == "strawberry-fruit" else { return nil }
         switch (tint % 6 + 6) % 6 {
         case 0: return "BerryFruitStrawberry"
         case 1: return "BerryFruitRaspberry"
@@ -116,9 +115,9 @@ struct BerryTile: View {
                     .shadow(color: palette.opacity(preview ? 0.10 : 0.22),
                             radius: max(0.5, side * 0.06), y: 1)
                     .accessibilityLabel("Sculpted \(art.replacingOccurrences(of: "BerryFruit", with: "")) puzzle block")
-            } else if decorated || skin == "strawberry-fruit" {
-                // The *entire* piece is shaped like a real strawberry.
-                // Hit-testing and placement still use the exact square cell.
+            } else if skin == "strawberry-fruit" {
+                // Legacy fruit cosmetic remains available only by choice.
+                // Default blocks must use the full original square tile.
                 Image("BerryRealStrawberry")
                     .resizable()
                     .interpolation(.high)
