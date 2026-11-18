@@ -118,7 +118,7 @@ workflows:
           PY
           python3 - <<'PY'
           from pathlib import Path
-          import hashlib, zipfile
+          import hashlib, io, zipfile
           root = Path.cwd().parent.resolve()
           extras = [
               ("Berry_Berry_Blast_0.5.9_AppIcon_Cloud.zip",
@@ -136,7 +136,29 @@ workflows:
                       "Artwork checksum mismatch: " + filename +
                       "\\nExpected: " + expected_hash + "\\nFound: " + digest
                   )
-              with zipfile.ZipFile(item) as z:
+              try:
+                  archive = zipfile.ZipFile(item)
+              except zipfile.BadZipFile:
+                  # The tracked 0.5.9 AppIcon archive has exactly 39 junk
+                  # bytes inserted between its valid central directory and
+                  # end-of-directory record. GitHub's bytes and SHA are
+                  # verified above. Remove ONLY that confirmed separator;
+                  # do not suppress corruption in other archives.
+                  if filename != "Berry_Berry_Blast_0.5.9_AppIcon_Cloud.zip":
+                      raise
+                  raw = item.read_bytes()
+                  end = raw.rfind(b"PK\\x05\\x06")
+                  if end < 0 or end + 22 != len(raw):
+                      raise SystemExit("App icon ZIP lacks a normal end record")
+                  cd_size = int.from_bytes(raw[end + 12:end + 16], "little")
+                  cd_offset = int.from_bytes(raw[end + 16:end + 20], "little")
+                  cd_end = cd_offset + cd_size
+                  if raw[cd_offset:cd_offset + 4] != b"PK\\x01\\x02" or end - cd_end != 39:
+                      raise SystemExit("App icon ZIP has unexpected corruption")
+                  repaired = raw[:cd_end] + raw[end:]
+                  archive = zipfile.ZipFile(io.BytesIO(repaired))
+                  print("PASS: repaired known 39-byte AppIcon ZIP directory gap")
+              with archive as z:
                   if z.testzip() is not None:
                       raise SystemExit("Corrupted ZIP artwork: " + filename)
                   names = set(z.namelist())
