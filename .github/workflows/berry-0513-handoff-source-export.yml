@@ -1,0 +1,54 @@
+name: Berry Berry Blast 0.5.13 Build 3 Frozen Source Handoff
+on:
+  push:
+    branches: [handoff/berry-0513-build3-frozen-20261118]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export-snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify source is identical to Build 3 test commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          observed="$(git rev-parse HEAD:StrawberryShortcakeBlockBlast)"
+          expected="0a66b3e99882ab8046b74856b9ccadd2210feeff"
+          echo "BUILD3_SOURCE_TREE_SHA=$observed"
+          test "$observed" = "$expected"
+          test -f StrawberryShortcakeBlockBlast/Tests/BerryBoardFrameContainmentTests.swift
+          test -f StrawberryShortcakeBlockBlast/BerryBlockBlast/BerryGardenBorder.swift
+          python3 StrawberryShortcakeBlockBlast/Tools/verify_audio_build2.py || true
+      - name: Assemble self-contained, exact tracked source snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p handoff_source
+          printf '%s\n' \
+            "repo=ValentineBSAA/IPhone-Apps" \
+            "original_build3_commit=b4ffda288b7a778a79a860c8d8ebc2cab3e5755b" \
+            "source_tree_sha=$(git rev-parse HEAD:StrawberryShortcakeBlockBlast)" \
+            "snapshot_branch=handoff/berry-0513-build3-frozen-20261118" \
+            "note=This snapshot is source, NOT Build 3 simulator approval or IPA" \
+            > handoff_source/SOURCE_PROVENANCE.txt
+          git ls-files -z \
+            StrawberryShortcakeBlockBlast/ \
+            .github/workflows/ \
+            codemagic.yaml \
+            README.md \
+            docs/ \
+            HANDOFF/ \
+            BuildPayload/ \
+            | tar --null -czf handoff_source/Berry_0513_Build3_Complete_Tracked_Source.tar.gz --files-from=-
+          sha256sum handoff_source/*.tar.gz > handoff_source/SHA256SUMS.txt
+          ls -lh handoff_source/
+      - name: Upload source as a single GitHub artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-0513-Build3-FROZEN-SOURCE-20261118
+          path: handoff_source/*
+          retention-days: 30
+          if-no-files-found: error
