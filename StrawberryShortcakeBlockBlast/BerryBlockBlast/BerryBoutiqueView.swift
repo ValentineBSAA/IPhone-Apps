@@ -24,6 +24,7 @@ struct BerryBoutiqueView: View {
     @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkleSkin = "default"
     @AppStorage("berryblockblast.sound") private var sound = true
     @State private var selectedCategory: Category?
+    @State private var confirmRestoreAllAppearance = false
 
     private enum Category: String, CaseIterable, Identifiable {
         case blocks, frames, helpers, special, cottage, inventory
@@ -251,18 +252,29 @@ struct BerryBoutiqueView: View {
                 .font(.caption)
                 .foregroundStyle(BerryStyle.chocolate.opacity(0.74))
             Button {
-                blockSkin = "default"
-                boardSurface = "original"
-                borderSkin = "default"
-                sparkleSkin = "default"
-                if sound { BerryAudio.shared.play(.menuSelect) }
+                confirmRestoreAllAppearance = true
             } label: {
-                Label("RESTORE ORIGINAL 0.5.8 APPEARANCE", systemImage: "arrow.uturn.backward.circle.fill")
+                Label("RESTORE ALL COSMETIC DEFAULTS", systemImage: "paintpalette.fill")
                     .font(.system(size: 12, weight: .black, design: .rounded))
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.bordered)
             .tint(BerryStyle.strawberry)
+            .confirmationDialog(
+                "Also restore your selected block skin?",
+                isPresented: $confirmRestoreAllAppearance,
+                titleVisibility: .visible) {
+                    Button("Restore All Cosmetic Defaults") {
+                        blockSkin = "default"
+                        boardSurface = "original"
+                        borderSkin = "default"
+                        sparkleSkin = "default"
+                        if sound { BerryAudio.shared.play(.menuSelect) }
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Your chosen blocks will return to the original style. Purchased cosmetics, scores and strawberries are not erased.")
+                }
             Text("BOARD SURFACES · ORIGINAL + OPTIONAL")
                 .font(.system(size: 12, weight: .black, design: .rounded))
                 .foregroundStyle(BerryStyle.strawberry)
