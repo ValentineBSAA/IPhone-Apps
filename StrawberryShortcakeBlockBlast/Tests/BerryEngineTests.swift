@@ -233,7 +233,11 @@ final class BerryEngineTests: XCTestCase {
         XCTAssertEqual(game.board.count, 24)
         XCTAssertEqual(game.board[0].count, 24)
         XCTAssertTrue(game.hasMove())
-        XCTAssertTrue(game.tray.compactMap { $0 }.allSatisfy { $0.points.count >= 7 })
+        // New Mega Garden balancing includes small, legal rescue shapes;
+        // preventing stuck turns matters more than requiring giant blocks.
+        XCTAssertTrue(game.tray.compactMap { $0 }.allSatisfy {
+            !$0.points.isEmpty && game.hasPlacement(for: $0)
+        })
         let first = game.tray.compactMap { $0 }.first!
         XCTAssertTrue(game.hasPlacement(for: first))
         let encoded = try JSONEncoder().encode(game)
