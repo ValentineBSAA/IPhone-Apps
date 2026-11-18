@@ -317,6 +317,8 @@ struct BerryGameView: View {
                                 Text(String(format: "%01d:%02d", blitzRemaining / 60, blitzRemaining % 60))
                                     .font(.system(size: 35, weight: .black, design: .rounded))
                                     .monospacedDigit()
+                                    .foregroundStyle(blitzRemaining <= 10 ?
+                                        BerryStyle.urgentTimerGradient : BerryStyle.timerGradient)
                             }
                             Spacer()
                             VStack(alignment: .trailing, spacing: 3) {
