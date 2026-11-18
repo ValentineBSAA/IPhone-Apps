@@ -60,7 +60,30 @@ enum BerryTrophyCatalog {
         return rewards.first(where: { "reward-" + $0.id == skin })
     }
 
+    static func earnedKey(_ id: String) -> String {
+        "berryberryblast.trophies.earned." + id + ".v0512"
+    }
+
+    static func permanentlyEarned(_ reward: Reward) -> Bool {
+        UserDefaults.standard.bool(forKey: earnedKey(reward.id)) ||
+        (reward.id == "strawberry-red" &&
+         UserDefaults.standard.bool(forKey: legacyStrawberryKey))
+    }
+
+    static func recordPermanentUnlock(_ reward: Reward) {
+        // One-way entitlement: Undo never revokes a collectible and
+        // repeating an already achieved challenge never earns a second one.
+        UserDefaults.standard.set(true, forKey: earnedKey(reward.id))
+    }
+
+    static func migrateAlreadyEarned() {
+        for reward in rewards where isEarned(reward) {
+            recordPermanentUnlock(reward)
+        }
+    }
+
     static func isEarned(_ reward: Reward) -> Bool {
+        if permanentlyEarned(reward) { return true }
         let data = UserDefaults.standard
         return unlocked(reward,
                         lifetimeLines: data.integer(forKey: lifetimeLinesKey),
@@ -99,6 +122,7 @@ struct BerryTrophyGardenView: View {
         BerryTrophyCatalog.rewards.filter { isUnlocked($0) }.count
     }
     private func isUnlocked(_ reward: BerryTrophyCatalog.Reward) -> Bool {
+        BerryTrophyCatalog.permanentlyEarned(reward) ||
         BerryTrophyCatalog.unlocked(reward, lifetimeLines: lifetimeLines, chapter: storyChapter,
                                     survivals: nightmareSurvivals, nightmareBest: nightmareBestLines,
                                     legacy: legacyStrawberry)
@@ -162,6 +186,7 @@ struct BerryTrophyGardenView: View {
             }
         }
         .accessibilityIdentifier("berry-trophy-garden")
+        .onAppear { BerryTrophyCatalog.migrateAlreadyEarned() }
     }
 
     private func card(_ reward: BerryTrophyCatalog.Reward) -> some View {
