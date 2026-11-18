@@ -20,6 +20,7 @@ struct BerryBoutiqueView: View {
     @ObservedObject var session: BerryGameSession
     @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
     @AppStorage("berryblockblast.shop.equippedBorder.v056b2") private var borderSkin = "default"
+    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "cream"
     @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkleSkin = "default"
     @AppStorage("berryblockblast.sound") private var sound = true
     @State private var selectedCategory: Category?
@@ -40,7 +41,7 @@ struct BerryBoutiqueView: View {
         var subtitle: String {
             switch self {
             case .blocks: return "Make every berry block yours"
-            case .frames: return "Beautiful borders and effects"
+            case .frames: return "Illustrated boards, borders and effects"
             case .helpers: return "Undo, Shuffle and Berry Hint"
             case .special: return "Powerful one-use tools and permanent abilities"
             case .cottage: return "Build your strawberry garden"
@@ -77,6 +78,18 @@ struct BerryBoutiqueView: View {
                           detail: "Cool mint leaves and candy glass", emoji: "🍃", price: 110, type: "blocks"),
         BerryBoutiqueItem(id: "blackberry-blocks", name: "Blackberry Jam",
                           detail: "Deep-purple jam and blackberry shine", emoji: "🫐", price: 130, type: "blocks"),
+        // All five visual surfaces are included, not newly monetized.
+        // Reuse the same selection key already saved by Berry Settings.
+        BerryBoutiqueItem(id: "surface-cream", name: "Strawberry Cream",
+                          detail: "Soft pink berry cream", emoji: "🍓", price: 0, type: "surfaces"),
+        BerryBoutiqueItem(id: "surface-glass", name: "Frosted Candy Glass",
+                          detail: "Glossy strawberry jelly", emoji: "💎", price: 0, type: "surfaces"),
+        BerryBoutiqueItem(id: "surface-picnic", name: "Berry Picnic",
+                          detail: "Pastel picnic-cloth tiles", emoji: "🧺", price: 0, type: "surfaces"),
+        BerryBoutiqueItem(id: "surface-garden", name: "Garden Patch",
+                          detail: "Earth and leaf growing squares", emoji: "🌱", price: 0, type: "surfaces"),
+        BerryBoutiqueItem(id: "surface-seed", name: "Seed Mosaic",
+                          detail: "Sparkling seed-imprint tiles", emoji: "✨", price: 0, type: "surfaces"),
         BerryBoutiqueItem(id: "rose-border", name: "Rose Petal Frame",
                           detail: "A beautiful raspberry board border", emoji: "🌺", price: 75, type: "frames"),
         BerryBoutiqueItem(id: "mint-border", name: "Mint Garden Frame",
@@ -89,6 +102,7 @@ struct BerryBoutiqueView: View {
         switch item.type {
         case "blocks": return blockSkin == item.id
         case "frames": return borderSkin == item.id
+        case "surfaces": return boardSurface == String(item.id.dropFirst("surface-".count))
         default: return sparkleSkin == item.id
         }
     }
@@ -97,6 +111,7 @@ struct BerryBoutiqueView: View {
         switch item.type {
         case "blocks": blockSkin = item.id
         case "frames": borderSkin = item.id
+        case "surfaces": boardSurface = String(item.id.dropFirst("surface-".count))
         default: sparkleSkin = item.id
         }
         if sound { BerryAudio.shared.play(.menuSelect) }
@@ -214,9 +229,29 @@ struct BerryBoutiqueView: View {
     private func section(_ category: Category) -> some View {
         switch category {
         case .blocks:
-            ForEach(items.filter { $0.type == "blocks" }) { item in itemCard(item) }
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                ForEach(items.filter { $0.type == "blocks" }) { item in itemCard(item) }
+            }
         case .frames:
-            ForEach(items.filter { $0.type != "blocks" }) { item in itemCard(item) }
+            Text("ILLUSTRATED BOARD SURFACES")
+                .font(.system(size: 12, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.strawberry)
+            Text("All five new board surfaces are included. Your existing frames and sparkles are preserved.")
+                .font(.caption).foregroundStyle(BerryStyle.chocolate)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                ForEach(items.filter { $0.type == "surfaces" }) { item in itemCard(item) }
+            }
+            Text("FRAMES & SPARKLES")
+                .font(.system(size: 12, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.strawberry)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                ForEach(items.filter { $0.type == "frames" || $0.type == "sparkles" }) {
+                    item in itemCard(item)
+                }
+            }
         case .helpers:
             VStack(alignment: .leading, spacing: 13) {
                 Text("Helpers are unavailable in Berry Classic and timed modes.")
@@ -362,61 +397,89 @@ struct BerryBoutiqueView: View {
         .foregroundStyle(BerryStyle.chocolate)
     }
 
+    private func surfaceArt(for id: String) -> String {
+        switch id {
+        case "surface-glass": return "BerryBoardCandyGlassCell"
+        case "surface-picnic": return "BerryBoardPicnicCell"
+        case "surface-garden": return "BerryBoardGardenCell"
+        case "surface-seed": return "BerryBoardSeedMosaicCell"
+        default: return "BerryBoardCreamCell"
+        }
+    }
+
     private func itemCard(_ item: BerryBoutiqueItem) -> some View {
-        let owned = session.ownedCosmetics.contains(item.id)
-        return HStack(spacing: 11) {
+        let included = item.type == "surfaces"
+        let owned = included || session.ownedCosmetics.contains(item.id)
+        return VStack(spacing: 7) {
             Group {
                 if item.type == "blocks" {
                     BerryTile(tint: item.id == "blueberry-blocks" ? 3 : 0,
                               mode: .classic, strawberryUnlocked: true,
                               skinOverride: item.id)
-                        .padding(7)
+                        .padding(6)
+                } else if included {
+                    Image(surfaceArt(for: item.id))
+                        .resizable()
+                        .scaledToFit()
                 } else {
-                    BerryIcon(name: item.type == "frames" ? "CottageDecorations" : "Milestone", size: 53)
+                    BerryIcon(name: item.type == "frames" ? "CottageDecorations" : "Milestone",
+                              size: 62)
                 }
             }
-            .frame(width: 58, height: 58)
-            .background(item.accent.opacity(0.13), in: RoundedRectangle(cornerRadius: 14))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(item.name)
-                    .font(.system(size: 15, weight: .black, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate)
-                Text(item.detail)
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
-                    .fixedSize(horizontal: false, vertical: true)
-                if owned {
-                    Text(active(item) ? "✓ EQUIPPED" : "✓ OWNED")
-                        .font(.system(size: 10, weight: .black, design: .rounded))
-                        .foregroundStyle(BerryStyle.leaf)
-                }
+            .frame(width: 70, height: 70)
+            .background(item.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 15))
+            Text(item.name)
+                .font(.system(size: 13, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.78)
+            Text(item.detail)
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+            if owned {
+                Text(active(item) ? "✓ EQUIPPED" : included ? "INCLUDED" : "✓ OWNED")
+                    .font(.system(size: 10, weight: .black, design: .rounded))
+                    .foregroundStyle(BerryStyle.leaf)
             }
-            Spacer(minLength: 4)
+            Spacer(minLength: 0)
             Button {
                 if owned {
                     if active(item) {
                         switch item.type {
                         case "blocks": blockSkin = "default"
                         case "frames": borderSkin = "default"
+                        case "surfaces": boardSurface = "cream"
                         default: sparkleSkin = "default"
                         }
-                    } else { equip(item) }
+                    } else {
+                        equip(item)
+                    }
                 } else if session.buyCosmetic(id: item.id, cost: item.price) {
                     equip(item)
                     if sound { BerryAudio.shared.play(.reward) }
                 }
             } label: {
-                Text(owned ? (active(item) ? "Unequip" : "Equip") : "🍓 \(item.price)")
+                Text(included ? (active(item) ? "✓ Selected" : "Use Board") :
+                     owned ? (active(item) ? "Unequip" : "Equip") : "🍓 \(item.price)")
                     .font(.system(size: 11, weight: .black, design: .rounded))
-                    .frame(minWidth: 58)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.74)
+                    .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .tint(owned ? BerryStyle.leaf : BerryStyle.strawberry)
-            .disabled(!owned && session.berries < item.price)
+            .disabled((!owned && session.berries < item.price) ||
+                      (included && active(item)))
         }
-        .padding(12)
-        .background(.white, in: RoundedRectangle(cornerRadius: 18))
-        .overlay(RoundedRectangle(cornerRadius: 18)
-            .strokeBorder(item.accent.opacity(0.33), lineWidth: 1.2))
+        .padding(10)
+        .frame(maxWidth: .infinity, minHeight: 218)
+        .background(.white, in: RoundedRectangle(cornerRadius: 19))
+        .overlay(RoundedRectangle(cornerRadius: 19)
+            .strokeBorder(active(item) ? BerryStyle.leaf.opacity(0.65) :
+                          item.accent.opacity(0.28),
+                          lineWidth: active(item) ? 2 : 1.2))
     }
 }
