@@ -228,6 +228,8 @@ final class BerryGameSession: ObservableObject {
     func drop(slot: Int, row: Int, col: Int) -> Bool {
         guard !gameOver else { return false }
         let before = engine
+        let oldSection = engine.activeGardenSection
+        let oldSeason = engine.seasons
         guard let outcome = engine.place(slot: slot, row: row, col: col) else { return false }
         previous = before
         previousBerryEarnings = 0
@@ -248,12 +250,15 @@ final class BerryGameSession: ObservableObject {
                 outcome.clearedLines >= 3 ? "BERRY SPECTACULAR! ✨" :
                 outcome.streak >= 2 ? "SWEET COMBO ×\(outcome.streak)! 🍓" : "BERRY DELICIOUS! 🍰"
         } else { lastMessage = nil }
-        if activeMode == .endless && !engine.hasMove() {
-            let oldSection = engine.activeGardenSection
-            let oldSeason = engine.seasons
-            if engine.beginNextEndlessSeasonIfStuck() {
-                // The same saved 24x24 garden is preserved on patch changes.
-                // Undo cannot return the player to an unplayable patch.
+        if activeMode == .endless {
+            // Auto-completed patches may advance while the remaining hand is
+            // still playable. Announce those transitions as well as rescues.
+            var progressed = engine.activeGardenSection != oldSection ||
+                engine.seasons != oldSeason
+            if !engine.hasMove() {
+                progressed = engine.beginNextEndlessSeasonIfStuck() || progressed
+            }
+            if progressed {
                 previous = nil
                 previousBerryEarnings = 0
                 previousRewardEntry = nil
