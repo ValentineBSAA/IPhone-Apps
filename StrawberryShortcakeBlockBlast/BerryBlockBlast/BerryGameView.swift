@@ -258,8 +258,8 @@ struct BerryGameView: View {
         case .story: return storyIsLineQuest ? "CHAPTER \(storyLevel) • Clear \(storyTargetLines) lines to bloom!" : "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
         case .daily: return "DAILY HARVEST • \(BerryGameSession.dailyDateKey()) • Gather \(goal) points!"
         case .cozy: return "COZY COTTAGE • \(session.cottageDecorations) decorations • Grow at your pace!"
-        case .challenge: return "⚡ \(blitzVariant.rawValue.uppercased()) • \(blitzRemaining)s • \(session.engine.score) points"
-        case .superHard: return "🌙 NIGHTMARE • 12 × 12 • \(blitzRemaining)s remaining"
+        case .challenge: return "⚡ \(blitzVariant.rawValue.uppercased()) • \(session.engine.score) points"
+        case .superHard: return "🌙 NIGHTMARE • 12 × 12 • SURVIVE THE CLOCK"
         }
     }
 
@@ -343,17 +343,21 @@ struct BerryGameView: View {
                         BerryClassicScoreView(score: session.engine.score, best: session.bestScore, combo: session.engine.streak)
                     } else if mode == .challenge {
                         BerryBlitzHUD(timeLeft: blitzRemaining, score: session.engine.score,
-                                     best: session.bestScore, variant: blitzVariant)
+                                     best: session.bestScore, variant: blitzVariant,
+                                     deadline: blitzDeadline, pausedAt: pausedTimerAt, running: blitzRunning)
                     } else if mode == .superHard {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("🌙 STRAWBERRY NIGHTMARE")
                                     .font(.system(size: 10, weight: .black, design: .rounded))
-                                Text(String(format: "%01d:%02d", blitzRemaining / 60, blitzRemaining % 60))
-                                    .font(.system(size: 35, weight: .black, design: .rounded))
-                                    .monospacedDigit()
-                                    .foregroundStyle(blitzRemaining <= 10 ?
-                                        BerryStyle.urgentTimerGradient : BerryStyle.timerGradient)
+                                BerryLiveCountdown(
+                                    deadline: blitzDeadline,
+                                    pausedAt: pausedTimerAt,
+                                    fallbackSeconds: blitzRemaining,
+                                    running: blitzRunning,
+                                    fontSize: 35,
+                                    label: "Strawberry Nightmare time remaining"
+                                )
                             }
                             Spacer()
                             VStack(alignment: .trailing, spacing: 3) {
