@@ -302,13 +302,20 @@ struct BerryGameView: View {
             let top = geo.safeAreaInsets.top
             let bottom = geo.safeAreaInsets.bottom
             let compact = height < 740
-            let fittedBoardSize = max(185, min(width - 42, height - top - bottom -
-                (isTimedMode ? (compact ? 276 : 310) : (compact ? 248 : 282)) -
-                (mode == .story ? 42 : 0), 475))
+            // Reserve real space for the tray, tools, statistics and Story
+            // dialogue BEFORE choosing the board size. The old width-first
+            // sizing pushed the final row and controls below the screen.
+            let layoutReserve: CGFloat =
+                mode == .story ? 426 :
+                mode == .daily ? 391 :
+                (mode == .endless && session.engine.side == 24) ? 402 :
+                isTimedMode ? 360 : 350
+            let fittedBoardSize = max(192, min(width - 48,
+                height - top - bottom - layoutReserve, 465))
             let boardSize = stableBoardSize ?? fittedBoardSize
             ZStack {
                 background
-                VStack(spacing: compact ? 5 : 8) {
+                VStack(spacing: compact ? 4 : 5) {
                     topBar(compact: compact)
                     if mode == .classic {
                         BerryClassicScoreView(score: session.engine.score, best: session.bestScore, combo: session.engine.streak)
@@ -341,15 +348,19 @@ struct BerryGameView: View {
                     } else {
                         scoreBar
                     }
-                    HStack(spacing: 6) {
-                        Image(systemName: mode == .challenge ? "bolt.fill" : mode == .cozy ? "leaf.fill" : "sparkles")
-                        Text((mode == .endless || mode == .cozy) ? (session.lastMessage ?? objective) : objective)
-                            .lineLimit(1).minimumScaleFactor(0.65)
-                        Image(systemName: "sparkles")
+                    if mode != .story {
+                        HStack(spacing: 6) {
+                            Image(systemName: mode == .challenge ? "bolt.fill" :
+                                  mode == .cozy ? "leaf.fill" : "sparkles")
+                            Text((mode == .endless || mode == .cozy) ?
+                                 (session.lastMessage ?? objective) : objective)
+                                .lineLimit(1).minimumScaleFactor(0.72)
+                            Image(systemName: "sparkles")
+                        }
+                        .font(.system(size: compact ? 10 : 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(BerryStyle.chocolate)
+                        .frame(height: 17)
                     }
-                    .font(.system(size: compact ? 10 : 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate)
-                    .frame(height: 19)
                     if mode == .endless && session.engine.side == 24 {
                         endlessSectionHUD
                     }
@@ -384,12 +395,12 @@ struct BerryGameView: View {
                     }
                     HStack(spacing: 5) {
                         Image(systemName: "hand.draw.fill")
-                        Text(selectedSlot == nil ? "DRAG UP TO PLACE  •  OR TAP A PIECE" : "TAP AN EMPTY SPACE TO PLACE")
+                        Text(selectedSlot == nil ? "DRAG OR TAP TO PLACE" : "TAP A FREE BOARD SQUARE")
                     }
-                    .font(.system(size: 10, weight: .heavy, design: .rounded))
-                    .tracking(0.6)
-                    .foregroundStyle(BerryStyle.chocolate.opacity(0.72))
-                    .frame(height: 17)
+                    .font(.system(size: 9, weight: .heavy, design: .rounded))
+                    .tracking(0.35)
+                    .foregroundStyle(BerryStyle.chocolate.opacity(0.76))
+                    .frame(height: 13)
                     HStack(spacing: 8) {
                         ForEach(0..<3, id: \.self) { slot in
                             let piece = session.engine.tray[slot]
@@ -419,7 +430,7 @@ struct BerryGameView: View {
                                 }
                             }
                             .frame(maxWidth: .infinity)
-                            .frame(height: compact ? 65 : 76)
+                            .frame(height: compact ? 58 : 65)
                             .contentShape(Rectangle())
                             // Dedicated UIKit touch delivery persists after the finger
                             // leaves the tray and cannot conflict with board tap gestures.
@@ -445,26 +456,33 @@ struct BerryGameView: View {
                             .foregroundStyle(BerryStyle.chocolate)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    HStack {
-                        BerryWalletPill(berries: session.berries)
-                        Spacer()
-                        HStack(spacing: 5) {
-                            BerryCandyNumber(value: session.engine.totalLines.formatted(),
-                                             size: 13, label: "Lines")
-                            Text("LINES ·")
-                            BerryCandyNumber(value: session.engine.moves.formatted(),
-                                             size: 13, label: "Moves")
-                            Text("MOVES")
-                        }
-                        .font(.system(size: 9, weight: .heavy, design: .rounded))
-                        .foregroundStyle(BerryStyle.chocolate.opacity(0.7))
+                    // One small status strip rather than a second full-size
+                    // wallet + counters row competing with the board.
+                    HStack(spacing: 6) {
+                        Image(systemName: "leaf.fill")
+                            .foregroundStyle(BerryStyle.leaf)
+                        BerryCandyNumber(value: "🍓 \(session.berries.formatted())",
+                                         size: 13, label: "Strawberry wallet")
+                        Spacer(minLength: 4)
+                        BerryCandyNumber(value: session.engine.totalLines.formatted(),
+                                         size: 12, label: "Lines cleared")
+                        Text("LINES")
+                        Text("·")
+                        BerryCandyNumber(value: session.engine.moves.formatted(),
+                                         size: 12, label: "Moves")
+                        Text("MOVES")
                     }
+                    .font(.system(size: 9, weight: .heavy, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate.opacity(0.80))
+                    .padding(.horizontal, 10)
+                    .frame(height: 25)
+                    .background(.white.opacity(0.78), in: Capsule())
                     Spacer(minLength: 0)
                 }
                 .disabled(isPaused)
                 .padding(.horizontal, 15)
-                .padding(.top, max(8, top + 3))
-                .padding(.bottom, max(5, bottom))
+                .padding(.top, max(10, top + 6))
+                .padding(.bottom, max(10, bottom))
                 .frame(maxWidth: 510)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 if let slot = activeDragSlot,
