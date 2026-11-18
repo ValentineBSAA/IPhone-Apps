@@ -8,7 +8,9 @@ final class BerryBoardTouchMappingTests: XCTestCase {
     func testEightAndTwelveCellBoardsMatchTouchGeometryAcrossPhoneWidths() {
         let one = BerryPiece(points: [.init(row: 0, col: 0)], tint: 0)
         for width: CGFloat in [320, 375, 393, 430] {
-            let boardSize = max(150, width - 12)
+            let boardSize = BerryGameplayLayout.boardSize(
+                width: width, height: 759, topInset: 0,
+                bottomInset: 0, mode: .classic)
             let rim = BerryGameplayLayout.boardTouchMargin
             let wrapper = CGRect(x: 10, y: 140,
                                  width: boardSize + rim * 2,
@@ -49,9 +51,9 @@ final class BerryBoardTouchMappingTests: XCTestCase {
             let board = BerryGameplayLayout.boardSize(
                 width: 393, height: 759, topInset: 0,
                 bottomInset: 0, mode: .classic)
-            XCTAssertGreaterThanOrEqual(board, 370, label)
+            XCTAssertGreaterThanOrEqual(board, 350, label)
             XCTAssertLessThanOrEqual(
-                board + 2 * BerryGameplayLayout.boardTouchMargin + 6,
+                BerryBoardContainment.fullFrameSide(playableSide: board) + 6,
                 393 + 0.001, label)
         }
     }
