@@ -1,4 +1,4 @@
-name: Berry Berry Blast 0.5.12 Build 3 Full-Game Regression and Illustrated IPA
+name: Berry Berry Blast Build 3 Simulator Validation (No IPA)
 on:
   push:
     branches: [fix/berry-berry-blast-0512-build3-tray-layout-regression]
@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   native-regression:
-    name: Full Game + Calendar Simulator Tests & Native Build 3
+    name: Full Game + Calendar Simulator Tests Only
     runs-on: macos-15
     timeout-minutes: 60
     defaults:
@@ -63,42 +63,10 @@ jobs:
             -resultBundlePath .build/Build3Regression.xcresult \
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO test
-      - name: Compile native iOS 16 iPhone application
-        shell: bash
-        run: |
-          set -euo pipefail
-          xcodebuild -project BerryBlockBlast.xcodeproj -scheme BerryBlockBlast \
-            -configuration Release -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath .build/Device CODE_SIGNING_ALLOWED=NO build
-      - name: Package fully illustrated unsigned Build 3 IPA
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p dist/Payload
-          cp -R .build/Device/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
-          (cd dist && zip -qr Berry-Berry-Blast-v0.5.12-build3-ALL-48-ART-unsigned.ipa Payload)
-          python3 Tools/verify_audio_build2.py --ipa dist/Berry-Berry-Blast-v0.5.12-build3-ALL-48-ART-unsigned.ipa
-          unzip -t dist/Berry-Berry-Blast-v0.5.12-build3-ALL-48-ART-unsigned.ipa | tail -2
-          python3 - <<'PY'
-          from pathlib import Path
-          import zipfile
-          p=Path('dist/Berry-Berry-Blast-v0.5.12-build3-ALL-48-ART-unsigned.ipa')
-          with zipfile.ZipFile(p) as z:
-              assert any(x.endswith('/Assets.car') for x in z.namelist()), 'missing compiled artwork'
-              assert any(x.endswith('/BerryBlockBlast') for x in z.namelist()), 'missing native executable'
-          print('VERIFIED:',p.name,format(p.stat().st_size/1024/1024,'.1f'),'MiB')
-          PY
       - name: Upload full regression images and test result bundle
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Berry-Berry-Blast-v0.5.12-Build3-Full-Regression-XCTest
           path: StrawberryShortcakeBlockBlast/.build/Build3Regression.xcresult
-          retention-days: 14
-      - name: Upload unsigned native iPhone Build 3 test IPA
-        uses: actions/upload-artifact@v4
-        with:
-          name: Berry-Berry-Blast-v0.5.12-build3-ALL-48-ART-unsigned-IPA
-          path: StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-v0.5.12-build3-ALL-48-ART-unsigned.ipa
           retention-days: 14
