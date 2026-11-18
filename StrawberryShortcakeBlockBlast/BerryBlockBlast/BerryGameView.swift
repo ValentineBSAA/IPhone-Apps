@@ -175,6 +175,32 @@ struct BerryGameView: View {
     private var blitzVariant: BerryBlitzVariant { BerryBlitzVariant.selected }
     private var isTimedMode: Bool { mode == .challenge || mode == .superHard }
     private var timedDuration: Int { mode == .superHard ? 180 : blitzVariant.seconds }
+
+    private var playtimeModeID: String {
+        switch mode {
+        case .classic: return "classic"
+        case .endless: return "endless-\(session.engine.side)"
+        case .story: return "story"
+        case .daily: return "daily"
+        case .cozy: return "cozy"
+        case .superHard: return "nightmare"
+        case .challenge: return "blitz-\(blitzVariant.seconds)"
+        }
+    }
+    private var playtimeModeTitle: String {
+        if mode == .endless { return "Sweet Endless \(session.engine.side)×\(session.engine.side)" }
+        if mode == .challenge { return "Berry Blitz: \(blitzVariant.rawValue)" }
+        return mode.rawValue
+    }
+
+    private func updateModePlaytime() {
+        let activePuzzle = !isPaused && !showGameOver && !showVictory &&
+            !confirmRestart && !showSettings && !showHelp && !showShop &&
+            !showStats && !showCottage && !showWelcome && !showDailyCalendar &&
+            !showPremiumActions && !confirmGoldenStrawberry &&
+            (!isTimedMode || blitzRunning)
+        BerryPlaytimeTracker.shared.setModePlaying(activePuzzle)
+    }
     @State private var isPaused = false
     @Environment(\.scenePhase) private var scenePhase
     private var canManuallyPause: Bool { true }
@@ -562,6 +588,7 @@ struct BerryGameView: View {
             BerryAudio.shared.setScreen(isTimedMode ? .blitz : .gameplay)
             BerryAudio.shared.setMusic(music)
             session.selectMode(mode)
+            BerryPlaytimeTracker.shared.enterMode(playtimeModeID, title: playtimeModeTitle)
             scoreRecordAtEntry = max(session.bestScore, session.engine.score)
             celebratedRecordThisRun = false
             showNewBestBanner = false
@@ -585,7 +612,22 @@ struct BerryGameView: View {
             }
             if mode == .daily && dailyCompleted == BerryGameSession.dailyDateKey() { showVictory = session.engine.score >= goal }
             if !welcomed { showWelcome = true }
+            updateModePlaytime()
         }
+        .onDisappear {
+            BerryPlaytimeTracker.shared.leaveMode()
+        }
+        .onChange(of: isPaused) { _ in updateModePlaytime() }
+        .onChange(of: showGameOver) { _ in updateModePlaytime() }
+        .onChange(of: showShop) { _ in updateModePlaytime() }
+        .onChange(of: showStats) { _ in updateModePlaytime() }
+        .onChange(of: showCottage) { _ in updateModePlaytime() }
+        .onChange(of: showWelcome) { _ in updateModePlaytime() }
+        .onChange(of: showDailyCalendar) { _ in updateModePlaytime() }
+        .onChange(of: showPremiumActions) { _ in updateModePlaytime() }
+        .onChange(of: confirmGoldenStrawberry) { _ in updateModePlaytime() }
+        .onChange(of: confirmRestart) { _ in updateModePlaytime() }
+        .onChange(of: blitzRunning) { _ in updateModePlaytime() }
         .onChange(of: session.engine.score) { score in
             checkObjective()
             celebrateNewRecordIfNeeded(score)
@@ -599,14 +641,17 @@ struct BerryGameView: View {
         .onChange(of: showSettings) { opened in
             if opened { pauseTimedClock() }
             else { resumeTimedClockIfPossible() }
+            updateModePlaytime()
         }
         .onChange(of: showHelp) { opened in
             if opened { pauseTimedClock() }
             else { resumeTimedClockIfPossible() }
+            updateModePlaytime()
         }
         .onChange(of: showVictory) { victory in
             BerryAudio.shared.setScreen(victory ? .results : (isTimedMode ? .blitz : .gameplay))
             if victory && sound { BerryAudio.shared.play(.victory) }
+            updateModePlaytime()
         }
         .overlay {
             if isPaused && !showVictory && !showGameOver {
