@@ -253,10 +253,11 @@ struct BerryBoutiqueView: View {
                 }
             }
         case .helpers:
-            VStack(alignment: .leading, spacing: 13) {
-                Text("Helpers are unavailable in Berry Classic and timed modes.")
-                    .font(.caption.bold())
-                    .foregroundStyle(BerryStyle.chocolate)
+            Text("Helpers are unavailable in Berry Classic and timed modes.")
+                .font(.caption.bold())
+                .foregroundStyle(BerryStyle.chocolate)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 helperRow("Extra Undo", icon: "UndoIcon", count: session.undos, cost: BerryEconomy.undoPrice) {
                     session.buyUndo()
                 }
@@ -267,14 +268,13 @@ struct BerryBoutiqueView: View {
                     session.buyHint()
                 }
             }
-            .padding(14)
-            .background(.white, in: RoundedRectangle(cornerRadius: 18))
         case .special:
-            VStack(spacing: 11) {
-                Text("Premium powers for Endless, Berry Story and Cozy Cottage. Classic and timed challenges stay fair.")
-                    .font(.caption.bold())
-                    .foregroundStyle(BerryStyle.chocolate)
-                    .multilineTextAlignment(.center)
+            Text("Premium powers for Endless, Berry Story and Cozy Cottage. Classic and timed challenges stay fair.")
+                .font(.caption.bold())
+                .foregroundStyle(BerryStyle.chocolate)
+                .multilineTextAlignment(.center)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 premiumOffer(id: "trowel", title: "Golden Trowel", detail: "Remove an occupied square · one use", icon: "GoldenTrowel", fallback: "shovel.fill", cost: 150)
                 premiumOffer(id: "twister", title: "Ribbon Twister", detail: "Rotate a tray piece · three uses", icon: "RibbonTwister", fallback: "arrow.triangle.2.circlepath", cost: 200)
                 premiumOffer(id: "seed", title: "Starberry Seed", detail: "Plant one square, potentially clear a line", icon: "StarberrySeed", fallback: "leaf.circle.fill", cost: 230)
