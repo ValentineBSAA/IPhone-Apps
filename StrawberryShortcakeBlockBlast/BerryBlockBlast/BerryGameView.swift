@@ -584,6 +584,9 @@ struct BerryGameView: View {
             drag = nil
         }
         .onChange(of: session.gameOver) { ended in
+            if ended && mode == .daily {
+                BerryDailyHistory.markLostToday()
+            }
             if ended && mode == .superHard {
                 // Nightmare is survival: a blocked board ends the race NOW.
                 blitzRunning = false
@@ -622,7 +625,12 @@ struct BerryGameView: View {
                 blitzFinished = true
                 blitzDeadline = nil
             }
-            if mode == .daily && dailyCompleted == BerryGameSession.dailyDateKey() { showVictory = session.engine.score >= goal }
+            if mode == .daily {
+                // A finished calendar day can never open another playable run.
+                if BerryDailyHistory.outcome() == .won { showVictory = true }
+                if BerryDailyHistory.outcome() == .lost { showGameOver = true }
+                if session.gameOver { BerryDailyHistory.markLostToday() }
+            }
             if !welcomed { showWelcome = true }
             updateModePlaytime()
         }
@@ -733,9 +741,16 @@ struct BerryGameView: View {
                                     .font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
                             }
                         }
-                        if showGameOver && !showVictory && !confirmRestart {
+                        if showGameOver && !showVictory && !confirmRestart && mode != .daily {
                             continueRescueOptions
                         }
+                        if mode == .daily {
+                            Text(showVictory ? "✓ Daily Harvest completed. Return tomorrow!" :
+                                 "🍓 Daily attempt used. Your next chance opens at midnight.")
+                                .font(.system(size: 12, weight: .heavy, design: .rounded))
+                                .multilineTextAlignment(.center)
+                                .foregroundStyle(BerryStyle.strawberry)
+                        } else {
                         Button(showVictory ? "🍓 Another Sweet Adventure" : isTimedMode ? "⚡ Race Again" : "🍓 Plant a Fresh Garden") {
                             showVictory = false; showGameOver = false; confirmRestart = false
                             completedStoryChapter = nil; session.newGame(); selectedSlot = nil; drag = nil; hintPreview = nil
@@ -748,6 +763,7 @@ struct BerryGameView: View {
                             celebratedRecordThisRun = false; scoreRecordAtEntry = session.bestScore
                             showNewBestBanner = false
                         }.buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
+                        }
                         Button("🏡 Return to Strawberry Village") { returnToVillage() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
                         if confirmRestart {
@@ -1367,6 +1383,8 @@ struct BerryGameView: View {
             storyLevel += 1
         }
         if mode == .daily {
+            // Completed outcomes can never reward or replay twice.
+            guard BerryDailyHistory.outcome() == .active else { return }
             session.rewardDaily()
             dailyCompleted = BerryGameSession.dailyDateKey()
             BerryDailyHistory.markCompleteToday()
