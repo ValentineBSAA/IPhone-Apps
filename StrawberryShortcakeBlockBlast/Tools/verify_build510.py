@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline source and art checks for Berry Berry Blast 0.5.10 Build 1.
+"""Offline source and art checks for Berry Berry Blast 0.5.10 Build 2.
 
 Runs AFTER both art payloads have been installed and before xcodebuild.
 This validator does not claim the Swift app was compiled or device-tested.
@@ -15,9 +15,9 @@ game = (root / "BerryBlockBlast" / "BerryGameView.swift").read_text(encoding="ut
 required_settings = [
     'INFOPLIST_KEY_CFBundleDisplayName: "Berry Berry Blast"',
     'MARKETING_VERSION: "0.5.10"',
-    'CURRENT_PROJECT_VERSION: "1"',
+    'CURRENT_PROJECT_VERSION: "2"',
     'INFOPLIST_KEY_CFBundleShortVersionString: "0.5.10"',
-    'INFOPLIST_KEY_CFBundleVersion: "1"',
+    'INFOPLIST_KEY_CFBundleVersion: "2"',
     'PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.berryblockblast',
     'iOS: "16.0"',
 ]
@@ -160,7 +160,7 @@ assert 'The Village in Full Bloom' in story_source, "Twelve-chapter Story progre
 assert 'Light the Lantern Orchard' in story_source, "Story chapter 7 missing or renamed"
 assert story_tests.count("func test") >= 3, "Story narrative regression tests missing"
 assert 'Chapter story conclusion' in game, "Story victory needs visible narrative text"
-print(f"PASS: Berry Berry Blast 0.5.10 Build 1, {len(names)} art catalogs, "
+print(f"PASS: Berry Berry Blast 0.5.10 Build 2, {len(names)} art catalogs, "
       "iOS16, four no-scroll 12x12 Endless patches, tests and app icon")
 
 
@@ -176,8 +176,8 @@ for marker in ('guard skin == "strawberry-fruit" else',
     assert marker in tiles, "Sculpted fruit incorrectly replaced original square blocks"
 assert 'skin == "default" || skin == "strawberry-fruit"' not in tiles, (
     "Default skin must remain classic square candy blocks")
-for marker in ('.fill(Color.white.opacity(0.76))',
-               '.strokeBorder(.white.opacity(0.58), lineWidth: 1)',
+for marker in ('.fill(Color.white.opacity(0.96))',
+               'Color(red: 0.64, green: 0.32, blue: 0.46).opacity(0.83)',
                'private let gap: CGFloat = 3',
                'boardSurface == "original"'):
     assert marker in game, "Original 0.5.8 empty board square changed: " + marker
@@ -206,3 +206,23 @@ assert 'LINE EARNINGS BY MODE' in collection
 assert 'BerryCandyNumber' in school and 'practiceFilled' in school
 print("PASS: 0.5.10 restored original squares, optional skins, one Daily attempt, "
       "economy ledger, premium icons, Story dialogue and learning cards")
+
+# 0.5.10 Build 2: no change to selected block styles or placement grid.
+appearance = (root / "BerryBlockBlast" / "BerryUIAssets.swift").read_text()
+assert 'struct BerryBoardAppearanceControls: View' in appearance
+assert 'Restore Original Board Only' in appearance
+assert 'Restore All Appearance Defaults' in appearance
+assert 'boardSurface = "original"' in appearance
+assert 'borderSkin = "default"' in appearance
+assert 'BerryBoardAppearanceControls()' in game
+assert 'BerryBoardAppearanceControls()' in home
+assert 'storyDialogueCard(compact: compact)' in game
+assert 'showFullStory' in game
+assert 'private let gap: CGFloat = 3' in game
+assert 'layoutReserve' in game and 'mode == .story ? 426' in game
+assert 'DRAG OR TAP TO PLACE' in game
+assert 'private func toolSymbol(' in game
+assert 'BerryWalletPill(berries: session.berries)' not in game, (
+    "Full-size second wallet row returned, crowding the board")
+print("PASS: build 2 original-board controls, Story layout, tool icons, "
+      "compact counters and unchanged game grid")
