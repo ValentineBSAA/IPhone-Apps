@@ -232,42 +232,39 @@ struct BerryPieceGlyph: View {
     var strawberryUnlocked = false
 
     var body: some View {
-        let width = CGFloat(piece.width) * unit
-        let height = CGFloat(piece.height) * unit
+        let width = max(3, CGFloat(piece.width) * unit)
+        let height = max(3, CGFloat(piece.height) * unit)
         let tileSide = max(3, unit - 2)
 
-        // The fallback is drawn by Canvas independently of the dynamic
-        // images used by BerryTile. A valid, tappable piece can therefore
-        // never disappear because an asset, theme, or GeometryReader fails
-        // to produce visible pixels. This also uses explicit cell coordinates
-        // rather than relying on SwiftUI's offset layout negotiation.
+        // Critical: give the ZStack a real sized layout anchor BEFORE
+        // offsetting any tiles. A ForEach of only offset GeometryReaders
+        // can collapse to a one-cell or zero-sized measured surface when
+        // the hand is dealt a single-row or single-column piece.
+        //
+        // These vanilla colored squares are independently visible even if
+        // the optional cosmetics fail to load. The positions stay square,
+        // preserving the same hit targets, rules and placement geometry.
         ZStack(alignment: .topLeading) {
-            Canvas { context, _ in
-                for cell in piece.points {
-                    let rect = CGRect(
-                        x: CGFloat(cell.col) * unit,
-                        y: CGFloat(cell.row) * unit,
-                        width: tileSide, height: tileSide
-                    )
-                    let shape = Path(roundedRect: rect,
-                                     cornerRadius: max(2, unit * 0.16))
-                    context.fill(shape, with: .color(BerryStyle.color(for: piece.tint)))
-                    context.stroke(shape, with: .color(.white.opacity(0.88)),
-                                   lineWidth: max(1, unit * 0.065))
-                }
-            }
-            .frame(width: width, height: height)
-            .allowsHitTesting(false)
+            Color.clear.frame(width: width, height: height)
 
             ForEach(piece.points, id: \.self) { cell in
-                BerryTile(tint: piece.tint, mode: mode,
-                          strawberryUnlocked: strawberryUnlocked)
-                    .frame(width: tileSide, height: tileSide)
-                    .position(
-                        x: CGFloat(cell.col) * unit + tileSide / 2,
-                        y: CGFloat(cell.row) * unit + tileSide / 2
-                    )
-                    .allowsHitTesting(false)
+                ZStack {
+                    RoundedRectangle(cornerRadius: max(2, unit * 0.17),
+                                     style: .continuous)
+                        .fill(BerryStyle.color(for: piece.tint))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: max(2, unit * 0.17),
+                                             style: .continuous)
+                                .strokeBorder(.white.opacity(0.82), lineWidth: max(1, unit * 0.07))
+                        }
+                    BerryTile(tint: piece.tint, mode: mode,
+                              strawberryUnlocked: strawberryUnlocked)
+                        .frame(width: tileSide, height: tileSide)
+                }
+                .frame(width: tileSide, height: tileSide)
+                .offset(x: CGFloat(cell.col) * unit,
+                        y: CGFloat(cell.row) * unit)
+                .allowsHitTesting(false)
             }
         }
         .frame(width: width, height: height, alignment: .topLeading)
