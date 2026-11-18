@@ -30,7 +30,7 @@ struct BerryBoutiqueView: View {
     @State private var cosmeticFilter = 0
     @AppStorage("berryberryblast.frame.overlay.v0511") private var overlayFrame = "original"
 
-    private enum BoardSubmenu { case surfaces, frames }
+    private enum BoardSubmenu: Equatable { case surfaces, frames }
 
     private enum Category: String, CaseIterable, Identifiable {
         case boardStudio, blocks, sparkleStudio, seasonal, helpers, special, cottage, inventory, restore
