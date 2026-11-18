@@ -1,0 +1,68 @@
+name: Berry Berry Blast 0.5.12 Stabilized Unsigned QA IPA
+on:
+  push:
+    branches: [fix/berry-0512-stabilize-touch-geometry]
+permissions:
+  contents: read
+concurrency:
+  group: berry-0512-stabilized-unsigned-ipa
+  cancel-in-progress: false
+jobs:
+  candidate:
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify full source assets and iOS 16 compatibility before build
+        run: |
+          set -euo pipefail
+          python3 Tools/verify_ios16_source.py
+          python3 Tools/check_ios16_compat.py
+          python3 Tools/verify_audio_build2.py
+          python3 Tools/verify_0512_art_in_repo.py
+      - name: Native iOS 16 device compilation and unsigned IPA inspection
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          python3 Tools/install_art510.py
+          xcodegen generate --spec project.yml
+          xcodebuild -project BerryBlockBlast.xcodeproj -scheme BerryBlockBlast \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath .build/Candidate CODE_SIGNING_ALLOWED=NO build
+          mkdir -p dist/Payload
+          cp -R .build/Candidate/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
+          (cd dist && zip -qr Berry-Berry-Blast-v0.5.12-Build3-STABILIZED-unsigned.ipa Payload)
+          python3 Tools/verify_audio_build2.py \
+            --ipa dist/Berry-Berry-Blast-v0.5.12-Build3-STABILIZED-unsigned.ipa
+          unzip -t dist/Berry-Berry-Blast-v0.5.12-Build3-STABILIZED-unsigned.ipa | tail -2
+          python3 - <<'PY'
+          import zipfile,plistlib
+          filename='dist/Berry-Berry-Blast-v0.5.12-Build3-STABILIZED-unsigned.ipa'
+          with zipfile.ZipFile(filename) as z:
+              assert 'Payload/BerryBlockBlast.app/Assets.car' in z.namelist()
+              info=plistlib.loads(z.read('Payload/BerryBlockBlast.app/Info.plist'))
+              assert info['CFBundleShortVersionString']=='0.5.12'
+              assert info['CFBundleVersion']=='3'
+              assert info.get('MinimumOSVersion','16.0')=='16.0'
+          print('Stabilization simulator QA green on both devices. Requires physical-device signoff.')
+          PY
+          echo 'UNSIGNED QA BUILD; NOT PUBLIC RELEASE. Requires physical-device functional signoff.' \
+            > dist/HARDWARE-SIGNOFF-REQUIRED.txt
+      - name: Record exact candidate source commit and hardware signoff warning
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD > StrawberryShortcakeBlockBlast/dist/QA-SOURCE-COMMIT.txt
+        working-directory: .
+      - name: Upload unsigned QA IPA, never public release
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-0512-Build3-STABILIZED-UNSIGNED-IPA
+          path: |
+            StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-v0.5.12-Build3-STABILIZED-unsigned.ipa
+            StrawberryShortcakeBlockBlast/dist/HARDWARE-SIGNOFF-REQUIRED.txt
+            StrawberryShortcakeBlockBlast/dist/QA-SOURCE-COMMIT.txt
+          if-no-files-found: error
+          retention-days: 30
