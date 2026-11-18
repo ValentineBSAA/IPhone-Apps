@@ -1581,18 +1581,34 @@ struct BerryGameView: View {
     }
     private var helpSheet: some View {
         sheetBase("How to Play", icon: "🍰") {
-            Text("Touch a piece and slide it onto the \(session.engine.side) × \(session.engine.side) board, then release. Or tap a piece and tap the board to place it. Complete full rows or columns to clear them.")
-            Text("Clear multiple lines together for bonus points. Keep clearing to grow your combo. Clear the entire board for +300!")
-            if mode == .classic {
-                Text("Berry Classic uses three shapes at a time, with no timer, Undo or Shuffle. When nothing fits, the run ends. Chase your best record!")
-            } else if mode == .endless {
-                Text("Sweet Endless has no final game over. The 24×24 Mega Garden appears as four full-size 12×12 patches. Every 18 placements or three cleared lines, it automatically moves to the next patch, with no scrolling or manual navigation. A blocked patch moves on for free, and after patch four a fresh season begins. Scores, strawberries and your garden save stay intact. Tap the scope icon to find a legal move without spending a Hint.")
-            } else {
-                Text("Earn strawberries for line clears. Buy Undo, Shuffle and Berry Hint from the Boutique. Use helpers from the bottom toolbar in Story, Daily, Endless and Cozy modes. Berry Classic, Blitz and Nightmare stay power-up free.")
-            Text("Blitz offers 1, 2, 5 and 10-minute score races. When the tray gets stuck, fresh playable pieces appear, so the clock determines the finish. Nightmare is a separate three-minute challenge and still ends if no piece can fit.")
-            Text("Your purchased Cottage decorations can now be moved and saved inside My Strawberry Cottage on the village home screen.")
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                BerryGridInfoTile(title: "Drag or Tap",
+                                 detail: "Drag a berry piece onto free squares, or tap a piece and then its destination",
+                                 art: "BerryClassic", value: "Place")
+                BerryGridInfoTile(title: "Complete Lines",
+                                 detail: "Fill a row or column to clear it and earn strawberries",
+                                 art: "HarvestReward", value: "Clear")
+                BerryGridInfoTile(title: "Score Combos",
+                                 detail: "Clear multiple lines to increase your sweet score",
+                                 art: "Milestone", value: "× Combo")
+                BerryGridInfoTile(title: "Your Mode",
+                                 detail: mode == .classic ?
+                                    "Classic: no timers or power-ups; three pieces at a time" :
+                                    mode == .daily ? "Daily: one attempt a day, win or lose" :
+                                    mode == .endless ? "Endless: garden sizes persist across plays" :
+                                    mode == .challenge ? "Blitz: race the clock" :
+                                    mode == .superHard ? "Nightmare: three-minute survival" :
+                                    "Story and Cozy: helpers are available",
+                                 art: "BerryStory", value: mode.rawValue)
+                BerryGridInfoTile(title: "Garden Helpers",
+                                 detail: "Undo, Shuffle and Hint work in supported modes",
+                                 art: "BerryHint", value: "Optional")
+                BerryGridInfoTile(title: "Board Studio",
+                                 detail: "Choose board, decorative frame and block styles independently",
+                                 art: "ShopBasket", value: "Cosmetics")
             }
-            primaryButton("Got It!") { showHelp = false }
+            primaryButton("Back to Playing") { showHelp = false }
         }
     }
     private var settingsSheet: some View {
@@ -1663,18 +1679,15 @@ struct BerryGameView: View {
             Text("🍓 \(completed) decorations collected")
                 .font(.headline)
                 .foregroundStyle(BerryStyle.leaf)
-            ForEach(0..<upgrades.count, id: \.self) { index in
-                HStack {
-                    Image(systemName: completed > index ? "checkmark.seal.fill" : "lock.fill")
-                        .foregroundStyle(completed > index ? BerryStyle.leaf : .gray)
-                    Text(upgrades[index])
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundStyle(BerryStyle.chocolate)
-                    Spacer()
-                    if completed > index { Text("Owned").font(.caption).foregroundStyle(BerryStyle.leaf) }
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                ForEach(0..<upgrades.count, id: \.self) { index in
+                    BerryGridInfoTile(
+                        title: upgrades[index],
+                        detail: completed > index ? "Already decorating your cottage" : "Not collected yet",
+                        art: "CottageDecorations",
+                        value: completed > index ? "✓ Owned" : "Locked")
                 }
-                .padding(12)
-                .background(.white, in: RoundedRectangle(cornerRadius: 15))
             }
             Button(completed < upgrades.count ?
                    "Decorate: \(upgrades[completed]) • 🍓 \(session.nextCottageDecorationPrice ?? 0)" :
@@ -1692,20 +1705,28 @@ struct BerryGameView: View {
     }
 
     private var statsSheet: some View {
-        sheetBase("Berry Scrapbook", icon: "📖") {
-            statRow("Best score", "\(session.bestScore)")
-            statRow("Current score", "\(session.engine.score)")
-            statRow("Lines cleared", "\(session.engine.totalLines)")
-            statRow("Moves", "\(session.engine.moves)")
-            statRow("Best combo", "×\(session.engine.bestCombo)")
-            statRow("Perfect gardens", "\(session.engine.boardClears)")
-            statRow("Berries earned", "\(session.totalEarnedBerries)")
-            statRow("Cottage decorations", "\(session.cottageDecorations)")
+        sheetBase("Your Berry Scrapbook", icon: "📖") {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                BerryGridInfoTile(title: "Best Score", detail: "Personal record",
+                                 art: "Champion", value: session.bestScore.formatted())
+                BerryGridInfoTile(title: "Current Score", detail: "This run",
+                                 art: "BerryClassic", value: session.engine.score.formatted())
+                BerryGridInfoTile(title: "Lines Cleared", detail: "This run",
+                                 art: "HarvestReward", value: session.engine.totalLines.formatted())
+                BerryGridInfoTile(title: "Moves", detail: "Total pieces placed",
+                                 art: "Milestone", value: session.engine.moves.formatted())
+                BerryGridInfoTile(title: "Best Combo", detail: "Longest clear streak",
+                                 art: "Milestone", value: "×\(session.engine.bestCombo)")
+                BerryGridInfoTile(title: "Perfect Gardens", detail: "Board clears",
+                                 art: "CottageDecorations", value: "\(session.engine.boardClears)")
+                BerryGridInfoTile(title: "Strawberries Earned", detail: "Lifetime income",
+                                 art: "HarvestReward", value: "\(session.totalEarnedBerries)")
+                BerryGridInfoTile(title: "Cottage Decorations", detail: "Owned furnishings",
+                                 art: "CottageDecorations", value: "\(session.cottageDecorations)")
+            }
             primaryButton("Keep Playing") { showStats = false }
         }
-    }
-    private func statRow(_ name: String, _ value: String) -> some View {
-        HStack { Text(name); Spacer(); Text(value).bold().foregroundStyle(BerryStyle.strawberry) }
     }
     private func primaryButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(title, action: action).buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
