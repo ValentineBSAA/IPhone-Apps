@@ -19,7 +19,7 @@ enum BerryStoryNarrative {
         ("Repair the Berry Gate",
          "The little village gate needs fixing. Clear the required lines for us!",
          "We're nearly finished with the gate. Keep it up!",
-         "The gate looks lovely again!"),
+         "The gate looks lovely again! The garden paths are open for everyone."),
         ("Reopen the Berry Market",
          "The baskets are empty. Earn points so we can reopen the market!",
          "The market shelves are filling with berries!",
