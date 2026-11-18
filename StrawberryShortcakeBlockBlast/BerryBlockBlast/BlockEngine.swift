@@ -37,6 +37,30 @@ struct BerryEngine: Codable {
     private(set) var boardClears = 0
     /// Completed Sweet Endless gardens. Older saved games decode this as zero.
     private(set) var seasons = 0
+    /// Four 12x12 sections in the 24x24 endless garden. Persisted with
+    /// the existing engine save so older players keep their whole garden.
+    private(set) var activeGardenSection = 0
+    var visibleSide: Int { side == 24 ? 12 : side }
+    var sectionOrigin: (row: Int, col: Int) {
+        guard side == 24 else { return (0, 0) }
+        let section = max(0, min(3, activeGardenSection))
+        return ((section / 2) * 12, (section % 2) * 12)
+    }
+    private func origin(for section: Int) -> (row: Int, col: Int) {
+        ((section / 2) * 12, (section % 2) * 12)
+    }
+    private func sectionHasFreeCell(_ section: Int) -> Bool {
+        let start = origin(for: section)
+        return (start.row..<(start.row + 12)).contains { row in
+            (start.col..<(start.col + 12)).contains { col in board[row][col] == nil }
+        }
+    }
+    func visibleCell(row: Int, col: Int) -> Int? {
+        let origin = sectionOrigin
+        guard (0..<visibleSide).contains(row), (0..<visibleSide).contains(col) else { return nil }
+        return board[origin.row + row][origin.col + col]
+    }
+
     private var randomState: UInt64? = nil
     private var cozyPieces: Bool? = nil
     private var hardPieces: Bool? = nil
@@ -74,7 +98,7 @@ struct BerryEngine: Codable {
     // Decode the optional mode metadata explicitly so older saves survive upgrades.
     private enum CodingKeys: String, CodingKey {
         case board, tray, score, streak, moves, totalLines, bestCombo
-        case dryMoves, boardClears, seasons, randomState, cozyPieces, side, hardPieces, pantryPiece, spyglassNext
+        case dryMoves, boardClears, seasons, activeGardenSection, randomState, cozyPieces, side, hardPieces, pantryPiece, spyglassNext
     }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -90,6 +114,7 @@ struct BerryEngine: Codable {
         dryMoves = try values.decodeIfPresent(Int.self, forKey: .dryMoves) ?? 0
         boardClears = try values.decodeIfPresent(Int.self, forKey: .boardClears) ?? 0
         seasons = try values.decodeIfPresent(Int.self, forKey: .seasons) ?? 0
+        activeGardenSection = min(3, max(0, try values.decodeIfPresent(Int.self, forKey: .activeGardenSection) ?? 0))
         randomState = try values.decodeIfPresent(UInt64.self, forKey: .randomState)
         cozyPieces = try values.decodeIfPresent(Bool.self, forKey: .cozyPieces)
         pantryPiece = try values.decodeIfPresent(BerryPiece.self, forKey: .pantryPiece)
@@ -114,16 +139,35 @@ struct BerryEngine: Codable {
         self.score = score
     }
 
-    func canPlace(_ piece: BerryPiece, row: Int, col: Int) -> Bool {
+    private func canPlace(_ piece: BerryPiece, row: Int, col: Int, section: Int) -> Bool {
         guard !piece.points.isEmpty, Set(piece.points).count == piece.points.count else { return false }
+        let start = side == 24 ? origin(for: section) : (row: 0, col: 0)
+        let limit = side == 24 ? 12 : side
         for p in piece.points {
-            let r = row + p.row
-            let c = col + p.col
-            guard (0..<side).contains(r), (0..<side).contains(c), board[r][c] == nil else {
-                return false
-            }
+            let r = row + p.row, c = col + p.col
+            guard (start.row..<(start.row + limit)).contains(r),
+                  (start.col..<(start.col + limit)).contains(c),
+                  board[r][c] == nil else { return false }
         }
         return true
+    }
+
+    func canPlace(_ piece: BerryPiece, row: Int, col: Int) -> Bool {
+        canPlace(piece, row: row, col: col, section: activeGardenSection)
+    }
+
+    private func hasMove(in section: Int) -> Bool {
+        let origin = side == 24 ? origin(for: section) : (row: 0, col: 0)
+        let limit = side == 24 ? 12 : side
+        for piece in tray.compactMap({ $0 }) {
+            for row in origin.row..<(origin.row + limit) {
+                for col in origin.col..<(origin.col + limit)
+                where canPlace(piece, row: row, col: col, section: section) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     func hasPlacement(for piece: BerryPiece) -> Bool {
@@ -143,8 +187,9 @@ struct BerryEngine: Codable {
     /// This never spends a purchased hint or modifies puzzle state.
     func suggestedEndlessMove() -> BerryHint? {
         guard side == 24 else { return suggestedMove() }
-        for row in 0..<min(side, 12) {
-            for col in 0..<min(side, 12) {
+        let origin = sectionOrigin
+        for row in origin.row..<(origin.row + 12) {
+            for col in origin.col..<(origin.col + 12) {
                 for (slot, candidate) in tray.enumerated() {
                     if let piece = candidate, canPlace(piece, row: row, col: col) {
                         return BerryHint(slot: slot, row: row, col: col)
@@ -197,21 +242,26 @@ struct BerryEngine: Codable {
         guard (0..<side).contains(row), (0..<side).contains(col),
               board[row][col] == nil else { return nil }
         board[row][col] = 0
-        let rows = (0..<side).filter { r in board[r].allSatisfy { $0 != nil } }
-        let columns = (0..<side).filter { c in (0..<side).allSatisfy { board[$0][c] != nil } }
+        let origin = sectionOrigin
+        let rowRange = origin.row..<(origin.row + visibleSide)
+        let colRange = origin.col..<(origin.col + visibleSide)
+        let rows = rowRange.filter { row in colRange.allSatisfy { board[row][$0] != nil } }
+        let columns = colRange.filter { col in rowRange.allSatisfy { board[$0][col] != nil } }
         let cleared = rows.count + columns.count
         if cleared > 0 {
             totalLines += cleared
             streak += 1
             dryMoves = 0
             bestCombo = max(streak, bestCombo)
-            for r in rows { for c in 0..<side { board[r][c] = nil } }
-            for c in columns { for r in 0..<side { board[r][c] = nil } }
+            for r in rows { for c in colRange { board[r][c] = nil } }
+            for c in columns { for r in rowRange { board[r][c] = nil } }
         }
         moves += 1
         let bonus = cleared * 10
         score += 1 + bonus
-        let clear = cleared > 0 && board.flatMap { $0 }.allSatisfy { $0 == nil }
+        let clear = cleared > 0 && rowRange.allSatisfy { row in
+            colRange.allSatisfy { board[row][$0] == nil }
+        }
         if clear { boardClears += 1 }
         return BerryPlacement(clearedRows: rows, clearedColumns: columns,
                               earned: 1 + bonus, streak: streak, boardClear: clear)
@@ -246,14 +296,7 @@ struct BerryEngine: Codable {
         return true
     }
 
-    func hasMove() -> Bool {
-        for piece in tray.compactMap({ $0 }) {
-            for row in 0..<side {
-                for col in 0..<side where canPlace(piece, row: row, col: col) { return true }
-            }
-        }
-        return false
-    }
+    func hasMove() -> Bool { hasMove(in: activeGardenSection) }
 
     @discardableResult
     mutating func place(slot: Int, row: Int, col: Int) -> BerryPlacement? {
@@ -262,21 +305,26 @@ struct BerryEngine: Codable {
         tray[slot] = nil
         moves += 1
 
-        let rows = (0..<side).filter { r in board[r].allSatisfy { $0 != nil } }
-        let cols = (0..<side).filter { c in (0..<side).allSatisfy { board[$0][c] != nil } }
+        let origin = sectionOrigin
+        let rowRange = origin.row..<(origin.row + visibleSide)
+        let colRange = origin.col..<(origin.col + visibleSide)
+        let rows = rowRange.filter { row in colRange.allSatisfy { board[row][$0] != nil } }
+        let cols = colRange.filter { col in rowRange.allSatisfy { board[$0][col] != nil } }
         let lines = rows.count + cols.count
         if lines > 0 {
             streak += 1
             dryMoves = 0
             totalLines += lines
             bestCombo = max(bestCombo, streak)
-            for r in rows { for c in 0..<side { board[r][c] = nil } }
-            for c in cols { for r in 0..<side { board[r][c] = nil } }
+            for r in rows { for c in colRange { board[r][c] = nil } }
+            for c in cols { for r in rowRange { board[r][c] = nil } }
         } else {
             dryMoves += 1
             if dryMoves >= 3 { streak = 0 }
         }
-        let boardClear = lines > 0 && board.flatMap { $0 }.allSatisfy { $0 == nil }
+        let boardClear = lines > 0 && rowRange.allSatisfy { row in
+            colRange.allSatisfy { board[row][$0] == nil }
+        }
         if boardClear { boardClears += 1 }
         // Classic baseline: one line 10, two lines 20, three lines 60,
         // four lines 120, multiplied by the current clearing streak.
