@@ -134,11 +134,25 @@ final class GameStore: ObservableObject {
         suspend()
     }
 
+    private func updateAmbience() {
+        let tense: Set<String> = [
+            "voicemail", "stairs", "elevator", "nora_check", "intersection",
+            "threshold", "safe_ending", "loop_ending", "taken_ending",
+            "eli_last", "eli_safe", "eli_bad", "unit7_last", "unit7_safe", "unit7_bad"
+        ]
+        if state.audioEnabled && state.activeThread == visibleThread &&
+            tense.contains(state.sceneID) && state.endingID == nil {
+            ambience.start()
+        } else {
+            ambience.stop()
+        }
+    }
+
     func beginOrResume() {
         consumePendingReply()
+        updateAmbience()
         guard let thread = state.activeThread, visibleThread == thread,
               state.endingID == nil, !state.choiceReady else { return }
-        if state.audioEnabled { ambience.start() }
         deliveryTask?.cancel()
         deliveryTask = Task { [weak self] in
             await self?.runDeliveryLoop()
@@ -166,6 +180,7 @@ final class GameStore: ObservableObject {
 
     private func runDeliveryLoop() async {
         while !Task.isCancelled {
+            updateAmbience()
             guard state.activeThread == visibleThread,
                   let scene = currentScene else { return }
 
@@ -302,8 +317,7 @@ final class GameStore: ObservableObject {
 
     func setAudio(_ enabled: Bool) {
         state.audioEnabled = enabled
-        if enabled && visibleThread == state.activeThread { ambience.start() }
-        else if !enabled { ambience.stop() }
+        updateAmbience()
         save()
     }
 
