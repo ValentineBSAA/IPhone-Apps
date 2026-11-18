@@ -6,7 +6,7 @@ struct NeighborAvatar: View {
 
     var body: some View {
         ZStack {
-            if let photograph = UIImage(named: neighbor.portraitAssetName) {
+            if let photograph = PortraitImages.load(neighbor.portraitAssetName) {
                 Image(uiImage: photograph)
                     .resizable()
                     .scaledToFill()
