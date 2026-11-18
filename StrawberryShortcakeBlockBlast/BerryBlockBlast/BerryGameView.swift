@@ -800,6 +800,10 @@ struct BerryGameView: View {
                 [Color(red: 1, green: 0.88, blue: 0.71), BerryStyle.cream, Color(red: 1, green: 0.80, blue: 0.70)] :
                 mode == .endless && session.engine.seasons % 4 == 3 ?
                 [Color(red: 0.86, green: 0.88, blue: 1), BerryStyle.cream, Color(red: 0.91, green: 0.91, blue: 1)] :
+                mode == .daily ?
+                [Color(red: 1.0, green: 0.82, blue: 0.75), Color(red: 1, green: 0.96, blue: 0.84), Color(red: 0.88, green: 0.95, blue: 0.82)] :
+                mode == .superHard ?
+                [Color(red: 0.77, green: 0.67, blue: 0.88), Color(red: 0.97, green: 0.86, blue: 0.94), Color(red: 0.89, green: 0.77, blue: 0.91)] :
                 mode == .cozy ? [Color(red: 0.88, green: 0.96, blue: 0.84), BerryStyle.cream, Color(red: 1, green: 0.86, blue: 0.87)] : mode == .challenge ? [Color(red: 1, green: 0.79, blue: 0.84), Color(red: 1, green: 0.95, blue: 0.77), Color(red: 0.98, green: 0.73, blue: 0.8)] : mode == .story ? [Color(red: 0.94, green: 0.83, blue: 1), BerryStyle.cream, Color(red: 1, green: 0.83, blue: 0.91)] : [Color(red: 1, green: 0.85, blue: 0.9), Color(red: 1, green: 0.96, blue: 0.87), Color(red: 1, green: 0.8, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing)
             GeometryReader { geo in
                 Circle().fill(.white.opacity(0.34)).frame(width: geo.size.width * 0.85).offset(x: -geo.size.width * 0.35, y: -geo.size.height * 0.13)
