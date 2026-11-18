@@ -20,9 +20,13 @@ struct ConversationView: View {
                         }
                         .padding(.vertical, 17)
 
-                        ForEach(game.messages(in: contact.id)) { message in
-                            MessageRow(message: message, photoToShow: $photoToShow)
-                                .id(message.id)
+                        ForEach(Array(game.messages(in: contact.id).enumerated()), id: \.element.id) { index, message in
+                            MessageRow(
+                                message: message,
+                                showTimestamp: shouldShowTimestamp(at: index, in: game.messages(in: contact.id)),
+                                photoToShow: $photoToShow
+                            )
+                            .id(message.id)
                         }
 
                         if game.typingThread == contact.id {
@@ -83,26 +87,39 @@ struct ConversationView: View {
                 HStack(spacing: 10) {
                     Image(systemName: "plus.circle.fill")
                         .foregroundColor(Night.muted)
-                        .font(.system(size: 22))
-                    Text(game.typingThread == contact.id ? "\(contact.name) is typing…" : "Waiting for a reply…")
+                        .font(.system(size: 21))
+                    Text(game.typingThread == contact.id ? "typing…" : "Message")
                         .font(.system(size: 14))
                         .foregroundColor(Night.muted)
                     Spacer()
-                    Button {
-                        game.revealNextNow()
-                    } label: {
-                        Label("Reveal", systemImage: "forward.end.fill")
-                            .font(.system(size: 12, weight: .medium))
-                    }
-                    .accessibilityHint("Skip the current fictional message delay")
+                    Image(systemName: "mic.slash")
+                        .font(.system(size: 16))
+                        .foregroundColor(Night.muted.opacity(0.55))
+                        .accessibilityLabel("Voice messaging unavailable")
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 15)
+                .padding(.vertical, 14)
             }
         }
         .background(Night.background.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button {
+                        game.revealNextNow()
+                    } label: {
+                        Label("Skip current pause", systemImage: "forward.end")
+                    }
+                    Button {
+                        game.markThreadRead(contact.id)
+                    } label: {
+                        Label("Mark as read", systemImage: "checkmark.message")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            }
             ToolbarItem(placement: .principal) {
                 NavigationLink(value: AppPage.profile(contact, true)) {
                 HStack(spacing: 9) {
@@ -132,6 +149,15 @@ struct ConversationView: View {
         }
     }
 
+    private func shouldShowTimestamp(at index: Int, in messages: [GameMessage]) -> Bool {
+        guard index < messages.count else { return false }
+        guard index + 1 < messages.count else { return true }
+        let current = messages[index]
+        let next = messages[index + 1]
+        return next.sender != current.sender
+            || abs(next.createdAt.timeIntervalSince(current.createdAt)) > 5 * 60
+    }
+
     private func footerNote(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 12))
@@ -142,7 +168,7 @@ struct ConversationView: View {
 
     private var choiceComposer: some View {
         VStack(alignment: .leading, spacing: 9) {
-            SectionEyebrow(text: "Your response changes what happens next")
+            SectionEyebrow(text: "Reply")
                 .padding(.horizontal, 3)
 
             ForEach(game.availableChoices) { choice in
@@ -184,7 +210,7 @@ struct ConversationView: View {
             HStack(spacing: 8) {
                 Image(systemName: "plus.circle")
                     .foregroundColor(Night.muted)
-                TextField("Type a listed reply…", text: $draft, axis: .vertical)
+                TextField("Message", text: $draft, axis: .vertical)
                     .lineLimit(1...3)
                     .font(.system(size: 14))
                     .textInputAutocapitalization(.sentences)
@@ -232,6 +258,7 @@ struct ConversationView: View {
 
 private struct MessageRow: View {
     let message: GameMessage
+    let showTimestamp: Bool
     @Binding var photoToShow: GameMessage?
     @EnvironmentObject private var game: GameStore
     @State private var showTranscript = false
@@ -246,15 +273,17 @@ private struct MessageRow: View {
                     .background(message.isOutgoing ? Night.outgoing : Night.incoming)
                     .clipShape(BubbleShape(outgoing: message.isOutgoing))
 
-                HStack(spacing: 5) {
-                    Text(message.createdAt, style: .time)
-                    if message.isOutgoing {
-                        Text(message.isRead ? "· Read" : "· Delivered")
+                if showTimestamp {
+                    HStack(spacing: 5) {
+                        Text(message.createdAt, style: .time)
+                        if message.isOutgoing {
+                            Text(message.isRead ? "· Read" : "· Delivered")
+                        }
                     }
+                    .font(.system(size: 10))
+                    .foregroundColor(Night.muted)
+                    .padding(.horizontal, 4)
                 }
-                .font(.system(size: 10))
-                .foregroundColor(Night.muted)
-                .padding(.horizontal, 4)
             }
             .frame(maxWidth: 282, alignment: message.isOutgoing ? .trailing : .leading)
 
