@@ -37,18 +37,18 @@ enum BerryGameplayLayout {
         // title, score, objective/chapter, board, hint, tray, tools, counters.
         // Smaller gap budget for seven common blocks, extra for chapters.
         let gaps: CGFloat = spacing * (mode == .story ? 8 : 7)
-        // Board interaction has a seven-point non-tappable frame on each side.
-        let border: CGFloat = 14
+        // Board touch wrapper now has only 3-point padding on each side.
+        let border: CGFloat = 6
         // Defensive margin for differences in the internal HUD layout,
         // Dynamic Type and rounding. All listed controls remain tappable.
-        let cushion: CGFloat = 16
+        let cushion: CGFloat = 12
         let occupied = topBar + score + objective + chapter + daily + endless +
             hint + tray + toolBar + counters + gaps +
             topPad + bottomPad + border + cushion
         let byHeight = max(150, height - occupied)
-        // Ten horizontal points of outer content padding plus 14-point board
-        // interaction frame must fit 100% within the safe area.
-        let byWidth = max(150, min(width, 510) - 24)
+        // Six horizontal points of outer content padding plus 6-point board
+        // interaction frame must fit fully inside the safe-area width.
+        let byWidth = max(150, min(width, 510) - 12)
         return min(465, byWidth, byHeight)
     }
 }
