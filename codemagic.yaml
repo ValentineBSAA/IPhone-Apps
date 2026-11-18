@@ -124,7 +124,7 @@ workflows:
               ("Berry_Berry_Blast_0.5.9_AppIcon_Cloud.zip",
                "a98861bbb9ac21098c9a6f7a7663fc43e6a7b629ae5ffe0e04803dc462bd6660"),
               ("Berry_Berry_Blast_GoldenStrawberry_CloudPatch.zip",
-               "2a8e4c50c91f58be27be05278ca42659fd97b21673344987e154a56f99a7846e"),
+               "4f73d536af342d1640f3554bf83c479336c38a3a6910cf21c90db02fbdcd0da7"),
           ]
           for filename, expected_hash in extras:
               item = root / "BuildPayload" / filename
