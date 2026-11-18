@@ -639,6 +639,7 @@ struct BerryGameView: View {
             if showVictory || showGameOver || confirmRestart {
                 ZStack {
                     BerryStyle.chocolate.opacity(0.42).ignoresSafeArea()
+                    BerryResultScrollContainer {
                     VStack(spacing: 12) {
                         if showVictory {
                             BerryGirlView(pose: .celebrate)
@@ -651,9 +652,11 @@ struct BerryGameView: View {
                              isTimedMode && blitzRemaining == 0 ? "Time's Up, Berry Racer!" : "No More Moves!")
                             .font(.system(size: 25, weight: .black, design: .rounded))
                             .foregroundStyle(BerryStyle.strawberry).multilineTextAlignment(.center)
-                        Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "A fresh board starts this chapter again. Your records and earned berries stay safe." : isTimedMode && blitzRemaining == 0 ? "Your timer reached zero. See your results below!" : "No pieces fit. Use a Shuffle to refresh pieces, or a Golden Strawberry to clear the board. Your score continues!")
+                        Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "A fresh board starts this chapter again. Your records and earned berries stay safe." : isTimedMode && blitzRemaining == 0 ? "Your timer reached zero. See your results below!" : BerryGameOverCopy.explanation(for: rescueAvailability, daily: mode == .daily))
                             .font(.system(size: 15, weight: .medium, design: .rounded))
-                            .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
+                            .foregroundStyle(BerryStyle.chocolate)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
                         if showVictory && mode == .story {
                             Text(BerryStoryNarrative.victory(for:
                                 completedStoryChapter ?? max(1, storyLevel - 1)))
@@ -676,7 +679,8 @@ struct BerryGameView: View {
                                     .font(.subheadline.bold()).foregroundStyle(BerryStyle.leaf)
                             }
                         }
-                        if showGameOver && !showVictory && !confirmRestart && mode != .daily {
+                        if showGameOver && !showVictory && !confirmRestart &&
+                           mode != .daily && !(isTimedMode && blitzRemaining == 0) {
                             continueRescueOptions
                         }
                         if mode == .daily {
@@ -701,6 +705,8 @@ struct BerryGameView: View {
                         }
                         Button("🏡 Return to Strawberry Village") { returnToVillage() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
                         if confirmRestart {
                             Button("Keep Playing") { confirmRestart = false }.foregroundStyle(BerryStyle.chocolate)
                         }
@@ -712,7 +718,9 @@ struct BerryGameView: View {
                         in: RoundedRectangle(cornerRadius: 30))
                     .overlay(RoundedRectangle(cornerRadius: 30).stroke(.white, lineWidth: 3))
                     .shadow(color: BerryStyle.strawberry.opacity(0.28), radius: 22, y: 12)
-                    .padding(22)
+                    .padding(.horizontal, 22)
+                    .padding(.vertical, 22)
+                    }
                 }.transition(.opacity)
             }
         }
@@ -911,16 +919,24 @@ struct BerryGameView: View {
     /// Two equally discoverable rescue routes. Shuffle can refill a tray
     /// when the active garden has space. Golden Strawberry clears a crowded
     /// board. Both preserve the running chapter and score.
+    private var rescueAvailability: BerryRescueAvailability {
+        let shuffle = session.canContinueWithShuffle &&
+            (session.shuffles > 0 || session.berries >= BerryEconomy.shufflePrice)
+        let golden = session.canUsePremium && session.canContinueWithGoldenStrawberry &&
+            (session.premiumCharges["golden-strawberry", default: 0] > 0 ||
+             session.berries >= BerryGameSession.goldenStrawberryCost)
+        return BerryRescueAvailability(shuffle: shuffle, golden: golden)
+    }
+
     private var continueRescueOptions: some View {
+        let availability = rescueAvailability
         let ownsShuffle = session.shuffles > 0
-        let shuffleAvailable = session.canContinueWithShuffle &&
-            (ownsShuffle || session.berries >= BerryEconomy.shufflePrice)
+        let shuffleAvailable = availability.shuffle
         let ownsGold = session.premiumCharges["golden-strawberry", default: 0] > 0
-        let goldenAvailable = session.canContinueWithGoldenStrawberry &&
-            (ownsGold || session.berries >= BerryGameSession.goldenStrawberryCost)
+        let goldenAvailable = availability.golden
 
         return VStack(spacing: 7) {
-            Text("KEEP YOUR GARDEN & SCORE")
+            Text(BerryGameOverCopy.heading(for: availability))
                 .font(.system(size: 12, weight: .black, design: .rounded))
                 .foregroundStyle(BerryStyle.strawberry)
             if shuffleAvailable || goldenAvailable {
@@ -952,16 +968,7 @@ struct BerryGameView: View {
                     }
                 }
             } else {
-                Label("No rescue is available for this board. A fresh garden is free.",
-                      systemImage: "leaf.circle")
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate.opacity(0.82))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity)
-                    .background(BerryStyle.cream.opacity(0.86),
-                                in: RoundedRectangle(cornerRadius: 14))
+                BerryNoRescueNotice(message: BerryGameOverCopy.noRescueNotice)
             }
         }
     }
