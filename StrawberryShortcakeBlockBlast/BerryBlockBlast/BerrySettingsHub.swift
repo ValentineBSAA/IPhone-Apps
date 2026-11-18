@@ -35,7 +35,7 @@ struct BerrySettingsHubView: View {
         var title: String {
             switch self {
             case .gameplay: return "Gameplay"
-            case .appearance: return "Board & Appearance"
+            case .appearance: return "Block Appearance"
             case .audio: return "Audio"
             case .celebration: return "Celebrations"
             case .accessibility: return "Accessibility"
@@ -45,7 +45,7 @@ struct BerrySettingsHubView: View {
         var detail: String {
             switch self {
             case .gameplay: return "Preview and controls"
-            case .appearance: return "Surfaces, frames, pieces"
+            case .appearance: return "Clean board, collectible blocks"
             case .audio: return "Music and sound effects"
             case .celebration: return "Your birthday and seasons"
             case .accessibility: return "Readability and feedback"
@@ -177,25 +177,23 @@ struct BerrySettingsHubView: View {
                 }
             }
         case .appearance:
-            Text("EMPTY BOARD SQUARES")
+            Text("CLEAN, FULL-SIZE GAME BOARD")
                 .font(.system(size: 12, weight: .black, design: .rounded))
                 .foregroundStyle(BerryStyle.strawberry)
             LazyVGrid(columns: cols, spacing: 11) {
-                ForEach(["original", "cream", "glass", "picnic", "garden", "seed"], id: \.self) { id in
-                    choice(surfaceName(id),
-                           detail: id == "original" ? "Default clear squares" : "Optional cell treatment",
-                           icon: "square.grid.3x3.fill",
-                           selected: boardSurface == id) { boardSurface = id }
-                }
+                BerryGridInfoTile(
+                    title: "Classic Garden",
+                    detail: "One clear, edge-to-edge puzzle grid. The rejected decorative frames and surface skins are retired.",
+                    art: "BerryClassic",
+                    value: "Always Active"
+                )
+                BerryGridInfoTile(
+                    title: "Collectible Blocks",
+                    detail: "Unlock and equip special candy tiles in the Strawberry Trophy Garden.",
+                    art: "BBBIconBlocks",
+                    value: "Permanent Rewards"
+                )
             }
-            Text("DECORATIVE FRAMES · FREE & OPTIONAL")
-                .font(.system(size: 12, weight: .black, design: .rounded))
-                .foregroundStyle(BerryStyle.strawberry)
-            BerryBoardFrameGrid()
-            BerryBoardConceptGrid()
-            Text("Blocks remain independent. Pick any frame without changing your squares or puzzle pieces.")
-                .font(.system(size: 11, weight: .medium, design: .rounded))
-                .foregroundStyle(BerryStyle.chocolate)
         case .audio:
             LazyVGrid(columns: cols, spacing: 11) {
                 toggleCard("Music", detail: "Original soundtrack", icon: "music.note",
@@ -250,13 +248,9 @@ struct BerrySettingsHubView: View {
                     }
                     .pickerStyle(.menu)
                 }.settingCard()
-                ForEach(BerryFrameCatalog.choices.filter { $0.id != "original" }) { theme in
-                    choice(theme.title, detail: theme.detail, icon: theme.symbol,
-                           selected: frameID == theme.id) { frameID = theme.id }
-                }
             }
             if birthdayToday {
-                Text("🎂 Happy Birthday! Your Berry Birthday frame is ready to equip.")
+                Text("🎂 Happy Birthday! Your Strawberry Village is celebrating.")
                     .font(.system(size: 13, weight: .black, design: .rounded))
                     .foregroundStyle(BerryStyle.strawberry)
             }
@@ -269,9 +263,6 @@ struct BerrySettingsHubView: View {
                 choice("Sweet Assist", detail: "Most readable placement feedback",
                        icon: "checkmark.shield.fill",
                        selected: previewStyle == "ghost") { previewStyle = "ghost" }
-                choice("High Contrast Board", detail: "Return to original clear squares",
-                       icon: "square.grid.3x3.fill",
-                       selected: boardSurface == "original") { boardSurface = "original" }
             }
         case .restore:
             LazyVGrid(columns: cols, spacing: 11) {
