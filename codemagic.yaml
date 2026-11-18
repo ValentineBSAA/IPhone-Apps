@@ -118,64 +118,69 @@ workflows:
           PY
           python3 - <<'PY'
           from pathlib import Path
-          import hashlib, io, zipfile
+          import hashlib, zipfile, shutil
           root = Path.cwd().parent.resolve()
-          extras = [
-              ("Berry_Berry_Blast_0.5.9_AppIcon_Cloud.zip",
-               "155a349b20d1a8089adf46bb250259e6256fa77b8754bae55e0effbbdcec8cf4"),
-              ("Berry_Berry_Blast_GoldenStrawberry_CloudPatch.zip",
-               "4f73d536af342d1640f3554bf83c479336c38a3a6910cf21c90db02fbdcd0da7"),
-          ]
-          for filename, expected_hash in extras:
-              item = root / "BuildPayload" / filename
-              if not item.is_file():
-                  raise SystemExit("Missing extra game artwork: " + str(item))
-              digest = hashlib.sha256(item.read_bytes()).hexdigest()
-              if digest != expected_hash:
-                  raise SystemExit(
-                      "Artwork checksum mismatch: " + filename +
-                      "\\nExpected: " + expected_hash + "\\nFound: " + digest
-                  )
-              try:
-                  archive = zipfile.ZipFile(item)
-              except zipfile.BadZipFile:
-                  # The tracked 0.5.9 AppIcon archive has exactly 39 junk
-                  # bytes inserted between its valid central directory and
-                  # end-of-directory record. GitHub's bytes and SHA are
-                  # verified above. Remove ONLY that confirmed separator;
-                  # do not suppress corruption in other archives.
-                  if filename != "Berry_Berry_Blast_0.5.9_AppIcon_Cloud.zip":
-                      raise
-                  raw = item.read_bytes()
-                  end = raw.rfind(b"PK\x05\x06")
-                  if end < 0 or end + 22 != len(raw):
-                      raise SystemExit("App icon ZIP lacks a normal end record")
-                  cd_size = int.from_bytes(raw[end + 12:end + 16], "little")
-                  cd_offset = int.from_bytes(raw[end + 16:end + 20], "little")
-                  cd_end = cd_offset + cd_size
-                  if raw[cd_offset:cd_offset + 4] != b"PK\x01\x02" or end - cd_end != 39:
-                      raise SystemExit("App icon ZIP has unexpected corruption")
-                  repaired = raw[:cd_end] + raw[end:]
-                  archive = zipfile.ZipFile(io.BytesIO(repaired))
-                  print("PASS: repaired known 39-byte AppIcon ZIP directory gap")
-              with archive as z:
-                  if z.testzip() is not None:
-                      raise SystemExit("Corrupted ZIP artwork: " + filename)
-                  names = set(z.namelist())
-                  if filename.endswith("_AppIcon_Cloud.zip"):
-                      prefix = "StrawberryShortcakeBlockBlast/BerryBlockBlast/Assets.xcassets/AppIcon.appiconset/"
-                      png_name = prefix + "AppIcon.png"
-                      if names != {png_name, prefix + "Contents.json"}:
-                          raise SystemExit("Unexpected app icon files: " + str(sorted(names)))
-                      png = z.read(png_name)
-                      if png[:8] != bytes([137,80,78,71,13,10,26,10]) or int.from_bytes(png[16:20], "big") != 1024 or int.from_bytes(png[20:24], "big") != 1024:
-                          raise SystemExit("App icon must be a valid 1024 x 1024 PNG")
-                  for entry in names:
-                      resolved = (root / entry).resolve()
-                      if not resolved.is_relative_to(root):
-                          raise SystemExit("Unsafe artwork path: " + entry)
+          payload = root / "BuildPayload" / "BerryBerryBlast_0.5.9_PolishedPlayfield_CloudReady.zip"
+          expected = "f0aedd94661c4b3d821c5d39d070b9d741846ad4f4e900c8cb370b97fa1fce77"
+          if not payload.is_file():
+              raise SystemExit("Missing verified board and mascot art payload")
+          actual = hashlib.sha256(payload.read_bytes()).hexdigest()
+          if actual != expected:
+              raise SystemExit(f"Playfield art payload SHA mismatch: {actual}")
+          try:
+              with zipfile.ZipFile(payload) as z:
+                  damaged = z.testzip()
+                  if damaged:
+                      raise SystemExit("Corrupted board-art entry: " + damaged)
+                  entries = z.namelist()
+                  imagesets = [x for x in entries if x.endswith(".imageset/Contents.json")]
+                  if len(imagesets) != 11:
+                      raise SystemExit(f"Expected 11 new image catalogs, got {len(imagesets)}")
+                  required = "StrawberryShortcakeBlockBlast/BerryBlockBlast/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
+                  if required not in entries:
+                      raise SystemExit("Missing newly approved mascot iPhone app icon")
+                  appicon = z.read(required)
+                  if appicon[:8] != bytes([137,80,78,71,13,10,26,10]):
+                      raise SystemExit("App icon is not a PNG")
+                  if (int.from_bytes(appicon[16:20], "big"),int.from_bytes(appicon[20:24], "big")) != (1024,1024):
+                      raise SystemExit("App icon must be 1024x1024")
+                  if appicon[25] != 2:
+                      raise SystemExit("App icon must be opaque RGB, not transparent")
+                  for name in entries:
+                      if not (root / name).resolve().is_relative_to(root):
+                          raise SystemExit("Refusing unsafe art path: " + name)
                   z.extractall(root)
-          print("PASS: original app icon + Golden Strawberry are installed")
+          except zipfile.BadZipFile as exc:
+              raise SystemExit("Verified playfield art ZIP is invalid: " + str(exc))
+          assets = Path.cwd() / "BerryBlockBlast" / "Assets.xcassets"
+          # Keep the old stable asset name used by every Story and home view.
+          centered = assets / "BerryMascotCenteredCircle.imageset" / "BerryMascotCenteredCircle.png"
+          portrait = assets / "BerryCharacterPortrait.imageset" / "BerryCharacterPortrait.png"
+          if not centered.is_file():
+              raise SystemExit("Missing centered transparent original mascot")
+          shutil.copyfile(centered, portrait)
+          print("PASS: 10 polished playfield images, centered mascot, and new opaque app icon")
+          PY
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, zipfile
+          root = Path.cwd().parent.resolve()
+          path = root / "BuildPayload" / "Berry_Berry_Blast_GoldenStrawberry_CloudPatch.zip"
+          expected = "4f73d536af342d1640f3554bf83c479336c38a3a6910cf21c90db02fbdcd0da7"
+          if not path.is_file():
+              raise SystemExit("Missing Golden Strawberry original artwork")
+          digest = hashlib.sha256(path.read_bytes()).hexdigest()
+          if digest != expected:
+              raise SystemExit("Golden Strawberry checksum mismatch: " + digest)
+          with zipfile.ZipFile(path) as z:
+              bad = z.testzip()
+              if bad is not None:
+                  raise SystemExit("Golden Strawberry ZIP CRC failed: " + bad)
+              for name in z.namelist():
+                  if not (root / name).resolve().is_relative_to(root):
+                      raise SystemExit("Unsafe Golden Strawberry archive entry: " + name)
+              z.extractall(root)
+          print("PASS: Golden Strawberry original game icon installed")
           PY
           python3 Tools/verify_build59.py
       - name: Compile native iPhone app without signing
