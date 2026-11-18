@@ -1156,7 +1156,7 @@ struct BerryGameView: View {
     }
 
     private var toolBar: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: 4) {
             if mode != .classic && !isTimedMode {
             toolButton("Undo", icon: "UndoIcon", count: session.undos, enabled: session.canUndo) {
                 if session.canUndo {
@@ -1193,26 +1193,61 @@ struct BerryGameView: View {
                     showShop = true
                 }
             }
-        }.frame(height: 50)
+        }.frame(height: 46)
     }
 
-    private func toolButton(_ title: String, icon: String, count: Int?, enabled: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 1) {
-                HStack(spacing: 2) {
-                    BerryIcon(name: icon, size: 23)
-                    if let count { Text("\(count)").font(.system(size: 10, weight: .heavy)) }
-                }
-                Text(title).font(.system(size: 9, weight: .heavy, design: .rounded))
-            }
-            .foregroundStyle(enabled ? BerryStyle.strawberry : Color.gray)
-            .frame(maxWidth: .infinity)
-            .frame(height: 48)
-            .background(.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 12))
-        }.buttonStyle(.plain)
-        // Do not disable the Undo button; when no undo is available the player
-        // can still see the reason in the store/inventory.
+    private func toolSymbol(_ icon: String) -> String {
+        switch icon {
+        case "UndoIcon": return "arrow.uturn.backward"
+        case "ShuffleIcon": return "shuffle"
+        case "BerryHint": return "lightbulb.fill"
+        case "StatsChart": return "chart.bar.fill"
+        case "GoldenStrawberry": return "wand.and.stars"
+        case "CottageDecorations": return "house.fill"
+        case "ShopBasket": return "basket.fill"
+        default: return "square.grid.2x2.fill"
+        }
+    }
 
+    private func toolButton(_ title: String, icon: String, count: Int?,
+                            enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: toolSymbol(icon))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(enabled ? BerryStyle.strawberry : BerryStyle.chocolate)
+                        .frame(width: 28, height: 28)
+                        .background(BerryStyle.softPink.opacity(0.75), in: Circle())
+                        .overlay(Circle()
+                            .strokeBorder(BerryStyle.strawberry.opacity(0.44), lineWidth: 1))
+                    if let count {
+                        Text("\(count)")
+                            .font(.system(size: 9, weight: .black, design: .rounded))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
+                            .background(BerryStyle.strawberry, in: Capsule())
+                            .offset(x: 8, y: -3)
+                    }
+                }
+                Text(title)
+                    .font(.system(size: 9, weight: .heavy, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.80)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .background(.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(BerryStyle.strawberry.opacity(0.17), lineWidth: 1))
+            .opacity(enabled ? 1 : 0.70)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(count.map { "\(title), \($0) available" } ?? title)
+        // Keep unavailable helper tiles tappable so the Boutique remains
+        // accessible. Their handlers already guard actual use.
     }
 
     // Both board measurement and touch events use UIWindow coordinates.
