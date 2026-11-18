@@ -265,14 +265,32 @@ struct BerryJournalView: View {
                         .foregroundStyle(BerryStyle.strawberry)
                     Text("A scrapbook of everything you've grown and earned.")
                         .font(.subheadline).foregroundStyle(BerryStyle.chocolate)
-                    record("Story Chapters", value: "\(chapters) completed", symbol: "book.closed.fill")
-                    record("Village", value: "Level \(progress.villageLevel) of 5", symbol: "house.fill")
-                    record("Sweet Harvest", value: "\(lifetimeLines) lifetime lines", symbol: "leaf.fill")
-                    record("Daily Harvest", value: "\(BerryDailyHistory.completed.count) completed days", symbol: "calendar")
-                    record("Quest Rewards", value: "\(progress.claimedTotal) claimed", symbol: "checklist")
-                    record("Berry Collection", value: "\(session.ownedCosmetics.count) cosmetics", symbol: "square.stack.fill")
-                    record("My Cottage", value: "\(session.cottageDecorations) of 6 decorations", symbol: "house.lodge.fill")
-                    record("Strawberries Earned", value: "\(session.totalEarnedBerries) lifetime", symbol: "star.fill")
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 11),
+                                        GridItem(.flexible(), spacing: 11)], spacing: 11) {
+                        BerryGridInfoTile(title: "Story Chapters", detail: "Completed chapters",
+                                         art: "BerryStory", value: "\(chapters)")
+                        BerryGridInfoTile(title: "Strawberry Village",
+                                         detail: "Five village locations",
+                                         art: "BerryVillageMap",
+                                         value: "Level \(progress.villageLevel)/5")
+                        BerryGridInfoTile(title: "Sweet Harvest", detail: "Lifetime cleared lines",
+                                         art: "HarvestReward", value: "\(lifetimeLines)")
+                        BerryGridInfoTile(title: "Daily Harvest",
+                                         detail: "Daily challenges completed",
+                                         art: "DailyHarvest",
+                                         value: "\(BerryDailyHistory.completed.count)")
+                        BerryGridInfoTile(title: "Quest Rewards", detail: "Claimed berry quests",
+                                         art: "BerryQuestBoardArt", value: "\(progress.claimedTotal)")
+                        BerryGridInfoTile(title: "Berry Collection", detail: "Cosmetics owned",
+                                         art: "BerryCollection", value: "\(session.ownedCosmetics.count)")
+                        BerryGridInfoTile(title: "My Cottage", detail: "Decorations collected",
+                                         art: "CottageDecorations",
+                                         value: "\(session.cottageDecorations)/6")
+                        BerryGridInfoTile(title: "Strawberries Earned",
+                                         detail: "Lifetime harvest",
+                                         art: "HarvestReward",
+                                         value: BerryNumbers.compact(session.totalEarnedBerries))
+                    }
                 }
                 .padding(17)
             }
@@ -280,21 +298,5 @@ struct BerryJournalView: View {
             .navigationTitle("Berry Journal")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
-    }
-    private func record(_ title: String, value: String, symbol: String) -> some View {
-        HStack(spacing: 13) {
-            Image(systemName: symbol)
-                .font(.title2).foregroundStyle(BerryStyle.strawberry)
-                .frame(width: 48, height: 48)
-                .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 14))
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.headline)
-                Text(value).font(.subheadline).foregroundStyle(BerryStyle.leaf)
-            }
-            Spacer()
-        }
-        .foregroundStyle(BerryStyle.chocolate)
-        .padding(13)
-        .background(.white, in: RoundedRectangle(cornerRadius: 17))
     }
 }
