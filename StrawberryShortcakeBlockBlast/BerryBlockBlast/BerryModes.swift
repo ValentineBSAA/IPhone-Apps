@@ -97,7 +97,7 @@ struct BerryHomeView: View {
         }
         .buttonStyle(.plain)
     }
-    private var version: String { "🍓 v0.5.10 • 2" }
+    private var version: String { "🍓 v0.5.11 • 1" }
     @AppStorage("berryblockblast.story.level") private var storyLevel = 1
     var body: some View {
         ZStack {
@@ -457,48 +457,19 @@ struct BerryHomeView: View {
         }
         .sheet(isPresented: $showSettings) {
             NavigationStack {
-                ScrollView {
-                    VStack(spacing: 18) {
-                        Text("🍓 🎶 🌸")
-                            .font(.system(size: 38))
-                        Text("Strawberry Sound Studio")
-                            .font(.system(size: 25, weight: .black, design: .rounded))
-                            .foregroundStyle(BerryStyle.strawberry)
-                        BerryBoardAppearanceControls()
-                        BerryMusicSettingsView()
-                        VStack(spacing: 14) {
-                            Toggle("Haptic feedback", isOn: $haptics)
-                                .tint(BerryStyle.strawberry)
-                            Button {
-                                if sound { audio.play(.clear) }
-                            } label: {
-                                Label("Test berry chimes", systemImage: "music.note")
-                                    .font(.headline)
-                                    .frame(maxWidth: .infinity).padding(12)
+                BerrySettingsHubView()
+                    .navigationTitle("🍓 Berry Settings")
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") {
+                                audio.play(.menuBack)
+                                showSettings = false
                             }
-                            .buttonStyle(.borderedProminent)
-                            .tint(BerryStyle.strawberry)
-                            .disabled(!sound)
                         }
-                        .foregroundStyle(BerryStyle.chocolate)
-                        .padding(16)
-                        .background(.white.opacity(0.9), in: RoundedRectangle(cornerRadius: 20))
-                        VStack(spacing: 6) {
-                            Text(version).font(.subheadline.bold())
-                            Text("A berry-sweet puzzle garden. Earn strawberries and decorate your world!")
-                                .font(.caption)
-                                .multilineTextAlignment(.center)
-                        }
-                        .foregroundStyle(BerryStyle.chocolate.opacity(0.75))
                     }
-                    .padding(22)
-                    .frame(maxWidth: 520)
-                    .frame(maxWidth: .infinity)
-                }
-                .background(LinearGradient(colors: [BerryStyle.cream, Color(red: 1, green: 0.85, blue: 0.90)], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
-                .navigationTitle("🍓 Berry Settings")
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { audio.play(.menuBack); showSettings = false } } }
-            }.presentationDetents([.large]).presentationDragIndicator(.visible)
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         .onAppear {
             audio.setMusicVolume(Float(musicVolume))
