@@ -263,6 +263,7 @@ final class BerryGameSession: ObservableObject {
             }
         }
         gameOver = !engine.hasMove()
+        BerryProgression.shared.recordPlacement(mode: activeMode, clearedLines: outcome.clearedLines)
         save()
         return true
     }
@@ -341,10 +342,17 @@ final class BerryGameSession: ObservableObject {
     func rewardTutorial() { awardOnce("tutorial", amount: 25, reason: "Strawberry School") }
     func rewardDaily() {
         let day = Self.dailyDateKey()
-        awardOnce("daily-" + day, amount: 30, reason: "Daily Harvest")
+        // Migrated completions were already paid by prior app versions.
+        // Never pay a second reward for a completed legacy date.
+        guard !BerryDailyHistory.completed.contains(day) else { return }
+        let dayNumber = BerryDailyHistory.nextStreakDay
+        let amount = BerryDailyHistory.reward(forStreakDay: dayNumber)
+        awardOnce("daily-" + day, amount: amount,
+                  reason: "Daily Harvest · Day \(dayNumber) streak")
     }
     func rewardStory(_ chapter: Int) {
         awardOnce("chapter-" + String(chapter), amount: 15 + min(35, chapter * 5), reason: "Story chapter")
+        BerryProgression.shared.recordStoryChapter(chapter)
     }
     func buyCottageDecoration() {
         // There are six unique Cottage upgrades. Earlier buyers with more
