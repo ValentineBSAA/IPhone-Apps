@@ -5,17 +5,29 @@ struct NeighborAvatar: View {
     var size: CGFloat = 50
 
     var body: some View {
-        Circle()
-            .fill(RadialGradient(colors: [neighbor.hue, neighbor.hue.opacity(0.28), Night.surface],
-                                 center: .topLeading, startRadius: 0, endRadius: size))
-            .overlay {
+        ZStack {
+            if let photograph = UIImage(named: neighbor.portraitAssetName) {
+                Image(uiImage: photograph)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: size, height: size)
+                    .clipped()
+            } else {
+                // Missing art should be detected by runtime asset tests, not
+                // silently allowed into a public-facing release.
+                Circle()
+                    .fill(RadialGradient(
+                        colors: [neighbor.hue, neighbor.hue.opacity(0.28), Night.surface],
+                        center: .topLeading, startRadius: 0, endRadius: size))
                 Text(neighbor.initials)
                     .font(.system(size: size * 0.30, weight: .medium))
                     .foregroundColor(.white)
             }
-            .frame(width: size, height: size)
-            .overlay(Circle().strokeBorder(.white.opacity(0.16), lineWidth: 1))
-            .accessibilityLabel(neighbor.name)
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(Circle().strokeBorder(.white.opacity(0.16), lineWidth: 1))
+        .accessibilityLabel("\(neighbor.name) contact photograph")
     }
 }
 
