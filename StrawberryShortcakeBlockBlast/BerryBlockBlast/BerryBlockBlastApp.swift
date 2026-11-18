@@ -10,6 +10,20 @@ struct BerryBlockBlastApp: App {
             BerryHomeView()
                 .overlay(alignment: .top) { BerryMilestoneBanner() }
                 .onAppear {
+                    // 0.5.9 silently changed 'default' into fruit blocks and
+                    // a decorated pink cell. Restore the familiar 0.5.8
+                    // appearance once without discarding intentionally chosen
+                    // alternative board surfaces or old cosmetic purchases.
+                    let defaults = UserDefaults.standard
+                    let migration = "berryberryblast.originalBoardRestored.v0510"
+                    if !defaults.bool(forKey: migration) {
+                        let surfaceKey = "berryberryblast.board.surface.v059"
+                        if defaults.string(forKey: surfaceKey) == nil ||
+                           defaults.string(forKey: surfaceKey) == "cream" {
+                            defaults.set("original", forKey: surfaceKey)
+                        }
+                        defaults.set(true, forKey: migration)
+                    }
                     BerryAudio.shared.appSceneDidChange(scenePhase)
                     playtime.scenePhaseDidChange(scenePhase)
                 }
