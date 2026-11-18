@@ -62,7 +62,7 @@ struct ContactBookView: View {
                 Text("Everyday contacts")
             }
             Section {
-                Text("All contacts are part of the fictional phone. Nothing is imported from your real iPhone.")
+                Text("Contact details and notes")
                     .font(.system(size: 12))
                     .foregroundColor(Night.muted)
             } header: {
@@ -104,9 +104,9 @@ struct ContactProfileView: View {
 
     private var displayPhone: String {
         switch contact {
-        case .nora: return "Fictional contact · Number unavailable"
-        case .eli: return "Fictional work contact · Number unavailable"
-        case .unit7: return "Unlisted number"
+        case .nora: return "(928) 555-0132"
+        case .eli: return "(928) 555-0167"
+        case .unit7: return "(928) 555-0184"
         }
     }
 
@@ -172,7 +172,7 @@ struct ContactProfileView: View {
                 VStack(alignment: .leading, spacing: 7) {
                     Label("Voice calling is not yet available", systemImage: "mic.slash")
                         .font(.system(size: 13, weight: .semibold))
-                    Text("The future in-game voice mode will only be enabled when actual character dialogue, microphone consent and speech-recognition testing are ready. Nothing is recording you.")
+                    Text("Calls and voice messaging are unavailable for this contact.")
                         .font(.system(size: 12))
                         .foregroundColor(Night.muted)
                 }
