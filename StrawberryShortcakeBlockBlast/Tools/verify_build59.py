@@ -58,6 +58,12 @@ assert (root / "Tests" / "BerryEndlessGardenSectionsTests.swift").is_file()
 assert (root / "Tests" / "BerryGoldenStrawberryTests.swift").is_file()
 assert 'clearBoardWithGoldenStrawberry' in engine
 assert (root / "Tests" / "BerryGoldenStrawberryTests.swift").read_text().count("func test") >= 5
+economy = (root / "BerryBlockBlast" / "BerryEconomy.swift").read_text()
+for marker in ("undoPrice = 40", "shufflePrice = 50", "hintPrice = 35",
+               "[60, 90, 130, 180, 240, 300]", "nextCottagePrice(owned:"):
+    assert marker in economy, "Missing 0.5.9 economy rule: " + marker
+assert (root / "Tests" / "BerryEconomyTests.swift").read_text().count("func test") >= 4
+
 session = (root / "BerryBlockBlast" / "BerryGameSession.swift").read_text()
 shop = (root / "BerryBlockBlast" / "BerryBoutiqueView.swift").read_text()
 for source, needle in ((session, 'useGoldenStrawberry()'),
