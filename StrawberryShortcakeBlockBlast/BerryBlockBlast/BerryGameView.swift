@@ -654,6 +654,17 @@ struct BerryGameView: View {
                         Text(showVictory ? (mode == .story ? "Chapter \(completedStoryChapter ?? max(1, storyLevel - 1)) complete! Your next chapter is ready." : "Your strawberry star has blossomed!") : confirmRestart ? "A fresh board starts this chapter again. Your records and earned berries stay safe." : isTimedMode && blitzRemaining == 0 ? "Your timer reached zero. See your results below!" : "No pieces fit. Use a Shuffle to refresh pieces, or a Golden Strawberry to clear the board. Your score continues!")
                             .font(.system(size: 15, weight: .medium, design: .rounded))
                             .foregroundStyle(BerryStyle.chocolate).multilineTextAlignment(.center)
+                        if showVictory && mode == .story {
+                            Text(BerryStoryNarrative.victory(for:
+                                completedStoryChapter ?? max(1, storyLevel - 1)))
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundStyle(BerryStyle.chocolate)
+                                .multilineTextAlignment(.center)
+                                .padding(9)
+                                .background(BerryStyle.softPink,
+                                            in: RoundedRectangle(cornerRadius: 14))
+                                .accessibilityLabel("Chapter story conclusion")
+                        }
                         if !confirmRestart {
                             HStack(spacing: 12) {
                                 BerryCandyResultCounter(title: "SCORE", value: session.engine.score)
