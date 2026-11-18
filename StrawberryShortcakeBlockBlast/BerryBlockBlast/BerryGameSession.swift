@@ -24,6 +24,7 @@ final class BerryGameSession: ObservableObject {
     private var previousBerryEarnings = 0
     private var previousRewardEntry: String?
     private var activeMode: BerryMode = .endless
+    static let goldenStrawberryCost = 250
     static let classicSaveKey = "berryblockblast.classic.engine.v055"
     static let classicSavedFlagKey = "berryblockblast.classic.savedFlag.v056b2"
     private static let legacyEndlessSaveKey = "berryblockblast.saved-game.v3"
@@ -418,11 +419,12 @@ final class BerryGameSession: ObservableObject {
     }
 
     /// Golden Trowel 150, Ribbon Twister 200 (three uses), Starberry Seed 230,
-    /// Golden Strawberry 350, Picnic Pantry 600 and Berry Spyglass 900 (permanent).
+    /// Golden Strawberry 250, Picnic Pantry 600 and Berry Spyglass 900 (permanent).
     @discardableResult
     func buyPremium(_ id: String) -> Bool {
         let prices = ["trowel": 150, "twister": 200, "seed": 230,
-                      "golden-strawberry": 350, "pantry": 600, "spyglass": 900]
+                      "golden-strawberry": Self.goldenStrawberryCost,
+                      "pantry": 600, "spyglass": 900]
         guard let price = prices[id], berries >= price else { return false }
         let permanent = id == "pantry" || id == "spyglass"
         if permanent && premiumOwned.contains(id) { return false }
@@ -465,6 +467,30 @@ final class BerryGameSession: ObservableObject {
         lastClearedLines = 0
         lastEarned = 0
         lastMessage = "✨ Golden Strawberry! Your garden is clear!"
+        persistPremium()
+        return true
+    }
+
+    /// Emergency Game Over checkout. Buying and clearing is one operation,
+    /// avoiding a paid but unusable item and keeping the run intact.
+    @discardableResult
+    func buyAndUseGoldenStrawberry() -> Bool {
+        guard canUsePremium,
+              premiumCharges["golden-strawberry", default: 0] == 0,
+              berries >= Self.goldenStrawberryCost,
+              !engine.goldenRescueUsed,
+              engine.clearBoardWithGoldenStrawberry() else { return false }
+        berries -= Self.goldenStrawberryCost
+        previous = nil
+        previousBerryEarnings = 0
+        previousRewardEntry = nil
+        gameOver = !engine.hasMove()
+        lastClearedLines = 0
+        lastEarned = 0
+        lastMessage = "✨ Golden Strawberry! You can keep playing!"
+        rewardsLog.insert("🍓 -\(Self.goldenStrawberryCost) • Golden Strawberry Continue", at: 0)
+        rewardsLog = Array(rewardsLog.prefix(20))
+        UserDefaults.standard.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
         persistPremium()
         return true
     }
