@@ -6,6 +6,10 @@ struct ContactBookView: View {
     @EnvironmentObject private var game: GameStore
     @State private var searchText = ""
 
+    private var matchingNeighbors: [Neighbor] {
+        Neighbor.allCases.filter { searchText.isEmpty || $0.name.localizedCaseInsensitiveContains(searchText) || $0.subtitle.localizedCaseInsensitiveContains(searchText) }
+    }
+
     private var matching: [Contact] {
         guard !searchText.isEmpty else { return Contact.allCases }
         return Contact.allCases.filter {
@@ -37,8 +41,32 @@ struct ContactBookView: View {
                         .padding(.vertical, 4)
                     }
                 }
+            }
+            Section {
+                ForEach(matchingNeighbors) { neighbor in
+                    NavigationLink(value: AppPage.worldProfile(neighbor)) {
+                        HStack(spacing: 14) {
+                            NeighborAvatar(neighbor: neighbor, size: 53)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(neighbor.name)
+                                    .font(.system(size: 16, weight: .semibold))
+                                Text(neighbor.subtitle)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(Night.muted)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
             } header: {
-                Text("Saved contacts")
+                Text("Everyday contacts")
+            }
+            Section {
+                Text("All contacts are part of the fictional phone. Nothing is imported from your real iPhone.")
+                    .font(.system(size: 12))
+                    .foregroundColor(Night.muted)
+            } header: {
+                Text("About")
             } footer: {
                 Text("These contacts belong to the fictional story. No real iPhone contacts are imported.")
             }
