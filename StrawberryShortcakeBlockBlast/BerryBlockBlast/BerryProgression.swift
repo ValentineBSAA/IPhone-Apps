@@ -150,12 +150,19 @@ struct BerryVillageView: View {
     @ObservedObject private var progress = BerryProgression.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showCottage = false
-    private let places: [(String, String, String, Int)] = [
-        ("Strawberry Cottage", "home.sparkles", "Your growing little home", 1),
-        ("Blooming Path", "leaf.fill", "Restore paths with Story chapters", 2),
-        ("Jam Market", "basket.fill", "Bring treats back to the village", 3),
-        ("Berry Bakery", "birthday.cake.fill", "Help the ovens come alive", 4),
-        ("Festival Square", "sparkles", "A cheerful village celebration", 5)
+    private struct VillagePlace: Identifiable {
+        let name: String
+        let symbol: String
+        let detail: String
+        let level: Int
+        var id: String { name }
+    }
+    private let places: [VillagePlace] = [
+        .init(name: "Strawberry Cottage", symbol: "house.fill", detail: "Your growing little home", level: 1),
+        .init(name: "Blooming Path", symbol: "leaf.fill", detail: "Restore paths with Story chapters", level: 2),
+        .init(name: "Jam Market", symbol: "basket.fill", detail: "Bring treats back to the village", level: 3),
+        .init(name: "Berry Bakery", symbol: "birthday.cake.fill", detail: "Help the ovens come alive", level: 4),
+        .init(name: "Festival Square", symbol: "sparkles", detail: "A cheerful village celebration", level: 5)
     ]
     var body: some View {
         NavigationStack {
@@ -168,20 +175,20 @@ struct BerryVillageView: View {
                     Text("Restore the village through Story chapters, daily harvests and garden adventures.")
                         .multilineTextAlignment(.center).font(.subheadline)
                         .foregroundStyle(BerryStyle.chocolate)
-                    ForEach(places, id: \.0) { place in
-                        let unlocked = progress.villageLevel >= place.3
+                    ForEach(places) { place in
+                        let unlocked = progress.villageLevel >= place.level
                         HStack(spacing: 14) {
-                            Image(systemName: unlocked ? place.1 : "lock.fill")
+                            Image(systemName: unlocked ? place.symbol : "lock.fill")
                                 .font(.system(size: 26)).foregroundStyle(unlocked ? BerryStyle.leaf : .gray)
                                 .frame(width: 50, height: 54)
                                 .background(BerryStyle.softPink, in: RoundedRectangle(cornerRadius: 13))
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(place.0).font(.headline)
-                                Text(unlocked ? place.2 : "Unlock at Village Level \(place.3)")
+                                Text(place.name).font(.headline)
+                                Text(unlocked ? place.detail : "Unlock at Village Level \(place.level)")
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
-                            if unlocked && place.3 == 1 {
+                            if unlocked && place.level == 1 {
                                 Button("Visit") { showCottage = true }
                                     .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry)
                             } else {
