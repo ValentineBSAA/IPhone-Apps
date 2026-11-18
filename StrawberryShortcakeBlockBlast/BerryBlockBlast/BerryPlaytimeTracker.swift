@@ -92,7 +92,7 @@ final class BerryPlaytimeTracker: ObservableObject {
     }
 
     var recentSessions: [ModeSession] {
-        modeSessions.filter { $0.activeSeconds > 0 }.reversed()
+        Array(modeSessions.filter { $0.activeSeconds > 0 }.reversed())
     }
 
     func modeSeconds(for id: String) -> Double {
@@ -239,7 +239,7 @@ final class BerryPlaytimeTracker: ObservableObject {
         return formatter.string(from: date)
     }
 
-    static func clock(_ time: Date) -> String {
+    nonisolated static func clock(_ time: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US")
         formatter.dateFormat = "h:mm a"
