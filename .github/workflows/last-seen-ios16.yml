@@ -67,7 +67,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 Tools/import_contacts.py --zip ContactPhotos.zip --required
-          test "$(find LastSeenApp/Assets.xcassets -maxdepth 1 -type d -name 'Contact_*.imageset' | wc -l | tr -d ' ')" = "10"
+          test "$(find LastSeenApp/Assets.xcassets -maxdepth 1 -type d -name 'Contact_*.imageset' | wc -l | tr -d ' ')" = "12"
           for asset in Contact_Nora_01 Contact_Nora_02 Contact_Nora_03 Contact_Nora_04 \
                        Contact_Eli_01 Contact_Eli_02 Contact_Eli_03 \
                        Contact_Unit7_01 Contact_Unit7_02 Contact_Unit7_03; do
