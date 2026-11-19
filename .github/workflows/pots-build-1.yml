@@ -16,7 +16,9 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-15
+    # Use GitHub's supported Intel pool to avoid macos-15 ARM runner acquisition
+    # failures (queued 15 minutes with no runner and zero build steps).
+    runs-on: macos-15-intel
     timeout-minutes: 45
     steps:
       - name: Check out repository
