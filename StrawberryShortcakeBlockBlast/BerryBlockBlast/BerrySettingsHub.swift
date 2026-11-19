@@ -10,6 +10,7 @@ struct BerrySettingsHubView: View {
     @State private var selected: Section?
     @State private var confirmAllAppearance = false
     @State private var showDeveloperGateway = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
 
     @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
@@ -78,14 +79,14 @@ struct BerrySettingsHubView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 13) {
-                Text(selected?.title ?? "🍓 Berry Settings")
+                Text(selected?.title ?? "🍓 Make Your Garden Yours")
                     .font(.system(size: 24, weight: .black, design: .rounded))
                     .foregroundStyle(BerryStyle.strawberry)
                     .multilineTextAlignment(.center)
 
                 if let selected {
                     Button {
-                        withAnimation(.easeInOut(duration: 0.18)) { self.selected = nil }
+                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.18)) { self.selected = nil }
                     } label: {
                         Label("All Settings", systemImage: "chevron.left")
                             .font(.system(size: 13, weight: .heavy, design: .rounded))
@@ -102,7 +103,7 @@ struct BerrySettingsHubView: View {
                     LazyVGrid(columns: cols, spacing: 11) {
                         ForEach(Section.allCases) { category in
                             Button {
-                                withAnimation(.easeInOut(duration: 0.18)) {
+                                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.18)) {
                                     selected = category
                                 }
                             } label: {
@@ -127,7 +128,7 @@ struct BerrySettingsHubView: View {
                                 .overlay(RoundedRectangle(cornerRadius: 19)
                                     .strokeBorder(BerryStyle.strawberry.opacity(0.24), lineWidth: 1))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(BerryPolishPressStyle())
                         }
                     }
                 }

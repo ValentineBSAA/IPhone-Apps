@@ -18,9 +18,8 @@ struct BerryBoard: View {
     let mode: BerryMode
     let strawberryUnlocked: Bool
     let previewStyle: String
-    // Removed rejected decorative board surfaces and frames in Build 3.
-    // Saved cosmetic entitlements remain in storage, but the playable board
-    // always uses a clean, high-contrast grid with a single thin rim.
+    // Build 4.1 optional Blossom Glass is decoration only, never a hitbox change.
+    // The hardware-tested original remains the default and instant rollback.
     private let gap: CGFloat = 3
     @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "original"
 
@@ -50,7 +49,22 @@ struct BerryBoard: View {
                                     .resizable()
                                     .interpolation(.high)
                                     .scaledToFill()
+                                    .overlay {
+                                        // Light catching on each empty square only.
+                                        RoundedRectangle(cornerRadius: side > 8 ? 4 : 7)
+                                            .fill(LinearGradient(colors: [
+                                                Color.white.opacity(0.42),
+                                                Color(red: 0.92, green: 0.45, blue: 0.67).opacity(0.10),
+                                                Color(red: 0.77, green: 0.61, blue: 0.96).opacity(0.33)
+                                            ], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                    }
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: side > 8 ? 4 : 7)
+                                            .strokeBorder(.white.opacity(0.80),
+                                                          lineWidth: side > 8 ? 0.8 : 1.2)
+                                    }
                                     .clipShape(RoundedRectangle(cornerRadius: side > 8 ? 4 : 7))
+                                    .allowsHitTesting(false)
                                     .accessibilityHidden(true)
                             }
                         }
