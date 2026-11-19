@@ -129,11 +129,15 @@ struct FeatureTile: View {
     }
 }
 
+struct FeelingDraft: Identifiable {
+    let feeling: String
+    var id: String { feeling }
+}
+
 struct HomeScreenView: View {
     let openLog: () -> Void
     let openHistory: () -> Void
 
-    @Environment(\.managedObjectContext) private var context
     @FetchRequest(sortDescriptors: [NSSortDescriptor(key: "recordedAt", ascending: false)])
     private var entries: FetchedResults<POTSLogEntry>
 
@@ -145,8 +149,8 @@ struct HomeScreenView: View {
     @AppStorage("homeLayoutDensity") private var density = "compact"
 
     @State private var newLog: LogCategory?
-    @State private var editRoute: RecordEditRoute?
-    @State private var notice: String?
+    @State private var feelingDraft: FeelingDraft?
+    @AppStorage("homeStatusDotsMigrationV1") private var migratedStatusDots = false
 
     private var allRecords: [RecordSnapshot] {
         RecordSnapshot.snapshots(of: Array(entries))
@@ -222,16 +226,15 @@ struct HomeScreenView: View {
         .sheet(item: $newLog) { category in
             EntryEditor(category: category)
         }
-        .sheet(item: $editRoute) { route in
-            RecordEditDestination(objectID: route.objectID)
+        .sheet(item: $feelingDraft) { draft in
+            EntryEditor(category: .checkIn, suggestedFeeling: draft.feeling.isEmpty ? nil : draft.feeling)
         }
-        .alert("Could not save", isPresented: Binding(
-            get: { notice != nil },
-            set: { if !$0 { notice = nil } }
-        )) {
-            Button("OK") { notice = nil }
-        } message: {
-            Text(notice ?? "Please try again.")
+        .onAppear {
+            guard !migratedStatusDots else { return }
+            if moduleOrder == "today,checkIn,favorites,recent" {
+                moduleOrder = HomeLayout.moduleDefault
+            }
+            migratedStatusDots = true
         }
     }
 
@@ -241,7 +244,7 @@ struct HomeScreenView: View {
         case .today: todayCard
         case .checkIn: checkInStrip
         case .favorites: favoriteGrid
-        case .recent: recentGrid
+        case .recent: statusDots
         }
     }
 
@@ -253,7 +256,7 @@ struct HomeScreenView: View {
                         Text("Today")
                             .font(.title3.bold())
                         if let check = todayEntries.first(where: { $0.category == LogCategory.checkIn.rawValue }) {
-                            Text("Last check-in: \(check.title)")
+                            Text("Last check-in: \(CheckInFormat.feeling(title: check.title, posture: check.posture) ?? check.title)")
                                 .font(.caption).foregroundStyle(.secondary)
                         } else {
                             Text(todayEntries.isEmpty ? "Nothing logged yet" : "No check-in yet")
@@ -314,7 +317,7 @@ struct HomeScreenView: View {
                 Text("Quick check-in").font(.subheadline.weight(.semibold))
                 Spacer()
                 if let latest = todayEntries.first(where: { $0.category == LogCategory.checkIn.rawValue }) {
-                    Text("Last: \(latest.title)")
+                    Text("Last: \(CheckInFormat.feeling(title: latest.title, posture: latest.posture) ?? latest.title)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -338,9 +341,10 @@ struct HomeScreenView: View {
     }
 
     private func checkInButton(_ answer: String) -> some View {
-        let selected = todayEntries.first(where: { $0.category == LogCategory.checkIn.rawValue })?.title == answer
+        let latest = todayEntries.first(where: { $0.category == LogCategory.checkIn.rawValue })
+        let selected = latest.flatMap { CheckInFormat.feeling(title: $0.title, posture: $0.posture) } == answer
         return Button {
-            saveCheckIn(answer)
+            feelingDraft = FeelingDraft(feeling: answer)
         } label: {
             Text(answer)
                 .font(.system(size: 14, weight: selected ? .semibold : .medium))
@@ -359,7 +363,7 @@ struct HomeScreenView: View {
         }
         .buttonStyle(.plain)
         .disabled(PersistenceController.shared.loadError != nil)
-        .accessibilityHint("Records a new optional check-in")
+        .accessibilityHint("Opens a note. Nothing is saved until you choose Save.")
     }
 
     private var favoriteGrid: some View {
@@ -390,62 +394,74 @@ struct HomeScreenView: View {
         }
     }
 
-    @ViewBuilder
-    private var recentGrid: some View {
-        if !allRecords.isEmpty {
-            VStack(alignment: .leading, spacing: 9) {
+    private var statusDots: some View {
+        VStack(alignment: .leading, spacing: 9) {
             HStack {
-                Text("Recent activity").font(.headline)
+                Text("Logged today")
+                    .font(.subheadline.weight(.semibold))
                 Spacer()
-                Button("See all", action: openHistory)
+                Button("History", action: openHistory)
                     .font(.caption.weight(.semibold))
             }
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 9), GridItem(.flexible(), spacing: 9)], spacing: 9) {
-                    ForEach(Array(allRecords.prefix(3))) { entry in
-                        Button { editRoute = RecordEditRoute(objectID: entry.id) } label: {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(entry.title)
-                                    .font(.subheadline.weight(.semibold))
-                                    .lineLimit(1)
-                                Text(entry.detail)
-                                    .font(.caption)
-                                    .lineLimit(2)
-                                    .foregroundStyle(.secondary)
-                                Text(entry.recordedAt.formatted(date: .abbreviated, time: .shortened))
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .frame(maxWidth: .infinity, minHeight: roomy ? 86 : 71, alignment: .topLeading)
-                            .padding(12)
-                            .background(Color(uiColor: .secondarySystemGroupedBackground),
-                                        in: RoundedRectangle(cornerRadius: 16))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
+
+            HStack(spacing: 9) {
+                statusDot("Feeling", category: .checkIn)
+                statusDot("Symptoms", category: .symptom)
+                statusDot("Heart rate", category: .heartRate)
+                statusDot("BP", category: .bloodPressure)
             }
+
+            if let latest = todayEntries.first {
+                HStack(spacing: 6) {
+                    Image(systemName: "clock").font(.caption2)
+                    Text("Latest: \(latest.title) · \(latest.recordedAt.formatted(date: .omitted, time: .shortened))")
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Spacer(minLength: 3)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            Text("Filled = recorded today · Empty = not recorded. These are not health ratings.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
         }
     }
-    private func saveCheckIn(_ answer: String) {
-        let entry = POTSLogEntry(context: context)
-        entry.id = UUID()
-        entry.recordedAt = Date()
-        entry.category = LogCategory.checkIn.rawValue
-        entry.title = answer
-        entry.severity = -1
-        entry.firstValue = 0
-        entry.secondValue = 0
-        entry.posture = ""
-        entry.notes = ""
-        entry.timezoneID = TimeZone.current.identifier
-        entry.source = "manual"
-        do {
-            try POTSData.save(context)
-        } catch {
-            context.rollback()
-            notice = error.localizedDescription
+
+    private func statusDot(_ title: String, category: LogCategory) -> some View {
+        let logged = todayEntries.contains { $0.category == category.rawValue }
+        return Button {
+            if category == .checkIn {
+                feelingDraft = FeelingDraft(feeling: "")
+            } else {
+                newLog = category
+            }
+        } label: {
+            VStack(spacing: 6) {
+                Circle()
+                    .fill(logged ? Color.potsTeal : Color.clear)
+                    .frame(width: 13, height: 13)
+                    .overlay(Circle().strokeBorder(
+                        logged ? Color.potsTeal : Color.secondary.opacity(0.5),
+                        lineWidth: 1.5
+                    ))
+                Text(title)
+                    .font(.caption.weight(.medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
+                    .foregroundStyle(.primary)
+            }
+            .frame(maxWidth: .infinity, minHeight: roomy ? 64 : 51)
+            .background(Color(uiColor: .secondarySystemGroupedBackground),
+                        in: RoundedRectangle(cornerRadius: 13))
         }
+        .buttonStyle(.plain)
+        .disabled(PersistenceController.shared.loadError != nil)
+        .accessibilityLabel("\(title), \(logged ? "recorded today" : "not recorded today")")
+        .accessibilityHint("Open an entry form")
     }
+
 }
 
 struct LogHubView: View {
