@@ -56,6 +56,17 @@ Night_Tile_Teal
 Night_Tile_Yellow
 ```
 
+**Safe import (when the approved ZIP is available in your Git checkout):**
+
+```bash
+cd StrawberryShortcakeBlockBlast
+python3 Tools/import_night_assets.py /path/to/Berry_Berry_Blast_Night_Edition_Xcode_Asset_Catalog.zip
+python3 Tools/import_night_assets.py /path/to/Berry_Berry_Blast_Night_Edition_Xcode_Asset_Catalog.zip --apply
+git status --short
+```
+
+The first command validates only; the second creates 30 distinct `Night_*.imageset` entries without touching daytime art. Commit those resulting PNGs and `Contents.json` files to this development branch, then rerun artwork and app-build checks. **This helper script has been committed, but its night PNG import has not been run on GitHub yet.**
+
 **Night asset import checklist (do NOT mark complete until committed):**
 - [ ] Import all 30 `Night_*.imageset` folders into `StrawberryShortcakeBlockBlast/BerryBlockBlast/Assets.xcassets` on the Build 4 development branch only.
 - [ ] Validate 30 separate image sets, each with its own correct `Contents.json`, matching named PNG, RGBA transparency, dimensions and nonzero pixel data.
