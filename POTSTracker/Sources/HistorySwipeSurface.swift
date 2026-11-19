@@ -149,7 +149,8 @@ struct HistorySwipeSurface<Content: View>: View {
                     .minimumScaleFactor(0.75)
             }
             .foregroundStyle(.white)
-            .frame(width: width, minHeight: 64)
+            .frame(width: width)
+            .frame(minHeight: 64)
             .background(color, in: RoundedRectangle(cornerRadius: 13))
         }
         .buttonStyle(.plain)
