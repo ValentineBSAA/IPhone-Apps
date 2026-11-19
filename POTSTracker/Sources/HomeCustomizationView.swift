@@ -15,16 +15,16 @@ enum HomeModule: String, CaseIterable, Identifiable {
         case .today: return "Today"
         case .checkIn: return "Daily check-in"
         case .favorites: return "Pinned trackers"
-        case .recent: return "Recent activity"
+        case .recent: return "Today's dots"
         }
     }
 
     var subtitle: String {
         switch self {
         case .today: return "Today's summary and quick log"
-        case .checkIn: return "Optional one-tap check-in"
+        case .checkIn: return "Open an optional titled check-in note"
         case .favorites: return "Your shortcuts"
-        case .recent: return "Your last three entries"
+        case .recent: return "Simple indicators for what was logged today"
         }
     }
 
@@ -33,13 +33,13 @@ enum HomeModule: String, CaseIterable, Identifiable {
         case .today: return "sun.max"
         case .checkIn: return "heart.text.square"
         case .favorites: return "square.grid.2x2"
-        case .recent: return "clock.arrow.circlepath"
+        case .recent: return "circle.grid.2x2"
         }
     }
 }
 
 enum HomeLayout {
-    static let moduleDefault = "today,checkIn,favorites,recent"
+    static let moduleDefault = "today,recent,checkIn,favorites"
     static let pinDefault = "symptom,heartRate,bloodPressure,journal"
 
     static func ids(from raw: String) -> [String] {
