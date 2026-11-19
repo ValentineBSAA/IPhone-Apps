@@ -81,7 +81,7 @@ struct HistorySwipeSurface<Content: View>: View {
                     .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
                     .contentShape(Rectangle())
                     .background(
-                        Color(uiColor: .secondarySystemGroupedBackground),
+                        Color.potsSurface,
                         in: RoundedRectangle(cornerRadius: 13, style: .continuous)
                     )
             }
