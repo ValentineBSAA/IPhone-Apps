@@ -1,4 +1,4 @@
-name: POTS Tracker | v0.1.6 Reliable Swipe and Bulk Delete iOS 16
+name: POTS Tracker | v0.1.7 Journal Lock Apple Health and OLED iOS 16
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
       - ".github/workflows/pots-build-1.yml"
 
 concurrency:
-  group: pots-tracker-ux-v016
+  group: pots-tracker-ux-v017
   cancel-in-progress: true
 
 permissions:
@@ -95,9 +95,16 @@ jobs:
           BUILD="$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$INFO")"
           BUNDLE="$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$INFO")"
           echo "Installed app identity: $BUNDLE · v$VERSION (build $BUILD)"
-          test "$VERSION" = "0.1.6"
+          test "$VERSION" = "0.1.7"
           test "$BUILD" = "$GITHUB_RUN_NUMBER"
           test "$BUNDLE" = "com.valentinebsaa.potstracker"
+          FACE="$(/usr/libexec/PlistBuddy -c 'Print NSFaceIDUsageDescription' "$INFO")"
+          HEALTH="$(/usr/libexec/PlistBuddy -c 'Print NSHealthShareUsageDescription' "$INFO")"
+          echo "$FACE" | grep -iq 'journal'
+          echo "$HEALTH" | grep -iq 'steps'
+          test -f POTSTracker.entitlements
+          /usr/libexec/PlistBuddy -c 'Print :com.apple.developer.healthkit' POTSTracker.entitlements | grep -q 'true'
+          echo "Verified: Face ID explanation, read-only Apple Health purpose and HealthKit entitlement source"
 
       - name: Package unsigned IPA
         working-directory: POTSTracker
@@ -106,13 +113,13 @@ jobs:
           set -euo pipefail
           mkdir -p dist/Payload
           cp -R build-device/Build/Products/Release-iphoneos/POTSTracker.app dist/Payload/
-          (cd dist && zip -qr POTS-Tracker-v0.1.6-Swipe-Bulk-iOS16-unsigned.ipa Payload)
-          unzip -l dist/POTS-Tracker-v0.1.6-Swipe-Bulk-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
+          (cd dist && zip -qr POTS-Tracker-v0.1.7-Privacy-Health-OLED-iOS16-unsigned.ipa Payload)
+          unzip -l dist/POTS-Tracker-v0.1.7-Privacy-Health-OLED-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
 
       - name: Upload unsigned IPA build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: POTS-Tracker-v0.1.6-Swipe-Bulk-iOS16-unsigned
+          name: POTS-Tracker-v0.1.7-Privacy-Health-OLED-iOS16-unsigned
           path: POTSTracker/dist/*.ipa
           if-no-files-found: error
           retention-days: 30
