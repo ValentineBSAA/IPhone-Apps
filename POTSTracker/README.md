@@ -1,6 +1,6 @@
 # POTS Tracker (working title)
 
-**Status:** Build 1 source code and unsigned IPA CI workflow committed, **compilation and physical-iPhone testing not yet verified**. Approved icon binaries still require repository import.
+**Status:** Build 1 source code and unsigned IPA CI workflow committed, **compilation and physical-iPhone testing not yet verified**. All 13 approved 1024×1024 icon PNGs are now in `Resources/Icons/` after a successful GitHub release import. Runtime/IPA visual confirmation remains untested.
 
 A free, privacy-first native **iPhone** utility for tracking lived experiences of Postural Orthostatic Tachycardia Syndrome (POTS). Designed for a family member who wants useful daily records and 7-day, monthly, 365/366-day, and lifetime history without paid features.
 
@@ -63,8 +63,10 @@ An unsigned IPA is not install-ready: it must be signed or installed using a com
 See [the Build 1 test plan](BUILD_1_TEST_PLAN.md) and [the premium feature roadmap](PREMIUM_FEATURE_ROADMAP.md).
 
 
-## Required approved artwork import, no substitutions
+## Approved artwork imported successfully
 
-**The repo currently contains icon documentation and code, not the 13 original binary images.** They are held in `POTS_13_Color_Matched_Icons.zip` from the chat. To add them, upload the exact archive to this repository at `POTSTracker/assets/approved-icon-pack.zip` through GitHub's Add file → Upload files. Keep this exact name. The [icon-import workflow](../.github/workflows/pots-approved-icon-import.yml) extracts the originals to `POTSTracker/Resources/Icons/` and commits them. The [Build 1 workflow](../.github/workflows/pots-build-1.yml) prepares Xcode image sets and the Home Screen app icon, with no generic icon replacement. It will fail visibly when any approved artwork is absent.
+The [Pots Artwork GitHub Release](https://github.com/ValentineBSAA/IPhone-Apps/releases/tag/pots) contains `approved-icon-pack.zip`, SHA-256 `338a9fe79ffd6ac144e31b334cb812c2b815b46f68d9a85bd896df2e91efbc62`.
 
-Use `python3 POTSTracker/tools/import_icons.py POTSTracker/assets/approved-icon-pack.zip --repo-root .` on a machine with the archive, then `python3 -m pip install pillow` and `python3 POTSTracker/tools/prepare_assets.py` to prepare for a local Xcode build. These tools do not transmit health information.
+On November 19, 2026, [the import workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44606165350) completed successfully: it verified the ZIP checksum, checked 13 original PNGs at 1024 × 1024, and committed them to [`POTSTracker/Resources/Icons/`](Resources/Icons/). No substitute art was generated. The Build 1 workflow now creates the Xcode catalog from these originals and refuses missing icons.
+
+**Still to verify:** successful iOS compilation, actual Home Screen/AppIcon rendering, all 12 in-app images on a physical iPhone. Do not confuse completed source asset import with successful installation or functional testing.
