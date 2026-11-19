@@ -51,7 +51,7 @@ Implemented in `Sources/`: an iOS 16-compatible SwiftUI dashboard, all 12 featur
 - Current history: last 7 days, including entries from prior days; blank days stay blank.
 - Settings: Low Energy Mode, show/hide explanations, privacy and safety information.
 - **Not implemented yet:** hydrated/fluid tracking, medications, sleep, posture sessions, reminders, full-year charts, PDF/CSV, local backup/restore and optional observations. Their feature cards explicitly say they're planned.
-- **Artwork gate:** if approved PNGs have not been imported, the app uses clearly labeled SF Symbol fallbacks. Do not call the complete branded interface finished.
+- **Artwork gate:** Build 1 requires all 13 original PNGs and the native generated image sets. The workflow halts when they are missing instead of displaying substitute artwork.
 - **Important:** the app has no export or restore function yet. **Do not store irreplaceable real health data in Build 1.** Deleting this experimental version may remove locally saved entries.
 
 ### Build on GitHub
@@ -61,3 +61,10 @@ The repository contains `project.yml` and [the native iOS 16 build workflow](../
 An unsigned IPA is not install-ready: it must be signed or installed using a compatible authorized signing workflow. Never commit a signing certificate or password to this public repository.
 
 See [the Build 1 test plan](BUILD_1_TEST_PLAN.md) and [the premium feature roadmap](PREMIUM_FEATURE_ROADMAP.md).
+
+
+## Required approved artwork import, no substitutions
+
+**The repo currently contains icon documentation and code, not the 13 original binary images.** They are held in `POTS_13_Color_Matched_Icons.zip` from the chat. To add them, upload the exact archive to this repository at `POTSTracker/assets/approved-icon-pack.zip` through GitHub's Add file → Upload files. Keep this exact name. The [icon-import workflow](../.github/workflows/pots-approved-icon-import.yml) extracts the originals to `POTSTracker/Resources/Icons/` and commits them. The [Build 1 workflow](../.github/workflows/pots-build-1.yml) prepares Xcode image sets and the Home Screen app icon, with no generic icon replacement. It will fail visibly when any approved artwork is absent.
+
+Use `python3 POTSTracker/tools/import_icons.py POTSTracker/assets/approved-icon-pack.zip --repo-root .` on a machine with the archive, then `python3 -m pip install pillow` and `python3 POTSTracker/tools/prepare_assets.py` to prepare for a local Xcode build. These tools do not transmit health information.
