@@ -55,6 +55,7 @@ struct FeatureDetail: View {
 }
 
 struct EntriesForCategory: View {
+    @Environment(\.managedObjectContext) private var context
     @FetchRequest(sortDescriptors: [NSSortDescriptor(key: "recordedAt", ascending: false)])
     private var entries: FetchedResults<POTSLogEntry>
 
@@ -62,6 +63,9 @@ struct EntriesForCategory: View {
     let feature: TrackerFeature
     @State private var adding = false
     @State private var editingRoute: RecordEditRoute?
+    @State private var pendingDeletion: NSManagedObjectID?
+    @State private var confirmDeletion = false
+    @State private var deleteError: String?
 
     private var filtered: [POTSLogEntry] {
         entries.filter { $0.category == category.rawValue }
@@ -147,9 +151,11 @@ struct EntriesForCategory: View {
                                     .foregroundStyle(.secondary)
                                 VStack(spacing: 0) {
                                     ForEach(day.records) { record in
-                                        RecordSwipeRow(record: record) {
-                                            editingRoute = RecordEditRoute(objectID: record.id)
-                                        }
+                                        RecordSwipeRow(
+                                            record: record,
+                                            onEdit: { editingRoute = RecordEditRoute(objectID: record.id) },
+                                            onDelete: { pendingDeletion = record.id; confirmDeletion = true }
+                                        )
                                         if record.id != day.records.last?.id {
                                             Divider().padding(.leading, 12)
                                         }
@@ -170,6 +176,27 @@ struct EntriesForCategory: View {
         .sheet(isPresented: $adding) { EntryEditor(category: category) }
         .sheet(item: $editingRoute) { route in
             RecordEditDestination(objectID: route.objectID)
+        }
+        .confirmationDialog("Delete this entry?", isPresented: $confirmDeletion, titleVisibility: .visible) {
+            Button("Delete permanently", role: .destructive) {
+                guard let id = pendingDeletion else { return }
+                pendingDeletion = nil
+                do {
+                    try RecordStore.delete(id, in: context)
+                } catch {
+                    deleteError = error.localizedDescription
+                }
+            }
+        } message: {
+            Text("Only this entry will be removed. This cannot be undone.")
+        }
+        .alert("Could not delete entry", isPresented: Binding(
+            get: { deleteError != nil },
+            set: { if !$0 { deleteError = nil } }
+        )) {
+            Button("OK") { deleteError = nil }
+        } message: {
+            Text(deleteError ?? "Try again.")
         }
     }
 
