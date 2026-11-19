@@ -152,23 +152,47 @@ enum DateTracking {
 @main
 struct POTSTrackerApp: App {
     private let persistence = PersistenceController.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
             DashboardView()
                 .environment(\.managedObjectContext, persistence.container.viewContext)
                 .tint(.potsTeal)
+                .onChange(of: scenePhase) { phase in
+                    if phase != .active { JournalAccess.shared.lock() }
+                }
         }
     }
 }
 
 extension Color {
-    static let potsTeal = Color(red: 0.07, green: 0.52, blue: 0.57)
+    static let potsTeal = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+        ? UIColor(red: 0.30, green: 0.81, blue: 0.82, alpha: 1)
+        : UIColor(red: 0.07, green: 0.52, blue: 0.57, alpha: 1)
+    })
     static let potsInk = Color(red: 0.08, green: 0.19, blue: 0.28)
-    static let potsBackground = Color(uiColor: UIColor { trait in
-        trait.userInterfaceStyle == .dark
-        ? UIColor(red: 0.06, green: 0.10, blue: 0.15, alpha: 1)
+
+    // True OLED black, not UIKit's pale grouped gray.
+    static let potsBackground = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+        ? UIColor.black
         : UIColor(red: 0.95, green: 0.98, blue: 0.99, alpha: 1)
+    })
+
+    // In dark mode, content cards are near-black to stay visibly separate
+    // from the black canvas without becoming large light-gray blocks.
+    static let potsSurface = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+        ? UIColor(red: 0.055, green: 0.075, blue: 0.090, alpha: 1)
+        : UIColor.secondarySystemGroupedBackground
+    })
+
+    static let potsSurfaceMuted = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+        ? UIColor(red: 0.095, green: 0.125, blue: 0.14, alpha: 1)
+        : UIColor.tertiarySystemGroupedBackground
     })
 }
 
@@ -180,7 +204,7 @@ struct GlassCard<Content: View>: View {
     var body: some View {
         content
             .padding(16)
-            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .background(Color.potsSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color.potsTeal.opacity(0.10), lineWidth: 1))
     }
 }
