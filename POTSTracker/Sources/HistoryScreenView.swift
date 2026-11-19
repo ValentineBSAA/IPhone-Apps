@@ -13,6 +13,7 @@ enum HistoryPeriod: String, CaseIterable, Identifiable {
 /// Real journal history. Every view reads the persisted Core Data entries:
 /// no fabricated graph values and no cap on lifetime records.
 struct HistoryScreenView: View {
+    @Environment(\.managedObjectContext) private var context
     @FetchRequest(sortDescriptors: [NSSortDescriptor(key: "recordedAt", ascending: false)])
     private var entries: FetchedResults<POTSLogEntry>
 
@@ -20,12 +21,12 @@ struct HistoryScreenView: View {
     @State private var month: Date = Date()
     @State private var year: Int = Calendar.current.component(.year, from: Date())
     @State private var selectedDay: Date?
-    @State private var editing: POTSLogEntry?
+    @State private var editingRoute: RecordEditRoute?
 
     private var cal: Calendar { .current }
-    private var fullEntries: [POTSLogEntry] { Array(entries) }
+    private var fullEntries: [RecordSnapshot] { RecordSnapshot.snapshots(of: Array(entries)) }
 
-    private var filteredEntries: [POTSLogEntry] {
+    private var filteredEntries: [RecordSnapshot] {
         switch period {
         case .week:
             let days = DateTracking.lastSevenDays()
@@ -72,17 +73,18 @@ struct HistoryScreenView: View {
                         .padding(.top, 3)
                 } else {
                     HStack {
-                        Text(period == .all ? "Lifetime entries" : "Recorded entries")
+                        Text("Saved entries")
                             .font(.headline)
                         Spacer()
                         Text("\(filteredEntries.count)")
                             .font(.subheadline.monospacedDigit())
                             .foregroundStyle(.secondary)
                     }
-                    LazyVGrid(columns: [GridItem(.flexible())], spacing: 10) {
-                        ForEach(filteredEntries, id: \.objectID) { entry in
-                            EntryCard(entry: entry) { editing = entry }
-                        }
+                    Text("Tap a day, then a category to view individual entries. Swipe an entry left to delete or right to edit.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    RecordTreeView(records: filteredEntries) { id in
+                        editingRoute = RecordEditRoute(objectID: id)
                     }
                 }
             }
@@ -92,8 +94,8 @@ struct HistoryScreenView: View {
         .background(Color.potsBackground.ignoresSafeArea())
         .navigationTitle("History")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $editing) { entry in
-            EntryEditor(category: LogCategory(rawValue: entry.category) ?? .journal, editing: entry)
+        .sheet(item: $editingRoute) { route in
+            RecordEditDestination(objectID: route.objectID)
         }
     }
 
@@ -104,7 +106,7 @@ struct HistoryScreenView: View {
                     .font(.headline)
                 HStack(spacing: 5) {
                     ForEach(DateTracking.lastSevenDays(), id: \.self) { day in
-                        let count = DateTracking.count(on: day, among: fullEntries)
+                        let count = fullEntries.filter { cal.isDate($0.recordedAt, inSameDayAs: day) }.count
                         VStack(spacing: 6) {
                             Text(day.formatted(.dateTime.weekday(.narrow)))
                                 .font(.caption2.weight(.semibold))
@@ -164,7 +166,7 @@ struct HistoryScreenView: View {
                     }
                     ForEach(Array(monthCells().enumerated()), id: \.offset) { _, item in
                         if let day = item {
-                            let count = DateTracking.count(on: day, among: fullEntries)
+                            let count = fullEntries.filter { cal.isDate($0.recordedAt, inSameDayAs: day) }.count
                             Button {
                                 if let current = selectedDay, cal.isDate(current, inSameDayAs: day) {
                                     selectedDay = nil
