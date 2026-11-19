@@ -11,8 +11,16 @@ struct FeatureDetail: View {
                 SettingsPanel()
             } else if feature.id == "calendar" {
                 HistoryScreenView()
+            } else if feature.id == "appleHealth" {
+                AppleHealthView()
             } else if let category = feature.category {
-                EntriesForCategory(category: category, feature: feature)
+                if category == .journal {
+                    JournalProtected {
+                        EntriesForCategory(category: category, feature: feature)
+                    }
+                } else {
+                    EntriesForCategory(category: category, feature: feature)
+                }
             } else {
                 plannedFeature
             }
@@ -162,7 +170,7 @@ struct EntriesForCategory: View {
                                     }
                                 }
                                 .padding(8)
-                                .background(Color(uiColor: .secondarySystemGroupedBackground),
+                                .background(Color.potsSurface,
                                             in: RoundedRectangle(cornerRadius: 18))
                             }
                         }
@@ -258,8 +266,31 @@ struct SettingsPanel: View {
                         Image(systemName: "chevron.right").foregroundStyle(.tertiary)
                     }
                     .padding(16)
-                    .background(Color(uiColor: .secondarySystemGroupedBackground),
+                    .background(Color.potsSurface,
                                 in: RoundedRectangle(cornerRadius: 18))
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    JournalLockSettings()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "lock.shield")
+                            .font(.title3)
+                            .foregroundStyle(Color.potsTeal)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Journal Lock")
+                                .font(.subheadline.bold())
+                            Text("Optional Face ID or iPhone passcode")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(16)
+                    .background(Color.potsSurface, in: RoundedRectangle(cornerRadius: 18))
                 }
                 .buttonStyle(.plain)
 
