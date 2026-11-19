@@ -1,5 +1,7 @@
 # POTS Tracker: Master Development Checklist
 
+**Companion research and acceptance criteria:** [PREMIUM_FEATURE_ROADMAP.md](PREMIUM_FEATURE_ROADMAP.md). Every listed premium-quality feature remains free when implemented; this checklist tracks actual implementation, not marketing promises.
+
 **As of 2026-11-19:** planning only. Do not mark implementation complete without proof. ✅ = verified, ⬜ = to do, ⚠️ = blocked.
 
 ## 0. Approved requirements and design
