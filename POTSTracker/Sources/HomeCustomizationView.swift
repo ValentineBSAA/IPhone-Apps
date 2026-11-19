@@ -78,6 +78,7 @@ struct HomeCustomizationView: View {
     @AppStorage("homeLayoutDensity") private var density = "compact"
 
     @State private var showReset = false
+    @State private var showPinPicker = false
     private let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
 
     private var modules: [HomeModule] { HomeLayout.orderedModules(from: moduleOrder) }
@@ -88,9 +89,7 @@ struct HomeCustomizationView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Make Home yours")
-                        .font(.title2.bold())
-                    Text("Start with a calm layout. Show only the sections and shortcuts you find useful.")
+                    Text("Only show what you want on Home.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -195,33 +194,18 @@ struct HomeCustomizationView: View {
                         .font(.footnote).foregroundStyle(.secondary)
                 }
 
-                Text("Add or remove shortcuts")
-                    .font(.headline)
-                LazyVGrid(columns: columns, spacing: 10) {
-                    ForEach(TrackerFeature.all) { feature in
-                        let isPinned = pinned.contains(where: { $0.id == feature.id })
-                        Button {
-                            togglePin(feature.id)
-                        } label: {
-                            HStack(spacing: 9) {
-                                FeatureArtwork(feature: feature, width: 37)
-                                Text(feature.name)
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.primary)
-                                    .lineLimit(2)
-                                Spacer(minLength: 2)
-                                Image(systemName: isPinned ? "checkmark.circle.fill" : "plus.circle")
-                                    .foregroundStyle(Color.potsTeal)
-                            }
-                            .padding(10)
-                            .frame(maxWidth: .infinity, minHeight: 62)
-                            .background(Color(uiColor: .secondarySystemGroupedBackground),
-                                        in: RoundedRectangle(cornerRadius: 16))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("\(isPinned ? "Unpin" : "Pin") \(feature.name)")
+                Button {
+                    showPinPicker = true
+                } label: {
+                    HStack {
+                        Label("Choose pinned trackers", systemImage: "square.grid.2x2")
+                        Spacer()
+                        Image(systemName: "chevron.right")
                     }
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 48)
                 }
+                .buttonStyle(.bordered)
                 Button("Restore original Home layout") { showReset = true }
                     .font(.subheadline.weight(.medium))
                     .frame(maxWidth: .infinity)
@@ -232,6 +216,52 @@ struct HomeCustomizationView: View {
         .background(Color.potsBackground.ignoresSafeArea())
         .navigationTitle("Customize Home")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showPinPicker) {
+            NavigationStack {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Select the trackers you want on Home. All categories stay available in Log and More.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        LazyVGrid(columns: columns, spacing: 10) {
+                            ForEach(TrackerFeature.all) { feature in
+                                let isPinned = pinned.contains(where: { $0.id == feature.id })
+                                Button {
+                                    togglePin(feature.id)
+                                } label: {
+                                    HStack(spacing: 9) {
+                                        FeatureArtwork(feature: feature, width: 39)
+                                        Text(feature.name)
+                                            .font(.subheadline.weight(.semibold))
+                                            .foregroundStyle(.primary)
+                                            .lineLimit(2)
+                                        Spacer(minLength: 0)
+                                        Image(systemName: isPinned ? "checkmark.circle.fill" : "plus.circle")
+                                            .foregroundStyle(Color.potsTeal)
+                                    }
+                                    .padding(9)
+                                    .frame(maxWidth: .infinity, minHeight: 64)
+                                    .background(Color(uiColor: .secondarySystemGroupedBackground),
+                                                in: RoundedRectangle(cornerRadius: 15))
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("\(isPinned ? "Unpin" : "Pin") \(feature.name)")
+                            }
+                        }
+                    }
+                    .padding(16)
+                }
+                .background(Color.potsBackground.ignoresSafeArea())
+                .navigationTitle("Pinned trackers")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { showPinPicker = false }
+                    }
+                }
+            }
+            .presentationDetents([.medium, .large])
+        }
         .confirmationDialog("Restore the original Home layout?", isPresented: $showReset) {
             Button("Restore layout") {
                 moduleOrder = HomeLayout.moduleDefault
