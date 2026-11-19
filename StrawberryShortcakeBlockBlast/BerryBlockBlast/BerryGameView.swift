@@ -85,12 +85,12 @@ struct BerryGameView: View {
         case .endless:
             let seasonNames = ["Spring Bloom", "Summer Berries", "Autumn Honey", "Winter Frost"]
             return "SWEET ENDLESS • \(session.engine.side)×\(session.engine.side) • SEASON \(session.engine.seasons + 1): \(seasonNames[session.engine.seasons % 4])"
-        case .classic: return "🍓 BERRY CLASSIC • Three pieces • Chase your best!"
+        case .classic: return "Three pieces • Chase your best!"
         case .story: return storyIsLineQuest ? "CHAPTER \(storyLevel) • Clear \(storyTargetLines) lines to bloom!" : "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
-        case .daily: return "DAILY HARVEST • \(BerryGameSession.dailyDateKey()) • Gather \(goal) points!"
-        case .cozy: return "COZY COTTAGE • \(session.cottageDecorations) decorations • Grow at your pace!"
+        case .daily: return "TODAY’S GOAL • Gather \(goal) points!"
+        case .cozy: return "\(session.cottageDecorations) decorations • Grow at your pace!"
         case .challenge: return "⚡ \(blitzVariant.rawValue.uppercased()) • \(session.engine.score) points"
-        case .superHard: return "🌙 NIGHTMARE • 12 × 12 • SURVIVE THE CLOCK"
+        case .superHard: return "12×12 • Survive the clock"
         }
     }
 
@@ -183,7 +183,7 @@ struct BerryGameView: View {
                     } else if mode == .superHard {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("🌙 STRAWBERRY NIGHTMARE")
+                                Text("TIME REMAINING")
                                     .font(.system(size: 10, weight: .black, design: .rounded))
                                 BerryLiveCountdown(
                                     deadline: blitzDeadline,

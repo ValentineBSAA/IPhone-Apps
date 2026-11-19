@@ -16,12 +16,12 @@ final class BerryBuild4PolishTests: XCTestCase {
             XCTFail("Approved darker pink tile missing from Assets.car")
             return
         }
-        XCTAssertEqual(image.size.width, 192, accuracy: 0.5)
-        XCTAssertEqual(image.size.height, 192, accuracy: 0.5)
+        XCTAssertEqual(image.size.width, 160, accuracy: 0.5)
+        XCTAssertEqual(image.size.height, 160, accuracy: 0.5)
     }
 
     func testPolishBuildIdentityIsDistinct() {
-        XCTAssertEqual(BerryBuildIdentity.revisionName, "BUILD 4.2 • RESPONSIVE QA")
-        XCTAssertEqual(BerryBuildIdentity.sourceBranch, "feature/berry-build4-r3-responsive-layout")
+        XCTAssertEqual(BerryBuildIdentity.revisionName, "BUILD 4.3 • POLISH QA")
+        XCTAssertEqual(BerryBuildIdentity.sourceBranch, "feature/berry-build4-r4-polish-qa")
     }
 }
