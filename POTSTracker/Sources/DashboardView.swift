@@ -31,29 +31,12 @@ struct FeatureArtwork: View {
     let feature: TrackerFeature
     var width: CGFloat = 58
 
-    private var image: UIImage? {
-        let url = Bundle.main.url(forResource: feature.file, withExtension: "png", subdirectory: "Icons")
-            ?? Bundle.main.url(forResource: feature.file, withExtension: "png")
-        return url.flatMap { UIImage(contentsOfFile: $0.path) }
-    }
-
     var body: some View {
-        Group {
-            if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
-            } else {
-                Image(systemName: feature.symbol)
-                    .font(.system(size: width * 0.42, weight: .semibold))
-                    .foregroundStyle(feature.color)
-                    .frame(width: width, height: width)
-                    .background(feature.color.opacity(0.12), in: RoundedRectangle(cornerRadius: 17))
-                    .accessibilityHidden(true)
-            }
-        }
-        .frame(width: width, height: width)
-        .accessibilityHidden(true)
+        Image(feature.file)
+            .resizable()
+            .scaledToFit()
+            .frame(width: width, height: width)
+            .accessibilityHidden(true)
     }
 }
 
