@@ -46,14 +46,9 @@ struct HistoryScreenView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 17) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Your history")
-                        .font(.title3.bold())
-                    Text("A record of what you entered, not a medical score.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
+                Text("Browse your entries by date")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                 Picker("History range", selection: $period) {
                     ForEach(HistoryPeriod.allCases) { choice in
                         Text(choice.rawValue).tag(choice)
@@ -69,22 +64,21 @@ struct HistoryScreenView: View {
                 case .all: lifetimeOverview
                 }
 
-                HStack {
-                    Text(period == .all ? "Lifetime entries" : "Recorded entries")
-                        .font(.headline)
-                    Spacer()
-                    Text("\(filteredEntries.count)")
-                        .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
                 if filteredEntries.isEmpty {
-                    GlassCard {
-                        Text("No entries in this range. An unrecorded day is not a symptom-free day.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+                    Text("Nothing recorded for this period.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 3)
+                        .padding(.top, 3)
                 } else {
+                    HStack {
+                        Text(period == .all ? "Lifetime entries" : "Recorded entries")
+                            .font(.headline)
+                        Spacer()
+                        Text("\(filteredEntries.count)")
+                            .font(.subheadline.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
                     LazyVGrid(columns: [GridItem(.flexible())], spacing: 10) {
                         ForEach(filteredEntries, id: \.objectID) { entry in
                             EntryCard(entry: entry) { editing = entry }
