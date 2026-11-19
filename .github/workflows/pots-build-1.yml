@@ -1,0 +1,92 @@
+name: POTS Tracker | Build 1 iOS 16 unsigned IPA
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "POTSTracker/**"
+      - ".github/workflows/pots-build-1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Inspect optional approved icons
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib,struct
+          root=pathlib.Path("POTSTracker/Resources/Icons")
+          images=list(root.glob("*.png")) if root.exists() else []
+          if not images:
+              print("Approved PNG binaries have not been imported. Building with labeled native icon fallbacks.")
+          else:
+              assert len(images)==13, f"Expected all 13 icons, found {len(images)}"
+              for image in images:
+                  data=image.read_bytes()[:24]
+                  assert data[:8]==b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", data[16:24])==(1024,1024), image
+              print("All 13 approved high-resolution PNGs verified")
+          PY
+
+      - name: Generate native Xcode project
+        working-directory: POTSTracker
+        run: xcodegen generate --spec project.yml
+
+      - name: Build for iOS Simulator, unsigned
+        working-directory: POTSTracker
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project POTSTracker.xcodeproj \
+            -scheme POTSTracker \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath build-sim \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Build for physical iPhone, unsigned
+        working-directory: POTSTracker
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project POTSTracker.xcodeproj \
+            -scheme POTSTracker \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build-device \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package unsigned IPA
+        working-directory: POTSTracker
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/Payload
+          cp -R build-device/Build/Products/Release-iphoneos/POTSTracker.app dist/Payload/
+          (cd dist && zip -qr POTS-Tracker-Build-1-iOS16-unsigned.ipa Payload)
+          unzip -l dist/POTS-Tracker-Build-1-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
+
+      - name: Upload unsigned IPA build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: POTS-Tracker-Build-1-iOS16-unsigned
+          path: POTSTracker/dist/*.ipa
+          if-no-files-found: error
+          retention-days: 30
