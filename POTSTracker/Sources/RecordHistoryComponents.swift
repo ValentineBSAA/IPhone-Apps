@@ -143,6 +143,7 @@ struct RecordCategoryGroup: Identifiable {
 struct RecordTreeView: View {
     let records: [RecordSnapshot]
     let onEdit: (NSManagedObjectID) -> Void
+    let onDelete: (NSManagedObjectID) -> Void
     @State private var expandedDays = Set<Date>()
     @State private var expandedCategories = Set<String>()
 
@@ -230,7 +231,7 @@ struct RecordTreeView: View {
         if expandedCategories.contains(group.id) {
             VStack(spacing: 0) {
                 ForEach(group.records) { record in
-                    RecordSwipeRow(record: record, onEdit: { onEdit(record.id) })
+                    RecordSwipeRow(record: record, onEdit: { onEdit(record.id) }, onDelete: { onDelete(record.id) })
                     if record.id != group.records.last?.id {
                         Divider().padding(.leading, 8)
                     }
@@ -249,15 +250,11 @@ struct RecordTreeView: View {
 /// Swipe right reveals Edit; swipe left reveals Delete, which still asks
 /// for confirmation. Tap a row to edit. VoiceOver and long press also work.
 struct RecordSwipeRow: View {
-    @Environment(\.managedObjectContext) private var context
-
     let record: RecordSnapshot
     let onEdit: () -> Void
+    let onDelete: () -> Void
 
     @State private var reveal: Int = 0
-    @State private var showDelete = false
-    @State private var deletionError: String?
-    @State private var isDeleting = false
 
     private let railWidth: CGFloat = 77
 
@@ -277,7 +274,7 @@ struct RecordSwipeRow: View {
                 Spacer()
                 Button {
                     reveal = 0
-                    showDelete = true
+                    onDelete()
                 } label: {
                     Image(systemName: "trash")
                         .frame(width: railWidth, height: 62)
@@ -332,32 +329,10 @@ struct RecordSwipeRow: View {
         .clipped()
         .contextMenu {
             Button(action: onEdit) { Label("Edit", systemImage: "pencil") }
-            Button(role: .destructive, action: { showDelete = true }) { Label("Delete", systemImage: "trash") }
+            Button(role: .destructive, action: { onDelete() }) { Label("Delete", systemImage: "trash") }
         }
         .accessibilityAction(named: "Edit") { onEdit() }
-        .accessibilityAction(named: "Delete") { showDelete = true }
-        .confirmationDialog("Delete this entry?", isPresented: $showDelete, titleVisibility: .visible) {
-            Button("Delete permanently", role: .destructive) {
-                guard !isDeleting else { return }
-                isDeleting = true
-                do {
-                    try RecordStore.delete(record.id, in: context)
-                } catch {
-                    deletionError = error.localizedDescription
-                }
-                isDeleting = false
-                reveal = 0
-            }
-        } message: {
-            Text("This cannot be undone. Only this entry will be removed.")
-        }
-        .alert("Could not delete entry", isPresented: Binding(
-            get: { deletionError != nil },
-            set: { if !$0 { deletionError = nil } }
-        )) {
-            Button("OK") { deletionError = nil }
-        } message: {
-            Text(deletionError ?? "Try again.")
-        }
+        .accessibilityAction(named: "Delete") { onDelete() }
+
     }
 }
