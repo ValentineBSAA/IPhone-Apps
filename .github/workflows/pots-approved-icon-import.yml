@@ -1,0 +1,40 @@
+name: POTS Tracker | Import approved icon ZIP
+
+on:
+  push:
+    paths:
+      - "POTSTracker/assets/approved-icon-pack.zip"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import-icons:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out sources
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify approved asset source exists
+        shell: bash
+        run: |
+          test -f POTSTracker/assets/approved-icon-pack.zip || {
+            echo "Upload the approved POTS_13_Color_Matched_Icons.zip as POTSTracker/assets/approved-icon-pack.zip first."
+            exit 1
+          }
+      - name: Validate and import all 13 original icons
+        run: python3 POTSTracker/tools/import_icons.py POTSTracker/assets/approved-icon-pack.zip --repo-root . --replace
+      - name: Commit extracted PNG assets
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add POTSTracker/Resources/Icons
+          if git diff --cached --quiet; then
+            echo "Approved icon assets already up to date."
+          else
+            git commit -m "assets(pots): import approved 13 full-resolution icons"
+            git push
+          fi
