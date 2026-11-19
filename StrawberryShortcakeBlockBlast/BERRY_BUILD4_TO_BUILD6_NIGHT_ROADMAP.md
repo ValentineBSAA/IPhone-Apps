@@ -1,6 +1,6 @@
 # 🍓 Berry Berry Blast | Release Gates & Night Edition Roadmap
 
-**Single project checklist (updated 2026-11-18)**  
+**Single project checklist (updated 2026-11-18 after successful Nighttime release import)**  
 **Development branch:** `feature/berry-build4-approved-assets-foundation`  
 **Known-good restore point:** Build 3, commit `b4ffda288b7a778a79a860c8d8ebc2cab3e5755b`, physically tested on iPhone 14 Pro.  
 **Rule:** A feature is *not complete* because a PNG exists or Swift code compiles. Check off a task only after its stated verification has passed. Never overwrite the tested Build 3 baseline.
@@ -12,7 +12,7 @@
 | Build 3 gameplay, original board and saves | ✅ Hardware-tested baseline | Regression after each release |
 | Build 4 player UI, tools, modes, dev lock, Blossom Glass | 🟠 Implemented on candidate branch; QA pending | CI, then iPhone 14 Pro |
 | 30 daytime illustrations | ✅ On Build 4 branch in separate Xcode image sets | Appearance / tap testing |
-| 30 Night Edition counterparts | 🎨 Created as individual transparent PNGs; **not yet uploaded to repository** | Import + image integrity check |
+| 30 Night Edition counterparts | ✅ Imported as 30 individual Xcode imagesets on Build 4 development branch | CI + real-device night-visual QA |
 | Strawberry sun / moon clock icons | 🎨 Illustrated; not integrated | Independent PNG and UI approval |
 | Real live menu clock and day/night presentation | 📋 Planned | Midnight, timezone and app-resume QA |
 | In-context notices and Daily Quest fixes | 📋 Build 5 scope | In-menu visibility and reward QA |
@@ -21,7 +21,7 @@
 
 ## Night Edition assets: 30 exact pairings
 
-Source artifact: **Berry_Berry_Blast_Night_Edition_Xcode_Asset_Catalog.zip**, from the approved user-visible night asset handoff. The zip is a working attachment, **not a GitHub release or repository file**. It includes 30 separate `Night_*.imageset` folders, each containing its own PNG and `Contents.json`. It was integrity-checked before this roadmap. Preserve both versions side by side; never rewrite the day images.
+Source artifact: **Berry_Berry_Blast_Night_Edition_Xcode_Asset_Catalog.zip**, published by the project owner as the GitHub Release asset under tag **[Nighttime](https://github.com/ValentineBSAA/IPhone-Apps/releases/tag/Nighttime)**. The uploaded binary was downloaded and validated by [GitHub Actions](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44435721368). It includes 30 separate `Night_*.imageset` folders, each containing its own PNG and `Contents.json`. It was integrity-checked before this roadmap. Preserve both versions side by side; never rewrite the day images.
 
 ```text
 Night_Approved_Night_Market_Storefront
@@ -65,12 +65,12 @@ python3 Tools/import_night_assets.py /path/to/Berry_Berry_Blast_Night_Edition_Xc
 git status --short
 ```
 
-The first command validates only; the second creates 30 distinct `Night_*.imageset` entries without touching daytime art. Commit those resulting PNGs and `Contents.json` files to this development branch, then rerun artwork and app-build checks. **This helper script has been committed, but its night PNG import has not been run on GitHub yet.**
+The first command validates only; the second creates 30 distinct `Night_*.imageset` entries without touching daytime art. Commit those resulting PNGs and `Contents.json` files to this development branch, then rerun artwork and app-build checks. **GitHub import completed successfully:** 30 separate PNGs plus their Xcode `Contents.json` metadata were committed by GitHub Actions to Build 4 only, with the daytime originals and audio unchanged.
 
-**Night asset import checklist (do NOT mark complete until committed):**
-- [ ] Import all 30 `Night_*.imageset` folders into `StrawberryShortcakeBlockBlast/BerryBlockBlast/Assets.xcassets` on the Build 4 development branch only.
-- [ ] Validate 30 separate image sets, each with its own correct `Contents.json`, matching named PNG, RGBA transparency, dimensions and nonzero pixel data.
-- [ ] Validate every day image name still resolves and the 67 original audio files remain unchanged.
+**Night asset import checklist (GitHub import succeeded; remaining checks retain separate gates):**
+- [x] Import all 30 `Night_*.imageset` folders into `StrawberryShortcakeBlockBlast/BerryBlockBlast/Assets.xcassets` on the Build 4 development branch only.
+- [x] Validate 30 separate image sets, each with its own correct `Contents.json`, matching named PNG, RGBA transparency, dimensions and nonzero pixel data.
+- [x] Validate every day image name still resolves and the 67 original audio files remain unchanged.
 - [ ] Ensure an icon shown at night always has a day fallback; never dynamically generate image-name strings for missing assets without fallback.
 - [ ] Reject the bonus ornate Moonberry board **concept** from shipping gameplay until separately approved and touch-tested.
 - [ ] Verify basic legibility, contrast, tooltip/help readability and icon recognition on a real iPhone.
