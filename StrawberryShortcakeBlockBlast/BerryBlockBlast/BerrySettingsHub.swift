@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// One shared two-column settings destination for Home and all game modes.
 /// Values use the original AppStorage keys; merely opening a card cannot
@@ -8,6 +9,7 @@ struct BerrySettingsHubView: View {
 
     @State private var selected: Section?
     @State private var confirmAllAppearance = false
+    @State private var showDeveloperGateway = false
 
 
     @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
@@ -18,7 +20,6 @@ struct BerrySettingsHubView: View {
     @AppStorage("berryblockblast.previewStyle") private var previewStyle = "ghost"
 
     @AppStorage("berryblockblast.haptics") private var haptics = true
-    @AppStorage("berryblockblast.touchDiagnostics") private var touchDiagnostics = false
     @AppStorage("berryblockblast.music") private var music = true
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.musicVolume") private var musicVolume = 0.22
@@ -130,9 +131,28 @@ struct BerrySettingsHubView: View {
                         }
                     }
                 }
-                Text("Berry Berry Blast 0.5.12 • Build 3")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate.opacity(0.67))
+                HStack(spacing: 12) {
+                    Text(BerryBuildIdentity.settingsLabel)
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(BerryStyle.chocolate.opacity(0.67))
+                    Spacer(minLength: 0)
+                    Button { showDeveloperGateway = true } label: {
+                        Group {
+                            if let icon = UIImage(named: "Developer_Mode_Strawberry_Lock") {
+                                Image(uiImage: icon).resizable().scaledToFit()
+                            } else {
+                                Image(systemName: "lock.shield.fill")
+                                    .resizable().scaledToFit()
+                                    .foregroundStyle(BerryStyle.strawberry.opacity(0.6))
+                            }
+                        }
+                        .frame(width: 24, height: 24)
+                        .padding(6)
+                        .background(.white.opacity(0.55), in: RoundedRectangle(cornerRadius: 9))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Developer Garden")
+                }
             }
             .padding(17)
             .frame(maxWidth: 520)
@@ -141,6 +161,7 @@ struct BerrySettingsHubView: View {
         .background(LinearGradient(colors: [BerryStyle.cream, BerryStyle.softPink],
                                    startPoint: .top, endPoint: .bottom)
                     .ignoresSafeArea())
+        .sheet(isPresented: $showDeveloperGateway) { BerryDeveloperGardenView() }
         .confirmationDialog("Restore all original cosmetics?",
                             isPresented: $confirmAllAppearance,
                             titleVisibility: .visible) {
@@ -258,8 +279,6 @@ struct BerrySettingsHubView: View {
             LazyVGrid(columns: cols, spacing: 11) {
                 toggleCard("Haptics", detail: "Feel valid and invalid placement",
                            icon: "hand.tap.fill", value: $haptics)
-                toggleCard("Touch Diagnostics", detail: "Show gesture debugging details",
-                           icon: "hand.point.up.left.fill", value: $touchDiagnostics)
                 choice("Sweet Assist", detail: "Most readable placement feedback",
                        icon: "checkmark.shield.fill",
                        selected: previewStyle == "ghost") { previewStyle = "ghost" }
