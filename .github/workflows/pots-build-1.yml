@@ -21,23 +21,26 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
-      - name: Inspect optional approved icons
+      - name: Require all 13 approved custom icons
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import pathlib,struct
-          root=pathlib.Path("POTSTracker/Resources/Icons")
-          images=list(root.glob("*.png")) if root.exists() else []
-          if not images:
-              print("Approved PNG binaries have not been imported. Building with labeled native icon fallbacks.")
-          else:
-              assert len(images)==13, f"Expected all 13 icons, found {len(images)}"
-              for image in images:
-                  data=image.read_bytes()[:24]
-                  assert data[:8]==b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", data[16:24])==(1024,1024), image
-              print("All 13 approved high-resolution PNGs verified")
-          PY
+          if [ ! -f POTSTracker/Resources/Icons/00_App_Icon.png ]; then
+            if [ -f POTSTracker/assets/approved-icon-pack.zip ]; then
+              python3 POTSTracker/tools/import_icons.py POTSTracker/assets/approved-icon-pack.zip --repo-root . --replace
+            else
+              echo "::error::Missing approved POTS icon artwork. Upload approved-icon-pack.zip to POTSTracker/assets/ on GitHub, then rerun."
+              exit 1
+            fi
+          fi
+          python3 POTSTracker/tools/import_icons.py --help >/dev/null
+
+      - name: Generate Apple-ready asset catalog from original artwork
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet Pillow
+          python3 POTSTracker/tools/prepare_assets.py
 
       - name: Generate native Xcode project
         working-directory: POTSTracker
