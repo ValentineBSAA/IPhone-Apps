@@ -1,6 +1,6 @@
 # POTS Tracker (working title)
 
-**Status:** Build 1 source code and unsigned IPA CI workflow committed, **compilation and physical-iPhone testing not yet verified**. All 13 approved 1024×1024 icon PNGs are now in `Resources/Icons/` after a successful GitHub release import. Runtime/IPA visual confirmation remains untested.
+**Status:** Build 1 native IPA compiled successfully and launched on an iPhone 16e. User-provided screenshots confirmed the custom feature artwork. **v0.1.1 Calm Home redesign source has been committed and is awaiting new CI and real-device regression testing.** The 13 approved original icon PNGs remain in `Resources/Icons/`.
 
 A free, privacy-first native **iPhone** utility for tracking lived experiences of Postural Orthostatic Tachycardia Syndrome (POTS). Designed for a family member who wants useful daily records and 7-day, monthly, 365/366-day, and lifetime history without paid features.
 
@@ -69,4 +69,11 @@ The [Pots Artwork GitHub Release](https://github.com/ValentineBSAA/IPhone-Apps/r
 
 On November 19, 2026, [the import workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44606165350) completed successfully: it verified the ZIP checksum, checked 13 original PNGs at 1024 × 1024, and committed them to [`POTSTracker/Resources/Icons/`](Resources/Icons/). No substitute art was generated. The Build 1 workflow now creates the Xcode catalog from these originals and refuses missing icons.
 
-**Still to verify:** successful iOS compilation, actual Home Screen/AppIcon rendering, all 12 in-app images on a physical iPhone. Do not confuse completed source asset import with successful installation or functional testing.
+**Verified:** Build 1 simulator/device compilation and in-app custom icon rendering on the physical iPhone 16e. **Still to verify:** the Home Screen AppIcon and redesigned v0.1.1 screens, record persistence across upgrade, accessibility and regression tests.
+
+
+## v0.1.1 "Calm Home" UX revision
+
+See [UX_REDESIGN_V011.md](UX_REDESIGN_V011.md) for actual iPhone screenshot findings, new structure and the physical test checklist. The default is a short Home with one Today card, compact check-in, four pinned shortcuts and three recent records. All 12 categories are now in a grouped **Log** tab; History has week/month/year/lifetime views; More contains customization and safety settings. Home sections and pinned icons can be independently rearranged, hidden or restored. Category pages are pushed rather than presented as tall nested sheets.
+
+This is an interface revision, **not** full Build 2. Hydration, medication, sleep, posture, reminders, PDF/CSV and backup are still future work, with no fee when implemented. The app keeps the existing bundle ID and Core Data schema for an in-place test-device update. Do not delete the installed Build 1 app just to update it, as local data has no backup/export yet.
