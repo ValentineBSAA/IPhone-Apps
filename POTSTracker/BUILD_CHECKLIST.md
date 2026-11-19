@@ -152,3 +152,26 @@
 - [ ] Check iOS 16.0 iPhone 14 Pro compatibility and VoiceOver/Dynamic Type
 
 **Release gate:** Build 1.1 is a UI revision, not a claim that Build 2 hydration/medication/sleep features are implemented. No real patient data until backup/restore is functional and tested.
+
+
+## v0.1.2 Quiet Home and rolling installed version
+- [x] Review iPhone 16e v0.1.1 UI screenshots; identify duplicate headings, redundant tiles, empty states and contrast issues
+- [x] Shorten Home heading, date row and action area
+- [x] Make optional check-in a balanced, smaller 3+2 grid, highlighting the most recent choice
+- [x] Hide Recent Activity when there are no entries and reduce pinned shortcut card size
+- [x] Keep only the 8 recording-related original icon categories on Log
+- [x] Organize review and settings into readable, smaller 2-column More grids with approved artwork
+- [x] Remove duplicate History title and redundant empty-record panel
+- [x] Read installed app version and build number dynamically from Info.plist on Home and More
+- [x] Configure GitHub Actions to increment the bundle build number from \`GITHUB_RUN_NUMBER\`
+- [x] Configure CI to verify version, build and stable bundle identifier before packaging IPA
+- [x] Add build-metadata tests, screenshot review and [v0.1.2 physical QA plan](UX_REDESIGN_V012.md)
+- [ ] Verify v0.1.2 iPhone simulator/device compilation
+- [ ] Verify v0.1.2 automatic tests
+- [ ] Inspect real v0.1.2 unsigned IPA and packaged Info.plist
+- [ ] Sign and install v0.1.2 as an update on physical iPhone 16e
+- [ ] Verify actual v0.1.2 screen layout and live installed version/build number
+- [ ] Verify persistent records and Home settings survive the upgrade
+- [ ] Verify iOS 16 device and all custom artwork remain supported
+
+**App version is not a claim of release readiness:** v0.1.2 is another experimental UI iteration. Medical tracking must remain local and free. There is no reliable export/backup yet, so do not store irreplaceable records.
