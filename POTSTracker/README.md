@@ -77,3 +77,12 @@ On November 19, 2026, [the import workflow](https://github.com/ValentineBSAA/IPh
 See [UX_REDESIGN_V011.md](UX_REDESIGN_V011.md) for actual iPhone screenshot findings, new structure and the physical test checklist. The default is a short Home with one Today card, compact check-in, four pinned shortcuts and three recent records. All 12 categories are now in a grouped **Log** tab; History has week/month/year/lifetime views; More contains customization and safety settings. Home sections and pinned icons can be independently rearranged, hidden or restored. Category pages are pushed rather than presented as tall nested sheets.
 
 This is an interface revision, **not** full Build 2. Hydration, medication, sleep, posture, reminders, PDF/CSV and backup are still future work, with no fee when implemented. The app keeps the existing bundle ID and Core Data schema for an in-place test-device update. Do not delete the installed Build 1 app just to update it, as local data has no backup/export yet.
+
+
+## v0.1.2 Quiet Home, November 19, 2026
+
+Physical iPhone 16e screenshots of v0.1.1 confirmed that the design is improving but still has redundant headings, giant empty states, an overly long Home and pale large menu cards. The next [v0.1.2 layout/QA plan](UX_REDESIGN_V012.md) makes a more focused Home, separates recording tools from review/settings, cleans up History, and uses two-column original-artwork tiles in More.
+
+**Visible installed build identification:** both Home and More show the app's *actual installed* \`CFBundleShortVersionString\` and \`CFBundleVersion\`. GitHub Actions automatically stamps a new build number from the workflow's incrementing \`GITHUB_RUN_NUMBER\`, verifies the device app's Info.plist, then packages the unsigned IPA. This is an offline, accurate identifier of the installed app, **not** an automatic online update checker.
+
+Preserved for upgrade compatibility: iOS 16+, \`com.valentinebsaa.potstracker\` bundle ID, existing Core Data model and database, approved 13 PNGs, no Apple Watch or paywall. As always, compilation is not a substitute for physical tests. See [the v0.1.2 regression checklist](UX_REDESIGN_V012.md).
