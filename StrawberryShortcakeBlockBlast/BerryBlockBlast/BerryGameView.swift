@@ -251,7 +251,10 @@ struct BerryGameView: View {
                     }
                     HStack(spacing: 5) {
                         Image(systemName: "hand.draw.fill")
-                        Text(selectedSlot == nil ? "DRAG OR TAP TO PLACE" : "TAP A FREE BOARD SQUARE")
+                        Text(specialTargetTool == "trowel" ? "GOLDEN TROWEL: TAP A BLOCK TO REMOVE" :
+                             specialTargetTool == "seed" ? "STARBERRY SEED: TAP AN EMPTY SQUARE" :
+                             selectedSlot == nil ? "DRAG OR TAP TO PLACE" :
+                             "TAP A FREE BOARD SQUARE")
                     }
                     .font(.system(size: 9, weight: .heavy, design: .rounded))
                     .tracking(0.35)
@@ -405,37 +408,34 @@ struct BerryGameView: View {
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
         .sheet(isPresented: $showDailyCalendar) { BerryDailyHarvestView(goal: goal) }
-        .confirmationDialog("Special Tools", isPresented: $showPremiumActions,
-                            titleVisibility: .visible) {
-            Button("Golden Trowel · \(session.premiumCharges["trowel", default: 0]) left") {
-                specialTargetTool = "trowel"
+        .sheet(isPresented: $showPremiumActions) {
+            BerrySpecialToolsSheet(
+                charges: session.premiumCharges,
+                pantryOwned: session.premiumOwned.contains("pantry"),
+                selectedPiece: selectedSlot != nil,
+                canContinue: session.canContinueWithGoldenStrawberry
+            ) { choice in
+                switch choice {
+                case .trowel:
+                    specialTargetTool = "trowel"
+                case .seed:
+                    specialTargetTool = "seed"
+                case .twister:
+                    guard let slot = selectedSlot else { return }
+                    if session.useRibbonTwister(slot: slot) { successFeedback() }
+                    else { warningFeedback() }
+                case .pantry:
+                    guard let slot = selectedSlot else { return }
+                    if session.usePicnicPantry(slot: slot) { successFeedback() }
+                    else { warningFeedback() }
+                case .golden:
+                    // Don't present the confirmation alert over the closing sheet.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        confirmGoldenStrawberry = true
+                    }
+                }
             }
-            .disabled(session.premiumCharges["trowel", default: 0] < 1)
-            Button("Starberry Seed · \(session.premiumCharges["seed", default: 0]) left") {
-                specialTargetTool = "seed"
-            }
-            .disabled(session.premiumCharges["seed", default: 0] < 1)
-            Button("✨ Golden Strawberry · \(session.premiumCharges["golden-strawberry", default: 0]) left") {
-                confirmGoldenStrawberry = true
-            }
-            .disabled(session.premiumCharges["golden-strawberry", default: 0] < 1 ||
-                      !session.canContinueWithGoldenStrawberry)
-            Button("Ribbon Twister · \(session.premiumCharges["twister", default: 0]) left") {
-                guard let slot = selectedSlot else { return }
-                if session.useRibbonTwister(slot: slot) { successFeedback() }
-                else { warningFeedback() }
-            }
-            .disabled(session.premiumCharges["twister", default: 0] < 1 || selectedSlot == nil)
-            Button("Picnic Pantry · \(session.premiumOwned.contains("pantry") ? "Owned" : "Locked")") {
-                guard let slot = selectedSlot else { return }
-                if session.usePicnicPantry(slot: slot) { successFeedback() }
-                else { warningFeedback() }
-            }
-            .disabled(!session.premiumOwned.contains("pantry") || selectedSlot == nil)
-            Button("Cancel", role: .cancel) { specialTargetTool = nil }
-        } message: {
-            Text(session.spyglassPiece.map { "Spyglass forecast: \($0.points.count) squares. Select a piece first for rotation or storage. For Trowel and Seed, tap an occupied or empty board square." } ??
-                 "Select a tray piece for rotation/storage. For Trowel and Seed, choose a board cell. Invalid actions never spend charges.")
+            .presentationDetents([.large])
         }
         .alert("Continue with Golden Strawberry?", isPresented: $confirmGoldenStrawberry) {
             Button(session.premiumCharges["golden-strawberry", default: 0] > 0
