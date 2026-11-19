@@ -163,11 +163,12 @@ struct BerryGameView: View {
                 width: width, height: height,
                 topInset: top, bottomInset: bottom,
                 mode: mode,
-                megaGarden: mode == .endless && session.engine.side == 24
+                megaGarden: mode == .endless && session.engine.side == 24,
+                touchDiagnostics: touchDiagnostics
             )
             ZStack {
                 background
-                VStack(spacing: compact ? 4 : 5) {
+                VStack(spacing: BerryGameplayLayout.stackSpacing(for: height)) {
                     // Distribute surplus vertical space around the gameplay
                     // as phones grow taller; never leave it all below the
                     // counters while shrinking the board unnecessarily.
@@ -824,7 +825,7 @@ struct BerryGameView: View {
                     .foregroundStyle(BerryStyle.strawberry)
                     .layoutPriority(1)
                 Text(mode == .endless ?
-                     "SWEET ENDLESS · \(session.engine.side)×\(session.engine.side) · SEASON \(session.engine.seasons + 1)" :
+                     "YOUR FOREVER STRAWBERRY GARDEN" :
                      mode.rawValue.uppercased())
                     .font(.system(size: 8, weight: .heavy, design: .rounded))
                     .foregroundStyle(BerryStyle.chocolate.opacity(0.7))
@@ -1435,31 +1436,12 @@ struct BerryGameView: View {
                 .padding(BerryGameplayLayout.gardenFrameInset)
                 .background {
                     if boardSurface == "blossom-glass" {
-                        RoundedRectangle(cornerRadius: 23, style: .continuous)
-                            .fill(LinearGradient(colors: [
-                                Color(red: 1, green: 0.89, blue: 0.97),
-                                Color(red: 0.93, green: 0.50, blue: 0.77),
-                                Color(red: 0.62, green: 0.45, blue: 0.77)
-                            ], startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 23, style: .continuous)
-                                    .strokeBorder(.white.opacity(0.96), lineWidth: 2)
-                            }
-                            .allowsHitTesting(false)
+                        // The legacy full-frame floral PNG obscured corner
+                        // cells. Never overlay arbitrary images on the grid.
+                        // Only this 8pt EXTERIOR gutter is decorated.
+                        BerryBlossomEdgeFrame()
                     } else {
                         BerryGardenBorder(mode: mode)
-                    }
-                }
-                .overlay {
-                    if boardSurface == "blossom-glass" {
-                        // Alpha-transparent center: decoration does not obscure
-                        // squares or enlarge the outer UIKit touch wrapper.
-                        Image("Blossom_Glass_Frame_Transparent_Center")
-                            .resizable()
-                            .interpolation(.high)
-                            .scaledToFill()
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
                     }
                 }
     }

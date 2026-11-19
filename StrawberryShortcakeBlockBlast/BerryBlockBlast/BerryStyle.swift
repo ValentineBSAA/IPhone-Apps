@@ -36,7 +36,7 @@ enum BerryStyle {
     static func color(for tint: Int) -> Color {
         switch (tint % 6 + 6) % 6 {
         case 0: return Color(red: 0.96, green: 0.26, blue: 0.38) // berry red
-        case 1: return Color(red: 0.97, green: 0.56, blue: 0.66) // frosting pink
+        case 1: return Color(red: 0.77, green: 0.05, blue: 0.30) // deeper raspberry pink, matching the approved tile
         case 2: return Color(red: 0.52, green: 0.74, blue: 0.35) // leaf green
         case 3: return Color(red: 0.66, green: 0.47, blue: 0.84) // blueberry violet
         case 4: return Color(red: 1.00, green: 0.72, blue: 0.32) // sunny citrus
@@ -89,6 +89,19 @@ struct BerryTile: View {
         case "mint-blocks": return "MintFrostBlock"
         case "blackberry-blocks": return "BlackberryJamBlock"
         default: return nil
+        }
+    }
+    /// Build 4.2 pink tile replacement. Index 1 is pink in Endless and
+    /// Classic, but other game modes have their own tint order. Only replace
+    /// pink where it really is pink; never recolor yellow/green blocks.
+    private var usesApprovedPinkTile: Bool {
+        guard skin == "default" else { return false }
+        let index = (tint % 6 + 6) % 6
+        switch mode {
+        case .endless, .classic: return index == 1
+        case .story, .challenge: return index == 3
+        case .superHard: return index == 5
+        case .daily, .cozy: return false
         }
     }
     private var palette: Color {
@@ -149,6 +162,17 @@ struct BerryTile: View {
                     .shadow(color: palette.opacity(preview ? 0.10 : 0.22),
                             radius: max(0.5, side * 0.06), y: 1)
                     .accessibilityLabel("Sculpted \(art.replacingOccurrences(of: "BerryFruit", with: "")) puzzle block")
+            } else if usesApprovedPinkTile, UIImage(named: "Tile_Pink") != nil {
+                // Approved deep raspberry candy artwork, one tile per cell.
+                // The hitbox and input geometry remain completely unchanged.
+                Image("Tile_Pink")
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: side, height: side)
+                    .shadow(color: Color(red: 0.47, green: 0.02, blue: 0.20)
+                        .opacity(preview ? 0.10 : 0.18), radius: 2, y: 1)
+                    .accessibilityLabel("Deep raspberry pink puzzle block")
             } else if skin == "strawberry-fruit" {
                 // Legacy fruit cosmetic remains available only by choice.
                 // Default blocks must use the full original square tile.
@@ -160,6 +184,20 @@ struct BerryTile: View {
                     .shadow(color: Color(red: 0.66, green: 0.1, blue: 0.22).opacity(0.26),
                             radius: max(1, side * 0.08), y: 1)
                     .accessibilityLabel("Three-dimensional strawberry fruit block")
+            } else if skin == "default" && (mode == .classic || mode == .endless) &&
+                        (tint % 6 + 6) % 6 == 1 {
+                // Approved deeper-raspberry image replaces the original pink
+                // square on gameplay, in-hand pieces and tray previews.
+                // The touch geometry, other colors and boutique skins remain unchanged.
+                Image("Tile_Pink")
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: side, height: side)
+                    .shadow(color: Color(red: 0.51, green: 0.02, blue: 0.20)
+                                .opacity(preview ? 0.10 : 0.20),
+                            radius: max(0.5, side * 0.04), y: 1)
+                    .accessibilityLabel("Deep raspberry pink candy block")
             } else {
             RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .fill(LinearGradient(colors: [palette.opacity(0.78), palette, palette.opacity(0.98)],

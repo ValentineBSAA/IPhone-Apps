@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 @testable import BerryBlockBlast
 
 final class BerryBuild4PolishTests: XCTestCase {
@@ -10,8 +11,17 @@ final class BerryBuild4PolishTests: XCTestCase {
         XCTAssertEqual(views.map(\.milestone), milestones)
     }
 
+    func testApprovedDarkRaspberryPinkTileIsBundled() {
+        guard let image = UIImage(named: "Tile_Pink") else {
+            XCTFail("Approved darker pink tile missing from Assets.car")
+            return
+        }
+        XCTAssertEqual(image.size.width, 192, accuracy: 0.5)
+        XCTAssertEqual(image.size.height, 192, accuracy: 0.5)
+    }
+
     func testPolishBuildIdentityIsDistinct() {
-        XCTAssertEqual(BerryBuildIdentity.revisionName, "BUILD 4.1 • POLISH QA")
-        XCTAssertEqual(BerryBuildIdentity.sourceBranch, "feature/berry-build4-r2-polish")
+        XCTAssertEqual(BerryBuildIdentity.revisionName, "BUILD 4.2 • RESPONSIVE QA")
+        XCTAssertEqual(BerryBuildIdentity.sourceBranch, "feature/berry-build4-r3-responsive-layout")
     }
 }
