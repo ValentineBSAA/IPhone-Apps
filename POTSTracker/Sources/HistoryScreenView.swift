@@ -22,8 +22,11 @@ struct HistoryScreenView: View {
     @State private var year: Int = Calendar.current.component(.year, from: Date())
     @State private var selectedDay: Date?
     @State private var editingRoute: RecordEditRoute?
-    @State private var pendingDeletion: NSManagedObjectID?
+    @State private var pendingDeletionIDs: [NSManagedObjectID] = []
+    @State private var pendingDeletionLabel = "this entry"
     @State private var confirmDeletion = false
+    @State private var confirmClearAll = false
+    @State private var clearPhrase = ""
     @State private var deleteError: String?
 
     private var cal: Calendar { .current }
@@ -83,14 +86,45 @@ struct HistoryScreenView: View {
                             .font(.subheadline.monospacedDigit())
                             .foregroundStyle(.secondary)
                     }
-                    Text("Tap a day, then a category to view individual entries. Swipe an entry left to delete or right to edit.")
+                    Text("Open a day, then a category. Swipe a row left to remove, right to edit or open.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     RecordTreeView(
                         records: filteredEntries,
                         onEdit: { id in editingRoute = RecordEditRoute(objectID: id) },
-                        onDelete: { id in pendingDeletion = id; confirmDeletion = true }
+                        onDelete: { id in requestDelete([id], label: "this entry") },
+                        onDeleteGroup: { ids, label in requestDelete(ids, label: label) }
                     )
+                    if period == .all {
+                        HistorySwipeSurface(
+                            leadingTitle: "Week",
+                            leadingSymbol: "calendar",
+                            trailingTitle: "Clear all",
+                            accessibilityTitle: "Clear all saved history, \(fullEntries.count) records",
+                            onTap: { clearPhrase = ""; confirmClearAll = true },
+                            onLeading: { period = .week },
+                            onTrailing: { clearPhrase = ""; confirmClearAll = true }
+                        ) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "trash")
+                                    .foregroundStyle(.red)
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text("Clear all saved history")
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(.primary)
+                                    Text("Swipe left, then confirm. Cannot be undone.")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 6)
+                                Text("\(fullEntries.count)")
+                                    .font(.subheadline.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.horizontal, 13)
+                        }
+                        .padding(.top, 4)
+                    }
                 }
             }
             .padding(18)
@@ -102,18 +136,40 @@ struct HistoryScreenView: View {
         .sheet(item: $editingRoute) { route in
             RecordEditDestination(objectID: route.objectID)
         }
-        .confirmationDialog("Delete this entry?", isPresented: $confirmDeletion, titleVisibility: .visible) {
-            Button("Delete permanently", role: .destructive) {
-                guard let id = pendingDeletion else { return }
-                pendingDeletion = nil
+        .confirmationDialog(
+            "Delete \(pendingDeletionLabel)?",
+            isPresented: $confirmDeletion,
+            titleVisibility: .visible
+        ) {
+            Button("Delete \(pendingDeletionIDs.count) \(pendingDeletionIDs.count == 1 ? "entry" : "entries") permanently", role: .destructive) {
+                let ids = pendingDeletionIDs
+                pendingDeletionIDs = []
                 do {
-                    try RecordStore.delete(id, in: context)
+                    try RecordStore.delete(ids, in: context)
                 } catch {
                     deleteError = error.localizedDescription
                 }
             }
         } message: {
-            Text("Only this entry will be removed. This cannot be undone.")
+            Text("The selected records will be removed together. This cannot be undone; backup and export are not available yet.")
+        }
+        .alert("Clear every saved record?", isPresented: $confirmClearAll) {
+            TextField("Type DELETE", text: $clearPhrase)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
+            Button("Delete all history", role: .destructive) {
+                guard clearPhrase.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "DELETE" else { return }
+                do {
+                    try RecordStore.delete(fullEntries.map(\.id), in: context)
+                } catch {
+                    deleteError = error.localizedDescription
+                }
+                clearPhrase = ""
+            }
+            .disabled(clearPhrase.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() != "DELETE")
+            Button("Cancel", role: .cancel) { clearPhrase = "" }
+        } message: {
+            Text("Every saved entry on this iPhone will be permanently deleted, across all dates and trackers. Backup and export aren't ready. Type DELETE to confirm.")
         }
         .alert("Could not delete entry", isPresented: Binding(
             get: { deleteError != nil },
@@ -294,6 +350,13 @@ struct HistoryScreenView: View {
                     .font(.title2.monospacedDigit().bold())
             }
         }
+    }
+
+    private func requestDelete(_ ids: [NSManagedObjectID], label: String) {
+        guard !ids.isEmpty else { return }
+        pendingDeletionIDs = ids
+        pendingDeletionLabel = label
+        confirmDeletion = true
     }
 
     private func shiftMonth(_ delta: Int) {
