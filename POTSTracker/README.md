@@ -1,6 +1,6 @@
 # POTS Tracker (working title)
 
-**Status:** pre-build planning and approved artwork stage. No executable app has been built yet.
+**Status:** Build 1 source code and unsigned IPA CI workflow committed, **compilation and physical-iPhone testing not yet verified**. Approved icon binaries still require repository import.
 
 A free, privacy-first native **iPhone** utility for tracking lived experiences of Postural Orthostatic Tachycardia Syndrome (POTS). Designed for a family member who wants useful daily records and 7-day, monthly, 365/366-day, and lifetime history without paid features.
 
@@ -42,3 +42,22 @@ Do **not** replace the approved artwork with automatically generated substitutes
 Track progress in [BUILD_CHECKLIST.md](BUILD_CHECKLIST.md), the [research-backed premium-quality (all-free) roadmap](PREMIUM_FEATURE_ROADMAP.md), and GitHub Issues.
 
 No personal medical details, test logs containing identifying health data, credentials or backups belong in this public repository.
+
+## Build 1 working source (implementation pending CI verification)
+
+Implemented in `Sources/`: an iOS 16-compatible SwiftUI dashboard, all 12 feature cards, large-control mode, one-tap optional check-ins, seven-day activity count, manually entered symptom/heart-rate/blood-pressure/journal records with editing and deletion, plus private on-device Core Data SQLite persistence.
+
+- Current recording screens: Symptoms, Heart Rate, Blood Pressure, Daily Journal.
+- Current history: last 7 days, including entries from prior days; blank days stay blank.
+- Settings: Low Energy Mode, show/hide explanations, privacy and safety information.
+- **Not implemented yet:** hydrated/fluid tracking, medications, sleep, posture sessions, reminders, full-year charts, PDF/CSV, local backup/restore and optional observations. Their feature cards explicitly say they're planned.
+- **Artwork gate:** if approved PNGs have not been imported, the app uses clearly labeled SF Symbol fallbacks. Do not call the complete branded interface finished.
+- **Important:** the app has no export or restore function yet. **Do not store irreplaceable real health data in Build 1.** Deleting this experimental version may remove locally saved entries.
+
+### Build on GitHub
+
+The repository contains `project.yml` and [the native iOS 16 build workflow](../.github/workflows/pots-build-1.yml). On source updates or manual dispatch, GitHub Actions runs XcodeGen, attempts an unsigned simulator build and an unsigned physical-device build, then uploads an IPA artifact **if compilation succeeds**.
+
+An unsigned IPA is not install-ready: it must be signed or installed using a compatible authorized signing workflow. Never commit a signing certificate or password to this public repository.
+
+See [the Build 1 test plan](BUILD_1_TEST_PLAN.md) and [the premium feature roadmap](PREMIUM_FEATURE_ROADMAP.md).
