@@ -211,3 +211,21 @@
 - [ ] Test repeated navigation, scrolling/gestures, relaunch, and persistence; check Low Energy Mode and VoiceOver.
 - [ ] Design **future** grouped notifications/reminders by date/type, with non-noisy opt-in settings; do not mark notifications built.
 - [ ] Test entire [v0.1.4 regression plan](UX_REGRESSION_V014.md).
+
+## v0.1.5 Unified status dots & titled check-in notes (iPhone screenshots)
+- [x] Confirm grouped History day→category→record behavior on iPhone 16e screenshots, retaining final-record deletion regression.
+- [x] Replace oversized, buried Home Recent Activity cards with four small **logged today** indicators for Feeling, Symptoms, Heart rate and Blood Pressure.
+- [x] Status dots indicate only whether a category was recorded today, never a clinical reading or health quality.
+- [x] Make dots tappable to open relevant forms; keep History as the complete entry list.
+- [x] Keep existing Home customization preference IDs; reorder the prior unmodified default layout so dots appear just beneath Today.
+- [x] Make Quick Check-in choices open a pre-filled editor rather than instantly recording repeated one-word entries.
+- [x] Add editable title, optional note, recorded date/time, explicit Save and Cancel for check-ins.
+- [x] Store selected feeling separately from the editable title using existing fields, with backward compatibility for old check-ins.
+- [x] Display title, feeling and notes in grouped History; preserve check-in edit/delete action safety.
+- [x] Add new check-in format tests and update Home layout/history regression assertions.
+- [x] Preserve original icons, iOS 16 minimum, version display once in More, app identifier and Core Data schema.
+- [ ] Confirm v0.1.5 device and simulator compilation, IPA packaging and tests.
+- [ ] Run entire real-device [v0.1.5 QA plan](UX_V015.md).
+- [ ] Validate Save / Cancel / legacy check-in editing / status dot accuracy / last-record deletion on iPhone 16e.
+- [ ] Confirm no status dot suggests a medical diagnosis or penalizes missing entries.
+- [ ] Confirm notification grouping remains planned, not falsely presented as implemented.
