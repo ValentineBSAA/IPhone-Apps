@@ -68,7 +68,7 @@ struct EntriesForCategory: View {
     @State private var deleteError: String?
 
     private var filtered: [POTSLogEntry] {
-        entries.filter { $0.category == category.rawValue }
+        entries.filter { !$0.isDeleted && $0.managedObjectContext != nil && $0.category == category.rawValue }
     }
     private var thisWeek: Int {
         let start = DateTracking.lastSevenDays().first ?? Date()
