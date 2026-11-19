@@ -77,6 +77,9 @@ struct BerryGameView: View {
     private var goal: Int { mode == .story ? 100 + storyLevel * 55 : 120 }
     private var storyTargetLines: Int { 2 + (storyLevel / 2) }
     private var storyIsLineQuest: Bool { storyLevel % 2 == 0 }
+    private var endlessSeasonName: String {
+        ["Spring Bloom", "Summer Berries", "Autumn Honey", "Winter Frost"][session.engine.seasons % 4]
+    }
     private var objective: String {
         switch mode {
         case .endless:
@@ -205,12 +208,27 @@ struct BerryGameView: View {
                     } else {
                         scoreBar
                     }
-                    if mode != .story {
+                    if mode == .endless {
+                        VStack(spacing: 1) {
+                            Text("✿ SWEET ENDLESS ✿")
+                                .font(.system(size: compact ? 12 : 14, weight: .black, design: .rounded))
+                                .tracking(1.1)
+                                .foregroundStyle(BerryStyle.strawberry)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            Text("\(session.engine.side)×\(session.engine.side) • Season \(session.engine.seasons + 1) • \(endlessSeasonName)")
+                                .font(.system(size: compact ? 9 : 10, weight: .bold, design: .rounded))
+                                .foregroundStyle(BerryStyle.chocolate)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                        .frame(height: compact ? 27 : 32)
+                        .accessibilityElement(children: .combine)
+                    } else if mode != .story {
                         HStack(spacing: 6) {
                             Image(systemName: mode == .challenge ? "bolt.fill" :
                                   mode == .cozy ? "leaf.fill" : "sparkles")
-                            Text((mode == .endless || mode == .cozy) ?
-                                 (session.lastMessage ?? objective) : objective)
+                            Text(mode == .cozy ? (session.lastMessage ?? objective) : objective)
                                 .lineLimit(1).minimumScaleFactor(0.72)
                             Image(systemName: "sparkles")
                         }
@@ -282,8 +300,8 @@ struct BerryGameView: View {
                     .layoutPriority(3)
                     toolBar
                     if touchDiagnostics {
-                        Text(touchStatus)
-                            .font(.system(size: 9, weight: .medium, design: .monospaced))
+                        Text("QA TOUCH • " + touchStatus)
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
                             .lineLimit(2)
                             .foregroundStyle(BerryStyle.chocolate)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1416,7 +1434,21 @@ struct BerryGameView: View {
                 // altering its appearance cannot shift legal placement cells.
                 .padding(BerryGameplayLayout.gardenFrameInset)
                 .background {
-                    BerryGardenBorder(mode: mode)
+                    if boardSurface == "blossom-glass" {
+                        RoundedRectangle(cornerRadius: 23, style: .continuous)
+                            .fill(LinearGradient(colors: [
+                                Color(red: 1, green: 0.89, blue: 0.97),
+                                Color(red: 0.93, green: 0.50, blue: 0.77),
+                                Color(red: 0.62, green: 0.45, blue: 0.77)
+                            ], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 23, style: .continuous)
+                                    .strokeBorder(.white.opacity(0.96), lineWidth: 2)
+                            }
+                            .allowsHitTesting(false)
+                    } else {
+                        BerryGardenBorder(mode: mode)
+                    }
                 }
                 .overlay {
                     if boardSurface == "blossom-glass" {

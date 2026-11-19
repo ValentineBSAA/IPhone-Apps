@@ -82,7 +82,7 @@ struct BerryBoutiqueView: View {
             case .blocks: return "BBBIconBlocks"
             case .sparkleStudio: return "BBBIconSparkle"
             case .seasonal: return "BBBIconSeasonal"
-            case .helpers: return "BBBIconTools"
+            case .helpers: return "BBBIconHome"
             case .special: return "BBBIconTools"
             case .cottage: return "BBBIconHome"
             case .inventory: return "BBBIconInventory"
@@ -153,17 +153,19 @@ struct BerryBoutiqueView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            HStack(spacing: 12) {
-                BerryIcon(name: "ShopBasket", size: 57)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("The Berry Boutique")
+            if selectedCategory == nil {
+                HStack(spacing: 12) {
+                    BerryIcon(name: "ShopBasket", size: 49)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("The Berry Boutique")
                         .font(.system(size: 24, weight: .black, design: .rounded))
                         .foregroundStyle(BerryStyle.strawberry)
                     Text("Little treasures for your strawberry village")
                         .font(.system(size: 11, weight: .medium, design: .rounded))
                         .foregroundStyle(BerryStyle.chocolate)
                 }
-                Spacer(minLength: 0)
+                    Spacer(minLength: 0)
+                }
             }
             HStack {
                 Label("Berry Wallet", systemImage: "basket.fill")
@@ -222,7 +224,8 @@ struct BerryBoutiqueView: View {
                     .padding(.horizontal, 10)
             }
         }
-        .padding(.vertical, 8)
+        .padding(.top, 5)
+        .padding(.bottom, 8)
         .onAppear {
             selectedCategory = opensWithHelpers ? .helpers : nil
             boardSubmenu = nil
@@ -260,7 +263,7 @@ struct BerryBoutiqueView: View {
                 .strokeBorder(BerryStyle.strawberry.opacity(0.28), lineWidth: 1.3))
             .shadow(color: BerryStyle.strawberry.opacity(0.09), radius: 6, y: 3)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(BerryPolishPressStyle())
     }
 
     @ViewBuilder

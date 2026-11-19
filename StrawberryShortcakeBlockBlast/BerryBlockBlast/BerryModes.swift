@@ -95,7 +95,7 @@ struct BerryHomeView: View {
             .overlay(RoundedRectangle(cornerRadius: 20)
                 .strokeBorder(BerryStyle.strawberry.opacity(0.28)))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(BerryPolishPressStyle())
     }
     private var version: String { BerryBuildIdentity.homeLabel }
     @AppStorage("berryblockblast.story.level") private var storyLevel = 1
@@ -341,7 +341,7 @@ struct BerryHomeView: View {
             NavigationStack {
                 ScrollView {
                     BerryBoutiqueView(session: villageSession)
-                        .padding(.horizontal, 16).padding(.vertical, 18)
+                        .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 18)
                 }
                 .background(BerryStyle.cream.ignoresSafeArea())
                 .navigationTitle("Market")
