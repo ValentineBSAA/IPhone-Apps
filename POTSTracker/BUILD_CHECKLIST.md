@@ -48,8 +48,9 @@
 ## 3. Native interface
 - [x] Source for main dashboard: quick log, today's summary, seven-day overview and recent logs
 - [ ] Next-reminder summary (Build 2); verify dashboard on real iPhone
-- [x] Source for 12 accessible labeled feature grid cards with approved PNG loading and honest placeholder states
-- [ ] **Verify** all 13 artwork files imported and rendered (native fallback until then)
+- [x] Source for 12 accessible labeled feature grid cards using **only the approved custom icons**
+- [x] GitHub CI blocks builds when any approved PNG is missing; Xcode image set and Home Screen icon generation are configured
+- [ ] **Verify** all 13 original PNG binaries imported and rendered; this remains required for Build 1
 - [x] Source for one-tap daily check-in and low-energy large controls
 - [ ] Verify low-energy mode with real-world accessibility testing
 - [ ] Fast number keypad with units; do not pretend the phone itself measures HR/BP
@@ -108,3 +109,10 @@
 - [ ] Signed and installed on test iPhone
 - [ ] Device smoke tests pass with synthetic, non-personal entries
 - [ ] Confirm original 13 approved PNGs imported into app and actual app icon supplied
+
+## Custom icon correction (2026-11-19)
+- [x] Removed generic SF Symbol icon fallback from all 12 feature cards
+- [x] Added native Xcode asset-catalog generator for the exact approved PNGs, including Apple-compatible opaque app icon
+- [x] Made CI fail fast when the full original asset set is missing
+- [ ] Upload original binary archive to `POTSTracker/assets/approved-icon-pack.zip` on GitHub
+- [ ] Verify all 13 high-resolution PNGs committed under `Resources/Icons` and properly displayed in the built app
