@@ -96,10 +96,11 @@ struct FeatureTile: View {
             Group {
                 if horizontal {
                     HStack(spacing: 10) {
-                        FeatureArtwork(feature: feature, width: roomy ? 57 : 44)
+                        FeatureArtwork(feature: feature, width: roomy ? 52 : 40)
                         Text(feature.name)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.system(size: roomy ? 15 : 14, weight: .semibold))
                             .lineLimit(2)
+                            .minimumScaleFactor(0.85)
                             .multilineTextAlignment(.leading)
                         Spacer(minLength: 0)
                     }
@@ -115,12 +116,12 @@ struct FeatureTile: View {
                 }
             }
             .foregroundStyle(.primary)
-            .padding(horizontal ? 12 : 14)
-            .frame(maxWidth: .infinity, minHeight: horizontal ? (roomy ? 87 : 72) : (roomy ? 139 : 125))
+            .padding(horizontal ? 10 : 12)
+            .frame(maxWidth: .infinity, minHeight: horizontal ? (roomy ? 80 : 66) : (roomy ? 135 : 116))
             .background(Color(uiColor: .secondarySystemGroupedBackground),
-                        in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Color.potsTeal.opacity(0.07)))
-            .contentShape(RoundedRectangle(cornerRadius: 20))
+                        in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.potsTeal.opacity(0.06)))
+            .contentShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(feature.name)
@@ -152,7 +153,7 @@ struct HomeScreenView: View {
     }
 
     private var roomy: Bool { density == "comfortable" || lowEnergyMode }
-    private var gap: CGFloat { roomy ? 18 : 13 }
+    private var gap: CGFloat { roomy ? 16 : 11 }
     private var hidden: Set<String> { Set(HomeLayout.ids(from: hiddenModules)) }
     private var modules: [HomeModule] {
         HomeLayout.orderedModules(from: moduleOrder).filter { !hidden.contains($0.id) }
@@ -161,17 +162,17 @@ struct HomeScreenView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: gap) {
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(Date.now.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.secondary)
-                        Text("Your day, at a glance")
-                            .font(.title3.weight(.semibold))
-                    }
+                HStack(alignment: .center) {
+                    Text(Date.now.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
                     Spacer()
+                    Text(InstalledBuild.shortLabel)
+                        .font(.caption2.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel(InstalledBuild.fullLabel)
                 }
-                .padding(.bottom, 2)
+                .padding(.horizontal, 2)
 
                 if let error = PersistenceController.shared.loadError {
                     Label(error, systemImage: "exclamationmark.triangle.fill")
@@ -203,7 +204,7 @@ struct HomeScreenView: View {
                 }
             }
             .padding(.horizontal, 17)
-            .padding(.top, 14)
+            .padding(.top, 10)
             .padding(.bottom, 24)
         }
         .background(Color.potsBackground.ignoresSafeArea())
@@ -256,7 +257,7 @@ struct HomeScreenView: View {
                             Text("Last check-in: \(check.title)")
                                 .font(.caption).foregroundStyle(.secondary)
                         } else {
-                            Text("No check-in yet")
+                            Text(todayEntries.isEmpty ? "Nothing logged yet" : "No check-in yet")
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }
@@ -273,13 +274,13 @@ struct HomeScreenView: View {
                 Button(action: openLog) {
                     HStack {
                         Image(systemName: "plus.circle.fill")
-                        Text("Log something")
+                        Text("Add an entry")
                         Spacer()
                         Image(systemName: "arrow.right")
                     }
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 15)
-                    .frame(minHeight: roomy ? 58 : 50)
+                    .frame(minHeight: roomy ? 58 : 47)
                     .foregroundStyle(.white)
                     .background(Color.potsTeal, in: RoundedRectangle(cornerRadius: 14))
                 }
@@ -300,7 +301,7 @@ struct HomeScreenView: View {
                 .font(.caption.weight(.semibold))
                 .minimumScaleFactor(0.8)
                 .lineLimit(1)
-                .frame(maxWidth: .infinity, minHeight: roomy ? 53 : 41)
+                .frame(maxWidth: .infinity, minHeight: roomy ? 52 : 38)
                 .foregroundStyle(Color.potsTeal)
                 .background(Color.potsTeal.opacity(0.09), in: RoundedRectangle(cornerRadius: 12))
         }
@@ -309,33 +310,57 @@ struct HomeScreenView: View {
     }
 
     private var checkInStrip: some View {
-        VStack(alignment: .leading, spacing: 9) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("How are you feeling?")
-                    .font(.headline)
+                Text("Quick check-in").font(.subheadline.weight(.semibold))
                 Spacer()
-                Text("Optional").font(.caption2).foregroundStyle(.secondary)
+                if let latest = todayEntries.first(where: { $0.category == LogCategory.checkIn.rawValue }) {
+                    Text("Last: \(latest.title)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                } else {
+                    Text("Optional").font(.caption).foregroundStyle(.secondary)
+                }
             }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: roomy ? 112 : 97), spacing: 7)], spacing: 7) {
-                ForEach(["Better", "Usual", "Worse", "Much worse", "Not sure"], id: \.self) { answer in
-                    Button {
-                        saveCheckIn(answer)
-                    } label: {
-                        Text(answer)
-                            .font(.subheadline.weight(.medium))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.77)
-                            .frame(maxWidth: .infinity, minHeight: roomy ? 55 : 40)
-                            .foregroundStyle(.primary)
-                            .background(Color(uiColor: .secondarySystemGroupedBackground),
-                                        in: RoundedRectangle(cornerRadius: 12))
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(PersistenceController.shared.loadError != nil)
-                    .accessibilityHint("Adds a new check-in for today")
+
+            VStack(spacing: 7) {
+                HStack(spacing: 7) {
+                    checkInButton("Better")
+                    checkInButton("Usual")
+                    checkInButton("Worse")
+                }
+                HStack(spacing: 7) {
+                    checkInButton("Much worse")
+                    checkInButton("Not sure")
                 }
             }
         }
+    }
+
+    private func checkInButton(_ answer: String) -> some View {
+        let selected = todayEntries.first(where: { $0.category == LogCategory.checkIn.rawValue })?.title == answer
+        return Button {
+            saveCheckIn(answer)
+        } label: {
+            Text(answer)
+                .font(.system(size: 14, weight: selected ? .semibold : .medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(maxWidth: .infinity, minHeight: roomy ? 51 : 37)
+                .foregroundStyle(selected ? Color.potsTeal : Color.primary)
+                .background(
+                    selected ? Color.potsTeal.opacity(0.13) : Color(uiColor: .secondarySystemGroupedBackground),
+                    in: RoundedRectangle(cornerRadius: 11)
+                )
+                .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(
+                    selected ? Color.potsTeal.opacity(0.4) : Color.clear,
+                    lineWidth: 1
+                ))
+        }
+        .buttonStyle(.plain)
+        .disabled(PersistenceController.shared.loadError != nil)
+        .accessibilityHint("Records a new optional check-in")
     }
 
     private var favoriteGrid: some View {
@@ -366,20 +391,16 @@ struct HomeScreenView: View {
         }
     }
 
+    @ViewBuilder
     private var recentGrid: some View {
-        VStack(alignment: .leading, spacing: 9) {
+        if !entries.isEmpty {
+            VStack(alignment: .leading, spacing: 9) {
             HStack {
                 Text("Recent activity").font(.headline)
                 Spacer()
                 Button("See all", action: openHistory)
                     .font(.caption.weight(.semibold))
             }
-            if entries.isEmpty {
-                Text("Nothing recorded yet. This space stays quiet until you add an entry.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 8)
-            } else {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 9), GridItem(.flexible(), spacing: 9)], spacing: 9) {
                     ForEach(Array(entries.prefix(3)), id: \.objectID) { entry in
                         Button { editLog = entry } label: {
@@ -406,7 +427,6 @@ struct HomeScreenView: View {
             }
         }
     }
-
     private func saveCheckIn(_ answer: String) {
         let entry = POTSLogEntry(context: context)
         entry.id = UUID()
@@ -437,14 +457,11 @@ struct LogHubView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Choose what to record")
-                        .font(.title3.weight(.semibold))
-                    Text("One entry at a time. Every category is optional.")
+                    Text("Choose a tracker. One entry at a time.")
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
                 featureSection("Track now", ids: ["symptom", "heartRate", "bloodPressure", "journal"])
                 featureSection("Daily support", ids: ["hydration", "medications", "sleep", "posture"])
-                featureSection("Review & organize", ids: ["calendar", "reports", "reminders", "settings"])
             }
             .padding(18)
             .padding(.bottom, 20)
@@ -468,64 +485,93 @@ struct LogHubView: View {
 
 struct MoreHubView: View {
     @AppStorage("lowEnergyMode") private var lowEnergyMode = false
+    private let columns = [GridItem(.flexible(), spacing: 11), GridItem(.flexible(), spacing: 11)]
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 17) {
-                Text("Keep things comfortable")
-                    .font(.title3.weight(.semibold))
-                Text("Your preferences stay on this iPhone.")
-                    .font(.subheadline).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 18) {
+                Text("Make the app your own")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
 
-                NavigationLink {
-                    HomeCustomizationView()
-                } label: {
-                    moreCard("Customize Home", subtitle: "Pin features, hide or reorder sections", icon: "slider.horizontal.3")
+                section("Personalize")
+                LazyVGrid(columns: columns, spacing: 11) {
+                    NavigationLink {
+                        HomeCustomizationView()
+                    } label: {
+                        smallTool("Customize Home", icon: "slider.horizontal.3")
+                    }
+                    .buttonStyle(.plain)
+
+                    if let settings = TrackerFeature.all.first(where: { $0.id == "settings" }) {
+                        FeatureTile(feature: settings, roomy: lowEnergyMode)
+                    }
                 }
-                NavigationLink {
-                    SettingsPanel()
-                } label: {
-                    moreCard("Comfort & settings", subtitle: "Larger controls and display preferences", icon: "gearshape.fill")
+
+                section("Review & tools")
+                LazyVGrid(columns: columns, spacing: 11) {
+                    ForEach(["calendar", "reports", "reminders"].compactMap({ id in
+                        TrackerFeature.all.first(where: { $0.id == id })
+                    })) { feature in
+                        FeatureTile(feature: feature, roomy: lowEnergyMode)
+                    }
+                    NavigationLink {
+                        PrivacyText()
+                    } label: {
+                        smallTool("Privacy & safety", icon: "hand.raised.fill")
+                    }
+                    .buttonStyle(.plain)
                 }
-                NavigationLink {
-                    PrivacyText()
-                } label: {
-                    moreCard("Privacy & medical information", subtitle: "How your local records are handled", icon: "hand.raised.fill")
-                }
+
                 GlassCard {
                     VStack(alignment: .leading, spacing: 7) {
-                        Text("Build 1 · First iPhone test").font(.headline)
-                        Text("The advanced trackers, reports, reminders and backups are scheduled for later builds. They will remain free.")
-                            .font(.subheadline).foregroundStyle(.secondary)
-                        Text("Do not store irreplaceable medical records until export and restore are available.")
-                            .font(.caption).foregroundStyle(.secondary)
+                        HStack {
+                            Label("Installed app", systemImage: "info.circle")
+                                .font(.subheadline.weight(.semibold))
+                            Spacer()
+                            Text(InstalledBuild.shortLabel)
+                                .font(.subheadline.weight(.semibold).monospacedDigit())
+                                .foregroundStyle(Color.potsTeal)
+                        }
+                        Text("This is the version on your iPhone, not a check for updates.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("Test build. Backup and export aren't ready; avoid storing irreplaceable medical records.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
             .padding(18)
+            .padding(.bottom, 24)
         }
         .background(Color.potsBackground.ignoresSafeArea())
         .navigationTitle("More")
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func moreCard(_ title: String, subtitle: String, icon: String) -> some View {
-        HStack(spacing: 15) {
+    private func section(_ title: String) -> some View {
+        Text(title).font(.headline)
+    }
+
+    private func smallTool(_ title: String, icon: String) -> some View {
+        VStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.title3)
+                .font(.system(size: 26, weight: .medium))
                 .foregroundStyle(Color.potsTeal)
-                .frame(width: 44, height: 44)
-                .background(Color.potsTeal.opacity(0.10), in: RoundedRectangle(cornerRadius: 13))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(.subheadline.weight(.semibold))
-                Text(subtitle).font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 2)
-            Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                .frame(width: 57, height: 57)
+                .background(Color.potsTeal.opacity(0.09), in: RoundedRectangle(cornerRadius: 16))
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
         }
-        .foregroundStyle(.primary)
-        .padding(14)
+        .frame(maxWidth: .infinity, minHeight: lowEnergyMode ? 135 : 116)
+        .padding(12)
         .background(Color(uiColor: .secondarySystemGroupedBackground),
-                    in: RoundedRectangle(cornerRadius: 19))
+                    in: RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.potsTeal.opacity(0.06)))
+        .accessibilityElement(children: .combine)
     }
 }
