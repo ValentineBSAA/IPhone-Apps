@@ -1,4 +1,4 @@
-name: POTS Tracker | Build 1 iOS 16 unsigned IPA
+name: POTS Tracker | v0.1.1 Calm Home iOS 16
 
 on:
   workflow_dispatch:
@@ -6,6 +6,10 @@ on:
     paths:
       - "POTSTracker/**"
       - ".github/workflows/pots-build-1.yml"
+
+concurrency:
+  group: pots-tracker-ux-main
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -84,13 +88,13 @@ jobs:
           set -euo pipefail
           mkdir -p dist/Payload
           cp -R build-device/Build/Products/Release-iphoneos/POTSTracker.app dist/Payload/
-          (cd dist && zip -qr POTS-Tracker-Build-1-iOS16-unsigned.ipa Payload)
-          unzip -l dist/POTS-Tracker-Build-1-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
+          (cd dist && zip -qr POTS-Tracker-v0.1.1-Calm-Home-iOS16-unsigned.ipa Payload)
+          unzip -l dist/POTS-Tracker-v0.1.1-Calm-Home-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
 
       - name: Upload unsigned IPA build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: POTS-Tracker-Build-1-iOS16-unsigned
+          name: POTS-Tracker-v0.1.1-Calm-Home-iOS16-unsigned
           path: POTSTracker/dist/*.ipa
           if-no-files-found: error
           retention-days: 30
