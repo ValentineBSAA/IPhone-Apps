@@ -202,11 +202,38 @@ struct BerrySettingsHubView: View {
                 .font(.system(size: 12, weight: .black, design: .rounded))
                 .foregroundStyle(BerryStyle.strawberry)
             LazyVGrid(columns: cols, spacing: 11) {
+                choice("Original Strawberry Jam", detail: "Hardware-tested board and border", icon: "square.grid.3x3.fill", selected: boardSurface == "original") {
+                    boardSurface = "original"
+                }
+                Button {
+                    boardSurface = "blossom-glass"
+                } label: {
+                    VStack(spacing: 8) {
+                        BerryApprovedArtwork(name: "Board_Theme_Icon", fallback: "camera.filters", size: 54)
+                        Text("Strawberry Blossom Glass")
+                            .font(.system(size: 13, weight: .black, design: .rounded))
+                            .multilineTextAlignment(.center)
+                        Text("Experimental glossy garden. Visuals only.")
+                            .font(.system(size: 10, weight: .medium, design: .rounded))
+                            .multilineTextAlignment(.center)
+                        if boardSurface == "blossom-glass" {
+                            Text("✓ SELECTED").font(.caption.bold()).foregroundStyle(BerryStyle.leaf)
+                        }
+                    }
+                    .foregroundStyle(BerryStyle.chocolate)
+                    .frame(maxWidth: .infinity, minHeight: 112)
+                    .padding(9)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 17))
+                    .overlay(RoundedRectangle(cornerRadius: 17)
+                        .strokeBorder(boardSurface == "blossom-glass" ? BerryStyle.leaf : BerryStyle.strawberry.opacity(0.22),
+                                      lineWidth: boardSurface == "blossom-glass" ? 2 : 1))
+                }
+                .buttonStyle(.plain)
                 BerryGridInfoTile(
-                    title: "Classic Garden",
-                    detail: "One clear, edge-to-edge puzzle grid. The rejected decorative frames and surface skins are retired.",
+                    title: "Board Safety",
+                    detail: "Board size, touch mapping and saved gameplay are unchanged.",
                     art: "BerryClassic",
-                    value: "Always Active"
+                    value: "Visual Only"
                 )
                 BerryGridInfoTile(
                     title: "Collectible Blocks",
@@ -300,7 +327,7 @@ struct BerrySettingsHubView: View {
                                  art: "BerryCollection", value: "Protected")
                 BerryGridInfoTile(title: "App Version",
                                  detail: "iOS 16 compatible",
-                                 art: "Milestone", value: "0.5.11 • 1")
+                                 art: "Milestone", value: BerryBuildIdentity.marketingVersion + " • " + BerryBuildIdentity.buildNumber)
             }
         }
     }
