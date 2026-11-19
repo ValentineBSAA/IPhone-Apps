@@ -37,9 +37,11 @@ struct BerryDeveloperGardenView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
-                    Image(systemName: "lock.shield.fill")
-                        .font(.system(size: 43, weight: .bold))
-                        .foregroundStyle(BerryStyle.strawberry)
+                    Image("Developer_Mode_Strawberry_Lock")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 72, height: 72)
+                        .accessibilityHidden(true)
                     if !unlocked {
                         Text("Developer Garden")
                             .font(.system(size: 26, weight: .black, design: .rounded))
@@ -145,11 +147,21 @@ struct BerryDeveloperGardenView: View {
                 .background(.white, in: RoundedRectangle(cornerRadius: 16))
             Text("When enabled, the placement coordinate readout appears during gameplay.")
         case .saves:
-            ForEach([8, 12, 24], id: \.self) { side in
-                let found = BerryGameSession.hasResumableEndless(side: side)
-                Label("\(side)×\(side) Sweet Endless: \(found ? "Saved" : "No saved run")",
-                      systemImage: found ? "checkmark.circle.fill" : "circle")
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                ForEach([8, 12, 24], id: \.self) { side in
+                    let found = BerryGameSession.hasResumableEndless(side: side)
+                    VStack(spacing: 8) {
+                        Image(systemName: found ? "checkmark.circle.fill" : "circle")
+                            .font(.title2)
+                            .foregroundStyle(found ? BerryStyle.leaf : BerryStyle.chocolate)
+                        Text("\(side)×\(side) Endless")
+                            .font(.system(size: 13, weight: .heavy, design: .rounded))
+                        Text(found ? "Saved" : "No saved run")
+                            .font(.caption)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 104)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 14))
+                }
             }
             Text("This inspector is read-only and will never reset a garden.")
         case .clock:
