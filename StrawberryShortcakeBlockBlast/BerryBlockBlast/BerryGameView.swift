@@ -132,6 +132,7 @@ struct BerryGameView: View {
     @AppStorage(BerryTrophyCatalog.nightmareBestLinesKey) private var nightmareBestLines = 0
     @State private var lastBlitzTimeBonus = 0
     @AppStorage("berryblockblast.previewStyle") private var previewStyle = "ghost"
+    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "original"
     private let harvestCheers = [
         "🍓 A berry sweet harvest!", "🍰 Piece of strawberry cake!",
         "🌸 The garden is blooming!", "✨ Sweet as sunshine!",
@@ -1416,6 +1417,18 @@ struct BerryGameView: View {
                 .padding(BerryGameplayLayout.gardenFrameInset)
                 .background {
                     BerryGardenBorder(mode: mode)
+                }
+                .overlay {
+                    if boardSurface == "blossom-glass" {
+                        // Alpha-transparent center: decoration does not obscure
+                        // squares or enlarge the outer UIKit touch wrapper.
+                        Image("Blossom_Glass_Frame_Transparent_Center")
+                            .resizable()
+                            .interpolation(.high)
+                            .scaledToFill()
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
                 }
     }
 
