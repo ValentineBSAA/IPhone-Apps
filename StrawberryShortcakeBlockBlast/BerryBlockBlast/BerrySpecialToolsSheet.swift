@@ -1,6 +1,33 @@
 import SwiftUI
 import UIKit
 
+/// Pure availability and label rules shared by UI and regression tests.
+/// Unavailable helpers never call the action closure or spend a charge.
+enum BerrySpecialToolAvailability {
+    static func canUse(_ tool: BerrySpecialToolsSheet.Tool,
+                       charges: [String: Int], pantryOwned: Bool,
+                       selectedPiece: Bool, canContinue: Bool) -> Bool {
+        if tool == .pantry { return pantryOwned && selectedPiece }
+        if tool == .golden { return canContinue && charges[tool.chargeKey, default: 0] > 0 }
+        if tool.needsPiece && !selectedPiece { return false }
+        return charges[tool.chargeKey, default: 0] > 0
+    }
+
+    static func label(_ tool: BerrySpecialToolsSheet.Tool,
+                      charges: [String: Int], pantryOwned: Bool,
+                      selectedPiece: Bool, canContinue: Bool) -> String {
+        if tool == .pantry {
+            if !pantryOwned { return "Locked" }
+            return selectedPiece ? "Ready" : "Select a piece"
+        }
+        let count = max(0, charges[tool.chargeKey, default: 0])
+        if count == 0 { return "0 left" }
+        if tool.needsPiece && !selectedPiece { return "Select a piece" }
+        if tool == .golden && !canContinue { return "Available when stuck" }
+        return "\(count) left"
+    }
+}
+
 /// Player-facing inventory. Technical touch/debug instructions belong in Developer Garden.
 struct BerrySpecialToolsSheet: View {
     enum Tool: String, CaseIterable, Identifiable {
@@ -67,10 +94,7 @@ struct BerrySpecialToolsSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    Text("🍓 Special Tools")
-                        .font(.system(size: 26, weight: .black, design: .rounded))
-                        .foregroundStyle(BerryStyle.strawberry)
-                    Text("A little help for your growing garden!")
+                    Text("Choose a helper for your garden")
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(BerryStyle.chocolate)
                     if !selectedPiece {
@@ -85,6 +109,7 @@ struct BerrySpecialToolsSheet: View {
                     LazyVGrid(columns: columns, spacing: 11) {
                         ForEach(Tool.allCases) { tool in
                             Button {
+                                guard canUse(tool) else { return }
                                 dismiss()
                                 onChoose(tool)
                             } label: {
@@ -105,23 +130,26 @@ struct BerrySpecialToolsSheet: View {
                                         .font(.system(size: 11, weight: .medium, design: .rounded))
                                         .multilineTextAlignment(.center)
                                         .frame(minHeight: 39)
-                                    Text(tool == .pantry ? (pantryOwned ? "Ready" : "Locked") :
-                                         "\(charges[tool.chargeKey, default: 0]) left")
+                                    Text(status(for: tool))
                                         .font(.caption.bold())
+                                        .foregroundStyle(canUse(tool) ? BerryStyle.leaf : BerryStyle.chocolate)
                                         .padding(.horizontal, 9)
                                         .padding(.vertical, 4)
-                                        .background(BerryStyle.softPink, in: Capsule())
+                                        .background(canUse(tool) ? BerryStyle.leaf.opacity(0.12) :
+                                                    BerryStyle.softPink, in: Capsule())
                                 }
                                 .foregroundStyle(BerryStyle.chocolate)
                                 .frame(maxWidth: .infinity, minHeight: 191)
                                 .padding(9)
                                 .background(.white, in: RoundedRectangle(cornerRadius: 18))
                                 .overlay(RoundedRectangle(cornerRadius: 18)
-                                    .strokeBorder(BerryStyle.strawberry.opacity(0.25)))
+                                    .strokeBorder(canUse(tool) ? BerryStyle.leaf.opacity(0.4) :
+                                                  BerryStyle.chocolate.opacity(0.28)))
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel("\(tool.name). \(tool.detail)")
+                            .accessibilityValue(status(for: tool))
                             .disabled(!canUse(tool))
-                            .opacity(canUse(tool) ? 1 : 0.52)
                         }
                     }
                 }
@@ -139,11 +167,14 @@ struct BerrySpecialToolsSheet: View {
     }
 
     private func canUse(_ tool: Tool) -> Bool {
-        if tool == .pantry { return pantryOwned && selectedPiece }
-        if tool == .golden {
-            return canContinue && charges[tool.chargeKey, default: 0] > 0
-        }
-        if tool.needsPiece && !selectedPiece { return false }
-        return charges[tool.chargeKey, default: 0] > 0
+        BerrySpecialToolAvailability.canUse(tool, charges: charges,
+                                           pantryOwned: pantryOwned,
+                                           selectedPiece: selectedPiece, canContinue: canContinue)
+    }
+
+    private func status(for tool: Tool) -> String {
+        BerrySpecialToolAvailability.label(tool, charges: charges,
+                                          pantryOwned: pantryOwned,
+                                          selectedPiece: selectedPiece, canContinue: canContinue)
     }
 }

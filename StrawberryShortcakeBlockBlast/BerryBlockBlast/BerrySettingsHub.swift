@@ -16,7 +16,7 @@ struct BerrySettingsHubView: View {
     @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
     @AppStorage("berryblockblast.shop.equippedBorder.v056b2") private var borderSkin = "default"
     @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkleSkin = "default"
-    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "original"
+    @AppStorage(BerryBoardAppearancePolicy.storageKey) private var boardSurface = BerryBoardAppearancePolicy.original
     @AppStorage("berryberryblast.frame.overlay.v0511") private var frameID = "original"
     @AppStorage("berryblockblast.previewStyle") private var previewStyle = "ghost"
 

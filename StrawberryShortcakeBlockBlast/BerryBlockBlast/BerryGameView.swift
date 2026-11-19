@@ -135,7 +135,7 @@ struct BerryGameView: View {
     @AppStorage(BerryTrophyCatalog.nightmareBestLinesKey) private var nightmareBestLines = 0
     @State private var lastBlitzTimeBonus = 0
     @AppStorage("berryblockblast.previewStyle") private var previewStyle = "ghost"
-    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "original"
+    @AppStorage(BerryBoardAppearancePolicy.storageKey) private var boardSurface = BerryBoardAppearancePolicy.original
     private let harvestCheers = [
         "🍓 A berry sweet harvest!", "🍰 Piece of strawberry cake!",
         "🌸 The garden is blooming!", "✨ Sweet as sunshine!",
@@ -1664,7 +1664,10 @@ struct BerryGameView: View {
                                     "Story and Cozy: helpers are available",
                                  art: "BerryStory", value: mode.rawValue)
                 BerryGridInfoTile(title: "Garden Helpers",
-                                 detail: "Undo, Shuffle and Hint work in supported modes",
+                                 detail: mode == .classic ?
+                                    "Classic: no Undo, Shuffle, Hint or premium tools" :
+                                    isTimedMode ? "Timed modes: no Undo, Shuffle or Hint" :
+                                    "Undo, Shuffle and Hint work in supported modes",
                                  art: "BerryHint", value: "Optional")
                 BerryGridInfoTile(title: "Candy Block Collection",
                                  detail: "Collect and equip your earned block styles in the Trophy Garden",
