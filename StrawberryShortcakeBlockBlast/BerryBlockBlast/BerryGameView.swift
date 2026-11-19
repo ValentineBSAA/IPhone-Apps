@@ -81,7 +81,7 @@ struct BerryGameView: View {
         switch mode {
         case .endless:
             let seasonNames = ["Spring Bloom", "Summer Berries", "Autumn Honey", "Winter Frost"]
-            return "🍓 \(session.engine.side)×\(session.engine.side) • SEASON \(session.engine.seasons + 1): \(seasonNames[session.engine.seasons % 4])"
+            return "SWEET ENDLESS • \(session.engine.side)×\(session.engine.side) • SEASON \(session.engine.seasons + 1): \(seasonNames[session.engine.seasons % 4])"
         case .classic: return "🍓 BERRY CLASSIC • Three pieces • Chase your best!"
         case .story: return storyIsLineQuest ? "CHAPTER \(storyLevel) • Clear \(storyTargetLines) lines to bloom!" : "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
         case .daily: return "DAILY HARVEST • \(BerryGameSession.dailyDateKey()) • Gather \(goal) points!"
@@ -119,6 +119,8 @@ struct BerryGameView: View {
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.music") private var music = true
     @State private var sparkle = false
+    @State private var comboMilestone: Int?
+    @State private var lastComboMilestone = 0
     @State private var showNewBestBanner = false
     @State private var scoreRecordAtEntry = 0
     @State private var celebratedRecordThisRun = false
@@ -366,6 +368,13 @@ struct BerryGameView: View {
                     .position(x: width / 2, y: height * 0.43)
                     .allowsHitTesting(false)
             }
+            if let milestone = comboMilestone {
+                BerryComboMilestoneBanner(milestone: milestone)
+                    .frame(maxWidth: min(315, width - 34))
+                    .position(x: width / 2, y: height * 0.43)
+                    .allowsHitTesting(false)
+                    .zIndex(10)
+            }
             if showNewBestBanner {
                 BerryNewBestBanner(score: session.engine.score)
                     .frame(maxWidth: min(310, width - 30))
@@ -602,6 +611,15 @@ struct BerryGameView: View {
         .onChange(of: confirmGoldenStrawberry) { _ in updateModePlaytime() }
         .onChange(of: confirmRestart) { _ in updateModePlaytime() }
         .onChange(of: blitzRunning) { _ in updateModePlaytime() }
+        .onChange(of: session.engine.streak) { value in
+            if value < 10 { lastComboMilestone = 0 }
+            guard [10, 20, 30, 50].contains(value), value != lastComboMilestone else { return }
+            lastComboMilestone = value
+            comboMilestone = value
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                if comboMilestone == value { comboMilestone = nil }
+            }
+        }
         .onChange(of: session.engine.score) { score in
             checkObjective()
             celebrateNewRecordIfNeeded(score)
@@ -787,7 +805,7 @@ struct BerryGameView: View {
                     .foregroundStyle(BerryStyle.strawberry)
                     .layoutPriority(1)
                 Text(mode == .endless ?
-                     "\(session.engine.side)×\(session.engine.side) · SEASON \(session.engine.seasons + 1)" :
+                     "SWEET ENDLESS · \(session.engine.side)×\(session.engine.side) · SEASON \(session.engine.seasons + 1)" :
                      mode.rawValue.uppercased())
                     .font(.system(size: 8, weight: .heavy, design: .rounded))
                     .foregroundStyle(BerryStyle.chocolate.opacity(0.7))
