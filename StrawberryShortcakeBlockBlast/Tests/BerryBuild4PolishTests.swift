@@ -16,8 +16,8 @@ final class BerryBuild4PolishTests: XCTestCase {
             XCTFail("Approved darker pink tile missing from Assets.car")
             return
         }
-        XCTAssertEqual(image.size.width, 192, accuracy: 0.5)
-        XCTAssertEqual(image.size.height, 192, accuracy: 0.5)
+        XCTAssertEqual(image.size.width, 160, accuracy: 0.5)
+        XCTAssertEqual(image.size.height, 160, accuracy: 0.5)
     }
 
     func testPolishBuildIdentityIsDistinct() {

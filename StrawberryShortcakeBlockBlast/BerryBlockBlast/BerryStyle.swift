@@ -45,6 +45,23 @@ enum BerryStyle {
     }
 }
 
+/// Keeps the approved default pink tile independent of Boutique cosmetics.
+/// Pure rules, directly covered by XCTest so future shop additions cannot
+/// silently paint a custom skin with the default artwork.
+enum BerryPinkTilePolicy {
+    static func shouldUseApprovedTile(tint: Int, mode: BerryMode, skin: String) -> Bool {
+        guard skin == "default" else { return false }
+        let index = (tint % 6 + 6) % 6
+        switch mode {
+        case .endless, .classic: return index == 1
+        case .story: return index == 0 || index == 3
+        case .challenge: return index == 3
+        case .superHard: return index == 5
+        case .daily, .cozy: return false
+        }
+    }
+}
+
 struct BerryTile: View {
     let tint: Int
     var preview = false
@@ -95,15 +112,7 @@ struct BerryTile: View {
     /// Classic, but other game modes have their own tint order. Only replace
     /// pink where it really is pink; never recolor yellow/green blocks.
     private var usesApprovedPinkTile: Bool {
-        guard skin == "default" else { return false }
-        let index = (tint % 6 + 6) % 6
-        switch mode {
-        case .endless, .classic: return index == 1
-        case .story: return index == 0 || index == 3
-        case .challenge: return index == 3
-        case .superHard: return index == 5
-        case .daily, .cozy: return false
-        }
+        BerryPinkTilePolicy.shouldUseApprovedTile(tint: tint, mode: mode, skin: skin)
     }
     private var palette: Color {
         let index = (tint % 6 + 6) % 6

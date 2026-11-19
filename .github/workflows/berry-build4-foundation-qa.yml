@@ -21,6 +21,7 @@ jobs:
           set -euo pipefail
           python3 Tools/verify_ios16_source.py
           python3 Tools/check_ios16_compat.py
+          python3 Tools/verify_swiftui_test_imports.py
           python3 Tools/verify_audio_build2.py
           python3 Tools/verify_0512_art_in_repo.py
           test -f BerryBlockBlast/BerryBoardVisual.swift
@@ -78,7 +79,7 @@ jobs:
           assert hashlib.sha256(data).hexdigest()=='5cf64371058073cf2924b0bcf0ff864e50cc61ef0a5b80e015952ee9f4ba9775', 'Unapproved pink tile content'
           source=Path('BerryBlockBlast/BerryStyle.swift').read_text()
           assert 'Image("Tile_Pink")' in source, 'Pink image not displayed by gameplay'
-          assert 'usesApprovedPinkTile' in source, 'Default pink tint routing missing'
+          assert 'BerryPinkTilePolicy.shouldUseApprovedTile' in source, 'Default pink tint policy not wired'
           assert source.count('Image("Tile_Pink")')==1, 'Duplicate pink renderer branch'
           game=Path('BerryBlockBlast/BerryGameView.swift').read_text()
           score=Path('BerryBlockBlast/BerryScoreSpotlight.swift').read_text()

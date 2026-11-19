@@ -28,6 +28,14 @@
   Blossom Glass external border, economy, mode rules, music or inventory
 - [x] Explicitly distinguish Build 4.3 from the installed Build 4.2 IPA
 
+## Future Boutique / SwiftUI compilation regression protection
+
+- [x] Early CI preflight checks test files using SwiftUI `Color`/`LinearGradient` import SwiftUI explicitly, before either simulator starts
+- [x] XCTest asserts 160×160 bundled tile in BOTH pink-art suites; old 192×192 assertions eliminated
+- [x] Pure default pink routing policy tested across seven modes, all six tint indices and negative/overflow tints
+- [x] XCTest ensures all non-default Boutique skins, including future skin names, bypass the default pink asset; switching back to default restores it
+- [ ] New Boutique skins must go through this regression suite and physical preview/equip/unequip verification before release
+
 ## GitHub CI gates (must complete before owner tests)
 
 - [ ] Source, iOS 16, audio and PNG checks
