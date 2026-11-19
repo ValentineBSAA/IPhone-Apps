@@ -1,0 +1,51 @@
+name: POTSTracker
+options:
+  bundleIdPrefix: com.valentinebsaa
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    SUPPORTS_MACCATALYST: "NO"
+targets:
+  POTSTracker:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: Sources
+      - path: Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.potstracker
+        PRODUCT_NAME: POTSTracker
+        GENERATE_INFOPLIST_FILE: "YES"
+        INFOPLIST_KEY_CFBundleDisplayName: "POTS Tracker"
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: "YES"
+        INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
+        INFOPLIST_KEY_UIRequiresFullScreen: "NO"
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_VERSION: "5.9"
+        ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: "NO"
+  POTSTrackerTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: Tests
+    dependencies:
+      - target: POTSTracker
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.potstracker.tests
+        GENERATE_INFOPLIST_FILE: "YES"
+        SWIFT_VERSION: "5.9"
+schemes:
+  POTSTracker:
+    build:
+      targets:
+        POTSTracker: all
+        POTSTrackerTests: [test]
+    test:
+      targets:
+        - POTSTrackerTests
