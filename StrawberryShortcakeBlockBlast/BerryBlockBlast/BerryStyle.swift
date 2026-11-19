@@ -99,7 +99,8 @@ struct BerryTile: View {
         let index = (tint % 6 + 6) % 6
         switch mode {
         case .endless, .classic: return index == 1
-        case .story, .challenge: return index == 3
+        case .story: return index == 0 || index == 3
+        case .challenge: return index == 3
         case .superHard: return index == 5
         case .daily, .cozy: return false
         }
@@ -184,20 +185,6 @@ struct BerryTile: View {
                     .shadow(color: Color(red: 0.66, green: 0.1, blue: 0.22).opacity(0.26),
                             radius: max(1, side * 0.08), y: 1)
                     .accessibilityLabel("Three-dimensional strawberry fruit block")
-            } else if skin == "default" && (mode == .classic || mode == .endless) &&
-                        (tint % 6 + 6) % 6 == 1 {
-                // Approved deeper-raspberry image replaces the original pink
-                // square on gameplay, in-hand pieces and tray previews.
-                // The touch geometry, other colors and boutique skins remain unchanged.
-                Image("Tile_Pink")
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFit()
-                    .frame(width: side, height: side)
-                    .shadow(color: Color(red: 0.51, green: 0.02, blue: 0.20)
-                                .opacity(preview ? 0.10 : 0.20),
-                            radius: max(0.5, side * 0.04), y: 1)
-                    .accessibilityLabel("Deep raspberry pink candy block")
             } else {
             RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .fill(LinearGradient(colors: [palette.opacity(0.78), palette, palette.opacity(0.98)],

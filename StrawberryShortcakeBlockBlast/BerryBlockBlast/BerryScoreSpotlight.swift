@@ -15,7 +15,7 @@ struct BerryClassicScoreView: View {
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 4) {
                     Text("🍓")
-                    Text("BERRY CLASSIC SCORE")
+                    Text("CURRENT SCORE")
                         .tracking(1.1)
                 }
                 .font(.system(size: 10, weight: .heavy, design: .rounded))

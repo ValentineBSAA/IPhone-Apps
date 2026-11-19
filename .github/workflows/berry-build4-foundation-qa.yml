@@ -1,7 +1,7 @@
-name: Berry Berry Blast 0.5.14 Build 4.2 Responsive Layout QA
+name: Berry Berry Blast 0.5.14 Build 4.3 Pink Contrast and Labels QA
 on:
   push:
-    branches: [feature/berry-build4-r3-responsive-layout]
+    branches: [feature/berry-build4-r4-polish-qa]
   workflow_dispatch:
 permissions:
   contents: read
@@ -74,11 +74,18 @@ jobs:
           image=Path('BerryBlockBlast/Assets.xcassets/Tile_Pink.imageset/Tile_Pink.png')
           data=image.read_bytes()
           assert data[:8]==bytes.fromhex('89504e470d0a1a0a'), 'Pink tile is not a PNG'
-          assert struct.unpack('>II',data[16:24])==(192,192), 'Pink tile dimensions changed'
-          assert hashlib.sha256(data).hexdigest()=='dfc7ac4bf39e4ce99e20e6c536800198646b44ddd00137c3ef2bb4f196a69d15', 'Unapproved pink tile content'
+          assert struct.unpack('>II',data[16:24])==(160,160), 'Pink tile dimensions changed'
+          assert hashlib.sha256(data).hexdigest()=='5cf64371058073cf2924b0bcf0ff864e50cc61ef0a5b80e015952ee9f4ba9775', 'Unapproved pink tile content'
           source=Path('BerryBlockBlast/BerryStyle.swift').read_text()
           assert 'Image("Tile_Pink")' in source, 'Pink image not displayed by gameplay'
-          assert '(mode == .classic || mode == .endless)' in source, 'Pink route unexpectedly changed'
+          assert 'usesApprovedPinkTile' in source, 'Default pink tint routing missing'
+          assert source.count('Image("Tile_Pink")')==1, 'Duplicate pink renderer branch'
+          game=Path('BerryBlockBlast/BerryGameView.swift').read_text()
+          score=Path('BerryBlockBlast/BerryScoreSpotlight.swift').read_text()
+          assert 'BERRY CLASSIC SCORE' not in score
+          assert '🍓 BERRY CLASSIC •' not in game
+          assert 'YOUR FOREVER STRAWBERRY GARDEN' in game
+          assert 'Three pieces • Chase your best!' in game
           print('PASS: approved dark pink PNG routed to classic/endless.')
           PY
           test -f Tests/BerryBoardFrameContainmentTests.swift
@@ -238,28 +245,28 @@ jobs:
             -derivedDataPath .build/Candidate CODE_SIGNING_ALLOWED=NO build
           mkdir -p dist/Payload
           cp -R .build/Candidate/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
-          (cd dist && zip -qr Berry-Berry-Blast-v0.5.14-build4.2-RESPONSIVE-QA-unsigned.ipa Payload)
+          (cd dist && zip -qr Berry-Berry-Blast-v0.5.14-build4.3-POLISH-QA-unsigned.ipa Payload)
           python3 Tools/verify_audio_build2.py \
-            --ipa dist/Berry-Berry-Blast-v0.5.14-build4.2-RESPONSIVE-QA-unsigned.ipa
-          unzip -t dist/Berry-Berry-Blast-v0.5.14-build4.2-RESPONSIVE-QA-unsigned.ipa | tail -2
+            --ipa dist/Berry-Berry-Blast-v0.5.14-build4.3-POLISH-QA-unsigned.ipa
+          unzip -t dist/Berry-Berry-Blast-v0.5.14-build4.3-POLISH-QA-unsigned.ipa | tail -2
           python3 - <<'PY'
           import zipfile,plistlib
-          filename='dist/Berry-Berry-Blast-v0.5.14-build4.2-RESPONSIVE-QA-unsigned.ipa'
+          filename='dist/Berry-Berry-Blast-v0.5.14-build4.3-POLISH-QA-unsigned.ipa'
           with zipfile.ZipFile(filename) as z:
               assert 'Payload/BerryBlockBlast.app/Assets.car' in z.namelist()
               info=plistlib.loads(z.read('Payload/BerryBlockBlast.app/Info.plist'))
               assert info['CFBundleShortVersionString']=='0.5.14'
-              assert info['CFBundleVersion']=='42'
+              assert info['CFBundleVersion']=='43'
               assert info.get('MinimumOSVersion','16.0')=='16.0'
           print('Simulator QA passed. Still requires physical-device signoff.')
           PY
-          echo '0.5.14 Build 4.2 RESPONSIVE QA. Blossom frame and adaptive HUD need physical iPhone signoff. NOT a public release.' \
+          echo '0.5.14 Build 4.3 POLISH QA. Dark pink art and label polish need physical iPhone signoff. NOT a public release.' \
             > dist/HARDWARE-SIGNOFF-REQUIRED.txt
       - name: Upload candidate only, never auto-publish release
         uses: actions/upload-artifact@v4
         with:
-          name: Berry-0514-Build4.2-RESPONSIVE-QA-UNSIGNED-IPA
+          name: Berry-0514-Build4.3-POLISH-QA-UNSIGNED-IPA
           path: |
-            StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-v0.5.14-build4.2-RESPONSIVE-QA-unsigned.ipa
+            StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-v0.5.14-build4.3-POLISH-QA-unsigned.ipa
             StrawberryShortcakeBlockBlast/dist/HARDWARE-SIGNOFF-REQUIRED.txt
           retention-days: 14
