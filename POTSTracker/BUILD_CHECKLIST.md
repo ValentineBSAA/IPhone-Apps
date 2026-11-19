@@ -246,3 +246,19 @@
 - [ ] Verify v0.1.6 IPA and test [v0.1.6 physical iPhone checklist](UX_V016.md).
 - [ ] Verify swipe from any horizontal position and natural vertical scrolling without conflict.
 - [ ] Verify day/category/all deletion leaves unrelated records intact and never crashes on final deletion.
+
+## v0.1.7: slow clear gestures, OLED black, optional Journal Lock and Apple Health
+- [x] Keep working swipe edit/delete and confirmation; remove competing long-press.
+- [x] Slow swipe animation to 0.34s, reveal actions only on deliberate drags, tap opens with no action overlay.
+- [x] True OLED black dark background, near-black cards, vibrant but accessible teal, preserving original art.
+- [x] Optional Face ID/device-passcode Journal Lock, enable/disable authenticated and prompt explained.
+- [x] Guard Journal destination, History editing, Home recent titles and grouped History against locked Journal content.
+- [x] Require Journal unlock to include private records in full History deletion.
+- [x] Explain Journal UI gate is not standalone encryption.
+- [x] Add voluntary Apple Health read-only steps, walking distance, flights climbed; no Apple Watch or Health writing.
+- [x] Add correct Info.plist descriptions and HealthKit entitlement; no automatic permission prompts.
+- [ ] Verify unsigned IPA compiles on iOS 16 with these permissions.
+- [ ] Confirm signing profile preserves HealthKit capability; re-signing may need a compatible Apple Developer profile.
+- [ ] Test all Face ID/passcode and Apple Health permission flows on actual iPhone.
+- [ ] Check swipe/tap separation and true black theme on iPhone 16e.
+- [ ] Full [v0.1.7 physical QA checklist](UX_V017.md) including privacy leak and previous delete regressions.
