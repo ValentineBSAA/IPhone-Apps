@@ -105,12 +105,13 @@ struct HistorySwipeSurface<Content: View>: View {
                     defer { draggingOffset = 0 }
                     guard abs(dx) > 22, abs(dx) > abs(dy) * 1.12 else { return }
 
-                    // One decisive flick invokes the action, no holding,
-                    // second swipe or precision starting point required.
-                    if dx > 135 {
+                    // A normal quick flick is enough from any point on the
+                    // surface. Short, deliberate swipes reveal the action rail.
+                    let projected = value.predictedEndTranslation.width
+                    if dx > 90 || (dx > 28 && projected > 165) {
                         restingOffset = 0
                         onLeading()
-                    } else if dx < -135 {
+                    } else if dx < -90 || (dx < -28 && projected < -165) {
                         restingOffset = 0
                         onTrailing()
                     } else {
@@ -121,16 +122,6 @@ struct HistorySwipeSurface<Content: View>: View {
                     }
                 }
         )
-        .contextMenu {
-            Button {
-                close()
-                onLeading()
-            } label: { Label(leadingTitle, systemImage: leadingSymbol) }
-            Button(role: .destructive) {
-                close()
-                onTrailing()
-            } label: { Label(trailingTitle, systemImage: "trash") }
-        }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityTitle)
         .accessibilityHint("Swipe right for \(leadingTitle), left for \(trailingTitle).")
