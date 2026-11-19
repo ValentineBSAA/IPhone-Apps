@@ -22,6 +22,7 @@
 - **Log:** only recording workflows, in 2-column grids: Track now (Symptoms, Heart Rate, Blood Pressure, Journal) and Daily support (Hydration, Medications, Sleep, Posture). No repeated Calendar/Settings tiles.
 - **History:** eliminate duplicate headings and large empty-data card; preserve all real Week/Month/Year/All navigation and timestamps. A blank day is always unrecorded, never presumed symptom-free.
 - **More:** compact two-column grouped tiles. Home customization + original Settings artwork under Personalize; original Calendar, Reports, Reminders artwork + Privacy under Review & tools. Dark readable labels replace pale teal navigation text.
+- **Customize Home:** keep advanced tracker selection behind a dedicated pinned-trackers picker; avoid displaying the same 12 categories twice on the main personalization screen.
 - **Version visibility:** Home displays \`v0.1.2 · N\`, and More displays the **actual installed** version/build from Info.plist. This works offline and does not misrepresent an automatic update check.
 - **Build number:** GitHub Actions sets \`CURRENT_PROJECT_VERSION=$GITHUB_RUN_NUMBER\` during both device and simulator compilation; checks the packaged app's actual \`CFBundleVersion\`, \`CFBundleShortVersionString\` and stable bundle ID before packaging.
 - **Compatibility:** preserve bundle ID \`com.valentinebsaa.potstracker\`, iOS 16+ deployment minimum, Core Data schema and storage paths. All 13 approved graphics remain mandatory.
