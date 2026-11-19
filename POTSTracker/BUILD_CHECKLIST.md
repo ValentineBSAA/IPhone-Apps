@@ -12,7 +12,7 @@
 - [x] Ability to record more than one measurement or episode per day
 - [x] Bright, coordinated glossy multi-color icon art approved: 1 app + 12 category icons
 - [x] Labeled grid-card UI, light/dark theme, fatigue-friendly quick-entry philosophy
-- [ ] Exact approved 13 full-resolution PNGs imported to GitHub and validated (**must not mark done from a ZIP manifest alone**)
+- [x] All 13 approved full-resolution PNGs imported to GitHub and validated (GitHub Actions run 44606165350, 2026-11-19)
 - [ ] Select public display name after basic trademark/App Store search (POTS Tracker is placeholder)
 - [ ] Check accessibility text contrast, Dynamic Type and reduced motion in real UI
 - [ ] Identify target family member's device / supported OS when available, without collecting health history
@@ -50,7 +50,8 @@
 - [ ] Next-reminder summary (Build 2); verify dashboard on real iPhone
 - [x] Source for 12 accessible labeled feature grid cards using **only the approved custom icons**
 - [x] GitHub CI blocks builds when any approved PNG is missing; Xcode image set and Home Screen icon generation are configured
-- [ ] **Verify** all 13 original PNG binaries imported and rendered; this remains required for Build 1
+- [x] Verify all 13 original PNG binaries exist under `Resources/Icons` and pass import validation
+- [ ] Verify all icon assets render correctly in the built app on a real iPhone
 - [x] Source for one-tap daily check-in and low-energy large controls
 - [ ] Verify low-energy mode with real-world accessibility testing
 - [ ] Fast number keypad with units; do not pretend the phone itself measures HR/BP
@@ -114,5 +115,6 @@
 - [x] Removed generic SF Symbol icon fallback from all 12 feature cards
 - [x] Added native Xcode asset-catalog generator for the exact approved PNGs, including Apple-compatible opaque app icon
 - [x] Made CI fail fast when the full original asset set is missing
-- [ ] Upload original binary archive to `POTSTracker/assets/approved-icon-pack.zip` on GitHub
-- [ ] Verify all 13 high-resolution PNGs committed under `Resources/Icons` and properly displayed in the built app
+- [x] Locate and import the original archive from the **Pots Artwork** release (`pots` tag, `approved-icon-pack.zip`)
+- [x] Verify all 13 high-resolution PNGs committed under `Resources/Icons`
+- [ ] Verify all 13 approved images properly display in the built iPhone app
