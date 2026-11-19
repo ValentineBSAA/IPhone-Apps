@@ -27,3 +27,9 @@ Destination: `POTSTracker/Resources/Icons/`.
 Import command: `python3 POTSTracker/tools/import_icons.py POTS_13_Color_Matched_Icons.zip --repo-root .`
 
 For the actual Home Screen icon, remove any manually rounded black edges/padding before placing it in the native AppIcon asset set; iOS performs its own masking.
+
+## Verified import
+
+**Completed November 19, 2026:** source ZIP obtained from [GitHub Release `pots`](https://github.com/ValentineBSAA/IPhone-Apps/releases/tag/pots). Asset SHA-256: `338a9fe79ffd6ac144e31b334cb812c2b815b46f68d9a85bd896df2e91efbc62`.
+
+[Import workflow run 44606165350](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44606165350) passed all steps. GitHub repository path `POTSTracker/Resources/Icons/` now contains exactly 13 original PNGs. iPhone appearance / Home Screen AppIcon rendering is still a Build 1 device-test requirement.
