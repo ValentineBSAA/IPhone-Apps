@@ -4,7 +4,7 @@ import XCTest
 final class HomeLayoutTests: XCTestCase {
     func testDefaultHomeIsShortAndPrioritized() {
         let modules = HomeLayout.orderedModules(from: HomeLayout.moduleDefault)
-        XCTAssertEqual(modules.map(\.id), ["today", "checkIn", "favorites", "recent"])
+        XCTAssertEqual(modules.map(\.id), ["today", "recent", "checkIn", "favorites"])
         XCTAssertEqual(HomeLayout.pinned(from: HomeLayout.pinDefault).map(\.id),
                        ["symptom", "heartRate", "bloodPressure", "journal"])
     }
@@ -12,7 +12,7 @@ final class HomeLayoutTests: XCTestCase {
     func testHomeSectionReorderingPersistsStableIDs() {
         let shuffled = HomeLayout.move("favorites", in: HomeLayout.orderedModules(from: HomeLayout.moduleDefault).map(\.id), by: -1)
         XCTAssertEqual(HomeLayout.orderedModules(from: shuffled).map(\.id),
-                       ["today", "favorites", "checkIn", "recent"])
+                       ["today", "recent", "favorites", "checkIn"])
     }
 
     func testBadStoredPreferencesCannotInventTrackersOrLoseSections() {
