@@ -22,6 +22,7 @@ struct BerryBoard: View {
     // Saved cosmetic entitlements remain in storage, but the playable board
     // always uses a clean, high-contrast grid with a single thin rim.
     private let gap: CGFloat = 3
+    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "original"
 
     var body: some View {
         let side = engine.visibleSide
@@ -43,6 +44,16 @@ struct BerryBoard: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: side > 8 ? 4 : 7)
                         .fill(BerryBoardPersonality.emptyCell(for: mode))
+                        .overlay {
+                            if boardSurface == "blossom-glass" {
+                                Image("Tile_Empty")
+                                    .resizable()
+                                    .interpolation(.high)
+                                    .scaledToFill()
+                                    .clipShape(RoundedRectangle(cornerRadius: side > 8 ? 4 : 7))
+                                    .accessibilityHidden(true)
+                            }
+                        }
                         .overlay {
                             RoundedRectangle(cornerRadius: side > 8 ? 4 : 7)
                                 .strokeBorder(BerryBoardPersonality.cellOutline(for: mode),
