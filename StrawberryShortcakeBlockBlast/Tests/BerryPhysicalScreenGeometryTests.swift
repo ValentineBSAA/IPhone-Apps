@@ -10,7 +10,7 @@ import XCTest
 final class BerryPhysicalScreenGeometryTests: XCTestCase {
     private let epsilon: CGFloat = 2
 
-    func testClassicAndNightmareRespectActualPhoneSafeAreaAndTray() {
+    func testMajorModesRespectActualPhoneSafeAreaAndTray() {
         guard let scene = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene }).first else {
             XCTFail("No UIKit UIWindowScene. A real device simulator is mandatory.")
@@ -39,7 +39,8 @@ final class BerryPhysicalScreenGeometryTests: XCTestCase {
         XCTAssertEqual(bounds.height, 852, accuracy: 2,
                        "Wrong simulator device profile or display configuration")
 
-        for mode: BerryMode in [.classic, .superHard] {
+        // Test main screen, story extra rows and 12x12 mode on actual safe area.
+        for mode: BerryMode in [.classic, .endless, .story, .cozy, .superHard] {
             let previousKeyWindow = scene.windows.first(where: { $0.isKeyWindow })
             let host = UIHostingController(
                 rootView: BerryGameView(mode: mode, onExit: {})
@@ -74,7 +75,8 @@ final class BerryPhysicalScreenGeometryTests: XCTestCase {
             let safeBounds = safe.isEmpty ? window.bounds : safe
 
             XCTAssertGreaterThanOrEqual(grid.width,
-                safeBounds.width * 0.92, "\(mode): playable board wastes horizontal space")
+                safeBounds.width * (mode == .story ? 0.76 : 0.82),
+                "\(mode): playable board too small after responsive layout")
             XCTAssertEqual(grid.width, grid.height, accuracy: epsilon,
                 "\(mode): cells may not be stretched")
             assertInside(grid, safeBounds, context: "\(mode) board")

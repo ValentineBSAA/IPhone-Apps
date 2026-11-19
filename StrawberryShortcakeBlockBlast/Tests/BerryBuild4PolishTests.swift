@@ -11,7 +11,7 @@ final class BerryBuild4PolishTests: XCTestCase {
     }
 
     func testPolishBuildIdentityIsDistinct() {
-        XCTAssertEqual(BerryBuildIdentity.revisionName, "BUILD 4.1 • POLISH QA")
-        XCTAssertEqual(BerryBuildIdentity.sourceBranch, "feature/berry-build4-r2-polish")
+        XCTAssertEqual(BerryBuildIdentity.revisionName, "BUILD 4.2 • RESPONSIVE QA")
+        XCTAssertEqual(BerryBuildIdentity.sourceBranch, "feature/berry-build4-r3-responsive-layout")
     }
 }

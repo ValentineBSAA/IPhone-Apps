@@ -27,13 +27,14 @@ final class BerryBoardFrameContainmentTests: XCTestCase {
                     "\(label) \(mode): frame must leave vertical room for controls")
             }
         }
-        // On a full-sized phone the change is a controlled 16pt reduction.
+        // Build 4.2: give the surrounding UI and grid edges more breathing
+        // room while keeping the puzzle board large and touch-friendly.
         let classic = BerryGameplayLayout.boardSize(
             width: 393, height: 759, topInset: 0,
             bottomInset: 0, mode: .classic)
-        XCTAssertEqual(classic, 365, accuracy: 0.5)
+        XCTAssertEqual(classic, 393 * 0.87, accuracy: 0.5)
         XCTAssertEqual(BerryBoardContainment.fullFrameSide(playableSide: classic),
-                       387, accuracy: 0.5)
+                       classic + 22, accuracy: 0.5)
     }
 
     func testEveryEightAndTwelveCellCenterMapsWithFrameExcluded() {
