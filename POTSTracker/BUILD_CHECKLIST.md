@@ -229,3 +229,20 @@
 - [ ] Validate Save / Cancel / legacy check-in editing / status dot accuracy / last-record deletion on iPhone 16e.
 - [ ] Confirm no status dot suggests a medical diagnosis or penalizes missing entries.
 - [ ] Confirm notification grouping remains planned, not falsely presented as implemented.
+
+## v0.1.6: responsive swipe and bulk delete (iPhone 16e feedback)
+- [x] Preserve correct Feeling dot behavior: it clears after the last recorded feeling is removed.
+- [x] Keep check-in Save disabled until a feeling has been chosen; do not change intentional validation.
+- [x] Replace finicky per-row drag/hold interaction with consistent full-width quick flicks.
+- [x] Make swipe rails fully opaque and labeled, instead of translucent colored overlays on text.
+- [x] Swipe individual entry: Edit (right), confirm Delete (left).
+- [x] Swipe a category within a day: Open/Close (right), confirm delete whole category (left).
+- [x] Swipe a day group: Open/Close (right), confirm delete whole day (left).
+- [x] On All History, include a swipe-accessible Clear all action with typed DELETE confirmation.
+- [x] Use immutable record IDs and transactional bulk deletes with save/rollback.
+- [x] Add tests for deleting a whole day, only one category, all records and duplicate IDs.
+- [x] Preserve all artwork, customizable Home, rolling build number in More, native iOS 16 and no Apple Watch.
+- [ ] Run GitHub v0.1.6 simulator/device compilation, unit tests and version validation.
+- [ ] Verify v0.1.6 IPA and test [v0.1.6 physical iPhone checklist](UX_V016.md).
+- [ ] Verify swipe from any horizontal position and natural vertical scrolling without conflict.
+- [ ] Verify day/category/all deletion leaves unrelated records intact and never crashes on final deletion.
