@@ -191,3 +191,23 @@
 - [ ] Accessibility review of empty/filled states in large text, VoiceOver and Low Energy Mode.
 
 **Design assessment:** The clean navigation works on real hardware. What's still missing is useful context after recording, enough completed logging categories, and confidence in end-to-end persistence, not another layer of decorative cards. Never imply the app takes automatic readings or makes medical judgments.
+
+
+## v0.1.4 final-entry crash regression and grouped swipe history
+- [x] Reproduced issue in written device report: 4 check-ins displayed; app exited after deleting final record.
+- [x] Replace unsafe EntryCard views holding deleted Core Data managed objects with immutable RecordSnapshot rows.
+- [x] Route editor by NSManagedObjectID, resolving object only when editing starts.
+- [x] Move destructive confirmation to stable parent History/category view, not disappearing row.
+- [x] Add rollback/error handling around deletion.
+- [x] Add expandable History tree: date → category → individual entries; all records remain individually accessible.
+- [x] Add swipe-right Edit, swipe-left Delete reveal; require confirmation to delete; add tap/context menu/VoiceOver alternatives.
+- [x] Replace bulky category history cards with compact grouped swipeable rows.
+- [x] Rework Home recent rendering to use safe snapshots.
+- [x] Add regression unit tests for deletion of last record, four same-day check-ins and multiple categories/dates.
+- [x] Keep current 13 custom icons, local storage paths, bundle ID, iOS 16 minimum and single version footer.
+- [ ] Confirm GitHub simulator/device compile and all unit tests pass.
+- [ ] Confirm IPA contains v0.1.4, increasing build number, original assets, correct bundle ID.
+- [ ] **On physical iPhone:** create 4 entries, delete 4→3→2→1→0 without crashing; cancel delete; edit via swipe; verify all tabs and date grouping.
+- [ ] Test repeated navigation, scrolling/gestures, relaunch, and persistence; check Low Energy Mode and VoiceOver.
+- [ ] Design **future** grouped notifications/reminders by date/type, with non-noisy opt-in settings; do not mark notifications built.
+- [ ] Test entire [v0.1.4 regression plan](UX_REGRESSION_V014.md).
