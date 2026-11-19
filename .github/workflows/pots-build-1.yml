@@ -1,4 +1,4 @@
-name: POTS Tracker | v0.1.1 Calm Home iOS 16
+name: POTS Tracker | v0.1.2 Quiet Home iOS 16
 
 on:
   workflow_dispatch:
@@ -64,6 +64,7 @@ jobs:
             -destination "generic/platform=iOS Simulator" \
             -derivedDataPath build-sim \
             CODE_SIGNING_ALLOWED=NO \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
             build
 
       - name: Build for physical iPhone, unsigned
@@ -79,7 +80,22 @@ jobs:
             -destination "generic/platform=iOS" \
             -derivedDataPath build-device \
             CODE_SIGNING_ALLOWED=NO \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
             build
+
+      - name: Verify installed app's version and increasing build number
+        working-directory: POTSTracker
+        shell: bash
+        run: |
+          set -euo pipefail
+          INFO="build-device/Build/Products/Release-iphoneos/POTSTracker.app/Info.plist"
+          VERSION="$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$INFO")"
+          BUILD="$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$INFO")"
+          BUNDLE="$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$INFO")"
+          echo "Installed app identity: $BUNDLE · v$VERSION (build $BUILD)"
+          test "$VERSION" = "0.1.2"
+          test "$BUILD" = "$GITHUB_RUN_NUMBER"
+          test "$BUNDLE" = "com.valentinebsaa.potstracker"
 
       - name: Package unsigned IPA
         working-directory: POTSTracker
@@ -88,13 +104,13 @@ jobs:
           set -euo pipefail
           mkdir -p dist/Payload
           cp -R build-device/Build/Products/Release-iphoneos/POTSTracker.app dist/Payload/
-          (cd dist && zip -qr POTS-Tracker-v0.1.1-Calm-Home-iOS16-unsigned.ipa Payload)
-          unzip -l dist/POTS-Tracker-v0.1.1-Calm-Home-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
+          (cd dist && zip -qr POTS-Tracker-v0.1.2-Quiet-Home-iOS16-unsigned.ipa Payload)
+          unzip -l dist/POTS-Tracker-v0.1.2-Quiet-Home-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
 
       - name: Upload unsigned IPA build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: POTS-Tracker-v0.1.1-Calm-Home-iOS16-unsigned
+          name: POTS-Tracker-v0.1.2-Quiet-Home-iOS16-unsigned
           path: POTSTracker/dist/*.ipa
           if-no-files-found: error
           retention-days: 30
@@ -118,4 +134,5 @@ jobs:
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath build-sim \
             CODE_SIGNING_ALLOWED=NO \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
             test
