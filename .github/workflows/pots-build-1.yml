@@ -1,4 +1,4 @@
-name: POTS Tracker | v0.1.3 One Version Footer iOS 16
+name: POTS Tracker | v0.1.4 History Safety iOS 16
 
 on:
   workflow_dispatch:
@@ -93,7 +93,7 @@ jobs:
           BUILD="$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$INFO")"
           BUNDLE="$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$INFO")"
           echo "Installed app identity: $BUNDLE · v$VERSION (build $BUILD)"
-          test "$VERSION" = "0.1.3"
+          test "$VERSION" = "0.1.4"
           test "$BUILD" = "$GITHUB_RUN_NUMBER"
           test "$BUNDLE" = "com.valentinebsaa.potstracker"
 
@@ -104,13 +104,13 @@ jobs:
           set -euo pipefail
           mkdir -p dist/Payload
           cp -R build-device/Build/Products/Release-iphoneos/POTSTracker.app dist/Payload/
-          (cd dist && zip -qr POTS-Tracker-v0.1.3-One-Version-iOS16-unsigned.ipa Payload)
-          unzip -l dist/POTS-Tracker-v0.1.3-One-Version-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
+          (cd dist && zip -qr POTS-Tracker-v0.1.4-History-Safety-iOS16-unsigned.ipa Payload)
+          unzip -l dist/POTS-Tracker-v0.1.4-History-Safety-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
 
       - name: Upload unsigned IPA build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: POTS-Tracker-v0.1.3-One-Version-iOS16-unsigned
+          name: POTS-Tracker-v0.1.4-History-Safety-iOS16-unsigned
           path: POTSTracker/dist/*.ipa
           if-no-files-found: error
           retention-days: 30
