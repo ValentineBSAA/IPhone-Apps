@@ -86,3 +86,9 @@ Physical iPhone 16e screenshots of v0.1.1 confirmed that the design is improving
 **Visible installed build identification:** both Home and More show the app's *actual installed* \`CFBundleShortVersionString\` and \`CFBundleVersion\`. GitHub Actions automatically stamps a new build number from the workflow's incrementing \`GITHUB_RUN_NUMBER\`, verifies the device app's Info.plist, then packages the unsigned IPA. This is an offline, accurate identifier of the installed app, **not** an automatic online update checker.
 
 Preserved for upgrade compatibility: iOS 16+, \`com.valentinebsaa.potstracker\` bundle ID, existing Core Data model and database, approved 13 PNGs, no Apple Watch or paywall. As always, compilation is not a substitute for physical tests. See [the v0.1.2 regression checklist](UX_REDESIGN_V012.md).
+
+## v0.1.5 Status dots and check-in notes
+
+The next usability pass is based on real iPhone 16e screenshots of v0.1.4. It replaces Home's bulky Recent Activity gallery with four small dots recording whether a category has an entry **today** (Feeling, Symptoms, Heart Rate and Blood Pressure). These dots are documentation status, **not medical thresholds or wellness scores**, and they open the appropriate manual form.
+
+Quick feeling buttons now open a titled note composer with suggested title, optional details and editable timestamp. Cancel never records anything. Legacy one-word check-ins remain readable and editable without a Core Data schema migration. Original icons and current History/delete safety are preserved. See [v0.1.5 implementation and physical testing checklist](UX_V015.md). No backup/export yet.
