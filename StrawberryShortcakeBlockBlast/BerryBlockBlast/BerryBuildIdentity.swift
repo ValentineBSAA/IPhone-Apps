@@ -13,6 +13,6 @@ enum BerryBuildIdentity {
     static let revisionName = "BUILD 4.1 • POLISH QA"
     static let sourceBranch = "feature/berry-build4-r2-polish"
     static var settingsLabel: String {
-        "Berry Berry Blast v\(marketingVersion) • Build \(buildNumber) • POLISH QA"
+        "Berry Berry Blast v\(marketingVersion) • Build 4.1 • POLISH QA (internal \(buildNumber))"
     }
 }

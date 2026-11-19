@@ -222,7 +222,7 @@ jobs:
               assert 'Payload/BerryBlockBlast.app/Assets.car' in z.namelist()
               info=plistlib.loads(z.read('Payload/BerryBlockBlast.app/Info.plist'))
               assert info['CFBundleShortVersionString']=='0.5.14'
-              assert info['CFBundleVersion']=='4.1'
+              assert info['CFBundleVersion']=='41'
               assert info.get('MinimumOSVersion','16.0')=='16.0'
           print('Simulator QA passed. Still requires physical-device signoff.')
           PY
