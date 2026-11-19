@@ -17,6 +17,7 @@ struct EntryEditor: View {
     @State private var secondValue: String
     @State private var recordedAt: Date
     @State private var saveError: String?
+    @FocusState private var inputFocused: Bool
 
     private let symptoms = [
         "Dizziness", "Near-fainting", "Fainting", "Palpitations",
@@ -58,7 +59,7 @@ struct EntryEditor: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 17) {
-                    Text("Everything here is entered manually. An iPhone cannot measure blood pressure by itself.")
+                    Text("Add only what is useful. You can edit an entry later.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                     switch category {
@@ -81,15 +82,6 @@ struct EntryEditor: View {
                             }
                         }
                     }
-                    Button {
-                        saveEntry()
-                    } label: {
-                        Label(editing == nil ? "Save entry" : "Save changes", systemImage: "checkmark.circle.fill")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, minHeight: lowEnergyMode ? 62 : 52)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!valid || PersistenceController.shared.loadError != nil)
                     Text("This is a personal journal, not a medical diagnosis or emergency monitor.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -97,12 +89,32 @@ struct EntryEditor: View {
                 }
                 .padding(18)
             }
+            .safeAreaInset(edge: .bottom) {
+                Button {
+                    inputFocused = false
+                    saveEntry()
+                } label: {
+                    Label(editing == nil ? "Save entry" : "Save changes", systemImage: "checkmark.circle.fill")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, minHeight: lowEnergyMode ? 62 : 52)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!valid || PersistenceController.shared.loadError != nil)
+                .padding(.horizontal, 18)
+                .padding(.top, 10)
+                .padding(.bottom, 8)
+                .background(.regularMaterial)
+            }
             .background(Color.potsBackground.ignoresSafeArea())
             .navigationTitle(editing == nil ? "New \(category.title)" : "Edit \(category.title)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { inputFocused = false }
                 }
             }
             .alert("Entry wasn't saved", isPresented: Binding(
@@ -135,6 +147,7 @@ struct EntryEditor: View {
                 }
                 TextField("Or type a symptom", text: $title)
                     .textFieldStyle(.roundedBorder)
+                    .focused($inputFocused)
                 HStack {
                     Text("Severity")
                         .font(.subheadline.weight(.medium))
@@ -163,6 +176,7 @@ struct EntryEditor: View {
                     TextField("Beats per minute", text: $firstValue)
                         .keyboardType(.numberPad)
                         .textFieldStyle(.roundedBorder)
+                        .focused($inputFocused)
                     Text("bpm")
                         .foregroundStyle(.secondary)
                 }
@@ -180,10 +194,12 @@ struct EntryEditor: View {
                     TextField("Systolic", text: $firstValue)
                         .keyboardType(.numberPad)
                         .textFieldStyle(.roundedBorder)
+                        .focused($inputFocused)
                     Text("/")
                     TextField("Diastolic", text: $secondValue)
                         .keyboardType(.numberPad)
                         .textFieldStyle(.roundedBorder)
+                        .focused($inputFocused)
                     Text("mmHg")
                         .font(.caption)
                         .foregroundStyle(.secondary)
