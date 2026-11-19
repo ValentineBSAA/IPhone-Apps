@@ -1,40 +1,69 @@
-name: POTS Tracker | Import approved icon ZIP
+name: POTS Tracker | Import approved release artwork
 
 on:
+  workflow_dispatch:
   push:
     paths:
+      - ".github/workflows/pots-approved-icon-import.yml"
       - "POTSTracker/assets/approved-icon-pack.zip"
-  workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: pots-icon-import
+  cancel-in-progress: false
+
 jobs:
-  import-icons:
+  import-approved-icons:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - name: Check out sources
+      - name: Check out the main branch
         uses: actions/checkout@v4
         with:
+          ref: main
           persist-credentials: true
-      - name: Verify approved asset source exists
+
+      - name: Download original artwork from GitHub release pots
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p POTSTracker/assets
+          gh release download pots \
+            --repo "${GITHUB_REPOSITORY}" \
+            --pattern "approved-icon-pack.zip" \
+            --dir POTSTracker/assets \
+            --clobber
+
+      - name: Verify exact approved release archive
         shell: bash
         run: |
-          test -f POTSTracker/assets/approved-icon-pack.zip || {
-            echo "Upload the approved POTS_13_Color_Matched_Icons.zip as POTSTracker/assets/approved-icon-pack.zip first."
-            exit 1
-          }
-      - name: Validate and import all 13 original icons
-        run: python3 POTSTracker/tools/import_icons.py POTSTracker/assets/approved-icon-pack.zip --repo-root . --replace
-      - name: Commit extracted PNG assets
+          set -euo pipefail
+          echo "338a9fe79ffd6ac144e31b334cb812c2b815b46f68d9a85bd896df2e91efbc62  POTSTracker/assets/approved-icon-pack.zip" | sha256sum --check
+
+      - name: Validate and extract the complete 13-icon set
         shell: bash
         run: |
+          set -euo pipefail
+          python3 POTSTracker/tools/import_icons.py \
+            POTSTracker/assets/approved-icon-pack.zip \
+            --repo-root . --replace
+          test "$(find POTSTracker/Resources/Icons -maxdepth 1 -name '*.png' -type f | wc -l | tr -d ' ')" = "13"
+
+      - name: Commit originals into the iPhone app source
+        shell: bash
+        run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add POTSTracker/Resources/Icons
           if git diff --cached --quiet; then
-            echo "Approved icon assets already up to date."
+            echo "All approved icon files are already identical to the release."
           else
-            git commit -m "assets(pots): import approved 13 full-resolution icons"
-            git push
+            git commit -m "assets(pots): import all 13 original PNGs from release pots"
+            git push origin HEAD:main
           fi
+          echo "Original approved artwork is located in POTSTracker/Resources/Icons."
