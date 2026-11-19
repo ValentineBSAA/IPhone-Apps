@@ -1,4 +1,4 @@
-name: POTS Tracker | v0.1.5 Status Dots and Notes iOS 16
+name: POTS Tracker | v0.1.6 Reliable Swipe and Bulk Delete iOS 16
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
       - ".github/workflows/pots-build-1.yml"
 
 concurrency:
-  group: pots-tracker-ux-v015
+  group: pots-tracker-ux-v016
   cancel-in-progress: true
 
 permissions:
@@ -95,7 +95,7 @@ jobs:
           BUILD="$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$INFO")"
           BUNDLE="$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$INFO")"
           echo "Installed app identity: $BUNDLE · v$VERSION (build $BUILD)"
-          test "$VERSION" = "0.1.5"
+          test "$VERSION" = "0.1.6"
           test "$BUILD" = "$GITHUB_RUN_NUMBER"
           test "$BUNDLE" = "com.valentinebsaa.potstracker"
 
@@ -106,13 +106,13 @@ jobs:
           set -euo pipefail
           mkdir -p dist/Payload
           cp -R build-device/Build/Products/Release-iphoneos/POTSTracker.app dist/Payload/
-          (cd dist && zip -qr POTS-Tracker-v0.1.5-Status-Notes-iOS16-unsigned.ipa Payload)
-          unzip -l dist/POTS-Tracker-v0.1.5-Status-Notes-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
+          (cd dist && zip -qr POTS-Tracker-v0.1.6-Swipe-Bulk-iOS16-unsigned.ipa Payload)
+          unzip -l dist/POTS-Tracker-v0.1.6-Swipe-Bulk-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
 
       - name: Upload unsigned IPA build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: POTS-Tracker-v0.1.5-Status-Notes-iOS16-unsigned
+          name: POTS-Tracker-v0.1.6-Swipe-Bulk-iOS16-unsigned
           path: POTSTracker/dist/*.ipa
           if-no-files-found: error
           retention-days: 30
