@@ -127,8 +127,8 @@ jobs:
         include:
           - slug: iphone14pro
             model: iPhone 14 Pro
-          - slug: iphone16
-            model: iPhone 16
+          - slug: iphone16e
+            model: iPhone 16e
     defaults:
       run:
         working-directory: StrawberryShortcakeBlockBlast

@@ -34,10 +34,17 @@ final class BerryPhysicalScreenGeometryTests: XCTestCase {
         XCTAssertLessThan(bounds.width, bounds.height, "Portrait iPhone required")
         // Same logical width, but actual safe area comes from the OS,
         // rather than a hardcoded approximation.
-        XCTAssertEqual(bounds.width, 393, accuracy: 1,
-                       "Run this gate on iPhone 14 Pro and iPhone 16 simulators")
-        XCTAssertEqual(bounds.height, 852, accuracy: 2,
-                       "Wrong simulator device profile or display configuration")
+        // Real iPhone 16e is 390×844 logical points, while 14 Pro is
+        // 393×852. Do not silently accept the standard iPhone 16 as a 16e.
+        if abs(bounds.width - 390) <= 1 {
+            XCTAssertEqual(bounds.height, 844, accuracy: 2,
+                           "Expected iPhone 16e simulator resolution")
+        } else {
+            XCTAssertEqual(bounds.width, 393, accuracy: 1,
+                           "Expected iPhone 14 Pro or iPhone 16e")
+            XCTAssertEqual(bounds.height, 852, accuracy: 2,
+                           "Expected iPhone 14 Pro simulator resolution")
+        }
 
         // Test main screen, story extra rows and 12x12 mode on actual safe area.
         for mode: BerryMode in [.classic, .endless, .story, .cozy, .superHard] {

@@ -46,15 +46,26 @@ final class BerryBoardTouchMappingTests: XCTestCase {
             for: CGPoint(x: 1000, y: 1000), board: board, piece: piece, side: 12))
     }
 
-    func testBoardSizeMatchesSingleRimConstantOnBoth393PointPhones() {
-        for label in ["iPhone 14 Pro", "iPhone 16"] {
+    func testBoardSizeKeepsResponsiveMarginsAndAccurateTouchRim() {
+        let phones: [(String, CGFloat)] = [
+            ("iPhone 14 Pro", 393), ("iPhone 16e", 390)
+        ]
+        for (label, width) in phones {
             let board = BerryGameplayLayout.boardSize(
-                width: 393, height: 759, topInset: 0,
+                width: width, height: 759, topInset: 0,
                 bottomInset: 0, mode: .classic)
-            XCTAssertGreaterThanOrEqual(board, 350, label)
+            // Previous 350pt minimum contradicted the approved 87% width
+            // target, which yields 341.91pt on a 393pt safe-width screen.
+            XCTAssertGreaterThanOrEqual(board, width * 0.83, label)
+            XCTAssertLessThanOrEqual(board, width * 0.88, label)
+            XCTAssertEqual(
+                BerryBoardContainment.fullFrameSide(playableSide: board),
+                board + 2 * (BerryGameplayLayout.boardTouchMargin +
+                             BerryGameplayLayout.gardenFrameInset),
+                accuracy: 0.01, label)
             XCTAssertLessThanOrEqual(
                 BerryBoardContainment.fullFrameSide(playableSide: board) + 6,
-                393 + 0.001, label)
+                width + 0.001, label)
         }
     }
 }
