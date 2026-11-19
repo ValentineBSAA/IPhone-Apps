@@ -21,7 +21,8 @@ struct TrackerFeature: Identifiable {
         .init(id: "journal", name: "Journal", file: "09_Journal", symbol: "book.closed.fill", color: .pink, build: 1),
         .init(id: "posture", name: "Posture", file: "10_Posture", symbol: "figure.stand", color: .teal, build: 2),
         .init(id: "reminders", name: "Reminders", file: "11_Reminders", symbol: "bell.fill", color: .blue, build: 2),
-        .init(id: "settings", name: "Settings", file: "12_Settings", symbol: "gearshape.fill", color: .purple, build: 1)
+        .init(id: "settings", name: "Settings", file: "12_Settings", symbol: "gearshape.fill", color: .purple, build: 1),
+        .init(id: "appleHealth", name: "Apple Health", file: "", symbol: "heart.text.square.fill", color: .red, build: 2)
     ]
 
     var category: LogCategory? { LogCategory(rawValue: id) }
@@ -32,11 +33,21 @@ struct FeatureArtwork: View {
     var width: CGFloat = 58
 
     var body: some View {
-        Image(feature.file)
-            .resizable()
-            .scaledToFit()
-            .frame(width: width, height: width)
-            .accessibilityHidden(true)
+        Group {
+            if feature.file.isEmpty {
+                Image(systemName: feature.symbol)
+                    .font(.system(size: width * 0.45, weight: .medium))
+                    .foregroundStyle(Color.potsTeal)
+                    .frame(width: width, height: width)
+                    .background(Color.potsTeal.opacity(0.13), in: RoundedRectangle(cornerRadius: width * 0.22))
+            } else {
+                Image(feature.file)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: width, height: width)
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
 
@@ -81,6 +92,11 @@ struct DashboardView: View {
             .tag(TrackerTab.more)
         }
         .tint(.potsTeal)
+        .toolbarBackground(Color.potsBackground, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
+        .onChange(of: selectedTab) { _ in
+            JournalAccess.shared.lock()
+        }
     }
 }
 
@@ -118,7 +134,7 @@ struct FeatureTile: View {
             .foregroundStyle(.primary)
             .padding(horizontal ? 10 : 12)
             .frame(maxWidth: .infinity, minHeight: horizontal ? (roomy ? 80 : 66) : (roomy ? 135 : 116))
-            .background(Color(uiColor: .secondarySystemGroupedBackground),
+            .background(Color.potsSurface,
                         in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.potsTeal.opacity(0.06)))
             .contentShape(RoundedRectangle(cornerRadius: 18))
@@ -150,10 +166,15 @@ struct HomeScreenView: View {
 
     @State private var newLog: LogCategory?
     @State private var feelingDraft: FeelingDraft?
+    @AppStorage("journalLockEnabled") private var journalLockEnabled = false
+    @ObservedObject private var journalAccess = JournalAccess.shared
     @AppStorage("homeStatusDotsMigrationV1") private var migratedStatusDots = false
 
     private var allRecords: [RecordSnapshot] {
-        RecordSnapshot.snapshots(of: Array(entries))
+        let journalHidden = journalLockEnabled && !journalAccess.unlocked
+        return RecordSnapshot.snapshots(of: Array(entries).filter {
+            !journalHidden || $0.category != LogCategory.journal.rawValue
+        })
     }
     private var todayEntries: [RecordSnapshot] {
         allRecords.filter { Calendar.current.isDateInToday($0.recordedAt) }
@@ -353,7 +374,7 @@ struct HomeScreenView: View {
                 .frame(maxWidth: .infinity, minHeight: roomy ? 51 : 37)
                 .foregroundStyle(selected ? Color.potsTeal : Color.primary)
                 .background(
-                    selected ? Color.potsTeal.opacity(0.13) : Color(uiColor: .secondarySystemGroupedBackground),
+                    selected ? Color.potsTeal.opacity(0.13) : Color.potsSurface,
                     in: RoundedRectangle(cornerRadius: 11)
                 )
                 .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(
@@ -453,7 +474,7 @@ struct HomeScreenView: View {
                     .foregroundStyle(.primary)
             }
             .frame(maxWidth: .infinity, minHeight: roomy ? 64 : 51)
-            .background(Color(uiColor: .secondarySystemGroupedBackground),
+            .background(Color.potsSurface,
                         in: RoundedRectangle(cornerRadius: 13))
         }
         .buttonStyle(.plain)
@@ -525,11 +546,21 @@ struct MoreHubView: View {
 
                 section("Review & tools")
                 LazyVGrid(columns: columns, spacing: 11) {
-                    ForEach(["calendar", "reports", "reminders"].compactMap({ id in
+                    ForEach(["calendar", "reports", "reminders", "appleHealth"].compactMap({ id in
                         TrackerFeature.all.first(where: { $0.id == id })
                     })) { feature in
                         FeatureTile(feature: feature, roomy: lowEnergyMode)
                     }
+                }
+
+                section("Privacy & security")
+                LazyVGrid(columns: columns, spacing: 11) {
+                    NavigationLink {
+                        JournalLockSettings()
+                    } label: {
+                        smallTool("Journal Lock", icon: "lock.shield.fill")
+                    }
+                    .buttonStyle(.plain)
                     NavigationLink {
                         PrivacyText()
                     } label: {
@@ -578,7 +609,7 @@ struct MoreHubView: View {
         }
         .frame(maxWidth: .infinity, minHeight: lowEnergyMode ? 135 : 116)
         .padding(12)
-        .background(Color(uiColor: .secondarySystemGroupedBackground),
+        .background(Color.potsSurface,
                     in: RoundedRectangle(cornerRadius: 18))
         .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.potsTeal.opacity(0.06)))
         .accessibilityElement(children: .combine)
