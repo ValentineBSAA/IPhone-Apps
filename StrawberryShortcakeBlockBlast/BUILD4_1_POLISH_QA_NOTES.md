@@ -20,7 +20,7 @@ Never overwrite known-good Build 3: b4ffda288b7a778a79a860c8d8ebc2cab3e5755b
 - Developer Garden adds 8th Combo Preview tile; banners are display-only, no session mutation, points, rewards, saves or achievements.
 - Touch diagnostics clarified: the QA TOUCH readout appears beneath gameplay toolbar.
 - Feature notes disclose that night/economy and notification controls are not yet functional.
-- 9 owner-approved full-resolution developer/helper PNG candidates are in original next-chat handoff ZIP and are not silently claimed to be in GitHub. Art package import is tracked separately.
+- All 9 approved developer/helper PNG illustrations are imported as individually named Xcode imagesets. The original 512×512 masters stay in the handoff ZIP; GitHub uses optimized 192×192 transparent PNG copies sized for the 49–73pt iPhone tile artwork.
 
 ## Pre-hardware acceptance
 

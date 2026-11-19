@@ -82,7 +82,7 @@ struct BerryBoutiqueView: View {
             case .blocks: return "BBBIconBlocks"
             case .sparkleStudio: return "BBBIconSparkle"
             case .seasonal: return "BBBIconSeasonal"
-            case .helpers: return "BBBIconHome"
+            case .helpers: return "Garden_Helpers_Watering_Can"
             case .special: return "BBBIconTools"
             case .cottage: return "BBBIconHome"
             case .inventory: return "BBBIconInventory"

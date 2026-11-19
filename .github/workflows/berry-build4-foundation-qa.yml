@@ -34,6 +34,26 @@ jobs:
           test -f BerryBlockBlast/BerrySpecialToolsSheet.swift
           test -f BerryBlockBlast/BerryComboMilestoneBanner.swift
           test -f BerryBlockBlast/BerryPolishPressStyle.swift
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,struct
+          names=['Dev_Build_Information_Berry_Blueprint','Dev_Combo_Preview_Fireworks',
+            'Dev_Diagnostics_Strawberry_Pulse','Dev_Economy_Inspector_Two_Currencies',
+            'Dev_Experimental_Features_Moon_Potion','Dev_Notification_Test_Berry_Bell',
+            'Dev_Save_Inspector_Berry_Drive','Dev_Timers_Moon_Clock',
+            'Garden_Helpers_Watering_Can']
+          root=Path('BerryBlockBlast/Assets.xcassets')
+          for name in names:
+              folder=root/(name+'.imageset')
+              meta=json.loads((folder/'Contents.json').read_text())
+              image=folder/(name+'.png')
+              png=image.read_bytes()
+              assert meta['images'][0]['filename']==name+'.png', name
+              assert png[:8]==bytes.fromhex('89504e470d0a1a0a'), name
+              w,h=struct.unpack('>II',png[16:24])
+              assert (w,h)==(192,192), (name,w,h)
+          print('PASS: 9 independently named approved iPhone-sized icons.')
+          PY
           test -f Tests/BerryBoardFrameContainmentTests.swift
           test -f Tests/BerryResultTextReliabilityTests.swift
           test -f Tests/BerryDifficultyPolicyTests.swift
@@ -206,7 +226,7 @@ jobs:
               assert info.get('MinimumOSVersion','16.0')=='16.0'
           print('Simulator QA passed. Still requires physical-device signoff.')
           PY
-          echo '0.5.14 Build 4.1 POLISH QA. Unverified on physical iPhones, new candidate art requires separate import. NOT a public release.' \
+          echo '0.5.14 Build 4.1 POLISH QA. Unverified on physical iPhones, 9 new approved icons included. NOT a public release.' \
             > dist/HARDWARE-SIGNOFF-REQUIRED.txt
       - name: Upload candidate only, never auto-publish release
         uses: actions/upload-artifact@v4

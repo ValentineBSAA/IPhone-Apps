@@ -36,8 +36,8 @@ struct BerryDeveloperGardenView: View {
             case .combo: return "sparkles.rectangle.stack.fill"
             }
         }
-        // Nine owner-approved PNGs are retained in the handoff bundle. These
-        // existing packaged illustrations remain distinct fallback artwork.
+        // Individually approved PNGs are packaged as nine native assets.
+        // Existing branded art is kept as a fallback if an asset goes missing.
         var packagedArt: String {
             switch self {
             case .diagnostics: return "BBBIconTools"
@@ -186,9 +186,17 @@ struct BerryDeveloperGardenView: View {
                 NavigationStack {
                     ScrollView {
                         VStack(spacing: 13) {
-                            BerryApprovedArtwork(name: tool.packagedArt,
-                                                 fallback: tool.icon,
-                                                 size: 64)
+                            Group {
+                                if UIImage(named: tool.approvedCandidate) != nil {
+                                    Image(tool.approvedCandidate)
+                                        .resizable().scaledToFit()
+                                } else {
+                                    BerryApprovedArtwork(name: tool.packagedArt,
+                                                         fallback: tool.icon,
+                                                         size: 64)
+                                }
+                            }
+                            .frame(width: 64, height: 64)
                             Text(tool.rawValue)
                                 .font(.title2.bold())
                                 .foregroundStyle(BerryStyle.strawberry)
