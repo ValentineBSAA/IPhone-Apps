@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// One shared two-column settings destination for Home and all game modes.
 /// Values use the original AppStorage keys; merely opening a card cannot
@@ -8,6 +9,7 @@ struct BerrySettingsHubView: View {
 
     @State private var selected: Section?
     @State private var confirmAllAppearance = false
+    @State private var showDeveloperGateway = false
 
 
     @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
@@ -18,7 +20,6 @@ struct BerrySettingsHubView: View {
     @AppStorage("berryblockblast.previewStyle") private var previewStyle = "ghost"
 
     @AppStorage("berryblockblast.haptics") private var haptics = true
-    @AppStorage("berryblockblast.touchDiagnostics") private var touchDiagnostics = false
     @AppStorage("berryblockblast.music") private var music = true
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.musicVolume") private var musicVolume = 0.22
@@ -130,9 +131,28 @@ struct BerrySettingsHubView: View {
                         }
                     }
                 }
-                Text("Berry Berry Blast 0.5.12 • Build 3")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate.opacity(0.67))
+                HStack(spacing: 12) {
+                    Text(BerryBuildIdentity.settingsLabel)
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(BerryStyle.chocolate.opacity(0.67))
+                    Spacer(minLength: 0)
+                    Button { showDeveloperGateway = true } label: {
+                        Group {
+                            if let icon = UIImage(named: "Developer_Mode_Strawberry_Lock") {
+                                Image(uiImage: icon).resizable().scaledToFit()
+                            } else {
+                                Image(systemName: "lock.shield.fill")
+                                    .resizable().scaledToFit()
+                                    .foregroundStyle(BerryStyle.strawberry.opacity(0.6))
+                            }
+                        }
+                        .frame(width: 24, height: 24)
+                        .padding(6)
+                        .background(.white.opacity(0.55), in: RoundedRectangle(cornerRadius: 9))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Developer Garden")
+                }
             }
             .padding(17)
             .frame(maxWidth: 520)
@@ -141,6 +161,7 @@ struct BerrySettingsHubView: View {
         .background(LinearGradient(colors: [BerryStyle.cream, BerryStyle.softPink],
                                    startPoint: .top, endPoint: .bottom)
                     .ignoresSafeArea())
+        .sheet(isPresented: $showDeveloperGateway) { BerryDeveloperGardenView() }
         .confirmationDialog("Restore all original cosmetics?",
                             isPresented: $confirmAllAppearance,
                             titleVisibility: .visible) {
@@ -181,11 +202,38 @@ struct BerrySettingsHubView: View {
                 .font(.system(size: 12, weight: .black, design: .rounded))
                 .foregroundStyle(BerryStyle.strawberry)
             LazyVGrid(columns: cols, spacing: 11) {
+                choice("Original Strawberry Jam", detail: "Hardware-tested board and border", icon: "square.grid.3x3.fill", selected: boardSurface == "original") {
+                    boardSurface = "original"
+                }
+                Button {
+                    boardSurface = "blossom-glass"
+                } label: {
+                    VStack(spacing: 8) {
+                        BerryApprovedArtwork(name: "Board_Theme_Icon", fallback: "camera.filters", size: 54)
+                        Text("Strawberry Blossom Glass")
+                            .font(.system(size: 13, weight: .black, design: .rounded))
+                            .multilineTextAlignment(.center)
+                        Text("Experimental glossy garden. Visuals only.")
+                            .font(.system(size: 10, weight: .medium, design: .rounded))
+                            .multilineTextAlignment(.center)
+                        if boardSurface == "blossom-glass" {
+                            Text("✓ SELECTED").font(.caption.bold()).foregroundStyle(BerryStyle.leaf)
+                        }
+                    }
+                    .foregroundStyle(BerryStyle.chocolate)
+                    .frame(maxWidth: .infinity, minHeight: 112)
+                    .padding(9)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 17))
+                    .overlay(RoundedRectangle(cornerRadius: 17)
+                        .strokeBorder(boardSurface == "blossom-glass" ? BerryStyle.leaf : BerryStyle.strawberry.opacity(0.22),
+                                      lineWidth: boardSurface == "blossom-glass" ? 2 : 1))
+                }
+                .buttonStyle(.plain)
                 BerryGridInfoTile(
-                    title: "Classic Garden",
-                    detail: "One clear, edge-to-edge puzzle grid. The rejected decorative frames and surface skins are retired.",
+                    title: "Board Safety",
+                    detail: "Board size, touch mapping and saved gameplay are unchanged.",
                     art: "BerryClassic",
-                    value: "Always Active"
+                    value: "Visual Only"
                 )
                 BerryGridInfoTile(
                     title: "Collectible Blocks",
@@ -258,8 +306,6 @@ struct BerrySettingsHubView: View {
             LazyVGrid(columns: cols, spacing: 11) {
                 toggleCard("Haptics", detail: "Feel valid and invalid placement",
                            icon: "hand.tap.fill", value: $haptics)
-                toggleCard("Touch Diagnostics", detail: "Show gesture debugging details",
-                           icon: "hand.point.up.left.fill", value: $touchDiagnostics)
                 choice("Sweet Assist", detail: "Most readable placement feedback",
                        icon: "checkmark.shield.fill",
                        selected: previewStyle == "ghost") { previewStyle = "ghost" }
@@ -281,7 +327,7 @@ struct BerrySettingsHubView: View {
                                  art: "BerryCollection", value: "Protected")
                 BerryGridInfoTile(title: "App Version",
                                  detail: "iOS 16 compatible",
-                                 art: "Milestone", value: "0.5.11 • 1")
+                                 art: "Milestone", value: BerryBuildIdentity.marketingVersion + " • " + BerryBuildIdentity.buildNumber)
             }
         }
     }

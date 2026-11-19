@@ -97,7 +97,7 @@ struct BerryHomeView: View {
         }
         .buttonStyle(.plain)
     }
-    private var version: String { "🍓 v0.5.12 • 3" }
+    private var version: String { BerryBuildIdentity.homeLabel }
     @AppStorage("berryblockblast.story.level") private var storyLevel = 1
     @AppStorage("berryberryblast.birthday.month.v0511") private var birthdayMonth = 0
     @AppStorage("berryberryblast.birthday.day.v0511") private var birthdayDay = 0
@@ -186,39 +186,18 @@ struct BerryHomeView: View {
                                 .font(.system(size: 12, weight: .black, design: .rounded))
                                 .foregroundStyle(BerryStyle.strawberry)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                            Button {
-                                BerryAudio.shared.setMusic(music)
-                                audio.play(.gameStart)
-                                activeMode = .classic
-                            } label: {
-                                HStack(spacing: 13) {
-                                    BerryIcon(name: "BerryClassic", size: 56)
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("🍓 Berry Classic")
-                                            .font(.system(size: 21, weight: .black, design: .rounded))
-                                        Text("The pure 8 × 8 block puzzle. No timer or power-ups.")
-                                            .font(.system(size: 12, weight: .medium, design: .rounded))
-                                            .fixedSize(horizontal: false, vertical: true)
-                                        Text("✨ BIG BRIGHT HIGH SCORE")
-                                            .font(.system(size: 10, weight: .heavy, design: .rounded))
-                                            .foregroundStyle(BerryStyle.strawberry)
-                                    }
-                                    Spacer(minLength: 0)
-                                    Image(systemName: "chevron.right")
-                                }
-                                .foregroundStyle(BerryStyle.chocolate)
-                                .padding(14)
-                                .background(
-                                    LinearGradient(colors: [.white, Color(red: 1, green: 0.88, blue: 0.91), Color(red: 1, green: 0.97, blue: 0.85)],
-                                                   startPoint: .topLeading, endPoint: .bottomTrailing),
-                                    in: RoundedRectangle(cornerRadius: 21)
-                                )
-                                .overlay(RoundedRectangle(cornerRadius: 21).strokeBorder(BerryStyle.strawberry.opacity(0.55), lineWidth: 2))
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Play Berry Classic, the endless 8 by 8 block puzzle")
                             LazyVGrid(columns: [GridItem(.flexible(), spacing: 11),
                                                 GridItem(.flexible(), spacing: 11)], spacing: 11) {
+                                BerryGridNavigationTile(
+                                    title: "Berry Classic",
+                                    detail: "The pure 8×8 block puzzle. No timer or power-ups.",
+                                    art: "BerryClassic",
+                                    caption: "High Score"
+                                ) {
+                                    BerryAudio.shared.setMusic(music)
+                                    audio.play(.gameStart)
+                                    activeMode = .classic
+                                }
                                 ForEach(Array(BerryMode.allCases.prefix(3))) { mode in
                                     BerryGridNavigationTile(
                                         title: mode.rawValue,

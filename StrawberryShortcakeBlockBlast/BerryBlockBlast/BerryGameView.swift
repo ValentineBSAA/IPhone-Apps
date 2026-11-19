@@ -81,7 +81,7 @@ struct BerryGameView: View {
         switch mode {
         case .endless:
             let seasonNames = ["Spring Bloom", "Summer Berries", "Autumn Honey", "Winter Frost"]
-            return "🍓 \(session.engine.side)×\(session.engine.side) • SEASON \(session.engine.seasons + 1): \(seasonNames[session.engine.seasons % 4])"
+            return "SWEET ENDLESS • \(session.engine.side)×\(session.engine.side) • SEASON \(session.engine.seasons + 1): \(seasonNames[session.engine.seasons % 4])"
         case .classic: return "🍓 BERRY CLASSIC • Three pieces • Chase your best!"
         case .story: return storyIsLineQuest ? "CHAPTER \(storyLevel) • Clear \(storyTargetLines) lines to bloom!" : "CHAPTER \(storyLevel) • Reach \(goal) points to bloom!"
         case .daily: return "DAILY HARVEST • \(BerryGameSession.dailyDateKey()) • Gather \(goal) points!"
@@ -119,6 +119,8 @@ struct BerryGameView: View {
     @AppStorage("berryblockblast.sound") private var sound = true
     @AppStorage("berryblockblast.music") private var music = true
     @State private var sparkle = false
+    @State private var comboMilestone: Int?
+    @State private var lastComboMilestone = 0
     @State private var showNewBestBanner = false
     @State private var scoreRecordAtEntry = 0
     @State private var celebratedRecordThisRun = false
@@ -130,6 +132,7 @@ struct BerryGameView: View {
     @AppStorage(BerryTrophyCatalog.nightmareBestLinesKey) private var nightmareBestLines = 0
     @State private var lastBlitzTimeBonus = 0
     @AppStorage("berryblockblast.previewStyle") private var previewStyle = "ghost"
+    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "original"
     private let harvestCheers = [
         "🍓 A berry sweet harvest!", "🍰 Piece of strawberry cake!",
         "🌸 The garden is blooming!", "✨ Sweet as sunshine!",
@@ -249,7 +252,10 @@ struct BerryGameView: View {
                     }
                     HStack(spacing: 5) {
                         Image(systemName: "hand.draw.fill")
-                        Text(selectedSlot == nil ? "DRAG OR TAP TO PLACE" : "TAP A FREE BOARD SQUARE")
+                        Text(specialTargetTool == "trowel" ? "GOLDEN TROWEL: TAP A BLOCK TO REMOVE" :
+                             specialTargetTool == "seed" ? "STARBERRY SEED: TAP AN EMPTY SQUARE" :
+                             selectedSlot == nil ? "DRAG OR TAP TO PLACE" :
+                             "TAP A FREE BOARD SQUARE")
                     }
                     .font(.system(size: 9, weight: .heavy, design: .rounded))
                     .tracking(0.35)
@@ -366,6 +372,13 @@ struct BerryGameView: View {
                     .position(x: width / 2, y: height * 0.43)
                     .allowsHitTesting(false)
             }
+            if let milestone = comboMilestone {
+                BerryComboMilestoneBanner(milestone: milestone)
+                    .frame(maxWidth: min(315, width - 34))
+                    .position(x: width / 2, y: height * 0.43)
+                    .allowsHitTesting(false)
+                    .zIndex(10)
+            }
             if showNewBestBanner {
                 BerryNewBestBanner(score: session.engine.score)
                     .frame(maxWidth: min(310, width - 30))
@@ -396,37 +409,34 @@ struct BerryGameView: View {
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
         .sheet(isPresented: $showDailyCalendar) { BerryDailyHarvestView(goal: goal) }
-        .confirmationDialog("Special Tools", isPresented: $showPremiumActions,
-                            titleVisibility: .visible) {
-            Button("Golden Trowel · \(session.premiumCharges["trowel", default: 0]) left") {
-                specialTargetTool = "trowel"
+        .sheet(isPresented: $showPremiumActions) {
+            BerrySpecialToolsSheet(
+                charges: session.premiumCharges,
+                pantryOwned: session.premiumOwned.contains("pantry"),
+                selectedPiece: selectedSlot != nil,
+                canContinue: session.canContinueWithGoldenStrawberry
+            ) { choice in
+                switch choice {
+                case .trowel:
+                    specialTargetTool = "trowel"
+                case .seed:
+                    specialTargetTool = "seed"
+                case .twister:
+                    guard let slot = selectedSlot else { return }
+                    if session.useRibbonTwister(slot: slot) { successFeedback() }
+                    else { warningFeedback() }
+                case .pantry:
+                    guard let slot = selectedSlot else { return }
+                    if session.usePicnicPantry(slot: slot) { successFeedback() }
+                    else { warningFeedback() }
+                case .golden:
+                    // Don't present the confirmation alert over the closing sheet.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        confirmGoldenStrawberry = true
+                    }
+                }
             }
-            .disabled(session.premiumCharges["trowel", default: 0] < 1)
-            Button("Starberry Seed · \(session.premiumCharges["seed", default: 0]) left") {
-                specialTargetTool = "seed"
-            }
-            .disabled(session.premiumCharges["seed", default: 0] < 1)
-            Button("✨ Golden Strawberry · \(session.premiumCharges["golden-strawberry", default: 0]) left") {
-                confirmGoldenStrawberry = true
-            }
-            .disabled(session.premiumCharges["golden-strawberry", default: 0] < 1 ||
-                      !session.canContinueWithGoldenStrawberry)
-            Button("Ribbon Twister · \(session.premiumCharges["twister", default: 0]) left") {
-                guard let slot = selectedSlot else { return }
-                if session.useRibbonTwister(slot: slot) { successFeedback() }
-                else { warningFeedback() }
-            }
-            .disabled(session.premiumCharges["twister", default: 0] < 1 || selectedSlot == nil)
-            Button("Picnic Pantry · \(session.premiumOwned.contains("pantry") ? "Owned" : "Locked")") {
-                guard let slot = selectedSlot else { return }
-                if session.usePicnicPantry(slot: slot) { successFeedback() }
-                else { warningFeedback() }
-            }
-            .disabled(!session.premiumOwned.contains("pantry") || selectedSlot == nil)
-            Button("Cancel", role: .cancel) { specialTargetTool = nil }
-        } message: {
-            Text(session.spyglassPiece.map { "Spyglass forecast: \($0.points.count) squares. Select a piece first for rotation or storage. For Trowel and Seed, tap an occupied or empty board square." } ??
-                 "Select a tray piece for rotation/storage. For Trowel and Seed, choose a board cell. Invalid actions never spend charges.")
+            .presentationDetents([.large])
         }
         .alert("Continue with Golden Strawberry?", isPresented: $confirmGoldenStrawberry) {
             Button(session.premiumCharges["golden-strawberry", default: 0] > 0
@@ -602,6 +612,15 @@ struct BerryGameView: View {
         .onChange(of: confirmGoldenStrawberry) { _ in updateModePlaytime() }
         .onChange(of: confirmRestart) { _ in updateModePlaytime() }
         .onChange(of: blitzRunning) { _ in updateModePlaytime() }
+        .onChange(of: session.engine.streak) { value in
+            if value < 10 { lastComboMilestone = 0 }
+            guard [10, 20, 30, 50].contains(value), value != lastComboMilestone else { return }
+            lastComboMilestone = value
+            comboMilestone = value
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                if comboMilestone == value { comboMilestone = nil }
+            }
+        }
         .onChange(of: session.engine.score) { score in
             checkObjective()
             celebrateNewRecordIfNeeded(score)
@@ -787,7 +806,7 @@ struct BerryGameView: View {
                     .foregroundStyle(BerryStyle.strawberry)
                     .layoutPriority(1)
                 Text(mode == .endless ?
-                     "\(session.engine.side)×\(session.engine.side) · SEASON \(session.engine.seasons + 1)" :
+                     "SWEET ENDLESS · \(session.engine.side)×\(session.engine.side) · SEASON \(session.engine.seasons + 1)" :
                      mode.rawValue.uppercased())
                     .font(.system(size: 8, weight: .heavy, design: .rounded))
                     .foregroundStyle(BerryStyle.chocolate.opacity(0.7))
@@ -1398,6 +1417,18 @@ struct BerryGameView: View {
                 .padding(BerryGameplayLayout.gardenFrameInset)
                 .background {
                     BerryGardenBorder(mode: mode)
+                }
+                .overlay {
+                    if boardSurface == "blossom-glass" {
+                        // Alpha-transparent center: decoration does not obscure
+                        // squares or enlarge the outer UIKit touch wrapper.
+                        Image("Blossom_Glass_Frame_Transparent_Center")
+                            .resizable()
+                            .interpolation(.high)
+                            .scaledToFill()
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
                 }
     }
 

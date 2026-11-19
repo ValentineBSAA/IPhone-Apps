@@ -1,0 +1,88 @@
+name: Berry Berry Blast | Import Approved Night Edition Assets
+
+on:
+  push:
+    branches:
+      - feature/berry-build4-approved-assets-foundation
+    paths:
+      - .github/workflows/berry-import-night-release-assets.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: berry-import-approved-night-art
+  cancel-in-progress: false
+
+jobs:
+  import-night-asset-catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out Build 4 candidate branch (never Build 3)
+        uses: actions/checkout@v4
+        with:
+          ref: feature/berry-build4-approved-assets-foundation
+          persist-credentials: true
+
+      - name: Download artist-approved ZIP from GitHub Release Nighttime
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/berry-night-approved
+          gh release download Nighttime \
+            --repo "${GITHUB_REPOSITORY}" \
+            --pattern 'Berry_Berry_Blast_Night_Edition_Xcode_Asset_Catalog.zip' \
+            --dir /tmp/berry-night-approved
+          test -s /tmp/berry-night-approved/Berry_Berry_Blast_Night_Edition_Xcode_Asset_Catalog.zip
+          sha256sum /tmp/berry-night-approved/Berry_Berry_Blast_Night_Edition_Xcode_Asset_Catalog.zip
+
+      - name: Validate ZIP, all 30 individual RGBA images and matching day dimensions
+        working-directory: StrawberryShortcakeBlockBlast
+        run: |
+          set -euo pipefail
+          python3 Tools/import_night_assets.py \
+            /tmp/berry-night-approved/Berry_Berry_Blast_Night_Edition_Xcode_Asset_Catalog.zip
+
+      - name: Import the 30 imagesets without replacing daytime art
+        working-directory: StrawberryShortcakeBlockBlast
+        run: |
+          set -euo pipefail
+          python3 Tools/import_night_assets.py \
+            /tmp/berry-night-approved/Berry_Berry_Blast_Night_Edition_Xcode_Asset_Catalog.zip --apply
+
+      - name: Verify all 30 nights present, keep existing daytime images and original audio
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, 'StrawberryShortcakeBlockBlast/Tools')
+          from import_night_assets import EXPECTED, ASSET_ROOT, png_details
+          for night in sorted(EXPECTED):
+              name = night.removeprefix('Night_')
+              for asset in (night, name):
+                  d=ASSET_ROOT / (asset+'.imageset')
+                  assert (d / 'Contents.json').is_file(), d
+                  assert (d / (asset+'.png')).is_file(), d
+                  png_details((d / (asset+'.png')).read_bytes())
+          print('PASS: 30 Night_ imagesets + 30 intact daytime counterparts')
+          PY
+          python3 StrawberryShortcakeBlockBlast/Tools/verify_audio_build2.py
+
+      - name: Commit only Night Edition imagesets on Build 4 feature branch
+        run: |
+          set -euo pipefail
+          git add -- 'StrawberryShortcakeBlockBlast/BerryBlockBlast/Assets.xcassets/Night_'*.imageset
+          if git diff --cached --quiet; then
+            echo 'All 30 Night Edition imagesets are already present; no new commit required.'
+          else
+            count="$(git diff --cached --name-only | grep -c '/Night_.*\.png$' || true)"
+            test "$count" -eq 30
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'assets(berry): import 30 approved Night Edition Xcode imagesets'
+            git push origin HEAD:refs/heads/feature/berry-build4-approved-assets-foundation
+          fi
