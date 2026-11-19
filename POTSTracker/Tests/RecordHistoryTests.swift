@@ -52,7 +52,7 @@ final class RecordHistoryTests: XCTestCase {
         // This immutable snapshot can still render after Core Data invalidates the object.
         XCTAssertEqual(frozen.title, "Better")
         XCTAssertEqual(frozen.categoryLabel, "Check-ins")
-        XCTAssertEqual(frozen.detail, "Daily check-in")
+        XCTAssertEqual(frozen.detail, "Check-in · Better")
     }
 
     func testFourCheckInsCollapseIntoOneDayAndCategoryWithoutLosingEntries() throws {
