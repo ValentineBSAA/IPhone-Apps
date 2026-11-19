@@ -1,0 +1,53 @@
+name: POTS Tracker Complete Source Handoff
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/pots-handoff.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository and original approved artwork
+        uses: actions/checkout@v4
+
+      - name: Package exact POTS Tracker source, artwork and workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib, shutil, subprocess, zipfile
+          root = pathlib.Path(".")
+          out = pathlib.Path("handoff-export")
+          out.mkdir()
+          zip_path = out / "POTS_Tracker_v0.1.7_Full_Source_and_Artwork.zip"
+          version = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=7) as z:
+              for file in sorted(pathlib.Path("POTSTracker").rglob("*")):
+                  if file.is_file() and ".git" not in file.parts and "build" not in file.parts:
+                      z.write(file, file.as_posix())
+              z.write(".github/workflows/pots-build-1.yml", ".github/workflows/pots-build-1.yml")
+              z.writestr("SOURCE_COMMIT.txt", "Repo: ValentineBSAA/IPhone-Apps\nCommit: " + version + "\nSource: main checkout; before POTS & Posies rebrand.\n")
+          with zipfile.ZipFile(zip_path) as z:
+              errors = z.testzip()
+              assert errors is None, errors
+              assert len([p for p in z.namelist() if p.endswith(".png") and "Resources/Icons" in p]) == 13
+              assert "POTSTracker/project.yml" in z.namelist()
+              assert "POTSTracker/Sources/JournalAccess.swift" in z.namelist()
+              assert "POTSTracker/Sources/AppleHealthView.swift" in z.namelist()
+          print("Validated full source ZIP", zip_path, zip_path.stat().st_size)
+          PY
+
+      - name: Upload full handoff source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: POTS-Tracker-v0.1.7-Full-Source-and-Artwork
+          path: handoff-export/POTS_Tracker_v0.1.7_Full_Source_and_Artwork.zip
+          retention-days: 14
+          if-no-files-found: error
