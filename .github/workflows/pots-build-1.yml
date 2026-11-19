@@ -39,8 +39,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m pip install --quiet Pillow
-          python3 POTSTracker/tools/prepare_assets.py
+          python3 -m venv .pots-build-venv
+          .pots-build-venv/bin/pip install --quiet Pillow
+          .pots-build-venv/bin/python POTSTracker/tools/prepare_assets.py
 
       - name: Generate native Xcode project
         working-directory: POTSTracker
