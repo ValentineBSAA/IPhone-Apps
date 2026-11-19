@@ -2,7 +2,7 @@
 
 **Companion research and acceptance criteria:** [PREMIUM_FEATURE_ROADMAP.md](PREMIUM_FEATURE_ROADMAP.md). Every listed premium-quality feature remains free when implemented; this checklist tracks actual implementation, not marketing promises.
 
-**As of 2026-11-19:** Build 1 source code committed, compilation and device validation outstanding. Do not mark implementation complete without proof. ✅ = verified, ⬜ = to do, ⚠️ = blocked.
+**As of 2026-11-19:** Build 1 compiled and installed on iPhone 16e; screenshots verify dashboard and feature artwork. Build 1.1 Calm Home redesign is committed, with regression tests and new IPA validation in progress. Do not mark implementation complete without proof. ✅ = verified, ⬜ = to do, ⚠️ = blocked.
 
 ## 0. Approved requirements and design
 - [x] Native iPhone-first utility, no Apple Watch or wearables
@@ -119,7 +119,8 @@
 - [x] Made CI fail fast when the full original asset set is missing
 - [x] Locate and import the original archive from the **Pots Artwork** release (`pots` tag, `approved-icon-pack.zip`)
 - [x] Verify all 13 high-resolution PNGs committed under `Resources/Icons`
-- [ ] Verify all 13 approved images properly display in the built iPhone app
+- [x] All 12 approved feature images visibly rendered in iPhone 16e Build 1 screenshots
+- [ ] Verify the app's 13th image (Home Screen icon) and v0.1.1 layout on physical device
 
 ## Verified CI Build 1 success (2026-11-19)
 - [x] [GitHub Actions run 44606479837](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44606479837) completed **success**
@@ -129,3 +130,25 @@
 - [ ] Sign and install IPA on a physical iPhone, confirm graphics and CRUD/persistence, complete `BUILD_1_TEST_PLAN.md`
 
 **Warning:** CI build is not a physical-device functional test. This pre-release build lacks backup/restore. Do not store irreplaceable patient records.
+
+
+## v0.1.1 Calm Home redesign (based on physical iPhone 16e screenshots, 2026-11-19)
+- [x] Remove giant introduction and one-screen feature catalog from Home
+- [x] Add persistent four-tab navigation: Home / Log / History / More
+- [x] Compact Today card with three quick-entry shortcuts and optional check-in strip
+- [x] Group all 12 approved feature images in dedicated Log grids
+- [x] Replace empty double-sheet category pages with navigation-pushed summary/add/history pages
+- [x] Add persistent Home customization: reorder/hide modules, pin/unpin/reorder feature shortcuts, compact/comfortable settings and reset
+- [x] Implement data-backed History Week / Month / Year / All views (not fabricated charts)
+- [x] Keep Save accessible above the keyboard on manual entry forms
+- [x] Preserve existing bundle ID and Core Data schema for in-place upgrades
+- [x] Add Home layout regression unit tests and a [real-device QA plan](UX_REDESIGN_V011.md)
+- [x] Add GitHub Actions concurrency to supersede outdated build runs
+- [ ] Verify v0.1.1 full simulator and device compilation
+- [ ] Verify native unit tests execute and pass on a simulator
+- [ ] Package unsigned v0.1.1 IPA and inspect its contents
+- [ ] Update installed iPhone 16e app **without deleting existing test records**
+- [ ] Check screenshot layout, back behavior, tabs, customized Home persistence and keyboard-safe saving
+- [ ] Check iOS 16.0 iPhone 14 Pro compatibility and VoiceOver/Dynamic Type
+
+**Release gate:** Build 1.1 is a UI revision, not a claim that Build 2 hydration/medication/sleep features are implemented. No real patient data until backup/restore is functional and tested.
