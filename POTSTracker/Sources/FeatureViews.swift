@@ -300,7 +300,7 @@ struct SettingsPanel: View {
                             .font(.headline)
                         Text("Stored on this iPhone. No account, advertising, analytics or Apple Watch connection.")
                             .font(.subheadline)
-                        Text("Backup and export are not available in Build 1. Do not use this version for irreplaceable medical records.")
+                        Text("Local backup and export are not available yet. Don't store irreplaceable medical records in this test build.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -328,6 +328,8 @@ struct PrivacyText: View {
                     .font(.title2.bold())
                 Text("POTS Tracker currently stores information locally on the iPhone. It has no analytics service, cloud account, advertising or automatic uploads. Reports and backup exports are planned but not available in Build 1.")
                 Text("Important: deleting the app may remove its local records. Do not use this app as the only copy of critical medical information until export and restore have been tested.")
+                Text("Optional Journal Lock uses Face ID or the iPhone passcode to restrict on-screen access. It does not encrypt Journal entries separately from the app's existing protected storage.")
+                Text("Apple Health access is optional, read-only and only requested when you choose it. Activity data is displayed on demand and isn't copied to your POTS entries or uploaded.")
                 Divider()
                 Text("About your health")
                     .font(.title2.bold())
