@@ -1,13 +1,14 @@
-name: Berry Berry Blast 0.5.14 Build 4.3 Pink Contrast and Labels QA
+name: Berry Berry Blast 0.5.14 Build 4.4 Boutique + Tools QA
 on:
   push:
-    branches: [feature/berry-build4-r4-polish-qa]
+    branches: [feature/berry-build4-r5-boutique-tools-qa]
   workflow_dispatch:
 permissions:
   contents: read
+# Only superseded builds on this branch are canceled. Other branches are independent.
 concurrency:
-  group: berry-build4-foundation-qa
-  cancel-in-progress: false
+  group: berry-build4-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   integrity:
     runs-on: ubuntu-latest
@@ -22,6 +23,7 @@ jobs:
           python3 Tools/verify_ios16_source.py
           python3 Tools/check_ios16_compat.py
           python3 Tools/verify_swiftui_test_imports.py
+          python3 Tools/verify_build44_boutique_tools.py
           python3 Tools/verify_audio_build2.py
           python3 Tools/verify_0512_art_in_repo.py
           test -f BerryBlockBlast/BerryBoardVisual.swift
@@ -131,6 +133,7 @@ jobs:
           workflow=Path('../.github/workflows/berry-build4-foundation-qa.yml').read_text()
           assert 'runs-on: macos-15-intel' in workflow, 'Runner fallback accidentally removed'
           assert 'max-parallel: 1' in workflow, 'Simulators may compete for scarce runners'
+          assert 'cancel-in-progress: true' in workflow and 'github.ref' in workflow, 'Old global workflow queue regression'
           assert 'needs: [integrity, engine-regression]' in workflow
           assert 'needs: [integrity, engine-regression, simulators]' in workflow
           print('PASS: regression gate is independent of macOS runner availability')
@@ -246,28 +249,28 @@ jobs:
             -derivedDataPath .build/Candidate CODE_SIGNING_ALLOWED=NO build
           mkdir -p dist/Payload
           cp -R .build/Candidate/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
-          (cd dist && zip -qr Berry-Berry-Blast-v0.5.14-build4.3-POLISH-QA-unsigned.ipa Payload)
+          (cd dist && zip -qr Berry-Berry-Blast-v0.5.14-build4.4-BOUTIQUE-TOOLS-QA-unsigned.ipa Payload)
           python3 Tools/verify_audio_build2.py \
-            --ipa dist/Berry-Berry-Blast-v0.5.14-build4.3-POLISH-QA-unsigned.ipa
-          unzip -t dist/Berry-Berry-Blast-v0.5.14-build4.3-POLISH-QA-unsigned.ipa | tail -2
+            --ipa dist/Berry-Berry-Blast-v0.5.14-build4.4-BOUTIQUE-TOOLS-QA-unsigned.ipa
+          unzip -t dist/Berry-Berry-Blast-v0.5.14-build4.4-BOUTIQUE-TOOLS-QA-unsigned.ipa | tail -2
           python3 - <<'PY'
           import zipfile,plistlib
-          filename='dist/Berry-Berry-Blast-v0.5.14-build4.3-POLISH-QA-unsigned.ipa'
+          filename='dist/Berry-Berry-Blast-v0.5.14-build4.4-BOUTIQUE-TOOLS-QA-unsigned.ipa'
           with zipfile.ZipFile(filename) as z:
               assert 'Payload/BerryBlockBlast.app/Assets.car' in z.namelist()
               info=plistlib.loads(z.read('Payload/BerryBlockBlast.app/Info.plist'))
               assert info['CFBundleShortVersionString']=='0.5.14'
-              assert info['CFBundleVersion']=='43'
+              assert info['CFBundleVersion']=='44'
               assert info.get('MinimumOSVersion','16.0')=='16.0'
           print('Simulator QA passed. Still requires physical-device signoff.')
           PY
-          echo '0.5.14 Build 4.3 POLISH QA. Dark pink art and label polish need physical iPhone signoff. NOT a public release.' \
+          echo '0.5.14 Build 4.4 BOUTIQUE + TOOLS QA. Board Studio and Special Tools need physical iPhone signoff. NOT a public release.' \
             > dist/HARDWARE-SIGNOFF-REQUIRED.txt
       - name: Upload candidate only, never auto-publish release
         uses: actions/upload-artifact@v4
         with:
-          name: Berry-0514-Build4.3-POLISH-QA-UNSIGNED-IPA
+          name: Berry-0514-Build4.4-BOUTIQUE-TOOLS-QA-UNSIGNED-IPA
           path: |
-            StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-v0.5.14-build4.3-POLISH-QA-unsigned.ipa
+            StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-v0.5.14-build4.4-BOUTIQUE-TOOLS-QA-unsigned.ipa
             StrawberryShortcakeBlockBlast/dist/HARDWARE-SIGNOFF-REQUIRED.txt
           retention-days: 14

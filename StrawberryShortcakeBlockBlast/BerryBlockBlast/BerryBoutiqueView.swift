@@ -1,5 +1,16 @@
 import SwiftUI
 
+/// Two hardware-tested board looks. The same saved key is used by Settings,
+/// the Boutique and gameplay. Choosing a board never costs strawberries.
+enum BerryBoardAppearancePolicy {
+    static let storageKey = "berryberryblast.board.surface.v059"
+    static let original = "original"
+    static let blossomGlass = "blossom-glass"
+    static func isApproved(_ id: String) -> Bool {
+        id == original || id == blossomGlass
+    }
+}
+
 private struct BerryBoutiqueItem: Identifiable {
     let id: String
     let name: String
@@ -20,7 +31,7 @@ struct BerryBoutiqueView: View {
     @ObservedObject var session: BerryGameSession
     @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
     @AppStorage("berryblockblast.shop.equippedBorder.v056b2") private var borderSkin = "default"
-    @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "original"
+    @AppStorage(BerryBoardAppearancePolicy.storageKey) private var boardSurface = BerryBoardAppearancePolicy.original
     @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkleSkin = "default"
     @AppStorage("berryblockblast.sound") private var sound = true
     @State private var selectedCategory: Category?
@@ -208,12 +219,9 @@ struct BerryBoutiqueView: View {
                     .foregroundStyle(BerryStyle.strawberry)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    // Keep old board cosmetic purchases and saved data, but
-                    // do not offer rejected Board Studio / Seasonal Frame
-                    // artwork as active choices in a new test release.
-                    ForEach(Category.allCases.filter {
-                        $0 != .boardStudio && $0 != .seasonal
-                    }) { category in
+                    // Board Studio is restored for the two tested board looks.
+                    // Unapproved legacy/seasonal frame art stays archived.
+                    ForEach(Category.allCases.filter { $0 != .seasonal }) { category in
                         categoryTile(category)
                     }
                 }
@@ -266,6 +274,51 @@ struct BerryBoutiqueView: View {
         .buttonStyle(BerryPolishPressStyle())
     }
 
+    private func boardSurfaceCard(id: String, title: String, detail: String,
+                                  artwork: String, fallback: String) -> some View {
+        let selected = boardSurface == id
+        return Button {
+            guard BerryBoardAppearancePolicy.isApproved(id) else { return }
+            boardSurface = id
+            if sound { BerryAudio.shared.play(.menuSelect) }
+        } label: {
+            VStack(spacing: 8) {
+                BerryApprovedArtwork(name: artwork, fallback: fallback, size: 82)
+                    .frame(width: 90, height: 90)
+                    .background(BerryStyle.softPink.opacity(0.7),
+                                in: RoundedRectangle(cornerRadius: 17))
+                Text(title)
+                    .font(.system(size: 13, weight: .black, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.78)
+                Text(detail)
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundStyle(BerryStyle.chocolate.opacity(0.82))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                Text(selected ? "✓ SELECTED" : "TAP TO USE")
+                    .font(.system(size: 11, weight: .black, design: .rounded))
+                    .foregroundStyle(selected ? BerryStyle.leaf : BerryStyle.strawberry)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 5)
+                    .background(selected ? BerryStyle.leaf.opacity(0.12) :
+                                BerryStyle.softPink, in: Capsule())
+            }
+            .frame(maxWidth: .infinity, minHeight: 218)
+            .padding(9)
+            .background(.white, in: RoundedRectangle(cornerRadius: 20))
+            .overlay(RoundedRectangle(cornerRadius: 20)
+                .strokeBorder(selected ? BerryStyle.leaf : BerryStyle.strawberry.opacity(0.27),
+                              lineWidth: selected ? 2 : 1))
+        }
+        .buttonStyle(BerryPolishPressStyle())
+        .accessibilityLabel(title)
+        .accessibilityValue(selected ? "Selected" : "Not selected")
+        .accessibilityHint("Change the visual board appearance. Your progress and wallet stay unchanged.")
+    }
+
     @ViewBuilder
     private func section(_ category: Category) -> some View {
         switch category {
@@ -276,12 +329,25 @@ struct BerryBoutiqueView: View {
                 ForEach(filteredItems(type: "blocks")) { item in itemCard(item) }
             }
         case .boardStudio:
+            Text("Two approved looks for your garden. Changing the board is free and never resets your game.")
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate)
+                .multilineTextAlignment(.center)
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
                                 GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                BerryGridInfoTile(
-                    title: "Clean Classic Board",
-                    detail: "Decorative surface and frame options retired after iPhone testing. Your old purchases remain saved.",
-                    art: "BerryClassic", value: "Active"
+                boardSurfaceCard(
+                    id: BerryBoardAppearancePolicy.original,
+                    title: "Original Strawberry Jam",
+                    detail: "The classic hardware-tested board",
+                    artwork: "BerryClassic",
+                    fallback: "square.grid.3x3.fill"
+                )
+                boardSurfaceCard(
+                    id: BerryBoardAppearancePolicy.blossomGlass,
+                    title: "Strawberry Blossom Glass",
+                    detail: "Glossy garden with a safe outside border",
+                    artwork: "Board_Theme_Icon",
+                    fallback: "camera.filters"
                 )
             }
         case .sparkleStudio:
