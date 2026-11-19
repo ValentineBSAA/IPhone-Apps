@@ -67,7 +67,10 @@ struct RecordSnapshot: Identifiable, Equatable {
         case .symptom:
             return severity < 0 ? "Symptom recorded" : "Severity \(severity)/10"
         case .checkIn:
-            return "Daily check-in"
+            return CheckInFormat.shortDetail(
+                feeling: CheckInFormat.feeling(title: title, posture: posture),
+                notes: notes
+            )
         case .journal, .none:
             return notes.isEmpty ? "Journal entry" : notes
         }
