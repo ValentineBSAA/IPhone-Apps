@@ -2,7 +2,7 @@
 
 **Companion research and acceptance criteria:** [PREMIUM_FEATURE_ROADMAP.md](PREMIUM_FEATURE_ROADMAP.md). Every listed premium-quality feature remains free when implemented; this checklist tracks actual implementation, not marketing promises.
 
-**As of 2026-11-19:** planning only. Do not mark implementation complete without proof. ✅ = verified, ⬜ = to do, ⚠️ = blocked.
+**As of 2026-11-19:** Build 1 source code committed, compilation and device validation outstanding. Do not mark implementation complete without proof. ✅ = verified, ⬜ = to do, ⚠️ = blocked.
 
 ## 0. Approved requirements and design
 - [x] Native iPhone-first utility, no Apple Watch or wearables
@@ -20,14 +20,17 @@
 ## 1. Repository and iPhone build system
 - [x] Create dedicated `POTSTracker/` space within `IPhone-Apps` repo
 - [x] Write project requirements and master checklist
-- [ ] Add SwiftUI Xcode project/configuration targeting **iOS 16+**, validate simulator and real device
+- [x] Add SwiftUI Xcode project/configuration targeting **iOS 16+** (source committed)
+- [ ] **Verify successful Xcode simulator and device builds**
 - [ ] Distinct bundle ID / display name / launch icon; verify icon fits Apple's unrounded app icon asset rules (no pre-rounded black margins)
-- [ ] GitHub Actions macOS build with exported unsigned IPA artifact if supported; signing outside source control
+- [x] Commit macOS GitHub Actions workflow for unsigned simulator/device builds and IPA packaging
+- [ ] **Verify GitHub Action completed successfully and uploaded real unsigned IPA artifact**; signing outside source control
 - [ ] Tests and no-secret CI; no user data or personally identifying logs in artifacts
 - [ ] Document Windows 11 + GitHub Actions build and user-signed sideload workflow, no false promise of permanent signing
 
 ## 2. Data model and storage
-- [ ] Local persistent database using iOS 16-compatible technology (Core Data or SQLite; avoid SwiftData's iOS 17 minimum)
+- [x] Implement iOS 16-compatible Core Data SQLite model and local store in source
+- [ ] Verify persistence across app termination/reboot/update, migration and backup
 - [ ] Each entry has timestamp, timezone context, source/manual flag, optional notes and a stable record ID
 - [ ] Symptoms: customizable options, severity 0–10, onset/duration, context, triggers, recovery
 - [ ] Heart rate: bpm, posture (supine/sitting/standing), measurement method, time since change
@@ -37,14 +40,18 @@
 - [ ] Fluids and electrolytes/sodium: optional entry units and food details, no default medical targets
 - [ ] Medication schedule and actual taken/skipped records, without dose advice
 - [ ] Sleep, rest, activity, meal, temperature/heat context, illness, menstrual-cycle context **optional/off by default** with controls
-- [ ] Multi-entry per day, edit/backfill, deletion + confirmation/undo; no fabricated zero readings
+- [x] Implement multi-entry, backdated entry, edit, confirmed delete and blank-day handling in source
+- [ ] Verify all CRUD flows and add an undo mechanism after device testing
 - [ ] Storage migration and integrity check; no data loss across upgrades
 - [ ] Private app data protection on disk; optional device passcode/biometric lock where available
 
 ## 3. Native interface
-- [ ] Main dashboard: quick log, today's summary, 7-day calendar, recent logs and next reminders
-- [ ] Grid views for all 12 features with approved image, text label and accessible tap targets
-- [ ] Single-tap low-energy mode with big controls and minimal typing
+- [x] Source for main dashboard: quick log, today's summary, seven-day overview and recent logs
+- [ ] Next-reminder summary (Build 2); verify dashboard on real iPhone
+- [x] Source for 12 accessible labeled feature grid cards with approved PNG loading and honest placeholder states
+- [ ] **Verify** all 13 artwork files imported and rendered (native fallback until then)
+- [x] Source for one-tap daily check-in and low-energy large controls
+- [ ] Verify low-energy mode with real-world accessibility testing
 - [ ] Fast number keypad with units; do not pretend the phone itself measures HR/BP
 - [ ] Readable charts with accessibility table alternatives
 - [ ] Light and dark mode, 12-hour clock, readable large text and contrast
@@ -91,3 +98,13 @@
 - **Build 4:** polish, test automation, real-device feedback and public release
 
 **Do not request or expose the family member's medical information in GitHub.**
+
+## Build 1 source handoff
+- [x] SwiftUI dashboard, Core Data model, manual entry forms, seven-day history, feature navigation, settings and medical disclaimer committed
+- [x] Date-window and Core Data unit tests authored (not yet verified to run)
+- [x] XcodeGen configuration and GitHub Actions build pipeline authored
+- [ ] CI compiler and simulator/device build pass
+- [ ] IPA artifact exists and downloads correctly
+- [ ] Signed and installed on test iPhone
+- [ ] Device smoke tests pass with synthetic, non-personal entries
+- [ ] Confirm original 13 approved PNGs imported into app and actual app icon supplied
