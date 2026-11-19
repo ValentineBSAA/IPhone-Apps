@@ -241,7 +241,7 @@ struct HomeCustomizationView: View {
                                     }
                                     .padding(9)
                                     .frame(maxWidth: .infinity, minHeight: 64)
-                                    .background(Color(uiColor: .secondarySystemGroupedBackground),
+                                    .background(Color.potsSurface,
                                                 in: RoundedRectangle(cornerRadius: 15))
                                 }
                                 .buttonStyle(.plain)
