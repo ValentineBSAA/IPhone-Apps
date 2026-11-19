@@ -167,10 +167,6 @@ struct HomeScreenView: View {
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Text(InstalledBuild.shortLabel)
-                        .font(.caption2.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(.secondary)
-                        .accessibilityLabel(InstalledBuild.fullLabel)
                 }
                 .padding(.horizontal, 2)
 
@@ -523,24 +519,18 @@ struct MoreHubView: View {
                     .buttonStyle(.plain)
                 }
 
-                GlassCard {
-                    VStack(alignment: .leading, spacing: 7) {
-                        HStack {
-                            Label("Installed app", systemImage: "info.circle")
-                                .font(.subheadline.weight(.semibold))
-                            Spacer()
-                            Text(InstalledBuild.shortLabel)
-                                .font(.subheadline.weight(.semibold).monospacedDigit())
-                                .foregroundStyle(Color.potsTeal)
-                        }
-                        Text("This is the version on your iPhone, not a check for updates.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text("Test build. Backup and export aren't ready; avoid storing irreplaceable medical records.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                VStack(spacing: 5) {
+                    Text("POTS Tracker · \(InstalledBuild.shortLabel)")
+                        .font(.caption.weight(.medium).monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Installed POTS Tracker, \(InstalledBuild.fullLabel)")
+                    Text("Test build · Local backup and export aren't available yet")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 5)
+                .padding(.bottom, 10)
             }
             .padding(18)
             .padding(.bottom, 24)
