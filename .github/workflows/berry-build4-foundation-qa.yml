@@ -68,6 +68,19 @@ jobs:
           assert 'comfortableWidth = width * 0.87' in layout
           print('PASS: frame never overlays gameplay; responsive screen budget active.')
           PY
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,struct
+          image=Path('BerryBlockBlast/Assets.xcassets/Tile_Pink.imageset/Tile_Pink.png')
+          data=image.read_bytes()
+          assert data[:8]==bytes.fromhex('89504e470d0a1a0a'), 'Pink tile is not a PNG'
+          assert struct.unpack('>II',data[16:24])==(192,192), 'Pink tile dimensions changed'
+          assert hashlib.sha256(data).hexdigest()=='dfc7ac4bf39e4ce99e20e6c536800198646b44ddd00137c3ef2bb4f196a69d15', 'Unapproved pink tile content'
+          source=Path('BerryBlockBlast/BerryStyle.swift').read_text()
+          assert 'Image("Tile_Pink")' in source, 'Pink image not displayed by gameplay'
+          assert '(mode == .classic || mode == .endless)' in source, 'Pink route unexpectedly changed'
+          print('PASS: approved dark pink PNG routed to classic/endless.')
+          PY
           test -f Tests/BerryBoardFrameContainmentTests.swift
           test -f Tests/BerryResultTextReliabilityTests.swift
           test -f Tests/BerryDifficultyPolicyTests.swift
