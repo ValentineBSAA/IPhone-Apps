@@ -15,16 +15,19 @@ final class AppleHealthReader: ObservableObject {
     @Published var errorText: String?
 
     private let healthStore = HKHealthStore()
+    private var pendingQueries = 0
     private init() {}
 
     var supported: Bool { HKHealthStore.isHealthDataAvailable() }
 
     private var readTypes: Set<HKObjectType> {
-        Set([
-            HKQuantityType.quantityType(forIdentifier: .stepCount),
-            HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning),
-            HKQuantityType.quantityType(forIdentifier: .flightsClimbed)
-        ].compactMap { $0 })
+        let identifiers: [HKQuantityTypeIdentifier] = [
+            .stepCount, .distanceWalkingRunning, .flightsClimbed
+        ]
+        return Set<HKObjectType>(
+            identifiers.compactMap { HKQuantityType.quantityType(forIdentifier: $0) }
+                .map { $0 as HKObjectType }
+        )
     }
 
     func requestReadAccess() {
@@ -54,19 +57,29 @@ final class AppleHealthReader: ObservableObject {
         let start = Calendar.current.startOfDay(for: Date())
         let now = Date()
         loading = true
+        pendingQueries = 3
 
         query(.stepCount, start: start, end: now, unit: .count()) { value in
             self.steps = value.map { Int($0.rounded()).formatted() } ?? "—"
+            self.finishedQuery()
         }
         let isUS = Locale.current.usesMetricSystem == false
         query(.distanceWalkingRunning, start: start, end: now,
               unit: isUS ? .mile() : .meterUnit(with: .kilo)) { value in
             self.distance = value.map { String(format: "%.2f %@", $0, isUS ? "mi" : "km") } ?? "—"
+            self.finishedQuery()
         }
         query(.flightsClimbed, start: start, end: now, unit: .count()) { value in
             self.flights = value.map { Int($0.rounded()).formatted() } ?? "—"
-            self.updatedAt = Date()
-            self.loading = false
+            self.finishedQuery()
+        }
+    }
+
+    private func finishedQuery() {
+        pendingQueries = max(0, pendingQueries - 1)
+        if pendingQueries == 0 {
+            updatedAt = Date()
+            loading = false
         }
     }
 
