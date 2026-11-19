@@ -22,6 +22,9 @@ struct HistoryScreenView: View {
     @State private var year: Int = Calendar.current.component(.year, from: Date())
     @State private var selectedDay: Date?
     @State private var editingRoute: RecordEditRoute?
+    @State private var pendingDeletion: NSManagedObjectID?
+    @State private var confirmDeletion = false
+    @State private var deleteError: String?
 
     private var cal: Calendar { .current }
     private var fullEntries: [RecordSnapshot] { RecordSnapshot.snapshots(of: Array(entries)) }
@@ -83,9 +86,11 @@ struct HistoryScreenView: View {
                     Text("Tap a day, then a category to view individual entries. Swipe an entry left to delete or right to edit.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    RecordTreeView(records: filteredEntries) { id in
-                        editingRoute = RecordEditRoute(objectID: id)
-                    }
+                    RecordTreeView(
+                        records: filteredEntries,
+                        onEdit: { id in editingRoute = RecordEditRoute(objectID: id) },
+                        onDelete: { id in pendingDeletion = id; confirmDeletion = true }
+                    )
                 }
             }
             .padding(18)
@@ -96,6 +101,27 @@ struct HistoryScreenView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editingRoute) { route in
             RecordEditDestination(objectID: route.objectID)
+        }
+        .confirmationDialog("Delete this entry?", isPresented: $confirmDeletion, titleVisibility: .visible) {
+            Button("Delete permanently", role: .destructive) {
+                guard let id = pendingDeletion else { return }
+                pendingDeletion = nil
+                do {
+                    try RecordStore.delete(id, in: context)
+                } catch {
+                    deleteError = error.localizedDescription
+                }
+            }
+        } message: {
+            Text("Only this entry will be removed. This cannot be undone.")
+        }
+        .alert("Could not delete entry", isPresented: Binding(
+            get: { deleteError != nil },
+            set: { if !$0 { deleteError = nil } }
+        )) {
+            Button("OK") { deleteError = nil }
+        } message: {
+            Text(deleteError ?? "Try again.")
         }
     }
 
