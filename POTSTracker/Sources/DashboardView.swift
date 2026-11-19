@@ -145,11 +145,14 @@ struct HomeScreenView: View {
     @AppStorage("homeLayoutDensity") private var density = "compact"
 
     @State private var newLog: LogCategory?
-    @State private var editLog: POTSLogEntry?
+    @State private var editRoute: RecordEditRoute?
     @State private var notice: String?
 
-    private var todayEntries: [POTSLogEntry] {
-        entries.filter { Calendar.current.isDateInToday($0.recordedAt) }
+    private var allRecords: [RecordSnapshot] {
+        RecordSnapshot.snapshots(of: Array(entries))
+    }
+    private var todayEntries: [RecordSnapshot] {
+        allRecords.filter { Calendar.current.isDateInToday($0.recordedAt) }
     }
 
     private var roomy: Bool { density == "comfortable" || lowEnergyMode }
@@ -219,8 +222,8 @@ struct HomeScreenView: View {
         .sheet(item: $newLog) { category in
             EntryEditor(category: category)
         }
-        .sheet(item: $editLog) { entry in
-            EntryEditor(category: LogCategory(rawValue: entry.category) ?? .journal, editing: entry)
+        .sheet(item: $editRoute) { route in
+            RecordEditDestination(objectID: route.objectID)
         }
         .alert("Could not save", isPresented: Binding(
             get: { notice != nil },
@@ -389,7 +392,7 @@ struct HomeScreenView: View {
 
     @ViewBuilder
     private var recentGrid: some View {
-        if !entries.isEmpty {
+        if !allRecords.isEmpty {
             VStack(alignment: .leading, spacing: 9) {
             HStack {
                 Text("Recent activity").font(.headline)
@@ -398,13 +401,13 @@ struct HomeScreenView: View {
                     .font(.caption.weight(.semibold))
             }
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 9), GridItem(.flexible(), spacing: 9)], spacing: 9) {
-                    ForEach(Array(entries.prefix(3)), id: \.objectID) { entry in
-                        Button { editLog = entry } label: {
+                    ForEach(Array(allRecords.prefix(3))) { entry in
+                        Button { editRoute = RecordEditRoute(objectID: entry.id) } label: {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(entry.title)
                                     .font(.subheadline.weight(.semibold))
                                     .lineLimit(1)
-                                Text(EntryFormat.description(for: entry))
+                                Text(entry.detail)
                                     .font(.caption)
                                     .lineLimit(2)
                                     .foregroundStyle(.secondary)
