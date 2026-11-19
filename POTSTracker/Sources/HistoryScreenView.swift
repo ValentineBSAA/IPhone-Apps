@@ -14,6 +14,9 @@ enum HistoryPeriod: String, CaseIterable, Identifiable {
 /// no fabricated graph values and no cap on lifetime records.
 struct HistoryScreenView: View {
     @Environment(\.managedObjectContext) private var context
+    @AppStorage("journalLockEnabled") private var journalLockEnabled = false
+    @ObservedObject private var journalAccess = JournalAccess.shared
+    @State private var journalUnlockError: String?
     @FetchRequest(sortDescriptors: [NSSortDescriptor(key: "recordedAt", ascending: false)])
     private var entries: FetchedResults<POTSLogEntry>
 
@@ -30,7 +33,12 @@ struct HistoryScreenView: View {
     @State private var deleteError: String?
 
     private var cal: Calendar { .current }
-    private var fullEntries: [RecordSnapshot] { RecordSnapshot.snapshots(of: Array(entries)) }
+    private var fullEntries: [RecordSnapshot] {
+        let hidePrivate = journalLockEnabled && !journalAccess.unlocked
+        return RecordSnapshot.snapshots(of: Array(entries).filter {
+            !hidePrivate || $0.category != LogCategory.journal.rawValue
+        })
+    }
 
     private var filteredEntries: [RecordSnapshot] {
         switch period {
@@ -71,6 +79,29 @@ struct HistoryScreenView: View {
                 case .all: lifetimeOverview
                 }
 
+                if journalLockEnabled && !journalAccess.unlocked {
+                    GlassCard {
+                        HStack(spacing: 12) {
+                            Image(systemName: "lock.shield")
+                                .foregroundStyle(Color.potsTeal)
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("Journal records hidden")
+                                    .font(.subheadline.weight(.semibold))
+                                Text("Unlock to view private notes and include them in full-history deletion.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button("Unlock") {
+                                journalAccess.authenticate(reason: "View private Journal history") { success, error in
+                                    if !success { journalUnlockError = error }
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+                }
+
                 if filteredEntries.isEmpty {
                     Text("Nothing recorded for this period.")
                         .font(.subheadline)
@@ -95,7 +126,7 @@ struct HistoryScreenView: View {
                         onDelete: { id in requestDelete([id], label: "this entry") },
                         onDeleteGroup: { ids, label in requestDelete(ids, label: label) }
                     )
-                    if period == .all {
+                    if period == .all && (!journalLockEnabled || journalAccess.unlocked) {
                         HistorySwipeSurface(
                             leadingTitle: "Week",
                             leadingSymbol: "calendar",
@@ -159,6 +190,10 @@ struct HistoryScreenView: View {
                 .autocorrectionDisabled()
             Button("Delete all history", role: .destructive) {
                 guard clearPhrase.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "DELETE" else { return }
+                guard !journalLockEnabled || journalAccess.unlocked else {
+                    deleteError = "Unlock Journal first so Clear All includes every saved record."
+                    return
+                }
                 do {
                     try RecordStore.delete(fullEntries.map(\.id), in: context)
                 } catch {
@@ -170,6 +205,14 @@ struct HistoryScreenView: View {
             Button("Cancel", role: .cancel) { clearPhrase = "" }
         } message: {
             Text("Every saved entry on this iPhone will be permanently deleted, across all dates and trackers. Backup and export aren't ready. Type DELETE to confirm.")
+        }
+        .alert("Journal access unsuccessful", isPresented: Binding(
+            get: { journalUnlockError != nil },
+            set: { if !$0 { journalUnlockError = nil } }
+        )) {
+            Button("OK") { journalUnlockError = nil }
+        } message: {
+            Text(journalUnlockError ?? "Try again.")
         }
         .alert("Could not delete entry", isPresented: Binding(
             get: { deleteError != nil },
