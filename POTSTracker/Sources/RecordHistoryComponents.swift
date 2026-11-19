@@ -1,6 +1,31 @@
 import SwiftUI
 import CoreData
 
+/// Sheet state stores an object ID, never a deleted managed object.
+struct RecordEditRoute: Identifiable {
+    let objectID: NSManagedObjectID
+    var id: NSManagedObjectID { objectID }
+}
+
+struct RecordEditDestination: View {
+    @Environment(\.managedObjectContext) private var context
+    let objectID: NSManagedObjectID
+
+    var body: some View {
+        Group {
+            if let record = try? context.existingObject(with: objectID) as? POTSLogEntry,
+               !record.isDeleted {
+                EntryEditor(category: LogCategory(rawValue: record.category) ?? .journal, editing: record)
+            } else {
+                Text("This entry is no longer available.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(24)
+            }
+        }
+    }
+}
+
 /// Immutable display data. Deleting a Core Data object never leaves a visible row
 /// trying to read properties from an invalidated NSManagedObject.
 struct RecordSnapshot: Identifiable, Equatable {
@@ -306,8 +331,8 @@ struct RecordSwipeRow: View {
         .frame(maxWidth: .infinity)
         .clipped()
         .contextMenu {
-            Button("Edit", systemImage: "pencil", action: onEdit)
-            Button("Delete", systemImage: "trash", role: .destructive) { showDelete = true }
+            Button(action: onEdit) { Label("Edit", systemImage: "pencil") }
+            Button(role: .destructive, action: { showDelete = true }) { Label("Delete", systemImage: "trash") }
         }
         .accessibilityAction(named: "Edit") { onEdit() }
         .accessibilityAction(named: "Delete") { showDelete = true }
