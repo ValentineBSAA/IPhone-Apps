@@ -21,10 +21,10 @@
 - [x] Create dedicated `POTSTracker/` space within `IPhone-Apps` repo
 - [x] Write project requirements and master checklist
 - [x] Add SwiftUI Xcode project/configuration targeting **iOS 16+** (source committed)
-- [ ] **Verify successful Xcode simulator and device builds**
+- [x] **Verify successful Xcode simulator and device builds** (GitHub Actions run 44606479837)
 - [ ] Distinct bundle ID / display name / launch icon; verify icon fits Apple's unrounded app icon asset rules (no pre-rounded black margins)
 - [x] Commit macOS GitHub Actions workflow for unsigned simulator/device builds and IPA packaging
-- [ ] **Verify GitHub Action completed successfully and uploaded real unsigned IPA artifact**; signing outside source control
+- [x] **Verify GitHub Action completed successfully and uploaded real unsigned IPA artifact** (run 44606479837; artifact 14569179161); signing outside source control
 - [ ] Tests and no-secret CI; no user data or personally identifying logs in artifacts
 - [ ] Document Windows 11 + GitHub Actions build and user-signed sideload workflow, no false promise of permanent signing
 
@@ -90,7 +90,8 @@
 - [ ] Verify 13 images are correctly mapped and not blurry/cropped; confirm launch icon previews
 - [ ] Local backup failure and restore conflict tests; no personal data committed to GitHub
 - [ ] Final README, changelog, license choice, privacy statement and acknowledgements
-- [ ] Build 1 IPA produced, installed and verified on a real device
+- [x] Build 1 unsigned IPA produced by GitHub Actions
+- [ ] Build 1 signed, installed and verified on a real iPhone
 - [ ] Release only after physical verification and regression tests
 
 ## Build increments
@@ -105,8 +106,9 @@
 - [x] SwiftUI dashboard, Core Data model, manual entry forms, seven-day history, feature navigation, settings and medical disclaimer committed
 - [x] Date-window and Core Data unit tests authored (not yet verified to run)
 - [x] XcodeGen configuration and GitHub Actions build pipeline authored
-- [ ] CI compiler and simulator/device build pass
-- [ ] IPA artifact exists and downloads correctly
+- [x] CI compiler and simulator/device build pass (run 44606479837)
+- [x] IPA artifact uploaded on GitHub (artifact 14569179161; 34,400,158 bytes)
+- [ ] Download artifact ZIP and inspect contained IPA on local host
 - [ ] Signed and installed on test iPhone
 - [ ] Device smoke tests pass with synthetic, non-personal entries
 - [ ] Confirm original 13 approved PNGs imported into app and actual app icon supplied
@@ -118,3 +120,12 @@
 - [x] Locate and import the original archive from the **Pots Artwork** release (`pots` tag, `approved-icon-pack.zip`)
 - [x] Verify all 13 high-resolution PNGs committed under `Resources/Icons`
 - [ ] Verify all 13 approved images properly display in the built iPhone app
+
+## Verified CI Build 1 success (2026-11-19)
+- [x] [GitHub Actions run 44606479837](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44606479837) completed **success**
+- [x] All 13 approved icons validated and Apple-ready asset catalog produced
+- [x] Simulator compile and physical iPhone target compile passed
+- [x] Unsigned IPA packaged and uploaded as `POTS-Tracker-Build-1-iOS16-unsigned`, GitHub artifact ID `14569179161` (~34.4 MB artifact archive)
+- [ ] Sign and install IPA on a physical iPhone, confirm graphics and CRUD/persistence, complete `BUILD_1_TEST_PLAN.md`
+
+**Warning:** CI build is not a physical-device functional test. This pre-release build lacks backup/restore. Do not store irreplaceable patient records.
