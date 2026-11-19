@@ -175,3 +175,19 @@
 - [ ] Verify iOS 16 device and all custom artwork remain supported
 
 **App version is not a claim of release readiness:** v0.1.2 is another experimental UI iteration. Medical tracking must remain local and free. There is no reliable export/backup yet, so do not store irreplaceable records.
+
+## v0.1.3 Single-version footer and product-depth checkpoint (iPhone 16e feedback)
+- [x] Confirm v0.1.2 build 44 on physical iPhone 16e using screenshots.
+- [x] Remove repeated version badge from Home.
+- [x] Replace the oversized Installed App information card with one understated More footer showing the real installed version and rolling build number.
+- [x] Keep a brief pre-release backup limitation in More; preserve detailed privacy guidance elsewhere.
+- [x] Keep all 13 approved icons, original four-tab structure, Home preferences, iOS 16 and Core Data store unchanged.
+- [x] Set v0.1.3 and keep automatic CI build-number stamping and IPA identity verification.
+- [ ] Verify v0.1.3 GitHub simulator/device compilation, tests and IPA.
+- [ ] Verify More is the **only** visible place showing the version on a physical iPhone.
+- [ ] Test synthetic symptom, heart-rate, blood-pressure and check-in entries end-to-end, then verify on Home and History after app relaunch.
+- [ ] Decide whether to add *conditional*, data-driven Today summaries (latest user-entered reading/episode) rather than add empty decorative widgets.
+- [ ] Prioritize functional hydration/medication/rest tracking and tested backup/restore rather than repeatedly redesigning a still-empty history.
+- [ ] Accessibility review of empty/filled states in large text, VoiceOver and Low Energy Mode.
+
+**Design assessment:** The clean navigation works on real hardware. What's still missing is useful context after recording, enough completed logging categories, and confidence in end-to-end persistence, not another layer of decorative cards. Never imply the app takes automatic readings or makes medical judgments.
