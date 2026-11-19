@@ -109,7 +109,7 @@ struct HomeCustomizationView: View {
                     }
                 }
 
-                sectionHeader("Home sections", caption: "Reorder or hide any section. Today stays available for quick access.")
+                sectionHeader("Home sections", caption: "Reorder or hide sections. Restore the original layout whenever you like.")
 
                 LazyVGrid(columns: columns, spacing: 10) {
                     ForEach(modules) { module in
