@@ -1,0 +1,108 @@
+name: BerryStore iOS IPA (experimental)
+
+on:
+  push:
+    branches:
+      - berrystore-v0.1
+    paths:
+      - 'BerryStore/**'
+      - '.github/workflows/berrystore-ios.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: berrystore-ios-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build BerryStore IPA on macOS
+    runs-on: xcode-27
+    timeout-minutes: 110
+    env:
+      UPSTREAM_SHA: 4f3d18d98c5fbee72c80f787ceb2e8e09ded60a6
+      BERRY_VERSION: 0.1.0
+    steps:
+      - name: Checkout our brand and verification source
+        uses: actions/checkout@v4
+
+      - name: Run independent BerryStore unit tests
+        run: python3 -m unittest discover -s BerryStore/tests -v
+
+      - name: Select upstream-tested Xcode version
+        uses: maxim-lobanov/setup-xcode@v1.6.0
+        with:
+          xcode-version: '27.2'
+
+      - name: Get pinned SideStore source and recursive submodules
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --no-checkout https://github.com/SideStore/SideStore.git "$RUNNER_TEMP/upstream"
+          git -C "$RUNNER_TEMP/upstream" checkout --detach "$UPSTREAM_SHA"
+          git -C "$RUNNER_TEMP/upstream" submodule update --init --recursive --depth=1
+          test "$(git -C "$RUNNER_TEMP/upstream" rev-parse HEAD)" = "$UPSTREAM_SHA"
+          test -d "$RUNNER_TEMP/upstream/Dependencies/SideSign"
+          test -d "$RUNNER_TEMP/upstream/Dependencies/minimuxer"
+
+      - name: Prepare separate BerryStore app identity and artwork
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 BerryStore/scripts/prepare.py --source "$RUNNER_TEMP/upstream"
+          /usr/libexec/PlistBuddy -c 'Print CFBundleDisplayName' "$RUNNER_TEMP/upstream/AltStore/Info.plist" | grep -Fx BerryStore
+
+      - name: Install upstream IPA packaging tools
+        run: brew install ldid xcbeautify
+
+      - name: Compile and fakesign real iPhone IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/BerryStore/artifacts"
+          cd "$RUNNER_TEMP/upstream"
+          NSUnbufferedIO=YES make BUILD_CONFIG=Release MARKETING_VERSION="$BERRY_VERSION" build \
+            2>&1 | tee "$GITHUB_WORKSPACE/BerryStore/artifacts/xcodebuild.log" | xcbeautify --renderer github-actions
+          make fakesign
+          make ipa
+          test -s SideStore.ipa
+          cp SideStore.ipa "$GITHUB_WORKSPACE/BerryStore/artifacts/BerryStore-$BERRY_VERSION-fakesigned.ipa"
+
+      - name: Verify compiled IPA and hash
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 BerryStore/scripts/verify_ipa.py "BerryStore/artifacts/BerryStore-$BERRY_VERSION-fakesigned.ipa"
+          (cd BerryStore/artifacts && shasum -a 256 "BerryStore-$BERRY_VERSION-fakesigned.ipa" > SHA256SUMS.txt)
+
+      - name: Package modified AGPL source and pinned submodules
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "$RUNNER_TEMP/upstream/LICENSE"
+          cp -R "$GITHUB_WORKSPACE/BerryStore" "$RUNNER_TEMP/upstream/BerryStore-build-overlay"
+          tar -C "$RUNNER_TEMP/upstream" -czf "$GITHUB_WORKSPACE/BerryStore/artifacts/BerryStore-$BERRY_VERSION-source.tar.gz" \
+            --exclude=.git --exclude=SideStore.xcarchive --exclude=build --exclude=SideStore.ipa .
+          test -s "BerryStore/artifacts/BerryStore-$BERRY_VERSION-source.tar.gz"
+
+      - name: Upload verified IPA and corresponding source
+        uses: actions/upload-artifact@v4
+        with:
+          name: BerryStore-${{ env.BERRY_VERSION }}-IPA-and-source
+          path: |
+            BerryStore/artifacts/BerryStore-*.ipa
+            BerryStore/artifacts/BerryStore-*-source.tar.gz
+            BerryStore/artifacts/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Preserve compiler log if build fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: BerryStore-${{ env.BERRY_VERSION }}-build-log
+          path: BerryStore/artifacts/xcodebuild.log
+          if-no-files-found: ignore
+          retention-days: 30
