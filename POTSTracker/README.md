@@ -39,6 +39,6 @@ Do **not** replace the approved artwork with automatically generated substitutes
 4. Run physical-device testing (including offline launch, permission denial, timezone changes and data restore).
 5. Publish only after real-device validation.
 
-Track progress in [BUILD_CHECKLIST.md](BUILD_CHECKLIST.md) and GitHub Issues.
+Track progress in [BUILD_CHECKLIST.md](BUILD_CHECKLIST.md), the [research-backed premium-quality (all-free) roadmap](PREMIUM_FEATURE_ROADMAP.md), and GitHub Issues.
 
 No personal medical details, test logs containing identifying health data, credentials or backups belong in this public repository.
