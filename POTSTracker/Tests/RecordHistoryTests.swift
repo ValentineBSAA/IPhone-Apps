@@ -92,4 +92,62 @@ final class RecordHistoryTests: XCTestCase {
         XCTAssertEqual(days[1].categories.count, 1)
         XCTAssertEqual(days[1].records.count, 1)
     }
+
+    func testDeleteWholeDateKeepsAnotherDate() throws {
+        let context = try memoryContainer().viewContext
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let previous = calendar.date(byAdding: .day, value: -1, to: today)!
+        for title in ["Better", "Worse", "Usual"] {
+            _ = try add(context, title: title, date: today.addingTimeInterval(3600))
+        }
+        _ = try add(context, title: "Yesterday", date: previous.addingTimeInterval(3600))
+
+        let groups = RecordDayGroup.group(RecordSnapshot.snapshots(of: try all(context)))
+        XCTAssertEqual(groups.count, 2)
+        XCTAssertEqual(groups[0].records.count, 3)
+        let deleted = try RecordStore.delete(groups[0].records.map(\.id), in: context)
+        XCTAssertEqual(deleted, 3)
+        let remaining = try all(context)
+        XCTAssertEqual(remaining.count, 1)
+        XCTAssertEqual(remaining[0].title, "Yesterday")
+    }
+
+    func testDeleteOneCategoryKeepsOtherCategoryAndDay() throws {
+        let context = try memoryContainer().viewContext
+        let now = Date()
+        for _ in 0..<4 {
+            _ = try add(context, type: "checkIn", title: "Feeling", date: now)
+        }
+        _ = try add(context, type: "heartRate", title: "Heart Rate", date: now)
+
+        let day = try XCTUnwrap(RecordDayGroup.group(RecordSnapshot.snapshots(of: all(context))).first)
+        let group = try XCTUnwrap(day.categories.first(where: { $0.category == "checkIn" }))
+        let removed = try RecordStore.delete(group.records.map(\.id), in: context)
+        XCTAssertEqual(removed, 4)
+        let remaining = try all(context)
+        XCTAssertEqual(remaining.count, 1)
+        XCTAssertEqual(remaining[0].category, "heartRate")
+    }
+
+    func testClearAllHistoryRemovesAllEntriesAcrossDatesAndCategories() throws {
+        let context = try memoryContainer().viewContext
+        let old = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
+        _ = try add(context, type: "checkIn", title: "Better", date: Date())
+        _ = try add(context, type: "journal", title: "Old note", date: old)
+        _ = try add(context, type: "symptom", title: "Dizziness", date: Date())
+        let ids = try all(context).map(\.objectID)
+        XCTAssertEqual(try RecordStore.delete(ids, in: context), 3)
+        XCTAssertTrue(try all(context).isEmpty)
+        XCTAssertEqual(try RecordStore.delete(ids, in: context), 0)
+        XCTAssertTrue(RecordDayGroup.group(RecordSnapshot.snapshots(of: try all(context))).isEmpty)
+    }
+
+    func testBulkDeleteOnlyDeletesEachIDOnce() throws {
+        let context = try memoryContainer().viewContext
+        let entry = try add(context, title: "Once")
+        XCTAssertEqual(try RecordStore.delete([entry.objectID, entry.objectID], in: context), 1)
+        XCTAssertTrue(try all(context).isEmpty)
+    }
+
 }
