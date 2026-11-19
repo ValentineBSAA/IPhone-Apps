@@ -15,7 +15,13 @@ struct RecordEditDestination: View {
         Group {
             if let record = try? context.existingObject(with: objectID) as? POTSLogEntry,
                !record.isDeleted {
-                EntryEditor(category: LogCategory(rawValue: record.category) ?? .journal, editing: record)
+                if record.category == LogCategory.journal.rawValue {
+                    JournalProtected {
+                        EntryEditor(category: .journal, editing: record)
+                    }
+                } else {
+                    EntryEditor(category: LogCategory(rawValue: record.category) ?? .journal, editing: record)
+                }
             } else {
                 Text("This entry is no longer available.")
                     .font(.subheadline)
@@ -227,7 +233,7 @@ struct RecordTreeView: View {
                 }
                 .padding(8)
                 .background(
-                    Color(uiColor: .secondarySystemGroupedBackground),
+                    Color.potsSurface,
                     in: RoundedRectangle(cornerRadius: 19)
                 )
                 .overlay(RoundedRectangle(cornerRadius: 19).strokeBorder(Color.potsTeal.opacity(0.08)))
