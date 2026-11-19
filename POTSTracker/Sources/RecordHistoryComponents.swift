@@ -106,6 +106,27 @@ enum RecordStore {
             throw error
         }
     }
+
+    /// Delete an entire day, category or lifetime collection in one transaction.
+    /// Every ID is resolved at confirmation time. A failed save rolls back
+    /// the whole operation, avoiding partially deleted local health records.
+    @discardableResult
+    static func delete(_ ids: [NSManagedObjectID], in context: NSManagedObjectContext) throws -> Int {
+        var deleted = 0
+        for id in Set(ids) {
+            guard let entry = try? context.existingObject(with: id) as? POTSLogEntry,
+                  !entry.isDeleted else { continue }
+            context.delete(entry)
+            deleted += 1
+        }
+        do {
+            try POTSData.save(context)
+            return deleted
+        } catch {
+            context.rollback()
+            throw error
+        }
+    }
 }
 
 struct RecordDayGroup: Identifiable {
@@ -141,26 +162,39 @@ struct RecordCategoryGroup: Identifiable {
     var icon: String { records.first?.symbol ?? "doc.text" }
 }
 
-/// A compact expandable tree: date -> tracker type -> entry.
-/// All groups start collapsed. Even hundreds of records won't become a wall of cards.
+/// Three-level History: date → category → individual entry.
+/// Each visible surface has full-width native-feeling flick controls.
 struct RecordTreeView: View {
     let records: [RecordSnapshot]
     let onEdit: (NSManagedObjectID) -> Void
     let onDelete: (NSManagedObjectID) -> Void
+    let onDeleteGroup: ([NSManagedObjectID], String) -> Void
+
     @State private var expandedDays = Set<Date>()
     @State private var expandedCategories = Set<String>()
 
     var body: some View {
-        LazyVStack(spacing: 9) {
+        LazyVStack(spacing: 11) {
             ForEach(RecordDayGroup.group(records)) { day in
                 VStack(spacing: 0) {
-                    Button {
-                        toggleDay(day.id)
-                    } label: {
-                        HStack(spacing: 11) {
+                    HistorySwipeSurface(
+                        leadingTitle: expandedDays.contains(day.id) ? "Close" : "Open",
+                        leadingSymbol: expandedDays.contains(day.id) ? "chevron.up" : "chevron.down",
+                        trailingTitle: "Delete day",
+                        accessibilityTitle: "\(day.day.formatted(date: .complete, time: .omitted)), \(day.records.count) entries",
+                        onTap: { toggleDay(day.id) },
+                        onLeading: { toggleDay(day.id) },
+                        onTrailing: {
+                            onDeleteGroup(
+                                day.records.map(\.id),
+                                day.day.formatted(date: .complete, time: .omitted)
+                            )
+                        }
+                    ) {
+                        HStack(spacing: 10) {
                             Image(systemName: "calendar")
                                 .foregroundStyle(Color.potsTeal)
-                                .frame(width: 24)
+                                .frame(width: 25)
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(day.day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))
                                     .font(.subheadline.weight(.semibold))
@@ -168,7 +202,7 @@ struct RecordTreeView: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
-                            Spacer()
+                            Spacer(minLength: 6)
                             Text("\(day.records.count)")
                                 .font(.subheadline.weight(.semibold).monospacedDigit())
                                 .foregroundStyle(Color.potsTeal)
@@ -176,166 +210,127 @@ struct RecordTreeView: View {
                                 .padding(.vertical, 5)
                                 .background(Color.potsTeal.opacity(0.09), in: Capsule())
                             Image(systemName: expandedDays.contains(day.id) ? "chevron.down" : "chevron.right")
-                                .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
+                                .font(.caption.weight(.medium))
                         }
-                        .padding(15)
-                        .contentShape(Rectangle())
+                        .padding(.horizontal, 11)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(day.day.formatted(date: .complete, time: .omitted)), \(day.records.count) entries")
-                    .accessibilityHint(expandedDays.contains(day.id) ? "Collapse date" : "Expand date")
-
                     if expandedDays.contains(day.id) {
-                        Divider().padding(.leading, 15)
-                        VStack(spacing: 0) {
+                        VStack(spacing: 5) {
                             ForEach(day.categories) { group in
                                 categoryNode(group)
                             }
                         }
-                        .padding(.leading, 14)
-                        .padding(.trailing, 12)
-                        .padding(.bottom, 7)
+                        .padding(.top, 6)
+                        .padding(.leading, 12)
                     }
                 }
-                .background(Color(uiColor: .secondarySystemGroupedBackground),
-                            in: RoundedRectangle(cornerRadius: 18))
-                .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.potsTeal.opacity(0.08)))
+                .padding(8)
+                .background(
+                    Color(uiColor: .secondarySystemGroupedBackground),
+                    in: RoundedRectangle(cornerRadius: 19)
+                )
+                .overlay(RoundedRectangle(cornerRadius: 19).strokeBorder(Color.potsTeal.opacity(0.08)))
             }
         }
     }
 
     @ViewBuilder
     private func categoryNode(_ group: RecordCategoryGroup) -> some View {
-        Button {
-            if !expandedDays.contains(group.day) { expandedDays.insert(group.day) }
-            if !expandedCategories.insert(group.id).inserted { expandedCategories.remove(group.id) }
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: group.icon)
-                    .frame(width: 20)
-                    .foregroundStyle(Color.potsTeal)
-                Text(group.label).font(.subheadline.weight(.medium))
-                Spacer()
-                Text("\(group.records.count)")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                Image(systemName: expandedCategories.contains(group.id) ? "chevron.down" : "chevron.right")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
+        VStack(spacing: 5) {
+            HistorySwipeSurface(
+                leadingTitle: expandedCategories.contains(group.id) ? "Close" : "Open",
+                leadingSymbol: expandedCategories.contains(group.id) ? "chevron.up" : "chevron.down",
+                trailingTitle: "Delete group",
+                accessibilityTitle: "\(group.label), \(group.records.count) entries",
+                onTap: { toggleCategory(group) },
+                onLeading: { toggleCategory(group) },
+                onTrailing: {
+                    onDeleteGroup(
+                        group.records.map(\.id),
+                        "\(group.label) on \(group.day.formatted(date: .abbreviated, time: .omitted))"
+                    )
+                }
+            ) {
+                HStack(spacing: 10) {
+                    Image(systemName: group.icon)
+                        .frame(width: 22)
+                        .foregroundStyle(Color.potsTeal)
+                    Text(group.label).font(.subheadline.weight(.medium))
+                    Spacer(minLength: 5)
+                    Text("\(group.records.count)")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                    Image(systemName: expandedCategories.contains(group.id) ? "chevron.down" : "chevron.right")
+                        .foregroundStyle(.secondary)
+                        .font(.caption2.weight(.medium))
+                }
+                .padding(.horizontal, 10)
             }
-            .padding(.vertical, 13)
-            .padding(.horizontal, 6)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityHint(expandedCategories.contains(group.id) ? "Collapse entries" : "Show individual entries")
 
-        if expandedCategories.contains(group.id) {
-            VStack(spacing: 0) {
-                ForEach(group.records) { record in
-                    RecordSwipeRow(record: record, onEdit: { onEdit(record.id) }, onDelete: { onDelete(record.id) })
-                    if record.id != group.records.last?.id {
-                        Divider().padding(.leading, 8)
+            if expandedCategories.contains(group.id) {
+                LazyVStack(spacing: 6) {
+                    ForEach(group.records) { record in
+                        RecordSwipeRow(
+                            record: record,
+                            onEdit: { onEdit(record.id) },
+                            onDelete: { onDelete(record.id) }
+                        )
                     }
                 }
+                .padding(.leading, 11)
             }
-            .padding(.leading, 10)
-            .background(Color.potsTeal.opacity(0.035), in: RoundedRectangle(cornerRadius: 12))
         }
     }
 
     private func toggleDay(_ id: Date) {
         if !expandedDays.insert(id).inserted { expandedDays.remove(id) }
     }
+
+    private func toggleCategory(_ group: RecordCategoryGroup) {
+        if !expandedCategories.insert(group.id).inserted { expandedCategories.remove(group.id) }
+    }
 }
 
-/// Swipe right reveals Edit; swipe left reveals Delete, which still asks
-/// for confirmation. Tap a row to edit. VoiceOver and long press also work.
+/// Swiping anywhere on a saved row feels like a normal short flick.
+/// It reveals actions or, with a full swipe, opens the action; deletion always
+/// requires the confirmation owned by the persistent History screen.
 struct RecordSwipeRow: View {
     let record: RecordSnapshot
     let onEdit: () -> Void
     let onDelete: () -> Void
 
-    @State private var reveal: Int = 0
-
-    private let railWidth: CGFloat = 77
-
     var body: some View {
-        ZStack(alignment: .center) {
-            HStack(spacing: 0) {
-                Button {
-                    reveal = 0
-                    onEdit()
-                } label: {
-                    Image(systemName: "pencil")
-                        .frame(width: railWidth, height: 62)
-                        .foregroundStyle(.white)
-                        .background(Color.potsTeal, in: RoundedRectangle(cornerRadius: 11))
-                }
-                .accessibilityLabel("Edit entry")
-                Spacer()
-                Button {
-                    reveal = 0
-                    onDelete()
-                } label: {
-                    Image(systemName: "trash")
-                        .frame(width: railWidth, height: 62)
-                        .foregroundStyle(.white)
-                        .background(Color.red, in: RoundedRectangle(cornerRadius: 11))
-                }
-                .accessibilityLabel("Delete entry")
-            }
-
-            Button {
-                if reveal == 0 { onEdit() } else { reveal = 0 }
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: record.symbol)
-                        .foregroundStyle(Color.potsTeal)
-                        .frame(width: 21)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(record.title)
-                            .font(.subheadline.weight(.medium))
-                            .lineLimit(1)
-                        Text(record.detail)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
-                    Spacer(minLength: 4)
-                    Text(record.recordedAt.formatted(date: .omitted, time: .shortened))
-                        .font(.caption.monospacedDigit())
+        HistorySwipeSurface(
+            leadingTitle: "Edit",
+            leadingSymbol: "pencil",
+            trailingTitle: "Delete",
+            accessibilityTitle: "\(record.title), \(record.detail)",
+            onTap: onEdit,
+            onLeading: onEdit,
+            onTrailing: onDelete
+        ) {
+            HStack(spacing: 10) {
+                Image(systemName: record.symbol)
+                    .foregroundStyle(Color.potsTeal)
+                    .frame(width: 23)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(record.title)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text(record.detail)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(2)
                 }
-                .frame(minHeight: 62)
-                .padding(.horizontal, 8)
-                .background(Color(uiColor: .secondarySystemGroupedBackground),
-                            in: RoundedRectangle(cornerRadius: 11))
-                .contentShape(Rectangle())
+                Spacer(minLength: 5)
+                Text(record.recordedAt.formatted(date: .omitted, time: .shortened))
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
-            .buttonStyle(.plain)
-            .offset(x: CGFloat(reveal) * railWidth)
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 25)
-                    .onEnded { gesture in
-                        let dx = gesture.translation.width
-                        let dy = gesture.translation.height
-                        guard abs(dx) > 55, abs(dx) > abs(dy) * 1.35 else { return }
-                        withAnimation(.easeOut(duration: 0.18)) {
-                            reveal = dx > 0 ? 1 : -1
-                        }
-                    }
-            )
+            .padding(.horizontal, 11)
         }
-        .frame(maxWidth: .infinity)
-        .clipped()
-        .contextMenu {
-            Button(action: onEdit) { Label("Edit", systemImage: "pencil") }
-            Button(role: .destructive, action: { onDelete() }) { Label("Delete", systemImage: "trash") }
-        }
-        .accessibilityAction(named: "Edit") { onEdit() }
-        .accessibilityAction(named: "Delete") { onDelete() }
-
     }
 }
