@@ -1,0 +1,23 @@
+# Do not commit real or identifiable health data or encrypted backup archives.
+# Keep all patient/device logs and exports outside public source control.
+Backups/
+Exports/
+PrivateData/
+PatientData/
+DiagnosticLogs/
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.db-shm
+*.db-wal
+*.mobileconfig
+*.p12
+*.p8
+*.pfx
+*.pem
+*.key
+*.ipa
+*.xcarchive/
+.DS_Store
