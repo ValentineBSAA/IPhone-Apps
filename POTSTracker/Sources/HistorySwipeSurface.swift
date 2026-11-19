@@ -4,9 +4,9 @@ import SwiftUI
 /// Unlike List.swipeActions, this works in grids/scroll views without
 /// converting the user's preferred card UI into a List.
 ///
-/// Drag from anywhere on the card. A short swipe reveals a named action;
-/// a decisive swipe opens that action directly. Destructive actions only
-/// request a confirmation from a stable parent, never delete on swipe.
+/// A deliberate swipe reveals a labeled action and leaves it visible until tapped.
+/// Ordinary taps open the card directly and never flash the action rail.
+/// No long-press gesture and no irreversible full-swipe deletion.
 struct HistorySwipeSurface<Content: View>: View {
     let leadingTitle: String
     let leadingSymbol: String
@@ -21,6 +21,7 @@ struct HistorySwipeSurface<Content: View>: View {
     @State private var draggingOffset: CGFloat = 0
 
     private let actionWidth: CGFloat = 88
+    private let settleDuration: Double = 0.34
 
     init(
         leadingTitle: String,
@@ -69,13 +70,12 @@ struct HistorySwipeSurface<Content: View>: View {
                     onTrailing()
                 }
             }
+            .opacity(abs(activeOffset) > 6 ? 1 : 0)
+            .allowsHitTesting(abs(activeOffset) > 6)
 
             Button {
-                if restingOffset != 0 {
-                    close()
-                } else {
-                    onTap()
-                }
+                close()
+                onTap()
             } label: {
                 content
                     .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
@@ -92,33 +92,26 @@ struct HistorySwipeSurface<Content: View>: View {
         .contentShape(Rectangle())
         .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
         .simultaneousGesture(
-            DragGesture(minimumDistance: 12, coordinateSpace: .local)
+            DragGesture(minimumDistance: 23, coordinateSpace: .local)
                 .onChanged { value in
                     let dx = value.translation.width
                     let dy = value.translation.height
-                    guard abs(dx) > 8, abs(dx) > abs(dy) * 1.12 else { return }
+                    guard abs(dx) > 12, abs(dx) > abs(dy) * 1.35 else { return }
                     draggingOffset = dx
                 }
                 .onEnded { value in
                     let dx = value.translation.width
                     let dy = value.translation.height
-                    defer { draggingOffset = 0 }
-                    guard abs(dx) > 22, abs(dx) > abs(dy) * 1.12 else { return }
-
-                    // A normal quick flick is enough from any point on the
-                    // surface. Short, deliberate swipes reveal the action rail.
-                    let projected = value.predictedEndTranslation.width
-                    if dx > 90 || (dx > 28 && projected > 165) {
-                        restingOffset = 0
-                        onLeading()
-                    } else if dx < -90 || (dx < -28 && projected < -165) {
-                        restingOffset = 0
-                        onTrailing()
-                    } else {
-                        let target = restingOffset + dx
-                        withAnimation(.easeOut(duration: 0.17)) {
-                            restingOffset = target > 43 ? actionWidth : (target < -43 ? -actionWidth : 0)
+                    guard abs(dx) > 30, abs(dx) > abs(dy) * 1.35 else {
+                        withAnimation(.easeInOut(duration: settleDuration)) {
+                            draggingOffset = 0
                         }
+                        return
+                    }
+                    let target = restingOffset + dx
+                    withAnimation(.easeInOut(duration: settleDuration)) {
+                        restingOffset = target > 46 ? actionWidth : (target < -46 ? -actionWidth : 0)
+                        draggingOffset = 0
                     }
                 }
         )
@@ -149,6 +142,6 @@ struct HistorySwipeSurface<Content: View>: View {
 
     private func close() {
         draggingOffset = 0
-        withAnimation(.easeOut(duration: 0.16)) { restingOffset = 0 }
+        withAnimation(.easeInOut(duration: settleDuration)) { restingOffset = 0 }
     }
 }
