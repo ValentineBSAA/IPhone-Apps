@@ -8,7 +8,7 @@ on:
       - ".github/workflows/pots-build-1.yml"
 
 concurrency:
-  group: pots-tracker-ux-main
+  group: pots-tracker-ux-v015
   cancel-in-progress: true
 
 permissions:
