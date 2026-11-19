@@ -61,7 +61,7 @@ struct EntriesForCategory: View {
     let category: LogCategory
     let feature: TrackerFeature
     @State private var adding = false
-    @State private var editing: POTSLogEntry?
+    @State private var editingRoute: RecordEditRoute?
 
     private var filtered: [POTSLogEntry] {
         entries.filter { $0.category == category.rawValue }
@@ -139,9 +139,26 @@ struct EntriesForCategory: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 } else {
-                    LazyVGrid(columns: [GridItem(.flexible())], spacing: 9) {
-                        ForEach(filtered, id: \.objectID) { entry in
-                            EntryCard(entry: entry) { editing = entry }
+                    LazyVStack(spacing: 4) {
+                        ForEach(RecordDayGroup.group(RecordSnapshot.snapshots(of: filtered))) { day in
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(day.day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                VStack(spacing: 0) {
+                                    ForEach(day.records) { record in
+                                        RecordSwipeRow(record: record) {
+                                            editingRoute = RecordEditRoute(objectID: record.id)
+                                        }
+                                        if record.id != day.records.last?.id {
+                                            Divider().padding(.leading, 12)
+                                        }
+                                    }
+                                }
+                                .padding(8)
+                                .background(Color(uiColor: .secondarySystemGroupedBackground),
+                                            in: RoundedRectangle(cornerRadius: 18))
+                            }
                         }
                     }
                 }
@@ -151,8 +168,8 @@ struct EntriesForCategory: View {
         }
         .background(Color.potsBackground.ignoresSafeArea())
         .sheet(isPresented: $adding) { EntryEditor(category: category) }
-        .sheet(item: $editing) { entry in
-            EntryEditor(category: category, editing: entry)
+        .sheet(item: $editingRoute) { route in
+            RecordEditDestination(objectID: route.objectID)
         }
     }
 
