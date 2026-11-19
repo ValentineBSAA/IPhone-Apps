@@ -63,6 +63,7 @@ struct DashboardView: View {
     private var entries: FetchedResults<POTSLogEntry>
 
     @AppStorage("lowEnergyMode") private var lowEnergyMode = false
+    @AppStorage("showEducationHints") private var showEducationHints = true
     @State private var selectedFeature: TrackerFeature?
     @State private var newLog: LogCategory?
     @State private var editLog: POTSLogEntry?
@@ -106,7 +107,7 @@ struct DashboardView: View {
                     Text("POTS Tracker")
                         .font(.headline.weight(.semibold))
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         if let settings = TrackerFeature.all.first(where: { $0.id == "settings" }) {
                             selectedFeature = settings
@@ -149,10 +150,12 @@ struct DashboardView: View {
             Text(Date.now.formatted(.dateTime.weekday(.wide).month(.wide).day()))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            Text("Log only what feels helpful. Every day is optional.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .padding(.top, 2)
+            if showEducationHints {
+                Text("Log only what feels helpful. Every day is optional.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 2)
+            }
         }
     }
 
