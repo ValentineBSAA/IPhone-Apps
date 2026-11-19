@@ -9,6 +9,7 @@ struct EntryEditor: View {
     let category: LogCategory
     let editing: POTSLogEntry?
 
+    @State private var selectedFeeling: String
     @State private var title: String
     @State private var notes: String
     @State private var posture: String
@@ -26,10 +27,17 @@ struct EntryEditor: View {
     ]
     private let positions = ["Not specified", "Lying down", "Sitting", "Standing"]
 
-    init(category: LogCategory, editing: POTSLogEntry? = nil) {
+    init(category: LogCategory, editing: POTSLogEntry? = nil, suggestedFeeling: String? = nil) {
         self.category = category
         self.editing = editing
-        _title = State(initialValue: editing?.title ?? "")
+        _selectedFeeling = State(initialValue: editing.flatMap {
+            CheckInFormat.feeling(title: $0.title, posture: $0.posture)
+        } ?? suggestedFeeling ?? "")
+        _title = State(initialValue: editing?.title ?? (
+            category == .checkIn && suggestedFeeling != nil
+            ? CheckInFormat.defaultTitle(for: suggestedFeeling!)
+            : ""
+        ))
         _notes = State(initialValue: editing?.notes ?? "")
         _posture = State(initialValue: editing?.posture.isEmpty == false ? editing!.posture : "Not specified")
         _severity = State(initialValue: editing.map { Int($0.severity) } ?? -1)
@@ -51,7 +59,8 @@ struct EntryEditor: View {
         case .journal:
             return !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case .checkIn:
-            return !title.isEmpty
+            return CheckInFormat.feelings.contains(selectedFeeling)
+                && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
     }
 
@@ -69,16 +78,18 @@ struct EntryEditor: View {
                     case .journal: journalFields
                     case .checkIn: checkInFields
                     }
-                    GlassCard {
-                        VStack(alignment: .leading, spacing: 13) {
-                            DatePicker("Recorded at", selection: $recordedAt, in: ...Date(), displayedComponents: [.date, .hourAndMinute])
-                                .datePickerStyle(.compact)
-                            if category != .journal {
-                                Text("Additional notes (optional)")
-                                    .font(.subheadline.weight(.semibold))
-                                TextField("What were you doing? How did you feel?", text: $notes, axis: .vertical)
-                                    .lineLimit(3...7)
-                                    .textFieldStyle(.roundedBorder)
+                    if category != .checkIn {
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: 13) {
+                                DatePicker("Recorded at", selection: $recordedAt, in: ...Date(), displayedComponents: [.date, .hourAndMinute])
+                                    .datePickerStyle(.compact)
+                                if category != .journal {
+                                    Text("Additional notes (optional)")
+                                        .font(.subheadline.weight(.semibold))
+                                    TextField("What were you doing? How did you feel?", text: $notes, axis: .vertical)
+                                        .lineLimit(3...7)
+                                        .textFieldStyle(.roundedBorder)
+                                }
                             }
                         }
                     }
@@ -94,7 +105,7 @@ struct EntryEditor: View {
                     inputFocused = false
                     saveEntry()
                 } label: {
-                    Label(editing == nil ? "Save entry" : "Save changes", systemImage: "checkmark.circle.fill")
+                    Label(editing == nil ? (category == .checkIn ? "Save check-in" : "Save entry") : "Save changes", systemImage: "checkmark.circle.fill")
                         .font(.headline)
                         .frame(maxWidth: .infinity, minHeight: lowEnergyMode ? 62 : 52)
                 }
@@ -226,14 +237,66 @@ struct EntryEditor: View {
 
     private var checkInFields: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("How are you feeling?")
-                    .font(.headline)
-                ForEach(["Better", "Usual", "Worse", "Much worse", "Not sure"], id: \.self) { feeling in
-                    Button(feeling) { title = feeling }
-                        .buttonStyle(.bordered)
-                        .tint(title == feeling ? Color.potsTeal : Color.gray)
+            VStack(alignment: .leading, spacing: 13) {
+                HStack {
+                    Text("How are you feeling?")
+                        .font(.headline)
+                    Spacer()
+                    Text("Optional check-in")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 7)], spacing: 7) {
+                    ForEach(CheckInFormat.feelings, id: \.self) { feeling in
+                        Button {
+                            // Preserve freely edited titles, but update the suggested
+                            // heading if this is still the template.
+                            if CheckInFormat.titleWasSuggested(title) || title.isEmpty {
+                                title = CheckInFormat.defaultTitle(for: feeling)
+                            }
+                            selectedFeeling = feeling
+                        } label: {
+                            Text(feeling)
+                                .font(.subheadline.weight(selectedFeeling == feeling ? .semibold : .medium))
+                                .minimumScaleFactor(0.82)
+                                .lineLimit(1)
+                                .frame(maxWidth: .infinity, minHeight: lowEnergyMode ? 56 : 43)
+                                .foregroundStyle(selectedFeeling == feeling ? Color.potsTeal : Color.primary)
+                                .background(
+                                    selectedFeeling == feeling ? Color.potsTeal.opacity(0.14) : Color.potsTeal.opacity(0.06),
+                                    in: RoundedRectangle(cornerRadius: 12)
+                                )
+                                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(
+                                    selectedFeeling == feeling ? Color.potsTeal.opacity(0.45) : Color.clear
+                                ))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Title").font(.subheadline.weight(.semibold))
+                    TextField("A short heading", text: $title)
+                        .textFieldStyle(.roundedBorder)
+                        .focused($inputFocused)
+                }
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("What would you like to remember?")
+                        .font(.subheadline.weight(.semibold))
+                    TextField("Optional details, a trigger, or a question for later", text: $notes, axis: .vertical)
+                        .lineLimit(3...6)
+                        .textFieldStyle(.roundedBorder)
+                        .focused($inputFocused)
+                }
+
+                DatePicker("When?", selection: $recordedAt, in: ...Date(), displayedComponents: [.date, .hourAndMinute])
+                    .datePickerStyle(.compact)
+
+                Text("Nothing is recorded until you tap Save.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -265,7 +328,9 @@ struct EntryEditor: View {
         entry.severity = category == .symptom ? Int16(severity) : -1
         entry.firstValue = Int32(firstValue) ?? 0
         entry.secondValue = Int32(secondValue) ?? 0
-        entry.posture = (category == .heartRate || category == .bloodPressure) && posture != "Not specified" ? posture : ""
+        entry.posture = category == .checkIn
+            ? selectedFeeling
+            : ((category == .heartRate || category == .bloodPressure) && posture != "Not specified" ? posture : "")
         entry.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         if editing == nil {
             entry.timezoneID = TimeZone.current.identifier
