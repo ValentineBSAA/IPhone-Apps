@@ -232,12 +232,25 @@ struct EntriesForCategory: View {
 struct SettingsPanel: View {
     @AppStorage("lowEnergyMode") private var lowEnergyMode = false
     @AppStorage("showEducationHints") private var showEducationHints = true
+    @AppStorage("posiesAppearance") private var posiesAppearance = "system"
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 GlassCard {
                     VStack(alignment: .leading, spacing: 14) {
+                        Text("Floral appearance")
+                            .font(.headline)
+                        Picker("Appearance", selection: $posiesAppearance) {
+                            Text("System").tag("system")
+                            Text("Blossom").tag("light")
+                            Text("Midnight").tag("dark")
+                        }
+                        .pickerStyle(.segmented)
+                        Text("Blossom uses soft ivory and rose; Midnight uses OLED black and plum. System follows your iPhone. All modes preserve readable text.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Divider()
                         Text("Comfort & accessibility")
                             .font(.headline)
                         Toggle("Larger, simpler controls", isOn: $lowEnergyMode)
