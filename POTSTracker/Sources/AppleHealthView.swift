@@ -116,7 +116,7 @@ struct AppleHealthView: View {
                         Label("From Apple Health", systemImage: "heart.text.square.fill")
                             .font(.title3.bold())
                             .foregroundStyle(Color.potsTeal)
-                        Text("Choose whether to let POTS Tracker read activity already saved in your iPhone's Health app.")
+                        Text("Choose whether to let POTS & Posies read activity already saved in your iPhone's Health app.")
                             .font(.subheadline)
                         Text("Read-only. No Apple Watch, account, paid service or automatic upload. Nothing is imported into your saved journal.")
                             .font(.caption)
