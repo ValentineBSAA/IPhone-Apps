@@ -48,6 +48,9 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.berryblockblast.tests
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BERRY_INTERNAL_QA"
 schemes:
   BerryBlockBlast:
     build:
