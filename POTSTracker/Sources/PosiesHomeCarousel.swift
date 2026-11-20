@@ -257,7 +257,7 @@ struct PosiesHomeCarousel: View {
                     Image(systemName: "bell.badge.fill")
                         .foregroundStyle(Color.potsTeal).font(.title2)
                     VStack(alignment: .leading, spacing: 5) {
-                        Text(rule.name).font(.headline).lineLimit(2)
+                        Text("A reminder is scheduled").font(.headline).lineLimit(2)
                         Text(when.formatted(date: .abbreviated, time: .shortened))
                             .font(.subheadline).foregroundStyle(Color.potsSecondary)
                         Text("A reminder never means an entry is complete.")
