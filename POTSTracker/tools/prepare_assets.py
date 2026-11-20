@@ -8,6 +8,8 @@ Requires Pillow only to render the required opaque 1024px iOS Home Screen icon.
 The 12 in-app feature icons are copied without modifying their pixels.
 """
 import json
+import base64
+import io
 import hashlib
 import shutil
 from pathlib import Path
@@ -44,7 +46,16 @@ def main():
         stem = path.stem
         image_dir = CATALOG / f"{stem}.imageset"
         image_dir.mkdir(exist_ok=True)
-        shutil.copyfile(path, image_dir / name)
+        # The branded Home Screen icon is a compact WebP payload. Restore its
+        # native 1024px PNG at build time; leave the other 12 icons untouched.
+        if name == NAMES[0] and (ICON_DIR / "POTS_Posies_App_Icon.webp.b64").is_file():
+            encoded = (ICON_DIR / "POTS_Posies_App_Icon.webp.b64").read_text().strip()
+            raw = base64.b64decode(encoded, validate=True)
+            with Image.open(io.BytesIO(raw)) as branded:
+                branded.convert("RGB").resize((1024, 1024), Image.Resampling.LANCZOS).save(
+                    image_dir / name, "PNG", optimize=True)
+        else:
+            shutil.copyfile(path, image_dir / name)
         (image_dir / "Contents.json").write_text(
             json.dumps({
                 "images": [{"filename": name, "idiom": "universal"}],
@@ -57,9 +68,10 @@ def main():
     # unchanged in its imageset; flatten ONLY the Home Screen app-icon copy.
     appicon_set = CATALOG / "AppIcon.appiconset"
     appicon_set.mkdir(exist_ok=True)
-    with Image.open(ICON_DIR / NAMES[0]) as image:
+    branded_image = CATALOG / f"{Path(NAMES[0]).stem}.imageset" / NAMES[0]
+    with Image.open(branded_image) as image:
         img = image.convert("RGBA")
-        background = Image.new("RGBA", img.size, (13, 111, 145, 255))
+        background = Image.new("RGBA", img.size, (246, 176, 199, 255))
         background.alpha_composite(img)
         opaque = background.convert("RGB")
         opaque.save(appicon_set / "AppIcon-1024.png", "PNG", optimize=True)
