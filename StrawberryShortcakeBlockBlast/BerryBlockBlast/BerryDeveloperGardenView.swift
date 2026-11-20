@@ -235,6 +235,7 @@ struct BerryDeveloperGardenView: View {
                         }
                         .frame(maxWidth: 480)
                         .padding(20)
+                        .padding(.top, 14)
                         .frame(maxWidth: .infinity)
                     }
                     .background(BerryStyle.softPink.ignoresSafeArea())
