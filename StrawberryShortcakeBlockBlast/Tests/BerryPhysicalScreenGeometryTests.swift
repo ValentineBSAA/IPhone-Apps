@@ -3,7 +3,7 @@ import SwiftUI
 import XCTest
 @testable import BerryBlockBlast
 
-/// Run this test separately on actual 14 Pro and 16 simulator profiles.
+/// Test the one required physical target: iPhone 16e simulator.
 /// A 393x759 dummy UIWindow is NOT a substitute for a simulator screen:
 /// safe areas, Dynamic Island and the home indicator belong to the OS.
 @MainActor
@@ -34,17 +34,11 @@ final class BerryPhysicalScreenGeometryTests: XCTestCase {
         XCTAssertLessThan(bounds.width, bounds.height, "Portrait iPhone required")
         // Same logical width, but actual safe area comes from the OS,
         // rather than a hardcoded approximation.
-        // Real iPhone 16e is 390×844 logical points, while 14 Pro is
-        // 393×852. Do not silently accept the standard iPhone 16 as a 16e.
-        if abs(bounds.width - 390) <= 1 {
-            XCTAssertEqual(bounds.height, 844, accuracy: 2,
-                           "Expected iPhone 16e simulator resolution")
-        } else {
-            XCTAssertEqual(bounds.width, 393, accuracy: 1,
-                           "Expected iPhone 14 Pro or iPhone 16e")
-            XCTAssertEqual(bounds.height, 852, accuracy: 2,
-                           "Expected iPhone 14 Pro simulator resolution")
-        }
+        // Retired the 14 Pro QA gate at owner request.
+        XCTAssertEqual(bounds.width, 390, accuracy: 2,
+                       "Expected exact iPhone 16e simulator width")
+        XCTAssertEqual(bounds.height, 844, accuracy: 2,
+                       "Expected exact iPhone 16e simulator height")
 
         // Test main screen, story extra rows and 12x12 mode on actual safe area.
         for mode: BerryMode in [.classic, .endless, .story, .cozy, .superHard] {
