@@ -173,27 +173,28 @@ extension Color {
     // intentionally retained so every existing SwiftUI screen inherits the theme.
     static let potsTeal = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.94, green: 0.65, blue: 0.78, alpha: 1)
+        ? UIColor(red: 0.96, green: 0.67, blue: 0.79, alpha: 1)
         : UIColor(red: 0.59, green: 0.20, blue: 0.36, alpha: 1)
     })
     static let potsInk = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.97, green: 0.90, blue: 0.94, alpha: 1)
+        ? UIColor(red: 0.98, green: 0.92, blue: 0.95, alpha: 1)
         : UIColor(red: 0.24, green: 0.14, blue: 0.21, alpha: 1)
     })
+    // Midnight Posies is plum charcoal, not absolute black.
     static let potsBackground = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-        ? UIColor.black
+        ? UIColor(red: 0.077, green: 0.058, blue: 0.098, alpha: 1)
         : UIColor(red: 1.00, green: 0.970, blue: 0.980, alpha: 1)
     })
     static let potsSurface = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.105, green: 0.072, blue: 0.115, alpha: 1)
+        ? UIColor(red: 0.143, green: 0.107, blue: 0.161, alpha: 1)
         : UIColor(red: 1.00, green: 0.995, blue: 0.996, alpha: 1)
     })
     static let potsSurfaceMuted = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.17, green: 0.12, blue: 0.18, alpha: 1)
+        ? UIColor(red: 0.202, green: 0.148, blue: 0.221, alpha: 1)
         : UIColor(red: 0.975, green: 0.915, blue: 0.940, alpha: 1)
     })
 }
