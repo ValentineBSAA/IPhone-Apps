@@ -31,12 +31,14 @@ final class JournalAccess: ObservableObject {
     }
 }
 
-/// The journal destination never constructs or renders private entries while
-/// locked. Moving away from this destination locks it again.
+/// Journal content is guarded by the iPhone's native authentication sheet.
+/// There is no intermediate "Unlock Journal" page or second tap. If the person
+/// cancels Face ID / passcode, return to the previous screen with no private UI.
 struct JournalProtected<Content: View>: View {
+    @Environment(\.dismiss) private var dismiss
     @AppStorage("journalLockEnabled") private var enabled = false
     @ObservedObject private var access = JournalAccess.shared
-    @State private var errorText: String?
+    @State private var requested = false
     let content: Content
 
     init(@ViewBuilder content: () -> Content) {
@@ -48,42 +50,30 @@ struct JournalProtected<Content: View>: View {
             if !enabled || access.unlocked {
                 content
             } else {
-                ScrollView {
-                    VStack(spacing: 16) {
-                        Image(systemName: "lock.shield.fill")
-                            .font(.system(size: 46))
-                            .foregroundStyle(Color.potsTeal)
-                        Text("Journal locked")
-                            .font(.title3.bold())
-                        Text("Unlock using Face ID or your iPhone passcode. Journal entries stay hidden until then.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                        Button {
-                            access.authenticate(reason: "Unlock your private POTS Journal") { success, error in
-                                if !success { errorText = error }
-                            }
-                        } label: {
-                            Label("Unlock Journal", systemImage: "faceid")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity, minHeight: 54)
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                    .padding(24)
-                    .frame(maxWidth: .infinity)
+                VStack(spacing: 14) {
+                    ProgressView()
+                    Text("Unlocking private Journal…")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .accessibilityLabel("Authenticating private Journal")
             }
         }
         .background(Color.potsBackground.ignoresSafeArea())
+        .onAppear { authenticateIfNeeded() }
+        .onChange(of: enabled) { _ in authenticateIfNeeded() }
         .onDisappear { access.lock() }
-        .alert("Journal couldn't be unlocked", isPresented: Binding(
-            get: { errorText != nil },
-            set: { if !$0 { errorText = nil } }
-        )) {
-            Button("OK") { errorText = nil }
-        } message: {
-            Text(errorText ?? "Please try again.")
+    }
+
+    private func authenticateIfNeeded() {
+        guard enabled && !access.unlocked && !requested else { return }
+        requested = true
+        access.authenticate(reason: "Open your private POTS & Posies Journal") { success, _ in
+            if !success {
+                // Cancel/failed authentication never exposes private records.
+                dismiss()
+            }
         }
     }
 }
