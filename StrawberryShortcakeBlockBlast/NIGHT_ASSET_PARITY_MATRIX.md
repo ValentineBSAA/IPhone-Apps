@@ -41,6 +41,16 @@ The `Mapped in night resolver` annotation means the *name appears* in `BerryDayN
 | `Tile_Teal` | `Night_Tile_Teal` | Yes | Not shown in known resolver; use-site audit pending | Owner visual approval pending |
 | `Tile_Yellow` | `Night_Tile_Yellow` | Yes | Not shown in known resolver; use-site audit pending | Owner visual approval pending |
 
+## 🌙 Dedicated premium Nighttime Blocks audit · [S3B issue #32](https://github.com/ValentineBSAA/IPhone-Apps/issues/32)
+
+Existing **eight nighttime tile sprites** are present in the 30-asset pack: `Night_Tile_Empty`, `Night_Tile_Green`, `Night_Tile_Pink`, `Night_Tile_Purple`, `Night_Tile_Sparkle`, `Night_Tile_Strawberry`, `Night_Tile_Teal`, and `Night_Tile_Yellow`. However, `BerryBoardVisual` currently uses the night empty-cell art, and `BerryTile` contains a targeted night pink variant; other colored, collectible and trophy tile paths still need individual audit and owner-approved routing.
+
+**S3B is not merely repainting board cells.** The audit needs distinct night counterparts for *occupied* normal tiles in all six tints, current equipped Boutique skins, rewarded/trophy skins, selected tray, dragged and ghost pieces, legal/illegal previews, shrink-and-spring landing, used slots, and default/Blossom Glass rim combinations. Statuses are **imported, runtime-used, aesthetically approved, CI-verified, physical-owner accepted**, separately.
+
+**Unresolved appearance decisions:** moonlit glass/candy shading and glow intensity; visually distinct nighttime reds, violets, blues, teal, green and yellow; whether individual existing cosmetics need newly illustrated night sprites or a documented intentionally shared look. Keep original daytime purchases/skins unaltered, and don't quietly replace them with the same generic purple night block. **Art review first.**
+
+**Test gating:** iPhone 16e only, safe cell mapping for 8/12/24, readable small-sized night tiles, Reduce Motion and rapid taps, no economy/cosmetic ownership mutations on 6AM/6PM transitions. Include cheap tile-asset routing checks before the simulator.
+
 ## Additional parity inventory required (screenshots + code route audit)
 
 **P0 Home:** hero logo/character portrait treatment, badge, wallet, section headings and decor; large Berry Classic, Sweet Endless, Berry Story, Daily Harvest, My Strawberry Cottage, More Adventures; Berry Collection, Strawberry School, Berry Village, Berry Quests, Berry Journal, Daily Streak, Strawberry Jukebox, Berry Boutique. Track every Home tile with image source name, whether it even resolves via existing `Night_*` mapping, required new art, device preview and owner approval.
