@@ -113,7 +113,7 @@ struct PosiesDataManagementView: View {
                                 .font(.subheadline)
                         }
                         if let completed = cloud.lastSuccess {
-                            Label("Last verified backup: \\(completed.formatted(date: .abbreviated, time: .shortened))",
+                            Label("Last verified backup: \(completed.formatted(date: .abbreviated, time: .shortened))",
                                   systemImage: "checkmark.shield.fill")
                                 .font(.caption).foregroundStyle(Color.potsTeal)
                         } else {
@@ -256,7 +256,7 @@ struct PosiesDataManagementView: View {
                             exportAction = "backup"
                             confirmExport = true
                         } label: {
-                            Label("Export JSON (advanced)", systemImage: "curlybraces")
+                            Label("Export JSON (advanced)", systemImage: "doc.text")
                                 .frame(maxWidth: .infinity, minHeight: 44)
                         }
                         .buttonStyle(.bordered)
