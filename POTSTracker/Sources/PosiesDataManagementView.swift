@@ -92,7 +92,7 @@ struct PosiesDataManagementView: View {
                              ? "This installation can access app-managed iCloud Drive backups."
                              : (cloud.iCloudAvailable == nil
                                 ? "Checking iCloud Drive support…"
-                                : "Automatic iCloud Drive backup isn't available with this signing profile or iCloud setup. You can still save a copy through Files."))
+                                : "Automatic iCloud backup isn't available here. You can still save a copy using Files, including iCloud Drive if it's available."))
                             .font(.subheadline).foregroundStyle(Color.potsSecondary)
 
                         Toggle("Automatically back up to iCloud Drive", isOn: Binding(
@@ -128,7 +128,7 @@ struct PosiesDataManagementView: View {
                                 .buttonStyle(.bordered)
                                 .disabled(cloud.isSaving)
                         }
-                        Text("Cloud copies contain private journal information and aren't protected by a separate app password. Automatic backup is optional and needs a compatible Apple provisioning profile.")
+                        Text("Automatic backups can include sensitive health details and private Journal notes. Keep them in your private iCloud account. They don't have an extra app password.")
                             .font(.caption).foregroundStyle(Color.potsSecondary)
                     }
                 }
@@ -136,7 +136,7 @@ struct PosiesDataManagementView: View {
                 GlassCard {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Save or restore a copy").font(.headline)
-                        Text("For iCloud Drive: choose Save to Files, then iCloud Drive in the share sheet. This works without the app-managed iCloud entitlement.")
+                        Text("Want to keep a copy in iCloud? Choose Save to Files, then iCloud Drive if it's available.")
                             .font(.subheadline).foregroundStyle(Color.potsSecondary)
                         Button {
                             prepareManualBackup()
@@ -336,7 +336,7 @@ struct PosiesDataManagementView: View {
                 )
             }
         }
-        .alert("Data transfer", isPresented: Binding(
+        .alert(errorText == nil ? "All set!" : "We couldn't finish that", isPresented: Binding(
             get: { errorText != nil || outcomeText != nil },
             set: { if !$0 { errorText = nil; outcomeText = nil } }
         )) {
