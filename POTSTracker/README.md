@@ -1,6 +1,6 @@
 # POTS & Posies
 
-**Status (v0.2.0):** Native iOS 16+ test app. Previous v0.1.9 Build 127 was installed and pictured on a physical iPhone. The new v0.2.0 source includes a premium History redesign, one-step Journal Face ID opening, a softer Midnight Posies theme, Apple Health removal, and AltStore-readable PNG icon previews. Compilation and new real-device regression testing must be verified separately. Local backup/restore is not yet implemented.
+**Status (v0.2.4):** iOS 16+ native test app. The full-feature development branch has **passed Simulator, iPhone-device compilation, and its automated regression suite** (GitHub run 44717465530). Existing device testing had already approved v0.2.3's Journal lock, tab routing and Midnight theme. This upgrade activates Hydration, Medications, Sleep & Rest, Posture, Calendar, Reports, Reminders, and manual CSV/PDF/JSON export/backup/import. **Physical QA of v0.2.4 is still required**, particularly backup restore and local notifications. Everything remains free, offline-first, no Apple Health, no Watch, and no account. See [UX_V024.md](UX_V024.md).
 
 A free, privacy-first native **iPhone** utility for tracking lived experiences of Postural Orthostatic Tachycardia Syndrome (POTS). Designed for a family member who wants useful daily records and 7-day, monthly, 365/366-day, and lifetime history without paid features.
 
@@ -14,7 +14,7 @@ A free, privacy-first native **iPhone** utility for tracking lived experiences o
 - Seven-day home overview with monthly, full-year (365/366 days), custom range and lifetime history.
 - Bright, accessible utility design with labeled **grid cards** and optional low-energy/large-control logging.
 - Data stays locally on the iPhone by default. Share/export is explicit user action, not background transmission.
-- Medication, fluids, food, sodium/electrolytes, sleep, activity, posture, triggers, symptom severity, episodes and free-form journal records all planned, with user-controlled enable/disable.
+- Hydration, medication, sleep/rest and posture observations have real entry forms; optional meals/activity/heat and advanced contextual events remain roadmap enhancements.
 - Calendar reminders and doctor-ready reports must remain free.
 
 ## Main screens
@@ -99,3 +99,13 @@ Quick feeling buttons now open a titled note composer with suggested title, opti
 See [UX_V020.md](UX_V020.md) for the implementation contract and the complete physical iPhone QA checklist. **Apple Health has intentionally been removed**, including the HealthKit entitlement, because AltStore provisioning cannot guarantee it. The experimental opt-in camera pulse beta remains independent, and manual reading entry continues to work without permission. The v0.2.0 packager also includes standard, sideload-tool-readable PNG app icon previews, although AltStore caching is external to the app.
 
 **Critical:** Keep the bundle ID and signing identity compatible when installing over v0.1.9. Deleting the app may destroy local records, and the current app has no tested backup/restore workflow.
+
+
+## v0.2.4 full feature milestone (November 20, 2026)
+
+- Daily support is now real: fluid quantities in mL and optional mg sodium, user-recorded medication statuses, sleep/rest duration and quality, and voluntary posture observations.
+- Calendar supports month/year and per-day records. Reports offer real data charts and an accessible count table across 7/30/90/365 days and lifetime.
+- Local reminders have configurable recurring times/days and quiet hours. Notification permission is optional and is requested when enabling reminders, never on app start.
+- Settings -> Data & backups can generate a PDF, CSV, or full JSON archive and show a validation/deduplication preview before manual restore. These operations are offline and user-initiated. **Backups are not separately passphrase-encrypted, and must be tested on the real iPhone before being relied on.**
+- All 12 original feature icons remain. Journal Lock, Camera Pulse beta, themes, stable tab-root routing, existing Core Data schema and bundle ID are preserved.
+- Read the authoritative [v0.2.4 source feature/QA matrix](UX_V024.md) before reporting a feature finished. Advanced correlation insights, widgets and custom tracker schema are deferred deliberately.
