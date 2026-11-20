@@ -314,66 +314,7 @@ struct HomeScreenView: View {
     }
 
     private var todayCard: some View {
-        GlassCard {
-            VStack(alignment: .leading, spacing: roomy ? 15 : 12) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Today")
-                            .font(.title3.bold())
-                        if todayEntries.contains(where: { $0.category == LogCategory.checkIn.rawValue }) {
-                            Text("Check-in recorded")
-                                .font(.caption).foregroundStyle(Color.potsSecondary)
-                        } else {
-                            Text(todayEntries.isEmpty ? "Nothing logged yet" : "No check-in yet")
-                                .font(.caption).foregroundStyle(Color.potsSecondary)
-                        }
-                    }
-                    Spacer()
-                    Text("\(todayEntries.count) \(todayEntries.count == 1 ? "entry" : "entries")")
-                        .font(.caption.weight(.semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(Color.potsTeal)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background(Color.potsTeal.opacity(0.10), in: Capsule())
-                }
-
-                Button(action: openLog) {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                        Text("Add an entry")
-                        Spacer()
-                        Image(systemName: "arrow.right")
-                    }
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.horizontal, 15)
-                    .frame(minHeight: roomy ? 58 : 47)
-                    .foregroundStyle(.white)
-                    .background(Color.potsButtonFill, in: RoundedRectangle(cornerRadius: 14))
-                }
-                .buttonStyle(.plain)
-
-                HStack(spacing: 8) {
-                    quickAction("Symptom", category: .symptom)
-                    quickAction("Heart rate", category: .heartRate)
-                    quickAction("BP", category: .bloodPressure)
-                }
-            }
-        }
-    }
-
-    private func quickAction(_ title: String, category: LogCategory) -> some View {
-        Button { newLog = category } label: {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .minimumScaleFactor(0.8)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, minHeight: roomy ? 52 : 38)
-                .foregroundStyle(Color.potsTeal)
-                .background(Color.potsTeal.opacity(0.09), in: RoundedRectangle(cornerRadius: 12))
-        }
-        .buttonStyle(.plain)
-        .disabled(PersistenceController.shared.loadError != nil)
+        PosiesHomeCarousel(records: allRecords, roomy: roomy, openLog: openLog)
     }
 
     private var checkInStrip: some View {
