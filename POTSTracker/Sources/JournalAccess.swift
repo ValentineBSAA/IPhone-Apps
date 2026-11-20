@@ -40,15 +40,34 @@ final class JournalAccess: ObservableObject {
     }
 }
 
-/// Journal content is guarded by the iPhone's native authentication sheet.
-/// There is no intermediate "Unlock Journal" page or second tap. If the person
-/// cancels Face ID / passcode, return to the previous screen with no private UI.
+/// Journal lock policy is testable without a device's Face ID implementation.
+/// A transient inactive scene (including the system authentication UI) does NOT
+/// mean Journal should be locked. Only a real background transition does.
+enum JournalGatePolicy {
+    static func shouldLockForScene(_ phase: ScenePhase) -> Bool {
+        phase == .background
+    }
+
+    static func needsPrompt(enabled: Bool,
+                            unlocked: Bool,
+                            waitingForReply: Bool,
+                            scene: ScenePhase) -> Bool {
+        enabled && !unlocked && !waitingForReply && scene == .active
+    }
+}
+
+/// The Journal destination requests Face ID automatically, but this gate does
+/// not own the lifetime of the unlocked session. In particular, rebuilding
+/// locked versus unlocked view content must never call lock() from onDisappear.
+/// The navigation destination locks when it is actually left, and the app root
+/// locks when the scene enters background. This eliminates the self-lock loop.
 struct JournalProtected<Content: View>: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("journalLockEnabled") private var enabled = false
     @ObservedObject private var access = JournalAccess.shared
     @State private var pendingAttempt: UUID?
+    @State private var lastError: String?
     let content: Content
 
     init(@ViewBuilder content: () -> Content) {
@@ -61,47 +80,86 @@ struct JournalProtected<Content: View>: View {
                 content
             } else {
                 VStack(spacing: 14) {
-                    ProgressView()
-                    Text("Unlocking private Journal…")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    Image(systemName: "lock.shield")
+                        .font(.largeTitle)
+                        .foregroundStyle(Color.potsTeal)
+                    if pendingAttempt != nil {
+                        ProgressView()
+                        Text("Unlocking private Journal…")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(lastError ?? "Your Journal is locked.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+
+                    // A system authentication callback can be interrupted or
+                    // delayed. The user must always have a non-destructive exit.
+                    Button(pendingAttempt == nil ? "Unlock Journal" : "Try Face ID again") {
+                        if pendingAttempt != nil {
+                            // Invalidate the obsolete attempt before retrying.
+                            access.lock()
+                            pendingAttempt = nil
+                        }
+                        authenticateIfNeeded()
+                    }
+                    .font(.subheadline.weight(.semibold))
                     Button("Back") {
                         pendingAttempt = nil
                         dismiss()
                     }
-                    .font(.subheadline.weight(.semibold))
+                    .font(.subheadline)
                 }
+                .padding(.horizontal, 24)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .accessibilityLabel("Journal locked. Authentication required.")
+                .accessibilityElement(children: .contain)
             }
         }
         .background(Color.potsBackground.ignoresSafeArea())
         .onAppear { authenticateIfNeeded() }
         .onChange(of: scenePhase) { phase in
-            if phase == .background {
+            // The root App is the ONLY owner of scene-background locking.
+            // Reset a pending request when backgrounding, then re-prompt
+            // after returning active. Ignore transient .inactive states.
+            if JournalGatePolicy.shouldLockForScene(phase) {
                 pendingAttempt = nil
-                access.lock()
+                lastError = nil
             } else if phase == .active {
                 authenticateIfNeeded()
             }
         }
-        .onChange(of: enabled) { _ in authenticateIfNeeded() }
-        .onDisappear {
-            pendingAttempt = nil
-            access.lock()
+        .onChange(of: enabled) { _ in
+            lastError = nil
+            authenticateIfNeeded()
         }
+        // IMPORTANT: No .onDisappear { access.lock() } here.
+        // The old handler could fire while the gate's unlocked content was
+        // being substituted, immediately relocking a successful Face ID.
     }
 
     private func authenticateIfNeeded() {
-        guard enabled && !access.unlocked && pendingAttempt == nil && scenePhase == .active else { return }
-        let request = UUID()
-        pendingAttempt = request
-        access.authenticate(reason: "Open your private Journal") { success, _ in
-            // Ignore obsolete replies from a Face ID prompt interrupted while backgrounding.
-            guard pendingAttempt == request else { return }
+        guard JournalGatePolicy.needsPrompt(
+            enabled: enabled,
+            unlocked: access.unlocked,
+            waitingForReply: pendingAttempt != nil,
+            scene: scenePhase
+        ) else { return }
+
+        lastError = nil
+        let attempt = UUID()
+        pendingAttempt = attempt
+        access.authenticate(reason: "Open your private Journal") { success, error in
+            guard pendingAttempt == attempt else { return }
             pendingAttempt = nil
-            guard scenePhase == .active else { return }
-            if !success { dismiss() }
+            // Face ID can temporarily make SwiftUI scenePhase == .inactive.
+            // Do not discard a successful device authorization on that basis.
+            // Background transitions invalidate the request in JournalAccess.
+            if !success {
+                lastError = error ?? "Authentication was canceled."
+                if scenePhase == .active { dismiss() }
+            }
         }
     }
 }
