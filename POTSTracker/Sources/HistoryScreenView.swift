@@ -45,7 +45,10 @@ struct HistoryScreenView: View {
         case .week:
             let days = DateTracking.lastSevenDays()
             guard let earliest = days.first else { return [] }
-            return fullEntries.filter { $0.recordedAt >= earliest && $0.recordedAt <= Date() }
+            return fullEntries.filter { entry in
+                entry.recordedAt >= earliest && entry.recordedAt <= Date()
+                    && (selectedDay == nil || cal.isDate(entry.recordedAt, inSameDayAs: selectedDay!))
+            }
         case .month:
             return fullEntries.filter { entry in
                 cal.isDate(entry.recordedAt, equalTo: month, toGranularity: .month)
@@ -61,16 +64,8 @@ struct HistoryScreenView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 17) {
-                Text("Browse your entries by date")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Picker("History range", selection: $period) {
-                    ForEach(HistoryPeriod.allCases) { choice in
-                        Text(choice.rawValue).tag(choice)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: period) { _ in selectedDay = nil }
+                historyWelcome
+                periodChooser
 
                 switch period {
                 case .week: weekOverview
@@ -109,17 +104,23 @@ struct HistoryScreenView: View {
                         .padding(.horizontal, 3)
                         .padding(.top, 3)
                 } else {
-                    HStack {
-                        Text("Saved entries")
-                            .font(.headline)
+                    HStack(alignment: .center) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Your records")
+                                .font(.title3.weight(.bold))
+                            Text("Tap a date to explore, or swipe for actions.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
                         Spacer()
                         Text("\(filteredEntries.count)")
-                            .font(.subheadline.monospacedDigit())
-                            .foregroundStyle(.secondary)
+                            .font(.headline.monospacedDigit())
+                            .foregroundStyle(Color.potsTeal)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(Color.potsTeal.opacity(0.11), in: Capsule())
+                            .accessibilityLabel("\(filteredEntries.count) saved entries")
                     }
-                    Text("Open a day, then a category. Swipe a row left to remove, right to edit or open.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                     RecordTreeView(
                         records: filteredEntries,
                         onEdit: { id in editingRoute = RecordEditRoute(objectID: id) },
@@ -222,6 +223,93 @@ struct HistoryScreenView: View {
         } message: {
             Text(deleteError ?? "Try again.")
         }
+    }
+
+    /// An editorial header; counts describe saved entries, not wellness.
+    private var historyWelcome: some View {
+        GlassCard {
+            HStack(alignment: .top, spacing: 13) {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.title2.weight(.light))
+                    .foregroundStyle(Color.potsTeal)
+                    .frame(width: 54, height: 54)
+                    .background(Color.potsTeal.opacity(0.11), in: RoundedRectangle(cornerRadius: 17))
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Your story, day by day")
+                        .font(.title3.bold())
+                    Text("A gentle space for the things you've chosen to record.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    HStack(spacing: 7) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(Color.potsTeal)
+                        Text("\(fullEntries.count) visible \(fullEntries.count == 1 ? "entry" : "entries")")
+                        Text("·")
+                        Text("No streaks required")
+                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    private var periodChooser: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Explore your timeline")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                periodCard(.week, symbol: "calendar.day.timeline.left", hint: "Last 7 days")
+                periodCard(.month, symbol: "calendar", hint: "By date")
+                periodCard(.year, symbol: "calendar.badge.clock", hint: "All 12 months")
+                periodCard(.all, symbol: "clock.arrow.circlepath", hint: "Every saved entry")
+            }
+        }
+    }
+
+    private func periodCard(_ choice: HistoryPeriod, symbol: String, hint: String) -> some View {
+        let chosen = period == choice
+        return Button {
+            guard period != choice else { return }
+            withAnimation(.easeInOut(duration: 0.20)) {
+                period = choice
+                selectedDay = nil
+            }
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: symbol)
+                    .font(.system(size: 18, weight: .medium))
+                    .frame(width: 30)
+                    .foregroundStyle(chosen ? Color.potsTeal : .secondary)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(choice.rawValue)
+                        .font(.subheadline.weight(.semibold))
+                    Text(hint)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                if chosen {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(Color.potsTeal)
+                }
+            }
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, minHeight: 66)
+            .background(chosen ? Color.potsSurfaceMuted : Color.potsSurface,
+                        in: RoundedRectangle(cornerRadius: 18))
+            .overlay(RoundedRectangle(cornerRadius: 18)
+                .strokeBorder(chosen ? Color.potsTeal.opacity(0.45) : Color.potsTeal.opacity(0.08), lineWidth: 1))
+            .contentShape(RoundedRectangle(cornerRadius: 18))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(choice.rawValue), \(hint)")
+        .accessibilityAddTraits(chosen ? [.isSelected] : [])
     }
 
     private var weekOverview: some View {
