@@ -128,6 +128,12 @@ struct EntriesForCategory: View {
                     }
                 }
 
+                if category.isExtended {
+                    PosiesTrackerHighlightsView(
+                        category: category, records: RecordSnapshot.snapshots(of: filtered)
+                    )
+                }
+
                 if category == .heartRate {
                     HStack(spacing: 10) {
                         Button { adding = true } label: {
