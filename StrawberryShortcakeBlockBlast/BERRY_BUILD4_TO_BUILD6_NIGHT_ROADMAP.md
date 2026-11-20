@@ -78,6 +78,8 @@ Night_Tile_Yellow
 
 **Do not ship the `Night_Blossom_Glass_Board_8x8_Concept` concept as the real playable board** without separate approved interaction testing. An older `Night_Developer_Mode_Strawberry_Lock` art asset can remain archived even though the visible lock button was intentionally removed; the secret Settings long-press is the approved entry.
 
+**Concrete initial asset register:** [NIGHT_ASSET_PARITY_MATRIX.md](NIGHT_ASSET_PARITY_MATRIX.md), generated from the actual repo catalog, confirms **30/30 existing Night_* files have matching day filenames**, and marks runtime routing/visual acceptance as still unverified. Treat its detailed use-site matrix as a S1 work queue, not a finished art approval.
+
 ### 3.2 Required exhaustive asset inventory, S1 [#24](https://github.com/ValentineBSAA/IPhone-Apps/issues/24)
 
 Each row in the planned `NIGHT_ASSET_PARITY_MATRIX.md` (new, generated when S1 begins) must contain:
