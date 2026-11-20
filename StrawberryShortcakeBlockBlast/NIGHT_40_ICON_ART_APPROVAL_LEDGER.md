@@ -1,10 +1,10 @@
 # 🌙 Night Garden: owner-approved 40-icon artwork ledger
 
-**Updated November 20, 2026. Source:** Eight batches of standalone AI-generated artwork approved by the owner in chat. **Status: ARTWORK APPROVED (40/40); SOURCE PNGs NOT YET COMMITTED TO GITHUB; XCODE IMPORT / ALPHA / RUNTIME / iPHONE 16e QA NOT YET DONE.**
+**Updated November 20, 2026. Source:** Eight batches of standalone AI-generated artwork approved by the owner in chat. **Status: ARTWORK APPROVED (40/40); 40 ORIGINAL PNG SOURCE FILES IMPORTED ON ISOLATED ARTWORK BRANCH, NOT YET MERGED; XCODE IMPORT / ALPHA DERIVATIVES / RUNTIME / iPHONE 16e QA NOT YET DONE.**
 
-This is a non-destructive addition to [Night Garden master roadmap](BERRY_BUILD4_TO_BUILD6_NIGHT_ROADMAP.md), [S1 asset matrix](NIGHT_ASSET_PARITY_MATRIX.md), [S1 issue #24](https://github.com/ValentineBSAA/IPhone-Apps/issues/24) and [epic #23](https://github.com/ValentineBSAA/IPhone-Apps/issues/23). The approved **40-icon download ZIP is delivered in the owner's ChatGPT conversation**, not hosted in this repository. The manifest inside the ZIP includes exact original SHA-256 values and PNG metadata. Do not claim the binary assets exist in GitHub until uploaded and verified there.
+This is a non-destructive addition to [Night Garden master roadmap](BERRY_BUILD4_TO_BUILD6_NIGHT_ROADMAP.md), [S1 asset matrix](NIGHT_ASSET_PARITY_MATRIX.md), [S1 issue #24](https://github.com/ValentineBSAA/IPhone-Apps/issues/24) and [epic #23](https://github.com/ValentineBSAA/IPhone-Apps/issues/23). The master ZIP is preserved as [GitHub Release V1](https://github.com/ValentineBSAA/IPhone-Apps/releases/tag/V1) and staged in an isolated GitHub branch for RGBA preparation. No alpha conversions or Xcode routing have been approved.
 
-**GitHub import source destination once uploaded:** `StrawberryShortcakeBlockBlast/ArtSource/NightGarden/Approved_40_Icon_Batches/`. Then integrate independently into `BerryBlockBlast/Assets.xcassets/<asset_name>.imageset` as stages are ready. The existing 30 `Night_*` pairs and existing Day assets **remain untouched**. The legacy 30-image importer validates RGBA and exact day matches; it must NOT be used on this 40-icon ZIP. Most source art is RGB and needs an individual reviewed background/alpha decision before using as overlays.
+**GitHub staging source destination (now populated on [artwork staging branch](https://github.com/ValentineBSAA/IPhone-Apps/tree/artwork/berry-night-garden-40-rgba-staging), draft [PR #40](https://github.com/ValentineBSAA/IPhone-Apps/pull/40)):** `StrawberryShortcakeBlockBlast/ArtSource/NightGarden/Approved_40_Icon_Batches/`. Then integrate independently into `BerryBlockBlast/Assets.xcassets/<asset_name>.imageset` as stages are ready. The existing 30 `Night_*` pairs and existing Day assets **remain untouched**. The legacy 30-image importer validates RGBA and exact day matches; it must NOT be used on this 40-icon ZIP. Most source art is RGB and needs an individual reviewed background/alpha decision before using as overlays.
 
 | Batch | Planned stage | Owner-approved images |
 | --- | --- | --- |
@@ -21,7 +21,8 @@ This is a non-destructive addition to [Night Garden master roadmap](BERRY_BUILD4
 
 - [x] Owner visually approved **40 original standalone icon illustrations**, including the approved Batch 2 redo and final `Night_Build_Information`.
 - [x] One combined ZIP in ChatGPT with 40 unchanged PNGs, batch and master preview sheets, CSV/JSON manifest and SHA-256 checksums; ZIP and per-PNG integrity verified.
-- [ ] Upload source pack to GitHub on artwork/planning branch. **This document alone does not contain the art bytes.**
+- [x] Stage all 40 original source PNG files on isolated artwork branch, SHA-verified by [successful Actions run #44829982427](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44829982427). **These art files are NOT on the shipping/merged branch yet.**
+- [ ] Review RGBA alpha for all 40 (2 already have true alpha; 21 dark matte, 13 pale/checkerboard and 4 mixed backgrounds).
 - [ ] Review background/alpha on every original and derive transparency only with deliberate QA; check small-scale icon readability on iPhone 16e.
 - [ ] Create appropriate new Xcode image sets, verify name consistency and collisions, route actual visible components, create snapshots and physical QA for Build 4.7/4.8.
 - [ ] Preserve 30 existing Night assets, untouched daytime art, existing saves, purchase prices and all 67 audio tracks. No automatic release or merge.
