@@ -132,27 +132,20 @@ struct BerrySettingsHubView: View {
                         }
                     }
                 }
+                // Quiet QA entry: long-press the existing build label, then use
+                // the developer PIN. The visible pastel lock/button and square
+                // backdrop are intentionally removed (owner-approved).
                 HStack(spacing: 12) {
                     Text(BerryBuildIdentity.settingsLabel)
                         .font(.system(size: 11, weight: .bold, design: .rounded))
                         .foregroundStyle(BerryStyle.chocolate.opacity(0.67))
-                    Spacer(minLength: 0)
-                    Button { showDeveloperGateway = true } label: {
-                        Group {
-                            if let icon = UIImage(named: "Developer_Mode_Strawberry_Lock") {
-                                Image(uiImage: icon).resizable().scaledToFit()
-                            } else {
-                                Image(systemName: "lock.shield.fill")
-                                    .resizable().scaledToFit()
-                                    .foregroundStyle(BerryStyle.strawberry.opacity(0.6))
-                            }
+                        .contentShape(Rectangle())
+                        .onLongPressGesture(minimumDuration: 1.8) {
+                            #if BERRY_INTERNAL_QA
+                            showDeveloperGateway = true
+                            #endif
                         }
-                        .frame(width: 24, height: 24)
-                        .padding(6)
-                        .background(.white.opacity(0.55), in: RoundedRectangle(cornerRadius: 9))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Developer Garden")
+                    Spacer(minLength: 0)
                 }
             }
             .padding(17)

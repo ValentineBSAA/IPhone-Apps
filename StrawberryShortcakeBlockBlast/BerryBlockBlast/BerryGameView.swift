@@ -523,6 +523,12 @@ struct BerryGameView: View {
             for: UIApplication.didBecomeActiveNotification)) { _ in
             if isTimedMode { resumeTimedClockIfPossible(foreground: true) }
         }
+        #if BERRY_INTERNAL_QA
+        .onReceive(NotificationCenter.default.publisher(
+            for: BerryGameSession.qaWalletChanged)) { _ in
+            session.refreshEconomyFromDisk()
+        }
+        #endif
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             if mode == .daily && scenePhase == .active && !dailyAttemptDay.isEmpty &&
                BerryDailyHistory.dateKey(for: Date()) != dailyAttemptDay {

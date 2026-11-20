@@ -9,12 +9,19 @@ struct BerryDeveloperGardenView: View {
     @State private var pinError = false
     @State private var selectedTool: Tool?
     @State private var previewMilestone: Int?
+    @State private var showAdvanced = false
+    @State private var qaAmountText = ""
+    @State private var qaBalance = 0
+    @State private var qaPendingAmount = 0
+    @State private var qaGrantConfirmation = false
+    @State private var qaError: String?
     @AppStorage("berryblockblast.touchDiagnostics") private var touchDiagnostics = false
     @ObservedObject private var economyLedger = BerryEconomyLedger.shared
 
     private let columns = [GridItem(.flexible(), spacing: 11), GridItem(.flexible(), spacing: 11)]
 
     private enum Tool: String, CaseIterable, Identifiable {
+        case qaWallet = "Test Strawberries"
         case diagnostics = "Diagnostics"
         case saves = "Save Inspector"
         case clock = "Timers & Clocks"
@@ -27,6 +34,7 @@ struct BerryDeveloperGardenView: View {
         var id: String { rawValue }
         var icon: String {
             switch self {
+            case .qaWallet: return "wallet.pass.fill"
             case .diagnostics: return "waveform.path.ecg"
             case .saves: return "externaldrive.fill"
             case .clock: return "clock.fill"
@@ -41,6 +49,7 @@ struct BerryDeveloperGardenView: View {
         // Existing branded art is kept as a fallback if an asset goes missing.
         var packagedArt: String {
             switch self {
+            case .qaWallet: return "Strawberry_Currency"
             case .diagnostics: return "BBBIconTools"
             case .saves: return "BBBIconInventory"
             case .clock: return "BBBIconSeasonal"
@@ -53,6 +62,7 @@ struct BerryDeveloperGardenView: View {
         }
         var approvedCandidate: String {
             switch self {
+            case .qaWallet: return "Dev_Economy_Inspector_Two_Currencies"
             case .diagnostics: return "Dev_Diagnostics_Strawberry_Pulse"
             case .saves: return "Dev_Save_Inspector_Berry_Drive"
             case .clock: return "Dev_Timers_Moon_Clock"
@@ -65,6 +75,7 @@ struct BerryDeveloperGardenView: View {
         }
         var blurb: String {
             switch self {
+            case .qaWallet: return "Type any QA-only berry amount"
             case .diagnostics: return "Read input and placement status"
             case .saves: return "Check saved Endless gardens"
             case .clock: return "Live local device time"
@@ -76,6 +87,12 @@ struct BerryDeveloperGardenView: View {
             }
         }
         var isPlanned: Bool { self == .notifications }
+    }
+    private var quickTools: [Tool] {
+        [.qaWallet, .diagnostics, .saves, .combo]
+    }
+    private var advancedTools: [Tool] {
+        [.economy, .build, .clock, .experimental, .notifications]
     }
 
     var body: some View {
@@ -122,15 +139,18 @@ struct BerryDeveloperGardenView: View {
                         .tint(BerryStyle.strawberry)
                         .disabled(pin.count != 4)
                     } else {
-                        Text("READ-ONLY QA • No berries, scores or saves are changed")
+                        Text("INTERNAL QA • Only confirmed test-wallet grants can change your berries")
                             .font(.system(size: 10, weight: .bold, design: .rounded))
                             .foregroundStyle(BerryStyle.chocolate)
                             .multilineTextAlignment(.center)
                         Text(BerryBuildIdentity.revisionName)
                             .font(.system(size: 11, weight: .heavy, design: .rounded))
                             .foregroundStyle(BerryStyle.leaf)
+                        Text("QUICK TEST TOOLS")
+                            .font(.caption.bold())
+                            .foregroundStyle(BerryStyle.chocolate)
                         LazyVGrid(columns: columns, spacing: 11) {
-                            ForEach(Tool.allCases) { tool in
+                            ForEach(quickTools + (showAdvanced ? advancedTools : [])) { tool in
                                 Button { selectedTool = tool } label: {
                                     VStack(spacing: 6) {
                                         Group {
@@ -169,6 +189,13 @@ struct BerryDeveloperGardenView: View {
                                 .buttonStyle(BerryPolishPressStyle())
                             }
                         }
+                        Button(showAdvanced ? "Hide extra diagnostics" : "More diagnostics and build information") {
+                            withAnimation(.easeInOut(duration: 0.18)) {
+                                showAdvanced.toggle()
+                            }
+                        }
+                        .font(.subheadline.bold())
+                        .tint(BerryStyle.strawberry)
                     }
                 }
                 .frame(maxWidth: 480)
@@ -198,9 +225,8 @@ struct BerryDeveloperGardenView: View {
                                 }
                             }
                             .frame(width: 64, height: 64)
-                            Text(tool.rawValue)
-                                .font(.title2.bold())
-                                .foregroundStyle(BerryStyle.strawberry)
+                            // Native sheet title is already visible; avoid a second
+                            // heading beneath it (also helps compact safe-area layout).
                             Text(tool.blurb)
                                 .font(.subheadline)
                                 .foregroundStyle(BerryStyle.chocolate)
@@ -222,6 +248,22 @@ struct BerryDeveloperGardenView: View {
                             }
                         }
                     }
+                    #if BERRY_INTERNAL_QA
+                    .alert("Add test strawberries?", isPresented: $qaGrantConfirmation) {
+                        Button("Add \(qaPendingAmount.formatted()) QA berries") {
+                            if let balance = BerryGameSession.grantQAStrawberries(qaPendingAmount) {
+                                qaBalance = balance
+                                qaError = nil
+                                qaAmountText = ""
+                            } else {
+                                qaError = "Unable to add this amount. Check the saved wallet and number size."
+                            }
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text("Adds \(qaPendingAmount.formatted()) clearly marked QA strawberries to the saved wallet for testing. They are not counted as earned rewards or line income. This can be spent in the shop.")
+                    }
+                    #endif
                     .overlay(alignment: .center) {
                         if let milestone = previewMilestone {
                             BerryComboMilestoneBanner(milestone: milestone)
@@ -239,6 +281,66 @@ struct BerryDeveloperGardenView: View {
     @ViewBuilder
     private func toolDetails(_ tool: Tool) -> some View {
         switch tool {
+        case .qaWallet:
+            #if BERRY_INTERNAL_QA
+            VStack(spacing: 12) {
+                Text("TEST CURRENCY • NOT GAMEPLAY REWARDS")
+                    .font(.caption.bold())
+                    .foregroundStyle(BerryStyle.strawberry)
+                Text("Current saved wallet: 🍓 \(qaBalance.formatted())")
+                    .font(.headline)
+                TextField("Type amount, e.g. 1200", text: $qaAmountText)
+                    .keyboardType(.numberPad)
+                    .textContentType(.none)
+                    .font(.system(size: 22, weight: .semibold, design: .rounded).monospacedDigit())
+                    .multilineTextAlignment(.center)
+                    .padding(13)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 14))
+                    .onChange(of: qaAmountText) { value in
+                        qaAmountText = String(value.filter(\.isNumber).prefix(19))
+                        qaError = nil
+                    }
+                if let amount = Int(qaAmountText), amount > 0,
+                   amount <= Int.max - qaBalance {
+                    Text("Preview: 🍓 \(qaBalance.formatted()) → \((qaBalance + amount).formatted())")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(BerryStyle.leaf)
+                }
+                Button("Review strawberry grant") {
+                    guard let value = Int(qaAmountText), value > 0,
+                          qaBalance >= 0, value <= Int.max - qaBalance else {
+                        qaError = "Enter a positive whole number within the wallet's safe numeric range."
+                        return
+                    }
+                    qaPendingAmount = value
+                    qaGrantConfirmation = true
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(BerryStyle.strawberry)
+                if let qaError {
+                    Text(qaError).font(.caption).foregroundStyle(.red)
+                }
+                Text("Enter any positive amount once. Confirmation is required. Grants are recorded separately as developer QA credits, not earned strawberries, and remain in your wallet after relaunch. Never use the debug grant in a public build.")
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
+                let audit = BerryGameSession.qaGrantHistory()
+                if !audit.isEmpty {
+                    Text("Recent QA grants")
+                        .font(.caption.bold())
+                    ForEach(audit.prefix(4), id: \.self) { item in
+                        Text(item)
+                            .font(.system(size: 10, design: .monospaced))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+            .onAppear {
+                qaBalance = BerryGameSession.qaWalletBalance()
+            }
+            #else
+            Text("Test-currency grants are not present in distribution builds.")
+                .font(.caption)
+            #endif
         case .diagnostics:
             Toggle("Show touch diagnostics during gameplay", isOn: $touchDiagnostics)
                 .padding(13)
