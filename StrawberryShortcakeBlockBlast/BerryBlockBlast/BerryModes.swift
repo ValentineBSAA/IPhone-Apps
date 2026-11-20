@@ -527,6 +527,12 @@ struct BerryHomeView: View {
                 quoteIndex = (quoteIndex + 1) % gardenQuotes.count
             }
         }
+        #if BERRY_INTERNAL_QA
+        .onReceive(NotificationCenter.default.publisher(
+            for: BerryGameSession.qaWalletChanged)) { _ in
+            villageSession.refreshEconomyFromDisk()
+        }
+        #endif
         .onChange(of: activeMode) { selected in
             if selected == nil {
                 villageSession.refreshEconomyFromDisk()
