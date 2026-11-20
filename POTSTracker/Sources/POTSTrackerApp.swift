@@ -154,15 +154,37 @@ struct POTSTrackerApp: App {
     @AppStorage("posiesAppearance") private var posiesAppearance = "system"
     private let persistence = PersistenceController.shared
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("journalLockEnabled") private var journalLockEnabled = false
+    @AppStorage("posiesWelcomeAcknowledgedV021") private var welcomeAccepted = false
 
     var body: some Scene {
         WindowGroup {
-            DashboardView()
-                .environment(\.managedObjectContext, persistence.container.viewContext)
+            ZStack {
+                if welcomeAccepted {
+                    DashboardView()
+                } else {
+                    WelcomeAndPrivacyView(acknowledged: $welcomeAccepted)
+                }
+                // Protect app-switcher snapshots while a private Journal is enabled.
+                if scenePhase != .active && journalLockEnabled && welcomeAccepted {
+                    Color.potsBackground.ignoresSafeArea()
+                        .overlay(
+                            VStack(spacing: 12) {
+                                Image(systemName: "lock.shield.fill")
+                                    .font(.largeTitle)
+                                Text("POTS & Posies")
+                                    .font(.headline)
+                            }
+                            .foregroundStyle(Color.potsTeal)
+                        )
+                        .accessibilityHidden(true)
+                }
+            }
+            .environment(\.managedObjectContext, persistence.container.viewContext)
                 .tint(.potsTeal)
                 .preferredColorScheme(posiesAppearance == "light" ? .light : (posiesAppearance == "dark" ? .dark : nil))
                 .onChange(of: scenePhase) { phase in
-                    if phase != .active { JournalAccess.shared.lock() }
+                    if phase == .background { JournalAccess.shared.lock() }
                 }
         }
     }
