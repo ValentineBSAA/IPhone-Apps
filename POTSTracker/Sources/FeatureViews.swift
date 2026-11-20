@@ -10,7 +10,11 @@ struct FeatureDetail: View {
             if feature.id == "settings" {
                 SettingsPanel()
             } else if feature.id == "calendar" {
-                HistoryScreenView()
+                PosiesCalendarView()
+            } else if feature.id == "reports" {
+                PosiesReportsView()
+            } else if feature.id == "reminders" {
+                PosiesRemindersView()
             } else if let category = feature.category {
                 if category == .journal {
                     JournalProtected {
@@ -155,7 +159,7 @@ struct EntriesForCategory: View {
                     Button { adding = true } label: {
                         HStack {
                             Image(systemName: "plus.circle.fill")
-                            Text("Add \(category == .journal ? "note" : "measurement")")
+                            Text(category == .journal ? "Add note" : "Add entry")
                             Spacer()
                             Image(systemName: "arrow.right")
                         }
@@ -216,7 +220,13 @@ struct EntriesForCategory: View {
             .padding(.bottom, 16)
         }
         .background(Color.potsBackground.ignoresSafeArea())
-        .sheet(isPresented: $adding) { EntryEditor(category: category) }
+        .sheet(isPresented: $adding) {
+            if category.isExtended {
+                ExpandedEntryEditor(category: category)
+            } else {
+                EntryEditor(category: category)
+            }
+        }
         .sheet(item: $editingRoute) { route in
             RecordEditDestination(objectID: route.objectID)
         }
@@ -250,6 +260,10 @@ struct EntriesForCategory: View {
         case .symptom: return "Track an episode when it happens"
         case .journal: return "Keep thoughts and questions together"
         case .checkIn: return "Record how today feels"
+        case .hydration: return "Record drinks and optional sodium with clear units"
+        case .medications: return "Record taken, skipped or planned items yourself"
+        case .sleep: return "Sleep, rest, duration and quality"
+        case .posture: return "Optional positions and observations, no forced test"
         }
     }
 
@@ -260,6 +274,10 @@ struct EntriesForCategory: View {
         case .symptom: return "Log a symptom without needing to complete a long form."
         case .journal: return "A short note is enough. You can return to it later."
         case .checkIn: return "Daily check-ins are optional."
+        case .hydration: return "Add a drink with its amount. No daily target is assigned."
+        case .medications: return "Record what you actually took or skipped."
+        case .sleep: return "A sleep or rest period is enough."
+        case .posture: return "Save a position observation when you choose."
         }
     }
 }
@@ -339,13 +357,21 @@ struct SettingsPanel: View {
                 }
                 .buttonStyle(.plain)
 
+                NavigationLink {
+                    PosiesDataManagementView()
+                } label: {
+                    Label("Export, backup & restore", systemImage: "externaldrive.badge.timemachine")
+                        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                        .font(.subheadline.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
                 GlassCard {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Your privacy")
                             .font(.headline)
                         Text("Stored on this iPhone. No account, advertising, analytics or Apple Watch connection.")
                             .font(.subheadline)
-                        Text("Local backup and export are not available yet. Don't store irreplaceable medical records in this test build.")
+                        Text("Manual export and backup tools are available under Settings. Keep a separate copy and verify restoration before relying on them.")
                             .font(.caption)
                             .foregroundStyle(Color.potsSecondary)
                     }
@@ -371,8 +397,8 @@ struct PrivacyText: View {
             VStack(alignment: .leading, spacing: 17) {
                 Text("Your records belong to you")
                     .font(.title2.bold())
-                Text("POTS & Posies currently stores information locally on the iPhone. It has no analytics service, cloud account, advertising or automatic uploads. Reports and backup exports are planned but not available in this test build.")
-                Text("Important: deleting the app may remove its local records. Do not use this app as the only copy of critical medical information until export and restore have been tested.")
+                Text("POTS & Posies currently stores information locally on the iPhone. It has no analytics service, cloud account, advertising or automatic uploads. Reports and manual backup/export are available on this iPhone and are initiated only when you choose. Nothing uploads automatically.")
+                Text("Important: deleting the app may remove its local records. Verify a manual backup and restore before treating the app as your only copy of important information.")
                 Text("Optional Journal Lock uses Face ID or the iPhone passcode to restrict on-screen access. It does not encrypt Journal entries separately from the app's existing protected storage.")
                 Text("An optional experimental camera pulse check uses the camera only after you choose Start. It does not save camera frames, and no estimate becomes a record unless you review and save it.")
                 Divider()
