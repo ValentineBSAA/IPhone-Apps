@@ -25,8 +25,9 @@ enum PosiesBackupPolicy {
     }
 
     static func safeToReplacePreviousBackup(newCount: Int, priorCount: Int) -> Bool {
-        // Protect against replacing a verified archive with a broken empty store.
-        newCount > 0 && (priorCount == 0 || newCount > 0)
+        // A damaged empty database must not silently overwrite the last backup.
+        // Legitimate deliberate deletion of *all* records requires manual backup.
+        newCount > 0
     }
 }
 
@@ -192,10 +193,10 @@ final class PosiesCloudBackup: ObservableObject {
             at: folder, includingPropertiesForKeys: [.contentModificationDateKey],
             options: [.skipsHiddenFiles]
         ).filter { $0.lastPathComponent.hasPrefix("POTS-and-Posies-") && $0.pathExtension == "json" }
-        let ordered = backups.sorted {
-            (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate ?? .distantPast) ??
-            .distantPast >
-            ((try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast)
+        let ordered = backups.sorted { lhs, rhs in
+            let left = (try? lhs.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? Date.distantPast
+            let right = (try? rhs.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? Date.distantPast
+            return left > right
         }
         for obsolete in ordered.dropFirst(7) {
             try? fileManager.removeItem(at: obsolete)
