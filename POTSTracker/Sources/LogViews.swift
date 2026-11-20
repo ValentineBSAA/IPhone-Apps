@@ -27,7 +27,7 @@ struct EntryEditor: View {
     ]
     private let positions = ["Not specified", "Lying down", "Sitting", "Standing"]
 
-    init(category: LogCategory, editing: POTSLogEntry? = nil, suggestedFeeling: String? = nil) {
+    init(category: LogCategory, editing: POTSLogEntry? = nil, suggestedFeeling: String? = nil, suggestedBPM: Int? = nil, suggestedNote: String? = nil) {
         self.category = category
         self.editing = editing
         _selectedFeeling = State(initialValue: editing.flatMap {
@@ -38,10 +38,10 @@ struct EntryEditor: View {
             ? CheckInFormat.defaultTitle(for: suggestedFeeling!)
             : ""
         ))
-        _notes = State(initialValue: editing?.notes ?? "")
+        _notes = State(initialValue: editing?.notes ?? suggestedNote ?? "")
         _posture = State(initialValue: editing?.posture.isEmpty == false ? editing!.posture : "Not specified")
         _severity = State(initialValue: editing.map { Int($0.severity) } ?? -1)
-        _firstValue = State(initialValue: editing == nil ? "" : "\(editing!.firstValue)")
+        _firstValue = State(initialValue: editing == nil ? (suggestedBPM.map(String.init) ?? "") : "\(editing!.firstValue)")
         _secondValue = State(initialValue: editing == nil ? "" : "\(editing!.secondValue)")
         _recordedAt = State(initialValue: editing?.recordedAt ?? Date())
     }
