@@ -211,20 +211,53 @@ struct ExpandedEntryEditor: View {
 
     private var hydrationFields: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("Drink type").font(.headline)
+            VStack(alignment: .leading, spacing: 13) {
+                Label("What did you drink?", systemImage: "drop.fill")
+                    .font(.headline).foregroundStyle(Color.potsTeal)
                 pickerGrid(fluidTypes, selected: $title)
+                if let previous = lastDrink, previous.firstValue > 0 {
+                    Button {
+                        title = previous.title
+                        firstValue = String(previous.firstValue)
+                        secondValue = previous.secondValue > 0 ? String(previous.secondValue) : ""
+                    } label: {
+                        Label("Reuse last drink: \\(previous.title), \\(previous.firstValue) mL",
+                              systemImage: "arrow.counterclockwise")
+                            .font(.caption.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityHint("Fills the form only. Nothing is recorded until Save.")
+                }
+                Text("Amount").font(.subheadline.weight(.semibold))
                 HStack {
                     TextField("Amount", text: $firstValue)
                         .keyboardType(.numberPad).textFieldStyle(.roundedBorder)
+                        .accessibilityLabel("Fluid amount, milliliters")
                     Text("mL").foregroundStyle(Color.potsSecondary)
                 }
-                HStack {
-                    TextField("Sodium (optional)", text: $secondValue)
-                        .keyboardType(.numberPad).textFieldStyle(.roundedBorder)
-                    Text("mg sodium").font(.caption).foregroundStyle(Color.potsSecondary)
+                Text("Quick amounts").font(.caption.weight(.semibold))
+                HStack(spacing: 7) {
+                    ForEach([125, 250, 350, 500], id: \.self) { amount in
+                        Button("\\(amount)") { firstValue = String(amount) }
+                            .font(.caption.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 42)
+                            .foregroundStyle(firstValue == String(amount) ? Color.white : Color.potsTeal)
+                            .background(firstValue == String(amount) ? Color.potsButtonFill : Color.potsSurfaceMuted,
+                                        in: RoundedRectangle(cornerRadius: 10))
+                            .accessibilityLabel("\\(amount) milliliters")
+                    }
                 }
-                Text("1 US fluid ounce ≈ 29.57 mL. Sodium mg is not the same as grams of salt. No daily target is prescribed.")
+                Text("Sodium (optional)").font(.subheadline.weight(.semibold))
+                HStack {
+                    TextField("From the product label", text: $secondValue)
+                        .keyboardType(.numberPad).textFieldStyle(.roundedBorder)
+                    Text("mg").font(.caption).foregroundStyle(Color.potsSecondary)
+                }
+                Text("Helpful context (optional)")
+                    .font(.subheadline.weight(.semibold))
+                tagGrid(["With food", "After activity", "Morning", "Before bed"])
+                Text("These buttons enter amounts, not recommended targets. Sodium is recorded in mg, not grams of salt.")
                     .font(.caption).foregroundStyle(Color.potsSecondary)
             }
         }
@@ -233,16 +266,43 @@ struct ExpandedEntryEditor: View {
     private var medicationFields: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 13) {
-                Text("Medication or supplement").font(.headline)
-                TextField("Enter the name from your care plan", text: $title)
+                Label("Medication or supplement", systemImage: "pills.fill")
+                    .font(.headline).foregroundStyle(Color.potsTeal)
+                if !recentMedications.isEmpty {
+                    Text("Previously recorded").font(.subheadline.weight(.semibold))
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 125), spacing: 8)], spacing: 8) {
+                        ForEach(recentMedications, id: \.id) { item in
+                            Button {
+                                title = item.title
+                                dose = PosiesEntryExtras.read(item.source).dose
+                                // Never infer that a past dose was taken today.
+                                if editing == nil { positionOrStatus = "" }
+                            } label: {
+                                Text(item.title)
+                                    .font(.caption.weight(.semibold))
+                                    .lineLimit(2).minimumScaleFactor(0.8)
+                                    .frame(maxWidth: .infinity, minHeight: 44)
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityHint("Fills name and label. Choose today's status and Save to record.")
+                        }
+                    }
+                }
+                TextField("Name as written on your label", text: $title)
+                    .textFieldStyle(.roundedBorder)
+                TextField("Dose or label (optional)", text: $dose)
                     .textFieldStyle(.roundedBorder)
                 Text("What happened?").font(.subheadline.weight(.semibold))
                 pickerGrid(medStatuses, selected: $positionOrStatus)
-                TextField("Dose / label (optional, as written)", text: $dose)
-                    .textFieldStyle(.roundedBorder)
-                TextField("Timing, effects or context (optional)", text: $contextText, axis: .vertical)
+                if positionOrStatus.isEmpty {
+                    Text("Choose a status to save. Nothing is assumed taken.")
+                        .font(.caption).foregroundStyle(Color.potsSecondary)
+                }
+                Text("Optional details").font(.subheadline.weight(.semibold))
+                tagGrid(["With food", "With water", "After eating", "Effect noticed"])
+                TextField("Timing, reason or other context", text: $contextText, axis: .vertical)
                     .lineLimit(2...4).textFieldStyle(.roundedBorder)
-                Text("A reminder never marks a dose as taken. Record only what actually happened. This app does not recommend doses.")
+                Text("This is a personal record, not a dose recommendation or automatic medication adherence tracker.")
                     .font(.caption).foregroundStyle(Color.potsSecondary)
             }
         }
@@ -251,17 +311,45 @@ struct ExpandedEntryEditor: View {
     private var sleepFields: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 13) {
-                Text("Type of rest").font(.headline)
+                Label("Sleep or rest", systemImage: "moon.stars.fill")
+                    .font(.headline).foregroundStyle(Color.potsTeal)
                 pickerGrid(sleepKinds, selected: $title)
-                HStack {
-                    TextField("Duration in minutes", text: $firstValue)
-                        .keyboardType(.numberPad).textFieldStyle(.roundedBorder)
-                    Text("min").foregroundStyle(Color.potsSecondary)
+                Toggle("Enter start and end times", isOn: $useTimeRange)
+                    .tint(.potsTeal)
+                if useTimeRange {
+                    DatePicker("Started", selection: $sleepStart, in: ...Date(),
+                               displayedComponents: [.date, .hourAndMinute])
+                    DatePicker("Ended", selection: $sleepEnd, in: ...Date(),
+                               displayedComponents: [.date, .hourAndMinute])
+                    Text((1...2880).contains(sleepMinutes)
+                         ? "Duration: \\(sleepMinutes) minutes, including overnight rest."
+                         : "End time must be after start time, within 48 hours.")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle((1...2880).contains(sleepMinutes) ? Color.potsTeal : Color.potsSecondary)
+                } else {
+                    HStack {
+                        TextField("Duration", text: $firstValue)
+                            .keyboardType(.numberPad).textFieldStyle(.roundedBorder)
+                        Text("min").foregroundStyle(Color.potsSecondary)
+                    }
+                    HStack(spacing: 7) {
+                        ForEach([15, 30, 60, 90], id: \.self) { minutes in
+                            Button("\\(minutes) min") { firstValue = String(minutes) }
+                                .font(.caption.weight(.semibold))
+                                .frame(maxWidth: .infinity, minHeight: 42)
+                                .background(Color.potsSurfaceMuted, in: RoundedRectangle(cornerRadius: 11))
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
                 Text("How was it? (optional)").font(.subheadline.weight(.semibold))
                 pickerGrid(["Not rated", "Restful", "Okay", "Interrupted", "Poor"], selected: $quality)
-                TextField("Fatigue, brain fog or context (optional)", text: $contextText, axis: .vertical)
+                Text("Afterward (optional)").font(.subheadline.weight(.semibold))
+                pickerGrid(["Refreshed", "About the same", "Still tired", "Not sure"], selected: $recovery)
+                TextField("Fatigue, brain fog, interruptions or context", text: $contextText, axis: .vertical)
                     .lineLimit(2...4).textFieldStyle(.roundedBorder)
+                Text("Rest and sleep durations describe what you entered, not a sleep-quality score.")
+                    .font(.caption).foregroundStyle(Color.potsSecondary)
             }
         }
     }
@@ -269,22 +357,52 @@ struct ExpandedEntryEditor: View {
     private var postureFields: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 13) {
-                Text("Position at the time").font(.headline)
+                Label("Position observation", systemImage: "figure.stand")
+                    .font(.headline).foregroundStyle(Color.potsTeal)
                 pickerGrid(positions, selected: $positionOrStatus)
+                Text("Optional measurements").font(.subheadline.weight(.semibold))
                 HStack {
-                    TextField("Heart rate (optional)", text: $firstValue)
+                    TextField("Heart rate", text: $firstValue)
                         .keyboardType(.numberPad).textFieldStyle(.roundedBorder)
                     Text("bpm").foregroundStyle(Color.potsSecondary)
                 }
                 HStack {
-                    TextField("Minutes in position (optional)", text: $secondValue)
+                    TextField("Time in position", text: $secondValue)
                         .keyboardType(.numberPad).textFieldStyle(.roundedBorder)
                     Text("min").foregroundStyle(Color.potsSecondary)
                 }
-                TextField("Symptoms or conditions (optional)", text: $contextText, axis: .vertical)
+                Text("What did you notice? (optional)")
+                    .font(.subheadline.weight(.semibold))
+                tagGrid(["Lightheaded", "Palpitations", "Fatigued", "Uncomfortable"])
+                TextField("Other symptoms or context", text: $contextText, axis: .vertical)
                     .lineLimit(2...5).textFieldStyle(.roundedBorder)
-                Text("This is an observation only, not a standing test or diagnosis. Never continue a position if you feel faint or unsafe.")
+                Text("Record only a position you were already in. This is not a guided standing test or diagnosis; stop if you feel unsafe.")
                     .font(.caption).foregroundStyle(Color.potsSecondary)
+            }
+        }
+    }
+
+    private func tagGrid(_ options: [String]) -> some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 116), spacing: 8)], spacing: 8) {
+            ForEach(options, id: \.self) { tag in
+                let selected = selectedTags.contains(tag)
+                Button {
+                    if selected { selectedTags.remove(tag) }
+                    else { selectedTags.insert(tag) }
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                            .font(.caption)
+                        Text(tag).font(.caption.weight(selected ? .semibold : .regular))
+                            .lineLimit(2).minimumScaleFactor(0.85)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 42)
+                    .foregroundStyle(selected ? Color.white : Color.primary)
+                    .background(selected ? Color.potsButtonFill : Color.potsSurfaceMuted,
+                                in: RoundedRectangle(cornerRadius: 11))
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? [.isSelected] : [])
             }
         }
     }
