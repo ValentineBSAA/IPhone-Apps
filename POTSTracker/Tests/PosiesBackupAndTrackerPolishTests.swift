@@ -53,7 +53,7 @@ final class PosiesBackupAndTrackerPolishTests: XCTestCase {
     }
 
     func testNewMetadataUsesOptionalFieldsNotNewCoreDataAttributes() {
-        let keys = Set(POTSData.model().entitiesByName["POTSLogEntry"]?.attributesByName.keys ?? [])
+        let keys = Set(POTSData.model().entitiesByName["POTSLogEntry"]?.attributesByName.keys.map { $0 } ?? [])
         XCTAssertTrue(keys.contains("source"))
         XCTAssertFalse(keys.contains("tags"))
         XCTAssertFalse(keys.contains("startAt"))
