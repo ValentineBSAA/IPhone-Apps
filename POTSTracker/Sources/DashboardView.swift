@@ -219,12 +219,7 @@ struct HomeScreenView: View {
                     }
                 }
 
-                if showHints {
-                    Text("Unrecorded days are unknown, never counted as symptom-free.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 3)
-                }
+
             }
             .padding(.horizontal, 17)
             .padding(.top, 10)
@@ -275,8 +270,8 @@ struct HomeScreenView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Today")
                             .font(.title3.bold())
-                        if let check = todayEntries.first(where: { $0.category == LogCategory.checkIn.rawValue }) {
-                            Text("Last check-in: \(CheckInFormat.feeling(title: check.title, posture: check.posture) ?? check.title)")
+                        if todayEntries.contains(where: { $0.category == LogCategory.checkIn.rawValue }) {
+                            Text("Check-in recorded")
                                 .font(.caption).foregroundStyle(.secondary)
                         } else {
                             Text(todayEntries.isEmpty ? "Nothing logged yet" : "No check-in yet")
@@ -336,14 +331,7 @@ struct HomeScreenView: View {
             HStack {
                 Text("Quick check-in").font(.subheadline.weight(.semibold))
                 Spacer()
-                if let latest = todayEntries.first(where: { $0.category == LogCategory.checkIn.rawValue }) {
-                    Text("Last: \(CheckInFormat.feeling(title: latest.title, posture: latest.posture) ?? latest.title)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                } else {
-                    Text("Optional").font(.caption).foregroundStyle(.secondary)
-                }
+
             }
 
             VStack(spacing: 7) {
@@ -361,29 +349,20 @@ struct HomeScreenView: View {
     }
 
     private func checkInButton(_ answer: String) -> some View {
-        let latest = todayEntries.first(where: { $0.category == LogCategory.checkIn.rawValue })
-        let selected = latest.flatMap { CheckInFormat.feeling(title: $0.title, posture: $0.posture) } == answer
-        return Button {
+        Button {
             feelingDraft = FeelingDraft(feeling: answer)
         } label: {
             Text(answer)
-                .font(.system(size: 14, weight: selected ? .semibold : .medium))
+                .font(.system(size: 14, weight: .medium))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity, minHeight: roomy ? 51 : 37)
-                .foregroundStyle(selected ? Color.potsTeal : Color.primary)
-                .background(
-                    selected ? Color.potsTeal.opacity(0.13) : Color.potsSurface,
-                    in: RoundedRectangle(cornerRadius: 11)
-                )
-                .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(
-                    selected ? Color.potsTeal.opacity(0.4) : Color.clear,
-                    lineWidth: 1
-                ))
+                .foregroundStyle(Color.primary)
+                .background(Color.potsSurface, in: RoundedRectangle(cornerRadius: 11))
         }
         .buttonStyle(.plain)
         .disabled(PersistenceController.shared.loadError != nil)
-        .accessibilityHint("Opens a note. Nothing is saved until you choose Save.")
+        .accessibilityHint("Opens an unsaved note. No record is created until you choose Save.")
     }
 
     private var favoriteGrid: some View {
@@ -431,21 +410,7 @@ struct HomeScreenView: View {
                 statusDot("BP", category: .bloodPressure)
             }
 
-            if let latest = todayEntries.first {
-                HStack(spacing: 6) {
-                    Image(systemName: "clock").font(.caption2)
-                    Text("Latest: \(latest.title) · \(latest.recordedAt.formatted(date: .omitted, time: .shortened))")
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                    Spacer(minLength: 3)
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
 
-            Text("Filled = recorded today · Empty = not recorded. These are not health ratings.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
         }
     }
 
