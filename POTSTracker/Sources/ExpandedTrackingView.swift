@@ -18,6 +18,19 @@ struct PosiesEntryExtras: Codable, Equatable {
     var endAt: Date?
     static let marker = "posies-extra-v1:"
 
+    init(dose: String = "", context: String = "", quality: String = "",
+         recordSource: String = "manual", tags: [String]? = nil,
+         recovery: String? = nil, startAt: Date? = nil, endAt: Date? = nil) {
+        self.dose = dose
+        self.context = context
+        self.quality = quality
+        self.recordSource = recordSource
+        self.tags = tags
+        self.recovery = recovery
+        self.startAt = startAt
+        self.endAt = endAt
+    }
+
     static func read(_ stored: String) -> PosiesEntryExtras {
         guard stored.hasPrefix(marker),
               let data = Data(base64Encoded: String(stored.dropFirst(marker.count))),
