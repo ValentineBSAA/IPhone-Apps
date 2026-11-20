@@ -107,7 +107,7 @@ struct PosiesDataManagementView: View {
                             }
                         ))
                         .tint(.potsTeal)
-                        .disabled(cloud.iCloudAvailable != true)
+                        .disabled(cloud.iCloudAvailable != true || (journalLockEnabled && !canSeeJournal))
                         if cloud.isSaving {
                             ProgressView("Backing up…")
                                 .font(.subheadline)
