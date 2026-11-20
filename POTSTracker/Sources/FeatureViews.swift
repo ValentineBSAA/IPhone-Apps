@@ -11,8 +11,6 @@ struct FeatureDetail: View {
                 SettingsPanel()
             } else if feature.id == "calendar" {
                 HistoryScreenView()
-            } else if feature.id == "appleHealth" {
-                AppleHealthView()
             } else if let category = feature.category {
                 if category == .journal {
                     JournalProtected {
@@ -364,7 +362,7 @@ struct PrivacyText: View {
                 Text("POTS & Posies currently stores information locally on the iPhone. It has no analytics service, cloud account, advertising or automatic uploads. Reports and backup exports are planned but not available in Build 1.")
                 Text("Important: deleting the app may remove its local records. Do not use this app as the only copy of critical medical information until export and restore have been tested.")
                 Text("Optional Journal Lock uses Face ID or the iPhone passcode to restrict on-screen access. It does not encrypt Journal entries separately from the app's existing protected storage.")
-                Text("Apple Health access is optional, read-only and only requested when you choose it. Activity data is displayed on demand and isn't copied to your POTS entries or uploaded.")
+                Text("An optional experimental camera pulse check uses the camera only after you choose Start. It does not save camera frames, and no estimate becomes a record unless you review and save it.")
                 Divider()
                 Text("About your health")
                     .font(.title2.bold())
