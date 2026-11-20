@@ -434,17 +434,22 @@ struct ExpandedEntryEditor: View {
         if editing == nil { item.id = UUID() }
         item.category = category.rawValue
         item.title = category == .posture ? "Position observation" : title.trimmingCharacters(in: .whitespacesAndNewlines)
-        item.recordedAt = recordedAt
-        item.firstValue = Int32(firstValue) ?? 0
+        item.recordedAt = category == .sleep && useTimeRange ? sleepEnd : recordedAt
+        item.firstValue = category == .sleep && useTimeRange
+            ? Int32(sleepMinutes) : (Int32(firstValue) ?? 0)
         item.secondValue = Int32(secondValue) ?? 0
         item.severity = -1
         item.posture = (category == .medications || category == .posture) ? positionOrStatus :
             (category == .sleep ? quality : "")
         item.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
-        var extras = PosiesEntryExtras()
+        var extras = editing.map { PosiesEntryExtras.read($0.source) } ?? PosiesEntryExtras()
         extras.dose = dose.trimmingCharacters(in: .whitespacesAndNewlines)
         extras.context = contextText.trimmingCharacters(in: .whitespacesAndNewlines)
         extras.quality = quality
+        extras.tags = selectedTags.isEmpty ? nil : selectedTags.sorted()
+        extras.recovery = recovery.isEmpty ? nil : recovery
+        extras.startAt = category == .sleep && useTimeRange ? sleepStart : nil
+        extras.endAt = category == .sleep && useTimeRange ? sleepEnd : nil
         item.source = extras.stored()
         if editing == nil { item.timezoneID = TimeZone.current.identifier }
         do {
