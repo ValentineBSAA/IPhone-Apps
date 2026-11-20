@@ -67,6 +67,18 @@ Existing **eight nighttime tile sprites** are present in the 30-asset pack: `Nig
 
 **P0 Celebrations:** day/night independent berry sprites, strawberry fireworks, falling strawberry showers, combo banners, Reduced Motion fallback. Preview test must not alter score or berries.
 
+## 🌗 Future Night Experience: distinct game modes, Story and exclusive shop inventory
+
+**New owner direction (Nov 20, 2026):** The finished Night Edition is planned to be a **second, different gameplay experience inside the same app**, not only nighttime recolors. These sections are **future art/content categories**, not implemented Build 4.6 screens. Keep the existing 30-pair visual register but expand it when the owner approves actual Night content.
+
+- **Night gameplay modes:** [N1 two-experience navigation #33](https://github.com/ValentineBSAA/IPhone-Apps/issues/33) and [N2 unique modes & Story #34](https://github.com/ValentineBSAA/IPhone-Apps/issues/34). Each approved Night mode gets **its own mode-card identity**, title art, preview imagery, onboarding/how-to, HUD/objective iconography, board/tray art as needed, win/lose states, unlocks and accessibility. **Actual mode names and rules remain TBD** until owner designs them; do not assume a one-to-one copy of daytime Classic/Endless/Story.
+- **Night Story:** Distinct story title/world/locations, chapter selection cards, characters, dialogue portraits, chapter goals, progress badges, cinematics (if approved), unlocks, save/continue and results. Never overwrite or repurpose existing Day Berry Story chapter art or progress.
+- **Different nighttime shop:** [N3 Night Market exclusive catalog #35](https://github.com/ValentineBSAA/IPhone-Apps/issues/35) requires **new item illustrations**, merchandising tiles, packaging, night-exclusive power-ups/skins/decorations when approved, item descriptions, currency, pricing and ownership/disabled states. These are only categories to *inventory*, not approved items. Day Boutique merchandise remains available and unchanged.
+- **Night Market storefront:** Existing `Approved_Night_Market_Storefront` and `Night_Approved_Night_Market_Storefront` are already in repo, but this does **not** mean individual shop merchandise is designed, imported or implemented. Build 4.7/4.8 art previews stay **nontransactional**. Real night catalog purchase support remains Build 6 after approval.
+- **Parities and exceptions:** A **day/night visual counterpart** to the same existing tool is not automatically a **new exclusive Night product**. Track each as separate record, with classification `existing day item / shared cosmetic / new night-exclusive item / intentionally unavailable` and exact experience, store, ownership, approved effect, art, accessibility.
+- **Build assignment:** 4.7/4.8 premium visual foundation first; Night Story/gameplay implementation **build TBD**; Night exclusive catalog/transactions within the approved Build 6 shop program as individually gated work.
+- **Dual-experience QA:** [N4 #36](https://github.com/ValentineBSAA/IPhone-Apps/issues/36) tracks both content catalogs, exact load routes and user-approved art as well as independent save/progression and item ownership tests. iPhone 16e only.
+
 ## Required columns for full S1 handoff
 
 For every visible/interactive element on every user-facing screen, complete:
