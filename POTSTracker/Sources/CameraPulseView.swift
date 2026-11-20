@@ -260,22 +260,29 @@ final class CameraPulseReader: NSObject, ObservableObject, AVCaptureVideoDataOut
         }
         let energy = wave.reduce(0.0) { $0 + $1 * $1 } / Double(n)
         guard energy > 0.045, energy < 1200 else { return nil }
-        var bestLag = 0, bestCorrelation = 0.0
+        var correlations = [Double]()
         for lag in 8...32 {
             var dot = 0.0, aa = 0.0, bb = 0.0
             for i in lag..<n {
                 let a = wave[i], b = wave[i - lag]
                 dot += a * b; aa += a * a; bb += b * b
             }
-            let correlation = dot / sqrt(max(1e-9, aa * bb))
-            if correlation > bestCorrelation {
-                bestCorrelation = correlation
-                bestLag = lag
-            }
+            correlations.append(dot / sqrt(max(1e-9, aa * bb)))
         }
-        guard bestLag > 0, bestCorrelation >= 0.47 else { return nil }
-        let bpm = 60.0 * 24.0 / Double(bestLag)
-        return (45...180).contains(bpm) ? bpm : nil
+        guard let bestCorrelation = correlations.max(), bestCorrelation >= 0.47 else { return nil }
+
+        // Prefer the earliest strong local maximum to avoid choosing a 2x/3x
+        // period harmonic and reporting 50 bpm when the real pulse is 150.
+        for index in correlations.indices {
+            let score = correlations[index]
+            guard score >= max(0.47, bestCorrelation * 0.90) else { continue }
+            let leftOK = index == 0 || score >= correlations[index - 1]
+            let rightOK = index == correlations.count - 1 || score >= correlations[index + 1]
+            guard leftOK && rightOK else { continue }
+            let bpm = 60.0 * 24.0 / Double(index + 8)
+            return (45...180).contains(bpm) ? bpm : nil
+        }
+        return nil
     }
 }
 
