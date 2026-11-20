@@ -83,9 +83,9 @@ def run(archive_path, apply):
                 raise ValueError(f"Duplicate asset: {name}")
             if item.get("owner_visual_approval") != "APPROVED":
                 raise ValueError(f"Not approved: {name}")
-            if not file_path.startswith(f"Batch_{batch:02}_") or not file_path.endswith("/"+name+".png"):
+            if not file_path.startswith(f"01_Original_Approved_PNG/Batch_{batch:02}_") or not file_path.endswith("/"+name+".png"):
                 raise ValueError(f"Manifest file path doesn't match {name}")
-            source_zip_path = ITEMS_DIR + file_path
+            source_zip_path = PACK + file_path
             if source_zip_path not in z.namelist():
                 raise ValueError(f"Missing PNG: {source_zip_path}")
             data = z.read(source_zip_path)
@@ -98,7 +98,7 @@ def run(archive_path, apply):
                 bg_class = classify_background(image)
             if dims != (1254,1254):
                 raise ValueError(f"Unexpected dimensions for {name}: {dims}")
-            original_destination = DEST / file_path
+            original_destination = DEST / file_path.removeprefix("01_Original_Approved_PNG/")
             planned.append((original_destination,data))
             tracked.add(source_zip_path)
             counts[batch] += 1
