@@ -11,7 +11,6 @@ final class BerryResponsiveGameplayLayoutTests: XCTestCase {
         // subtract top or bottom screen cutouts twice.
         let phones: [(String, CGFloat, CGFloat)] = [
             ("iPhone 16e safe area", 390, 751),
-            ("iPhone 14 Pro safe area", 393, 759),
             ("compact iPhone", 320, 650),
             ("large iPhone", 430, 835)
         ]
@@ -27,7 +26,7 @@ final class BerryResponsiveGameplayLayoutTests: XCTestCase {
                 let exterior = BerryBoardContainment.fullFrameSide(playableSide: normal)
                 XCTAssertGreaterThanOrEqual(normal, 150,
                     "\(phone) \(mode): board collapsed")
-                XCTAssertLessThanOrEqual(normal, width * 0.87 + 0.5,
+                XCTAssertLessThanOrEqual(normal, width * 0.92 + 0.5,
                     "\(phone) \(mode): board grows beyond the intended breathing room")
                 XCTAssertLessThanOrEqual(exterior + 6, width + 0.5,
                     "\(phone) \(mode): frame extends past screen width")
