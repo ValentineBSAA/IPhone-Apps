@@ -117,40 +117,46 @@ struct EntriesForCategory: View {
                     }
                 }
 
-                Button { adding = true } label: {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                        Text("Add \(category == .journal ? "note" : "measurement")")
-                        Spacer()
-                        Image(systemName: "arrow.right")
-                    }
-                    .font(.headline)
-                    .padding(.horizontal, 17)
-                    .frame(minHeight: 54)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(PersistenceController.shared.loadError != nil)
-
                 if category == .heartRate {
-                    NavigationLink {
-                        CameraPulseView()
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "camera.fill")
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("Try camera pulse · Beta")
-                                    .font(.subheadline.bold())
-                                Text("Optional 24-second fingertip estimate; no automatic saving")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                    HStack(spacing: 10) {
+                        Button { adding = true } label: {
+                            VStack(spacing: 8) {
+                                Image(systemName: "square.and.pencil").font(.title2)
+                                Text("Enter manually").font(.subheadline.bold())
                             }
-                            Spacer()
-                            Image(systemName: "chevron.right")
+                            .frame(maxWidth: .infinity, minHeight: 92)
                         }
-                        .padding(14)
-                        .background(Color.potsSurfaceMuted, in: RoundedRectangle(cornerRadius: 16))
+                        .buttonStyle(.borderedProminent)
+                        .disabled(PersistenceController.shared.loadError != nil)
+                        NavigationLink {
+                            CameraPulseView()
+                        } label: {
+                            VStack(spacing: 8) {
+                                Image(systemName: "camera.fill").font(.title2)
+                                Text("Camera Pulse · Beta").font(.subheadline.bold())
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 92)
+                            .background(Color.potsSurfaceMuted, in: RoundedRectangle(cornerRadius: 18))
+                            .overlay(RoundedRectangle(cornerRadius: 18)
+                                .strokeBorder(Color.potsTeal.opacity(0.18)))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Experimental resting pulse estimate. No reading is saved automatically.")
                     }
-                    .buttonStyle(.plain)
+                } else {
+                    Button { adding = true } label: {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Add \(category == .journal ? "note" : "measurement")")
+                            Spacer()
+                            Image(systemName: "arrow.right")
+                        }
+                        .font(.headline)
+                        .padding(.horizontal, 17)
+                        .frame(minHeight: 54)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(PersistenceController.shared.loadError != nil)
                 }
 
                 HStack {
