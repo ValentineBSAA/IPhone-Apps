@@ -1,4 +1,4 @@
-name: POTS & Posies | v0.2.5 Home Carousel & Safe Backup Experience iOS 16
+name: POTS & Posies | v0.2.6 Backup Recovery & Tracker Polish iOS 16
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
       - ".github/workflows/pots-build-1.yml"
 
 concurrency:
-  group: pots-posies-v025
+  group: pots-posies-v026
   cancel-in-progress: true
 
 permissions:
@@ -120,7 +120,7 @@ jobs:
           BUILD="$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$INFO")"
           BUNDLE="$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$INFO")"
           echo "Installed app identity: $BUNDLE · v$VERSION (build $BUILD)"
-          test "$VERSION" = "0.2.5"
+          test "$VERSION" = "0.2.6"
           test "$BUILD" = "$GITHUB_RUN_NUMBER"
           test "$BUNDLE" = "com.valentinebsaa.potstracker"
           DISPLAY="$(/usr/libexec/PlistBuddy -c 'Print CFBundleDisplayName' "$INFO")"
@@ -153,12 +153,19 @@ jobs:
           test -f Sources/PosiesHomeCarousel.swift
           test -f Sources/PosiesCloudBackup.swift
           test -f Tests/PosiesHomeAndCloudBackupTests.swift
+          test -f Tests/PosiesBackupAndTrackerPolishTests.swift
+          test -f Sources/PosiesBackupAccess.swift
+          test -f Sources/PosiesTrackerHighlightsView.swift
+          grep -q 'prepareManualBackup' Sources/PosiesDataManagementView.swift
+          grep -q 'Never infer that a past dose was taken today' Sources/ExpandedTrackingView.swift
+          echo "Verified: tap-responsive backup, optional premium trackers and backward-compatible extras tests"
+
           grep -q 'posiesAutomaticCloudConsentV025' Sources/PosiesDataManagementView.swift
           grep -q 'PosiesHomeCarousel' Sources/DashboardView.swift
           test ! -f POTSTracker.entitlements
           echo "Verified: carousel, opted-in iCloud runtime detection, Files fallback and retained AltStore signing"
 
-          echo "Verified v0.2.5 trackers, calendar, reports, reminders, data transfer and regression source"
+          echo "Verified v0.2.6 trackers, calendar, reports, reminders, data transfer and regression source"
 
           grep -q 'TabNavigationRevisions' Sources/DashboardView.swift
           echo "Verified: tab-stack root routing regression test is present"
@@ -173,13 +180,13 @@ jobs:
           set -euo pipefail
           mkdir -p dist/Payload
           cp -R build-device/Build/Products/Release-iphoneos/POTSTracker.app dist/Payload/
-          (cd dist && zip -qr POTS-and-Posies-v0.2.5-iOS16-unsigned.ipa Payload)
-          unzip -l dist/POTS-and-Posies-v0.2.5-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
+          (cd dist && zip -qr POTS-and-Posies-v0.2.6-iOS16-unsigned.ipa Payload)
+          unzip -l dist/POTS-and-Posies-v0.2.6-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
 
       - name: Upload unsigned IPA build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: POTS-and-Posies-v0.2.5-iOS16-unsigned
+          name: POTS-and-Posies-v0.2.6-iOS16-unsigned
           path: POTSTracker/dist/*.ipa
           if-no-files-found: error
           retention-days: 30
