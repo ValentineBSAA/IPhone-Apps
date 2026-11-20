@@ -133,6 +133,28 @@ struct EntriesForCategory: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(PersistenceController.shared.loadError != nil)
 
+                if category == .heartRate {
+                    NavigationLink {
+                        CameraPulseView()
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "camera.fill")
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Try camera pulse · Beta")
+                                    .font(.subheadline.bold())
+                                Text("Optional 24-second fingertip estimate; no automatic saving")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                        }
+                        .padding(14)
+                        .background(Color.potsSurfaceMuted, in: RoundedRectangle(cornerRadius: 16))
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 HStack {
                     Text("Your entries").font(.headline)
                     Spacer()
@@ -210,7 +232,7 @@ struct EntriesForCategory: View {
 
     private var subtitle: String {
         switch category {
-        case .heartRate: return "Record a reading from your monitor"
+        case .heartRate: return "Manual readings and optional experimental camera pulse"
         case .bloodPressure: return "Manual systolic and diastolic readings"
         case .symptom: return "Track an episode when it happens"
         case .journal: return "Keep thoughts and questions together"
