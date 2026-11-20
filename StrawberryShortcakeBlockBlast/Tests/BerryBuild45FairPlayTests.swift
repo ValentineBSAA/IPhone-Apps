@@ -34,10 +34,14 @@ final class BerryBuild45FairPlayTests: XCTestCase {
     }
     func testInvalidPlacementCannotChangeSave() throws {
         var e = BerryEngine(side: 8, seed: 451)
-        let prior = try JSONEncoder().encode(e)
+        // JSONEncoder does not promise stable dictionary key ordering.
+        // Canonicalized JSON reliably checks full persisted state equality.
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let prior = try encoder.encode(e)
         XCTAssertNil(e.place(slot: 0, row: -1, col: -1))
         XCTAssertNil(e.place(slot: 8, row: 0, col: 0))
-        XCTAssertEqual(try JSONEncoder().encode(e), prior)
+        XCTAssertEqual(try encoder.encode(e), prior)
     }
     func testExistingBerryPricesUnchanged() {
         XCTAssertEqual(BerryEconomy.undoPrice, 40)
