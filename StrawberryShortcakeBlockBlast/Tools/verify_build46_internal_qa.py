@@ -27,7 +27,9 @@ assert 'guard var inventory = existing else { return nil }' in session
 assert 'amount <= Int.max - inventory.berries' in session
 grant = session.split("static func grantQAStrawberries", 1)[1].split("    #endif", 1)[0]
 assert 'recordSpend' not in grant and 'totalEarnedBerries +=' not in grant
-assert 'comfortableWidth = width * 0.92' in layout
+assert 'boardWidthFraction: CGFloat = 0.92' in layout
+assert 'comfortableWidth = width * boardWidthFraction' in layout
+assert (root / "Tools/berry_build46_geometry_preflight.swift").is_file()
 assert 'animateSuccessfulLanding' in game and 'BerryLandingVisual' in game
 assert 'private let count = 44' in rain and 'session.drop' not in rain
 assert 'hour < 6 || hour >= 18' in night
