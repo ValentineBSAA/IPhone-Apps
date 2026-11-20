@@ -3,9 +3,9 @@
 
 **Updated:** November 20, 2026. This document supersedes the historic "Build 4" pending QA and retired dual-phone statements **for future work only**. Historic screenshots, 30-image import provenance, QA results and decisions are preserved here. **This roadmap is planning, not a shipping build or owner approval of new art.**
 
-**Owner-approved strategy:** Stage the premium night identity across **Build 4.7 (Night Foundation + Gameplay)** and **Build 4.8 (Full Parity + Strawberry Spectacle)**. Keep **Build 5** (progression and feedback) and **Build 6** (real Moonberry economy) independent. Do not stuff all cosmetic work into already-compiled Build 4.6 or break its baseline.
+**Updated owner-approved strategy:** Build a **two-experience game in one app**, with **different Night game modes, a distinct Night Story and a separate Night Market catalog**, not just a day/night recolor. Stage the visual identity first across **Build 4.7 (Night Foundation + Gameplay Artwork)** and **Build 4.8 (Full Visual Parity + Strawberry Spectacle)**. Preserve **Build 5** (existing daytime progression and feedback) and **Build 6** (Moonberry economy, unique Night Market commerce). Plan **Night gameplay and story content as a subsequent separately approved expansion, build number TBD**: do not silently assign unapproved new modes/story to the existing 4.7/4.8 deliveries or promise that Build 6 alone contains the entire second game. Maintain compatibility with the current tested daytime app and its saved data.
 
-**Issue index:** [Night Garden umbrella #23](https://github.com/ValentineBSAA/IPhone-Apps/issues/23) · [S1 asset ledger #24](https://github.com/ValentineBSAA/IPhone-Apps/issues/24) · [S2 themed clocks #25](https://github.com/ValentineBSAA/IPhone-Apps/issues/25) · [S3 gameplay night parity #26](https://github.com/ValentineBSAA/IPhone-Apps/issues/26) · [S3B premium Nighttime Blocks #32](https://github.com/ValentineBSAA/IPhone-Apps/issues/32) · [S4 Home & menus #27](https://github.com/ValentineBSAA/IPhone-Apps/issues/27) · [S5 Boutique & tools #28](https://github.com/ValentineBSAA/IPhone-Apps/issues/28) · [S6 strawberry fireworks #29](https://github.com/ValentineBSAA/IPhone-Apps/issues/29) · [S7 test & release QA #30](https://github.com/ValentineBSAA/IPhone-Apps/issues/30).
+**Issue index:** [Night Garden umbrella #23](https://github.com/ValentineBSAA/IPhone-Apps/issues/23) · [S1 asset ledger #24](https://github.com/ValentineBSAA/IPhone-Apps/issues/24) · [S2 themed clocks #25](https://github.com/ValentineBSAA/IPhone-Apps/issues/25) · [S3 gameplay night parity #26](https://github.com/ValentineBSAA/IPhone-Apps/issues/26) · [S3B premium Nighttime Blocks #32](https://github.com/ValentineBSAA/IPhone-Apps/issues/32) · [S4 Home & menus #27](https://github.com/ValentineBSAA/IPhone-Apps/issues/27) · [S5 Boutique & tools #28](https://github.com/ValentineBSAA/IPhone-Apps/issues/28) · [S6 strawberry fireworks #29](https://github.com/ValentineBSAA/IPhone-Apps/issues/29) · [S7 visual QA #30](https://github.com/ValentineBSAA/IPhone-Apps/issues/30) · [N1 two-experience architecture #33](https://github.com/ValentineBSAA/IPhone-Apps/issues/33) · [N2 distinct Night modes & Story #34](https://github.com/ValentineBSAA/IPhone-Apps/issues/34) · [N3 unique Night Market catalog #35](https://github.com/ValentineBSAA/IPhone-Apps/issues/35) · [N4 full dual-experience QA #36](https://github.com/ValentineBSAA/IPhone-Apps/issues/36).
 
 ## 1. Baselines, what is complete and what is not
 
@@ -18,8 +18,10 @@
 | Historical night art pack | **30 individual `Night_*.imageset` folders present** in current branch plus their daytime source art; import previously verified | Image presence does NOT mean every screen is routed or aesthetically approved |
 | **Build 4.7** | PLANNED | Approved day/night asset matrix, premium dual-clock artwork, theme foundation and gameplay icon parity |
 | **Build 4.8** | PLANNED | Complete Home, Settings, Boutique and auxiliary parity; dramatically improved celebration; owner approval |
-| **Build 5** | PRESERVED backlog | Existing Quest/Village/progression/notification improvements only |
-| **Build 6** | PRESERVED backlog | Real Moonberry ledger, earn rules, transactional Night Market, day/night shop switch |
+| **Build 5** | PRESERVED backlog | Existing Quest/Village/progression/notification improvements; future Night Story progress uses separate namespaces and content tracks |
+| **Build 6** | PRESERVED + EXPANDED backlog | Real Moonberry ledger, earn rules, transactional **Night Market with different items from Day Boutique**, and safe shop availability/switching; detailed catalog and currency rules require approval |
+
+| **Night gameplay/story expansion** | NEW PLANNED WORKSTREAM, build TBD | [N1 #33](https://github.com/ValentineBSAA/IPhone-Apps/issues/33): dual-experience architecture; [N2 #34](https://github.com/ValentineBSAA/IPhone-Apps/issues/34): **different Night modes and Story**; [N4 #36](https://github.com/ValentineBSAA/IPhone-Apps/issues/36): release QA. Not implemented in Build 4.6. | Author/approve distinct mode roster, Night Story bible, independent progress/saves, safe clock/user switching before assigning implementation build |
 
 **Current physical device policy:** **iPhone 16e only**, portrait iOS 16.0+ target. Older Build 3 and 4 reports sometimes mention iPhone 14 Pro; those are historical only. Future CI must not schedule an iPhone 14 Pro or make it a release gate. Existing older IPA is unsigned; no hidden merge, release, signing or install claims.
 
@@ -27,12 +29,12 @@
 
 ## 2. Non-negotiable release rules
 
-- **Day and night are visual themes, NOT difficulty modes.** Strawberry Nightmare remains its separate 12×12 timed game regardless of local time. The UI must never imply other modes become Nightmare after 6 PM.
+- **The current Build 4.6 day/night switch is visual-only**, but the approved long-term product direction is **two different gameplay experiences in one app**: Day and Night get **distinct modes, a distinct Story and distinct shop merchandise** after approval. **Time-of-day theme**, **selected Day/Night experience**, and the existing **Strawberry Nightmare difficulty mode** must remain separate concepts. Switching time must not silently erase a run or force every night play session into Nightmare. Exact automatic/manual switching behavior remains a design decision for [N1 #33](https://github.com/ValentineBSAA/IPhone-Apps/issues/33).
 - **Total visual parity:** every **visible** icon, illustrated game/mode card, button, banner, logo treatment, HUD stat, background, shop tile, selected/disabled/locked indicator, board tile/frame, footer, navigation/sheet, and user-facing modal must have an intentional **daylight** and **night** presentation. Shared neutral art is allowed **only if reviewed** and marked intentionally shared.
 - Keep 30 existing night assets and original day assets **unchanged until reviewed**. Source PNG import ≠ runtime asset routing ≠ owner aesthetic approval. No low-quality auto recolor or misnamed fallback masquerading as a completed variant.
 - All player-facing menus and settings subpages remain **two-column grids** where applicable; don't introduce linear settings lists. Match icon weight/size and readability, not just hue. Make Home tiles more prominent without crowding text.
 - Preserve exact 8×8/12×12/24×24 board touch mapping, 3pt touch margin, 8pt exterior Blossom Glass frame and saved scores/strawberries/charges/skins/inventory. Avoid input blockage and unsafe control positioning beneath notch or home gesture bar. Preserve readable disabled tool states.
-- Preserve game economy/prices/award-once rules, quests, soundtracks, original audio, accessibility settings and iOS16 compatibility. No real Night Market or Moonberry transactions before Build 6.
+- Preserve current **Day** economy/prices/award-once rules, quests, stories, soundtracks, original audio, accessibility settings and iOS16 compatibility. Night introduces **its own approved story and mode progress**, **different merchandise**, and potentially different rules/rewards only after explicit specification. **No real Night Market or Moonberry transactions before Build 6**, and no unapproved night game-mode/story implementation in the purely visual Builds 4.7/4.8.
 - **Never use QA-granted strawberries as real earnings metrics.** Internal Test Strawberries control is permitted only in special `BERRY_INTERNAL_QA` test builds, guarded from release distribution. Require explicit action + expected result before any QA transaction, never surprise spend or require farming combos.
 - No milestone is marked done from a passing Swift compile alone. Use three separate states: **asset imported**, **feature routed/tested**, **visual owner approved**. A candidate IPA must pass fast CI, full CI, physical iPhone 16e and explicit release decision.
 
@@ -102,6 +104,8 @@ Do not mark a group green if ANY visible active state is mismatched. Capture **d
 | **Other player screens** | Stats, Help, School/onboarding, Village, Cottage, Daily/Quests, Journal, Streak, Almanac, Collections/Trophies, Jukebox, results, unlock banners and any sheets/cards not pictured | P1 |
 | **Internal-only QA** | Developer Garden 4 quick tiles, Test Strawberries, Diagnostics, Save Inspector, Combo Preview, additional economy/build/clock panels; explicit separation of QA grant/normal wallet | P2 |
 | **Celebrations** | Berry burst V2 daytime and nighttime sprites, fireworks/rain, combo text, ribbons/petals, Story/milestone glow, Reduced Motion fallback | P0 independent stage |
+| **Unique Night Market items** | New Night-only catalog illustrations, icons, tools, skins, decorations, story/mode items and purchase states **only as separately approved concepts**. The approved storefront image is not an actual finished store inventory. Preserve distinct Day Boutique items. | P0 planning; implementation Build 6 |
+| **Distinct Night modes and Night Story** | Separate nighttime mode-card illustrations, original objectives, story chapters/locations/characters as approved, event/result screens, rewards and saves. **Do not assume existing Day mode icons simply recolor into new Night modes.** | P0 planning; implementation build TBD |
 
 ## 4. Staged build gates (each stage must be independently tested)
 
@@ -173,7 +177,49 @@ Do not mark a group green if ANY visible active state is mismatched. Capture **d
 - [ ] CI: cheap source/asset/geometry gate before simulator; 16e-specific smoke before comprehensive XCTest; screenshot and FPS/animation evidence; no 14 Pro.
 - [ ] Do not merge, publish, or call any visual "finished" without **separate owner visual approval** and explicit go/no-go.
 
-## 5. Builds 5 and 6 are preserved, NOT absorbed by Night Garden
+## 5. Two-games-in-one expansion: separate Night gameplay, Story and merchandise
+
+**NEW OWNER SCOPE (Nov 20, 2026):** Daytime and nighttime are **not ultimately the same game with two palettes**. They will share the app, navigation foundations and technical engine where practical, but Night Edition must grow into **genuinely different gameplay modes and a different Story**, plus its **own shop products** and thematic identity. A nighttime cosmetic skin/clock in Build 4.6–4.8 is a foundation only.
+
+**Delivery separation:** Keep the staged 4.7/4.8 **visual parity project** intact. Begin architecture and authoring design in parallel, but implement new Night mode/story rules only in a **future Night Gameplay Expansion build (number TBD with owner)**. **Build 6 remains the transactional Night Market/Moonberry milestone**, now with a unique Night catalog. These are coordinated through dependencies, not automatically bundled or silently merged.
+
+### N1 — Two-experience architecture and navigation [issue #33](https://github.com/ValentineBSAA/IPhone-Apps/issues/33)
+- [ ] Make a clear model distinction between `appearance = day/night`, `selected experience = Day/Night`, and existing `mode = Strawberry Nightmare`. Existing Strawberry Nightmare remains its own game mode, not synonymous with nighttime.
+- [ ] Define which menus, account profile, collectibles and engine systems stay shared versus which Day/Night modes, Story, quests, saves and rewards are separate. **Owner decides exact sharing.**
+- [ ] Define the 6 AM/6 PM *default appearance* and a **safe transition policy** when time changes during an active run/shop transaction or chapter. Decide whether user can choose Day/Night at any clock time. **Do not force an automatic game switch** as a side effect of the cosmetic theme.
+- [ ] Document home hub/two-column navigation and save compatibility, existing player upgrades and cross-time persistence.
+- [ ] Approve architecture and an incremental delivery sequence before adding new Night gameplay.
+
+### N2 — Original Nighttime modes, story and progression [issue #34](https://github.com/ValentineBSAA/IPhone-Apps/issues/34)
+- [ ] Plan an **owner-approved Night mode roster**: what is distinctly new, which Day modes get a remixed rule set, which are absent, plus objectives, scores, timers, tool restrictions and rewards. **Names and mechanics are TBD, not invented/approved yet.**
+- [ ] Design a **separate Night Story bible**, original chapters, missions/objectives, characters, locations, cutscenes/dialogue, story-specific soundtrack/visuals and unlocks. Narrative details need owner selection before coding.
+- [ ] Namespace Night Story progress, checkpoints, saves, scoreboards, collectible achievements and quests as appropriate so Day Story and saved games remain intact across 6AM/6PM transitions, manual switching and app updates.
+- [ ] Keep existing Build 5 Quest/Village improvements for Day; plan Night counterparts as **distinct deliverables** only when approved, not accidental substitutions.
+- [ ] Test navigation between both experiences and overnight save integrity with iPhone 16e-only QA.
+
+### N3 — Different nighttime shop items and true Night Market [issue #35](https://github.com/ValentineBSAA/IPhone-Apps/issues/35)
+- [ ] Create a distinct **Night Market catalog** and owner-approved concept/asset set: Night-exclusive cosmetics, themed board and block skins, tools/powers, home/village decor, Story or mode-specific items only where approved. Every item needs its own identity, effect, art, unlock, ownership, valid modes, wallet and price. **These are prospective categories, not user-approved finished products.**
+- [ ] Keep current **Day Berry Boutique** catalog, purchases and prices unchanged. Night shop should not simply recolor Undo/Hint/Shuffle and call them new items; shared items only when explicitly approved.
+- [ ] Approved night storefront imagery can appear as a **preview only** in 4.7/4.8; no premature purchases or invisible Moonberry economy.
+- [ ] Coordinate Build 6 Moonberry rules, separate wallets, earnings, spend/receipt integrity, wrong-wallet prevention, pending transactions, unlock conditions and day/night shop availability. Exact prices and gameplay effects TBD pending review.
+- [ ] Inventory/ownership across both stores must be safe when clocks transition or the user changes experiences; do not change an in-flight purchase or equipped skin.
+- [ ] Implement/test real Night transactions **only after approved Build 6 economics**; retain full audit and regression requirements.
+
+### N4 — Two-experience QA and release gates [issue #36](https://github.com/ValentineBSAA/IPhone-Apps/issues/36)
+- [ ] Regress both Day and Night **mode/story catalogs**, separate saves/chapters/rewards, shared profile decisions, shopping/catalog/wallet logic and in-game/foreground transitions.
+- [ ] Keep Night-specific gameplay QA separate from **visual parity gate S7**; a good-looking night screenshot is not proof of a new game mode or story.
+- [ ] Add cheap source, save namespace, mode routing and shop catalog/economy tests before the long iPhone 16e simulator suite. Require owner physical iPhone 16e signoff for both games.
+- [ ] No automatic release, merge, invented dates, unauthorised art or hidden economy changes.
+
+### Decision log: open product details (never assume approval)
+- Night mode **names, number, mechanics and difficulty**: TBD.
+- Night Story **setting, characters, chapter count, objective types and narrative content**: TBD.
+- Whether night experience selection follows the clock or user choice, and whether daytime is playable at night: TBD.
+- Night item **names, categories, effects, pricing and currency eligibility**: TBD.
+- Shared vs separate **progress, inventory and unlock policies**: TBD. Protect existing Day saves by default.
+- Release number for full Night story/mode implementation: TBD; **Build 6 Night Market commerce remains an existing commitment**.
+
+## 6. Builds 5 and 6 are preserved, NOT absorbed by Night Garden
 
 ### Build 5: existing notification, quests, Village and progression polish
 - [ ] In-context rewards, milestones and celebrations appear in the active page, never behind Settings/Boutique or a blocked modal.
@@ -183,16 +229,16 @@ Do not mark a group green if ANY visible active state is mismatched. Capture **d
 - [ ] No feature bloat: existing features get accessible, two-column grid polish with **both day/night asset themes**; integrate new features into completed theme system, not reopen whole art pipeline.
 - [ ] Short CI + real iPhone16e owner QA, save migration compatibility and explicit approval.
 
-### Build 6: actual Moonberry currency and transactional Night Market
-- [ ] Separate durable Strawberry and Moonberry wallets, transparent earn/spend ledgers, economy migration/rollback, purchase integrity.
+### Build 6: actual Moonberry currency and transactional **distinct-item Night Market**
+- [ ] Separate durable Strawberry and Moonberry wallets, transparent earn/spend ledgers, economy migration/rollback, purchase integrity. **Night Market inventory differs from Day Berry Boutique**, with independent item IDs, owner-approved illustrations, effects, eligibility, unlocks and prices per [N3 #35](https://github.com/ValentineBSAA/IPhone-Apps/issues/35).
 - [ ] Earn Moonberries from verified Endless milestones with once-only grant semantics despite Undo, reloading, retries and season changes.
-- [ ] True shop switch/availability at scheduled **6 AM / 6 PM device-local garden cycle**; approved storefront artwork reused from Night Garden parity. Real purchases only once complete and owner-approved.
+- [ ] Define **shop availability/experience selection policy** across scheduled 6 AM / 6 PM device-local garden cycle without surprising a player in a night story or in-flight purchase; approved storefront artwork reused from Night Garden parity. Real purchases only once owner-approved and complete.
 - [ ] Prices, permanent ownership, helpers and inventory persist over shop transitions, midnight, DST, timezone, offline and foreground resume.
 - [ ] Finish in-flight purchases before changing shop and don't mutate game mid-move. Graceful error/recovery and rollback.
 - [ ] Manual phone time is not authoritative against cheating; document any offline trust policy without pretending device time is secure.
-- [ ] Comprehensive test-only economic QA, no interference from developer QA currency, plus real iPhone16e signoff. Nighttime theme by itself must never make Moonberries spendable in Build 4.7/4.8.
+- [ ] Comprehensive test-only economic QA, unique day/night catalog transaction replay and wrong-wallet prevention, no interference from developer QA currency, plus real iPhone16e signoff. Nighttime **theme by itself** must never make Moonberries spendable in Build 4.7/4.8; actual Night commerce requires the separate Build 6 implementation.
 
-## 6. Engineering / release coordination
+## 7. Engineering / release coordination
 
 **Source branches:**
 - Build 4.5 functional baseline: `feature/berry-build4-r6-fair-play-lab` ([draft PR #15](https://github.com/ValentineBSAA/IPhone-Apps/pull/15)).
@@ -204,9 +250,11 @@ Do not mark a group green if ANY visible active state is mismatched. Capture **d
 
 **No hidden expenditures:** owner QA instructions must say exactly `starting balance → tap/type → expected amount/result`. Do not require buying tools, grinding high combos or changing phone's clock just to pass a checklist.
 
+**Long-term architecture:** [N1 day/night experiences #33](https://github.com/ValentineBSAA/IPhone-Apps/issues/33) → [N2 new Night Story/modes #34](https://github.com/ValentineBSAA/IPhone-Apps/issues/34); [N3 distinct Night Market items #35](https://github.com/ValentineBSAA/IPhone-Apps/issues/35) coordinates with Build 6, and [N4 dual-game QA #36](https://github.com/ValentineBSAA/IPhone-Apps/issues/36) gates release. Build 4.7/4.8 remain primarily **visual foundation** deliverables; no automatic gameplay rewrite. Night games and Story implementation build numbers await owner scope signoff.
+
 **Carry-forward unrelated:** historical AltStore/signing issues belong to their separate installation workflow; do not block art roadmap with unverified old iPhone16 hardware claims. New 4.7/4.8 app versions and build numbers are to be assigned at implementation, not guessed as completed.
 
-## 7. Historic provenance retained
+## 8. Historic provenance retained
 
 The original [Nighttime source release](https://github.com/ValentineBSAA/IPhone-Apps/releases/tag/Nighttime) included 30 named imagesets and prior validation; the old roadmap's import workflow used:
 
@@ -219,4 +267,4 @@ git status --short
 
 Import checks were reported green, but runtime mapping and aesthetic acceptance remain separate. Historic plans, especially Build 3/4 device reports and Build 4.4/4.5 checklists, are retained in [master historical Issue #8](https://github.com/ValentineBSAA/IPhone-Apps/issues/8), [Build4 approved assets](BUILD4_APPROVED_ASSETS_AND_QA.md), [Build4.4 QA](BUILD4_4_BOUTIQUE_TOOLS_QA.md) and [Build4.5 QA](BUILD4_5_FAIR_PLAY_QA.md). This document is the **current forward-looking source of truth**.
 
-**Final control:** No Build 4.7/4.8 implementation or image generation has been started by this roadmap update; asset creation requires separate user approval. No PR merge, no app public release, no existing gameplay changes.
+**Final control:** This is planning documentation: no new Night game modes, Night Story, exclusive shop inventory or real Moonberry transaction is implemented in Build 4.6 by this update. No Build 4.7/4.8 implementation or image generation has been started by this roadmap update; asset creation and gameplay details require user approval. No PR merge, no app public release, no existing gameplay changes.
