@@ -257,7 +257,6 @@ struct EntriesForCategory: View {
 
 struct SettingsPanel: View {
     @AppStorage("lowEnergyMode") private var lowEnergyMode = false
-    @AppStorage("showEducationHints") private var showEducationHints = true
     @AppStorage("posiesAppearance") private var posiesAppearance = "system"
 
     var body: some View {
@@ -273,15 +272,13 @@ struct SettingsPanel: View {
                             Text("Midnight").tag("dark")
                         }
                         .pickerStyle(.segmented)
-                        Text("Blossom uses soft ivory and rose; Midnight uses OLED black and plum. System follows your iPhone. All modes preserve readable text.")
+                        Text("Blossom uses ivory and rose; Midnight uses soft charcoal-plum. System follows your iPhone.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Divider()
                         Text("Comfort & accessibility")
                             .font(.headline)
                         Toggle("Larger, simpler controls", isOn: $lowEnergyMode)
-                            .tint(.potsTeal)
-                        Toggle("Show helpful explanations", isOn: $showEducationHints)
                             .tint(.potsTeal)
                         Text("Use the iPhone's Display & Text Size settings for larger fonts and additional contrast.")
                             .font(.caption)
@@ -365,7 +362,7 @@ struct PrivacyText: View {
             VStack(alignment: .leading, spacing: 17) {
                 Text("Your records belong to you")
                     .font(.title2.bold())
-                Text("POTS & Posies currently stores information locally on the iPhone. It has no analytics service, cloud account, advertising or automatic uploads. Reports and backup exports are planned but not available in Build 1.")
+                Text("POTS & Posies currently stores information locally on the iPhone. It has no analytics service, cloud account, advertising or automatic uploads. Reports and backup exports are planned but not available in this test build.")
                 Text("Important: deleting the app may remove its local records. Do not use this app as the only copy of critical medical information until export and restore have been tested.")
                 Text("Optional Journal Lock uses Face ID or the iPhone passcode to restrict on-screen access. It does not encrypt Journal entries separately from the app's existing protected storage.")
                 Text("An optional experimental camera pulse check uses the camera only after you choose Start. It does not save camera frames, and no estimate becomes a record unless you review and save it.")
