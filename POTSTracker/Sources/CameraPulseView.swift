@@ -23,6 +23,7 @@ final class CameraPulseReader: NSObject, ObservableObject, AVCaptureVideoDataOut
     private var device: AVCaptureDevice?
     private var active = false
     private var firstValid: Double?
+    private var firstCameraFrame: Double?
     private var lastValid: Double?
     private var lastUI: Double = 0
     private var samples: [Sample] = []
@@ -85,6 +86,7 @@ final class CameraPulseReader: NSObject, ObservableObject, AVCaptureVideoDataOut
                 self.session = session
                 self.samples.removeAll(keepingCapacity: true)
                 self.firstValid = nil
+                self.firstCameraFrame = nil
                 self.lastValid = nil
                 self.lastUI = 0
                 self.active = true
@@ -127,6 +129,7 @@ final class CameraPulseReader: NSObject, ObservableObject, AVCaptureVideoDataOut
         device = nil
         samples.removeAll()
         firstValid = nil
+        firstCameraFrame = nil
         lastValid = nil
         DispatchQueue.main.async {
             self.running = false
@@ -153,6 +156,11 @@ final class CameraPulseReader: NSObject, ObservableObject, AVCaptureVideoDataOut
         guard active, let buffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         let time = CMSampleBufferGetPresentationTimeStamp(sampleBuffer).seconds
         guard time.isFinite else { return }
+        if firstCameraFrame == nil { firstCameraFrame = time }
+        if let start = firstCameraFrame, time - start > 38 {
+            endCapture(error: "The scan timed out and the flashlight was turned off. Try again with your finger covering the camera, or enter a monitor reading manually.")
+            return
+        }
         CVPixelBufferLockBaseAddress(buffer, .readOnly)
         let w = CVPixelBufferGetWidth(buffer)
         let h = CVPixelBufferGetHeight(buffer)
