@@ -87,11 +87,11 @@ struct JournalProtected<Content: View>: View {
                         ProgressView()
                         Text("Unlocking private Journal…")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.potsSecondary)
                     } else {
                         Text(lastError ?? "Your Journal is locked.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.potsSecondary)
                             .multilineTextAlignment(.center)
                     }
 
@@ -183,7 +183,7 @@ struct JournalLockSettings: View {
                             .font(.headline)
                         Text("When enabled, Journal entries require Face ID or the iPhone passcode. The lock returns when you leave the Journal or the app goes into the background.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.potsSecondary)
                         Button {
                             access.authenticate(reason: enabled ? "Turn off private Journal Lock" : "Turn on private Journal Lock") { success, error in
                                 if success {
@@ -199,6 +199,7 @@ struct JournalLockSettings: View {
                                 .frame(maxWidth: .infinity, minHeight: 52)
                         }
                         .buttonStyle(.borderedProminent)
+                        .tint(Color.potsButtonFill)
                     }
                 }
                 GlassCard {
@@ -209,12 +210,12 @@ struct JournalLockSettings: View {
                         Text("This is an on-screen access lock, not separate encryption for individual Journal records. iPhone storage protection still applies. Journal information is hidden from Home and History while locked.")
                     }
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.potsSecondary)
                 }
                 if !access.isAvailable {
                     Text("To enable Journal Lock, first enable a passcode in iPhone Settings.")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                 }
             }
             .padding(18)

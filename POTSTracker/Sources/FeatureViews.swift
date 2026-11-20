@@ -54,10 +54,10 @@ struct FeatureDetail: View {
                             .font(.headline)
                         Text("This tracker will be added with real local saving and history. It isn't active in this test build.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.potsSecondary)
                         Text("For now, use the available Symptom, Heart Rate, Blood Pressure and Journal tools.")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.potsSecondary)
                     }
                 }
             }
@@ -98,7 +98,7 @@ struct EntriesForCategory: View {
                             .font(.title3.bold())
                         Text(subtitle)
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.potsSecondary)
                     }
                     Spacer(minLength: 0)
                 }
@@ -109,7 +109,7 @@ struct EntriesForCategory: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("\(filtered.count)")
                                 .font(.title2.bold().monospacedDigit())
-                            Text("Total entries").font(.caption).foregroundStyle(.secondary)
+                            Text("Total entries").font(.caption).foregroundStyle(Color.potsSecondary)
                         }
                         Spacer()
                         Rectangle().fill(Color.potsTeal.opacity(0.10))
@@ -118,7 +118,7 @@ struct EntriesForCategory: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("\(thisWeek)")
                                 .font(.title2.bold().monospacedDigit())
-                            Text("Last 7 days").font(.caption).foregroundStyle(.secondary)
+                            Text("Last 7 days").font(.caption).foregroundStyle(Color.potsSecondary)
                         }
                         Spacer()
                     }
@@ -134,6 +134,7 @@ struct EntriesForCategory: View {
                             .frame(maxWidth: .infinity, minHeight: 92)
                         }
                         .buttonStyle(.borderedProminent)
+                        .tint(Color.potsButtonFill)
                         .disabled(PersistenceController.shared.loadError != nil)
                         NavigationLink {
                             CameraPulseView()
@@ -163,6 +164,7 @@ struct EntriesForCategory: View {
                         .frame(minHeight: 54)
                     }
                     .buttonStyle(.borderedProminent)
+                    .tint(Color.potsButtonFill)
                     .disabled(PersistenceController.shared.loadError != nil)
                 }
 
@@ -170,7 +172,7 @@ struct EntriesForCategory: View {
                     Text("Your entries").font(.headline)
                     Spacer()
                     Text(filtered.isEmpty ? "Nothing recorded" : "Newest first")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(Color.potsSecondary)
                 }
                 if filtered.isEmpty {
                     GlassCard {
@@ -179,7 +181,7 @@ struct EntriesForCategory: View {
                                 .font(.subheadline.weight(.semibold))
                             Text(emptyMessage)
                                 .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.potsSecondary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -189,7 +191,7 @@ struct EntriesForCategory: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(day.day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))
                                     .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.potsSecondary)
                                 VStack(spacing: 0) {
                                     ForEach(day.records) { record in
                                         RecordSwipeRow(
@@ -281,7 +283,7 @@ struct SettingsPanel: View {
                         .pickerStyle(.segmented)
                         Text("Blossom uses ivory and rose; Midnight uses soft charcoal-plum. System follows your iPhone.")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.potsSecondary)
                         Divider()
                         Text("Comfort & accessibility")
                             .font(.headline)
@@ -289,7 +291,7 @@ struct SettingsPanel: View {
                             .tint(.potsTeal)
                         Text("Use the iPhone's Display & Text Size settings for larger fonts and additional contrast.")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.potsSecondary)
                     }
                 }
                 NavigationLink {
@@ -303,10 +305,10 @@ struct SettingsPanel: View {
                             Text("Customize Home")
                                 .font(.subheadline.bold())
                             Text("Hide, pin and reorder your cards")
-                                .font(.caption).foregroundStyle(.secondary)
+                                .font(.caption).foregroundStyle(Color.potsSecondary)
                         }
                         Spacer()
-                        Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                        Image(systemName: "chevron.right").foregroundStyle(Color.potsTertiary)
                     }
                     .padding(16)
                     .background(Color.potsSurface,
@@ -326,11 +328,11 @@ struct SettingsPanel: View {
                                 .font(.subheadline.bold())
                             Text("Optional Face ID or iPhone passcode")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.potsSecondary)
                         }
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(Color.potsTertiary)
                     }
                     .padding(16)
                     .background(Color.potsSurface, in: RoundedRectangle(cornerRadius: 18))
@@ -345,7 +347,7 @@ struct SettingsPanel: View {
                             .font(.subheadline)
                         Text("Local backup and export are not available yet. Don't store irreplaceable medical records in this test build.")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.potsSecondary)
                     }
                 }
                 NavigationLink {

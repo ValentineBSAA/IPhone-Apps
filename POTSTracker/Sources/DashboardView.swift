@@ -135,7 +135,7 @@ struct FeatureTile: View {
             .frame(maxWidth: .infinity, minHeight: horizontal ? (roomy ? 80 : 66) : (roomy ? 135 : 116))
             .background(Color.potsSurface,
                         in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.potsTeal.opacity(0.06)))
+            .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.potsStroke.opacity(0.7)))
             .contentShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
@@ -192,7 +192,7 @@ struct HomeScreenView: View {
                 HStack(alignment: .center) {
                     Text(Date.now.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                     Spacer()
                 }
                 .padding(.horizontal, 2)
@@ -213,7 +213,7 @@ struct HomeScreenView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Your Home is clear").font(.headline)
                             Text("You can open Log or restore sections in Customize Home.")
-                                .font(.subheadline).foregroundStyle(.secondary)
+                                .font(.subheadline).foregroundStyle(Color.potsSecondary)
                             Button("Go to Log", action: openLog).buttonStyle(.borderedProminent)
                         }
                     }
@@ -272,10 +272,10 @@ struct HomeScreenView: View {
                             .font(.title3.bold())
                         if todayEntries.contains(where: { $0.category == LogCategory.checkIn.rawValue }) {
                             Text("Check-in recorded")
-                                .font(.caption).foregroundStyle(.secondary)
+                                .font(.caption).foregroundStyle(Color.potsSecondary)
                         } else {
                             Text(todayEntries.isEmpty ? "Nothing logged yet" : "No check-in yet")
-                                .font(.caption).foregroundStyle(.secondary)
+                                .font(.caption).foregroundStyle(Color.potsSecondary)
                         }
                     }
                     Spacer()
@@ -299,7 +299,7 @@ struct HomeScreenView: View {
                     .padding(.horizontal, 15)
                     .frame(minHeight: roomy ? 58 : 47)
                     .foregroundStyle(.white)
-                    .background(Color.potsTeal, in: RoundedRectangle(cornerRadius: 14))
+                    .background(Color.potsButtonFill, in: RoundedRectangle(cornerRadius: 14))
                 }
                 .buttonStyle(.plain)
 
@@ -428,7 +428,7 @@ struct HomeScreenView: View {
                     .fill(logged ? Color.potsTeal : Color.clear)
                     .frame(width: 13, height: 13)
                     .overlay(Circle().strokeBorder(
-                        logged ? Color.potsTeal : Color.secondary.opacity(0.5),
+                        logged ? Color.potsTeal : Color.potsTertiary.opacity(0.85),
                         lineWidth: 1.5
                     ))
                 Text(title)
@@ -458,7 +458,7 @@ struct LogHubView: View {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Choose a tracker. One entry at a time.")
-                        .font(.subheadline).foregroundStyle(.secondary)
+                        .font(.subheadline).foregroundStyle(Color.potsSecondary)
                 }
                 featureSection("Track now", ids: ["symptom", "heartRate", "bloodPressure", "journal"])
                 featureSection("Daily support", ids: ["hydration", "medications", "sleep", "posture"])
@@ -492,7 +492,7 @@ struct MoreHubView: View {
             VStack(alignment: .leading, spacing: 18) {
                 Text("Make the app your own")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.potsSecondary)
 
                 section("Personalize")
                 LazyVGrid(columns: columns, spacing: 11) {
@@ -536,11 +536,11 @@ struct MoreHubView: View {
                 VStack(spacing: 5) {
                     Text("POTS & Posies · \(InstalledBuild.shortLabel)")
                         .font(.caption.weight(.medium).monospacedDigit())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                         .accessibilityLabel("Installed POTS & Posies, \(InstalledBuild.fullLabel)")
                     Text("Test build · Local backup and export aren't available yet")
                         .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color.potsTertiary)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.top, 5)
@@ -575,7 +575,7 @@ struct MoreHubView: View {
         .padding(12)
         .background(Color.potsSurface,
                     in: RoundedRectangle(cornerRadius: 18))
-        .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.potsTeal.opacity(0.06)))
+        .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.potsStroke.opacity(0.7)))
         .accessibilityElement(children: .combine)
     }
 }

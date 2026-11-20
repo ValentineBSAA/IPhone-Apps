@@ -157,6 +157,14 @@ struct POTSTrackerApp: App {
     @AppStorage("journalLockEnabled") private var journalLockEnabled = false
     @AppStorage("posiesWelcomeAcknowledgedV021") private var welcomeAccepted = false
 
+    init() {
+        UITabBar.appearance().unselectedItemTintColor = UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.749, green: 0.667, blue: 0.780, alpha: 1)
+                : UIColor.systemGray.resolvedColor(with: traits)
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             ZStack {
@@ -191,33 +199,52 @@ struct POTSTrackerApp: App {
 }
 
 extension Color {
-    // Strawberry Blossom / Midnight Posies. The established color tokens are
-    // intentionally retained so every existing SwiftUI screen inherits the theme.
+    // Strawberry Blossom preserved; Midnight Posies has higher-contrast layers.
     static let potsTeal = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.96, green: 0.67, blue: 0.79, alpha: 1)
+        ? UIColor(red: 1.0, green: 0.710, blue: 0.843, alpha: 1)
         : UIColor(red: 0.59, green: 0.20, blue: 0.36, alpha: 1)
     })
     static let potsInk = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.98, green: 0.92, blue: 0.95, alpha: 1)
+        ? UIColor(red: 1.0, green: 0.961, blue: 0.988, alpha: 1)
         : UIColor(red: 0.24, green: 0.14, blue: 0.21, alpha: 1)
     })
-    // Midnight Posies is plum charcoal, not absolute black.
     static let potsBackground = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.077, green: 0.058, blue: 0.098, alpha: 1)
+        ? UIColor(red: 0.129, green: 0.102, blue: 0.153, alpha: 1)
         : UIColor(red: 1.00, green: 0.970, blue: 0.980, alpha: 1)
     })
     static let potsSurface = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.143, green: 0.107, blue: 0.161, alpha: 1)
+        ? UIColor(red: 0.227, green: 0.169, blue: 0.259, alpha: 1)
         : UIColor(red: 1.00, green: 0.995, blue: 0.996, alpha: 1)
     })
     static let potsSurfaceMuted = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.202, green: 0.148, blue: 0.221, alpha: 1)
+        ? UIColor(red: 0.314, green: 0.231, blue: 0.349, alpha: 1)
         : UIColor(red: 0.975, green: 0.915, blue: 0.940, alpha: 1)
+    })
+    static let potsSecondary = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+        ? UIColor(red: 0.847, green: 0.776, blue: 0.855, alpha: 1)
+        : UIColor.secondaryLabel.resolvedColor(with: traits)
+    })
+    static let potsTertiary = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+        ? UIColor(red: 0.749, green: 0.667, blue: 0.780, alpha: 1)
+        : UIColor.tertiaryLabel.resolvedColor(with: traits)
+    })
+    // Link/icon pink and button fill must differ: white labels stay legible.
+    static let potsButtonFill = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+        ? UIColor(red: 0.596, green: 0.239, blue: 0.439, alpha: 1)
+        : UIColor(red: 0.59, green: 0.20, blue: 0.36, alpha: 1)
+    })
+    static let potsStroke = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+        ? UIColor(red: 0.592, green: 0.447, blue: 0.620, alpha: 1)
+        : UIColor(red: 0.59, green: 0.20, blue: 0.36, alpha: 0.10)
     })
 }
 
@@ -230,6 +257,6 @@ struct GlassCard<Content: View>: View {
         content
             .padding(16)
             .background(Color.potsSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color.potsTeal.opacity(0.10), lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color.potsStroke, lineWidth: 1))
     }
 }

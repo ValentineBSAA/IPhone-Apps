@@ -72,7 +72,7 @@ struct EntryEditor: View {
                 VStack(alignment: .leading, spacing: 17) {
                     Text("Add only what is useful. You can edit an entry later.")
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                     switch category {
                     case .symptom: symptomFields
                     case .heartRate: heartRateFields
@@ -97,7 +97,7 @@ struct EntryEditor: View {
                     }
                     Text("This is a personal journal, not a medical diagnosis or emergency monitor.")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                         .frame(maxWidth: .infinity)
                 }
                 .padding(18)
@@ -112,6 +112,7 @@ struct EntryEditor: View {
                         .frame(maxWidth: .infinity, minHeight: lowEnergyMode ? 62 : 52)
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(Color.potsButtonFill)
                 .disabled(!valid || saveInProgress || PersistenceController.shared.loadError != nil)
                 .padding(.horizontal, 18)
                 .padding(.top, 10)
@@ -154,7 +155,7 @@ struct EntryEditor: View {
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(title == item ? Color.white : Color.primary)
                         .frame(maxWidth: .infinity, minHeight: lowEnergyMode ? 56 : 43)
-                        .background(title == item ? Color.potsTeal : Color.potsTeal.opacity(0.12), in: RoundedRectangle(cornerRadius: 13))
+                        .background(title == item ? Color.potsButtonFill : Color.potsTeal.opacity(0.12), in: RoundedRectangle(cornerRadius: 13))
                         .buttonStyle(.plain)
                     }
                 }
@@ -175,7 +176,7 @@ struct EntryEditor: View {
                 }
                 Text("Severity is optional. Choose 0 only if you actually want to record zero.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.potsSecondary)
             }
         }
     }
@@ -191,7 +192,7 @@ struct EntryEditor: View {
                         .textFieldStyle(.roundedBorder)
                         .focused($inputFocused)
                     Text("bpm")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                 }
                 posturePicker
             }
@@ -215,12 +216,12 @@ struct EntryEditor: View {
                         .focused($inputFocused)
                     Text("mmHg")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                 }
                 posturePicker
                 Text("Enter measurements from an external blood-pressure monitor.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.potsSecondary)
             }
         }
     }
@@ -246,7 +247,7 @@ struct EntryEditor: View {
                     Spacer()
                     Text("Optional check-in")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                 }
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 7)], spacing: 7) {
@@ -298,7 +299,7 @@ struct EntryEditor: View {
 
                 Text("Nothing is recorded until you tap Save.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.potsSecondary)
             }
         }
     }

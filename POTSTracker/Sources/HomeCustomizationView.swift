@@ -91,7 +91,7 @@ struct HomeCustomizationView: View {
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Only show what you want on Home.")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                 }
 
                 GlassCard {
@@ -104,7 +104,7 @@ struct HomeCustomizationView: View {
                         .pickerStyle(.segmented)
                         Text("The low-energy setting in More makes tap targets larger, independently of this choice.")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.potsSecondary)
                     }
                 }
 
@@ -121,7 +121,7 @@ struct HomeCustomizationView: View {
                                     .font(.subheadline.bold())
                                 Text(module.subtitle)
                                     .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.potsSecondary)
                                     .lineLimit(2)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 HStack(spacing: 7) {
@@ -191,7 +191,7 @@ struct HomeCustomizationView: View {
                 }
                 if pinned.isEmpty {
                     Text("No trackers pinned. Your Log tab still contains every category.")
-                        .font(.footnote).foregroundStyle(.secondary)
+                        .font(.footnote).foregroundStyle(Color.potsSecondary)
                 }
 
                 Button {
@@ -222,7 +222,7 @@ struct HomeCustomizationView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Select the trackers you want on Home. All categories stay available in Log and More.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.potsSecondary)
                         LazyVGrid(columns: columns, spacing: 10) {
                             ForEach(TrackerFeature.all) { feature in
                                 let isPinned = pinned.contains(where: { $0.id == feature.id })
@@ -278,7 +278,7 @@ struct HomeCustomizationView: View {
     private func sectionHeader(_ title: String, caption: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.title3.bold())
-            Text(caption).font(.caption).foregroundStyle(.secondary)
+            Text(caption).font(.caption).foregroundStyle(Color.potsSecondary)
         }
     }
 

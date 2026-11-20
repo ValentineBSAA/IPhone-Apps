@@ -312,7 +312,7 @@ private struct FingerPlacementGuide: View {
                 .multilineTextAlignment(.center)
             Text("Diagram is illustrative. Camera layouts vary by iPhone.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.potsSecondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -366,10 +366,10 @@ struct CameraPulseView: View {
                             Label("Hold still", systemImage: "hand.raised")
                         }
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                         Text("Use a light touch and stop if the flashlight feels warm. A steady optical signal may take a few moments.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.potsSecondary)
                     }
                 }
 
@@ -389,7 +389,7 @@ struct CameraPulseView: View {
                             OpticalSignalWave(values: reader.waveform)
                             Text("Live optical color signal")
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.potsSecondary)
                             ProgressView(value: reader.progress) {
                                 Text("Acquiring a steady sample · approximately 20 seconds")
                                     .font(.caption)
@@ -406,12 +406,13 @@ struct CameraPulseView: View {
                                     .font(.largeTitle.bold().monospacedDigit())
                                     .accessibilityLabel("Experimental estimate: \(bpm) beats per minute")
                                 Text("Unverified experimental estimate. Compare with a trusted external monitor before using.")
-                                    .font(.caption).foregroundStyle(.secondary)
+                                    .font(.caption).foregroundStyle(Color.potsSecondary)
                                 Button { showEditor = true } label: {
                                     Label("Review before saving", systemImage: "square.and.pencil")
                                         .frame(maxWidth: .infinity, minHeight: 52)
                                 }
                                 .buttonStyle(.borderedProminent)
+                                .tint(Color.potsButtonFill)
                             }
                             Button { reader.begin() } label: {
                                 Label(reader.resultBPM == nil ? "Start camera pulse check" : "Measure again",
@@ -430,7 +431,7 @@ struct CameraPulseView: View {
 
                 Text("Camera Pulse is experimental and not validated for POTS diagnosis, rapid changes, irregular rhythms or clinical decisions. No video or images are stored and no number is saved automatically.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.potsSecondary)
             }
             .padding(18)
         }

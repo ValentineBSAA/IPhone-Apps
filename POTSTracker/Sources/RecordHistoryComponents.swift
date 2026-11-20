@@ -25,7 +25,7 @@ struct RecordEditDestination: View {
             } else {
                 Text("This entry is no longer available.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.potsSecondary)
                     .padding(24)
             }
         }
@@ -213,7 +213,7 @@ struct RecordTreeView: View {
                                     .font(.headline)
                                 Text("\(day.categories.count) \(day.categories.count == 1 ? "tracker" : "trackers") recorded")
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.potsSecondary)
                             }
                             Spacer(minLength: 6)
                             Text("\(day.records.count)")
@@ -223,7 +223,7 @@ struct RecordTreeView: View {
                                 .padding(.vertical, 5)
                                 .background(Color.potsTeal.opacity(0.09), in: Capsule())
                             Image(systemName: expandedDays.contains(day.id) ? "chevron.down" : "chevron.right")
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.potsSecondary)
                                 .font(.caption.weight(.medium))
                         }
                         .padding(.horizontal, 11)
@@ -275,9 +275,9 @@ struct RecordTreeView: View {
                     Spacer(minLength: 5)
                     Text("\(group.records.count)")
                         .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                     Image(systemName: expandedCategories.contains(group.id) ? "chevron.down" : "chevron.right")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                         .font(.caption2.weight(.medium))
                 }
                 .padding(.horizontal, 10)
@@ -338,13 +338,13 @@ struct RecordSwipeRow: View {
                         .lineLimit(1)
                     Text(record.detail)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                         .lineLimit(2)
                 }
                 Spacer(minLength: 5)
                 Text(record.recordedAt.formatted(date: .omitted, time: .shortened))
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.potsSecondary)
                     .lineLimit(1)
             }
             .padding(.horizontal, 11)

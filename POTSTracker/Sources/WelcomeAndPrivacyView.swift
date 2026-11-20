@@ -19,7 +19,7 @@ struct WelcomeAndPrivacyView: View {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Welcome to")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.potsSecondary)
                         Text("POTS & Posies")
                             .font(.title.bold())
                             .foregroundStyle(Color.potsTeal)
@@ -70,12 +70,13 @@ struct WelcomeAndPrivacyView: View {
                         .frame(maxWidth: .infinity, minHeight: 56)
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(Color.potsButtonFill)
                 .disabled(!understands)
                 .accessibilityHint("Opens the app. You can revisit privacy information in More.")
 
                 Text("Permissions are never required for basic logging. You can review privacy information again from More.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.potsSecondary)
             }
             .padding(20)
             .frame(maxWidth: 620)
@@ -94,7 +95,7 @@ struct WelcomeAndPrivacyView: View {
                 Text(title).font(.subheadline.weight(.semibold))
                 Text(detail)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.potsSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

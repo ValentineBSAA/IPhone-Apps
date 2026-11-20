@@ -84,7 +84,7 @@ struct HistoryScreenView: View {
                                     .font(.subheadline.weight(.semibold))
                                 Text("Unlock to view private notes and include them in full-history deletion.")
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.potsSecondary)
                             }
                             Spacer()
                             Button("Unlock") {
@@ -107,7 +107,7 @@ struct HistoryScreenView: View {
                                 .font(.headline)
                             Text("No entries in this range.")
                                 .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.potsSecondary)
                             NavigationLink {
                                 EntryEditor(category: .symptom)
                             } label: {
@@ -115,6 +115,7 @@ struct HistoryScreenView: View {
                                     .frame(maxWidth: .infinity, minHeight: 45)
                             }
                             .buttonStyle(.borderedProminent)
+                            .tint(Color.potsButtonFill)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -159,12 +160,12 @@ struct HistoryScreenView: View {
                                         .foregroundStyle(.primary)
                                     Text("Swipe left, then confirm. Cannot be undone.")
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(Color.potsSecondary)
                                 }
                                 Spacer(minLength: 6)
                                 Text("\(fullEntries.count)")
                                     .font(.subheadline.monospacedDigit())
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.potsSecondary)
                             }
                             .padding(.horizontal, 13)
                         }
@@ -252,14 +253,14 @@ struct HistoryScreenView: View {
                         .font(.title3.bold())
                     Text("A gentle space for the things you've chosen to record.")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                     HStack(spacing: 7) {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(Color.potsTeal)
                         Text("\(fullEntries.count) visible \(fullEntries.count == 1 ? "entry" : "entries")")
                     }
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.potsSecondary)
                 }
                 Spacer(minLength: 0)
             }
@@ -270,7 +271,7 @@ struct HistoryScreenView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Explore your timeline")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.potsSecondary)
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
                                 GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 periodCard(.week, symbol: "calendar", hint: "Last 7 days")
@@ -294,13 +295,13 @@ struct HistoryScreenView: View {
                 Image(systemName: symbol)
                     .font(.system(size: 18, weight: .medium))
                     .frame(width: 30)
-                    .foregroundStyle(chosen ? Color.potsTeal : Color.secondary)
+                    .foregroundStyle(chosen ? Color.potsTeal : Color.potsSecondary)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(choice.rawValue)
                         .font(.subheadline.weight(.semibold))
                     Text(hint)
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                         .lineLimit(1)
                 }
                 Spacer(minLength: 0)
@@ -315,7 +316,7 @@ struct HistoryScreenView: View {
             .background(chosen ? Color.potsSurfaceMuted : Color.potsSurface,
                         in: RoundedRectangle(cornerRadius: 18))
             .overlay(RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(chosen ? Color.potsTeal.opacity(0.45) : Color.potsTeal.opacity(0.08), lineWidth: 1))
+                .strokeBorder(chosen ? Color.potsStroke : Color.potsStroke.opacity(0.40), lineWidth: 1))
             .contentShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
@@ -332,7 +333,7 @@ struct HistoryScreenView: View {
                             .font(.headline)
                         Text("Tap a day to see just its records")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.potsSecondary)
                     }
                     Spacer()
                     if selectedDay != nil {
@@ -355,7 +356,7 @@ struct HistoryScreenView: View {
                             VStack(spacing: 7) {
                                 Text(day.formatted(.dateTime.weekday(.narrow)))
                                     .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.potsSecondary)
                                 Text(day.formatted(.dateTime.day()))
                                     .font(.subheadline.weight(.semibold).monospacedDigit())
                                     .foregroundStyle(selected ? Color.white : Color.primary)
@@ -364,7 +365,7 @@ struct HistoryScreenView: View {
                                     .frame(width: 6, height: 6)
                             }
                             .frame(maxWidth: .infinity, minHeight: 78)
-                            .background(selected ? Color.potsTeal : (today ? Color.potsSurfaceMuted : Color.potsBackground),
+                            .background(selected ? Color.potsButtonFill : (today ? Color.potsSurfaceMuted : Color.potsBackground),
                                         in: RoundedRectangle(cornerRadius: 14))
                             .overlay(RoundedRectangle(cornerRadius: 14)
                                 .strokeBorder(selected || today ? Color.potsTeal.opacity(0.43) : Color.potsTeal.opacity(0.07)))
@@ -387,7 +388,7 @@ struct HistoryScreenView: View {
                         .font(.headline)
                     Text("Select a date to see the entries from that day.")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                 }
                 HStack {
                     Button {
@@ -415,7 +416,7 @@ struct HistoryScreenView: View {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 6) {
                     ForEach(Array(weekdays.enumerated()), id: \.offset) { _, label in
                         Text(label).font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.potsSecondary)
                             .frame(maxWidth: .infinity)
                     }
                     ForEach(Array(monthCells().enumerated()), id: \.offset) { _, item in
@@ -469,7 +470,7 @@ struct HistoryScreenView: View {
                         .font(.headline)
                     Text("Choose any month to explore its saved entries.")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.potsSecondary)
                 }
                 HStack {
                     Button { year -= 1 } label: {
@@ -499,18 +500,18 @@ struct HistoryScreenView: View {
                             VStack(alignment: .leading, spacing: 9) {
                                 HStack {
                                     Circle()
-                                        .fill(monthEntries.isEmpty ? Color.secondary.opacity(0.22) : Color.potsTeal)
+                                        .fill(monthEntries.isEmpty ? Color.potsTertiary.opacity(0.55) : Color.potsTeal)
                                         .frame(width: 7, height: 7)
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                         .font(.caption2.weight(.medium))
-                                        .foregroundStyle(.tertiary)
+                                        .foregroundStyle(Color.potsTertiary)
                                 }
                                 Text(date.formatted(.dateTime.month(.wide)))
                                     .font(.subheadline.weight(.semibold))
                                 Text(monthEntries.isEmpty ? "Not recorded" : "\(monthEntries.count) entries")
                                     .font(.caption)
-                                    .foregroundStyle(monthEntries.isEmpty ? Color.secondary : Color.potsTeal)
+                                    .foregroundStyle(monthEntries.isEmpty ? Color.potsSecondary : Color.potsTeal)
                             }
                             .frame(maxWidth: .infinity, minHeight: 86, alignment: .leading)
                             .padding(.horizontal, 12)
@@ -536,7 +537,7 @@ struct HistoryScreenView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Your full record").font(.headline)
                     Text("All entries are available, with no paid history limit.")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(Color.potsSecondary)
                 }
                 Spacer()
                 Text("\(fullEntries.count)")
