@@ -3,151 +3,179 @@ import AVFoundation
 import CoreMedia
 import CoreVideo
 
-/// Experimental contact photoplethysmography (PPG). Not a medical device.
-/// Raw frames stay only in memory, and only a user-confirmed estimate can be
-/// copied into a new manual entry. No HealthKit capability is required.
+/// Experimental contact PPG; not a validated medical measurement.
+/// No video is recorded. Camera sample statistics live only in memory.
 final class CameraPulseReader: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     @Published private(set) var running = false
     @Published private(set) var progress = 0.0
     @Published private(set) var resultBPM: Int?
-    @Published private(set) var status = "Ready for a short fingertip check."
+    @Published private(set) var status = "Ready when you are."
+    @Published private(set) var signalQuality = "Waiting for camera"
+    @Published private(set) var waveform: [Double] = []
     @Published var errorText: String?
-
-    private struct Sample {
-        let time: Double
-        let value: Double
-    }
 
     private let cameraQueue = DispatchQueue(label: "posies.camera.ppg", qos: .userInitiated)
     private var session: AVCaptureSession?
     private var device: AVCaptureDevice?
+    private var desiredID: UUID?
     private var active = false
-    private var firstValid: Double?
     private var firstCameraFrame: Double?
-    private var lastValid: Double?
-    private var lastUI: Double = 0
-    private var samples: [Sample] = []
-    private let captureSeconds = 24.0
+    private var firstCovered: Double?
+    private var lastCovered: Double?
+    private var lastPublished: Double = 0
+    private var samples: [PulseSample] = []
+    private let recordingSeconds = 22.0
+    private let hardTimeoutSeconds = 39.0
 
     func begin() {
-        DispatchQueue.main.async {
-            self.progress = 0
-            self.resultBPM = nil
-            self.errorText = nil
-            self.status = "Requesting access to the rear camera…"
-        }
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
-        case .authorized:
-            startCamera()
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .video) { allowed in
-                if allowed {
-                    self.startCamera()
-                } else {
-                    self.presentError("Camera permission was declined. Enable Camera in iPhone Settings to try again.")
-                }
+        cameraQueue.async {
+            self.stopCapture(message: nil, failure: nil, bpm: nil)
+            let request = UUID()
+            self.desiredID = request
+            self.publish {
+                self.running = true
+                self.resultBPM = nil
+                self.errorText = nil
+                self.progress = 0
+                self.waveform = []
+                self.signalQuality = "Preparing"
+                self.status = "Preparing the rear camera…"
             }
-        default:
-            presentError("Camera access is off. Enable Camera for POTS & Posies in iPhone Settings.")
+            let permission = AVCaptureDevice.authorizationStatus(for: .video)
+            if permission == .authorized {
+                self.startCamera(request: request)
+            } else if permission == .notDetermined {
+                AVCaptureDevice.requestAccess(for: .video) { granted in
+                    self.cameraQueue.async {
+                        guard self.desiredID == request else { return }
+                        if granted {
+                            self.startCamera(request: request)
+                        } else {
+                            self.stopCapture(
+                                message: "Camera access was declined. You can still enter a monitor reading manually.",
+                                failure: "Camera permission is off. You can enable it in iPhone Settings.",
+                                bpm: nil)
+                        }
+                    }
+                }
+            } else {
+                self.stopCapture(
+                    message: "Camera permission is off.",
+                    failure: "Enable Camera access for POTS & Posies in iPhone Settings, or use manual entry.",
+                    bpm: nil)
+            }
         }
     }
 
-    private func startCamera() {
-        cameraQueue.async {
-            guard !self.active else { return }
-            guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-                  device.hasTorch else {
-                self.presentError("This iPhone does not provide the rear camera and torch needed for this experiment.")
+    private func startCamera(request: UUID) {
+        guard desiredID == request else { return }
+        guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+            stopCapture(message: "Rear camera unavailable.", failure: "This device has no usable rear camera.", bpm: nil)
+            return
+        }
+        guard camera.hasTorch else {
+            stopCapture(message: "Flashlight unavailable.", failure: "This rear camera does not have a usable flashlight.", bpm: nil)
+            return
+        }
+        let capture = AVCaptureSession()
+        do {
+            capture.beginConfiguration()
+            capture.sessionPreset = .vga640x480
+            let input = try AVCaptureDeviceInput(device: camera)
+            guard capture.canAddInput(input) else {
+                capture.commitConfiguration()
+                stopCapture(message: "Couldn't start camera.", failure: "The rear camera is busy. Close other camera apps and retry.", bpm: nil)
                 return
             }
-            let session = AVCaptureSession()
-            do {
-                session.beginConfiguration()
-                session.sessionPreset = .low
-                let input = try AVCaptureDeviceInput(device: device)
-                guard session.canAddInput(input) else {
-                    session.commitConfiguration()
-                    self.presentError("The camera cannot start on this device.")
-                    return
-                }
-                session.addInput(input)
-                let output = AVCaptureVideoDataOutput()
-                output.alwaysDiscardsLateVideoFrames = true
-                output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
-                guard session.canAddOutput(output) else {
-                    session.commitConfiguration()
-                    self.presentError("The camera cannot provide pulse sample frames.")
-                    return
-                }
-                session.addOutput(output)
-                output.setSampleBufferDelegate(self, queue: self.cameraQueue)
-                session.commitConfiguration()
-                self.device = device
-                self.session = session
-                self.samples.removeAll(keepingCapacity: true)
-                self.firstValid = nil
-                self.firstCameraFrame = nil
-                self.lastValid = nil
-                self.lastUI = 0
-                self.active = true
-                session.startRunning()
-
-                guard device.isTorchAvailable else {
-                    self.endCapture(error: "The flashlight is unavailable. Close other camera apps and try again.")
-                    return
-                }
-                try device.lockForConfiguration()
-                defer { device.unlockForConfiguration() }
-                try device.setTorchModeOn(level: 0.3)
-                DispatchQueue.main.async {
-                    self.running = true
-                    self.status = "Rest your fingertip gently over the rear camera and light. Hold still."
-                }
-            } catch {
-                self.endCapture(error: "Camera or flashlight could not start: \(error.localizedDescription)")
+            capture.addInput(input)
+            let output = AVCaptureVideoDataOutput()
+            output.alwaysDiscardsLateVideoFrames = true
+            output.videoSettings = [
+                kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
+            ]
+            guard capture.canAddOutput(output) else {
+                capture.commitConfiguration()
+                stopCapture(message: "Couldn't read camera.", failure: "This device cannot provide the video frames needed for the experiment.", bpm: nil)
+                return
             }
+            capture.addOutput(output)
+            output.setSampleBufferDelegate(self, queue: cameraQueue)
+            capture.commitConfiguration()
+            self.session = capture
+            self.device = camera
+            firstCameraFrame = nil
+            firstCovered = nil
+            lastCovered = nil
+            lastPublished = 0
+            samples.removeAll(keepingCapacity: true)
+            capture.startRunning()
+
+            guard capture.isRunning, camera.isTorchAvailable else {
+                stopCapture(message: "Flashlight unavailable.", failure: "The flashlight may be cooling down or in use by another app. Try again later.", bpm: nil)
+                return
+            }
+            try camera.lockForConfiguration()
+            do {
+                try camera.setTorchModeOn(level: 0.22)
+                camera.unlockForConfiguration()
+            } catch {
+                camera.unlockForConfiguration()
+                throw error
+            }
+
+            active = true
+            publish {
+                self.signalQuality = "Place fingertip"
+                self.status = "Cover the rear camera lens and nearby flash gently."
+            }
+            // Real-time safety cap even if AVFoundation stops delivering frames.
+            cameraQueue.asyncAfter(deadline: .now() + hardTimeoutSeconds + 3) { [weak self] in
+                guard let self = self, self.desiredID == request, self.active else { return }
+                self.stopCapture(
+                    message: "No steady signal found.",
+                    failure: "We couldn't find a steady optical signal. Rest your hand, cover the camera and flash, and try again.",
+                    bpm: nil)
+            }
+        } catch {
+            stopCapture(message: "Camera couldn't start.", failure: "Camera or flashlight couldn't start: \(error.localizedDescription)", bpm: nil)
         }
     }
 
     func stop() {
         cameraQueue.async {
-            self.endCapture(error: nil)
+            self.desiredID = nil
+            self.stopCapture(message: "Ready when you are.", failure: nil, bpm: nil)
         }
     }
 
-    private func endCapture(error: String?) {
-        // Called only from cameraQueue; torch is turned off on every exit path.
+    /// Only call on cameraQueue. Every stop path switches the flashlight off.
+    private func stopCapture(message: String?, failure: String?, bpm: Int?) {
         active = false
-        if let device = device, device.hasTorch {
-            if (try? device.lockForConfiguration()) != nil {
-                device.torchMode = .off
-                device.unlockForConfiguration()
-            }
+        desiredID = nil
+        if let camera = device, camera.hasTorch,
+           (try? camera.lockForConfiguration()) != nil {
+            camera.torchMode = .off
+            camera.unlockForConfiguration()
         }
         session?.stopRunning()
         session = nil
         device = nil
-        samples.removeAll()
-        firstValid = nil
+        samples.removeAll(keepingCapacity: true)
         firstCameraFrame = nil
-        lastValid = nil
-        DispatchQueue.main.async {
+        firstCovered = nil
+        lastCovered = nil
+        publish {
             self.running = false
-            if let error {
-                self.errorText = error
-                self.status = "No reading recorded."
-            } else if self.resultBPM == nil {
-                self.status = "Stopped. No reading was recorded."
-            }
+            if let message { self.status = message }
+            if let failure { self.errorText = failure }
+            self.resultBPM = bpm
+            if bpm != nil { self.progress = 1; self.signalQuality = "Reading ready" }
+            if failure != nil { self.progress = 0; self.signalQuality = "Try again" }
         }
     }
 
-    private func presentError(_ message: String) {
-        DispatchQueue.main.async {
-            self.errorText = message
-            self.running = false
-            self.status = "No reading recorded."
-        }
+    private func publish(_ changes: @escaping () -> Void) {
+        DispatchQueue.main.async(execute: changes)
     }
 
     func captureOutput(_ output: AVCaptureOutput,
@@ -157,140 +185,165 @@ final class CameraPulseReader: NSObject, ObservableObject, AVCaptureVideoDataOut
         let time = CMSampleBufferGetPresentationTimeStamp(sampleBuffer).seconds
         guard time.isFinite else { return }
         if firstCameraFrame == nil { firstCameraFrame = time }
-        if let start = firstCameraFrame, time - start > 38 {
-            endCapture(error: "The scan timed out and the flashlight was turned off. Try again with your finger covering the camera, or enter a monitor reading manually.")
+        if let began = firstCameraFrame, time - began > hardTimeoutSeconds {
+            stopCapture(
+                message: "Couldn't find a steady signal.",
+                failure: "The scan timed out safely and the flashlight turned off. Try a different finger position or enter a monitor reading.",
+                bpm: nil)
             return
         }
+
         CVPixelBufferLockBaseAddress(buffer, .readOnly)
-        let w = CVPixelBufferGetWidth(buffer)
-        let h = CVPixelBufferGetHeight(buffer)
-        let rowBytes = CVPixelBufferGetBytesPerRow(buffer)
-        guard let base = CVPixelBufferGetBaseAddress(buffer), w > 48, h > 48 else {
+        let width = CVPixelBufferGetWidth(buffer)
+        let height = CVPixelBufferGetHeight(buffer)
+        let strideBytes = CVPixelBufferGetBytesPerRow(buffer)
+        guard let base = CVPixelBufferGetBaseAddress(buffer), width > 48, height > 48 else {
             CVPixelBufferUnlockBaseAddress(buffer, .readOnly)
             return
         }
-        let bytes = base.assumingMemoryBound(to: UInt8.self)
-        // Small central region, sampled rather than retaining camera imagery.
-        var red = 0.0, green = 0.0, blue = 0.0, n = 0.0
-        for y in stride(from: h * 2 / 5, to: h * 3 / 5, by: 5) {
-            for x in stride(from: w * 2 / 5, to: w * 3 / 5, by: 5) {
-                let i = y * rowBytes + x * 4
-                blue += Double(bytes[i])
-                green += Double(bytes[i + 1])
-                red += Double(bytes[i + 2])
+        let pointer = base.assumingMemoryBound(to: UInt8.self)
+        var r = 0.0, g = 0.0, b = 0.0, n = 0.0
+        for y in stride(from: height * 2 / 5, to: height * 3 / 5, by: 5) {
+            for x in stride(from: width * 2 / 5, to: width * 3 / 5, by: 5) {
+                let i = y * strideBytes + x * 4
+                b += Double(pointer[i])
+                g += Double(pointer[i + 1])
+                r += Double(pointer[i + 2])
                 n += 1
             }
         }
         CVPixelBufferUnlockBaseAddress(buffer, .readOnly)
         guard n > 0 else { return }
-        red /= n; green /= n; blue /= n
-        // Filter obvious uncovered/dark frames. Do not produce a synthetic bpm.
-        let covered = red > 90 && red > green * 1.13 && red > blue * 1.13
+        r /= n; g /= n; b /= n
+
+        // Looser optical finger coverage gate than v0.2.0; the old
+        // red > green * 1.13 threshold rejected many fully-covered frames.
+        // Signal periodicity, not just red color, governs whether BPM appears.
+        let covered = r > 68 && r > b * 1.06 && r > g * 0.88
         if !covered {
-            if let lastValid, time - lastValid > 1.0 {
+            if let previous = lastCovered, time - previous > 0.75 {
                 samples.removeAll(keepingCapacity: true)
-                firstValid = nil
-                self.lastValid = nil
+                firstCovered = nil
+                lastCovered = nil
             }
-            if time - lastUI > 0.7 {
-                lastUI = time
-                DispatchQueue.main.async {
-                    self.status = "Cover the rear camera and light gently with one fingertip."
+            if time - lastPublished > 0.45 {
+                lastPublished = time
+                publish {
+                    self.status = "Move your fingertip to cover the lens and flashlight."
+                    self.signalQuality = "Adjust finger position"
                     self.progress = 0
+                    self.waveform = []
                 }
             }
             return
         }
-        if firstValid == nil { firstValid = time }
-        lastValid = time
-        // The green channel frequently carries useful pulse modulation.
-        // This value is only held transiently, never saved as a video.
-        samples.append(Sample(time: time, value: green > 18 ? green : red))
-        guard let began = firstValid else { return }
-        let elapsed = max(0, time - began)
-        if elapsed >= captureSeconds {
-            let estimate = Self.estimate(samples)
-            DispatchQueue.main.async {
-                self.resultBPM = estimate
-                self.progress = 1
-                self.status = estimate == nil
-                    ? "Signal not reliable enough. No heart rate was estimated. You can retry or use a validated monitor."
-                    : "Experimental estimate only. Compare with a reliable monitor before using."
-            }
-            endCapture(error: nil)
+        if firstCovered == nil { firstCovered = time }
+        lastCovered = time
+
+        // Prefer the unclipped green channel, then red if green saturates.
+        // Do not store image pixels; these are frame-level numerical averages.
+        let intensity = g > 12 && g < 247 ? g : r
+        samples.append(PulseSample(time: time, intensity: intensity))
+        guard let first = firstCovered else { return }
+        let elapsed = time - first
+        if elapsed >= recordingSeconds {
+            let reading = PulseSignalAnalyzer.estimate(samples)
+            stopCapture(
+                message: reading == nil
+                    ? "Not enough reliable pulse information."
+                    : "Experimental estimate ready. Please compare with a trusted monitor.",
+                failure: reading == nil
+                    ? "We couldn't isolate a repeatable pulse. Try a lighter, steady touch and warmer fingers, or enter your monitor result manually."
+                    : nil,
+                bpm: reading)
             return
         }
-        if time - lastUI >= 0.5 {
-            lastUI = time
-            DispatchQueue.main.async {
-                self.progress = min(1, elapsed / self.captureSeconds)
-                self.status = "Reading fingertip color changes. Keep your hand still."
+
+        if time - lastPublished > 0.45 {
+            lastPublished = time
+            let recent = samples.filter { time - $0.time <= 7 }
+            let confidence = PulseSignalAnalyzer.patternConfidence(recent)
+            let quality = elapsed < 3 ? "Finding signal" :
+                (confidence >= 0.52 ? "Good optical pattern" : "Keep finger steady")
+            let portion = max(0, min(1, (elapsed - 2) / (recordingSeconds - 2)))
+            let values = Array(recent.suffix(95)).map(\.intensity)
+            publish {
+                self.signalQuality = quality
+                self.status = elapsed < 3 ? "Hold still while we find your fingertip signal." :
+                    (confidence >= 0.52 ? "Measuring light changes…" :
+                        "Reading light changes. Adjust pressure gently if the signal stays weak.")
+                self.progress = portion
+                self.waveform = values
             }
         }
     }
+}
 
-    /// Conservative time-domain autocorrelation estimate on uniformly
-    /// resampled data. Rejects low-modulation and inconsistent half-windows.
-    private static func estimate(_ samples: [Sample]) -> Int? {
-        guard samples.count > 240, let first = samples.first, let last = samples.last,
-              last.time - first.time >= 18 else { return nil }
-        let hz = 24.0
-        let count = Int((last.time - first.time) * hz)
-        guard count >= 400 else { return nil }
-        var values = [Double]()
-        values.reserveCapacity(count)
-        var j = 0
-        for i in 0..<count {
-            let t = first.time + Double(i) / hz
-            while j + 1 < samples.count - 1 && samples[j + 1].time < t { j += 1 }
-            let a = samples[j], b = samples[j + 1]
-            let u = min(1, max(0, (t - a.time) / max(0.001, b.time - a.time)))
-            values.append(a.value * (1 - u) + b.value * u)
-        }
-        guard let all = pulseRate(values),
-              let early = pulseRate(Array(values.prefix(values.count / 2))),
-              let late = pulseRate(Array(values.suffix(values.count / 2))),
-              abs(early - late) <= 12,
-              abs(all - early) <= 12,
-              abs(all - late) <= 12 else { return nil }
-        return Int(all.rounded())
-    }
-
-    private static func pulseRate(_ values: [Double]) -> Double? {
-        let n = values.count
-        guard n >= 190 else { return nil }
-        var sums = [Double](repeating: 0, count: n + 1)
-        for i in 0..<n { sums[i + 1] = sums[i] + values[i] }
-        var wave = [Double](repeating: 0, count: n)
-        for i in 0..<n {
-            let lo = max(0, i - 19), hi = min(n, i + 20)
-            wave[i] = values[i] - (sums[hi] - sums[lo]) / Double(hi - lo)
-        }
-        let energy = wave.reduce(0.0) { $0 + $1 * $1 } / Double(n)
-        guard energy > 0.045, energy < 1200 else { return nil }
-        var correlations = [Double]()
-        for lag in 8...32 {
-            var dot = 0.0, aa = 0.0, bb = 0.0
-            for i in lag..<n {
-                let a = wave[i], b = wave[i - lag]
-                dot += a * b; aa += a * a; bb += b * b
+private struct FingerPlacementGuide: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 25)
+                    .fill(Color.potsSurfaceMuted)
+                    .frame(width: 220, height: 150)
+                    .overlay(RoundedRectangle(cornerRadius: 25)
+                        .strokeBorder(Color.potsTeal.opacity(0.25)))
+                HStack(alignment: .top, spacing: 14) {
+                    VStack(spacing: 7) {
+                        HStack(spacing: 6) {
+                            Circle().fill(Color.potsTeal).frame(width: 29, height: 29)
+                            Circle().fill(Color.potsTeal.opacity(0.50)).frame(width: 29, height: 29)
+                        }
+                        Circle().fill(Color.potsTeal.opacity(0.25)).frame(width: 29, height: 29)
+                    }
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(red: 0.94, green: 0.77, blue: 0.68))
+                        .frame(width: 48, height: 120)
+                        .rotationEffect(.degrees(23))
+                        .overlay(
+                            Image(systemName: "hand.point.up.fill")
+                                .foregroundStyle(Color.potsTeal)
+                                .font(.title2)
+                        )
+                }
             }
-            correlations.append(dot / sqrt(max(1e-9, aa * bb)))
+            Text("Place one fingertip over the rear lens and its nearby flash")
+                .font(.subheadline.weight(.semibold))
+                .multilineTextAlignment(.center)
+            Text("Diagram is illustrative. Camera layouts vary by iPhone.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
-        guard let bestCorrelation = correlations.max(), bestCorrelation >= 0.47 else { return nil }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+    }
+}
 
-        // Prefer the earliest strong local maximum to avoid choosing a 2x/3x
-        // period harmonic and reporting 50 bpm when the real pulse is 150.
-        for index in correlations.indices {
-            let score = correlations[index]
-            guard score >= max(0.47, bestCorrelation * 0.90) else { continue }
-            let leftOK = index == 0 || score >= correlations[index - 1]
-            let rightOK = index == correlations.count - 1 || score >= correlations[index + 1]
-            guard leftOK && rightOK else { continue }
-            let bpm = 60.0 * 24.0 / Double(index + 8)
-            return (45...180).contains(bpm) ? bpm : nil
+private struct OpticalSignalWave: View {
+    let values: [Double]
+
+    var body: some View {
+        GeometryReader { geometry in
+            Path { path in
+                guard values.count >= 4,
+                      let lo = values.min(), let hi = values.max() else {
+                    path.move(to: CGPoint(x: 0, y: geometry.size.height / 2))
+                    path.addLine(to: CGPoint(x: geometry.size.width, y: geometry.size.height / 2))
+                    return
+                }
+                let span = max(0.2, hi - lo)
+                for (i, v) in values.enumerated() {
+                    let x = geometry.size.width * CGFloat(i) / CGFloat(max(1, values.count - 1))
+                    let y = geometry.size.height * CGFloat(1 - ((v - lo) / span))
+                    let pt = CGPoint(x: x, y: y)
+                    if i == 0 { path.move(to: pt) } else { path.addLine(to: pt) }
+                }
+            }
+            .stroke(Color.potsTeal, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
         }
-        return nil
+        .frame(height: 58)
+        .accessibilityLabel("Live optical color variation, not a medical heart rhythm waveform")
     }
 }
 
@@ -303,61 +356,79 @@ struct CameraPulseView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 GlassCard {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Label("Experimental Camera Pulse", systemImage: "heart.text.square")
+                    VStack(alignment: .leading, spacing: 13) {
+                        Label("Fingertip guide", systemImage: "hand.point.up.left")
                             .font(.title3.bold())
                             .foregroundStyle(Color.potsTeal)
-                        Text("The rear camera reads tiny light changes through a fingertip while the flashlight is on. This may estimate a resting pulse, but accuracy is unverified for POTS, fast changes, or irregular rhythms.")
+                        FingerPlacementGuide()
+                        HStack(spacing: 9) {
+                            Label("Sit comfortably", systemImage: "chair")
+                            Label("Hold still", systemImage: "hand.raised")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        Text("Use a light touch and stop if the flashlight feels warm. A steady optical signal may take a few moments.")
                             .font(.subheadline)
-                        Text("Sit comfortably. Cover the camera and light gently with one finger. Do not press hard. Stop immediately if the flashlight becomes warm or you feel uncomfortable.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Text("No video, pictures, waveform or estimated value is saved automatically. You choose whether to open a draft.")
-                            .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
+
                 GlassCard {
-                    VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 13) {
+                        HStack {
+                            Text("Camera Pulse · Beta")
+                                .font(.headline)
+                            Spacer()
+                            Label(reader.signalQuality, systemImage:
+                                    reader.resultBPM == nil ? "waveform.path" : "checkmark.circle.fill")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(Color.potsTeal)
+                        }
                         Text(reader.status).font(.subheadline)
                         if reader.running {
+                            OpticalSignalWave(values: reader.waveform)
+                            Text("Live optical color signal")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
                             ProgressView(value: reader.progress) {
-                                Text("Approximately 24 seconds of stable signal")
+                                Text("Acquiring a steady sample · approximately 20 seconds")
                                     .font(.caption)
                             }
                             .tint(.potsTeal)
                             Button(role: .cancel) { reader.stop() } label: {
-                                Label("Stop and turn flashlight off", systemImage: "stop.circle.fill")
-                                    .frame(maxWidth: .infinity, minHeight: 50)
+                                Label("Stop and turn off flashlight", systemImage: "stop.circle.fill")
+                                    .frame(maxWidth: .infinity, minHeight: 52)
                             }
                             .buttonStyle(.bordered)
                         } else {
                             if let bpm = reader.resultBPM {
                                 Text("\(bpm) bpm")
                                     .font(.largeTitle.bold().monospacedDigit())
-                                Text("Unvalidated camera estimate. Do not use for medical decisions; compare it with a trusted monitor.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Button {
-                                    showEditor = true
-                                } label: {
-                                    Label("Review in heart-rate entry", systemImage: "square.and.pencil")
+                                    .accessibilityLabel("Experimental estimate: \(bpm) beats per minute")
+                                Text("Unverified experimental estimate. Compare with a trusted external monitor before using.")
+                                    .font(.caption).foregroundStyle(.secondary)
+                                Button { showEditor = true } label: {
+                                    Label("Review before saving", systemImage: "square.and.pencil")
                                         .frame(maxWidth: .infinity, minHeight: 52)
                                 }
                                 .buttonStyle(.borderedProminent)
                             }
-                            Button {
-                                reader.begin()
-                            } label: {
+                            Button { reader.begin() } label: {
                                 Label(reader.resultBPM == nil ? "Start camera pulse check" : "Measure again",
-                                      systemImage: "camera.metering.center.weighted")
+                                      systemImage: "camera.fill")
                                     .frame(maxWidth: .infinity, minHeight: 52)
                             }
                             .buttonStyle(.bordered)
+                            Button { showEditor = true } label: {
+                                Label("Enter monitor reading manually", systemImage: "pencil")
+                            }
+                            .buttonStyle(.plain)
+                            .font(.subheadline)
                         }
                     }
                 }
-                Text("For symptoms, clinical decisions, or an unexpected reading, use a validated heart-rate monitor and professional guidance. This experiment cannot measure blood pressure or diagnose POTS.")
+
+                Text("Camera Pulse is experimental and not validated for POTS diagnosis, rapid changes, irregular rhythms or clinical decisions. No video or images are stored and no number is saved automatically.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -368,19 +439,20 @@ struct CameraPulseView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear { reader.stop() }
         .onChange(of: scenePhase) { phase in
-            if phase != .active { reader.stop() }
+            if phase == .background { reader.stop() }
         }
         .sheet(isPresented: $showEditor) {
             EntryEditor(category: .heartRate, suggestedBPM: reader.resultBPM,
-                        suggestedNote: "Experimental camera pulse estimate; not medically validated. Confirm with an independent monitor.")
+                        suggestedNote: reader.resultBPM == nil ? nil :
+                            "Experimental camera pulse estimate; not validated. Confirm with a trusted monitor.")
         }
-        .alert("Camera pulse unavailable", isPresented: Binding(
+        .alert("Camera pulse needs attention", isPresented: Binding(
             get: { reader.errorText != nil },
             set: { if !$0 { reader.errorText = nil } }
         )) {
             Button("OK") { reader.errorText = nil }
         } message: {
-            Text(reader.errorText ?? "Try again or record a reading manually.")
+            Text(reader.errorText ?? "Try again or enter a monitor reading manually.")
         }
     }
 }
