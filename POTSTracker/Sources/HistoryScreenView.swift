@@ -197,7 +197,7 @@ struct HistoryScreenView: View {
                 }
             }
         } message: {
-            Text("The selected records will be removed together. This cannot be undone; backup and export are not available yet.")
+            Text("The selected records will be removed together. Export or back up anything you need first.")
         }
         .alert("Clear every saved record?", isPresented: $confirmClearAll) {
             TextField("Type DELETE", text: $clearPhrase)
@@ -219,7 +219,7 @@ struct HistoryScreenView: View {
             .disabled(clearPhrase.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() != "DELETE")
             Button("Cancel", role: .cancel) { clearPhrase = "" }
         } message: {
-            Text("Every saved entry on this iPhone will be permanently deleted, across all dates and trackers. Backup and export aren't ready. Type DELETE to confirm.")
+            Text("Every saved entry on this iPhone will be permanently deleted, across all dates and trackers. Create a separate backup in Settings first if needed. Type DELETE to confirm.")
         }
         .alert("Journal access unsuccessful", isPresented: Binding(
             get: { journalUnlockError != nil },
