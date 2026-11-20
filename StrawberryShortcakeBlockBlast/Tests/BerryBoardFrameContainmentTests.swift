@@ -8,8 +8,8 @@ import XCTest
 final class BerryBoardFrameContainmentTests: XCTestCase {
     func testFrameBudgetRetainsAllControlsAndLeavesVisibleBorder() {
         let phones: [(String, CGFloat, CGFloat)] = [
-            ("iPhone 14 Pro", 393, 759),
-            ("iPhone 16", 393, 759),
+            ("iPhone 16e", 390, 751),
+            ("393pt responsive layout", 393, 759),
             ("Narrow", 320, 650),
             ("Wide", 430, 835)
         ]
@@ -27,12 +27,13 @@ final class BerryBoardFrameContainmentTests: XCTestCase {
                     "\(label) \(mode): frame must leave vertical room for controls")
             }
         }
-        // Build 4.2: give the surrounding UI and grid edges more breathing
-        // room while keeping the puzzle board large and touch-friendly.
+        // Build 4.6: wider board is intentional. The shared width ratio is
+        // separately bounded in Linux preflight; this checks rendered geometry.
         let classic = BerryGameplayLayout.boardSize(
             width: 393, height: 759, topInset: 0,
             bottomInset: 0, mode: .classic)
-        XCTAssertEqual(classic, 393 * 0.87, accuracy: 0.5)
+        XCTAssertEqual(classic, 393 * BerryGameplayLayout.boardWidthFraction,
+                       accuracy: 0.5)
         XCTAssertEqual(BerryBoardContainment.fullFrameSide(playableSide: classic),
                        classic + 22, accuracy: 0.5)
     }
