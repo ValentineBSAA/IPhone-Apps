@@ -360,7 +360,7 @@ struct SettingsPanel: View {
                 NavigationLink {
                     PosiesDataManagementView()
                 } label: {
-                    Label("Export, backup & restore", systemImage: "externaldrive.badge.timemachine")
+                    Label("Backup & restore", systemImage: "icloud.and.arrow.up")
                         .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
                         .font(.subheadline.weight(.semibold))
                 }
@@ -371,7 +371,7 @@ struct SettingsPanel: View {
                             .font(.headline)
                         Text("Stored on this iPhone. No account, advertising, analytics or Apple Watch connection.")
                             .font(.subheadline)
-                        Text("Manual export and backup tools are available under Settings. Keep a separate copy and verify restoration before relying on them.")
+                        Text("Save to iCloud Drive through Files, or enable automatic cloud copies if this signed installation supports them. Verify a restore with test data.")
                             .font(.caption)
                             .foregroundStyle(Color.potsSecondary)
                     }
@@ -397,8 +397,8 @@ struct PrivacyText: View {
             VStack(alignment: .leading, spacing: 17) {
                 Text("Your records belong to you")
                     .font(.title2.bold())
-                Text("POTS & Posies currently stores information locally on the iPhone. It has no analytics service, cloud account, advertising or automatic uploads. Reports and manual backup/export are available on this iPhone and are initiated only when you choose. Nothing uploads automatically.")
-                Text("Important: deleting the app may remove its local records. Verify a manual backup and restore before treating the app as your only copy of important information.")
+                Text("Your records are stored on this iPhone. No POTS & Posies account, advertising or analytics. Automatic iCloud Drive backups can be enabled only with explicit consent and compatible signing. Otherwise use Save to Files > iCloud Drive. Reports and exports are user-initiated.")
+                Text("Deleting the app may remove records stored on this iPhone. Backup files are not separately passphrase-encrypted. Keep copies secure and verify a restore before relying on them.")
                 Text("Optional Journal Lock uses Face ID or the iPhone passcode to restrict on-screen access. It does not encrypt Journal entries separately from the app's existing protected storage.")
                 Text("An optional experimental camera pulse check uses the camera only after you choose Start. It does not save camera frames, and no estimate becomes a record unless you review and save it.")
                 Divider()
