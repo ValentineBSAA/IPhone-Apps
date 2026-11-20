@@ -18,6 +18,7 @@ struct EntryEditor: View {
     @State private var secondValue: String
     @State private var recordedAt: Date
     @State private var saveError: String?
+    @State private var saveInProgress = false
     @FocusState private var inputFocused: Bool
 
     private let symptoms = [
@@ -110,7 +111,7 @@ struct EntryEditor: View {
                         .frame(maxWidth: .infinity, minHeight: lowEnergyMode ? 62 : 52)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(!valid || PersistenceController.shared.loadError != nil)
+                .disabled(!valid || saveInProgress || PersistenceController.shared.loadError != nil)
                 .padding(.horizontal, 18)
                 .padding(.top, 10)
                 .padding(.bottom, 8)
@@ -316,6 +317,8 @@ struct EntryEditor: View {
     }
 
     private func saveEntry() {
+        guard !saveInProgress else { return }
+        saveInProgress = true
         guard valid else {
             saveError = "Enter a valid measurement or note."
             return
@@ -338,9 +341,12 @@ struct EntryEditor: View {
         }
         do {
             try POTSData.save(context)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            UIAccessibility.post(notification: .announcement, argument: "Entry saved")
             dismiss()
         } catch {
             context.rollback()
+            saveInProgress = false
             saveError = error.localizedDescription
         }
     }
