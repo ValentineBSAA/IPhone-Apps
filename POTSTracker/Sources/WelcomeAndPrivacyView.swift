@@ -36,7 +36,7 @@ struct WelcomeAndPrivacyView: View {
                     VStack(alignment: .leading, spacing: 15) {
                         information("Your information stays on this iPhone",
                                     icon: "lock.shield",
-                                    detail: "No account, cloud upload or Apple Watch is needed. Entries are kept in local device storage. Backup and export are not available yet, so don't store irreplaceable records during this test.")
+                                    detail: "No account, cloud upload or Apple Watch is needed. Entries are kept in local device storage. Manual export and backup are available in Settings. Keep backups somewhere safe, verify import with test data, and don't rely on a single copy.")
                         Divider()
                         information("This is a personal wellness journal",
                                     icon: "heart.text.square",
@@ -44,7 +44,7 @@ struct WelcomeAndPrivacyView: View {
                         Divider()
                         information("You control optional permissions",
                                     icon: "hand.raised",
-                                    detail: "Manual tracking works without camera or Face ID. Camera access is requested only if you start Camera Pulse Beta; Face ID or passcode is used only if you enable private Journal Lock.")
+                                    detail: "Manual tracking works without camera or Face ID. Camera access is requested only if you start Camera Pulse Beta; Face ID or passcode is used if you enable private Journal Lock. Local notification permission is requested only when you enable a reminder.")
                         Divider()
                         information("Camera Pulse is experimental",
                                     icon: "camera",
