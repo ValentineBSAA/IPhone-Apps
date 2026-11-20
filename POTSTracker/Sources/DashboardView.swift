@@ -232,7 +232,7 @@ struct HomeScreenView: View {
             .padding(.bottom, 24)
         }
         .background(Color.potsBackground.ignoresSafeArea())
-        .navigationTitle("POTS Tracker")
+        .navigationTitle("POTS & Posies")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -570,10 +570,10 @@ struct MoreHubView: View {
                 }
 
                 VStack(spacing: 5) {
-                    Text("POTS Tracker · \(InstalledBuild.shortLabel)")
+                    Text("POTS & Posies · \(InstalledBuild.shortLabel)")
                         .font(.caption.weight(.medium).monospacedDigit())
                         .foregroundStyle(.secondary)
-                        .accessibilityLabel("Installed POTS Tracker, \(InstalledBuild.fullLabel)")
+                        .accessibilityLabel("Installed POTS & Posies, \(InstalledBuild.fullLabel)")
                     Text("Test build · Local backup and export aren't available yet")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
