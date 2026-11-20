@@ -63,6 +63,9 @@ struct EntryEditor: View {
         case .checkIn:
             return CheckInFormat.feelings.contains(selectedFeeling)
                 && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .hydration, .medications, .sleep, .posture:
+            // These categories have their own dedicated typed editor.
+            return false
         }
     }
 
@@ -79,6 +82,7 @@ struct EntryEditor: View {
                     case .bloodPressure: bloodPressureFields
                     case .journal: journalFields
                     case .checkIn: checkInFields
+                    case .hydration, .medications, .sleep, .posture: EmptyView()
                     }
                     if category != .checkIn {
                         GlassCard {
