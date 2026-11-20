@@ -139,15 +139,14 @@ struct PosiesDataManagementView: View {
                         Text("For iCloud Drive: choose Save to Files, then iCloud Drive in the share sheet. This works without the app-managed iCloud entitlement.")
                             .font(.subheadline).foregroundStyle(Color.potsSecondary)
                         Button {
-                            exportAction = "backup"
-                            confirmExport = true
+                            prepareManualBackup()
                         } label: {
                             Label("Save my backup", systemImage: "square.and.arrow.up")
                                 .frame(maxWidth: .infinity, minHeight: 50)
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(Color.potsButtonFill)
-                        .disabled(!canSeeJournal || entries.isEmpty)
+                        .accessibilityHint("Opens a backup, explains when no entries exist, or requests Face ID to include private Journal notes.")
                         Button { showImporter = true } label: {
                             Label("Restore from a backup", systemImage: "arrow.counterclockwise")
                                 .frame(maxWidth: .infinity, minHeight: 48)
@@ -252,15 +251,11 @@ struct PosiesDataManagementView: View {
 
 
                     GlassCard {
-                        Button {
-                            exportAction = "backup"
-                            confirmExport = true
-                        } label: {
+                        Button { prepareManualBackup() } label: {
                             Label("Export JSON (advanced)", systemImage: "doc.text")
                                 .frame(maxWidth: .infinity, minHeight: 44)
                         }
                         .buttonStyle(.bordered)
-                        .disabled(!canSeeJournal || entries.isEmpty)
                     }
                 }
 
@@ -339,6 +334,32 @@ struct PosiesDataManagementView: View {
             Button("OK") { errorText = nil; outcomeText = nil }
         } message: {
             Text(errorText ?? outcomeText ?? "")
+        }
+    }
+
+    private func prepareManualBackup() {
+        guard PersistenceController.shared.loadError == nil else {
+            errorText = "Your saved records couldn't be opened. The app won't export an incomplete backup."
+            return
+        }
+        switch PosiesManualBackupAccess.evaluate(
+            recordCount: entries.count, lockEnabled: journalLockEnabled,
+            unlocked: journalAccess.unlocked
+        ) {
+        case .noEntries:
+            errorText = "Nothing has been recorded yet. Save a first entry, then return here to create a backup. You don't need to connect iCloud."
+        case .ready:
+            exportAction = "backup"
+            confirmExport = true
+        case .needsUnlock:
+            journalAccess.authenticate(reason: "Include private Journal entries in your backup") { success, error in
+                if success {
+                    exportAction = "backup"
+                    confirmExport = true
+                } else {
+                    errorText = error ?? "Journal stayed locked. No backup was created."
+                }
+            }
         }
     }
 
