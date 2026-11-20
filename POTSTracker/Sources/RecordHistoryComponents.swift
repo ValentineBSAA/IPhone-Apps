@@ -19,6 +19,8 @@ struct RecordEditDestination: View {
                     JournalProtected {
                         EntryEditor(category: .journal, editing: record)
                     }
+                } else if let category = LogCategory(rawValue: record.category), category.isExtended {
+                    ExpandedEntryEditor(category: category, editing: record)
                 } else {
                     EntryEditor(category: LogCategory(rawValue: record.category) ?? .journal, editing: record)
                 }
@@ -44,6 +46,7 @@ struct RecordSnapshot: Identifiable, Equatable {
     let secondValue: Int32
     let posture: String
     let notes: String
+    let source: String
 
     init(_ entry: POTSLogEntry) {
         id = entry.objectID
@@ -55,6 +58,7 @@ struct RecordSnapshot: Identifiable, Equatable {
         secondValue = entry.secondValue
         posture = entry.posture
         notes = entry.notes
+        source = entry.source
     }
 
     static func snapshots(of entries: [POTSLogEntry]) -> [RecordSnapshot] {
@@ -77,6 +81,15 @@ struct RecordSnapshot: Identifiable, Equatable {
                 feeling: CheckInFormat.feeling(title: title, posture: posture),
                 notes: notes
             )
+        case .hydration:
+            return "\(firstValue) mL" + (secondValue > 0 ? " · \(secondValue) mg sodium" : "")
+        case .medications:
+            let dose = PosiesEntryExtras.read(source).dose
+            return posture + (dose.isEmpty ? "" : " · \(dose)")
+        case .sleep:
+            return "\(firstValue) min" + (posture.isEmpty ? "" : " · \(posture)")
+        case .posture:
+            return posture + (firstValue > 0 ? " · \(firstValue) bpm" : "")
         case .journal, .none:
             return notes.isEmpty ? "Journal entry" : notes
         }
@@ -89,6 +102,10 @@ struct RecordSnapshot: Identifiable, Equatable {
         case .bloodPressure: return "Blood pressure"
         case .journal: return "Journal"
         case .checkIn: return "Check-ins"
+        case .hydration: return "Hydration"
+        case .medications: return "Medications"
+        case .sleep: return "Sleep & Rest"
+        case .posture: return "Posture"
         case .none: return "Other"
         }
     }
@@ -155,7 +172,7 @@ struct RecordDayGroup: Identifiable {
     }
 
     private func firstIndex(_ category: String) -> Int {
-        ["checkIn", "symptom", "heartRate", "bloodPressure", "journal"].firstIndex(of: category) ?? 999
+        ["checkIn", "symptom", "heartRate", "bloodPressure", "hydration", "medications", "sleep", "posture", "journal"].firstIndex(of: category) ?? 999
     }
 }
 
