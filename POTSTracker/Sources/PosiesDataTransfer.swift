@@ -169,7 +169,8 @@ enum PosiesDataTransfer {
         for r in records {
             let fields = [r.id.uuidString, iso.string(from: r.recordedAt), r.timezoneID,
                           r.category, r.title, r.severity >= 0 ? String(r.severity) : "",
-                          String(r.firstValue), String(r.secondValue), r.posture, r.source,
+                          String(r.firstValue), String(r.secondValue), r.posture,
+                          includeNotes ? r.source : "metadata withheld",
                           includeNotes ? r.notes : ""]
             rows.append(fields.map(csvField).joined(separator: ","))
         }
