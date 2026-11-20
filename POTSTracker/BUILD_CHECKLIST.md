@@ -2,6 +2,8 @@
 
 **Companion research and acceptance criteria:** [PREMIUM_FEATURE_ROADMAP.md](PREMIUM_FEATURE_ROADMAP.md). Every listed premium-quality feature remains free when implemented; this checklist tracks actual implementation, not marketing promises.
 
+**Current milestone:** v0.2.4 full feature expansion has green development-branch CI (run 44717465530); all newly introduced features still require physical-iPhone acceptance. See [UX_V024.md](UX_V024.md). Historical checklist items below retain their original dates.
+
 **As of 2026-11-19:** Build 1 compiled and installed on iPhone 16e; screenshots verify dashboard and feature artwork. Build 1.1 Calm Home redesign is committed, with regression tests and new IPA validation in progress. Do not mark implementation complete without proof. ✅ = verified, ⬜ = to do, ⚠️ = blocked.
 
 ## 0. Approved requirements and design
@@ -262,3 +264,15 @@
 - [ ] Test all Face ID/passcode and Apple Health permission flows on actual iPhone.
 - [ ] Check swipe/tap separation and true black theme on iPhone 16e.
 - [ ] Full [v0.1.7 physical QA checklist](UX_V017.md) including privacy leak and previous delete regressions.
+
+
+## v0.2.4 full-feature acceptance
+- [x] Four additional trackers have typed, editable local persistence without a Core Data schema migration.
+- [x] Calendar and free long-range observational reports read only actually saved records.
+- [x] Local reminders request notification permission contextually and never infer medication intake.
+- [x] Selective CSV/PDF, complete JSON backup, import preview and existing-ID skip implemented.
+- [x] Branch CI run 44717465530 passed both compiler targets and new/old automated regression tests.
+- [ ] Real iPhone: existing test data survives AltStore in-place update and all new forms are usable.
+- [ ] Real iPhone: Files backup + full restore/duplicate handling tested with synthetic entries.
+- [ ] Real iPhone: scheduled notifications, both themes, privacy/Journals, accessibility and offline use validated.
+- [ ] Advanced custom trackers, body map, widgets, encrypted backups and clinical-safe pattern comparisons deferred.
