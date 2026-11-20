@@ -26,7 +26,7 @@ final class BerryResponsiveGameplayLayoutTests: XCTestCase {
                 let exterior = BerryBoardContainment.fullFrameSide(playableSide: normal)
                 XCTAssertGreaterThanOrEqual(normal, 150,
                     "\(phone) \(mode): board collapsed")
-                XCTAssertLessThanOrEqual(normal, width * 0.92 + 0.5,
+                XCTAssertLessThanOrEqual(normal, width * BerryGameplayLayout.boardWidthFraction + 0.5,
                     "\(phone) \(mode): board grows beyond the intended breathing room")
                 XCTAssertLessThanOrEqual(exterior + 6, width + 0.5,
                     "\(phone) \(mode): frame extends past screen width")
