@@ -4,9 +4,9 @@ import SwiftUI
 /// Unlike List.swipeActions, this works in grids/scroll views without
 /// converting the user's preferred card UI into a List.
 ///
-/// A deliberate swipe reveals a labeled action and leaves it visible until tapped.
+/// Short swipes reveal controls; completing a full swipe triggers the action.
 /// Ordinary taps open the card directly and never flash the action rail.
-/// No long-press gesture and no irreversible full-swipe deletion.
+/// Full-swipe delete always opens an existing confirmation; never erases on gesture alone.
 struct HistorySwipeSurface<Content: View>: View {
     let leadingTitle: String
     let leadingSymbol: String
@@ -19,9 +19,11 @@ struct HistorySwipeSurface<Content: View>: View {
 
     @State private var restingOffset: CGFloat = 0
     @State private var draggingOffset: CGFloat = 0
+    @State private var fullSwipeHapticPlayed = false
 
     private let actionWidth: CGFloat = 88
-    private let settleDuration: Double = 0.34
+    private let settleDuration: Double = 0.27
+    private let fullSwipeDistance: CGFloat = 166
 
     init(
         leadingTitle: String,
@@ -44,7 +46,7 @@ struct HistorySwipeSurface<Content: View>: View {
     }
 
     private var activeOffset: CGFloat {
-        min(max(restingOffset + draggingOffset, -actionWidth), actionWidth)
+        min(max(restingOffset + draggingOffset, -fullSwipeDistance - 18), fullSwipeDistance + 18)
     }
 
     var body: some View {
@@ -92,32 +94,45 @@ struct HistorySwipeSurface<Content: View>: View {
         .contentShape(Rectangle())
         .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
         .simultaneousGesture(
-            DragGesture(minimumDistance: 23, coordinateSpace: .local)
+            DragGesture(minimumDistance: 17, coordinateSpace: .local)
                 .onChanged { value in
                     let dx = value.translation.width
                     let dy = value.translation.height
-                    guard abs(dx) > 12, abs(dx) > abs(dy) * 1.35 else { return }
+                    guard abs(dx) > 12, abs(dx) > abs(dy) * 1.25 else { return }
                     draggingOffset = dx
+                    let armed = abs(restingOffset + dx) >= fullSwipeDistance
+                    if armed && !fullSwipeHapticPlayed {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        fullSwipeHapticPlayed = true
+                    } else if !armed {
+                        fullSwipeHapticPlayed = false
+                    }
                 }
                 .onEnded { value in
                     let dx = value.translation.width
                     let dy = value.translation.height
-                    guard abs(dx) > 30, abs(dx) > abs(dy) * 1.35 else {
-                        withAnimation(.easeInOut(duration: settleDuration)) {
-                            draggingOffset = 0
-                        }
+                    fullSwipeHapticPlayed = false
+                    guard abs(dx) > 25, abs(dx) > abs(dy) * 1.25 else {
+                        withAnimation(.easeOut(duration: settleDuration)) { draggingOffset = 0 }
                         return
                     }
                     let target = restingOffset + dx
-                    withAnimation(.easeInOut(duration: settleDuration)) {
-                        restingOffset = target > 46 ? actionWidth : (target < -46 ? -actionWidth : 0)
+                    if abs(target) >= fullSwipeDistance {
+                        // Existing callbacks own their edit flow or explicit delete
+                        // confirmation. Full-swipe never deletes data by itself.
+                        close()
+                        if target > 0 { onLeading() } else { onTrailing() }
+                        return
+                    }
+                    withAnimation(.easeOut(duration: settleDuration)) {
+                        restingOffset = target > 45 ? actionWidth : (target < -45 ? -actionWidth : 0)
                         draggingOffset = 0
                     }
                 }
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityTitle)
-        .accessibilityHint("Swipe right for \(leadingTitle), left for \(trailingTitle).")
+        .accessibilityHint("Swipe right for \(leadingTitle), left for \(trailingTitle). Continue to the end to activate the action; deleting always requires confirmation.")
         .accessibilityAction(named: Text(leadingTitle)) { onLeading() }
         .accessibilityAction(named: Text(trailingTitle)) { onTrailing() }
     }
@@ -142,6 +157,6 @@ struct HistorySwipeSurface<Content: View>: View {
 
     private func close() {
         draggingOffset = 0
-        withAnimation(.easeInOut(duration: settleDuration)) { restingOffset = 0 }
+        withAnimation(.easeOut(duration: settleDuration)) { restingOffset = 0 }
     }
 }
