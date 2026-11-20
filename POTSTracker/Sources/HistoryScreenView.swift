@@ -262,7 +262,7 @@ struct HistoryScreenView: View {
                 .foregroundStyle(.secondary)
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
                                 GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                periodCard(.week, symbol: "calendar.day.timeline.left", hint: "Last 7 days")
+                periodCard(.week, symbol: "calendar", hint: "Last 7 days")
                 periodCard(.month, symbol: "calendar", hint: "By date")
                 periodCard(.year, symbol: "calendar.badge.clock", hint: "All 12 months")
                 periodCard(.all, symbol: "clock.arrow.circlepath", hint: "Every saved entry")
@@ -283,7 +283,7 @@ struct HistoryScreenView: View {
                 Image(systemName: symbol)
                     .font(.system(size: 18, weight: .medium))
                     .frame(width: 30)
-                    .foregroundStyle(chosen ? Color.potsTeal : .secondary)
+                    .foregroundStyle(chosen ? Color.potsTeal : Color.secondary)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(choice.rawValue)
                         .font(.subheadline.weight(.semibold))
@@ -347,7 +347,7 @@ struct HistoryScreenView: View {
                                     .foregroundStyle(.secondary)
                                 Text(day.formatted(.dateTime.day()))
                                     .font(.subheadline.weight(.semibold).monospacedDigit())
-                                    .foregroundStyle(selected ? Color.white : .primary)
+                                    .foregroundStyle(selected ? Color.white : Color.primary)
                                 Circle()
                                     .fill(count > 0 ? (selected ? Color.white : Color.potsTeal) : Color.clear)
                                     .frame(width: 6, height: 6)
@@ -373,6 +373,13 @@ struct HistoryScreenView: View {
     private var monthOverview: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("A month at a glance")
+                        .font(.headline)
+                    Text("Select a date to see the entries from that day.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 HStack {
                     Button {
                         shiftMonth(-1)
@@ -423,9 +430,11 @@ struct HistoryScreenView: View {
                                 .foregroundStyle(.primary)
                                 .background(
                                     selectedDay.map { cal.isDate($0, inSameDayAs: day) } == true
-                                    ? Color.potsTeal.opacity(0.22) : Color.secondary.opacity(0.06),
-                                    in: RoundedRectangle(cornerRadius: 10)
+                                    ? Color.potsTeal.opacity(0.22) : (count == 0 ? Color.potsBackground : Color.potsTeal.opacity(0.08)),
+                                    in: RoundedRectangle(cornerRadius: 12)
                                 )
+                                .overlay(RoundedRectangle(cornerRadius: 12)
+                                    .strokeBorder(Color.potsTeal.opacity(count == 0 ? 0.04 : 0.16)))
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("\(day.formatted(date: .complete, time: .omitted)), \(count == 0 ? "not recorded" : "\(count) entries")")
@@ -434,6 +443,9 @@ struct HistoryScreenView: View {
                         }
                     }
                 }
+                Text("A dot means recorded. Blank dates are not treated as symptom-free.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 if selectedDay != nil {
                     Button("Show entire month") { selectedDay = nil }
                         .font(.caption.weight(.semibold))
@@ -445,6 +457,13 @@ struct HistoryScreenView: View {
     private var yearOverview: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 13) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Your year in moments")
+                        .font(.headline)
+                    Text("Choose any month to explore its saved entries.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 HStack {
                     Button { year -= 1 } label: {
                         Image(systemName: "chevron.left").frame(minWidth: 42, minHeight: 42)
@@ -470,17 +489,28 @@ struct HistoryScreenView: View {
                             selectedDay = nil
                             period = .month
                         } label: {
-                            VStack(alignment: .leading, spacing: 5) {
+                            VStack(alignment: .leading, spacing: 9) {
+                                HStack {
+                                    Circle()
+                                        .fill(monthEntries.isEmpty ? Color.secondary.opacity(0.22) : Color.potsTeal)
+                                        .frame(width: 7, height: 7)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption2.weight(.medium))
+                                        .foregroundStyle(.tertiary)
+                                }
                                 Text(date.formatted(.dateTime.month(.wide)))
                                     .font(.subheadline.weight(.semibold))
                                 Text(monthEntries.isEmpty ? "Not recorded" : "\(monthEntries.count) entries")
                                     .font(.caption)
                                     .foregroundStyle(monthEntries.isEmpty ? Color.secondary : Color.potsTeal)
                             }
-                            .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+                            .frame(maxWidth: .infinity, minHeight: 86, alignment: .leading)
                             .padding(.horizontal, 12)
-                            .background(Color.potsTeal.opacity(monthEntries.isEmpty ? 0.04 : 0.10),
-                                        in: RoundedRectangle(cornerRadius: 12))
+                            .background(monthEntries.isEmpty ? Color.potsBackground : Color.potsSurfaceMuted,
+                                        in: RoundedRectangle(cornerRadius: 15))
+                            .overlay(RoundedRectangle(cornerRadius: 15)
+                                .strokeBorder(Color.potsTeal.opacity(monthEntries.isEmpty ? 0.06 : 0.20)))
                         }
                         .buttonStyle(.plain)
                         .foregroundStyle(.primary)
