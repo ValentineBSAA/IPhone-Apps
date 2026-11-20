@@ -155,8 +155,10 @@ jobs:
           workflow=Path('../.github/workflows/berry-build4-foundation-qa.yml').read_text()
           assert 'runs-on: macos-15-intel' in workflow, 'Runner fallback accidentally removed'
           assert 'max-parallel: 1' in workflow, 'Simulator concurrency protection missing'
-          assert '- slug: iphone16e' in workflow, 'iPhone 16e required target missing'
-          assert 'model: iPhone 14 Pro' not in workflow, 'Retired iPhone 14 Pro test target returned'
+          simulators = workflow.split('  simulators:\n', 1)[1].split('  candidate:\n', 1)[0]
+          matrix = simulators.split('      matrix:\n', 1)[1].split('    defaults:\n', 1)[0]
+          assert matrix.count('          - slug: ') == 1, 'Exactly one simulator device expected'
+          assert '- slug: iphone16e' in matrix and 'model: iPhone 16e' in matrix, 'iPhone 16e required target missing'
           assert 'cancel-in-progress: true' in workflow and 'github.ref' in workflow, 'Old global workflow queue regression'
           assert 'needs: [integrity, engine-regression]' in workflow
           assert 'needs: [integrity, engine-regression, simulators]' in workflow
