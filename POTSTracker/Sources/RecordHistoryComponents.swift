@@ -82,14 +82,21 @@ struct RecordSnapshot: Identifiable, Equatable {
                 notes: notes
             )
         case .hydration:
-            return "\(firstValue) mL" + (secondValue > 0 ? " · \(secondValue) mg sodium" : "")
+            let tags = PosiesEntryExtras.read(source).tags ?? []
+            return "\(firstValue) mL" + (secondValue > 0 ? " · \(secondValue) mg sodium" : "") +
+                (tags.isEmpty ? "" : " · \(tags.prefix(2).joined(separator: ", "))")
         case .medications:
-            let dose = PosiesEntryExtras.read(source).dose
-            return posture + (dose.isEmpty ? "" : " · \(dose)")
+            let extras = PosiesEntryExtras.read(source)
+            return posture + (extras.dose.isEmpty ? "" : " · \(extras.dose)") +
+                (extras.tags?.isEmpty == false ? " · \(extras.tags!.prefix(2).joined(separator: ", "))" : "")
         case .sleep:
-            return "\(firstValue) min" + (posture.isEmpty ? "" : " · \(posture)")
+            let recovery = PosiesEntryExtras.read(source).recovery ?? ""
+            return "\(firstValue) min" + (posture.isEmpty ? "" : " · \(posture)") +
+                (recovery.isEmpty ? "" : " · \(recovery)")
         case .posture:
-            return posture + (firstValue > 0 ? " · \(firstValue) bpm" : "")
+            let tags = PosiesEntryExtras.read(source).tags ?? []
+            return posture + (firstValue > 0 ? " · \(firstValue) bpm" : "") +
+                (tags.isEmpty ? "" : " · \(tags.prefix(2).joined(separator: ", "))")
         case .journal, .none:
             return notes.isEmpty ? "Journal entry" : notes
         }
