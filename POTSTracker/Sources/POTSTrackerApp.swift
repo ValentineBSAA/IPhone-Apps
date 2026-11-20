@@ -160,7 +160,7 @@ struct POTSTrackerApp: App {
     init() {
         UITabBar.appearance().unselectedItemTintColor = UIColor { traits in
             traits.userInterfaceStyle == .dark
-                ? UIColor(red: 0.749, green: 0.667, blue: 0.780, alpha: 1)
+                ? UIColor(red: 0.804, green: 0.725, blue: 0.835, alpha: 1)
                 : UIColor.systemGray.resolvedColor(with: traits)
         }
     }
@@ -217,12 +217,12 @@ extension Color {
     })
     static let potsSurface = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.227, green: 0.169, blue: 0.259, alpha: 1)
+        ? UIColor(red: 0.263, green: 0.192, blue: 0.302, alpha: 1)
         : UIColor(red: 1.00, green: 0.995, blue: 0.996, alpha: 1)
     })
     static let potsSurfaceMuted = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.314, green: 0.231, blue: 0.349, alpha: 1)
+        ? UIColor(red: 0.333, green: 0.255, blue: 0.376, alpha: 1)
         : UIColor(red: 0.975, green: 0.915, blue: 0.940, alpha: 1)
     })
     static let potsSecondary = Color(uiColor: UIColor { traits in
@@ -232,7 +232,7 @@ extension Color {
     })
     static let potsTertiary = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.749, green: 0.667, blue: 0.780, alpha: 1)
+        ? UIColor(red: 0.804, green: 0.725, blue: 0.835, alpha: 1)
         : UIColor.tertiaryLabel.resolvedColor(with: traits)
     })
     // Link/icon pink and button fill must differ: white labels stay legible.
