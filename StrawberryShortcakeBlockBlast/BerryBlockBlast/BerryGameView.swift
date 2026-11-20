@@ -384,8 +384,8 @@ struct BerryGameView: View {
                 }
                 .disabled(isPaused)
                 .padding(.horizontal, 3)
-                .padding(.top, max(6, top * 0.18))
-                .padding(.bottom, max(6, bottom * 0.18))
+                .padding(.top, max(4, top * 0.12))
+                .padding(.bottom, max(4, bottom * 0.12))
                 .frame(maxWidth: 510)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 // Always show the piece being carried, even in Mystery
