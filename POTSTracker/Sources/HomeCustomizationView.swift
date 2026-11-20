@@ -12,7 +12,7 @@ enum HomeModule: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .today: return "Today"
+        case .today: return "Home carousel"
         case .checkIn: return "Daily check-in"
         case .favorites: return "Pinned trackers"
         case .recent: return "Today's dots"
@@ -21,7 +21,7 @@ enum HomeModule: String, CaseIterable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .today: return "Today's summary and quick log"
+        case .today: return "Swipe through Today, Week, Wellbeing and Reminders"
         case .checkIn: return "Open an optional titled check-in note"
         case .favorites: return "Your shortcuts"
         case .recent: return "Simple indicators for what was logged today"
@@ -30,7 +30,7 @@ enum HomeModule: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .today: return "sun.max"
+        case .today: return "rectangle.on.rectangle.angled"
         case .checkIn: return "heart.text.square"
         case .favorites: return "square.grid.2x2"
         case .recent: return "circle.grid.2x2"
