@@ -52,6 +52,13 @@ struct ExpandedEntryEditor: View {
     @State private var recordedAt: Date
     @State private var errorText: String?
     @State private var saving = false
+    @FetchRequest(sortDescriptors: [NSSortDescriptor(key: "recordedAt", ascending: false)])
+    private var previousEntries: FetchedResults<POTSLogEntry>
+    @State private var selectedTags: Set<String>
+    @State private var recovery: String
+    @State private var useTimeRange: Bool
+    @State private var sleepStart: Date
+    @State private var sleepEnd: Date
 
     private let fluidTypes = ["Water", "Electrolyte drink", "Other drink", "Food / fluid"]
     private let sleepKinds = ["Sleep", "Rest"]
@@ -72,12 +79,35 @@ struct ExpandedEntryEditor: View {
         _firstValue = State(initialValue: editing == nil || editing!.firstValue <= 0 ? "" : String(editing!.firstValue))
         _secondValue = State(initialValue: editing == nil || editing!.secondValue <= 0 ? "" : String(editing!.secondValue))
         _positionOrStatus = State(initialValue: editing?.posture.isEmpty == false ? editing!.posture :
-            (category == .medications ? "Taken" : category == .posture ? "Sitting" : ""))
+            (category == .posture ? "Sitting" : ""))
         _dose = State(initialValue: extra.dose)
         _contextText = State(initialValue: extra.context)
         _quality = State(initialValue: extra.quality)
         _notes = State(initialValue: editing?.notes ?? "")
         _recordedAt = State(initialValue: editing?.recordedAt ?? Date())
+        _selectedTags = State(initialValue: Set(extra.tags ?? []))
+        _recovery = State(initialValue: extra.recovery ?? "")
+        _useTimeRange = State(initialValue: extra.startAt != nil && extra.endAt != nil)
+        _sleepStart = State(initialValue: extra.startAt ?? Date().addingTimeInterval(-3600))
+        _sleepEnd = State(initialValue: extra.endAt ?? Date())
+    }
+
+    private var sleepMinutes: Int {
+        Int(sleepEnd.timeIntervalSince(sleepStart) / 60)
+    }
+
+    private var lastDrink: POTSLogEntry? {
+        previousEntries.first {
+            !$0.isDeleted && $0.category == LogCategory.hydration.rawValue
+        }
+    }
+
+    private var recentMedications: [POTSLogEntry] {
+        var encountered = Set<String>()
+        return Array(previousEntries.filter {
+            $0.category == LogCategory.medications.rawValue && !$0.isDeleted &&
+            encountered.insert($0.title.lowercased()).inserted
+        }.prefix(5))
     }
 
     private var valid: Bool {
@@ -89,7 +119,9 @@ struct ExpandedEntryEditor: View {
             return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
                 title.count <= 150 && medStatuses.contains(positionOrStatus)
         case .sleep:
-            return sleepKinds.contains(title) && (Int(firstValue).map { (1...2880).contains($0) } ?? false)
+            return sleepKinds.contains(title) &&
+                (useTimeRange ? (1...2880).contains(sleepMinutes) :
+                 (Int(firstValue).map { (1...2880).contains($0) } ?? false))
         case .posture:
             return positions.contains(positionOrStatus) &&
                 (firstValue.isEmpty || (Int(firstValue).map { (1...400).contains($0) } ?? false)) &&
@@ -113,8 +145,13 @@ struct ExpandedEntryEditor: View {
                     }
                     GlassCard {
                         VStack(alignment: .leading, spacing: 12) {
-                            DatePicker("Recorded at", selection: $recordedAt, in: ...Date(),
-                                       displayedComponents: [.date, .hourAndMinute])
+                            if category == .sleep && useTimeRange {
+                                Text("This entry will be dated when your recorded rest ended.")
+                                    .font(.caption).foregroundStyle(Color.potsSecondary)
+                            } else {
+                                DatePicker("Recorded at", selection: $recordedAt, in: ...Date(),
+                                           displayedComponents: [.date, .hourAndMinute])
+                            }
                             Text("Notes (optional)").font(.subheadline.weight(.semibold))
                             TextField("What would you like to remember?", text: $notes, axis: .vertical)
                                 .lineLimit(3...6)
