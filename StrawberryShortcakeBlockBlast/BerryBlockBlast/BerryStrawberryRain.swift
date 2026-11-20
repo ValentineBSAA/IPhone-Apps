@@ -1,23 +1,59 @@
 import SwiftUI
 
-/// A light, bounded decorative overlay. No physics, no interaction, no impact on the engine.
+/// Board-confined, input-transparent strawberry burst. Tiny particles tumble
+/// outward, drift down and fade smoothly. This is visual-only: never touches
+/// combo, game scores, rewards, or the move engine.
 struct BerryStrawberryRain: View {
-    @State private var falling = false
-    private let offsets: [CGFloat] = [0.08, 0.22, 0.38, 0.51, 0.63, 0.78, 0.91,
-                                     0.15, 0.32, 0.57, 0.72, 0.86]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var firstBurst = false
+    @State private var secondBurst = false
+
+    private let count = 44
+
     var body: some View {
         GeometryReader { geo in
-            ForEach(0..<offsets.count, id: \.self) { index in
-                Text(index % 3 == 0 ? "🌸" : "🍓")
-                    .font(.system(size: index % 2 == 0 ? 18 : 13))
-                    .opacity(falling ? 0 : 0.85)
-                    .position(x: geo.size.width * offsets[index],
-                              y: falling ? geo.size.height + 20 : -12 - CGFloat(index % 4) * 28)
+            ZStack {
+                ForEach(0..<count, id: \.self) { index in
+                    let secondary = index >= 30
+                    let active = secondary ? secondBurst : firstBurst
+                    let particleIndex = secondary ? index - 30 : index
+                    let angle = Double((particleIndex * 137 + (secondary ? 35 : 0)) % 360)
+                        * .pi / 180
+                    let radius = CGFloat(0.25 + Double((index * 23) % 71) / 100)
+                        * min(geo.size.width, geo.size.height)
+                    let travel = active ? CGFloat(1) : CGFloat(0)
+                    let arcX = CGFloat(cos(angle)) * radius * travel
+                    let arcY = CGFloat(sin(angle)) * radius * travel * 0.70 +
+                               (active ? radius * 0.24 : 0)
+                    Text("🍓")
+                        .font(.system(size: CGFloat(11 + (index * 7) % 12)))
+                        .scaleEffect(active ? 0.72 : 0.35)
+                        .rotationEffect(.degrees(active ? angle * 1.4 : 0))
+                        .opacity(active ? 0 : 0.96)
+                        .position(x: geo.size.width / 2 + arcX,
+                                  y: geo.size.height * 0.46 + arcY)
+                }
             }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
         .onAppear {
-            withAnimation(.easeIn(duration: 1.05)) { falling = true }
+            if reduceMotion {
+                withAnimation(.easeOut(duration: 0.28)) {
+                    firstBurst = true
+                    secondBurst = true
+                }
+            } else {
+                withAnimation(.easeOut(duration: 2.55)) {
+                    firstBurst = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.48) {
+                    withAnimation(.easeOut(duration: 2.08)) {
+                        secondBurst = true
+                    }
+                }
+            }
         }
+        .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
 }
