@@ -506,6 +506,12 @@ struct MoreHubView: View {
                     })) { feature in
                         FeatureTile(feature: feature, roomy: lowEnergyMode)
                     }
+                    NavigationLink {
+                        PosiesDataManagementView()
+                    } label: {
+                        smallTool("Backups", icon: "icloud.and.arrow.up.fill")
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 section("Privacy & security")
@@ -529,7 +535,7 @@ struct MoreHubView: View {
                         .font(.caption.weight(.medium).monospacedDigit())
                         .foregroundStyle(Color.potsSecondary)
                         .accessibilityLabel("Installed POTS & Posies, \(InstalledBuild.fullLabel)")
-                    Text("Test build · Local backup and export aren't available yet")
+                    Text("Test build · Backups and exports are user-controlled")
                         .font(.caption2)
                         .foregroundStyle(Color.potsTertiary)
                 }
