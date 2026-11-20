@@ -10,6 +10,12 @@ struct PosiesEntryExtras: Codable, Equatable {
     var context: String = ""
     var quality: String = ""
     var recordSource: String = "manual"
+    // Optional fields decode from v0.2.4/v0.2.5 records without a
+    // storage migration or loss of earlier dose/context/quality metadata.
+    var tags: [String]?
+    var recovery: String?
+    var startAt: Date?
+    var endAt: Date?
     static let marker = "posies-extra-v1:"
 
     static func read(_ stored: String) -> PosiesEntryExtras {
