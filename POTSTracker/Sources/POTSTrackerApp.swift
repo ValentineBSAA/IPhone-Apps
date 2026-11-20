@@ -54,6 +54,12 @@ enum POTSData {
     static func save(_ context: NSManagedObjectContext) throws {
         if context.hasChanges {
             try context.save()
+            // Only explicitly opted-in users request automatic iCloud copies.
+            if UserDefaults.standard.bool(forKey: PosiesBackupPolicy.automaticConsentKey) {
+                DispatchQueue.main.async {
+                    PosiesCloudBackup.shared.noteRecordSaved()
+                }
+            }
         }
     }
 }
@@ -212,8 +218,17 @@ struct POTSTrackerApp: App {
             .environment(\.managedObjectContext, persistence.container.viewContext)
                 .tint(.potsTeal)
                 .preferredColorScheme(posiesAppearance == "light" ? .light : (posiesAppearance == "dark" ? .dark : nil))
+                .onAppear {
+                    if UserDefaults.standard.bool(forKey: PosiesBackupPolicy.automaticConsentKey) {
+                        PosiesCloudBackup.shared.checkAvailability()
+                    }
+                }
                 .onChange(of: scenePhase) { phase in
                     if phase == .background { JournalAccess.shared.lock() }
+                    if phase == .active &&
+                        UserDefaults.standard.bool(forKey: PosiesBackupPolicy.automaticConsentKey) {
+                        PosiesCloudBackup.shared.checkAvailability()
+                    }
                 }
         }
     }
