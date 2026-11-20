@@ -20,7 +20,7 @@ enum PulseSignalAnalyzer {
               abs(early.bpm - late.bpm) <= 13,
               abs(whole.bpm - early.bpm) <= 13,
               abs(whole.bpm - late.bpm) <= 13,
-              whole.confidence >= 0.13 else { return nil }
+              whole.confidence >= 0.095 else { return nil }
         return Int(whole.bpm.rounded())
     }
 
@@ -28,7 +28,7 @@ enum PulseSignalAnalyzer {
     static func patternConfidence(_ source: [PulseSample]) -> Double {
         guard let data = evenlySpaced(source), data.count >= Int(5 * hz),
               let result = rate(data) else { return 0 }
-        return min(1, result.confidence / 0.36)
+        return min(1, result.confidence / 0.22)
     }
 
     private static func evenlySpaced(_ source: [PulseSample]) -> [Double]? {
