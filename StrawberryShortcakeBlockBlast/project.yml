@@ -16,10 +16,10 @@ settings:
     INFOPLIST_KEY_UIRequiresFullScreen: YES
     INFOPLIST_KEY_UIStatusBarHidden: YES
     INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance: NO
-    MARKETING_VERSION: "0.5.15"
-    CURRENT_PROJECT_VERSION: "45"
-    INFOPLIST_KEY_CFBundleShortVersionString: "0.5.15"
-    INFOPLIST_KEY_CFBundleVersion: "45"
+    MARKETING_VERSION: "0.5.16"
+    CURRENT_PROJECT_VERSION: "46"
+    INFOPLIST_KEY_CFBundleShortVersionString: "0.5.16"
+    INFOPLIST_KEY_CFBundleVersion: "46"
 targets:
   BerryBlockBlast:
     type: application
@@ -34,6 +34,9 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.berryblockblast
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BERRY_INTERNAL_QA"
   BerryBlockBlastTests:
     type: bundle.unit-test
     platform: iOS
