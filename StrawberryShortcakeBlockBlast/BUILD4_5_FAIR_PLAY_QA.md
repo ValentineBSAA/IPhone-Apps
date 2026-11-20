@@ -2,7 +2,7 @@
 
 **Build:** Berry Berry Blast v0.5.15 • internal 45 • B4.5 FAIR PLAY • iOS 16.0+
 **Parent source:** Build 4.4 commit 14579caff8d15e6d5c69380297ea7cb77a414a45
-**Build 4.4 owner QA:** 11/12 passed. Real iPhone 14 Pro item 12 still open; simulator coverage is not hardware signoff.
+**Build 4.4 historical owner QA:** 11/12 passed. The 14 Pro cross-check remains historically unpassed, but the owner has retired that requirement for future builds. **Required test device is iPhone 16e only.** Simulator passes are not physical device signoff.
 **No public release, merge or signed IPA authorized.**
 
 ## Source/CI gates
@@ -13,7 +13,7 @@
 - [x] No changes to strawberry prices, one-time awards, wallet keys or Moonberry/night features.
 - [x] Regression XCTest, preflight and JSON report validator added.
 - [ ] GitHub integrity and deterministic Swift engine gates PASS.
-- [ ] iPhone 14 Pro and iPhone 16e **named simulator** XCTest/screenshot gates PASS.
+- [ ] **iPhone 16e only** named simulator XCTest/screenshot gate PASS. Do not require an iPhone 14 Pro simulator.
 - [ ] Native unsigned v0.5.15 / 45 IPA fully compiled and uploaded.
 
 ## Owner changed-area physical iPhone checklist • 0/12 until tested
@@ -27,7 +27,7 @@
 - [ ] 8. Invalid tools don't consume charges; real purchases still have their original costs.
 - [ ] 9. Force-quit/relaunch retains board choice, current saved Endless session and purchased items.
 - [ ] 10. Daily/Story/Quests still do not double-award; audio/haptics and Home/Pause/Settings/Help work.
-- [ ] 11. **Physical iPhone 14 Pro** 8×8/12×12 Blossom corner input and save restoration (not yet owner-tested on 4.4).
+- [ ] 11. **Physical iPhone 16e** 8×8/12×12 Blossom corner input and save restoration. Previous iPhone 14 Pro coverage retired, not claimed as passed.
 - [ ] 12. Inspect CI audit JSON as synthetic evidence only. No price/reward change is justified by first-fit simulation alone.
 
 **Release state:** Candidate only. Keep PR as draft until physical QA and explicit approval. Night Edition stays a later visual-only Build 4.6.
