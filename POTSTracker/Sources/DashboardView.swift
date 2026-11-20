@@ -21,8 +21,7 @@ struct TrackerFeature: Identifiable {
         .init(id: "journal", name: "Journal", file: "09_Journal", symbol: "book.closed.fill", color: .pink, build: 1),
         .init(id: "posture", name: "Posture", file: "10_Posture", symbol: "figure.stand", color: .teal, build: 2),
         .init(id: "reminders", name: "Reminders", file: "11_Reminders", symbol: "bell.fill", color: .blue, build: 2),
-        .init(id: "settings", name: "Settings", file: "12_Settings", symbol: "gearshape.fill", color: .purple, build: 1),
-        .init(id: "appleHealth", name: "Apple Health", file: "", symbol: "heart.text.square.fill", color: .red, build: 2)
+        .init(id: "settings", name: "Settings", file: "12_Settings", symbol: "gearshape.fill", color: .purple, build: 1) 
     ]
 
     var category: LogCategory? { LogCategory(rawValue: id) }
@@ -546,7 +545,7 @@ struct MoreHubView: View {
 
                 section("Review & tools")
                 LazyVGrid(columns: columns, spacing: 11) {
-                    ForEach(["calendar", "reports", "reminders", "appleHealth"].compactMap({ id in
+                    ForEach(["calendar", "reports", "reminders"].compactMap({ id in
                         TrackerFeature.all.first(where: { $0.id == id })
                     })) { feature in
                         FeatureTile(feature: feature, roomy: lowEnergyMode)
