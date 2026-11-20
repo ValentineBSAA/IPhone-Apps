@@ -1,4 +1,4 @@
-name: POTS & Posies | v0.2.2 Journal Unlock Stability iOS 16
+name: POTS & Posies | v0.2.3 Home Tab Root Navigation iOS 16
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
       - ".github/workflows/pots-build-1.yml"
 
 concurrency:
-  group: pots-posies-v022
+  group: pots-posies-v023
   cancel-in-progress: true
 
 permissions:
@@ -120,7 +120,7 @@ jobs:
           BUILD="$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$INFO")"
           BUNDLE="$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$INFO")"
           echo "Installed app identity: $BUNDLE · v$VERSION (build $BUILD)"
-          test "$VERSION" = "0.2.2"
+          test "$VERSION" = "0.2.3"
           test "$BUILD" = "$GITHUB_RUN_NUMBER"
           test "$BUNDLE" = "com.valentinebsaa.potstracker"
           DISPLAY="$(/usr/libexec/PlistBuddy -c 'Print CFBundleDisplayName' "$INFO")"
@@ -142,6 +142,9 @@ jobs:
           test -f Sources/WelcomeAndPrivacyView.swift
           test -f Sources/PulseSignalAnalyzer.swift
           test -f Tests/PulseSignalAnalyzerTests.swift
+          test -f Tests/TabNavigationRoutingTests.swift
+          grep -q 'TabNavigationRevisions' Sources/DashboardView.swift
+          echo "Verified: tab-stack root routing regression test is present"
           ! grep -q "NSHealthShareUsageDescription" project.yml
           grep -q "posiesWelcomeAcknowledgedV021" Sources/POTSTrackerApp.swift
           echo "Verified: first-launch privacy acknowledgement and offline camera pulse analyzer"
@@ -153,13 +156,13 @@ jobs:
           set -euo pipefail
           mkdir -p dist/Payload
           cp -R build-device/Build/Products/Release-iphoneos/POTSTracker.app dist/Payload/
-          (cd dist && zip -qr POTS-and-Posies-v0.2.2-iOS16-unsigned.ipa Payload)
-          unzip -l dist/POTS-and-Posies-v0.2.2-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
+          (cd dist && zip -qr POTS-and-Posies-v0.2.3-iOS16-unsigned.ipa Payload)
+          unzip -l dist/POTS-and-Posies-v0.2.3-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
 
       - name: Upload unsigned IPA build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: POTS-and-Posies-v0.2.2-iOS16-unsigned
+          name: POTS-and-Posies-v0.2.3-iOS16-unsigned
           path: POTSTracker/dist/*.ipa
           if-no-files-found: error
           retention-days: 30
