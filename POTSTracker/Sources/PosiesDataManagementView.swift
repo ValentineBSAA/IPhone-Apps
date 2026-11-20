@@ -147,6 +147,18 @@ struct PosiesDataManagementView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(Color.potsButtonFill)
                         .accessibilityHint("Opens a backup, explains when no entries exist, or requests Face ID to include private Journal notes.")
+                        VStack(alignment: .leading, spacing: 5) {
+                            Label("A little privacy reminder", systemImage: "lock.shield")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Color.potsTeal)
+                            Text("Your backup may include sensitive health details and private Journal notes. Keep it somewhere only you can access, and please don't share it publicly. The file doesn't have an extra password.")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.potsSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .background(Color.potsSurfaceMuted, in: RoundedRectangle(cornerRadius: 14))
                         Button { showImporter = true } label: {
                             Label("Restore from a backup", systemImage: "arrow.counterclockwise")
                                 .frame(maxWidth: .infinity, minHeight: 48)
@@ -302,30 +314,27 @@ struct PosiesDataManagementView: View {
                 errorText = error.localizedDescription
             }
         }
-        .confirmationDialog("Share private health records?", isPresented: $confirmExport,
+        .confirmationDialog("A little privacy reminder", isPresented: $confirmExport,
                             titleVisibility: .visible) {
-            Button("Generate and share \(exportAction?.uppercased() ?? "file")") {
+            Button(exportAction == "backup" ? "Continue to save backup" : "Continue to export") {
                 generateExport()
             }
-            Button("Cancel", role: .cancel) { exportAction = nil }
+            Button("Not now", role: .cancel) { exportAction = nil }
         } message: {
-            Text("The file may contain private health notes. Choose a trusted destination in the system share sheet, such as Save to Files > iCloud Drive.")
+            Text("This file can contain sensitive health information and private Journal notes. Keep it in a private place, such as your personal Files or iCloud Drive, and don't share it publicly. Anyone with the file may be able to read it, since it has no extra password.")
         }
-        .alert("Preview backup", isPresented: $showRestoreConfirmation) {
-            Button("Import \(preview?.additions ?? 0) new entries") {
-                guard let preview else { return }
-                do {
-                    let count = try PosiesDataTransfer.restore(preview, context: context)
-                    outcomeText = "\(count) new entries imported. Existing entries were unchanged."
-                    self.preview = nil
-                } catch {
-                    errorText = error.localizedDescription
-                }
+        .sheet(isPresented: $showRestoreConfirmation, onDismiss: { preview = nil }) {
+            if let preview {
+                PosiesRestorePreviewSheet(
+                    existingCount: preview.existing,
+                    newCount: preview.additions,
+                    onRestore: { restorePreview(preview) },
+                    onDone: {
+                        self.preview = nil
+                        showRestoreConfirmation = false
+                    }
+                )
             }
-            .disabled((preview?.additions ?? 0) == 0)
-            Button("Cancel", role: .cancel) { preview = nil }
-        } message: {
-            Text("\(preview?.archive.records.count ?? 0) entries in file. \(preview?.existing ?? 0) already exist; \(preview?.additions ?? 0) are new. This never erases or overwrites records.")
         }
         .alert("Data transfer", isPresented: Binding(
             get: { errorText != nil || outcomeText != nil },
@@ -334,6 +343,26 @@ struct PosiesDataManagementView: View {
             Button("OK") { errorText = nil; outcomeText = nil }
         } message: {
             Text(errorText ?? outcomeText ?? "")
+        }
+    }
+
+    private func restorePreview(_ approved: PosiesImportPreview) {
+        guard approved.additions > 0 else {
+            showRestoreConfirmation = false
+            preview = nil
+            return
+        }
+        do {
+            let count = try PosiesDataTransfer.restore(approved, context: context)
+            showRestoreConfirmation = false
+            preview = nil
+            outcomeText = count == 1
+                ? "Your entry is back on this iPhone. Your existing notes were left as they were."
+                : "Your \(count) entries are back on this iPhone. Your existing notes were left as they were."
+        } catch {
+            showRestoreConfirmation = false
+            preview = nil
+            errorText = "We couldn't finish restoring this backup. Your existing entries have not been replaced. \(error.localizedDescription)"
         }
     }
 
@@ -389,5 +418,75 @@ struct PosiesDataManagementView: View {
             errorText = error.localizedDescription
         }
         exportAction = nil
+    }
+}
+
+
+/// Calm, readable backup preview. It never offers an inert "Restore 0" action.
+private struct PosiesRestorePreviewSheet: View {
+    let existingCount: Int
+    let newCount: Int
+    let onRestore: () -> Void
+    let onDone: () -> Void
+
+    private var allHere: Bool { newCount == 0 }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack {
+                    Spacer()
+                    Image(systemName: allHere ? "heart.circle.fill" : "arrow.down.heart.fill")
+                        .font(.system(size: 44))
+                        .foregroundStyle(Color.potsTeal)
+                        .accessibilityHidden(true)
+                    Spacer()
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(allHere ? "You're all caught up!" : "Let's bring your notes back")
+                        .font(.title2.bold())
+                        .foregroundStyle(.primary)
+                    Text(allHere
+                         ? "This backup doesn't have any new entries to add. Your notes already on this iPhone will stay just as they are."
+                         : "\(newCount) new \(newCount == 1 ? "entry is" : "entries are") ready to restore. \(existingCount) \(existingCount == 1 ? "entry is" : "entries are") already here and won't be duplicated.")
+                        .font(.body)
+                        .foregroundStyle(Color.potsSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                VStack(alignment: .leading, spacing: 7) {
+                    Label("Keep your backup just for you", systemImage: "lock.shield")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.potsTeal)
+                    Text("It may contain private Journal notes and sensitive health details. Store the file somewhere secure and avoid sharing it publicly. It doesn't have an extra password.")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.potsSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(15)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.potsSurfaceMuted, in: RoundedRectangle(cornerRadius: 16))
+
+                Button {
+                    if allHere { onDone() } else { onRestore() }
+                } label: {
+                    Text(allHere ? "All done" : "Restore \(newCount) \(newCount == 1 ? "entry" : "entries")")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color.potsButtonFill)
+                if !allHere {
+                    Button("Not now", action: onDone)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.potsTeal)
+                }
+            }
+            .padding(24)
+        }
+        .background(Color.potsBackground.ignoresSafeArea())
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .accessibilityElement(children: .contain)
     }
 }
