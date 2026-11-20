@@ -26,12 +26,17 @@ struct BerryBlockBlastApp: App {
                     }
                     BerryAudio.shared.appSceneDidChange(scenePhase)
                     playtime.scenePhaseDidChange(scenePhase)
+                    BerryDayNightAppearance.update()
+                }
+                .onReceive(Timer.publish(every: 30, on: .main, in: .common).autoconnect()) { now in
+                    BerryDayNightAppearance.update(now: now)
                 }
                 .onChange(of: scenePhase) { phase in
                     // Handles lock button, notification banners, home gesture
                     // and unlocking before any delayed app callbacks.
                     BerryAudio.shared.appSceneDidChange(phase)
                     playtime.scenePhaseDidChange(phase)
+                    if phase == .active { BerryDayNightAppearance.update() }
                 }
         }
     }

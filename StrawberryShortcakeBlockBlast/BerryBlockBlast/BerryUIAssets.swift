@@ -4,8 +4,9 @@ import SwiftUI
 struct BerryIcon: View {
     let name: String
     var size: CGFloat = 38
+    @AppStorage(BerryDayNightAppearance.storageKey) private var isNight = false
     var body: some View {
-        Image(name)
+        Image(BerryDayNightAppearance.assetName(for: name, night: isNight))
             .resizable()
             .interpolation(.high)
             .scaledToFit()
@@ -152,6 +153,7 @@ struct BerryCandyToolbarButton: View {
     var size: CGFloat = 36
     var tint: Color = BerryStyle.strawberry
     let action: () -> Void
+    @AppStorage(BerryDayNightAppearance.storageKey) private var isNight = false
 
     private var approvedImage: String {
         let normalized = title.lowercased()
@@ -173,7 +175,9 @@ struct BerryCandyToolbarButton: View {
     var body: some View {
         Button(action: action) {
             Group {
-                if !approvedImage.isEmpty, let art = UIImage(named: approvedImage) {
+                if !approvedImage.isEmpty,
+                   let art = UIImage(named: BerryDayNightAppearance.assetName(
+                        for: approvedImage, night: isNight)) {
                     Image(uiImage: art)
                         .resizable()
                         .interpolation(.high)

@@ -195,6 +195,47 @@ final class BerryGameSession: ObservableObject {
         }
     }
     private let inventoryKey = "berryblockblast.inventory.v3"
+    #if BERRY_INTERNAL_QA
+    // Internal QA only. Use the existing saved Inventory data, never the board
+    // save slot, and never the natural-earnings or economy reporting counters.
+    static let qaGrantAuditKey = "berryberryblast.internalQA.grants.v046"
+    static let qaWalletChanged = Notification.Name("berryberryblast.qaWalletDidChange.v046")
+
+    static func qaWalletBalance(defaults: UserDefaults = .standard) -> Int {
+        guard let bytes = defaults.data(forKey: "berryblockblast.inventory.v3"),
+              let inventory = try? JSONDecoder().decode(Inventory.self, from: bytes)
+        else { return 0 }
+        return max(0, inventory.berries)
+    }
+
+    static func qaGrantHistory(defaults: UserDefaults = .standard) -> [String] {
+        defaults.stringArray(forKey: qaGrantAuditKey) ?? []
+    }
+
+    @discardableResult
+    static func grantQAStrawberries(_ amount: Int,
+                                   defaults: UserDefaults = .standard) -> Int? {
+        guard amount > 0 else { return nil }
+        let key = "berryblockblast.inventory.v3"
+        let existing = defaults.data(forKey: key).flatMap {
+            try? JSONDecoder().decode(Inventory.self, from: $0)
+        }
+        guard var inventory = existing else { return nil }
+        guard inventory.berries >= 0,
+              amount <= Int.max - inventory.berries else { return nil }
+        let before = inventory.berries
+        inventory.berries += amount
+        guard let updated = try? JSONEncoder().encode(inventory) else { return nil }
+        defaults.set(updated, forKey: key)
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+        let record = "\(timestamp) | QA +\(amount) | \(before) → \(inventory.berries)"
+        var history = defaults.stringArray(forKey: qaGrantAuditKey) ?? []
+        history.insert(record, at: 0)
+        defaults.set(Array(history.prefix(30)), forKey: qaGrantAuditKey)
+        NotificationCenter.default.post(name: qaWalletChanged, object: nil)
+        return inventory.berries
+    }
+    #endif
 
     private struct Inventory: Codable {
         var berries: Int

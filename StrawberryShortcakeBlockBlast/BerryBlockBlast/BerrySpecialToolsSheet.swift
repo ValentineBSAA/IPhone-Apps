@@ -1,6 +1,14 @@
 import SwiftUI
 import UIKit
 
+/// Disabled tools retain readable artwork and text, while remaining untappable.
+private struct BerryReadableDisabledToolStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.91 : 1.0)
+    }
+}
+
 /// Pure availability and label rules shared by UI and regression tests.
 /// Unavailable helpers never call the action closure or spend a charge.
 enum BerrySpecialToolAvailability {
@@ -146,7 +154,7 @@ struct BerrySpecialToolsSheet: View {
                                     .strokeBorder(canUse(tool) ? BerryStyle.leaf.opacity(0.4) :
                                                   BerryStyle.chocolate.opacity(0.28)))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(BerryReadableDisabledToolStyle())
                             .accessibilityLabel("\(tool.name). \(tool.detail)")
                             .accessibilityValue(status(for: tool))
                             .disabled(!canUse(tool))
@@ -154,6 +162,7 @@ struct BerrySpecialToolsSheet: View {
                     }
                 }
                 .padding(16)
+                .padding(.top, 16)
                 .frame(maxWidth: 500)
                 .frame(maxWidth: .infinity)
             }

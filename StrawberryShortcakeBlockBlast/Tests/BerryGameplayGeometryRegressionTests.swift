@@ -5,7 +5,7 @@ import CoreGraphics
 final class BerryGameplayGeometryRegressionTests: XCTestCase {
     func testSafeAreaSizingAcrossPhonesAndModes() {
         let cases: [(String, CGFloat, CGFloat, CGFloat, CGFloat)] = [
-            ("iPhone 14 Pro", 393, 759, 59, 34),
+            ("393pt responsive layout", 393, 759, 59, 34),
             ("iPhone 16e", 390, 748, 59, 34),
             ("compact", 375, 690, 47, 34),
             ("narrow", 320, 650, 47, 34),
@@ -32,10 +32,13 @@ final class BerryGameplayGeometryRegressionTests: XCTestCase {
             let board = BerryGameplayLayout.boardSize(
                 width: width, height: 759,
                 topInset: 59, bottomInset: 34, mode: .classic)
-            XCTAssertGreaterThanOrEqual(board, width * 0.83,
-                "Responsive board should remain generously sized")
-            XCTAssertLessThanOrEqual(board, width * 0.88,
-                "The board needs visible margin for the HUD and Blossom rim")
+            XCTAssertGreaterThanOrEqual(board, width * 0.90,
+                "Wider Build 4.6 board should use the screen safely")
+            XCTAssertLessThanOrEqual(board,
+                width * BerryGameplayLayout.boardWidthFraction + 0.01,
+                "Board must obey the shared layout-width policy")
+            XCTAssertLessThanOrEqual(board, width * 0.93,
+                "Leave a visible frame/HUD margin even as the board expands")
             XCTAssertLessThanOrEqual(
                 BerryBoardContainment.fullFrameSide(playableSide: board) + 6,
                 width + 0.01)

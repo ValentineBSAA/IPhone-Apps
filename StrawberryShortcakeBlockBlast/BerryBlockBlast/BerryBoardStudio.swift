@@ -45,10 +45,12 @@ struct BerryApprovedArtwork: View {
     let name: String
     let fallback: String
     var size: CGFloat = 54
+    @AppStorage(BerryDayNightAppearance.storageKey) private var isNight = false
 
     var body: some View {
         Group {
-            if let art = UIImage(named: name) {
+            if let art = UIImage(named: BerryDayNightAppearance.assetName(
+                for: name, night: isNight)) {
                 Image(uiImage: art)
                     .resizable()
                     .interpolation(.high)

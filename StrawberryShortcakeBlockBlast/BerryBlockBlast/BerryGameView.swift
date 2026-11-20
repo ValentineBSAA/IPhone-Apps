@@ -9,6 +9,53 @@ private final class BerryBoardPositionCache {
     var rect: CGRect = .zero
 }
 
+// Purely visual. Do not change the engine board, cell sizes or hit testing.
+private struct BerryLandingEffect: Identifiable {
+    let id = UUID()
+    let piece: BerryPiece
+    let row: Int
+    let col: Int
+    let originRow: Int
+    let originCol: Int
+    let visibleSide: Int
+}
+
+private struct BerryLandingVisual: View {
+    let effect: BerryLandingEffect
+    let boardSize: CGFloat
+    let mode: BerryMode
+    let strawberryUnlocked: Bool
+    let scale: CGFloat
+    let opacity: Double
+
+    var body: some View {
+        let gap: CGFloat = 3
+        let unit = (boardSize - CGFloat(effect.visibleSide - 1) * gap) /
+                   CGFloat(effect.visibleSide)
+        let stride = unit + gap
+        let width = CGFloat(effect.piece.width - 1) * stride + unit
+        let height = CGFloat(effect.piece.height - 1) * stride + unit
+        let localCol = effect.col - effect.originCol
+        let localRow = effect.row - effect.originRow
+        ZStack(alignment: .topLeading) {
+            ForEach(effect.piece.points, id: \.self) { point in
+                BerryTile(tint: effect.piece.tint, mode: mode,
+                          strawberryUnlocked: strawberryUnlocked)
+                    .frame(width: unit, height: unit)
+                    .offset(x: CGFloat(point.col) * stride,
+                            y: CGFloat(point.row) * stride)
+            }
+        }
+        .frame(width: width, height: height, alignment: .topLeading)
+        .scaleEffect(scale)
+        .opacity(opacity)
+        .position(x: CGFloat(localCol) * stride + width / 2,
+                  y: CGFloat(localRow) * stride + height / 2)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
 struct BerryGameView: View {
     let mode: BerryMode
     let onExit: () -> Void
@@ -100,9 +147,14 @@ struct BerryGameView: View {
     @State private var hintPreview: BerryDragState?
     @State private var hintSerial = 0
     @State private var strawberryRain = false
+    @State private var strawberryRainSerial = 0
+    @State private var landingEffect: BerryLandingEffect?
+    @State private var landingScale: CGFloat = 1.24
+    @State private var landingOpacity: Double = 1
     @State private var activeDragSlot: Int?
     @State private var activeDragFinger: CGPoint?
     @AppStorage("berryblockblast.touchDiagnostics") private var touchDiagnostics = false
+    @AppStorage(BerryDayNightAppearance.storageKey) private var isNight = false
     @State private var touchStatus = "Ready"
     @State private var selectedSlot: Int?
     @State private var showHelp = false
@@ -332,8 +384,8 @@ struct BerryGameView: View {
                 }
                 .disabled(isPaused)
                 .padding(.horizontal, 3)
-                .padding(.top, max(6, top * 0.18))
-                .padding(.bottom, max(6, bottom * 0.18))
+                .padding(.top, max(4, top * 0.12))
+                .padding(.bottom, max(4, bottom * 0.12))
                 .frame(maxWidth: 510)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 // Always show the piece being carried, even in Mystery
@@ -523,6 +575,12 @@ struct BerryGameView: View {
             for: UIApplication.didBecomeActiveNotification)) { _ in
             if isTimedMode { resumeTimedClockIfPossible(foreground: true) }
         }
+        #if BERRY_INTERNAL_QA
+        .onReceive(NotificationCenter.default.publisher(
+            for: BerryGameSession.qaWalletChanged)) { _ in
+            session.refreshEconomyFromDisk()
+        }
+        #endif
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             if mode == .daily && scenePhase == .active && !dailyAttemptDay.isEmpty &&
                BerryDailyHistory.dateKey(for: Date()) != dailyAttemptDay {
@@ -545,6 +603,7 @@ struct BerryGameView: View {
             activeDragSlot = nil
             activeDragFinger = nil
             drag = nil
+            landingEffect = nil
         }
         .onChange(of: session.gameOver) { ended in
             if ended && mode == .daily {
@@ -785,7 +844,11 @@ struct BerryGameView: View {
 
     private var background: some View {
         ZStack {
-            LinearGradient(colors: mode == .endless && session.engine.seasons % 4 == 1 ?
+            LinearGradient(colors: isNight ?
+                [Color(red: 0.75, green: 0.73, blue: 0.94),
+                 Color(red: 0.93, green: 0.86, blue: 0.96),
+                 Color(red: 0.89, green: 0.76, blue: 0.90)] :
+                mode == .endless && session.engine.seasons % 4 == 1 ?
                 [Color(red: 0.87, green: 0.97, blue: 0.85), BerryStyle.cream, BerryStyle.softPink] :
                 mode == .endless && session.engine.seasons % 4 == 2 ?
                 [Color(red: 1, green: 0.88, blue: 0.71), BerryStyle.cream, Color(red: 1, green: 0.80, blue: 0.70)] :
@@ -1358,7 +1421,16 @@ struct BerryGameView: View {
             warningFeedback()
             return
         }
+        let carriedPiece = session.engine.tray[finalDrop.slot]
+        let beforeOrigin = session.engine.sectionOrigin
         if session.drop(slot: finalDrop.slot, row: finalDrop.row, col: finalDrop.col) {
+            let afterOrigin = session.engine.sectionOrigin
+            if let carriedPiece,
+               beforeOrigin.row == afterOrigin.row &&
+               beforeOrigin.col == afterOrigin.col {
+                animateSuccessfulLanding(piece: carriedPiece, row: finalDrop.row,
+                                         col: finalDrop.col, origin: beforeOrigin)
+            }
             hintPreview = nil
             selectedSlot = nil
             successFeedback()
@@ -1367,13 +1439,51 @@ struct BerryGameView: View {
         }
     }
 
-    /// Identical drag and tap physics to verified 0.5.6.
+    private func animateSuccessfulLanding(piece: BerryPiece, row: Int, col: Int,
+                                          origin: (row: Int, col: Int)) {
+        guard !reduceMotion else { return }
+        let effect = BerryLandingEffect(
+            piece: piece, row: row, col: col, originRow: origin.row,
+            originCol: origin.col, visibleSide: session.engine.visibleSide)
+        landingEffect = effect
+        landingScale = 1.24
+        landingOpacity = 0.98
+        // A new run-loop frame guarantees the oversized visual is first drawn.
+        DispatchQueue.main.async {
+            guard landingEffect?.id == effect.id else { return }
+            withAnimation(.spring(response: 0.19, dampingFraction: 0.69)) {
+                landingScale = 0.96
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            guard landingEffect?.id == effect.id else { return }
+            withAnimation(.easeOut(duration: 0.11)) {
+                landingScale = 1.0
+                landingOpacity = 0
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.29) {
+            if landingEffect?.id == effect.id { landingEffect = nil }
+        }
+    }
+
+    /// Identical drag and tap geometry to verified 0.5.6; only the successful
+    /// placement's drawing receives a temporary visual effect.
     /// The 24x24 Endless engine presents one full-size 12x12 sector at a time.
     private func boardInteraction(actualSize: CGFloat) -> some View {
             BerryBoard(engine: session.engine, preview: drag ?? hintPreview, size: actualSize, selected: selectedSlot, mode: mode, strawberryUnlocked: strawberryUnlocked, previewStyle: previewStyle)
+                .overlay(alignment: .topLeading) {
+                    if let effect = landingEffect {
+                        BerryLandingVisual(effect: effect, boardSize: actualSize,
+                                           mode: mode, strawberryUnlocked: strawberryUnlocked,
+                                           scale: landingScale, opacity: landingOpacity)
+                    }
+                }
                 .overlay {
                     if strawberryRain && !reduceMotion {
-                        BerryStrawberryRain().allowsHitTesting(false)
+                        BerryStrawberryRain()
+                            .id(strawberryRainSerial)
+                            .allowsHitTesting(false)
                     }
                 }
                 // Fruit rain and line-clear decorations are confined to the
@@ -1422,8 +1532,14 @@ struct BerryGameView: View {
                         return
                     }
                     let origin = session.engine.sectionOrigin
-                    if session.drop(slot: slot, row: target.row + origin.row,
-                                    col: target.col + origin.col) {
+                    let absoluteRow = target.row + origin.row
+                    let absoluteCol = target.col + origin.col
+                    if session.drop(slot: slot, row: absoluteRow, col: absoluteCol) {
+                        let afterOrigin = session.engine.sectionOrigin
+                        if origin.row == afterOrigin.row && origin.col == afterOrigin.col {
+                            animateSuccessfulLanding(piece: piece, row: absoluteRow,
+                                                     col: absoluteCol, origin: origin)
+                        }
                         hintPreview = nil
                         selectedSlot = nil
                         successFeedback()
@@ -1615,8 +1731,12 @@ struct BerryGameView: View {
         // Fixed time: no extensions for clears.
         lastBlitzTimeBonus = 0
         if session.lastClearedLines > 0 && strawberryUnlocked && !reduceMotion {
+            strawberryRainSerial += 1
+            let serial = strawberryRainSerial
             strawberryRain = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.12) { strawberryRain = false }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.10) {
+                if strawberryRainSerial == serial { strawberryRain = false }
+            }
         }
         if haptics { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
         if sound {

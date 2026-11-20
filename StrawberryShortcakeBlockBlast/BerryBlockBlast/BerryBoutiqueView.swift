@@ -232,7 +232,7 @@ struct BerryBoutiqueView: View {
                     .padding(.horizontal, 10)
             }
         }
-        .padding(.top, 5)
+        .padding(.top, 20)
         .padding(.bottom, 8)
         .onAppear {
             selectedCategory = opensWithHelpers ? .helpers : nil
