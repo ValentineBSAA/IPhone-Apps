@@ -13,14 +13,14 @@ struct TrackerFeature: Identifiable {
         .init(id: "heartRate", name: "Heart Rate", file: "01_Heart_Rate", symbol: "heart.fill", color: .pink, build: 1),
         .init(id: "bloodPressure", name: "Blood Pressure", file: "02_Blood_Pressure", symbol: "waveform.path.ecg", color: .blue, build: 1),
         .init(id: "symptom", name: "Symptoms", file: "03_Symptoms", symbol: "list.clipboard.fill", color: .orange, build: 1),
-        .init(id: "hydration", name: "Hydration", file: "04_Hydration", symbol: "drop.fill", color: .cyan, build: 2),
-        .init(id: "medications", name: "Medications", file: "05_Medications", symbol: "pills.fill", color: .green, build: 2),
-        .init(id: "sleep", name: "Sleep & Rest", file: "06_Sleep", symbol: "moon.stars.fill", color: .purple, build: 2),
+        .init(id: "hydration", name: "Hydration", file: "04_Hydration", symbol: "drop.fill", color: .cyan, build: 1),
+        .init(id: "medications", name: "Medications", file: "05_Medications", symbol: "pills.fill", color: .green, build: 1),
+        .init(id: "sleep", name: "Sleep & Rest", file: "06_Sleep", symbol: "moon.stars.fill", color: .purple, build: 1),
         .init(id: "calendar", name: "Calendar", file: "07_Calendar", symbol: "calendar", color: .orange, build: 1),
-        .init(id: "reports", name: "Reports", file: "08_Reports", symbol: "chart.bar.fill", color: .mint, build: 3),
+        .init(id: "reports", name: "Reports", file: "08_Reports", symbol: "chart.bar.fill", color: .mint, build: 1),
         .init(id: "journal", name: "Journal", file: "09_Journal", symbol: "book.closed.fill", color: .pink, build: 1),
-        .init(id: "posture", name: "Posture", file: "10_Posture", symbol: "figure.stand", color: .teal, build: 2),
-        .init(id: "reminders", name: "Reminders", file: "11_Reminders", symbol: "bell.fill", color: .blue, build: 2),
+        .init(id: "posture", name: "Posture", file: "10_Posture", symbol: "figure.stand", color: .teal, build: 1),
+        .init(id: "reminders", name: "Reminders", file: "11_Reminders", symbol: "bell.fill", color: .blue, build: 1),
         .init(id: "settings", name: "Settings", file: "12_Settings", symbol: "gearshape.fill", color: .purple, build: 1) 
     ]
 
