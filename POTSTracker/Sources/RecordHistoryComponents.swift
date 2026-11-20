@@ -198,13 +198,20 @@ struct RecordTreeView: View {
                         }
                     ) {
                         HStack(spacing: 10) {
-                            Image(systemName: "calendar")
-                                .foregroundStyle(Color.potsTeal)
-                                .frame(width: 25)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(day.day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))
-                                    .font(.subheadline.weight(.semibold))
-                                Text("\(day.categories.count) \(day.categories.count == 1 ? "category" : "categories")")
+                            VStack(spacing: 2) {
+                                Text(day.day.formatted(.dateTime.month(.abbreviated)).uppercased())
+                                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                                Text(day.day.formatted(.dateTime.day()))
+                                    .font(.title3.weight(.bold).monospacedDigit())
+                            }
+                            .foregroundStyle(Color.potsTeal)
+                            .frame(width: 52, height: 55)
+                            .background(Color.potsTeal.opacity(0.11),
+                                        in: RoundedRectangle(cornerRadius: 14))
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text(day.day.formatted(.dateTime.weekday(.wide)))
+                                    .font(.headline)
+                                Text("\(day.categories.count) \(day.categories.count == 1 ? "tracker" : "trackers") recorded")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -260,8 +267,10 @@ struct RecordTreeView: View {
             ) {
                 HStack(spacing: 10) {
                     Image(systemName: group.icon)
-                        .frame(width: 22)
+                        .font(.subheadline.weight(.semibold))
+                        .frame(width: 34, height: 34)
                         .foregroundStyle(Color.potsTeal)
+                        .background(Color.potsTeal.opacity(0.10), in: RoundedRectangle(cornerRadius: 11))
                     Text(group.label).font(.subheadline.weight(.medium))
                     Spacer(minLength: 5)
                     Text("\(group.records.count)")
@@ -318,8 +327,10 @@ struct RecordSwipeRow: View {
         ) {
             HStack(spacing: 10) {
                 Image(systemName: record.symbol)
+                    .font(.subheadline)
                     .foregroundStyle(Color.potsTeal)
-                    .frame(width: 23)
+                    .frame(width: 34, height: 34)
+                    .background(Color.potsTeal.opacity(0.09), in: RoundedRectangle(cornerRadius: 11))
                 VStack(alignment: .leading, spacing: 4) {
                     Text(record.title)
                         .font(.subheadline.weight(.medium))
