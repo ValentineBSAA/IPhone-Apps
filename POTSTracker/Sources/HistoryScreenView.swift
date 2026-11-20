@@ -314,31 +314,56 @@ struct HistoryScreenView: View {
 
     private var weekOverview: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: 11) {
-                Text("Last seven days")
-                    .font(.headline)
-                HStack(spacing: 5) {
-                    ForEach(DateTracking.lastSevenDays(), id: \.self) { day in
-                        let count = fullEntries.filter { cal.isDate($0.recordedAt, inSameDayAs: day) }.count
-                        VStack(spacing: 6) {
-                            Text(day.formatted(.dateTime.weekday(.narrow)))
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            Text(count == 0 ? "–" : "\(count)")
-                                .font(.subheadline.weight(.semibold).monospacedDigit())
-                                .foregroundStyle(count == 0 ? Color.secondary : Color.potsTeal)
-                                .frame(maxWidth: .infinity, minHeight: 38)
-                                .background(count == 0 ? Color.secondary.opacity(0.08) : Color.potsTeal.opacity(0.12),
-                                            in: RoundedRectangle(cornerRadius: 11))
-                            Text(day.formatted(.dateTime.day()))
-                                .font(.caption2).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 14) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Your last seven days")
+                            .font(.headline)
+                        Text("Tap a day to see just its records")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if selectedDay != nil {
+                        Button("Show all") {
+                            withAnimation(.easeInOut(duration: 0.18)) { selectedDay = nil }
                         }
-                        .frame(maxWidth: .infinity)
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("\(day.formatted(date: .complete, time: .omitted)): \(count == 0 ? "not recorded" : "\(count) entries")")
+                        .font(.caption.weight(.semibold))
                     }
                 }
-                Text("A dash means not recorded.")
+                HStack(spacing: 6) {
+                    ForEach(DateTracking.lastSevenDays(), id: \.self) { day in
+                        let count = fullEntries.filter { cal.isDate($0.recordedAt, inSameDayAs: day) }.count
+                        let selected = selectedDay.map { cal.isDate($0, inSameDayAs: day) } == true
+                        let today = cal.isDateInToday(day)
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.18)) {
+                                selectedDay = selected ? nil : day
+                            }
+                        } label: {
+                            VStack(spacing: 7) {
+                                Text(day.formatted(.dateTime.weekday(.narrow)))
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                Text(day.formatted(.dateTime.day()))
+                                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                                    .foregroundStyle(selected ? Color.white : .primary)
+                                Circle()
+                                    .fill(count > 0 ? (selected ? Color.white : Color.potsTeal) : Color.clear)
+                                    .frame(width: 6, height: 6)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 78)
+                            .background(selected ? Color.potsTeal : (today ? Color.potsSurfaceMuted : Color.potsBackground),
+                                        in: RoundedRectangle(cornerRadius: 14))
+                            .overlay(RoundedRectangle(cornerRadius: 14)
+                                .strokeBorder(selected || today ? Color.potsTeal.opacity(0.43) : Color.potsTeal.opacity(0.07)))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(day.formatted(date: .complete, time: .omitted)), \(count == 0 ? "not recorded" : "\(count) entries")")
+                        .accessibilityAddTraits(selected ? [.isSelected] : [])
+                    }
+                }
+                Text("A colored dot means an entry was saved. No dot means not recorded, not symptom-free.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
