@@ -1,6 +1,6 @@
-# POTS Tracker (working title)
+# POTS & Posies
 
-**Status:** Build 1 native IPA compiled successfully and launched on an iPhone 16e. User-provided screenshots confirmed the custom feature artwork. **v0.1.1 Calm Home redesign source has been committed and is awaiting new CI and real-device regression testing.** The 13 approved original icon PNGs remain in `Resources/Icons/`.
+**Status (v0.2.0):** Native iOS 16+ test app. Previous v0.1.9 Build 127 was installed and pictured on a physical iPhone. The new v0.2.0 source includes a premium History redesign, one-step Journal Face ID opening, a softer Midnight Posies theme, Apple Health removal, and AltStore-readable PNG icon previews. Compilation and new real-device regression testing must be verified separately. Local backup/restore is not yet implemented.
 
 A free, privacy-first native **iPhone** utility for tracking lived experiences of Postural Orthostatic Tachycardia Syndrome (POTS). Designed for a family member who wants useful daily records and 7-day, monthly, 365/366-day, and lifetime history without paid features.
 
@@ -92,3 +92,10 @@ Preserved for upgrade compatibility: iOS 16+, \`com.valentinebsaa.potstracker\` 
 The next usability pass is based on real iPhone 16e screenshots of v0.1.4. It replaces Home's bulky Recent Activity gallery with four small dots recording whether a category has an entry **today** (Feeling, Symptoms, Heart Rate and Blood Pressure). These dots are documentation status, **not medical thresholds or wellness scores**, and they open the appropriate manual form.
 
 Quick feeling buttons now open a titled note composer with suggested title, optional details and editable timestamp. Cancel never records anything. Legacy one-word check-ins remain readable and editable without a Core Data schema migration. Original icons and current History/delete safety are preserved. See [v0.1.5 implementation and physical testing checklist](UX_V015.md). No backup/export yet.
+
+
+## v0.2.0 premium History and direct Journal
+
+See [UX_V020.md](UX_V020.md) for the implementation contract and the complete physical iPhone QA checklist. **Apple Health has intentionally been removed**, including the HealthKit entitlement, because AltStore provisioning cannot guarantee it. The experimental opt-in camera pulse beta remains independent, and manual reading entry continues to work without permission. The v0.2.0 packager also includes standard, sideload-tool-readable PNG app icon previews, although AltStore caching is external to the app.
+
+**Critical:** Keep the bundle ID and signing identity compatible when installing over v0.1.9. Deleting the app may destroy local records, and the current app has no tested backup/restore workflow.
