@@ -156,7 +156,7 @@ final class PosiesCloudBackup: ObservableObject {
         complete()
     }
 
-    private static func writeAndVerify(_ data: Data, to ubiquityContainer: URL, count: Int) throws {
+    nonisolated private static func writeAndVerify(_ data: Data, to ubiquityContainer: URL, count: Int) throws {
         let fileManager = FileManager.default
         let folder = ubiquityContainer
             .appendingPathComponent("Documents", isDirectory: true)
