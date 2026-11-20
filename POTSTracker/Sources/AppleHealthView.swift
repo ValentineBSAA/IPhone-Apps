@@ -40,7 +40,10 @@ final class AppleHealthReader: ObservableObject {
             DispatchQueue.main.async {
                 self.loading = false
                 if let error {
-                    self.errorText = "Apple Health authorization couldn't be completed: \(error.localizedDescription). If this is a sideloaded app, its signing profile must include the HealthKit entitlement."
+                    let entitlementMissing = error.localizedDescription.localizedCaseInsensitiveContains("entitlement")
+                    self.errorText = entitlementMissing
+                        ? "This AltStore installation was signed without the HealthKit permission Apple requires. POTS & Posies cannot grant it itself. Apple Health remains optional; manual tracking and the experimental camera pulse tool work independently. To enable Apple Health, use an Apple provisioning profile that authorizes HealthKit."
+                        : "Apple Health couldn't connect. Check iPhone permissions and your signing profile, or continue using manual tracking. Technical detail: \(error.localizedDescription)"
                 } else if success {
                     // Apple doesn't disclose whether the user denied individual
                     // read permissions. Never claim access was granted from
