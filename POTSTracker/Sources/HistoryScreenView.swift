@@ -98,19 +98,32 @@ struct HistoryScreenView: View {
                 }
 
                 if filteredEntries.isEmpty {
-                    Text("Nothing recorded for this period.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 3)
-                        .padding(.top, 3)
+                    GlassCard {
+                        VStack(spacing: 12) {
+                            Image(systemName: "calendar.badge.plus")
+                                .font(.title2)
+                                .foregroundStyle(Color.potsTeal)
+                            Text("A fresh page")
+                                .font(.headline)
+                            Text("No entries in this range.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            NavigationLink {
+                                EntryEditor(category: .symptom)
+                            } label: {
+                                Label("Add an entry", systemImage: "plus.circle.fill")
+                                    .frame(maxWidth: .infinity, minHeight: 45)
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
                 } else {
                     HStack(alignment: .center) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Your records")
                                 .font(.title3.weight(.bold))
-                            Text("Tap a date to explore, or swipe for actions.")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
+
                         }
                         Spacer()
                         Text("\(filteredEntries.count)")
@@ -244,8 +257,6 @@ struct HistoryScreenView: View {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(Color.potsTeal)
                         Text("\(fullEntries.count) visible \(fullEntries.count == 1 ? "entry" : "entries")")
-                        Text("·")
-                        Text("No streaks required")
                     }
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
@@ -363,9 +374,7 @@ struct HistoryScreenView: View {
                         .accessibilityAddTraits(selected ? [.isSelected] : [])
                     }
                 }
-                Text("A colored dot means an entry was saved. No dot means not recorded, not symptom-free.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+
             }
         }
     }
@@ -443,9 +452,7 @@ struct HistoryScreenView: View {
                         }
                     }
                 }
-                Text("A dot means recorded. Blank dates are not treated as symptom-free.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+
                 if selectedDay != nil {
                     Button("Show entire month") { selectedDay = nil }
                         .font(.caption.weight(.semibold))
