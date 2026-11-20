@@ -1,4 +1,4 @@
-name: POTS & Posies | v0.1.8 Floral Icon Initial Test iOS 16
+name: POTS & Posies | v0.1.9 Floral Touch Gestures and Camera Pulse Beta iOS 16
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
       - ".github/workflows/pots-build-1.yml"
 
 concurrency:
-  group: pots-posies-v018
+  group: pots-posies-v019
   cancel-in-progress: true
 
 permissions:
@@ -95,7 +95,7 @@ jobs:
           BUILD="$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$INFO")"
           BUNDLE="$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$INFO")"
           echo "Installed app identity: $BUNDLE · v$VERSION (build $BUILD)"
-          test "$VERSION" = "0.1.8"
+          test "$VERSION" = "0.1.9"
           test "$BUILD" = "$GITHUB_RUN_NUMBER"
           test "$BUNDLE" = "com.valentinebsaa.potstracker"
           DISPLAY="$(/usr/libexec/PlistBuddy -c 'Print CFBundleDisplayName' "$INFO")"
@@ -105,6 +105,9 @@ jobs:
           HEALTH="$(/usr/libexec/PlistBuddy -c 'Print NSHealthShareUsageDescription' "$INFO")"
           echo "$FACE" | grep -iq 'journal'
           echo "$HEALTH" | grep -iq 'steps'
+          CAMERA="$(/usr/libexec/PlistBuddy -c 'Print NSCameraUsageDescription' "$INFO")"
+          echo "$CAMERA" | grep -iq 'camera'
+          echo "Verified: camera permission purpose for opt-in flashlight pulse experiment"
           test -f POTSTracker.entitlements
           /usr/libexec/PlistBuddy -c 'Print :com.apple.developer.healthkit' POTSTracker.entitlements | grep -q 'true'
           echo "Verified: Face ID explanation, read-only Apple Health purpose and HealthKit entitlement source"
@@ -116,13 +119,13 @@ jobs:
           set -euo pipefail
           mkdir -p dist/Payload
           cp -R build-device/Build/Products/Release-iphoneos/POTSTracker.app dist/Payload/
-          (cd dist && zip -qr POTS-and-Posies-v0.1.8-iOS16-unsigned.ipa Payload)
-          unzip -l dist/POTS-and-Posies-v0.1.8-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
+          (cd dist && zip -qr POTS-and-Posies-v0.1.9-iOS16-unsigned.ipa Payload)
+          unzip -l dist/POTS-and-Posies-v0.1.9-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
 
       - name: Upload unsigned IPA build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: POTS-and-Posies-v0.1.8-iOS16-unsigned
+          name: POTS-and-Posies-v0.1.9-iOS16-unsigned
           path: POTSTracker/dist/*.ipa
           if-no-files-found: error
           retention-days: 30
