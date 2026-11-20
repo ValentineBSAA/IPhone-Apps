@@ -1,4 +1,4 @@
-name: POTS & Posies | v0.1.9 Floral Touch Gestures and Camera Pulse Beta iOS 16
+name: POTS & Posies | v0.2.0 Premium History and Direct Journal iOS 16
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
       - ".github/workflows/pots-build-1.yml"
 
 concurrency:
-  group: pots-posies-v019
+  group: pots-posies-v020
   cancel-in-progress: true
 
 permissions:
@@ -85,6 +85,31 @@ jobs:
             CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
             build
 
+      - name: Ensure AltStore-readable standard PNG icons
+        shell: bash
+        run: |
+          set -euo pipefail
+          .pots-build-venv/bin/python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          icon_path = Path("POTSTracker/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png")
+          app_path = Path("POTSTracker/build-device/Build/Products/Release-iphoneos/POTSTracker.app")
+          with Image.open(icon_path) as source:
+              image = source.convert("RGB")
+              assert image.size == (1024, 1024)
+              for filename, size in [
+                  ("AppIcon60x60@2x.png", (120, 120)),
+                  ("AppIcon76x76@2x~ipad.png", (152, 152)),
+              ]:
+                  target = app_path / filename
+                  image.resize(size, Image.Resampling.LANCZOS).save(target, "PNG")
+                  with Image.open(target) as check:
+                      check.load()
+                      assert check.size == size
+                  assert b"CgBI" not in target.read_bytes()[:40]
+                  print("Standard PNG for AltStore preview:", target.name, size)
+          PY
+
       - name: Verify installed app's version and increasing build number
         working-directory: POTSTracker
         shell: bash
@@ -95,22 +120,25 @@ jobs:
           BUILD="$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$INFO")"
           BUNDLE="$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$INFO")"
           echo "Installed app identity: $BUNDLE · v$VERSION (build $BUILD)"
-          test "$VERSION" = "0.1.9"
+          test "$VERSION" = "0.2.0"
           test "$BUILD" = "$GITHUB_RUN_NUMBER"
           test "$BUNDLE" = "com.valentinebsaa.potstracker"
           DISPLAY="$(/usr/libexec/PlistBuddy -c 'Print CFBundleDisplayName' "$INFO")"
           test "$DISPLAY" = "POTS & Posies"
           test -s build-device/Build/Products/Release-iphoneos/POTSTracker.app/Assets.car
           FACE="$(/usr/libexec/PlistBuddy -c 'Print NSFaceIDUsageDescription' "$INFO")"
-          HEALTH="$(/usr/libexec/PlistBuddy -c 'Print NSHealthShareUsageDescription' "$INFO")"
-          echo "$FACE" | grep -iq 'journal'
-          echo "$HEALTH" | grep -iq 'steps'
           CAMERA="$(/usr/libexec/PlistBuddy -c 'Print NSCameraUsageDescription' "$INFO")"
+          ICON="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName' "$INFO")"
+          echo "$FACE" | grep -iq 'journal'
           echo "$CAMERA" | grep -iq 'camera'
-          echo "Verified: camera permission purpose for opt-in flashlight pulse experiment"
-          test -f POTSTracker.entitlements
-          /usr/libexec/PlistBuddy -c 'Print :com.apple.developer.healthkit' POTSTracker.entitlements | grep -q 'true'
-          echo "Verified: Face ID explanation, read-only Apple Health purpose and HealthKit entitlement source"
+          test "$ICON" = "AppIcon"
+          if /usr/libexec/PlistBuddy -c 'Print NSHealthShareUsageDescription' "$INFO" >/dev/null 2>&1; then
+            echo "::error::Unexpected removed HealthKit usage permission in app Info.plist."
+            exit 1
+          fi
+          test ! -f POTSTracker.entitlements
+          test -s build-device/Build/Products/Release-iphoneos/POTSTracker.app/AppIcon60x60@2x.png
+          echo "Verified: Face ID and camera permissions, no HealthKit dependency, AppIcon fallback."
 
       - name: Package unsigned IPA
         working-directory: POTSTracker
@@ -119,13 +147,13 @@ jobs:
           set -euo pipefail
           mkdir -p dist/Payload
           cp -R build-device/Build/Products/Release-iphoneos/POTSTracker.app dist/Payload/
-          (cd dist && zip -qr POTS-and-Posies-v0.1.9-iOS16-unsigned.ipa Payload)
-          unzip -l dist/POTS-and-Posies-v0.1.9-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
+          (cd dist && zip -qr POTS-and-Posies-v0.2.0-iOS16-unsigned.ipa Payload)
+          unzip -l dist/POTS-and-Posies-v0.2.0-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
 
       - name: Upload unsigned IPA build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: POTS-and-Posies-v0.1.9-iOS16-unsigned
+          name: POTS-and-Posies-v0.2.0-iOS16-unsigned
           path: POTSTracker/dist/*.ipa
           if-no-files-found: error
           retention-days: 30
