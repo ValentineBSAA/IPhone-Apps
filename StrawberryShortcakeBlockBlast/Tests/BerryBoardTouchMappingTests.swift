@@ -48,16 +48,19 @@ final class BerryBoardTouchMappingTests: XCTestCase {
 
     func testBoardSizeKeepsResponsiveMarginsAndAccurateTouchRim() {
         let phones: [(String, CGFloat)] = [
-            ("iPhone 14 Pro", 393), ("iPhone 16e", 390)
+            ("393pt layout", 393), ("iPhone 16e", 390)
         ]
         for (label, width) in phones {
             let board = BerryGameplayLayout.boardSize(
                 width: width, height: 759, topInset: 0,
                 bottomInset: 0, mode: .classic)
-            // Previous 350pt minimum contradicted the approved 87% width
-            // target, which yields 341.91pt on a 393pt safe-width screen.
-            XCTAssertGreaterThanOrEqual(board, width * 0.83, label)
-            XCTAssertLessThanOrEqual(board, width * 0.88, label)
+            // Build 4.6 intentionally widens the board from 87% to 92%.
+            // This range independently protects reasonable touch margins;
+            // the exact upper limit comes from the shared layout policy.
+            XCTAssertGreaterThanOrEqual(board, width * 0.90, label)
+            XCTAssertLessThanOrEqual(board,
+                width * BerryGameplayLayout.boardWidthFraction + 0.01, label)
+            XCTAssertLessThanOrEqual(board, width * 0.93, label)
             XCTAssertEqual(
                 BerryBoardContainment.fullFrameSide(playableSide: board),
                 board + 2 * (BerryGameplayLayout.boardTouchMargin +
