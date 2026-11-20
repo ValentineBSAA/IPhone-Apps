@@ -25,6 +25,13 @@ struct FeatureDetail: View {
         }
         .navigationTitle(feature.name)
         .navigationBarTitleDisplayMode(.inline)
+        // Lock when the actual Journal destination leaves navigation.
+        // Never lock from JournalProtected's own conditional content.
+        .onDisappear {
+            if feature.id == "journal" {
+                JournalAccess.shared.lock()
+            }
+        }
     }
 
     private var plannedFeature: some View {
