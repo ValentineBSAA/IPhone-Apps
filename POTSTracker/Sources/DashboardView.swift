@@ -57,45 +57,95 @@ enum TrackerTab: Hashable {
     case more
 }
 
-/// One tab per real task. Features are pushed, not opened as a second full-screen sheet.
+/// Each bottom tab must open at its own root after entering from another tab.
+/// Changing a NavigationStack identity discards old pushed destinations,
+/// including a Journal that was visible before leaving Home or Log.
+/// This is deliberately transient navigation state, never stored with records.
+struct TabNavigationRevisions {
+    private(set) var home = 0
+    private(set) var log = 0
+    private(set) var history = 0
+    private(set) var more = 0
+
+    mutating func resetDestination(_ tab: TrackerTab) {
+        switch tab {
+        case .home: home += 1
+        case .log: log += 1
+        case .history: history += 1
+        case .more: more += 1
+        }
+    }
+
+    func revision(for tab: TrackerTab) -> Int {
+        switch tab {
+        case .home: return home
+        case .log: return log
+        case .history: return history
+        case .more: return more
+        }
+    }
+}
+
+/// A tab's tap always means that tab's root, never the last pushed feature
+/// on its old NavigationStack. The destination is reset BEFORE selecting it,
+/// so the stale Journal screen cannot briefly reappear and request Face ID.
 struct DashboardView: View {
     @State private var selectedTab: TrackerTab = .home
+    @State private var navigation = TabNavigationRevisions()
+
+    private var tabSelection: Binding<TrackerTab> {
+        Binding(
+            get: { selectedTab },
+            set: { destination in
+                selectTab(destination)
+            }
+        )
+    }
+
+    private func selectTab(_ destination: TrackerTab) {
+        guard selectedTab != destination else { return }
+        navigation.resetDestination(destination)
+        // Switching tabs ends any private Journal session.
+        JournalAccess.shared.lock()
+        selectedTab = destination
+    }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: tabSelection) {
             NavigationStack {
                 HomeScreenView(
-                    openLog: { selectedTab = .log },
-                    openHistory: { selectedTab = .history }
+                    openLog: { selectTab(.log) },
+                    openHistory: { selectTab(.history) }
                 )
             }
+            .id(navigation.home)
             .tabItem { Label("Home", systemImage: "house.fill") }
             .tag(TrackerTab.home)
 
             NavigationStack {
                 LogHubView()
             }
+            .id(navigation.log)
             .tabItem { Label("Log", systemImage: "square.grid.2x2.fill") }
             .tag(TrackerTab.log)
 
             NavigationStack {
                 HistoryScreenView()
             }
+            .id(navigation.history)
             .tabItem { Label("History", systemImage: "calendar") }
             .tag(TrackerTab.history)
 
             NavigationStack {
                 MoreHubView()
             }
+            .id(navigation.more)
             .tabItem { Label("More", systemImage: "ellipsis.circle.fill") }
             .tag(TrackerTab.more)
         }
         .tint(.potsTeal)
         .toolbarBackground(Color.potsBackground, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
-        .onChange(of: selectedTab) { _ in
-            JournalAccess.shared.lock()
-        }
     }
 }
 
