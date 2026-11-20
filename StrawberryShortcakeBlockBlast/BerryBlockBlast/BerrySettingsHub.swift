@@ -10,6 +10,7 @@ struct BerrySettingsHubView: View {
     @State private var selected: Section?
     @State private var confirmAllAppearance = false
     @State private var showDeveloperGateway = false
+    @AppStorage(BerryDayNightAppearance.storageKey) private var isNight = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
 
@@ -152,7 +153,10 @@ struct BerrySettingsHubView: View {
             .frame(maxWidth: 520)
             .frame(maxWidth: .infinity)
         }
-        .background(LinearGradient(colors: [BerryStyle.cream, BerryStyle.softPink],
+        .background(LinearGradient(colors: isNight ?
+                                   [Color(red: 0.92, green: 0.86, blue: 0.97),
+                                    Color(red: 0.88, green: 0.79, blue: 0.92)] :
+                                   [BerryStyle.cream, BerryStyle.softPink],
                                    startPoint: .top, endPoint: .bottom)
                     .ignoresSafeArea())
         .sheet(isPresented: $showDeveloperGateway) { BerryDeveloperGardenView() }

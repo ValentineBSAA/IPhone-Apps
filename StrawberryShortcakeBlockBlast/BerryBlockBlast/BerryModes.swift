@@ -36,6 +36,7 @@ enum BerryMode: String, CaseIterable, Identifiable {
 struct BerryHomeView: View {
     @State private var activeMode: BerryMode?
     @State private var showSettings = false
+    @AppStorage(BerryDayNightAppearance.storageKey) private var isNight = false
     @State private var showMore = false
     @State private var showSchool = false
     @State private var showCollection = false
@@ -113,7 +114,15 @@ struct BerryHomeView: View {
     }
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color(red: 1, green: 0.86, blue: 0.91), Color(red: 1, green: 0.97, blue: 0.88), Color(red: 1, green: 0.78, blue: 0.84)], startPoint: .topLeading, endPoint: .bottomTrailing).ignoresSafeArea()
+            LinearGradient(colors: isNight ?
+                [Color(red: 0.80, green: 0.77, blue: 0.95),
+                 Color(red: 0.94, green: 0.88, blue: 0.97),
+                 Color(red: 0.91, green: 0.70, blue: 0.83)] :
+                [Color(red: 1, green: 0.86, blue: 0.91),
+                 Color(red: 1, green: 0.97, blue: 0.88),
+                 Color(red: 1, green: 0.78, blue: 0.84)],
+                startPoint: .topLeading, endPoint: .bottomTrailing)
+                .ignoresSafeArea()
             if let activeMode {
                 BerryGameView(mode: activeMode, onExit: { self.activeMode = nil })
             } else {
@@ -135,6 +144,7 @@ struct BerryHomeView: View {
                                     showSettings = true
                                 }
                             }
+                            BerryLiveDayNightClock()
                             Text("🍓 ✨ 🍰 ✨ 🍓").font(.title2)
                                 .accessibilityLabel("Strawberry sweets")
                             Text("✿ WELCOME TO BERRY VILLAGE ✿").font(.system(size: 12, weight: .black, design: .rounded)).tracking(2).foregroundStyle(BerryStyle.leaf)

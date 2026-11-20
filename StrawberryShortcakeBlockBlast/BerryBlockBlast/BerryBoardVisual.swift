@@ -22,6 +22,7 @@ struct BerryBoard: View {
     // The hardware-tested original remains the default and instant rollback.
     private let gap: CGFloat = 3
     @AppStorage("berryberryblast.board.surface.v059") private var boardSurface = "original"
+    @AppStorage(BerryDayNightAppearance.storageKey) private var isNight = false
 
     var body: some View {
         let side = engine.visibleSide
@@ -45,7 +46,8 @@ struct BerryBoard: View {
                         .fill(BerryBoardPersonality.emptyCell(for: mode))
                         .overlay {
                             if boardSurface == "blossom-glass" {
-                                Image("Tile_Empty")
+                                Image(isNight && UIImage(named: "Night_Tile_Empty") != nil ?
+                                      "Night_Tile_Empty" : "Tile_Empty")
                                     .resizable()
                                     .interpolation(.high)
                                     .scaledToFill()

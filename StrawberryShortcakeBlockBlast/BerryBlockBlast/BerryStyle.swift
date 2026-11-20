@@ -72,6 +72,7 @@ struct BerryTile: View {
     @AppStorage("berryblockblast.shop.equippedBlockSkin.v056b2") private var blockSkin = "default"
     @AppStorage("berryblockblast.shop.equippedSparkle.v056b2") private var sparkles = "default"
     @AppStorage("berryberryblast.trophies.strawberry-red-on.v0512") private var strawberryRewardOn = true
+    @AppStorage(BerryDayNightAppearance.storageKey) private var isNight = false
 
     private var skin: String { skinOverride ?? blockSkin }
     /// Restored original 0.5.8 square candy blocks for the default style.
@@ -183,6 +184,15 @@ struct BerryTile: View {
                     .shadow(color: Color(red: 0.47, green: 0.02, blue: 0.20)
                         .opacity(preview ? 0.10 : 0.18), radius: 2, y: 1)
                     .accessibilityLabel("Deep raspberry pink puzzle block")
+                    .overlay {
+                        if isNight && skin == "default" &&
+                           UIImage(named: "Night_Tile_Pink") != nil {
+                            Image("Night_Tile_Pink")
+                                .resizable()
+                                .scaledToFit()
+                                .allowsHitTesting(false)
+                        }
+                    }
             } else if skin == "strawberry-fruit" {
                 // Legacy fruit cosmetic remains available only by choice.
                 // Default blocks must use the full original square tile.

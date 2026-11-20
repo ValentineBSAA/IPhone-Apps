@@ -154,6 +154,7 @@ struct BerryGameView: View {
     @State private var activeDragSlot: Int?
     @State private var activeDragFinger: CGPoint?
     @AppStorage("berryblockblast.touchDiagnostics") private var touchDiagnostics = false
+    @AppStorage(BerryDayNightAppearance.storageKey) private var isNight = false
     @State private var touchStatus = "Ready"
     @State private var selectedSlot: Int?
     @State private var showHelp = false
@@ -843,7 +844,11 @@ struct BerryGameView: View {
 
     private var background: some View {
         ZStack {
-            LinearGradient(colors: mode == .endless && session.engine.seasons % 4 == 1 ?
+            LinearGradient(colors: isNight ?
+                [Color(red: 0.75, green: 0.73, blue: 0.94),
+                 Color(red: 0.93, green: 0.86, blue: 0.96),
+                 Color(red: 0.89, green: 0.76, blue: 0.90)] :
+                mode == .endless && session.engine.seasons % 4 == 1 ?
                 [Color(red: 0.87, green: 0.97, blue: 0.85), BerryStyle.cream, BerryStyle.softPink] :
                 mode == .endless && session.engine.seasons % 4 == 2 ?
                 [Color(red: 1, green: 0.88, blue: 0.71), BerryStyle.cream, Color(red: 1, green: 0.80, blue: 0.70)] :
