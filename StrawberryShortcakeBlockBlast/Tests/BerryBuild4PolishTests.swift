@@ -21,7 +21,8 @@ final class BerryBuild4PolishTests: XCTestCase {
     }
 
     func testPolishBuildIdentityIsDistinct() {
-        XCTAssertEqual(BerryBuildIdentity.revisionName, "BUILD 4.4 • BOUTIQUE + TOOLS QA")
-        XCTAssertEqual(BerryBuildIdentity.sourceBranch, "feature/berry-build4-r5-boutique-tools-qa")
+        // Older Build 4.4 identity was deliberately superseded by Build 4.5.
+        XCTAssertEqual(BerryBuildIdentity.revisionName, "BUILD 4.5 • FAIR PLAY LAB")
+        XCTAssertEqual(BerryBuildIdentity.sourceBranch, "feature/berry-build4-r6-fair-play-lab")
     }
 }

@@ -10,6 +10,7 @@ struct BerryDeveloperGardenView: View {
     @State private var selectedTool: Tool?
     @State private var previewMilestone: Int?
     @AppStorage("berryblockblast.touchDiagnostics") private var touchDiagnostics = false
+    @ObservedObject private var economyLedger = BerryEconomyLedger.shared
 
     private let columns = [GridItem(.flexible(), spacing: 11), GridItem(.flexible(), spacing: 11)]
 
@@ -245,6 +246,28 @@ struct BerryDeveloperGardenView: View {
             Text("The small QA TOUCH readout appears directly below the gameplay tools bar. Pick up, move and release a piece to see finger events and board cell coordinates, including legal or blocked placement. Return here to switch it off. It never changes the game.")
                 .font(.caption)
                 .multilineTextAlignment(.center)
+            Text("FAIR PLAY • EXISTING MODE RULES")
+                .font(.system(size: 13, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.strawberry)
+            LazyVGrid(columns: columns, spacing: 11) {
+                ForEach(BerryMode.allCases) { mode in
+                    VStack(spacing: 7) {
+                        Text(mode.rawValue)
+                            .font(.caption.bold())
+                            .multilineTextAlignment(.center)
+                        Text(fairPlayRule(for: mode))
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(BerryStyle.chocolate)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 108)
+                    .padding(8)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 15))
+                }
+            }
+            Text("Read-only mode rules. Seeded gameplay measurements run in GitHub CI, not on this phone.")
+                .font(.caption)
+                .multilineTextAlignment(.center)
         case .saves:
             LazyVGrid(columns: columns, spacing: 11) {
                 ForEach([8, 12, 24], id: \.self) { side in
@@ -269,7 +292,7 @@ struct BerryDeveloperGardenView: View {
                 Text(context.date.formatted(date: .abbreviated, time: .standard))
                     .font(.system(size: 17, weight: .bold, design: .monospaced))
             }
-            Text("This is the phone's current local clock. Automatic 6 AM/6 PM storefront switching is not active in Build 4.1.")
+            Text("This is the phone's current local clock. Automatic 6 AM/6 PM storefront switching is planned for Build 4.6.")
                 .font(.caption)
                 .multilineTextAlignment(.center)
         case .notifications:
@@ -280,7 +303,33 @@ struct BerryDeveloperGardenView: View {
                 .font(.caption)
                 .multilineTextAlignment(.center)
         case .economy:
-            Text("Strawberry balances and purchases continue to use the existing saved ledger. This panel does not grant, deduct or simulate rewards.")
+            Text("FAIR PLAY • RECORDED STRAWBERRY ECONOMY")
+                .font(.system(size: 13, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.strawberry)
+            Text("Read-only data from the existing economy ledger. This is NOT the authoritative wallet. Quest, Story and other non-line rewards are not assigned to a mode.")
+                .font(.caption)
+                .multilineTextAlignment(.center)
+            LazyVGrid(columns: columns, spacing: 11) {
+                economyMetric("Recorded spending", "\(economyLedger.spent) 🍓")
+                economyMetric("Recorded line earnings", "\(economyLedger.earnedByMode.values.reduce(0, +)) 🍓")
+            }
+            Text("LINE EARNINGS BY MODE")
+                .font(.caption.bold())
+                .foregroundStyle(BerryStyle.strawberry)
+            LazyVGrid(columns: columns, spacing: 11) {
+                ForEach(Array(economyLedger.earnedByMode.keys).sorted(), id: \.self) { key in
+                    economyMetric(key, "\(economyLedger.earnedByMode[key, default: 0]) 🍓")
+                }
+            }
+            Text("RECORDED PURCHASE SPENDING")
+                .font(.caption.bold())
+                .foregroundStyle(BerryStyle.strawberry)
+            LazyVGrid(columns: columns, spacing: 11) {
+                ForEach(Array(economyLedger.spentByItem.keys).sorted(), id: \.self) { key in
+                    economyMetric(key, "\(economyLedger.spentByItem[key, default: 0]) 🍓")
+                }
+            }
+            Text("Undo 40 • Shuffle 50 • Hint 35. Prices are unchanged. Viewing this screen cannot grant, spend or reset anything.")
                 .font(.caption)
                 .multilineTextAlignment(.center)
             Text("Moonberries and the Night Market are planned for Build 6, not active here.")
@@ -320,5 +369,41 @@ struct BerryDeveloperGardenView: View {
                 }
             }
         }
+    }
+
+    private func fairPlayRule(for mode: BerryMode) -> String {
+        switch mode {
+        case .classic:
+            return "8×8 • No Undo, Shuffle, Hint or premium tools"
+        case .endless:
+            return "8×8 / 12×12 / 24×24 • Saved seasons • Adaptive first tray slot"
+        case .story:
+            return "Chapter objectives • Progressive first tray slot"
+        case .daily:
+            return "One attempt per day • No adaptive hand"
+        case .cozy:
+            return "Gentle first tray slot • No timed pressure"
+        case .challenge:
+            return "Timed score chase • No adaptive hand"
+        case .superHard:
+            return "12×12 • Three-minute hard challenge • No adaptive hand"
+        }
+    }
+
+    private func economyMetric(_ title: String, _ amount: String) -> some View {
+        VStack(spacing: 7) {
+            Text(title)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(BerryStyle.chocolate)
+                .multilineTextAlignment(.center)
+            Text(amount)
+                .font(.system(size: 15, weight: .black, design: .rounded))
+                .foregroundStyle(BerryStyle.strawberry)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, minHeight: 84)
+        .padding(8)
+        .background(.white, in: RoundedRectangle(cornerRadius: 15))
     }
 }

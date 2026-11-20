@@ -1,7 +1,7 @@
-name: Berry Berry Blast 0.5.14 Build 4.4 Boutique + Tools QA
+name: Berry Berry Blast 0.5.15 Build 4.5 Fair Play Lab
 on:
   push:
-    branches: [feature/berry-build4-r5-boutique-tools-qa]
+    branches: [feature/berry-build4-r6-fair-play-lab]
   workflow_dispatch:
 permissions:
   contents: read
@@ -24,6 +24,7 @@ jobs:
           python3 Tools/check_ios16_compat.py
           python3 Tools/verify_swiftui_test_imports.py
           python3 Tools/verify_build44_boutique_tools.py
+          python3 Tools/verify_build45_fair_play.py
           python3 Tools/verify_audio_build2.py
           python3 Tools/verify_0512_art_in_repo.py
           test -f BerryBlockBlast/BerryBoardVisual.swift
@@ -125,6 +126,27 @@ jobs:
             Tools/verify_0513_engine_regression.swift \
             -o /tmp/berry-0513-engine-regression
           /tmp/berry-0513-engine-regression
+      - name: Run Build 4.5 synthetic seeded Fair Play audit
+        run: |
+          set -euo pipefail
+          mkdir -p .build/QA
+          swiftc -swift-version 5 \
+            BerryBlockBlast/BlockEngine.swift \
+            BerryBlockBlast/BerryPieceCatalog.swift \
+            BerryBlockBlast/BerryDifficultyPolicy.swift \
+            Tools/berry_build45_seeded_audit.swift \
+            -o /tmp/berry-045-seeded-audit
+          BERRY_FAIR_PLAY_JSON=.build/QA/build45-fair-play.json \
+            /tmp/berry-045-seeded-audit | tee .build/QA/build45-fair-play.txt
+          python3 Tools/verify_build45_report.py .build/QA/build45-fair-play.json
+      - name: Preserve seeded Fair Play audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-0515-B45-Seeded-Fair-Play-Audit
+          path: |
+            StrawberryShortcakeBlockBlast/.build/QA/build45-fair-play.json
+            StrawberryShortcakeBlockBlast/.build/QA/build45-fair-play.txt
+          retention-days: 30
       - name: Catch macOS runner configuration regressions
         run: |
           set -euo pipefail
@@ -132,7 +154,11 @@ jobs:
           from pathlib import Path
           workflow=Path('../.github/workflows/berry-build4-foundation-qa.yml').read_text()
           assert 'runs-on: macos-15-intel' in workflow, 'Runner fallback accidentally removed'
-          assert 'max-parallel: 1' in workflow, 'Simulators may compete for scarce runners'
+          assert 'max-parallel: 1' in workflow, 'Simulator concurrency protection missing'
+          simulators = workflow.split('  simulators:\n', 1)[1].split('  candidate:\n', 1)[0]
+          matrix = simulators.split('      matrix:\n', 1)[1].split('    defaults:\n', 1)[0]
+          assert matrix.count('          - slug: ') == 1, 'Exactly one simulator device expected'
+          assert '- slug: iphone16e' in matrix and 'model: iPhone 16e' in matrix, 'iPhone 16e required target missing'
           assert 'cancel-in-progress: true' in workflow and 'github.ref' in workflow, 'Old global workflow queue regression'
           assert 'needs: [integrity, engine-regression]' in workflow
           assert 'needs: [integrity, engine-regression, simulators]' in workflow
@@ -140,8 +166,8 @@ jobs:
           PY
   simulators:
     needs: [integrity, engine-regression]
-    # Intel is a supported runner; the previous ARM macos-15 jobs
-    # were both cancelled before any step (runner allocation failure).
+    # Only iPhone 16e is a required simulator. Retired the iPhone 14 Pro
+    # device gate at owner request; previous runs remain historical evidence.
     runs-on: macos-15-intel
     timeout-minutes: 70
     strategy:
@@ -149,8 +175,6 @@ jobs:
       max-parallel: 1
       matrix:
         include:
-          - slug: iphone14pro
-            model: iPhone 14 Pro
           - slug: iphone16e
             model: iPhone 16e
     defaults:
@@ -249,28 +273,28 @@ jobs:
             -derivedDataPath .build/Candidate CODE_SIGNING_ALLOWED=NO build
           mkdir -p dist/Payload
           cp -R .build/Candidate/Build/Products/Release-iphoneos/BerryBlockBlast.app dist/Payload/
-          (cd dist && zip -qr Berry-Berry-Blast-v0.5.14-build4.4-BOUTIQUE-TOOLS-QA-unsigned.ipa Payload)
+          (cd dist && zip -qr Berry-Berry-Blast-v0.5.15-build4.5-FAIR-PLAY-QA-unsigned.ipa Payload)
           python3 Tools/verify_audio_build2.py \
-            --ipa dist/Berry-Berry-Blast-v0.5.14-build4.4-BOUTIQUE-TOOLS-QA-unsigned.ipa
-          unzip -t dist/Berry-Berry-Blast-v0.5.14-build4.4-BOUTIQUE-TOOLS-QA-unsigned.ipa | tail -2
+            --ipa dist/Berry-Berry-Blast-v0.5.15-build4.5-FAIR-PLAY-QA-unsigned.ipa
+          unzip -t dist/Berry-Berry-Blast-v0.5.15-build4.5-FAIR-PLAY-QA-unsigned.ipa | tail -2
           python3 - <<'PY'
           import zipfile,plistlib
-          filename='dist/Berry-Berry-Blast-v0.5.14-build4.4-BOUTIQUE-TOOLS-QA-unsigned.ipa'
+          filename='dist/Berry-Berry-Blast-v0.5.15-build4.5-FAIR-PLAY-QA-unsigned.ipa'
           with zipfile.ZipFile(filename) as z:
               assert 'Payload/BerryBlockBlast.app/Assets.car' in z.namelist()
               info=plistlib.loads(z.read('Payload/BerryBlockBlast.app/Info.plist'))
-              assert info['CFBundleShortVersionString']=='0.5.14'
-              assert info['CFBundleVersion']=='44'
+              assert info['CFBundleShortVersionString']=='0.5.15'
+              assert info['CFBundleVersion']=='45'
               assert info.get('MinimumOSVersion','16.0')=='16.0'
           print('Simulator QA passed. Still requires physical-device signoff.')
           PY
-          echo '0.5.14 Build 4.4 BOUTIQUE + TOOLS QA. Board Studio and Special Tools need physical iPhone signoff. NOT a public release.' \
+          echo '0.5.15 Build 4.5 FAIR PLAY LAB. Read-only analytics and seeded CI require changed-area physical QA. NOT a public release.' \
             > dist/HARDWARE-SIGNOFF-REQUIRED.txt
       - name: Upload candidate only, never auto-publish release
         uses: actions/upload-artifact@v4
         with:
-          name: Berry-0514-Build4.4-BOUTIQUE-TOOLS-QA-UNSIGNED-IPA
+          name: Berry-0515-Build4.5-FAIR-PLAY-QA-UNSIGNED-IPA
           path: |
-            StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-v0.5.14-build4.4-BOUTIQUE-TOOLS-QA-unsigned.ipa
+            StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-v0.5.15-build4.5-FAIR-PLAY-QA-unsigned.ipa
             StrawberryShortcakeBlockBlast/dist/HARDWARE-SIGNOFF-REQUIRED.txt
           retention-days: 14
