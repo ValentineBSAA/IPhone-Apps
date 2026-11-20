@@ -99,8 +99,13 @@ enum LogCategory: String, CaseIterable, Identifiable {
     case bloodPressure
     case journal
     case checkIn
+    case hydration
+    case medications
+    case sleep
+    case posture
 
     var id: String { rawValue }
+    var isExtended: Bool { [.hydration, .medications, .sleep, .posture].contains(self) }
     var title: String {
         switch self {
         case .symptom: return "Symptoms"
@@ -108,6 +113,10 @@ enum LogCategory: String, CaseIterable, Identifiable {
         case .bloodPressure: return "Blood Pressure"
         case .journal: return "Journal"
         case .checkIn: return "Daily Check-In"
+        case .hydration: return "Hydration"
+        case .medications: return "Medications"
+        case .sleep: return "Sleep & Rest"
+        case .posture: return "Posture"
         }
     }
     var symbol: String {
@@ -117,6 +126,10 @@ enum LogCategory: String, CaseIterable, Identifiable {
         case .bloodPressure: return "waveform.path.ecg"
         case .journal: return "book.closed.fill"
         case .checkIn: return "heart.text.square.fill"
+        case .hydration: return "drop.fill"
+        case .medications: return "pills.fill"
+        case .sleep: return "moon.stars.fill"
+        case .posture: return "figure.stand"
         }
     }
 }
@@ -132,6 +145,14 @@ enum EntryFormat {
             return entry.severity < 0 ? "Symptom logged" : "Severity \(entry.severity)/10"
         case LogCategory.checkIn.rawValue:
             return "How I felt"
+        case LogCategory.hydration.rawValue:
+            return "\(entry.firstValue) mL" + (entry.secondValue > 0 ? " · \(entry.secondValue) mg sodium" : "")
+        case LogCategory.medications.rawValue:
+            return entry.posture.isEmpty ? "Medication noted" : entry.posture
+        case LogCategory.sleep.rawValue:
+            return "\(entry.firstValue) minutes"
+        case LogCategory.posture.rawValue:
+            return entry.posture.isEmpty ? "Position observed" : entry.posture
         default:
             return entry.notes.isEmpty ? "Journal entry" : entry.notes
         }
