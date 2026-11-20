@@ -1,5 +1,5 @@
 # Premium-quality Features, Free Forever: POTS Tracker Research & Roadmap
-**Research snapshot:** November 19, 2026 | **Status:** specification, not implemented.
+**Research snapshot:** November 19, 2026 | **Status:** original specification; see v0.2.4 implementation update below.
 **Audience:** an iPhone user tracking POTS symptoms with manual entries; **no Apple Watch** or required peripherals.
 **Product goal:** the useful capabilities other apps sometimes sell as Premium/Pro, without subscriptions, advertising, tracking accounts or any paid tier.
 
@@ -103,3 +103,14 @@ Clinical / platform references:
 Expected delivery order: **B1 functional manual logging -> B2 full condition tracking -> B3 free premium reporting / backup -> B4 advanced observational insights / polish**. Each build needs regression checks and an honest test matrix.
 
 The family member's health specifics are not necessary to start development; keep later preference requests optional and private.
+
+
+## Implementation update • v0.2.4 (2026-11-20)
+
+**Implemented and tested in development branch** (GitHub Actions [run 44717465530](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44717465530)): the original 12 custom-artwork feature destinations, local Core Data entries, editable History, Journal Lock, optional Camera Pulse beta, hydration, medication, sleep/rest and posture observation trackers, month/year calendar, 7/30/90/365-day and lifetime reports, local reminder schedules with quiet hours, optional iOS notifications, and user-triggered PDF/CSV/JSON export with validated duplicate-safe JSON import. All preserve iOS 16 and remain free, offline-first, with no Watch or Apple Health.
+
+**Physical iPhone acceptance remains outstanding** for all new features, including backup file creation, preview, restore round-trip, real notification delivery, accessibility and long-range reports. Review [UX_V024.md](UX_V024.md) before declaring the update production-ready.
+
+**Deferred and not secretly simulated:** encrypted/passphrase backups; custom tracker schema; body-map, widgets, arbitrary event categories; clinician appointment templates; full unit-selector/salt conversions beyond correctly labeled mL/mg inputs; notification snooze; factor correlations; medication dosing targets or automatic adherence; emergency detection or clinical recommendations.
+
+Original P0/P1/P2 checkboxes are the full specification, not an assertion that every advanced acceptance criterion has passed.
