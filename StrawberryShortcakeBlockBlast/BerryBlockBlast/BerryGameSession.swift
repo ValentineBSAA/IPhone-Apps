@@ -220,8 +220,7 @@ final class BerryGameSession: ObservableObject {
         let existing = defaults.data(forKey: key).flatMap {
             try? JSONDecoder().decode(Inventory.self, from: $0)
         }
-        var inventory = existing ?? Inventory(berries: 0, undos: 2,
-                                              shuffles: 2, totalEarnedBerries: 0, hints: 0)
+        guard var inventory = existing else { return nil }
         guard inventory.berries >= 0,
               amount <= Int.max - inventory.berries else { return nil }
         let before = inventory.berries
