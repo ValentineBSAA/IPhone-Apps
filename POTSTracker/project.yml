@@ -18,15 +18,13 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.potstracker
-        MARKETING_VERSION: "0.1.9"
+        MARKETING_VERSION: "0.2.0"
         CURRENT_PROJECT_VERSION: "3"
         PRODUCT_NAME: POTSTracker
         GENERATE_INFOPLIST_FILE: "YES"
         INFOPLIST_KEY_CFBundleDisplayName: "POTS & Posies"
         INFOPLIST_KEY_NSCameraUsageDescription: "POTS & Posies uses the rear camera and flashlight only when you start an experimental fingertip pulse check. Frames stay on the iPhone and are never saved or uploaded."
         INFOPLIST_KEY_NSFaceIDUsageDescription: "POTS & Posies uses Face ID to unlock private Journal entries when you enable Journal Lock."
-        INFOPLIST_KEY_NSHealthShareUsageDescription: "POTS & Posies can read your steps, walking distance, and flights climbed from Apple Health when you choose to connect it. No data is uploaded."
-        CODE_SIGN_ENTITLEMENTS: POTSTracker.entitlements
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: "YES"
         INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
         INFOPLIST_KEY_UIRequiresFullScreen: "NO"
