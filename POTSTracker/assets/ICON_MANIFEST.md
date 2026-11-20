@@ -4,7 +4,7 @@ The 13-image art set is a matched glossy, multi-color collection of **1024 × 10
 
 | Source file | Feature | Colors |
 |---|---|---|
-| 00_App_Icon.png | Home Screen app icon | aqua/cyan |
+| 00_App_Icon.png | Home Screen app icon | pink blossom / white heart ECG |
 | 01_Heart_Rate.png | Heart rate | coral pink |
 | 02_Blood_Pressure.png | Blood pressure | blue |
 | 03_Symptoms.png | Symptoms | amber/orange |
@@ -27,6 +27,8 @@ Destination: `POTSTracker/Resources/Icons/`.
 Import command: `python3 POTSTracker/tools/import_icons.py POTS_13_Color_Matched_Icons.zip --repo-root .`
 
 For the actual Home Screen icon, remove any manually rounded black edges/padding before placing it in the native AppIcon asset set; iOS performs its own masking.
+
+The new **POTS & Posies** Home Screen artwork is stored in `Resources/Icons/POTS_Posies_App_Icon.webp.b64` and rendered to an opaque 1024px PNG by `tools/prepare_assets.py`. The original twelve feature icons remain unchanged. The legacy icon source PNG is preserved for rollback.
 
 ## Verified import
 
