@@ -116,6 +116,17 @@ struct BerryEngine: Codable {
         cozyPieces = cozy
         refill()
     }
+    /// Deterministic, test-only multi-size constructor. Live initializers and
+    /// persistent engine state are unchanged.
+    init(side: Int, hard: Bool = false, cozy: Bool = false, seed: UInt64) {
+        precondition(side == 8 || side == 12 || side == 24)
+        self.side = side
+        self.hardPieces = hard
+        self.cozyPieces = cozy
+        self.randomState = seed == 0 ? 0x9E3779B97F4A7C15 : seed
+        board = Array(repeating: Array(repeating: nil, count: side), count: side)
+        refill()
+    }
     init(seed: UInt64) {
         randomState = seed == 0 ? 0x9E3779B97F4A7C15 : seed
         refill()
