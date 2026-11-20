@@ -11,7 +11,7 @@ final class CameraPulseReader: NSObject, ObservableObject, AVCaptureVideoDataOut
     @Published private(set) var progress = 0.0
     @Published private(set) var resultBPM: Int?
     @Published private(set) var status = "Ready for a short fingertip check."
-    @Published private(set) var errorText: String?
+    @Published var errorText: String?
 
     private struct Sample {
         let time: Double
