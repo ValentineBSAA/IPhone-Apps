@@ -422,6 +422,25 @@ struct PosiesDataManagementView: View {
 }
 
 
+/// The preview words and primary action are the same in both themes,
+/// and do not mistake matching record IDs for verified byte-for-byte matches.
+enum PosiesRestoreCopy {
+    static func heading(newCount: Int) -> String {
+        newCount == 0 ? "You're all caught up!" : "Let's bring your notes back"
+    }
+
+    static func detail(existingCount: Int, newCount: Int) -> String {
+        if newCount == 0 {
+            return "All \(existingCount) \(existingCount == 1 ? "entry in this backup is" : "entries in this backup are") already on your iPhone. Nothing new needs to be added."
+        }
+        return "\(newCount) new \(newCount == 1 ? "entry is" : "entries are") ready to restore. \(existingCount) \(existingCount == 1 ? "entry is" : "entries are") already here and won't be duplicated."
+    }
+
+    static func button(newCount: Int) -> String {
+        newCount == 0 ? "All done" : "Restore \(newCount) \(newCount == 1 ? "entry" : "entries")"
+    }
+}
+
 /// Calm, readable backup preview. It never offers an inert "Restore 0" action.
 private struct PosiesRestorePreviewSheet: View {
     let existingCount: Int
@@ -443,12 +462,10 @@ private struct PosiesRestorePreviewSheet: View {
                     Spacer()
                 }
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(allHere ? "You're all caught up!" : "Let's bring your notes back")
+                    Text(PosiesRestoreCopy.heading(newCount: newCount))
                         .font(.title2.bold())
                         .foregroundStyle(.primary)
-                    Text(allHere
-                         ? "This backup doesn't have any new entries to add. Your notes already on this iPhone will stay just as they are."
-                         : "\(newCount) new \(newCount == 1 ? "entry is" : "entries are") ready to restore. \(existingCount) \(existingCount == 1 ? "entry is" : "entries are") already here and won't be duplicated.")
+                    Text(PosiesRestoreCopy.detail(existingCount: existingCount, newCount: newCount))
                         .font(.body)
                         .foregroundStyle(Color.potsSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -469,7 +486,7 @@ private struct PosiesRestorePreviewSheet: View {
                 Button {
                     if allHere { onDone() } else { onRestore() }
                 } label: {
-                    Text(allHere ? "All done" : "Restore \(newCount) \(newCount == 1 ? "entry" : "entries")")
+                    Text(PosiesRestoreCopy.button(newCount: newCount))
                         .font(.headline)
                         .frame(maxWidth: .infinity, minHeight: 52)
                 }
