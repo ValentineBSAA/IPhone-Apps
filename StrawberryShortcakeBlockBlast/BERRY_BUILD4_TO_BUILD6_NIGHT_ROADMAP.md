@@ -5,7 +5,7 @@
 
 **Owner-approved strategy:** Stage the premium night identity across **Build 4.7 (Night Foundation + Gameplay)** and **Build 4.8 (Full Parity + Strawberry Spectacle)**. Keep **Build 5** (progression and feedback) and **Build 6** (real Moonberry economy) independent. Do not stuff all cosmetic work into already-compiled Build 4.6 or break its baseline.
 
-**Issue index:** [Night Garden umbrella #23](https://github.com/ValentineBSAA/IPhone-Apps/issues/23) · [S1 asset ledger #24](https://github.com/ValentineBSAA/IPhone-Apps/issues/24) · [S2 themed clocks #25](https://github.com/ValentineBSAA/IPhone-Apps/issues/25) · [S3 gameplay night parity #26](https://github.com/ValentineBSAA/IPhone-Apps/issues/26) · [S4 Home & menus #27](https://github.com/ValentineBSAA/IPhone-Apps/issues/27) · [S5 Boutique & tools #28](https://github.com/ValentineBSAA/IPhone-Apps/issues/28) · [S6 strawberry fireworks #29](https://github.com/ValentineBSAA/IPhone-Apps/issues/29) · [S7 test & release QA #30](https://github.com/ValentineBSAA/IPhone-Apps/issues/30).
+**Issue index:** [Night Garden umbrella #23](https://github.com/ValentineBSAA/IPhone-Apps/issues/23) · [S1 asset ledger #24](https://github.com/ValentineBSAA/IPhone-Apps/issues/24) · [S2 themed clocks #25](https://github.com/ValentineBSAA/IPhone-Apps/issues/25) · [S3 gameplay night parity #26](https://github.com/ValentineBSAA/IPhone-Apps/issues/26) · [S3B premium Nighttime Blocks #32](https://github.com/ValentineBSAA/IPhone-Apps/issues/32) · [S4 Home & menus #27](https://github.com/ValentineBSAA/IPhone-Apps/issues/27) · [S5 Boutique & tools #28](https://github.com/ValentineBSAA/IPhone-Apps/issues/28) · [S6 strawberry fireworks #29](https://github.com/ValentineBSAA/IPhone-Apps/issues/29) · [S7 test & release QA #30](https://github.com/ValentineBSAA/IPhone-Apps/issues/30).
 
 ## 1. Baselines, what is complete and what is not
 
@@ -96,6 +96,7 @@ Do not mark a group green if ANY visible active state is mismatched. Capture **d
 | **Gameplay top toolbar** | Pause, Home/Return, Settings, Help; day/night selected/pressed, badge sizes, safe tap targets | P0 |
 | **Gameplay bottom toolbar** | Undo, Shuffle, Hint, Stats, Tools, Boutique; charge badges and zero/disabled/locked states; **true Night Undo** art, not `Night_Rotate` unless separately approved | P0 |
 | **Gameplay board/HUD** | Score, Best, Combo, story chapter objective, sector/patch, lines/moves, wallet, game-mode label, tray piece cards, used checkmarks, preview/ghost, colored empty/filled cells, corner flourishes; Original vs Blossom Glass frame, selected cosmetics and 8/12/24 geometry | P0 |
+| **Nighttime Blocks (dedicated S3B)** | Night versions for **every occupied block/tint** and equipped cosmetic (not only `Night_Tile_Empty` and `Night_Tile_Pink`), drag pieces, tray/used states and landing overlay, preserving owned skins and daytime values; owner-approved moonlit materials | P0 |
 | **Settings tiles** | Gameplay, Block Appearance, Audio, Celebrations, Accessibility, Data & Restore; full subpage back/Done, toggles, labels, buttons and header treatment | P1 |
 | **Boutique & helper/tool screens** | Extra Undo, Extra Shuffle, Berry Hint, Golden Trowel, Ribbon Twister, Starberry Seed, Golden Strawberry, Picnic Pantry, Berry Spyglass; wallet, prices, item cards, board studio, shop sections, permanent upgrades, notices, disabled states | P1 |
 | **Other player screens** | Stats, Help, School/onboarding, Village, Cottage, Daily/Quests, Journal, Streak, Almanac, Collections/Trophies, Jukebox, results, unlock banners and any sheets/cards not pictured | P1 |
@@ -130,6 +131,19 @@ Do not mark a group green if ANY visible active state is mismatched. Capture **d
 - [ ] Preserve 92% safe width and exact board touch geometry, Story/Endless sectors/patches, original/Blossom surfaces, selectable skins, oversized piece placement followed by approved shrink/bounce.
 - [ ] Verify 8/12/24 and corner/edge hits, selected/disabled/consumed state, game navigation, Reduced Motion, screenshot pairs, saved state.
 - [ ] **Build 4.7 QA gate:** source/icon/geometry preflight → dedicated 16e smoke → full XCTest → screenshots → unsigned IPA → focused real-device owner approval; no premature nightly full-test loop.
+
+### S3B: **Premium Nighttime Blocks**, [issue #32](https://github.com/ValentineBSAA/IPhone-Apps/issues/32) • Build 4.7
+
+**New independently approved step between gameplay/HUD S3 and Home/menus S4.** The owner wants nighttime **playable block tiles and tray pieces**, not just night backgrounds, boards and icons. Nighttime should give each block color and equipped cosmetic an intentional moonlit look while preserving exact game rules.
+
+- [ ] Review the already-imported `Night_Tile_Empty`, `Night_Tile_Green`, `Night_Tile_Pink`, `Night_Tile_Purple`, `Night_Tile_Sparkle`, `Night_Tile_Strawberry`, `Night_Tile_Teal`, `Night_Tile_Yellow` images individually. Source code currently uses `Night_Tile_Empty` for empty cells and `Night_Tile_Pink` only in one `BerryTile` path; **most occupied blocks are not fully routed to a unified night art system**.
+- [ ] Owner approves a **premium night block family**: moonlit strawberry/glass-candy materials, rich but distinguishable berry-red, blueberry-violet, sapphire-blue, mint/teal, leaf-green, golden-yellow with subtle moonlit highlights. Preserve readability and original daytime block silhouettes; avoid simply making everything purple.
+- [ ] Design separate nighttime appearances for **occupied blocks, empty cells, drag ghosts, selected pieces, tray piece cards, successful shrink/bounce placement, preview/invalid highlights and used-tray checkmarks**. Keep all 8×8/12×12/24×24 exact cell geometry and exterior Blossom rim.
+- [ ] Cover **every currently owned cosmetic block skin** and trophy cosmetic variant: day/night remix or an **explicitly owner-approved intentionally shared** image. Never unequip or overwrite bought skins, purchase history, wallet, saved boards or random tint/mode semantics when clock changes.
+- [ ] Centralize asset selection in `BerryTile` / theme resolver; test all six color indices, Classic/Endless/Story/Daily/Cozy/Blitz/Nightmare and both board frames. **Strawberry Nightmare mode is not synonymous with nighttime.**
+- [ ] Update [night asset parity register](NIGHT_ASSET_PARITY_MATRIX.md) with exact loaded asset, existing sprites, missing approved imagery, source consumers, screenshot pair and approval state.
+- [ ] Cheap asset-route/geometry preflight → iPhone 16e smoke → comprehensive regression → real iPhone 16e screenshots/video. Check contrast, Reduce Motion, rapid taps, color differentiation, performance and user approval before declaring completion.
+- [ ] Use staged art approval **before** replacement. Existing night tiles are imported, not necessarily owner-approved in current gameplay. **No Build 4.6 code changed by planning.**
 
 ### S4: Home, menus and Settings parity, [issue #27](https://github.com/ValentineBSAA/IPhone-Apps/issues/27) • Build 4.8
 - [ ] Approve and integrate **larger** Home icons in the two-column grids; include all 14 named Home cards and top hero/wallet/banner accents.
