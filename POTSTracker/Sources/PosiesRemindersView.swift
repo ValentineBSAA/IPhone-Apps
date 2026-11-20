@@ -49,7 +49,7 @@ enum PosiesNotificationScheduler {
                         content.title = "POTS & Posies"
                         content.body = "A gentle reminder is ready whenever you are."
                         content.sound = .default
-                        let components = DateComponents(weekday: day, hour: rule.hour, minute: rule.minute)
+                        let components = DateComponents(hour: rule.hour, minute: rule.minute, weekday: day)
                         let request = UNNotificationRequest(
                             identifier: prefix + rule.id.uuidString + "-\(day)",
                             content: content,
