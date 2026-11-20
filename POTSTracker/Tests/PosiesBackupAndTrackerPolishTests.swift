@@ -2,6 +2,24 @@ import XCTest
 @testable import POTSTracker
 
 final class PosiesBackupAndTrackerPolishTests: XCTestCase {
+    func testBackupAlreadyPresentIsReassuringAndDoesNotOfferRestoreZero() {
+        XCTAssertEqual(PosiesRestoreCopy.heading(newCount: 0), "You're all caught up!")
+        XCTAssertEqual(PosiesRestoreCopy.button(newCount: 0), "All done")
+        XCTAssertTrue(PosiesRestoreCopy.detail(existingCount: 4, newCount: 0)
+            .contains("already on your iPhone"))
+        XCTAssertFalse(PosiesRestoreCopy.detail(existingCount: 4, newCount: 0)
+            .contains("overwritten"))
+    }
+
+    func testBackupWithNewItemsUsesClearRestoreActionAndPluralization() {
+        XCTAssertEqual(PosiesRestoreCopy.button(newCount: 1), "Restore 1 entry")
+        XCTAssertEqual(PosiesRestoreCopy.button(newCount: 3), "Restore 3 entries")
+        XCTAssertTrue(PosiesRestoreCopy.detail(existingCount: 4, newCount: 1)
+            .contains("1 new entry is ready to restore"))
+        XCTAssertTrue(PosiesRestoreCopy.detail(existingCount: 1, newCount: 3)
+            .contains("1 entry is already here"))
+    }
+
     func testSaveBackupNoLongerSilentlyDisablesWhenJournalLocked() {
         XCTAssertEqual(PosiesManualBackupAccess.evaluate(
             recordCount: 3, lockEnabled: true, unlocked: false), .needsUnlock)
