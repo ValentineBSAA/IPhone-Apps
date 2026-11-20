@@ -7,16 +7,21 @@ import LocalAuthentication
 final class JournalAccess: ObservableObject {
     static let shared = JournalAccess()
     @Published private(set) var unlocked = false
+    private var authGeneration = 0
     private init() {}
 
     var isAvailable: Bool {
         LAContext().canEvaluatePolicy(.deviceOwnerAuthentication, error: nil)
     }
 
-    func lock() { unlocked = false }
+    func lock() {
+        authGeneration += 1
+        unlocked = false
+    }
 
     func authenticate(reason: String, completion: @escaping (Bool, String?) -> Void) {
         let context = LAContext()
+        let requestGeneration = authGeneration
         var error: NSError?
         guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
             completion(false, "Set up an iPhone passcode in Settings to use Journal Lock.")
@@ -24,6 +29,10 @@ final class JournalAccess: ObservableObject {
         }
         context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, failure in
             DispatchQueue.main.async {
+                guard self.authGeneration == requestGeneration else {
+                    completion(false, "Authentication was interrupted. Please try again.")
+                    return
+                }
                 if success { self.unlocked = true }
                 completion(success, success ? nil : (failure?.localizedDescription ?? "Authentication was canceled."))
             }
@@ -36,9 +45,10 @@ final class JournalAccess: ObservableObject {
 /// cancels Face ID / passcode, return to the previous screen with no private UI.
 struct JournalProtected<Content: View>: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage("journalLockEnabled") private var enabled = false
     @ObservedObject private var access = JournalAccess.shared
-    @State private var requested = false
+    @State private var pendingAttempt: UUID?
     let content: Content
 
     init(@ViewBuilder content: () -> Content) {
@@ -55,25 +65,43 @@ struct JournalProtected<Content: View>: View {
                     Text("Unlocking private Journal…")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                    Button("Back") {
+                        pendingAttempt = nil
+                        dismiss()
+                    }
+                    .font(.subheadline.weight(.semibold))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .accessibilityLabel("Authenticating private Journal")
+                .accessibilityLabel("Journal locked. Authentication required.")
             }
         }
         .background(Color.potsBackground.ignoresSafeArea())
         .onAppear { authenticateIfNeeded() }
+        .onChange(of: scenePhase) { phase in
+            if phase == .background {
+                pendingAttempt = nil
+                access.lock()
+            } else if phase == .active {
+                authenticateIfNeeded()
+            }
+        }
         .onChange(of: enabled) { _ in authenticateIfNeeded() }
-        .onDisappear { access.lock() }
+        .onDisappear {
+            pendingAttempt = nil
+            access.lock()
+        }
     }
 
     private func authenticateIfNeeded() {
-        guard enabled && !access.unlocked && !requested else { return }
-        requested = true
-        access.authenticate(reason: "Open your private POTS & Posies Journal") { success, _ in
-            if !success {
-                // Cancel/failed authentication never exposes private records.
-                dismiss()
-            }
+        guard enabled && !access.unlocked && pendingAttempt == nil && scenePhase == .active else { return }
+        let request = UUID()
+        pendingAttempt = request
+        access.authenticate(reason: "Open your private Journal") { success, _ in
+            // Ignore obsolete replies from a Face ID prompt interrupted while backgrounding.
+            guard pendingAttempt == request else { return }
+            pendingAttempt = nil
+            guard scenePhase == .active else { return }
+            if !success { dismiss() }
         }
     }
 }
