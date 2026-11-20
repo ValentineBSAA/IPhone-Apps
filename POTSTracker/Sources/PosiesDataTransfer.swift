@@ -38,12 +38,22 @@ struct PosiesPortableRecord: Codable, Identifiable, Equatable {
         case .heartRate: return "\(firstValue) bpm" + (posture.isEmpty ? "" : " · \(posture)")
         case .bloodPressure: return "\(firstValue)/\(secondValue) mmHg"
         case .symptom: return severity >= 0 ? "Severity \(severity)/10" : "No severity rating"
-        case .hydration: return "\(firstValue) mL" + (secondValue > 0 ? " · \(secondValue) mg sodium" : "")
+        case .hydration:
+            let tags = PosiesEntryExtras.read(source).tags ?? []
+            return "\(firstValue) mL" + (secondValue > 0 ? " · \(secondValue) mg sodium" : "") +
+                (tags.isEmpty ? "" : " · \(tags.prefix(2).joined(separator: ", "))")
         case .medications:
-            let dose = PosiesEntryExtras.read(source).dose
-            return posture + (dose.isEmpty ? "" : " · \(dose)")
-        case .sleep: return "\(firstValue) minutes" + (posture.isEmpty ? "" : " · \(posture)")
-        case .posture: return posture + (firstValue > 0 ? " · \(firstValue) bpm" : "")
+            let extras = PosiesEntryExtras.read(source)
+            return posture + (extras.dose.isEmpty ? "" : " · \(extras.dose)") +
+                (extras.tags?.isEmpty == false ? " · \(extras.tags!.prefix(2).joined(separator: ", "))" : "")
+        case .sleep:
+            let recovery = PosiesEntryExtras.read(source).recovery ?? ""
+            return "\(firstValue) minutes" + (posture.isEmpty ? "" : " · \(posture)") +
+                (recovery.isEmpty ? "" : " · \(recovery)")
+        case .posture:
+            let tags = PosiesEntryExtras.read(source).tags ?? []
+            return posture + (firstValue > 0 ? " · \(firstValue) bpm" : "") +
+                (tags.isEmpty ? "" : " · \(tags.prefix(2).joined(separator: ", "))")
         case .checkIn: return CheckInFormat.feeling(title: title, posture: posture) ?? "Check-in"
         case .journal, .none: return "Journal note"
         }
