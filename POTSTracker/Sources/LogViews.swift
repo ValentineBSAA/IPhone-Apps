@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreData
+import UIKit
 
 struct EntryEditor: View {
     @Environment(\.managedObjectContext) private var context
@@ -318,11 +319,11 @@ struct EntryEditor: View {
 
     private func saveEntry() {
         guard !saveInProgress else { return }
-        saveInProgress = true
         guard valid else {
             saveError = "Enter a valid measurement or note."
             return
         }
+        saveInProgress = true
         let entry = editing ?? POTSLogEntry(context: context)
         if editing == nil { entry.id = UUID() }
         entry.category = category.rawValue
