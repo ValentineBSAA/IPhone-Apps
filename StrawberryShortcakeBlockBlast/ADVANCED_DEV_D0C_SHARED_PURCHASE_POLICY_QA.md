@@ -13,7 +13,7 @@ D0b's mock wallet tests were useful but did **not** prove the real in-game purch
 - [x] Updated the D0b `BerryQAIsolatedWallet` to invoke the **identical** shared reducer for mocked purchase and charge use. It still mutates only in-memory sandbox state, never production `UserDefaults`.
 - [x] Added 10 `BerryStandardToolTransactionTests`: all three exact prices, all three one-short prices, invalid and negative inputs, charge overflow, count preservation, consumption only on valid action, QA parity.
 - [x] Existing 6 D0 and 11 D0b tests remain selected in the new named iPhone 16e CI workflow; the existing `BerryEconomyTests` are also included.
-- [ ] [D0c CI workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0c-shared-tools-iphone16e.yml): verify actual terminal successful iPhone 16e regression log and Release sandbox exclusion; don't mark pass based on commit presence.
+- [x] [D0c Actions #44865715817](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44865715817) **SUCCESS**, named iPhone 16e, **31/31 selected XCTests passed, zero failures**; Release compile excluded internal QA panels. Source/art/audio checks and no-IPA gate also passed.
 - [ ] Real-device owner tests and complete shop/ledger/save-disk adapter injection remain separate gating work.
 
 ## Exact behavior parity
@@ -39,3 +39,11 @@ No image generation, new currency, new developer cheats, GameCenter changes, mod
 - [ ] Run the existing Build 4.5 blocked-charge regression and recheck any completed tool behaviors, no full-length scoring grind required.
 
 **Status discipline:** A green simulator proves selected code rules; it does not authorize merge, IPA, physical acceptance, or every planned Developer Garden scenario.
+
+
+## Final automated regression evidence · November 20, 2026 (Arizona)
+- [x] [GitHub Actions run #44865715817](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44865715817) terminal **SUCCESS**; actual job log reports `** TEST SUCCEEDED **`.
+- [x] Four suites: `BerryDeveloperSandboxTests` **6/6**, `BerryDeveloperStateLabTests` **11/11**, `BerryStandardToolTransactionTests` **10/10**, and `BerryEconomyTests` **4/4**. Combined **31/31, zero failures**.
+- [x] Named iPhone 16e simulator; Release compilation passed and internal QA panels/wallet omitted; normal artwork/audio integrity and no-IPA gates passed.
+- [x] Ten new tests exercise the identical pure decision policy invoked by the actual Undo, Shuffle and Hint purchase/Hint charge methods, not a separate mock implementation.
+- [ ] **Physical owner iPhone 16e review** and **isolated end-to-end real ledger/inventory/persistence adapters** pending. Do not mark full checkout success, PR merge or IPA release from these selected tests.
