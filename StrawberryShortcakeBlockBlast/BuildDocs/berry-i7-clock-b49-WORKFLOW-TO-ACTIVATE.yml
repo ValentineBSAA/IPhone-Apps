@@ -23,7 +23,7 @@ jobs:
       run:
         working-directory: StrawberryShortcakeBlockBlast
     steps:
-      - name: Checkout I6 fully integrated native and safety candidate
+      - name: Checkout I7 fully integrated native and safety candidate
         uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -182,7 +182,7 @@ jobs:
         run: |
           set -euo pipefail
           if find . -type f -name '*.ipa' -print -quit | grep -q .; then
-            echo 'Unexpected IPA: I6 is test-only' >&2
+            echo 'Unexpected IPA: I7 is test-only' >&2
             exit 1
           fi
           echo 'No IPA, signing, publication or player data export.'
@@ -217,14 +217,14 @@ jobs:
           APP=".build/I7-Version49-Clock-Unsigned/Build/Products/Release-iphoneos/BerryBlockBlast.app"
           mkdir -p dist/Payload
           cp -R "$APP" dist/Payload/
-          IPA="dist/Berry-Berry-Blast-I6-v0.5.16-B49-CLOCK-ART-QA-UNSIGNED-PRIVATE-TEST.ipa"
+          IPA="dist/Berry-Berry-Blast-I7-v0.5.16-B49-CLOCK-ART-QA-UNSIGNED-PRIVATE-TEST.ipa"
           (cd dist && zip -qry "$(basename "$IPA")" Payload)
           unzip -t "$IPA" | tail -2
           python3 Tools/verify_audio_build2.py --ipa "$IPA"
           python3 - <<'PY'
           from pathlib import Path
           import hashlib, plistlib, zipfile
-          ipa = Path("dist/Berry-Berry-Blast-I6-v0.5.16-B49-CLOCK-ART-QA-UNSIGNED-PRIVATE-TEST.ipa")
+          ipa = Path("dist/Berry-Berry-Blast-I7-v0.5.16-B49-CLOCK-ART-QA-UNSIGNED-PRIVATE-TEST.ipa")
           with zipfile.ZipFile(ipa) as z:
               names = set(z.namelist())
               prefix = "Payload/BerryBlockBlast.app/"
@@ -277,9 +277,9 @@ jobs:
       - name: Upload actual PIN-accessible private device QA IPA and short check sheet
         uses: actions/upload-artifact@v4
         with:
-          name: Berry-Berry-Blast-I6-v0.5.16-B49-CLOCK-ART-QA-PRIVATE-IPA
+          name: Berry-Berry-Blast-I7-v0.5.16-B49-CLOCK-ART-QA-PRIVATE-IPA
           path: |
-            StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-I6-v0.5.16-B49-CLOCK-ART-QA-UNSIGNED-PRIVATE-TEST.ipa
+            StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-I7-v0.5.16-B49-CLOCK-ART-QA-UNSIGNED-PRIVATE-TEST.ipa
             StrawberryShortcakeBlockBlast/dist/IPA-SHA256.txt
             StrawberryShortcakeBlockBlast/dist/START-HERE-BEFORE-INSTALL.txt
           retention-days: 14
