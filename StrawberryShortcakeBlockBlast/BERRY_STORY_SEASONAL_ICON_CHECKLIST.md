@@ -25,8 +25,8 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 | BS-04 | Christmas | Night | Moonlit Christmas open storybook, sapphire sky, glowing star, snowy trees, fairy lights | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
 | BS-05 | Thanksgiving | Day | Warm harvest storybook, pie, maple leaves, cinnamon-gold chapter star | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/background QA pending | ⬜ source archive pending | ⬜ |
 | BS-06 | Thanksgiving | Night | Candlelit plum and amber storybook, pumpkin, moon and leaves | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/background QA pending | ⬜ source archive pending | ⬜ |
-| BS-07 | Birthday | Day | Open strawberry storybook, cake, balloons, gifts and golden chapter star | 🟡 GENERATED | ⬜ AWAITING OWNER | ⚠ visible checkerboard; true RGBA/background cleanup pending | ⬜ source archive pending | ⬜ |
-| BS-08 | Birthday | Night | Lavender birthday storybook with candlelight, confetti, midnight stars | ⬜ | ⬜ | ⬜ | ⬜ |
+| BS-07 | Birthday | Day | Open strawberry storybook, cake, balloons, gifts and golden chapter star | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ checkerboard transparency QA pending | ⬜ source archive pending | ⬜ |
+| BS-08 | Birthday | Night | Lavender birthday storybook with candlelight, confetti, midnight stars | ⬜ NEXT: generate one original | ⬜ awaiting owner review | ⬜ | ⬜ | ⬜ |
 
 ### Review gates / packaging
 - [x] Verified GitHub master icon taxonomy: Berry Story = family #02; app Home source points to `BerryStory` and dynamic chapter status.
@@ -134,3 +134,12 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 - [ ] Source image binary remains outside GitHub until packaged and imported with verified hashes.
 
 **Current Berry Story tally: 7/8 generated, 6/8 owner-approved.**
+
+
+## Birthday Day owner acceptance, Birthday Night next
+- [x] BS-07 Birthday Day owner visual approval: open strawberry chapter book, sparkling gold star, pink birthday cake, candles, balloons, gift and pink gingham bow. Freeze accepted original; no destructive overwrite.
+- [ ] NEXT BS-08 Birthday Night: one matching lavender/magenta moonlit open storybook with glowing pages, chapter star, candles, balloons, strawberry birthday cake and celebratory confetti; wait for explicit owner approval.
+- [ ] Birthday Day source contains visible checkerboard; transparency must be inspected, with original preserved and separately staged RGBA candidate, plus small-preview light/dark/actual-alpha QA before any production import.
+- [ ] Once BS-08 approved, package all eight Berry Story originals with provenance and SHA-256, then separate RGBA review, GitHub release import and later Xcode QA. Do not mark these steps complete early.
+
+**Current Berry Story approvals: 7/8, originals generated: 7/8.**
