@@ -30,8 +30,8 @@ Each holiday needs a new, individually illustrated **Day** and **Night** counter
 | C-04 | C-B02 | Halloween | Night | ✅ generated | ✅ OWNER APPROVED | ⚠ true RGBA source; alpha edge QA pending | ⬜ source package pending | ⬜ |
 | C-05 | C-B03 | Christmas | Day | ✅ original generated | ✅ OWNER APPROVED | ⬜ RGBA edge/halo QA pending | ⬜ source package pending | ⬜ |
 | C-06 | C-B03 | Christmas | Night | ✅ original generated | ✅ OWNER APPROVED | ⬜ RGBA edge/halo QA pending | ⬜ source package pending | ⬜ |
-| C-07 | C-B04 | Thanksgiving | Day | ⬜ NEXT: generate one design for review | ⬜ | ⬜ | ⬜ | ⬜ |
-| C-08 | C-B04 | Thanksgiving | Night | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| C-07 | C-B04 | Thanksgiving | Day | ✅ original generated | ✅ OWNER APPROVED | ⬜ RGBA/edge QA pending | ⬜ source package pending | ⬜ |
+| C-08 | C-B04 | Thanksgiving | Night | ⬜ NEXT: generate one original for approval | ⬜ | ⬜ | ⬜ | ⬜ |
 | C-09 | C-B05 | Birthday | Day | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | C-10 | C-B05 | Birthday | Night | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 
@@ -78,3 +78,11 @@ C-03 Halloween Day and C-04 Halloween Night are approved visual designs by owner
 - [ ] **CURRENT NEXT: C-07 Thanksgiving DAY**, using the previously accepted harvest digital plaque as style reference, with separate C-08 NIGHT to follow.
 
 **Overall clock frame visual approvals: 6/10 (Regular Day/Night + Halloween Day/Night + Christmas Day/Night).** Other family stages are independent. Earlier erroneous extra Halloween generations remain excluded.
+
+
+## Thanksgiving checkpoint
+- [x] C-07 Thanksgiving Day original visually approved by owner; autumn gingham, pumpkin, berry pie and blank cream center.
+- [ ] NEXT C-08 Thanksgiving Night: same digital frame geometry and a blank center, with moonlit aubergine/plum and golden harvest highlights; create one independently reviewed original.
+- [ ] Day and Night alpha, exact-original archiving, 64/96px previews, ZIP, GitHub binary staging and iPhone QA remain independent pending steps.
+
+**Current approvals: 7/10. No new Christmas/Halloween images are needed.**
