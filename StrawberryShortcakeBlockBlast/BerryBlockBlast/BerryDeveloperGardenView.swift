@@ -30,6 +30,9 @@ struct BerryDeveloperGardenView: View {
         case build = "Build Information"
         case experimental = "Experimental Features"
         case combo = "Combo Preview"
+        #if BERRY_INTERNAL_QA
+        case sandbox = "Scenario Sandbox"
+        #endif
 
         var id: String { rawValue }
         var icon: String {
@@ -43,6 +46,9 @@ struct BerryDeveloperGardenView: View {
             case .build: return "hammer.fill"
             case .experimental: return "flask.fill"
             case .combo: return "sparkles.rectangle.stack.fill"
+            #if BERRY_INTERNAL_QA
+            case .sandbox: return "square.grid.2x2.fill"
+            #endif
             }
         }
         // Individually approved PNGs are packaged as nine native assets.
@@ -58,6 +64,9 @@ struct BerryDeveloperGardenView: View {
             case .build: return "BBBIconSettings"
             case .experimental: return "Night_Developer_Mode_Strawberry_Lock"
             case .combo: return "Milestone"
+            #if BERRY_INTERNAL_QA
+            case .sandbox: return "BBBIconTools"
+            #endif
             }
         }
         var approvedCandidate: String {
@@ -71,6 +80,9 @@ struct BerryDeveloperGardenView: View {
             case .build: return "Dev_Build_Information_Berry_Blueprint"
             case .experimental: return "Dev_Experimental_Features_Moon_Potion"
             case .combo: return "Dev_Combo_Preview_Fireworks"
+            #if BERRY_INTERNAL_QA
+            case .sandbox: return "Dev_Diagnostics_Strawberry_Pulse"
+            #endif
             }
         }
         var blurb: String {
@@ -84,6 +96,9 @@ struct BerryDeveloperGardenView: View {
             case .build: return "Which app build is installed?"
             case .experimental: return "Which themes are enabled?"
             case .combo: return "Test celebrations without rewards"
+            #if BERRY_INTERNAL_QA
+            case .sandbox: return "Run isolated board fixtures without saves"
+            #endif
             }
         }
         var isPlanned: Bool { self == .notifications }
@@ -92,7 +107,11 @@ struct BerryDeveloperGardenView: View {
         [.qaWallet, .diagnostics, .saves, .combo]
     }
     private var advancedTools: [Tool] {
-        [.economy, .build, .clock, .experimental, .notifications]
+        #if BERRY_INTERNAL_QA
+        return [.sandbox, .economy, .build, .clock, .experimental, .notifications]
+        #else
+        return [.economy, .build, .clock, .experimental, .notifications]
+        #endif
     }
 
     var body: some View {
@@ -282,6 +301,10 @@ struct BerryDeveloperGardenView: View {
     @ViewBuilder
     private func toolDetails(_ tool: Tool) -> some View {
         switch tool {
+        #if BERRY_INTERNAL_QA
+        case .sandbox:
+            BerryDeveloperSandboxPanel()
+        #endif
         case .qaWallet:
             #if BERRY_INTERNAL_QA
             VStack(spacing: 12) {
