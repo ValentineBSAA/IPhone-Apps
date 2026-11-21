@@ -104,6 +104,7 @@ struct PosiesMedicationCabinetView: View {
                 }
                 if PosiesMedicationLibrary.save(copy) {
                     profiles = copy
+                    PosiesCloudBackup.shared.noteRecordSaved()
                 } else {
                     errorText = "We couldn't save that medication profile. Please check the details and try again."
                 }
@@ -118,6 +119,7 @@ struct PosiesMedicationCabinetView: View {
                 let updated = profiles.filter { $0.id != deleting }
                 if PosiesMedicationLibrary.save(updated) {
                     profiles = updated
+                    PosiesCloudBackup.shared.noteRecordSaved()
                 } else {
                     errorText = "We couldn't remove this profile."
                 }
