@@ -3,168 +3,390 @@ import CoreData
 
 private struct PosiesMedicationDraft: Identifiable {
     let id: UUID
-    var profile: PosiesMedicationProfile
+    let profile: PosiesMedicationProfile
     init(_ profile: PosiesMedicationProfile) {
         id = profile.id
         self.profile = profile
     }
 }
 
-/// The cabinet stores the user's own label details, not a medical drug
-/// database and never an inferred dose or an automatically recorded intake.
+/// A compact private cabinet: user-saved information first, a separate
+/// offline lookup for generic/brand names, and no inferred medication intake.
 struct PosiesMedicationCabinetView: View {
     @State private var profiles: [PosiesMedicationProfile] = []
     @State private var editing: PosiesMedicationDraft?
     @State private var deleting: UUID?
     @State private var errorText: String?
+    @State private var showingCatalog = false
+    @State private var pendingCatalogChoice: PosiesMedicationReference?
     @FetchRequest(sortDescriptors: [NSSortDescriptor(key: "recordedAt", ascending: false)])
     private var recordedEvents: FetchedResults<POTSLogEntry>
 
-    private func latestRecordedEvent(for profile: PosiesMedicationProfile) -> POTSLogEntry? {
+    private let columns = [GridItem(.flexible(), spacing: 12),
+                           GridItem(.flexible(), spacing: 12)]
+
+    private func lastEvent(for name: String) -> POTSLogEntry? {
         recordedEvents.first {
             !$0.isDeleted && $0.category == LogCategory.medications.rawValue &&
-            $0.title.localizedCaseInsensitiveCompare(profile.name) == .orderedSame
+            $0.title.compare(name, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
         }
     }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 15) {
-                GlassCard {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Label("My medication cabinet", systemImage: "pills.fill")
-                            .font(.title3.bold()).foregroundStyle(Color.potsTeal)
-                        Text("Save the information from your own medication labels once, so you don't have to keep typing it.")
-                            .font(.subheadline).foregroundStyle(Color.potsSecondary)
-                        Text("Profiles are reference notes. They don't mean a medication was taken, and this app doesn't recommend doses.")
-                            .font(.caption).foregroundStyle(Color.potsSecondary)
-                        Button {
-                            editing = PosiesMedicationDraft(PosiesMedicationProfile(name: ""))
-                        } label: {
-                            Label("Add medication", systemImage: "plus.circle.fill")
-                                .frame(maxWidth: .infinity, minHeight: 52)
-                        }
-                        .buttonStyle(.borderedProminent).tint(Color.potsButtonFill)
-                        .disabled(profiles.count >= PosiesMedicationLibrary.maximumProfiles)
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Keep your own medication labels in one place. Browse by generic or brand name, or add something yourself.")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.potsSecondary)
+                LazyVGrid(columns: columns, spacing: 12) {
+                    Button {
+                        showingCatalog = true
+                    } label: {
+                        Label("Browse medicine library", systemImage: "books.vertical.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 72)
+                            .multilineTextAlignment(.center)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.potsButtonFill)
+                    .disabled(profiles.count >= PosiesMedicationLibrary.maximumProfiles)
+                    Button {
+                        editing = PosiesMedicationDraft(
+                            PosiesMedicationProfile(name: "", schedule: "Not set"))
+                    } label: {
+                        Label("Add custom medication", systemImage: "plus.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 72)
+                            .multilineTextAlignment(.center)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(profiles.count >= PosiesMedicationLibrary.maximumProfiles)
+                }
+                HStack {
+                    Text("Your saved medications").font(.title3.bold())
+                    Spacer()
+                    Text("\(profiles.count) saved").font(.caption).foregroundStyle(Color.potsSecondary)
                 }
                 if profiles.isEmpty {
                     GlassCard {
-                        VStack(alignment: .leading, spacing: 7) {
-                            Text("Your cabinet starts here").font(.headline)
-                            Text("Add a name and any label details you find helpful. You can leave most fields blank.")
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label("Your cabinet is ready", systemImage: "heart.text.square")
+                                .font(.headline).foregroundStyle(Color.potsTeal)
+                            Text("Choose a name from the library or add your own. A preset never records that you took anything.")
                                 .font(.subheadline).foregroundStyle(Color.potsSecondary)
                         }
                     }
                 } else {
-                    ForEach(profiles) { profile in
-                        GlassCard {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(profile.name).font(.headline)
-                                if !profile.labelDose.isEmpty {
-                                    Text(profile.labelDose).font(.subheadline).foregroundStyle(Color.potsSecondary)
-                                }
-                                Label(profile.schedule, systemImage: "calendar.badge.clock")
-                                    .font(.caption).foregroundStyle(Color.potsTeal)
-                                if let refill = profile.refillDate {
-                                    Label("Refill date you entered: \(refill.formatted(date: .abbreviated, time: .omitted))",
-                                          systemImage: "calendar")
-                                        .font(.caption).foregroundStyle(Color.potsSecondary)
-                                }
-                                if let supply = profile.remainingSupply {
-                                    Text("Supply on hand (as entered): \(supply)")
-                                        .font(.caption).foregroundStyle(Color.potsSecondary)
-                                }
-                                if !profile.instructions.isEmpty {
-                                    Text(profile.instructions).font(.caption).foregroundStyle(Color.potsSecondary)
-                                }
-                                if let event = latestRecordedEvent(for: profile) {
-                                    Label("Last recorded: \(event.posture) · \(event.recordedAt.formatted(date: .abbreviated, time: .shortened))",
-                                          systemImage: "clock.arrow.circlepath")
-                                        .font(.caption).foregroundStyle(Color.potsSecondary)
-                                    Text("A planned record doesn't mean a dose was taken.")
-                                        .font(.caption2).foregroundStyle(Color.potsSecondary)
-                                } else {
-                                    Text("No events recorded for this medication name yet.")
-                                        .font(.caption).foregroundStyle(Color.potsSecondary)
-                                }
-                                HStack(spacing: 18) {
-                                    Button("Edit") { editing = PosiesMedicationDraft(profile) }
-                                    Spacer()
-                                    Button("Remove", role: .destructive) { deleting = profile.id }
-                                }
-                                .font(.subheadline.weight(.semibold))
-                            }
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        ForEach(profiles) { profile in
+                            profileTile(profile)
                         }
                     }
                 }
-                NavigationLink {
-                    ExpandedEntryEditor(category: .medications)
-                } label: {
-                    Label("Record a medication event", systemImage: "square.and.pencil")
-                        .frame(maxWidth: .infinity, minHeight: 52)
+                LazyVGrid(columns: columns, spacing: 12) {
+                    NavigationLink {
+                        ExpandedEntryEditor(category: .medications)
+                    } label: {
+                        Label("Record an event", systemImage: "square.and.pencil")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 64)
+                            .multilineTextAlignment(.center)
+                    }
+                    .buttonStyle(.bordered)
+                    NavigationLink {
+                        PosiesRemindersView()
+                    } label: {
+                        Label("My reminders", systemImage: "bell")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 64)
+                            .multilineTextAlignment(.center)
+                    }
+                    .buttonStyle(.bordered)
                 }
-                .buttonStyle(.bordered)
-                NavigationLink {
-                    PosiesRemindersView()
-                } label: {
-                    Label("Set an optional medication or refill reminder", systemImage: "bell")
-                        .frame(maxWidth: .infinity, minHeight: 52)
-                }
-                .buttonStyle(.bordered)
-                Text("Reminders are scheduled separately and only with your permission. No medication names or doses need to appear on the Lock Screen.")
+                Text("This library helps you find a name, not choose treatment. Your dose, schedule and actual medication events stay under your control. Lock-screen reminders remain discreet.")
                     .font(.caption).foregroundStyle(Color.potsSecondary)
             }
             .padding(18)
         }
         .background(Color.potsBackground.ignoresSafeArea())
-        .navigationTitle("Medication cabinet")
+        .navigationTitle("Medications")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { profiles = PosiesMedicationLibrary.load() }
-        .sheet(item: $editing) { item in
-            PosiesMedicationProfileEditor(profile: item.profile) { changed in
-                var copy = profiles
-                if let existing = copy.firstIndex(where: { $0.id == changed.id }) {
-                    copy[existing] = changed
-                } else {
-                    copy.append(changed)
-                }
-                if PosiesMedicationLibrary.save(copy) {
-                    profiles = copy
-                    PosiesCloudBackup.shared.noteRecordSaved()
-                    return true
-                } else {
-                    errorText = "We couldn't save that medication profile. Please check the details and try again."
-                    return false
-                }
+        .sheet(isPresented: $showingCatalog, onDismiss: {
+            if let choice = pendingCatalogChoice {
+                pendingCatalogChoice = nil
+                editing = PosiesMedicationDraft(choice.draftProfile)
+            }
+        }) {
+            PosiesMedicationCatalogView { reference in
+                pendingCatalogChoice = reference
+                showingCatalog = false
             }
         }
-        .confirmationDialog("Remove this medication profile?", isPresented: Binding(
+        .sheet(item: $editing) { draft in
+            PosiesMedicationProfileEditor(profile: draft.profile) { changed in
+                var updated = profiles
+                if let index = updated.firstIndex(where: { $0.id == changed.id }) {
+                    updated[index] = changed
+                } else {
+                    updated.append(changed)
+                }
+                guard PosiesMedicationLibrary.save(updated) else {
+                    errorText = "We couldn't save that profile. Your original entries are safe."
+                    return false
+                }
+                profiles = updated
+                PosiesCloudBackup.shared.noteRecordSaved()
+                return true
+            }
+        }
+        .confirmationDialog("Remove this saved profile?", isPresented: Binding(
             get: { deleting != nil },
             set: { if !$0 { deleting = nil } }
         ), titleVisibility: .visible) {
-            Button("Remove profile", role: .destructive) {
-                guard let deleting else { return }
-                let updated = profiles.filter { $0.id != deleting }
-                if PosiesMedicationLibrary.save(updated) {
-                    profiles = updated
+            Button("Remove saved profile", role: .destructive) {
+                guard let removing = deleting else { return }
+                let next = profiles.filter { $0.id != removing }
+                if PosiesMedicationLibrary.save(next) {
+                    profiles = next
                     PosiesCloudBackup.shared.noteRecordSaved()
                 } else {
-                    errorText = "We couldn't remove this profile."
+                    errorText = "We couldn't remove that profile. Please try again."
                 }
-                self.deleting = nil
+                deleting = nil
             }
-            Button("Keep profile", role: .cancel) { deleting = nil }
+            Button("Keep it", role: .cancel) { deleting = nil }
         } message: {
-            Text("Saved medication log entries will not be deleted.")
+            Text("This only removes the saved medication profile. Your previous medication event records stay.")
         }
-        .alert("Couldn't save", isPresented: Binding(
+        .alert("Unable to update cabinet", isPresented: Binding(
             get: { errorText != nil }, set: { if !$0 { errorText = nil } }
         )) {
             Button("OK") { errorText = nil }
         } message: {
             Text(errorText ?? "")
         }
+    }
+
+    private func profileTile(_ profile: PosiesMedicationProfile) -> some View {
+        let reference = PosiesMedicationCatalog.find(profile.name)
+        return GlassCard {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(profile.name)
+                    .font(.headline)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                if !profile.labelDose.isEmpty {
+                    Text(profile.labelDose).font(.subheadline).foregroundStyle(Color.potsSecondary)
+                        .lineLimit(2)
+                }
+                if profile.schedule != "Not set" && !profile.schedule.isEmpty {
+                    Label(profile.schedule, systemImage: "calendar")
+                        .font(.caption).foregroundStyle(Color.potsTeal)
+                        .lineLimit(2)
+                }
+                if let reference {
+                    Text(reference.category)
+                        .font(.caption2.weight(.semibold)).foregroundStyle(Color.potsTeal)
+                        .lineLimit(2)
+                    Text(reference.caution)
+                        .font(.caption)
+                        .foregroundStyle(Color.potsSecondary)
+                        .lineLimit(3)
+                    NavigationLink {
+                        PosiesMedicationReferenceDetail(reference: reference)
+                    } label: {
+                        Label("Safety details", systemImage: "info.circle")
+                            .font(.caption.weight(.semibold))
+                    }
+                }
+                if let last = lastEvent(for: profile.name) {
+                    Text("Last recorded: \(last.posture) · \(last.recordedAt.formatted(date: .abbreviated, time: .omitted))")
+                        .font(.caption).foregroundStyle(Color.potsSecondary)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 4)
+                HStack {
+                    Button("Edit") { editing = PosiesMedicationDraft(profile) }
+                    Spacer()
+                    Button("Remove", role: .destructive) { deleting = profile.id }
+                }
+                .font(.subheadline.weight(.semibold))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+/// Search is local. Categories are browsing aids, NOT indications and NOT
+/// personalized recommendations for any person or diagnosis.
+struct PosiesMedicationCatalogView: View {
+    @Environment(\.dismiss) private var dismiss
+    let onChoose: (PosiesMedicationReference) -> Void
+    @State private var search = ""
+    @State private var category = "All"
+
+    private var matches: [PosiesMedicationReference] {
+        PosiesMedicationCatalog.search(search, category: category)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 13) {
+                    Text("Search by generic or brand name. This is a name reference, not a list of medicines recommended for you.")
+                        .font(.subheadline).foregroundStyle(Color.potsSecondary)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(["All"] + PosiesMedicationCatalog.categories, id: \.self) { option in
+                                let selected = category == option
+                                Button {
+                                    category = PosiesChoiceBehavior.toggle(
+                                        category, tapped: option, empty: "All")
+                                } label: {
+                                    Text(option)
+                                        .font(.caption.weight(selected ? .semibold : .regular))
+                                        .padding(.horizontal, 11).padding(.vertical, 10)
+                                        .foregroundStyle(selected ? Color.white : Color.primary)
+                                        .background(selected ? Color.potsButtonFill : Color.potsSurfaceMuted,
+                                                    in: RoundedRectangle(cornerRadius: 11))
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityAddTraits(selected ? [.isSelected] : [])
+                            }
+                        }
+                    }
+                    Text("\(matches.count) matching names · \(PosiesMedicationCatalog.all.count) in library")
+                        .font(.caption).foregroundStyle(Color.potsSecondary)
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 11),
+                                        GridItem(.flexible(), spacing: 11)], spacing: 11) {
+                        ForEach(matches) { reference in
+                            NavigationLink {
+                                PosiesMedicationReferenceDetail(reference: reference) {
+                                    onChoose(reference)
+                                }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 7) {
+                                    Text(reference.name)
+                                        .font(.subheadline.bold())
+                                        .foregroundStyle(Color.primary)
+                                        .lineLimit(2)
+                                        .minimumScaleFactor(0.8)
+                                    if !reference.brands.isEmpty {
+                                        Text(reference.brandSummary)
+                                            .font(.caption)
+                                            .foregroundStyle(Color.potsSecondary)
+                                            .lineLimit(2)
+                                    }
+                                    Spacer(minLength: 4)
+                                    Text(reference.category)
+                                        .font(.caption2.weight(.semibold))
+                                        .foregroundStyle(Color.potsTeal)
+                                        .lineLimit(2)
+                                    Label("Details & cautions", systemImage: "info.circle")
+                                        .font(.caption2)
+                                        .foregroundStyle(Color.potsSecondary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .frame(minHeight: 112)
+                                .padding(12)
+                                .background(Color.potsSurfaceMuted,
+                                            in: RoundedRectangle(cornerRadius: 14))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    if matches.isEmpty {
+                        GlassCard {
+                            Text("No exact match here. Try a generic name or different spelling, or add a custom medication.")
+                                .font(.subheadline).foregroundStyle(Color.potsSecondary)
+                        }
+                    }
+                }
+                .padding(16)
+            }
+            .background(Color.potsBackground.ignoresSafeArea())
+            .navigationTitle("Medication library")
+            .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $search, prompt: "Generic or brand name")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+struct PosiesMedicationReferenceDetail: View {
+    let reference: PosiesMedicationReference
+    var onUse: (() -> Void)? = nil
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                GlassCard {
+                    VStack(alignment: .leading, spacing: 9) {
+                        Text(reference.name).font(.title2.bold()).foregroundStyle(Color.potsTeal)
+                        if !reference.brands.isEmpty {
+                            Text("Brand names you may recognize: \(reference.brandSummary)")
+                                .font(.subheadline).foregroundStyle(Color.potsSecondary)
+                        }
+                        Text("Browsing category: \(reference.category)")
+                            .font(.caption).foregroundStyle(Color.potsSecondary)
+                    }
+                }
+                GlassCard {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Important to know", systemImage: "exclamationmark.shield")
+                            .font(.headline).foregroundStyle(Color.potsTeal)
+                        Text(reference.caution).font(.subheadline)
+                        Text("This is a brief educational note, not a complete warning, interaction check, diagnosis or prescribing instruction. Packaging and brand formulations can differ. Always read your exact product label.")
+                            .font(.caption).foregroundStyle(Color.potsSecondary)
+                    }
+                }
+                GlassCard {
+                    VStack(alignment: .leading, spacing: 9) {
+                        Text("Check current official information").font(.headline)
+                        Link(destination: reference.detailURL) {
+                            Label(reference.hasDirectReference ?
+                                  "Read MedlinePlus information for this medicine" :
+                                  "Search MedlinePlus for this medicine",
+                                  systemImage: "arrow.up.right.square")
+                                .font(.subheadline)
+                        }
+                        Link(destination: reference.dailyMedSearchURL) {
+                            Label("Find current labels for \(reference.name) on DailyMed",
+                                  systemImage: "arrow.up.right.square")
+                                .font(.subheadline)
+                        }
+                        Text("Reference names and brief cautions reviewed \(PosiesMedicationCatalog.reviewedOn). Official labels may change after this date.")
+                            .font(.caption).foregroundStyle(Color.potsSecondary)
+                    }
+                }
+                if reference.category == "Autonomic & circulation" {
+                    Text("A medicine appearing in POTS-related discussions is not an FDA-approved POTS treatment recommendation. Only a clinician can decide what is appropriate for an individual.")
+                        .font(.caption).foregroundStyle(Color.potsSecondary)
+                }
+                if let onUse {
+                    Button {
+                        onUse()
+                    } label: {
+                        Label("Use this name in my cabinet", systemImage: "plus.circle.fill")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, minHeight: 54)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.potsButtonFill)
+                    Text("This only opens a draft. Strength, instructions and schedule stay blank or not set until you enter them.")
+                        .font(.caption).foregroundStyle(Color.potsSecondary)
+                }
+            }
+            .padding(18)
+        }
+        .background(Color.potsBackground.ignoresSafeArea())
+        .navigationTitle("Medicine details")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -174,6 +396,7 @@ private struct PosiesMedicationProfileEditor: View {
     @State private var supplyText: String
     @State private var hasRefillDate: Bool
     let onSave: (PosiesMedicationProfile) -> Bool
+    @State private var saveFailed = false
 
     private let schedules = ["Daily", "Several times daily", "As needed", "Other"]
     init(profile: PosiesMedicationProfile, onSave: @escaping (PosiesMedicationProfile) -> Bool) {
@@ -201,7 +424,7 @@ private struct PosiesMedicationProfileEditor: View {
                                     let active = profile.schedule == option
                                     Button {
                                         profile.schedule = PosiesChoiceBehavior.preference(
-                                            profile.schedule, tapped: option, defaultValue: "As needed")
+                                            profile.schedule, tapped: option, defaultValue: "Not set")
                                     } label: {
                                         Text(option)
                                             .font(.subheadline.weight(active ? .semibold : .regular))
@@ -253,10 +476,17 @@ private struct PosiesMedicationProfileEditor: View {
                         profile.remainingSupply = supplyText.isEmpty ? nil : Int(supplyText)
                         if onSave(profile) {
                             dismiss()
+                        } else {
+                            saveFailed = true
                         }
                     }
                     .disabled(!profile.safeToSave || (!supplyText.isEmpty && Int(supplyText) == nil))
                 }
+            }
+            .alert("That profile wasn't saved", isPresented: $saveFailed) {
+                Button("Keep editing", role: .cancel) {}
+            } message: {
+                Text("Please check the details and try again. Nothing in your cabinet was changed.")
             }
         }
     }
