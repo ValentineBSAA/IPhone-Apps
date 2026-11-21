@@ -27,6 +27,7 @@ struct BerryDeveloperGardenView: View {
         case clock = "Timers & Clocks"
         case notifications = "Notification Test"
         case economy = "Economy Inspector"
+        case moonberries = "Moonberries & Night Market"
         case build = "Build Information"
         case experimental = "Experimental Features"
         case combo = "Combo Preview"
@@ -47,6 +48,7 @@ struct BerryDeveloperGardenView: View {
             case .clock: return "clock.fill"
             case .notifications: return "bell.badge.fill"
             case .economy: return "creditcard.fill"
+            case .moonberries: return "moon.stars.fill"
             case .build: return "hammer.fill"
             case .experimental: return "flask.fill"
             case .combo: return "sparkles.rectangle.stack.fill"
@@ -69,6 +71,7 @@ struct BerryDeveloperGardenView: View {
             case .clock: return "BBBIconSeasonal"
             case .notifications: return "BBBIconHelp"
             case .economy: return "Strawberry_Currency"
+            case .moonberries: return "Night_Moonberry_Currency"
             case .build: return "BBBIconSettings"
             case .experimental: return "Night_Developer_Mode_Strawberry_Lock"
             case .combo: return "Milestone"
@@ -89,6 +92,7 @@ struct BerryDeveloperGardenView: View {
             case .clock: return "Dev_Timers_Moon_Clock"
             case .notifications: return "Dev_Notification_Test_Berry_Bell"
             case .economy: return "Dev_Economy_Inspector_Two_Currencies"
+            case .moonberries: return "Dev_Economy_Inspector_Two_Currencies"
             case .build: return "Dev_Build_Information_Berry_Blueprint"
             case .experimental: return "Dev_Experimental_Features_Moon_Potion"
             case .combo: return "Dev_Combo_Preview_Fireworks"
@@ -109,6 +113,7 @@ struct BerryDeveloperGardenView: View {
             case .clock: return "Live local device time"
             case .notifications: return "Future notice preview"
             case .economy: return "Strawberry and future Moonberry status"
+            case .moonberries: return "Planned Moonberry cheats, earning and night shop tests"
             case .build: return "Which app build is installed?"
             case .experimental: return "Which themes are enabled?"
             case .combo: return "Test celebrations without rewards"
@@ -121,7 +126,7 @@ struct BerryDeveloperGardenView: View {
             #endif
             }
         }
-        var isPlanned: Bool { self == .notifications }
+        var isPlanned: Bool { self == .notifications || self == .moonberries }
     }
     // Permanent hidden owner tools. Every candidate build must include these,
     // including the optional, confirmed cheat wallet action.
@@ -130,9 +135,9 @@ struct BerryDeveloperGardenView: View {
     }
     private var advancedTools: [Tool] {
         #if BERRY_INTERNAL_QA
-        return [.sandbox, .stateLab, .commerce, .toolActions, .questStory, .economy, .build, .clock, .experimental, .notifications]
+        return [.sandbox, .stateLab, .commerce, .toolActions, .questStory, .economy, .moonberries, .build, .clock, .experimental, .notifications]
         #else
-        return [.economy, .build, .clock, .experimental, .notifications]
+        return [.economy, .moonberries, .build, .clock, .experimental, .notifications]
         #endif
     }
 
@@ -491,6 +496,24 @@ struct BerryDeveloperGardenView: View {
                 .multilineTextAlignment(.center)
             Text("Moonberries and the Night Market are planned for Build 6, not active here.")
                 .font(.caption.bold())
+        case .moonberries:
+            Text("COMING LATER • BUILD 6")
+                .font(.headline.bold())
+                .foregroundStyle(BerryStyle.strawberry)
+            Text("Moonberries and the Night Market are not live in this build. No Moonberry balance, spending, or cheat is available yet. This is a roadmap preview, not a working test.")
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+            LazyVGrid(columns: columns, spacing: 11) {
+                economyMetric("Cheat Moonberries", "Planned")
+                economyMetric("Earn & Reward Tests", "Planned")
+                economyMetric("Moonberry Ledger", "Planned")
+                economyMetric("Night Market Purchases", "Planned")
+                economyMetric("6 AM / 6 PM Switch", "Planned")
+                economyMetric("Rollback & Saves", "Planned")
+            }
+            Text("When Build 6 implements a real separate Moonberry economy, this card must gain isolated one-tap PASS/FAIL fixtures and an optional, confirmed Cheat Moonberries control. Never invent a balance or write to the Strawberry wallet.")
+                .font(.caption)
+                .multilineTextAlignment(.center)
         case .build:
             Text(BerryBuildIdentity.settingsLabel)
                 .font(.subheadline.bold())
