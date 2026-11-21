@@ -138,7 +138,7 @@ final class BerryRescueUndoIsolationTests: XCTestCase {
         XCTAssertEqual(game.engine.score, preScore)
         XCTAssertEqual(game.engine.moves, preMoves)
         XCTAssertEqual(ledger.earnedByMode[BerryMode.endless.rawValue], 0)
-        XCTAssertEqual(store.stringArray(forKey: rewardsKey], [])
+        XCTAssertEqual(store.stringArray(forKey: rewardsKey), [])
         XCTAssertEqual(try decodedWallet(store).berries, 0)
         XCTAssertEqual(game.undos, 1)
     }
