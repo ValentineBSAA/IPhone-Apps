@@ -48,3 +48,17 @@ The paths in the ZIP already begin at `StrawberryShortcakeBlockBlast/ArtSource/`
 - [ ] User uploads all eight part files to a draft GitHub Release, then publishes it. **Do not publish before all eight attachments are present.** Verify workflow success; no GitHub PNG blob import has been claimed before it runs.
 
 Note: this fallback affects only delivery, not the 55 image designs, approved source bytes, manifest contents or QA status.
+
+
+## ✅ Actual GitHub import completed and verified
+- [x] User published the Release named **Approved All App icons so far seasonal home** with tag `berry-h1-approved-all-20261120`, eight assets of 45,000,000 bytes × 7 and 3,953,250 bytes × 1.
+- [x] Release workflow successfully reassembled the ZIP and verified **318,953,250 bytes**, pinned archive hash, all **150 package entries**, and each of 55 approved source-original hashes.
+- [x] Existing eight H1-B01 Home Classic PNGs compared Git-object byte hashes and matched archive originals; **not replaced**.
+- [x] Two older H1-B01 manifest/README differences archived under `ArtSource/00_Consolidated_H1_2026-11-20/Preserved_H1_Batch01_Archive_Metadata/` rather than overwritten. `IMPORT_PRESERVED_METADATA_MAPPING.json` now valid JSON for auditing.
+- [x] Confirmed master tree includes all **55/55 unique original PNG paths** with matching file sizes against `CONSOLIDATED_ASSET_MANIFEST.json`.
+- [x] Added **55 unique game-facing image key suggestions** and source path/alpha readiness to `APP_ASSET_BINDINGS_DRAFT.json`, plus integration notes at `ArtSource/README_SEASONAL_STAGING.md`.
+- [x] Original import GitHub Actions run [44860171770](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44860171770) **SUCCESS**; patched and idempotent verification run [44860324828](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44860324828) **SUCCESS**.
+- [ ] **Still not shipped:** none of the new staged images have been assigned to app `Assets.xcassets`, alpha candidates have not received owner acceptance, and real iPhone QA is still pending. Keep draft PR open for further integration work.
+- [ ] Future completion: BC-06 Thanksgiving Night, BC-07 Birthday Day, BC-08 Birthday Night, then updated manifest and a separate QA-approved runtime branch. The separate prior 40 Night Garden images remain preserved.
+
+**Definitive milestone:** *GitHub staging import COMPLETE and verified, 55/55 approved originals present*. *App/runtime integration NOT YET COMPLETE*.
