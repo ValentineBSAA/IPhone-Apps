@@ -193,3 +193,11 @@ We must not accumulate endless successful isolated branches while the real iPhon
 - [ ] Owner physical iPhone verifies Developer Garden D0/D0b, real Boutique purchase/equip/unequip, actual saved 8/12/24 games, helper purchase, gameplay controls and existing features. Keep exact pass/fail receipts and preserve prior live installs until explicitly approved.
 - [ ] Add Developer Garden visual Boutique scenario controls only after core source-integrity gate, then expand to premium/cottage, Daily Harvest, Berry Story, rewards/quests and Night experience as separate well-tested slices.
 - [ ] If end-to-end integration or physical QA reveals broader problems, repair these first rather than simply increasing the count of planned test contracts.
+
+
+## ✅ D1a real Boutique regression accepted · November 20, 2026
+- [x] [GitHub Actions #44868413961](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868413961) terminal **SUCCESS** with **64/64 selected iPhone 16e simulator XCTest methods, zero failures**. Suites: real Boutique 10, original Boutique 6, D0–D0e regression 48; Release compiled without internal QA panels.
+- [x] Real cosmetic checkout uses canonical existing prices and injected owner/inventory/rewards/ledger test store; existing owned and equipped cosmetics, actual player data and 8×8/12×12/24×24 Endless slot bytes preserved in regression.
+- [x] [66-scenario QA registry](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) now **20 simulator-pass/device-pending, 44 planned, 2 not implemented**. These are 20 scenario contracts covered by 64 selected XCTest methods, not 20 app features shipped.
+- [ ] **Physical iPhone QA and whole-game integration checkpoint** remain open. [D1a PR #70](https://github.com/ValentineBSAA/IPhone-Apps/pull/70) stays draft/unmerged, no new IPA/version.
+- [ ] **Next focused audit:** Cottage and Premium purchases still use generic save/premium save paths that may clear a parked 8×8 Endless board from a menu session. D1b must preserve the board without disrupting actual board-changing tool-use saves. Daily Harvest, Story and Night follow after an integrated candidate.
