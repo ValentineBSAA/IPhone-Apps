@@ -302,3 +302,9 @@ Recommended sequence alongside existing milestones: H5 nonvisual calendar smoke/
 - [x] [Actions #44862930573](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573) **SUCCESS**: QA-only Developer Sandbox excluded from Release build; **6/6 selected tests passed on iPhone 16e simulator**.
 - [x] [Draft PR #63](https://github.com/ValentineBSAA/IPhone-Apps/pull/63) remains isolated from the production Build 4.6 chain; live wallet, saves, gameplay, art, costs, and app version unaffected.
 - [ ] Physical-device owner signoff and future developer scenario work pending; D0 proof does not certify Night Game/Market, 4.7/4.8, Build 5/6 or every planned mechanic.
+
+
+## D0b isolated state and timer test lab · November 20, 2026
+- [x] [Draft PR #64](https://github.com/ValentineBSAA/IPhone-Apps/pull/64) extends the verified D0 sandbox with **six disposable test-state fixtures** for real price constants, mock charges/wallet, in-memory versioned engine snapshots and virtual pause/resume clocks.
+- [x] [QA checklist](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d0b-state-time-lab/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D0B_ISOLATED_STATE_LAB_QA.md) and **11 new XCTest methods**; [CI workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0b-state-time-iphone16e.yml) tests 17 combined methods and Release QA exclusion.
+- [ ] Simulator CI acceptance and real iPhone 16e device interaction gate. Separate D0c genuine app transaction/save dependency-injection tests before testing purchases, tool consumption and rewards. No changes to main, iPhone IPA, Night/Day wallets or art.
