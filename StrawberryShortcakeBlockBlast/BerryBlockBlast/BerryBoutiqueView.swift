@@ -272,6 +272,7 @@ struct BerryBoutiqueView: View {
             .shadow(color: BerryStyle.strawberry.opacity(0.09), radius: 6, y: 3)
         }
         .buttonStyle(BerryPolishPressStyle())
+        .accessibilityIdentifier("berry.boutique.category.\(category.rawValue)")
     }
 
     private func boardSurfaceCard(id: String, title: String, detail: String,
@@ -315,6 +316,7 @@ struct BerryBoutiqueView: View {
         }
         .buttonStyle(BerryPolishPressStyle())
         .accessibilityLabel(title)
+        .accessibilityIdentifier("berry.boutique.board.\(id)")
         .accessibilityValue(selected ? "Selected" : "Not selected")
         .accessibilityHint("Change the visual board appearance. Your progress and wallet stay unchanged.")
     }
