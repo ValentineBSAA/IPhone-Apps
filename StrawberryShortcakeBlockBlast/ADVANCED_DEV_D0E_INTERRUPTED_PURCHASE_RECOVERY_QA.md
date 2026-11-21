@@ -18,7 +18,7 @@ Previously Undo / Shuffle / Hint checkout wrote inventory and spending-ledger va
 - [x] Standard-tool purchases now consolidate through one `buyStandardTool` routine; it builds the post-purchase inventory before staging, replays the staged intent, then updates the session and preserves existing `save()` semantics. Prices, user-visible tool counts and remaining undo snapshot invalidation are preserved.
 - [x] All three purchases remain completely separate from story, daily, premium, cosmetics, quest/birthday gifts, Night currency and Night Market.
 - [x] Added **8 interrupted-state XCTest cases**, on top of the earlier **40** D0–D0d tests. Coverage includes successful checkout, intent-only restart, interruption after inventory update, interruption between ledger key updates, idempotent second restart, malformed-intent preservation/blocking, independent preexisting saves, and overflow/unresolved-intent refusal.
-- [ ] New [D0e iPhone 16e CI run](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0e-purchase-recovery-iphone16e.yml): confirm **48 selected XCTests, zero failures**, Release compile and QA-only menu absent from Release using actual completed logs. Do not mark passed from code generation.
+- [x] [D0e Actions #44867590124](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44867590124) **SUCCESS**; actual job log confirms **48/48 selected iPhone 16e XCTest methods passed, zero failures**, Release compiled without QA-only panel and no IPA created.
 - [ ] Owner physical iPhone 16e check after approved test build; no IPA built/released as part of this stage.
 
 ## Explicit guarantees and limitations
@@ -30,12 +30,12 @@ Previously Undo / Shuffle / Hint checkout wrote inventory and spending-ledger va
 - No new image generation, game modes, pricing adjustments, build number or IPA.
 
 ## D0e regression checklist
-- [ ] Source/artwork/audio and iOS16 checks passed.
-- [ ] Release build without internal Developer Garden QA panels passed.
-- [ ] Named iPhone 16e simulator 40 prior D0–D0d tests still green.
-- [ ] Eight new D0e interruption/recovery tests all pass.
-- [ ] Confirm recovery does not duplicate ledger spend or tool charge.
-- [ ] Confirm no changes to an unrelated 12×12 saved board or `UserDefaults.standard`.
+- [x] Source/artwork/audio and iOS16 checks passed in GitHub Actions #44867590124.
+- [x] Production Release build passed with Developer Garden QA-only panels excluded.
+- [x] Named iPhone 16e simulator: prior 40 D0–D0d selected tests remain green.
+- [x] Eight new `BerryStandardPurchaseRecoveryTests` pass with zero failures.
+- [x] Simulator verifies no duplicate spend/charge on replay and multiple restarts; physical/crash durability testing remains open.
+- [x] Simulator regression verifies unrelated 12×12 saved slot and `UserDefaults.standard` unchanged in isolated tests.
 - [ ] Complete physical iPhone QA of normal Undo, Shuffle, Hint purchases and saved session reload.
 - [ ] Run full-game regression before any branch merge or release.
 
@@ -43,3 +43,10 @@ Previously Undo / Shuffle / Hint checkout wrote inventory and spending-ledger va
 [D0f] Audit true game UI error handling when a pending journal is corrupt and build friendly recovery instructions. [D1–D7] Expand Developer Garden scenario runner into premium tools, cosmetic Boutique, Daily Harvest, Story, 8/12/24 gameplay, Night Garden, holiday clock and full save migrations. Preserve all original game mechanics and approved assets. Every new game feature must have a scenario coverage entry.
 
 **D0e is an incremental game reliability milestone, not the whole game's finish line.**
+
+
+## ✅ Verified D0e automated gate · November 20, 2026 (Arizona)
+- [x] [GitHub Actions #44867590124](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44867590124) terminal **SUCCESS**. Actual job log contains `** TEST SUCCEEDED **`.
+- [x] `BerryDeveloperSandboxTests` **6/6**; `BerryDeveloperStateLabTests` **11/11**; `BerryEconomyTests` **4/4**; `BerryStandardPurchaseRecoveryTests` **8/8**; `BerryStandardToolCheckoutIsolationTests` **9/9**; `BerryStandardToolTransactionTests` **10/10**. Combined **48/48, 0 failures**.
+- [x] Release build succeeded and the internal QA-only Developer Garden features were excluded, with no IPA generated. Original approved artwork and music source validations passed.
+- [ ] **This is selected simulator regression, not full-game or physical-iPhone acceptance.** UserDefaults remains non-atomic and non-durable under sudden power loss; real process-kill/hardware and friendly corrupt-journal repair UI are still required before release.
