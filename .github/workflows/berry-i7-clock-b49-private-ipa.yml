@@ -218,7 +218,59 @@ jobs:
           mkdir -p dist/Payload
           cp -R "$APP" dist/Payload/
           IPA="dist/Berry-Berry-Blast-I7-v0.5.16-B49-CLOCK-ART-QA-UNSIGNED-PRIVATE-TEST.ipa"
+          # Create the normal Xcode artifact first, then normalize its ZIP
+          # container with the EXACT repack approach that installed on the
+          # owner's physical iPhone after the stock IPA failed extraction.
+          # Important: change archive metadata ONLY, never game resources.
           (cd dist && zip -qry "$(basename "$IPA")" Payload)
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
+          import shutil, hashlib
+          ipa = Path("dist/Berry-Berry-Blast-I7-v0.5.16-B49-CLOCK-ART-QA-UNSIGNED-PRIVATE-TEST.ipa")
+          original = ipa.with_name("." + ipa.name + ".before-normalize")
+          ipa.rename(original)
+          # Rebuild the archive without extra fields or inherited ZIP metadata.
+          # Identical procedure to the owner-tested repacked diagnostic IPA.
+          with ZipFile(original, "r") as src, ZipFile(
+              ipa, "w", allowZip64=False,
+              compression=ZIP_DEFLATED, compresslevel=6
+          ) as dst:
+              for entry in src.infolist():
+                  fresh = ZipInfo(entry.filename, entry.date_time)
+                  fresh.create_system = 3
+                  fresh.external_attr = entry.external_attr
+                  fresh.internal_attr = entry.internal_attr
+                  fresh.compress_type = ZIP_STORED if entry.is_dir() else ZIP_DEFLATED
+                  fresh.flag_bits = 0
+                  fresh.extra = b""
+                  fresh.comment = b""
+                  with src.open(entry, "r") as reader, dst.open(
+                      fresh, "w", force_zip64=False
+                  ) as writer:
+                      shutil.copyfileobj(reader, writer, 1024 * 1024)
+          with ZipFile(original) as src, ZipFile(ipa) as dst:
+              old, new = src.infolist(), dst.infolist()
+              assert [x.filename for x in old] == [x.filename for x in new], "Changed IPA paths"
+              assert all(
+                  a.CRC == b.CRC and a.file_size == b.file_size and
+                  a.external_attr == b.external_attr
+                  for a, b in zip(old, new)
+              ), "Changed entry bytes or executable permissions"
+              assert all(not x.extra for x in new), "Unexpected ZIP extra fields"
+              assert dst.testzip() is None, "Repacked IPA failed CRC verification"
+              important = [x.filename for x in old if x.filename.endswith(
+                  ("BerryBlockBlast", "Info.plist", "Assets.car", "BerryTrack01.m4a")
+              )]
+              assert important, "Missing executable / plist verification targets"
+              assert all(
+                  hashlib.sha256(src.read(name)).digest() ==
+                  hashlib.sha256(dst.read(name)).digest()
+                  for name in important
+              ), "App payload changed during normalization"
+              print("AltStore-compatible repack verified:", len(new), "entries")
+          original.unlink()
+          PY
           unzip -t "$IPA" | tail -2
           python3 Tools/verify_audio_build2.py --ipa "$IPA"
           python3 - <<'PY'
