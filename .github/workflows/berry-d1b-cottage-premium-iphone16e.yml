@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - '.github/workflows/berry-d1b-boutique-isolation-iphone16e.yml'
+      - '.github/workflows/berry-d1b-cottage-premium-iphone16e.yml'
   workflow_dispatch:
 
 permissions:
