@@ -189,6 +189,7 @@ struct BerryHomeView: View {
                                         .strokeBorder(BerryStyle.strawberry.opacity(0.48), lineWidth: 1.4))
                                 }
                                 .buttonStyle(.plain)
+                                .accessibilityIdentifier("berry.home.birthday.claim")
                                 .disabled(birthdayClaimed)
                             }
                             Text("PLAY YOUR BERRY GAMES")
