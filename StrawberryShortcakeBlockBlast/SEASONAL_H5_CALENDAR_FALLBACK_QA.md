@@ -56,3 +56,11 @@ Keep Build 4.7 Night Garden polish, Build 4.8 celebrations, Build 5 Quests/Villa
 - [x] GitHub Actions [#44861283856](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44861283856) **SUCCESS**: checkout H5 branch, Swift toolchain, source type-check, compile and run offline policy smoke.
 - [ ] Nine new XCTest cases require a named **iPhone 16e** simulator CI and eventual physical QA; smoke alone does not assert they ran.
 - [ ] No source artwork transferred into `Assets.xcassets`, no Settings activation, no release/IPA/version bump. PR [#60](https://github.com/ValentineBSAA/IPhone-Apps/pull/60) deliberately draft.
+
+
+## Initial iPhone 16e XCTest run detail
+- [x] First simulator job [run #44861437030, attempt 1](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44861437030) ran **20** selected XCTests (11 H0 calendar, 9 H5 resolver). **19 passed, one failed**.
+- [x] The one failure was a **test fixture expectation error** in `testLocalRegionAndTimeZoneChangesNoNetworkOrGPSRequired`: at 06:00 UTC on Dec 25 New York is **01:00 AM local**, so its appropriate approved asset is `BBB_Season_Christmas_Night_HomeClassic`, not `..._Day_...`. The production resolver correctly fell back when the night image was omitted from the fixture.
+- [x] Corrected that test fixture only, without changing the resolver, the game, the artwork or any saves. [Commit in H5 branch](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-seasonal-h5-asset-fallback-lab/StrawberryShortcakeBlockBlast/Tests/BerrySeasonalAssetResolverTests.swift).
+- [ ] Rerun **attempt 2** accepted by GitHub on the same run. Do not assert iPhone XCTest green before confirmed terminal conclusion. Existing Foundation smoke remains green.
+- [ ] The log also mentioned missing `BerryVillageMap` and `BerryQuestBoardArt` assets at app launch; those are separate asset/catalog warnings and must not be misreported as the calendar test failure. Audit in dedicated app image QA before runtime activation.
