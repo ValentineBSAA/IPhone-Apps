@@ -21,7 +21,7 @@ The game must show correct events automatically by **local calendar date + devic
 - [x] Require approved+installed assets to be passed as a set. Missing ungenerated art safely falls back to **existing game art**, never a broken/blank image.
 - [x] Include proposed naming scheme compatible with `APP_ASSET_BINDINGS_DRAFT.json`: `BBB_Season_<Holiday>_<Day|Night>_<Role>`; clocks `BBB_Clock_<Holiday|Base>_<Day|Night>_ClockFrame`.
 - [x] Add **9 deterministic XCTest scenarios** for dormant default, local clock boundaries, Thanksgiving, missing Berry Collection variants, birthday overlaps, manual preview/Off, base clock frames, time-zone travel and nonmutating data.
-- [ ] Prove clean Swift compilation and deterministic Foundation-only smoke tests; GitHub Actions smoke stage needed before marking test gate complete.
+- [x] Clean Swift/Foundation type-check and separate deterministic smoke tests passed in [GitHub Actions #44861283856](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44861283856); **nine iPhone XCTest methods were authored but have not yet run through iOS XCTest**.
 - [ ] Add compile-time validated manifest and `Assets.xcassets` name reconciliation against actual reviewed RGBA candidates. Never expose unreviewed matte images as installed/approved.
 - [ ] Visual alpha sign-off: 22 derived RGBA candidates against light/dark/checker at 64/96/144 px; create/review 13 missing candidate mattes. Existing 40 Night Garden art stays untouched.
 - [ ] Agree with owner: event duration (day-only vs lead-in weeks), birthday vs same-day Christmas priority, leap-day choice, holidays by region, manual preview semantics, default-on vs opt-in. **Current values are dormant proposals, not accepted live-app policy.**
@@ -49,3 +49,10 @@ The game must show correct events automatically by **local calendar date + devic
 **Current milestone:** source-only H5 resolver and offline test plan. **Not a merged app feature, live seasonal appearance change, new IPA, or claim of production image approval.**
 
 Keep Build 4.7 Night Garden polish, Build 4.8 celebrations, Build 5 Quests/Village and Build 6 separate Moonberry commerce on their own independent feature tracks.
+
+
+## First CI proof checkpoint
+- [x] New read-only resolver type-checked on Swift/Foundation and deterministic tests executed without iOS app launch.
+- [x] GitHub Actions [#44861283856](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44861283856) **SUCCESS**: checkout H5 branch, Swift toolchain, source type-check, compile and run offline policy smoke.
+- [ ] Nine new XCTest cases require a named **iPhone 16e** simulator CI and eventual physical QA; smoke alone does not assert they ran.
+- [ ] No source artwork transferred into `Assets.xcassets`, no Settings activation, no release/IPA/version bump. PR [#60](https://github.com/ValentineBSAA/IPhone-Apps/pull/60) deliberately draft.
