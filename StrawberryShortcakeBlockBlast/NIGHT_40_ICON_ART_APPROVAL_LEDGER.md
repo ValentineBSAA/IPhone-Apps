@@ -39,3 +39,10 @@ This is a non-destructive addition to [Night Garden master roadmap](BERRY_BUILD4
 - Batches 2–8 technique audit: 16 dark matte, 13 pale/checkerboard, 5 full-scene rounded cards (night sky deliberately retained), 2 already RGBA. Painted card assets have transparent corner arcs but retain their backgrounds; owner decision about final presentation is pending.
 - Next: review for edge artifacts/halo at 64/96px, validate actual iPhone 16e screens, then integrate as separate Xcode image sets in Build 4.7/4.8. No changes to the currently deployed game, Day art, 30 legacy night assets, Night Market transaction rules or save data.
 - [Draft source/RGBA PR #40](https://github.com/ValentineBSAA/IPhone-Apps/pull/40) remains unmerged, intentionally separate from the shipping application branch.
+
+## Final owner RGBA visual approval · November 20, 2026
+
+- [x] **All 40/40 RGBA candidate images visually approved by owner.** Batches 1–8, including the 36 later conversions, all reviewed and stated to look good. This supersedes *earlier historic status* in this file that referred to 36 pending.
+- [x] Forty full-resolution true-RGBA candidate PNGs verified and committed on the isolated artwork branch; green [Actions #44843011429](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44843011429); [draft PR #40](https://github.com/ValentineBSAA/IPhone-Apps/pull/40) remains **unmerged**.
+- [ ] **Still pending:** Xcode import and semantic routing, entire UI Day/Night parity, visual confirmation on actual physical iPhone **16e**, accessibility and safe tap geometry, full tests, owner release approval. “Art approved” does not equal “game finished.”
+- [ ] **New, separate Seasonal Garden future art:** Halloween, Christmas, Thanksgiving and birthdays each need a handcrafted Day/Night variant; nothing seasonal has been generated. See [seasonal roadmap](SEASONAL_DAY_NIGHT_ART_ROADMAP.md) and [epic #42](https://github.com/ValentineBSAA/IPhone-Apps/issues/42). Do not use this to derail Night Garden Build 4.7/4.8 or Build 5/6.
