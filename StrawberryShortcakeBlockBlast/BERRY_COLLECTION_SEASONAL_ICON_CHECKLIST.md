@@ -26,8 +26,8 @@ This is the player's **owned inventory, achievements, awards and personal record
 |---|---|---|---|---|---|---|---|---|
 | BC-01 | Halloween | Day | Sunlit pink strawberry treasure chest with gold earned medal and award card, orange leaves, pumpkin-berries, purple hat, autumn gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ RGB checkerboard backdrop; RGBA cleanup pending | ⬜ source PNG not staged | ⬜ |
 | BC-02 | Halloween | Night | Moonlit violet strawberry keepsake chest with gold medal and collectible card, glowing berry jack-o'-lanterns, autumn foliage and orange-purple gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ 1254px RGB, off-white baked background; RGBA QA pending | ⬜ original PNG not staged | ⬜ |
-| BC-03 | Christmas | Day | Sunny snowy strawberry keepsake chest, earned gold berry medal and trophy card, gold bells, decorated evergreens, candy canes and red-green gingham | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ 1254px RGB with baked checkerboard; separate RGBA candidate and edge QA pending | ⬜ source PNG not staged | ⬜ |
-| BC-04 | Christmas | Night | Snowy moonlit purple chest with glowing keepsakes, golden prize star, fir lights and berry holly | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| BC-03 | Christmas | Day | Sunny snowy strawberry keepsake chest, earned gold berry medal and trophy card, gold bells, decorated evergreens, candy canes and red-green gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ RGB checkerboard; separate RGBA cleanup/edge QA pending | ⬜ source PNG not staged | ⬜ |
+| BC-04 | Christmas | Night | Snowy moonlit berry treasure chest, earned gold strawberry medal and award card, lit pines and ornaments, holiday stars and red-green bow | ⬜ NEXT: single original image | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
 | BC-05 | Thanksgiving | Day | Sunlit amber berry treasure chest, medal, harvest sticker, maple leaves, pumpkins and berry pie | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BC-06 | Thanksgiving | Night | Candlelit plum-and-gold collection chest, moon/stars, pumpkins, leaves, berry harvest accents | ⬜ | ⬜ | ⬜ | ⬜ |
 | BC-07 | Birthday | Day | Bright berry keepsake chest, earned medal and collectible, birthday cake, balloons and gifts | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -90,3 +90,11 @@ References: [Seasonal master icon matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) 
 - [ ] Source PNG Github staging, hash manifest, checker/light/dark/64/96px alpha proofs, ZIP, Xcode import and physical iPhone QA remain separate gates.
 
 **Berry Collection H1-B06 current: 3/8 image designs generated, 2/8 visually approved; BC-03 awaits review.**
+
+
+### BC-03 Christmas Day approved; BC-04 Christmas Night next
+- [x] **BC-03 Christmas Day** visually approved by owner (“Good continue”). Freeze the exact previously generated original with snow-touched strawberry keepsake chest, earned medal, trophy card, bells and red-green gingham. Do not regenerate or overwrite source bytes.
+- [ ] **NEXT BC-04 Christmas Night**: generate exactly ONE standalone image with an open strawberry treasure chest and gold medal plus trophy award card, moonlit blue-violet snowy sky, crescent, glowing firs, Christmas bells and candy canes, red-green gingham; no text or fake earnings. Await owner approval before BC-05 Thanksgiving Day.
+- [ ] True alpha/edge and checkerboard cleanup, exact PNG originals, source manifest and organized ZIP, verified GitHub binary staging, Xcode routing and physical-device testing are distinct pending tasks.
+
+**Authoritative Berry Collection H1-B06: 3/8 visually approved; BC-04 next.**
