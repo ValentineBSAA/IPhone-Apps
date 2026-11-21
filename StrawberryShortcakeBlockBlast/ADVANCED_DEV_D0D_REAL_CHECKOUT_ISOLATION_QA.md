@@ -35,3 +35,9 @@ Unlike earlier D0b mock rules, these new tests exercise the **real `BerryGameSes
 - [ ] Return to Developer Garden; all test histories and balances reset after leaving the sandbox.
 
 **No new images, no new public cheat menu, no IPA/version bump, no PR merge.** D0d is a carefully bounded layer of our *whole-game* QA infrastructure, not a completed game release.
+
+
+## CI attempt history
+- [x] [Initial D0d run #44866568830](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44866568830) stopped **before Xcode build or XCTest** because the copied workflow still expected direct `BerryStandardToolTransaction.purchase` references inside GameSession and the QA lab. D0d intentionally replaces those call sites with `BerryStandardToolCheckout.purchase`.
+- [x] Corrected the workflow to verify both checkout call sites and the reducer implementation directly; [fresh run #44866663042](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44866663042) started. Do not report the initial workflow-check failure as an app or XCTest failure.
+- [ ] Await terminal compile and test results from fresh run, then update acceptance status. Original artwork, save keys and app version remain unchanged.
