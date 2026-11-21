@@ -52,3 +52,11 @@
 - [ ] D1 scenario gallery and one-tap Setup/Run/Results/Discard; D2 board/gameplay modes; D3 special tools, invalid charges, shops and wallet; D4 Story/Daily/quests/birthday/upgrade/save scenarios; D5 H5 seasonal/time previews and future Night game; D6 audio/visual/input/performance; D7 CI/regression receipts.
 - [ ] User goal: no long grinding just to reach line clears, high combos, game over, locked quests, near-expiry timers, invalid tool states, or rare rewards. Every fixture reports deterministic expected/actual outcomes, with BLOCKED/NOT IMPLEMENTED distinguished from PASS.
 - [ ] Roadmap is **design-only**; no new Developer Garden UI, sandbox engine integration, app release or IPA has been made.
+
+
+## D0 disposable QA sandbox implementation checkpoint
+- [x] New [draft PR #63](https://github.com/ValentineBSAA/IPhone-Apps/pull/63) adds internal-only Scenario Sandbox to existing Developer Garden advanced 2-column grid; **no game state or UI change in main**.
+- [x] Two real `BerryEngine` fixtures: near-line clear (one row, 11 points) and occupied-cell rejection (entire engine unchanged). Reusable, deterministic seed/UUID state, Run/Discard buttons and observable PASS/FAIL outcomes.
+- [x] Six targeted tests authored for repeatability, score/clear, rejection, reset, saved keys and fixed tray IDs. [D0 CI](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573) checks Release sandbox exclusion and named iPhone 16e XCTest. **Status pending terminal result**.
+- [x] [Advanced QA scenario catalog](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) now contains **48 contracts**, including two D0 entries correctly marked **implemented_untested**, not accepted/tested-pass.
+- [ ] Separate hardware QA and signed-off sandbox safety. Live-wallet injection and Story/Daily/Quest/Shop scenarios are **not** implemented and remain isolated roadmap tasks. No user saves, app version or holiday assets changed.
