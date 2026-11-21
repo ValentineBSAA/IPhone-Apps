@@ -23,7 +23,7 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 | BS-02 | Halloween | Night | Moonlit purple enchanted storybook, stars, crescent and luminous chapter star | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
 | BS-03 | Christmas | Day | Snow-kissed red/green strawberry storybook with gold star and holly | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
 | BS-04 | Christmas | Night | Moonlit Christmas open storybook, sapphire sky, glowing star, snowy trees, fairy lights | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
-| BS-05 | Thanksgiving | Day | Warm harvest storybook, pie, maple leaves, cinnamon-gold chapter star | ⬜ NEXT: generate one original | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
+| BS-05 | Thanksgiving | Day | Warm harvest storybook, pie, maple leaves, cinnamon-gold chapter star | 🟡 GENERATED | ⬜ AWAITING OWNER | ⬜ alpha/background QA pending | ⬜ | ⬜ |
 | BS-06 | Thanksgiving | Night | Candlelit plum and amber storybook, pumpkin and leaves | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BS-07 | Birthday | Day | Strawberry cake storybook with ribbons, balloon and sparkling chapter star | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BS-08 | Birthday | Night | Lavender birthday storybook with candlelight, confetti, midnight stars | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -108,3 +108,11 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 - [ ] BS-05 is not approved until owner explicitly reviews it. Separate original/RGBA edge QA, source zip/hash import and device integration remain later gates.
 
 **Berry Story visual approvals: 4/8.**
+
+
+### BS-05 Thanksgiving Day generated
+- [x] Independently generated and displayed Halloween? No: this is Thanksgiving Day open strawberry storybook, golden chapter star, berry pie, pumpkins, leaves and orange gingham bow.
+- [ ] Await individual owner visual approval before BS-06 Thanksgiving Night.
+- [ ] Confirm true RGBA transparency and edges; original source ZIP, hashes and GitHub binary import remain pending.
+
+**Berry Story tally: 5/8 generated; 4/8 owner-approved.**
