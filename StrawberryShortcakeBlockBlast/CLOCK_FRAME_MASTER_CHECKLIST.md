@@ -31,8 +31,8 @@ Each holiday needs a new, individually illustrated **Day** and **Night** counter
 | C-05 | C-B03 | Christmas | Day | ✅ original generated | ✅ OWNER APPROVED | ⬜ RGBA edge/halo QA pending | ⬜ source package pending | ⬜ |
 | C-06 | C-B03 | Christmas | Night | ✅ original generated | ✅ OWNER APPROVED | ⬜ RGBA edge/halo QA pending | ⬜ source package pending | ⬜ |
 | C-07 | C-B04 | Thanksgiving | Day | ✅ original generated | ✅ OWNER APPROVED | ⬜ RGBA/edge QA pending | ⬜ source package pending | ⬜ |
-| C-08 | C-B04 | Thanksgiving | Night | ⬜ NEXT: generate one original for approval | ⬜ | ⬜ | ⬜ | ⬜ |
-| C-09 | C-B05 | Birthday | Day | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| C-08 | C-B04 | Thanksgiving | Night | ✅ original generated | ✅ OWNER APPROVED | ⚠ checkerboard may be baked in; alpha verification/cleanup pending | ⬜ source package pending | ⬜ |
+| C-09 | C-B05 | Birthday | Day | ⬜ NEXT: generate one original for owner review | ⬜ | ⬜ | ⬜ | ⬜ |
 | C-10 | C-B05 | Birthday | Night | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 
 **Thanksgiving reference:** owner previously accepted the harvest-themed wide strawberry clock plaque as the holiday *design baseline*, not as a replacement for the two regular clock images. This does **not** automatically approve both final Thanksgiving clock counterparts.
@@ -86,3 +86,13 @@ C-03 Halloween Day and C-04 Halloween Night are approved visual designs by owner
 - [ ] Day and Night alpha, exact-original archiving, 64/96px previews, ZIP, GitHub binary staging and iPhone QA remain independent pending steps.
 
 **Current approvals: 7/10. No new Christmas/Halloween images are needed.**
+
+
+## Thanksgiving visual approval and Birthday next (owner checkpoint)
+- [x] C-07 Thanksgiving Day: approved strawberry pie/pumpkin, amber gingham, cream blank-center design; owner confirmed completion.
+- [x] C-08 Thanksgiving Night: approved moonlit purple harvest frame with pumpkin, pie, crescent, orange/cream gingham, blank digital display center; owner confirmed completion.
+- [ ] Transparency technical check especially C-08: generated art displays a checkerboard pattern; **never claim actual RGBA transparency based on checkerboard visual alone**. Inspect PNG alpha, remove any baked background only after preserving full source, prepare light/dark/checker proofs and edge/halo QA.
+- [ ] Packaging, GitHub original/RGBA binary uploads, iOS 16 target integration and physical iPhone verification are NOT complete for holiday clocks.
+- [ ] **NEXT C-09 Birthday Day**, generate one original matching the established wide plaque with large blank center, birthday-strawberry cake, balloons and pink sunny palette. Ask for owner review before C-10 Night.
+
+**Visual clock artwork approvals: 8/10: base Day/Night, Halloween Day/Night, Christmas Day/Night, Thanksgiving Day/Night.** C-09 and C-10 remain unapproved. This checklist is the source of truth; do not generate collages or merge unrelated image assets.
