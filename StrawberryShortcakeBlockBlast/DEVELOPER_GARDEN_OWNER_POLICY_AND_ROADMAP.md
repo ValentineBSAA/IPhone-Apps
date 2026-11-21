@@ -97,6 +97,15 @@ When real Moonberry game mechanics are implemented, add **all** of these, with i
 
 ### 5. 🌞🌙 Day/night visuals, seasonal art and clock
 
+**Clock/countdown priority, screenshot follow-up:** [Issue #95](https://github.com/ValentineBSAA/IPhone-Apps/issues/95). The Home header currently displays `1:59 PM` and `Moonlight in 4h 1m` because `BerryDayNightClock.swift` formats only hours/minutes, rounds remaining time to whole minutes, and ticks every 30 seconds. **Implement the second-accurate digital clock/countdown as a separate task before applying the already-approved decorative clock artwork.**
+
+- [ ] Home local time **`h:mm:ss a`** in 12-hour format, real iPhone device time, once per second. Display a stable, monospaced `Moonlight in HH:MM:SS` countdown toward **6 PM** and `Sunrise in HH:MM:SS` toward **6 AM**. Refresh from the real current `Date` + `Calendar` target, never a drifting accumulated decrement; no negative seconds or lingering old phase.
+- [ ] Test local 5:59:58/59 PM → 6:00:00 PM and 5:59:58/59 AM → 6:00:00 AM, simulated time zone/DST/calendar, mid-afternoon, app resume/relaunch, offline and manual clock adjustments. Preserve visual-only night status until the real Moonberry market exists.
+- [ ] **Developer Garden State & Timer Lab** receives a read-only virtual-date second-tick and 6 AM/6 PM transition preview that proves the actual Home time/countdown policy, without changing system time or owner saves. It must be covered by native Release tests before the task is signed off.
+- [ ] When the approved analog clock artwork is added, display it from this **same validated time source and countdown logic**, not a second divergent clock model. Preserve two-column grids, time accessibility, tiny-screen readability and original game economy.
+
+
+
 - [ ] Apply all **approved** daytime and matching nighttime game/world illustrations with fallback, without altering original assets or grid geometry; distinguish asset imported vs actually displayed.
 - [ ] Preview 6 AM–6 PM day and 6 PM–6 AM night using **injected 12-hour local time**; handle suspended apps, DST, timezone, midnight, manual clock and offline.
 - [ ] Add opt-in, non-destructive visual previews for Halloween, Thanksgiving, Christmas, birthdays and other owner-approved holidays, **both day and night**; select themes by controlled date, preview contrast and revert without buying or unlocking anything.
