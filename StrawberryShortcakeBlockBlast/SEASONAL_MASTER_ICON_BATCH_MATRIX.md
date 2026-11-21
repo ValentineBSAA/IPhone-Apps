@@ -22,7 +22,7 @@ Use one standalone image-generation output per asset, never collage-generated so
 | ID | Group | Existing Night taxonomy counterpart | Seasonal target status |
 | ---: | --- | --- | --- |
 | 01 | HOME | Berry Classic | 8/8 visual samples approved; exact Classic vs Home mapping to confirm |
-| 02 | HOME | Berry Story | Not generated |
+| 02 | HOME | Berry Story | **H1-B02 dedicated 8-image [checklist](BERRY_STORY_SEASONAL_ICON_CHECKLIST.md) created; BS-01 Halloween Day next, 0/8 owner-approved** |
 | 03 | HOME | Daily Harvest | Not generated |
 | 04 | HOME | More Adventures | Not generated |
 | 05 | HOME | My Strawberry Cottage | Not generated |
@@ -100,3 +100,9 @@ See [H1-B01 art manifest](ArtSource/SeasonalGarden/00_Specs_And_Ledgers/H1_Batch
 ### GitHub seasonal cottage import correction
 - [x] The original eight seasonal cottage Home/Classic concept PNGs were actually imported successfully via [Actions run #44847067327](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44847067327). They remain **separate** from clock frame art and require Xcode/device QA.
 
+
+
+## H1-B02 · Berry Story icon family continuation
+- Dedicated [Berry Story Seasonal Icon Checklist](BERRY_STORY_SEASONAL_ICON_CHECKLIST.md) on the isolated `artwork/berry-seasonal-berry-story-h1-b02` branch.
+- Chapter book is the semantic design (rather than a second cottage); all eight holiday Day/Night versions remain subject to one-by-one owner approval and independent RGBA QA.
+- Previous clock art visual approvals stand at 10/10 but do not imply PNG binaries uploaded or runtime activation.
