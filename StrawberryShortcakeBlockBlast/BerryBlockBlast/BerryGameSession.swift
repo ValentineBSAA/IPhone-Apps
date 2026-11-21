@@ -616,7 +616,8 @@ final class BerryGameSession: ObservableObject {
 
     /// The emergency rescue may be triggered even from the Story Game Over
     /// screen. One purchased charge is spent only after actual cells clear.
-    /// Saving through persistPremium keeps the currency and board atomic.
+    /// Premium writes persist the updated board and inventory, but are not
+    /// guaranteed crash-atomic across separate UserDefaults keys.
     @discardableResult
     func useGoldenStrawberry() -> Bool {
         guard canContinueWithGoldenStrawberry,
@@ -644,7 +645,7 @@ final class BerryGameSession: ObservableObject {
               !engine.goldenRescueUsed,
               engine.clearBoardWithGoldenStrawberry() else { return false }
         berries -= Self.goldenStrawberryCost
-        BerryEconomyLedger.shared.recordSpend(Self.goldenStrawberryCost,
+        checkoutLedger.recordSpend(Self.goldenStrawberryCost,
                                               item: "Golden Strawberry Continue")
         previous = nil
         previousBerryEarnings = 0
@@ -655,7 +656,7 @@ final class BerryGameSession: ObservableObject {
         lastMessage = "✨ Golden Strawberry! You can keep playing!"
         rewardsLog.insert("🍓 -\(Self.goldenStrawberryCost) • Golden Strawberry Continue", at: 0)
         rewardsLog = Array(rewardsLog.prefix(20))
-        UserDefaults.standard.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
+        checkoutDefaults.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
         persistPremium()
         return true
     }
