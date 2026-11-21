@@ -177,3 +177,16 @@ Links: [H1-B02 Berry Story running checklist](https://github.com/ValentineBSAA/I
 - [ ] Next distinct category from seasonal master matrix: **More Adventures** Home tile, H1-B04, eight separate original images, one generated per approval.
 
 **Latest authoritative status:** 8/8 visuals owner-approved; RGB/RGBA QC and GitHub binary staging are pending; do not overwrite earlier Night Garden, clocks, Story or H1-B01 cottage assets.
+
+
+## H1-B03 approved source and RGBA QA package checkpoint
+- [x] **Daily Harvest 8/8 visual originals approved** and all eight exact 1254×1254 original PNG files preserved unchanged.
+- [x] Generated **8 separate RGBA candidates** (5 native RGBA byte-for-byte copies; DH-01, DH-03 and DH-07 non-destructive checkerboard-background removal candidates).
+- [x] Review caught DH-01 calendar-paper alpha holes and the candidate was repaired before packaging; original source remains immutable. This does not substitute for owner alpha approval.
+- [x] Created checker/light/dark RGBA contact sheets and 64/96/144px QA preview, SHA-256 JSON and CSV file manifests, README, and validated ZIP by reading back each individual image and checksum.
+- [x] ZIP filename: `Berry_Berry_Blast_Daily_Harvest_H1_B03_8_Originals_RGBA_QA.zip`, **50,806,509 bytes**, SHA-256 `e3171cb083d3faf1062dd4d75844082a61506cbe5e3491543370f61fcf59cd24`.
+- [ ] **Owner must approve RGBA cleanup** for DH-01, DH-03, DH-07, specifically fringe, tiny holes and readable calendar appearance on light/dark/checker/small UI renders. Five native RGBA items need normal phone QA as well.
+- [ ] Stage binary sources via GitHub Release import and verify SHA before claiming they are committed. **0/8 PNG binaries actually in GitHub at this checkpoint.**
+- [ ] Later Xcode asset mapping/season rules and physical iPhone QA; no build/release or changes to player data implied.
+
+**H1-B03 family is COMPLETE for visual design and packaged for alpha review, NOT fully integrated. Next separate icon category is Home/More Adventures H1-B04.**
