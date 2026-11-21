@@ -23,7 +23,7 @@ Use a clear **little tear-off calendar page (without printed numbers)** as the c
 | ID | Holiday | Appearance | Design direction | Generated | Owner approved | RGBA edge QA | Source in GitHub | iPhone |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | DH-01 | Halloween | Day | Sunny berry calendar, strawberry basket, smiling autumn lantern berries, orange/purple foliage | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ alpha/background QA pending | ⬜ source archive pending | ⬜ |
-| DH-02 | Halloween | Night | Indigo moonlit calendar, glowing berry harvest, playful ghosts & pumpkin-berry lanterns | ⬜ NEXT: generate single original | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
+| DH-02 | Halloween | Night | Moonlit calendar, basket of strawberries, crescent and stars, glowing witch-hat jack-o'-lantern berries | 🟡 GENERATED | ⬜ AWAITING OWNER | ⬜ alpha/edge QA pending | ⬜ source import pending | ⬜ |
 | DH-03 | Christmas | Day | Snow-topped calendar, decorated basket, berry wreath, holly and golden bells | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | DH-04 | Christmas | Night | Moonlit snowy calendar, glowing lights, fir trees, soft frost and festive berries | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | DH-05 | Thanksgiving | Day | Harvest calendar, berry crate, gold maples, pumpkin and berry pie | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -60,3 +60,11 @@ Links: [H1-B02 Berry Story running checklist](https://github.com/ValentineBSAA/I
 - [ ] Actual source PNG GitHub binary import, RGBA alpha/edge QA, packaging and live app integration remain pending.
 
 **Daily Harvest tally: 1/8 approved, 1/8 generated before DH-02.**
+
+
+### DH-02 Halloween Night generation checkpoint
+- [x] DH-02 generated as one original review image in chat: gold crescent and stars, magenta calendar without static dates, strawberry basket, friendly purple witch-hat pumpkin berries and orange/purple gingham bow.
+- [ ] Individual owner approval pending. Do not mark DH-02 approved or generate DH-03 until owner responds.
+- [ ] Original PNG and RGBA derivative files not yet uploaded; later alpha inspection, separate packaging, checksums, small-scale QA and on-device integration remain open.
+
+**Daily Harvest tally: 2/8 generated, 1/8 visually approved.**
