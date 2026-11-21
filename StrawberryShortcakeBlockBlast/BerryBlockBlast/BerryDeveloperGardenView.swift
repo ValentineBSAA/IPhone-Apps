@@ -253,6 +253,7 @@ struct BerryDeveloperGardenView: View {
                 .padding(18)
                 .frame(maxWidth: .infinity)
             }
+            .accessibilityIdentifier("berry.developer.scroll")
             .background(BerryStyle.softPink.ignoresSafeArea())
             .navigationTitle("Berry Garden")
             .navigationBarTitleDisplayMode(.inline)
