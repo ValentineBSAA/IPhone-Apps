@@ -1,0 +1,484 @@
+{
+  "schema": 1,
+  "app": "Berry Berry Blast",
+  "status": "roadmap-only, no test fixtures implemented",
+  "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests.",
+  "count": 46,
+  "status_values": [
+    "planned",
+    "implemented_untested",
+    "pass",
+    "fail",
+    "blocked",
+    "not_implemented"
+  ],
+  "rules": [
+    "Every new mechanic requires a scenario coverage entry.",
+    "No scenario may report pass without result and test artifact.",
+    "Do not modify production saves or reward history.",
+    "Use deterministic RNG and injected clock; never change device clock.",
+    "CI stress tests are not a substitute for physical iPhone 16e touch QA."
+  ],
+  "scenarios": [
+    {
+      "id": "classic-no-tools",
+      "category": "gameplay",
+      "title": "Classic 8×8 disables special tools",
+      "fixture": "Open Classic sandbox with zero and positive tool charges",
+      "expected": "Tool controls remain unavailable; no charge changes",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "endless-8-12-24",
+      "category": "gameplay",
+      "title": "Endless sizes and save namespaces",
+      "fixture": "Seed independent 8,12,24 boards with unique pieces/scores",
+      "expected": "Each size uses its own board/save/best and geometry",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "corner-placement",
+      "category": "gameplay",
+      "title": "Exact four board corners",
+      "fixture": "Set legal corner and edge target pieces",
+      "expected": "Legal pieces place; illegal/outside hits do not",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "line-clear",
+      "category": "gameplay",
+      "title": "One action from row and column clears",
+      "fixture": "Inject near-complete crossing board with legal next tray piece",
+      "expected": "Expected rows/columns clear once with correct score/berries",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "multi-combo",
+      "category": "gameplay",
+      "title": "Multi-line chain and celebration",
+      "fixture": "Prepare 2+ line combo fixture and deterministic effect seed",
+      "expected": "Score/line counts correct; visual preview does not grant",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "blocked-last-move",
+      "category": "gameplay",
+      "title": "No available moves and rescue",
+      "fixture": "Inject board with no legal placement and applicable rescue",
+      "expected": "Correct game-over or mode-specific rescue; no unintended score",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "endless-season",
+      "category": "gameplay",
+      "title": "Endless season boundary and 24×24 patches",
+      "fixture": "Prepare final playable area / season edge in sandbox",
+      "expected": "Section transition stays consistent without stale tiles",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "nightmare-difficulty",
+      "category": "gameplay",
+      "title": "Nightmare 12×12 restrictions",
+      "fixture": "Create hard-board seeded fixture",
+      "expected": "Difficulty/rules retained; no silent bonus tools",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "story-win-lose",
+      "category": "gameplay",
+      "title": "Story final-action goal and failure",
+      "fixture": "Inject chapter one action from win or defeat",
+      "expected": "Correct outcome/next-step; no duplicate reward",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "cozy-progression",
+      "category": "gameplay",
+      "title": "Cozy mode near full board",
+      "fixture": "Create gentle-progression fixture",
+      "expected": "Mode semantics preserved; no classic conversion",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "blitz-expiry",
+      "category": "gameplay",
+      "title": "Blitz timer 3 seconds left",
+      "fixture": "Virtual clock + pause/resume/foreground transitions",
+      "expected": "Countdown expiration and result fire exactly once",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "daily-consumption",
+      "category": "gameplay",
+      "title": "Daily one-attempt and same-day resume",
+      "fixture": "Virtual day + saved daily attempt fixture",
+      "expected": "Entry/resume allowed once; repeat blocked; next day reset correct",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "undo-refund",
+      "category": "tools",
+      "title": "Undo latest line clear",
+      "fixture": "Controlled valid last move and earned berries",
+      "expected": "Undo restores board and only reversible earnings",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "undo-no-previous",
+      "category": "tools",
+      "title": "Undo when no previous move",
+      "fixture": "Create new board with positive undo charges",
+      "expected": "No charge consumed; clear disabled status",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "shuffle-zero",
+      "category": "tools",
+      "title": "Shuffle unavailable or zero",
+      "fixture": "Set zero charges and blocked board",
+      "expected": "No charge deducted and proper guidance",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "hint-disabled",
+      "category": "tools",
+      "title": "Hint in restricted mode",
+      "fixture": "Classic/Blitz mode fixture with available hint credits",
+      "expected": "No invalid tool use or spend",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "trowel-invalid",
+      "category": "tools",
+      "title": "Trowel invalid cell",
+      "fixture": "Select occupied or out-of-bounds cell",
+      "expected": "No charge spent and board unchanged",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "twister-no-piece",
+      "category": "tools",
+      "title": "Twister without tray selection",
+      "fixture": "Zero selection / invalid target",
+      "expected": "No charge spent",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "seed-invalid",
+      "category": "tools",
+      "title": "Seed on unavailable cell",
+      "fixture": "Locked/invalid board space",
+      "expected": "No charge spent",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "golden-reject",
+      "category": "tools",
+      "title": "Golden Strawberry rejected checkout",
+      "fixture": "Funds one below price + cancel flow",
+      "expected": "Wallet and inventory unchanged",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "pantry-locked",
+      "category": "tools",
+      "title": "Pantry locked/empty",
+      "fixture": "Fixture without unlock or selected piece",
+      "expected": "No charge consumed, no inventory gain",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "spyglass-zero",
+      "category": "tools",
+      "title": "Spyglass unavailable",
+      "fixture": "No charge + blocked state",
+      "expected": "No usage/reward mutation",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "double-tap-guard",
+      "category": "tools",
+      "title": "Repeated confirm/rejected action",
+      "fixture": "Rapid duplicate action on same fixture",
+      "expected": "No duplicate debit, grant, or placement",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "insufficient-funds",
+      "category": "economy",
+      "title": "Purchase short by one berry",
+      "fixture": "Wallet below exact item price",
+      "expected": "Checkout declines without debit",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "exact-price",
+      "category": "economy",
+      "title": "Exact-price purchase",
+      "fixture": "Wallet exactly item price in isolated store",
+      "expected": "Exactly one debit; ownership persists in sandbox",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "ledger-vs-wallet",
+      "category": "economy",
+      "title": "Partial economy ledger semantics",
+      "fixture": "Mix earned line + quest + QA income",
+      "expected": "Ledger not mistaken for total wallet",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "no-negative",
+      "category": "economy",
+      "title": "Overspend and overflow guard",
+      "fixture": "Int boundary/negative and duplicate checkout fixtures",
+      "expected": "No negative wallet or integer overflow",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "cosmetic-equip",
+      "category": "economy",
+      "title": "Owned cosmetic equip/unequip",
+      "fixture": "Owned block/board/border combinations",
+      "expected": "Selection reversible; ownership and scores preserved",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "daily-midnight",
+      "category": "progression",
+      "title": "Daily midnight rollover and streak",
+      "fixture": "Injected date 23:59 to 00:01 local",
+      "expected": "One attempt per day, reward not duplicated",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "quest-last-action",
+      "category": "progression",
+      "title": "Quest one move from completion",
+      "fixture": "Seed quest progress minus one",
+      "expected": "Exactly one completion/reward",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "birthday-once",
+      "category": "progression",
+      "title": "Birthday grant once per year",
+      "fixture": "Injected month/day and replay/open twice",
+      "expected": "Existing 100 berry gift once; art toggle independent",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "story-chapter-unlock",
+      "category": "progression",
+      "title": "Story chapter gate and next chapter",
+      "fixture": "Near chapter completion snapshot",
+      "expected": "Correct next chapter without duplicate ownership",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "legacy-save-migration",
+      "category": "progression",
+      "title": "Legacy Endless saved board to current",
+      "fixture": "Versioned legacy engine JSON in sandbox",
+      "expected": "No loss or silent overwrite of original bytes",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "corrupt-save",
+      "category": "progression",
+      "title": "Bad snapshot fails gracefully",
+      "fixture": "Inject truncated/malformed save fixture",
+      "expected": "Safe recovery/fallback; real saves untouched",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "cottage-ownership",
+      "category": "progression",
+      "title": "Cottage decoration equipped and restorable",
+      "fixture": "Owned decoration set and cancel preview",
+      "expected": "No phantom purchase or loss of ownership",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "6am-6pm",
+      "category": "seasons",
+      "title": "Local 6AM/6PM appearance",
+      "fixture": "Virtual time at 05:59/06:00/17:59/18:00",
+      "expected": "Artwork changes correctly; active mode unchanged",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "halloween-clock",
+      "category": "seasons",
+      "title": "Halloween local Oct 31",
+      "fixture": "US calendar fixture in Day and Night",
+      "expected": "Correct icon name or known fallback",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "thanksgiving-region",
+      "category": "seasons",
+      "title": "US vs non-US Thanksgiving",
+      "fixture": "US and Canadian region virtual dates",
+      "expected": "US fourth Thursday applies only for US policy",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "christmas-timezone",
+      "category": "seasons",
+      "title": "Christmas across Phoenix/NYC clock",
+      "fixture": "Same instant differing time zones",
+      "expected": "Date and Night asset resolved locally",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "birthday-overlap",
+      "category": "seasons",
+      "title": "Birthday on Christmas with manual preview",
+      "fixture": "Local birthday option and preview fixture",
+      "expected": "Provisional precedence visible without rewards",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "missing-assets",
+      "category": "seasons",
+      "title": "Missing Berry Collection BC-06/07/08",
+      "fixture": "Simulate absent installed RGBA names",
+      "expected": "Existing base art used, never empty card",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "night-isolation",
+      "category": "experience",
+      "title": "Night experience progress isolation (future)",
+      "fixture": "Night system not implemented",
+      "expected": "Status NOT IMPLEMENTED, never PASS",
+      "status": "not_implemented",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "night-market",
+      "category": "experience",
+      "title": "Night-only shop inventory and Moonberries (future)",
+      "fixture": "Future catalog deliberately unavailable",
+      "expected": "Status NOT IMPLEMENTED, no Day wallet changes",
+      "status": "not_implemented",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "safe-area",
+      "category": "visual",
+      "title": "iPhone 16e 8/12/24 layout/readability",
+      "fixture": "Simulated screen size + controller/touch paths",
+      "expected": "No clipped headings/tools or input interception",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "reduce-motion",
+      "category": "visual",
+      "title": "Animation Reduce Motion and taps",
+      "fixture": "Toggle accessibility fixture",
+      "expected": "Reduced effects, stable hit targets",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    },
+    {
+      "id": "audio-interrupt",
+      "category": "visual",
+      "title": "Audio playlist interruption and resume",
+      "fixture": "Audio-session interruption fixture; 51 M4A+16 WAV",
+      "expected": "No crash, manual QA avoids uncontrolled loud playback",
+      "status": "planned",
+      "execution": "isolated_fixture",
+      "latest_result": null
+    }
+  ]
+}
