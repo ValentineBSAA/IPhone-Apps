@@ -31,3 +31,9 @@ No changes to GameSession, BoardEngine rules, underlying prices/earnings, saved 
 Next D1 creates a typed scenario registry based on the [46 planned contracts](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json). Only scenarios with code and actual test reports may be marked PASS. Future D0b adds injectable virtual game clock, isolated wallet and save-store fixtures **before** tool/purchase/reward actions are simulated.
 
 **Important distinction:** D0's current two scenarios mutate only an isolated engine. This is NOT yet general-purpose injection of hypothetical quest/wallet states into the live playing screen.
+
+
+## CI checkpoint (Release compile)
+- [x] [Actions #44862930573](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573): **Release target compiled successfully with QA sandbox excluded**, after source integrity and original art/audio checks passed.
+- [ ] Named iPhone 16e six-test suite currently executing; do not assert full green until the job's final conclusion and test counts are checked.
+- [ ] Physical iPhone QA and production merge/release remain open.
