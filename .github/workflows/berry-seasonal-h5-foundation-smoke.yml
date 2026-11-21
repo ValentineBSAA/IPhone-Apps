@@ -1,0 +1,92 @@
+name: Berry Berry Blast | H5 seasonal calendar and fallback (Foundation smoke)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/berry-seasonal-h5-foundation-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-seasonal-resolver:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout isolated H5 calendar and fallback test branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/berry-seasonal-h5-asset-fallback-lab
+          persist-credentials: false
+
+      - name: Verify standalone Swift/Foundation toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          swiftc --version
+
+      - name: Type-check both offline policy sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd StrawberryShortcakeBlockBlast
+          swiftc -typecheck \
+            BerryBlockBlast/BerrySeasonalCalendar.swift \
+            BerryBlockBlast/BerrySeasonalAssetResolver.swift
+
+      - name: Compile and execute deterministic policy smoke on Linux
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/main.swift <<'SWIFT'
+          import Foundation
+
+          func local(_ year:Int,_ month:Int,_ day:Int,_ hour:Int,
+                     zone:String = "America/Phoenix") -> Date {
+              var cal=Calendar(identifier:.gregorian)
+              cal.timeZone=TimeZone(identifier:zone)!
+              return cal.date(from:DateComponents(year:year,month:month,day:day,hour:hour))!
+          }
+          var options=BerrySeasonalOptions()
+          options.automaticHolidaysEnabled=true
+          options.countryOverride="US"
+
+          let halloweenDay="BBB_Season_Halloween_Day_MoreAdventures"
+          let halloweenNight="BBB_Season_Halloween_Night_MoreAdventures"
+          let installed:Set<String>=[halloweenDay,halloweenNight]
+          func chosen(_ date:Date,_ role:BerrySeasonalArtRole,
+                      _ assets:Set<String>=installed,
+                      _ opts:BerrySeasonalOptions=options,
+                      zone:TimeZone=TimeZone(identifier:"America/Phoenix")!) -> BerrySeasonalAssetSelection {
+              BerrySeasonalAssetResolver.resolve(role:role,existingAssetName:"UnchangedExistingArt",
+                 at:date,timeZone:zone,deviceRegionCode:"US",
+                 options:opts,approvedInstalledAssetNames:assets)
+          }
+          assert(chosen(local(2026,10,31,5),.moreAdventures).selectedAssetName==halloweenNight)
+          assert(chosen(local(2026,10,31,6),.moreAdventures).selectedAssetName==halloweenDay)
+          assert(chosen(local(2026,10,31,17),.moreAdventures).selectedAssetName==halloweenDay)
+          assert(chosen(local(2026,10,31,18),.moreAdventures).selectedAssetName==halloweenNight)
+          let thanksgiving=chosen(local(2026,11,26,19),.berryCollection,[])
+          assert(thanksgiving.event == .thanksgiving)
+          assert(thanksgiving.reason == .unavailableSeasonalAsset)
+          assert(thanksgiving.selectedAssetName=="UnchangedExistingArt")
+
+          let holiday=chosen(local(2026,12,25,12),.berryStory,
+             ["BBB_Season_Christmas_Day_BerryStory"])
+          assert(holiday.selectedAssetName=="BBB_Season_Christmas_Day_BerryStory")
+          var disabled=BerrySeasonalOptions()
+          assert(chosen(local(2026,12,25,12),.berryStory,
+             ["BBB_Season_Christmas_Day_BerryStory"],disabled).selectedAssetName=="UnchangedExistingArt")
+
+          let clock=chosen(local(2026,11,20,23),.clockFrame,
+             ["BBB_Clock_Base_Night_ClockFrame"],disabled)
+          assert(clock.selectedAssetName=="BBB_Clock_Base_Night_ClockFrame")
+          print("PASS: offline holiday dates, 6AM/6PM, disabled fallback, missing-asset fallback and live clock frame lookup")
+          SWIFT
+          cd StrawberryShortcakeBlockBlast
+          swiftc BerryBlockBlast/BerrySeasonalCalendar.swift \
+                 BerryBlockBlast/BerrySeasonalAssetResolver.swift \
+                 /tmp/main.swift -o /tmp/berry-h5-smoke
+          /tmp/berry-h5-smoke
