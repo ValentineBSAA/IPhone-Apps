@@ -17,6 +17,7 @@
 | 30 Night Edition counterparts | ✅ Imported as 30 individual Xcode imagesets on Build 4 development branch | CI + real-device night-visual QA |
 | Strawberry sun / moon clock icons | 🎨 Illustrated; not integrated | Independent PNG and UI approval |
 | Real live menu clock and day/night presentation | 📋 Planned | Midnight, timezone and app-resume QA |
+| **Second-accurate live time and transition countdown** | 📋 [Issue #95](https://github.com/ValentineBSAA/IPhone-Apps/issues/95), independent of decorative clock | 12-hour `h:mm:ss a`, `Moonlight/Sunrise in HH:MM:SS` at 6 PM/6 AM, update each second, real-device QA |
 | In-context notices and Daily Quest fixes | 📋 Build 5 scope | In-menu visibility and reward QA |
 | Moonberries, night shop transactions and shop switch | 📋 Build 6 scope | Persistent economy + real-clock QA |
 | iPhone 16 AltStore install/signing | ⚠️ Unresolved | Capture exact installation error |
@@ -91,10 +92,25 @@ The first command validates only; the second creates 30 distinct `Night_*.images
 - [ ] On physical iPhone 14 Pro, resume existing endless score, moves, purchases and unlocked cosmetics without reset.
 - [ ] Record issues and fix *only* regressions; do not merge until signed off.
 
+### Gate A2 · Live seconds and real transition countdown (independent of approved clock artwork)
+
+**Owner request from real iPhone screenshot, November 21, 2026:** [Issue #95](https://github.com/ValentineBSAA/IPhone-Apps/issues/95). The existing Home header already reads local time and says e.g. `1:59 PM · Day Garden` with `Moonlight in 4h 1m`, but it drops **seconds** and rounds the remaining time to whole minutes. **Fix this digital header independently and before integrating the approved decorative analog clock**. Do not alter the verified v0.5.16 Build 48 IPA; implement this in the next deliberate, separately tested version.
+
+- [ ] Clock should display **12-hour iPhone-local `h:mm:ss a`**, e.g. `1:59:37 PM`, with no switch to a 24-hour display and no need for new artwork.
+- [ ] Show an actual **HH:MM:SS second-by-second countdown**: daylight `Moonlight in 04:00:23` until next local **6:00 PM**, nighttime `Sunrise in 11:59:59` until next local **6:00 AM**. Label changes immediately on the boundary and seconds never go negative.
+- [ ] Update displayed seconds **once per second**, using `Date()` and `Calendar.nextDate`'s next local 6 AM/6 PM boundary each refresh, **not** a decremented stopwatch or minutes rounded with `ceil(remaining / 60)`. Current source to change: `BerryDayNightClock.swift` (`clockText`, `BerryLiveDayNightClock` minute rounding and 30-second `Timer.publish`).
+- [ ] Render compactly on iPhone, with steady monospaced digits, legible seconds at the smallest supported screen and Dynamic Island, no clipping or visual bouncing. Accessibility must say the actual local time and remaining time.
+- [ ] Recompute immediately after background/foreground, app sleep/relaunch, midnight, timezone/DST change, manual time adjustment; test 5:59:58 → 6:00:00 in both directions of phase transition, offline and simulated local calendars.
+- [ ] **Do not imply the real Night Market is open before Build 6.** `Moonlight` is a day/night visual transition preview. No changes to purchases, Strawberry or Moonberry wallets, save states or selected boards.
+- [ ] Add deterministic Swift tests (injectable local Date/Calendar) plus a native iPhone Home screen test for the seconds update and actual 6 PM/6 AM boundary; confirm on physical iPhone.
+- [ ] Add a read-only **Developer Garden virtual clock** preview for seconds rollovers and both boundaries, without changing system clock or real player state.
+
+**Phase B later:** the already-approved premium analog clock design must **reuse the verified live time/transition model**, not replace it or reset its countdown. No new art is required for Gate A2.
+
 ### Gate B · Night visuals and clock (after Gate A is stable)
 - [ ] Integrate nighttime art as visual-only toggles with original daytime art preserved.
 - [ ] Put separately generated strawberry-sun and moonberry-moon icons into individual PNG image sets.
-- [ ] Add a compact **live, 12-hour, device-local** clock to the home menu, with a day/night name and shop countdown. No full-screen clock.
+- [ ] Integrate the **already-approved compact decorative clock design** later, reusing the second-accurate local time and 6 AM/6 PM countdown delivered by Gate A2. No full-screen clock, and do not regress to a minutes-only countdown.
 - [ ] Define day as **6:00 AM–5:59:59 PM**, night **6:00 PM–5:59:59 AM**, using local calendar/date boundaries rather than timer tick counting.
 - [ ] Test clock while app foregrounded, backgrounded, suspended, resumed, offline, across midnight and timezone/DST changes.
 - [ ] Do not change Night Market inventory, prices or currency in this gate. Show a preview/coming-soon state until shop functionality is truly complete.
