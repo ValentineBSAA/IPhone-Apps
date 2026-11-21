@@ -115,3 +115,9 @@
 - [x] Eight interrupted-state tests added (staged only, partial inventory, partial ledger, repeated launch, corrupt intent, no other save changes, overflow) in [D0e CI](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0e-purchase-recovery-iphone16e.yml), with all previous 40 tests selected.
 - [x] [62-scenario coverage registry](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json): 3 new D0e entries implemented-untested, prior 13 simulator passed.
 - [ ] CI terminal result, physical iPhone acceptance, true power-loss durability limitations, player-friendly recovery screen and full-game purchase/mode/Story save integration remain open. No IPA/release.
+
+
+## ✅ D0e recovery simulator regression accepted
+- [x] [GitHub Actions #44867590124](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44867590124) **SUCCESS**: **48/48** selected iPhone 16e simulator tests passed including eight real standard-tool partial-purchase replay tests; Release compiled without QA-only UI.
+- [x] [62-contract coverage registry](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) now has **16 simulator-pass/device-pending, 44 planned, 2 not implemented**.
+- [ ] Physical iPhone 16e acceptance, real process-kill/power-loss durability, a friendly corrupt-intent recovery UI and broad Boutique/Story/Daily/Night regression are not passed by this selected suite. [PR #68](https://github.com/ValentineBSAA/IPhone-Apps/pull/68) stays draft; no IPA.
