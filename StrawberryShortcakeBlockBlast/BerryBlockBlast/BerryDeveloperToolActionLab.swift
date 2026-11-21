@@ -12,6 +12,10 @@ enum BerryQAToolActionScenario: String, CaseIterable, Identifiable {
     case invalid = "Invalid Tool Targets"
     case mega = "Mega Garden Save"
     case buyAndUse = "Buy & Use Trowel"
+    case twister = "Twister Rotation"
+    case pantry = "Picnic Pantry Swap"
+    case megaGolden = "Mega Golden Rescue"
+    case goldenCheckout = "Buy & Rescue Garden"
 
     var id: String { rawValue }
     var explanation: String {
@@ -23,6 +27,10 @@ enum BerryQAToolActionScenario: String, CaseIterable, Identifiable {
         case .invalid: return "Try a Trowel outside the board and a Seed on an occupied cell."
         case .mega: return "Remove a cell from a saved 24×24 garden without touching separate 8×8 or 12×12 saves."
         case .buyAndUse: return "Pay the real 150-berry Trowel price, use the tool, reopen and check wallet, ledger and charges."
+        case .twister: return "Rotate a real L-shaped tray piece using one Twister charge, save the turn and reopen."
+        case .pantry: return "Stash a real tray piece using owned Picnic Pantry, reopen, return it and save again."
+        case .megaGolden: return "Clear a 24×24 Mega Garden in all four patches, then reopen without changing other saves."
+        case .goldenCheckout: return "Spend exactly 250 test berries to rescue a garden and verify the real ledger, receipt and saved run."
         }
     }
     var expected: String {
@@ -34,6 +42,10 @@ enum BerryQAToolActionScenario: String, CaseIterable, Identifiable {
         case .invalid: return "Both actions rejected; tool charges and board bytes unchanged."
         case .mega: return "24×24 tool changes persist; saved 8×8 and 12×12 gardens untouched."
         case .buyAndUse: return "Wallet 0, ledger 150, cleared cell and no remaining Trowel after restart."
+        case .twister: return "Rotated L-shaped piece saved/reloaded; Twister charges 3 → 2, score safe."
+        case .pantry: return "Stored piece and swap back survive two reopenings; permanent ownership remains."
+        case .megaGolden: return "All four Mega Garden patches clear; one rescue used; 8×8 and 12×12 saves intact."
+        case .goldenCheckout: return "Exact wallet and ledger spend 250, one reward receipt, rescue saved and no second purchase."
         }
     }
 }
@@ -101,8 +113,9 @@ struct BerryDeveloperToolActionLab {
         }
         defer { store.removePersistentDomain(forName: testName) }
 
-        let side = selection == .mega ? 24 : 8
-        let wallet = selection == .buyAndUse ? 150 : 0
+        let side = (selection == .mega || selection == .megaGolden) ? 24 : 8
+        let wallet = selection == .buyAndUse ? 150 :
+                     (selection == .goldenCheckout ? 250 : 0)
         let inv = Inventory(berries: wallet, undos: 2, shuffles: 2,
                             totalEarnedBerries: 15, hints: 1)
         guard let bytes = try? JSONEncoder().encode(inv) else {
@@ -119,19 +132,33 @@ struct BerryDeveloperToolActionLab {
         switch selection {
         case .trowel, .mega: startCharges["trowel"] = 1
         case .seed: startCharges["seed"] = 1
-        case .golden, .goldenRepeat: startCharges["golden-strawberry"] = 1
+        case .golden, .goldenRepeat, .megaGolden: startCharges["golden-strawberry"] = 1
+        case .twister: startCharges["twister"] = 3
         case .invalid:
             startCharges["trowel"] = 1
             startCharges["seed"] = 1
-        case .buyAndUse: break
+        case .pantry, .goldenCheckout, .buyAndUse: break
         }
         store.set(startCharges, forKey: chargesKey)
+        if selection == .pantry {
+            store.set(["pantry"], forKey: "berryberryblast.premium.permanent.v059")
+        }
 
         // Create a real one-move playable board, not a fake success flag.
         let piece = BerryPiece(points: [BerryPoint(row: 0, col: 0)], tint: 2)
-        let empty = Array(repeating: Array<Int?>(repeating: nil, count: side),
+        let elbow = BerryPiece(points: [BerryPoint(row: 0, col: 0),
+                                        BerryPoint(row: 1, col: 0),
+                                        BerryPoint(row: 1, col: 1)], tint: 3)
+        let spare = BerryPiece(points: [BerryPoint(row: 0, col: 0)], tint: 4)
+        var empty = Array(repeating: Array<Int?>(repeating: nil, count: side),
                           count: side)
-        var board = BerryEngine(board: empty, tray: [piece, nil, nil], score: 100)
+        if selection == .megaGolden {
+            empty[1][15] = 2
+            empty[14][1] = 3
+            empty[21][21] = 4
+        }
+        let advanced = selection == .twister || selection == .pantry
+        var board = BerryEngine(board: empty, tray: advanced ? [piece, elbow, spare] : [piece, nil, nil], score: 100)
         guard board.place(slot: 0, row: 1, col: 1) != nil,
               let initialSave = try? JSONEncoder().encode(board) else {
             let receipt = BerryQAToolActionReceipt(scenario: selection,
@@ -243,6 +270,67 @@ struct BerryDeveloperToolActionLab {
                      reopened.premiumCharges["trowel"] == 0 &&
                      ledger.spent == 150 && ledger.spentByItem["trowel"] == 150
             actual = "Bought \(bought), used \(used); wallet \(reopened.berries); charges \(reopened.premiumCharges["trowel"] ?? -1); spent \(ledger.spent)."
+
+        case .twister:
+            let before = game.engine.tray[1]?.points
+            let used = game.useRibbonTwister(slot: 1)
+            let rotated = game.engine.tray[1]?.points
+            let reopened = openGame()
+            passed = used && before != nil && rotated != nil &&
+                     Set(before!) != Set(rotated!) &&
+                     Set(reopened.engine.tray[1]?.points ?? []) == Set(rotated!) &&
+                     reopened.premiumCharges["twister"] == 2 &&
+                     reopened.engine.score == initialScore &&
+                     reopened.engine.moves == initialMoves
+            actual = "Rotated \(used); different shape \(before != rotated); restart charges \(reopened.premiumCharges["twister"] ?? -1)."
+
+        case .pantry:
+            let original = game.engine.tray[1]
+            let stored = game.usePicnicPantry(slot: 1)
+            let stash = openGame()
+            let reserveSafe = stash.pantryPiece == original &&
+                              stash.engine.tray[1] == nil &&
+                              stash.premiumOwned.contains("pantry")
+            let restored = stash.usePicnicPantry(slot: 1)
+            let twice = openGame()
+            passed = original != nil && stored && reserveSafe && restored &&
+                     twice.pantryPiece == nil &&
+                     twice.engine.tray[1] == original &&
+                     twice.premiumOwned.contains("pantry") && twice.berries == 0
+            actual = "Stashed \(stored); reserve restored \(reserveSafe); swapped \(restored); final tray matches \(twice.engine.tray[1] == original)."
+
+        case .megaGolden:
+            let fourSectionsOccupied = game.engine.board[1][1] != nil &&
+                game.engine.board[1][15] != nil &&
+                game.engine.board[14][1] != nil &&
+                game.engine.board[21][21] != nil
+            let rescued = game.useGoldenStrawberry()
+            let reopened = openGame()
+            let clear = reopened.engine.board.flatMap { $0 }.allSatisfy { $0 == nil }
+            let othersSafe = otherSaved.allSatisfy { store.data(forKey: $0.key) == $0.value }
+            passed = fourSectionsOccupied && rescued && clear &&
+                     reopened.engine.side == 24 &&
+                     reopened.engine.goldenRescueUsed &&
+                     reopened.engine.score == initialScore &&
+                     reopened.premiumCharges["golden-strawberry"] == 0 &&
+                     othersSafe
+            actual = "Four sections occupied \(fourSectionsOccupied); rescued \(rescued); clear \(clear); other saves \(othersSafe ? "safe" : "CHANGED")."
+
+        case .goldenCheckout:
+            let rescued = game.buyAndUseGoldenStrawberry()
+            let reopened = openGame()
+            let duplicate = reopened.buyAndUseGoldenStrawberry()
+            let receipt = store.stringArray(forKey: "berryblockblast.rewards.v1") ?? []
+            let clear = reopened.engine.board.flatMap { $0 }.allSatisfy { $0 == nil }
+            passed = rescued && !duplicate && clear &&
+                     reopened.berries == 0 &&
+                     reopened.engine.goldenRescueUsed &&
+                     reopened.engine.score == initialScore &&
+                     ledger.spent == 250 &&
+                     ledger.spentByItem["Golden Strawberry Continue"] == 250 &&
+                     receipt.count == 1 &&
+                     receipt[0].contains("Golden Strawberry Continue")
+            actual = "Rescued \(rescued); second refused \(!duplicate); wallet \(reopened.berries); spent \(ledger.spent); receipt count \(receipt.count)."
         }
 
         let currentPlayer = watchedKeys.map {
