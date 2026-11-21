@@ -161,6 +161,11 @@ jobs:
           test -f Tests/PosiesPremiumCareTests.swift
           test -f Tests/PosiesDailyCareTests.swift
           test -f Tests/PosiesMedicationCatalogTests.swift
+          test -f Tests/PosiesMedicationCabinetPolishTests.swift
+          grep -q 'struct PosiesMedicationProfile' Sources/PosiesPremiumModels.swift
+          grep -q 'PosiesMedicationMeasurements.validPair' Sources/PosiesPremiumModels.swift
+          grep -q 'selectionMenu' Sources/PosiesMedicationCabinetView.swift
+          echo "Verified v0.3.0 structured medication editor and regression sources"
           test -f Sources/PosiesMedicationCatalog.swift
           grep -q 'PosiesMedicationCatalogView' Sources/PosiesMedicationCabinetView.swift
           grep -q 'PosiesMedicationReferenceDetail' Sources/PosiesMedicationCabinetView.swift

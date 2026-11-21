@@ -103,7 +103,7 @@ struct PosiesMedicationCabinetView: View {
                     }
                     .buttonStyle(.bordered)
                 }
-                Text("This library helps you find a name, not choose treatment. Your dose, schedule and actual medication events stay under your control. Lock-screen reminders remain discreet.")
+                Text("Your cabinet stores what you enter from a label. It never chooses a dose or records an intake for you. Open Safety & label for official medication information.")
                     .font(.caption).foregroundStyle(Color.potsSecondary)
             }
             .padding(18)
@@ -172,31 +172,39 @@ struct PosiesMedicationCabinetView: View {
         let reference = PosiesMedicationCatalog.find(profile.name)
         return GlassCard {
             VStack(alignment: .leading, spacing: 8) {
-                Text(profile.name)
-                    .font(.headline)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-                if !profile.labelDose.isEmpty {
-                    Text(profile.labelDose).font(.subheadline).foregroundStyle(Color.potsSecondary)
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: profile.dosageForm == "Liquid" || profile.dosageForm == "Drops"
+                          ? "drop.fill" : "pills.fill")
+                        .font(.title3).foregroundStyle(Color.potsTeal)
+                        .frame(width: 34, height: 38)
+                        .background(Color.potsSurfaceMuted, in: RoundedRectangle(cornerRadius: 10))
+                    Text(profile.name)
+                        .font(.headline).lineLimit(2).minimumScaleFactor(0.8)
+                    Spacer(minLength: 0)
+                }
+                if !profile.displayStrength.isEmpty {
+                    Text(profile.displayStrength)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.potsTeal)
                         .lineLimit(2)
+                }
+                if let dosageForm = profile.dosageForm {
+                    Text(dosageForm).font(.caption).foregroundStyle(Color.potsSecondary)
                 }
                 if profile.schedule != "Not set" && !profile.schedule.isEmpty {
                     Label(profile.schedule, systemImage: "calendar")
-                        .font(.caption).foregroundStyle(Color.potsTeal)
+                        .font(.caption).foregroundStyle(Color.potsSecondary)
+                        .lineLimit(2)
+                }
+                if let supply = profile.displaySupply {
+                    Text(supply).font(.caption).foregroundStyle(Color.potsSecondary)
                         .lineLimit(2)
                 }
                 if let reference {
-                    Text(reference.category)
-                        .font(.caption2.weight(.semibold)).foregroundStyle(Color.potsTeal)
-                        .lineLimit(2)
-                    Text(reference.caution)
-                        .font(.caption)
-                        .foregroundStyle(Color.potsSecondary)
-                        .lineLimit(3)
                     NavigationLink {
                         PosiesMedicationReferenceDetail(reference: reference)
                     } label: {
-                        Label("Safety details", systemImage: "info.circle")
+                        Label("Safety & label", systemImage: "info.circle")
                             .font(.caption.weight(.semibold))
                     }
                 }
@@ -393,75 +401,193 @@ struct PosiesMedicationReferenceDetail: View {
 private struct PosiesMedicationProfileEditor: View {
     @Environment(\.dismiss) private var dismiss
     @State private var profile: PosiesMedicationProfile
+    @State private var strengthText: String
+    @State private var strengthUnit: String
+    @State private var form: String
+    @State private var schedule: String
     @State private var supplyText: String
+    @State private var supplyUnit: String
     @State private var hasRefillDate: Bool
-    let onSave: (PosiesMedicationProfile) -> Bool
+    @State private var showLabelDetails = false
     @State private var saveFailed = false
+    let onSave: (PosiesMedicationProfile) -> Bool
 
-    private let schedules = ["Daily", "Several times daily", "As needed", "Other"]
     init(profile: PosiesMedicationProfile, onSave: @escaping (PosiesMedicationProfile) -> Bool) {
         _profile = State(initialValue: profile)
-        _supplyText = State(initialValue: profile.remainingSupply.map(String.init) ?? "")
+        _strengthText = State(initialValue: profile.strengthAmount ?? "")
+        _strengthUnit = State(initialValue: profile.strengthUnit ?? "")
+        _form = State(initialValue: profile.dosageForm ?? "")
+        _schedule = State(initialValue: profile.schedule == "Not set" ? "" : profile.schedule)
+        _supplyText = State(initialValue: profile.supplyAmount ??
+                            profile.remainingSupply.map(String.init) ?? "")
+        _supplyUnit = State(initialValue: profile.supplyUnit ??
+                            (profile.remainingSupply == nil ? "" : "units"))
         _hasRefillDate = State(initialValue: profile.refillDate != nil)
         self.onSave = onSave
     }
+
+    private var strengthIsValid: Bool {
+        PosiesMedicationMeasurements.validPair(
+            amount: strengthText, unit: strengthUnit,
+            units: PosiesMedicationMeasurements.strengthUnits, max: 1000000)
+    }
+    private var supplyIsValid: Bool {
+        PosiesMedicationMeasurements.validPair(
+            amount: supplyText, unit: supplyUnit,
+            units: PosiesMedicationMeasurements.supplyUnits, max: 100000)
+    }
+    private var canSave: Bool {
+        var candidate = profile
+        candidate.strengthAmount = strengthText.isEmpty ? nil : strengthText
+        candidate.strengthUnit = strengthUnit.isEmpty ? nil : strengthUnit
+        candidate.dosageForm = form.isEmpty ? nil : form
+        // Legacy supply is preserved below if no structured replacement is made.
+        if !isOriginalLegacySupply {
+            candidate.remainingSupply = nil
+            candidate.supplyAmount = supplyText.isEmpty ? nil : supplyText
+            candidate.supplyUnit = supplyUnit.isEmpty ? nil : supplyUnit
+        }
+        return strengthIsValid && supplyIsValid && candidate.safeToSave
+    }
+    private var isOriginalLegacySupply: Bool {
+        profile.supplyAmount == nil && profile.remainingSupply != nil &&
+        supplyText == profile.remainingSupply.map(String.init) &&
+        supplyUnit == "units"
+    }
+    private var draftStrength: String {
+        strengthIsValid && !strengthText.isEmpty ? "\(strengthText) \(strengthUnit)" :
+            (profile.labelDose.isEmpty ? "Strength not entered" : profile.labelDose)
+    }
+    private var isLiquid: Bool { form == "Liquid" || form == "Drops" }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 13) {
+                    GlassCard {
+                        VStack(alignment: .leading, spacing: 9) {
+                            HStack(spacing: 12) {
+                                Image(systemName: isLiquid ? "drop.fill" : "pills.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(Color.potsTeal)
+                                    .frame(width: 49, height: 49)
+                                    .background(Color.potsSurfaceMuted,
+                                                in: RoundedRectangle(cornerRadius: 14))
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(profile.name.isEmpty ? "New medication" : profile.name)
+                                        .font(.headline).lineLimit(2)
+                                    Text(draftStrength)
+                                        .font(.subheadline).foregroundStyle(Color.potsSecondary)
+                                }
+                                Spacer(minLength: 0)
+                            }
+                            Text("A personal bottle card, not a prescription or a dose recommendation.")
+                                .font(.caption).foregroundStyle(Color.potsSecondary)
+                        }
+                    }
+
                     GlassCard {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("From your medication label").font(.headline)
-                            TextField("Medication name", text: $profile.name)
+                            Label("Bottle label", systemImage: "pills.fill")
+                                .font(.headline).foregroundStyle(Color.potsTeal)
+                            TextField("Medication name (from your label)", text: $profile.name)
                                 .textFieldStyle(.roundedBorder)
-                            TextField("Dose or strength on label (optional)", text: $profile.labelDose)
-                                .textFieldStyle(.roundedBorder)
-                            TextField("Instructions from your label (optional)", text: $profile.instructions, axis: .vertical)
-                                .lineLimit(2...5).textFieldStyle(.roundedBorder)
-                            Text("How is it scheduled?").font(.subheadline.weight(.semibold))
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 125), spacing: 8)], spacing: 8) {
-                                ForEach(schedules, id: \.self) { option in
-                                    let active = profile.schedule == option
-                                    Button {
-                                        profile.schedule = PosiesChoiceBehavior.preference(
-                                            profile.schedule, tapped: option, defaultValue: "Not set")
-                                    } label: {
-                                        Text(option)
-                                            .font(.subheadline.weight(active ? .semibold : .regular))
-                                            .frame(maxWidth: .infinity, minHeight: 45)
-                                            .foregroundStyle(active ? Color.white : Color.primary)
-                                            .background(active ? Color.potsButtonFill : Color.potsSurfaceMuted,
-                                                        in: RoundedRectangle(cornerRadius: 11))
-                                    }
-                                    .buttonStyle(.plain)
-                                    .accessibilityAddTraits(active ? [.isSelected] : [])
+                                .accessibilityLabel("Medication name")
+                            Text("Strength shown on label (optional)")
+                                .font(.subheadline.weight(.semibold))
+                            HStack(spacing: 9) {
+                                TextField("e.g. 400", text: $strengthText)
+                                    .keyboardType(.decimalPad).textFieldStyle(.roundedBorder)
+                                    .accessibilityLabel("Label strength amount")
+                                selectionMenu("Unit", value: strengthUnit,
+                                              options: PosiesMedicationMeasurements.strengthUnits) {
+                                    strengthUnit = $0
+                                }
+                                .frame(maxWidth: 150)
+                            }
+                            if !strengthIsValid {
+                                Text("Enter a positive label amount and select its matching unit, or clear both.")
+                                    .font(.caption).foregroundStyle(Color.potsSecondary)
+                            }
+                            Text("These are label details, not instructions for how much to take.")
+                                .font(.caption).foregroundStyle(Color.potsSecondary)
+                            HStack(spacing: 9) {
+                                selectionMenu("Medicine form", value: form,
+                                              options: PosiesMedicationMeasurements.forms) {
+                                    form = $0
+                                }
+                                selectionMenu("My schedule", value: schedule,
+                                              options: PosiesMedicationMeasurements.schedules) {
+                                    schedule = $0
                                 }
                             }
                         }
                     }
+
                     GlassCard {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Refills & notes (optional)").font(.headline)
-                            Toggle("Save a refill date", isOn: $hasRefillDate)
+                            Label("Bottle & refills", systemImage: "shippingbox")
+                                .font(.headline).foregroundStyle(Color.potsTeal)
+                            Text("Amount on hand (optional)")
+                                .font(.subheadline.weight(.semibold))
+                            HStack(spacing: 9) {
+                                TextField("e.g. 30", text: $supplyText)
+                                    .keyboardType(.decimalPad).textFieldStyle(.roundedBorder)
+                                    .accessibilityLabel("Amount remaining in the bottle")
+                                selectionMenu("Unit", value: supplyUnit,
+                                              options: PosiesMedicationMeasurements.supplyUnits) {
+                                    supplyUnit = $0
+                                }
+                                .frame(maxWidth: 150)
+                            }
+                            if !supplyIsValid {
+                                Text("Enter a positive amount with a matching unit, or clear both.")
+                                    .font(.caption).foregroundStyle(Color.potsSecondary)
+                            }
+                            if supplyUnit == "US fl oz" || isLiquid {
+                                Text("US fl oz can describe bottle volume, but use mL and a proper dosing device for oral-liquid doses. This app doesn't calculate doses.")
+                                    .font(.caption).foregroundStyle(Color.potsSecondary)
+                            }
+                            Toggle("Track a refill date", isOn: $hasRefillDate)
                                 .tint(Color.potsTeal)
                             if hasRefillDate {
-                                DatePicker("Date from your plan", selection: Binding(
+                                DatePicker("My refill date", selection: Binding(
                                     get: { profile.refillDate ?? Date() },
                                     set: { profile.refillDate = $0 }), displayedComponents: .date)
                             }
-                            TextField("Remaining tablets / units (optional)", text: $supplyText)
-                                .keyboardType(.numberPad)
-                                .textFieldStyle(.roundedBorder)
-                            TextField("Notes", text: $profile.notes, axis: .vertical)
-                                .lineLimit(2...5).textFieldStyle(.roundedBorder)
-                            Text("Supply is only updated when you edit it. This app won't assume you took a dose.")
+                            Text("Supply is updated only when you edit it. No automatic pill counting.")
                                 .font(.caption).foregroundStyle(Color.potsSecondary)
                         }
                     }
-                    Text("Always use instructions from your clinician or pharmacy. No interaction checker or dosing advice is provided.")
+
+                    GlassCard {
+                        DisclosureGroup(isExpanded: $showLabelDetails) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                TextField("Directions copied from my label (optional)",
+                                          text: $profile.instructions, axis: .vertical)
+                                    .lineLimit(2...5).textFieldStyle(.roundedBorder)
+                                TextField("My notes (optional)", text: $profile.notes, axis: .vertical)
+                                    .lineLimit(2...5).textFieldStyle(.roundedBorder)
+                                TextField("Older free-text label value (kept for compatibility)",
+                                          text: $profile.labelDose)
+                                    .textFieldStyle(.roundedBorder)
+                                if !profile.labelDose.isEmpty {
+                                    Text("Older entries may contain a number without a unit. We keep it exactly as entered and never assume it means mg.")
+                                        .font(.caption).foregroundStyle(Color.potsSecondary)
+                                }
+                            }
+                            .padding(.top, 9)
+                        } label: {
+                            Label("Directions & personal notes (optional)", systemImage: "square.and.pencil")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .tint(Color.potsTeal)
+                    }
+                    Text("Use the strength, form and instructions printed on your own package. Ask your pharmacist if the label is unclear. Nothing in this app changes treatment.")
                         .font(.caption).foregroundStyle(Color.potsSecondary)
                 }
                 .padding(18)
+                .padding(.bottom, 20)
             }
             .background(Color.potsBackground.ignoresSafeArea())
             .navigationTitle("Medication profile")
@@ -471,23 +597,68 @@ private struct PosiesMedicationProfileEditor: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        profile.refillDate = hasRefillDate ? (profile.refillDate ?? Date()) : nil
-                        profile.remainingSupply = supplyText.isEmpty ? nil : Int(supplyText)
-                        if onSave(profile) {
-                            dismiss()
-                        } else {
-                            saveFailed = true
-                        }
-                    }
-                    .disabled(!profile.safeToSave || (!supplyText.isEmpty && Int(supplyText) == nil))
+                    Button("Save") { saveProfile() }
+                        .disabled(!canSave)
                 }
             }
             .alert("That profile wasn't saved", isPresented: $saveFailed) {
                 Button("Keep editing", role: .cancel) {}
             } message: {
-                Text("Please check the details and try again. Nothing in your cabinet was changed.")
+                Text("Please check the details and try again. Your existing cabinet was not changed.")
             }
+        }
+    }
+
+    private func selectionMenu(_ title: String, value: String, options: [String],
+                               onSelect: @escaping (String) -> Void) -> some View {
+        Menu {
+            Button("Not set") { onSelect("") }
+            ForEach(options, id: \.self) { option in
+                Button {
+                    onSelect(value == option ? "" : option)
+                } label: {
+                    if value == option {
+                        Label(option, systemImage: "checkmark")
+                    } else {
+                        Text(option)
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 5) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.caption2).foregroundStyle(Color.potsSecondary)
+                    Text(value.isEmpty ? "Choose" : value)
+                        .font(.subheadline.weight(.semibold)).lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.down").font(.caption2)
+            }
+            .foregroundStyle(Color.primary)
+            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .background(Color.potsSurfaceMuted, in: RoundedRectangle(cornerRadius: 10))
+        }
+        .accessibilityLabel("\(title), \(value.isEmpty ? "not set" : value)")
+        .accessibilityHint("Opens a menu; choose the same option again to clear it.")
+    }
+
+    private func saveProfile() {
+        guard canSave else { return }
+        profile.strengthAmount = strengthText.isEmpty ? nil : strengthText.trimmingCharacters(in: .whitespaces)
+        profile.strengthUnit = strengthUnit.isEmpty ? nil : strengthUnit
+        profile.dosageForm = form.isEmpty ? nil : form
+        profile.schedule = schedule.isEmpty ? "Not set" : schedule
+        if !isOriginalLegacySupply {
+            profile.remainingSupply = nil
+            profile.supplyAmount = supplyText.isEmpty ? nil : supplyText.trimmingCharacters(in: .whitespaces)
+            profile.supplyUnit = supplyUnit.isEmpty ? nil : supplyUnit
+        }
+        profile.refillDate = hasRefillDate ? (profile.refillDate ?? Date()) : nil
+        if onSave(profile) {
+            dismiss()
+        } else {
+            saveFailed = true
         }
     }
 }

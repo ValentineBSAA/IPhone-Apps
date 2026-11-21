@@ -309,3 +309,11 @@
 - [ ] Implement the existing v0.3.0 roadmap: optional flare timeline/context, careful observational summaries with missing-day handling and sample sizes, clinician-ready export and appointment-note improvements.
 - [ ] Add tests for each *implemented* 0.3.0 feature and iPhone physical QA before considering the feature milestone stable.
 - [ ] Do not merge stage branches or change the published main branch without accepted testing. See UX_V030.md.
+
+## v0.3.0 | Premium medication cabinet polish, awaiting QA
+- [x] Reorganize medication profile into compact preview and sections: bottle label, form/frequency dropdowns, remaining supply, refills, optional collapsed notes.
+- [x] Structured optional strength and inventory units (mg/mcg/g/mL/IU/etc; tablets/capsules/mL/US fl oz/etc); original older free-text strength untouched and never guessed.
+- [x] Dedicated supply field supports decimals for US fl oz while keeping old integer amount readable; no automatic dose calculations or decrementing.
+- [x] Dropdown selections can be cleared, and invalid strength/amount pair prevents Save.
+- [x] Saved cards show strength/form/supply only when explicitly entered; official safety links remain accessible.
+- [ ] Complete v0.3.0 CI, tests and physical iPhone QA; retain all future flare and clinician export work.
