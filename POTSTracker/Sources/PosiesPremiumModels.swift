@@ -35,6 +35,37 @@ struct PosiesVitalsContext: Codable, Equatable {
     }
 }
 
+/// An optional guided flare-up session saved inside a symptom record.
+/// It does not request a diagnostic standing test or an exercise challenge.
+struct PosiesFlareContext: Codable, Equatable {
+    static let marker = "posies-flare-v1:"
+    var startedAt: Date?
+    var endedAt: Date?
+    var pulse: Int?
+    var systolic: Int?
+    var diastolic: Int?
+    var triggers: [String] = []
+    var whatHelped: String = ""
+
+    static func read(_ value: String) -> Self? {
+        guard value.hasPrefix(marker),
+              let data = Data(base64Encoded: String(value.dropFirst(marker.count))) else { return nil }
+        return try? PosiesDataTransfer.decoder().decode(Self.self, from: data)
+    }
+    func stored() -> String {
+        guard let data = try? PosiesDataTransfer.encoder().encode(self) else { return "manual" }
+        return Self.marker + data.base64EncodedString()
+    }
+    var isValid: Bool {
+        (pulse == nil || (1...400).contains(pulse!)) &&
+        (systolic == nil || (1...400).contains(systolic!)) &&
+        (diastolic == nil || (1...400).contains(diastolic!)) &&
+        ((systolic == nil) == (diastolic == nil)) &&
+        (endedAt == nil || startedAt == nil || endedAt! >= startedAt!) &&
+        triggers.count <= 20 && whatHelped.count <= 2000
+    }
+}
+
 struct PosiesMedicationProfile: Codable, Equatable, Identifiable {
     var id = UUID()
     var name: String
