@@ -341,6 +341,7 @@ struct BerryDeveloperGardenView: View {
             BerryDeveloperSandboxPanel()
         case .stateLab:
             BerryDeveloperStateLabPanel()
+            BerryClockTransitionPreview()
         case .commerce:
             BerryDeveloperCommerceLabPanel()
         case .toolActions:
@@ -509,10 +510,14 @@ struct BerryDeveloperGardenView: View {
                 .font(.caption)
         case .clock:
             TimelineView(.periodic(from: .now, by: 1)) { context in
-                Text(context.date.formatted(date: .abbreviated, time: .standard))
-                    .font(.system(size: 17, weight: .bold, design: .monospaced))
+                Text(BerryDayNightAppearance.clockText(context.date))
+                    .font(.system(size: 18, weight: .bold, design: .monospaced))
+                Text(BerryDayNightAppearance.countdownText(at: context.date))
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .monospacedDigit()
             }
-            Text("This is your phone's current local clock. Automatic 6 AM/6 PM storefront switching is planned for the Night Market update.")
+            BerryClockTransitionPreview()
+            Text("The real iPhone clock and visual 6 AM/6 PM countdown work now. The Moonberry Night Market and its actual shop switch remain Build 6 features.")
                 .font(.caption)
                 .multilineTextAlignment(.center)
         case .notifications:
