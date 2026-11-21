@@ -79,7 +79,7 @@ final class BerryDeveloperStateLabTests: XCTestCase {
             let key = "test-\(side)"
             try storage.save(engine, key: key)
             let loaded = try XCTUnwrap(storage.restore(key: key))
-            XCTAssertEqual(try canonical(loaded), canonical(engine))
+            XCTAssertEqual(try canonical(loaded), try canonical(engine))
             XCTAssertGreaterThan(storage.byteCount(key: key), 100)
         }
         XCTAssertNil(try storage.restore(key: "missing"))
@@ -92,7 +92,7 @@ final class BerryDeveloperStateLabTests: XCTestCase {
         storage.setCorruptedBytes(Data("{bad".utf8), key: "bad")
         XCTAssertThrowsError(try storage.restore(key: "bad"))
         let restored = try XCTUnwrap(storage.restore(key: "valid"))
-        XCTAssertEqual(try canonical(restored), canonical(original))
+        XCTAssertEqual(try canonical(restored), try canonical(original))
     }
 
     func testVirtualTimerPauseAndResumeUsesProductionTimingPolicy() {
