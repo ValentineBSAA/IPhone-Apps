@@ -154,13 +154,15 @@ struct EntryEditor: View {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 108), spacing: 8)], spacing: 8) {
                     ForEach(symptoms, id: \.self) { item in
                         Button(item) {
-                            title = item == "Other" ? "" : item
+                            title = PosiesChoiceBehavior.toggle(title, tapped: item == "Other" ? "" : item)
                         }
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(title == item ? Color.white : Color.primary)
                         .frame(maxWidth: .infinity, minHeight: lowEnergyMode ? 56 : 43)
                         .background(title == item ? Color.potsButtonFill : Color.potsTeal.opacity(0.12), in: RoundedRectangle(cornerRadius: 13))
                         .buttonStyle(.plain)
+                        .accessibilityAddTraits(title == item ? [.isSelected] : [])
+                        .accessibilityHint(title == item ? "Selected. Tap again to clear." : "Tap to select this symptom.")
                     }
                 }
                 TextField("Or type a symptom", text: $title)
@@ -257,12 +259,13 @@ struct EntryEditor: View {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 7)], spacing: 7) {
                     ForEach(CheckInFormat.feelings, id: \.self) { feeling in
                         Button {
-                            // Preserve freely edited titles, but update the suggested
-                            // heading if this is still the template.
+                            let newFeeling = PosiesChoiceBehavior.toggle(selectedFeeling, tapped: feeling)
+                            // Never save a feeling unless explicitly selected.
+                            // Preserve titles written by the user.
                             if CheckInFormat.titleWasSuggested(title) || title.isEmpty {
-                                title = CheckInFormat.defaultTitle(for: feeling)
+                                title = newFeeling.isEmpty ? "" : CheckInFormat.defaultTitle(for: newFeeling)
                             }
-                            selectedFeeling = feeling
+                            selectedFeeling = newFeeling
                         } label: {
                             Text(feeling)
                                 .font(.subheadline.weight(selectedFeeling == feeling ? .semibold : .medium))
@@ -279,6 +282,8 @@ struct EntryEditor: View {
                                 ))
                         }
                         .buttonStyle(.plain)
+                        .accessibilityAddTraits(selectedFeeling == feeling ? [.isSelected] : [])
+                        .accessibilityHint(selectedFeeling == feeling ? "Selected. Tap again to clear." : "Tap to choose how you feel.")
                     }
                 }
 
