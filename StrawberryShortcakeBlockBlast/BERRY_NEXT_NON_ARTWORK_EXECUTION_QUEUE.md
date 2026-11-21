@@ -1,0 +1,45 @@
+# 🍓 Berry Berry Blast · Next Non-Artwork Engineering Queue
+
+**Checkpoint:** November 20, 2026. This is a continuity index of outstanding roadmap tracks, not permission to ship an IPA or merge development branches.  
+**Working base:** v0.5.16 / Build 4.6 developer branch. **Platform:** iOS 16+, iPhone 16e first. **Build number:** unchanged.  
+**Current H5 lab:** [H5 checklist](SEASONAL_H5_CALENDAR_FALLBACK_QA.md) and [draft PR #60](https://github.com/ValentineBSAA/IPhone-Apps/pull/60).  
+**Do not lose previous staged work:** [55 seasonal originals PR #59](https://github.com/ValentineBSAA/IPhone-Apps/pull/59), [40 Night Garden RGBA PR #40](https://github.com/ValentineBSAA/IPhone-Apps/pull/40), prior Build 4.x draft PR chain.
+
+## Where we stand
+- [x] 55 unique approved seasonal designs imported exactly into GitHub; one 319 MB master Release ZIP and 55-key mapping available.
+- [x] 40 Night Garden art originals + derived RGBA candidates individually owner approved and staged on separate branch, **not merged into running game**.
+- [x] Foundation-only local holiday, region and birthday prototype from H0 plus H5 pure artwork fallback resolver; nine H5 XCTest methods created.
+- [x] H5 Swift/Foundation compilation and offline smoke green [#44861283856](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44861283856).
+- [ ] iPhone 16e named simulator XCTest and owner physical QA still gated separately.
+- [ ] 13 missing RGBA sources (8 Home Classic + 5 Berry Collection); 22 derived cleanup candidates need final matte/edge QA, 20 native RGBA still need small-size visual acceptance.
+- [ ] 3 absent Berry Collection designs **BC-06 Thanksgiving Night, BC-07 Birthday Day, BC-08 Birthday Night** postponed until image generation available. Do not invent them, use fallback.
+
+## Safe next-work sequencing (one independent PR at a time)
+| Gate | Work package | Engineering state | Why it matters | Guardrail |
+| --- | --- | --- | --- | --- |
+| P0 | **H5 local holiday/day-night calendar and asset fallback** [#47](https://github.com/ValentineBSAA/IPhone-Apps/issues/47) | **STARTED**: resolver + nine tests on PR #60; Swift smoke green | Player sees correct Christmas, Oct 31, US fourth-Thursday Thanksgiving and optional birthday imagery by calendar + timezone, without broken missing icons | Only aesthetic selection; no GPS, gameplay or reward mutation; no live UI until approvals |
+| P1 | **Seasonal alpha/matte technical cleanup** [audit](https://github.com/ValentineBSAA/IPhone-Apps/blob/artwork/berry-seasonal-approved-h1-consolidated-20261120/StrawberryShortcakeBlockBlast/SEASONAL_ALPHA_TECHNICAL_REVIEW_H1.md) | 20 native RGBA, 22 derived/needs edge QA, 13 RGBA missing | Clean transparent Home icons at 64/96/144px on light/dark backgrounds | Preserve exact originals; no blind production import |
+| P2 | **Build 4.5 left-behind tool charge safety check** [#14](https://github.com/ValentineBSAA/IPhone-Apps/issues/14) | 10/12 owner physical QA checked; #12 independent data-audit reviewed; #8 invalid/blocked tool charge/pricing test still open | Do not declare 12/12 or silently consume currency | Changed-area manual test only; no grind or unapproved economy tuning |
+| P3 | **Build 4.7 Night visual foundation** [#23](https://github.com/ValentineBSAA/IPhone-Apps/issues/23), [#24](https://github.com/ValentineBSAA/IPhone-Apps/issues/24), [#25](https://github.com/ValentineBSAA/IPhone-Apps/issues/25), [#26](https://github.com/ValentineBSAA/IPhone-Apps/issues/26), [#32](https://github.com/ValentineBSAA/IPhone-Apps/issues/32) | Planned; 40/40 approved image sources separate; baseline clock functional but plain | Premium 12-hour digital plaque, gameplay HUD/toolbar, visually distinct Night blocks/board | No broken cell hit targets, saved cosmetics or fake clocks |
+| P4 | **Build 4.8 full menu/Boutique/Tools & celebrations** [#27](https://github.com/ValentineBSAA/IPhone-Apps/issues/27), [#28](https://github.com/ValentineBSAA/IPhone-Apps/issues/28), [#29](https://github.com/ValentineBSAA/IPhone-Apps/issues/29), [#30](https://github.com/ValentineBSAA/IPhone-Apps/issues/30) | Planned; current berry burst too small and not owner accepted | Complete two-column grid parity, clear disabled tools, larger strawberry fireworks/rain | No shop price or ownership changes, Reduce Motion and touch-safe |
+| P5 | **Build 5 existing Quests/Village/Journal visibility** [#8](https://github.com/ValentineBSAA/IPhone-Apps/issues/8) | Staged roadmap | Better daily goals, Village and earned rewards presentation | Preserve reward counters and once-only payouts |
+| P6 | **Build 6 distinct Night Market/Moonberries** [#35](https://github.com/ValentineBSAA/IPhone-Apps/issues/35) | Design only, independent wallet and catalog not approved | Genuine separate night offerings and transactional correctness | No fake inventory, no change to Day prices or cross-wallet charges |
+| P7 | **Future two-experience Night modes & Story** [#33](https://github.com/ValentineBSAA/IPhone-Apps/issues/33), [#34](https://github.com/ValentineBSAA/IPhone-Apps/issues/34), [#36](https://github.com/ValentineBSAA/IPhone-Apps/issues/36) | Architecture plan only | Night becomes a distinct game experience, not merely purple mode | Distinct Story, progress namespaces and full end-to-end QA first |
+
+## Holiday product decisions still unresolved
+- [ ] **Event duration**: exact day versus preholiday window; current pure H0 prototype uses exact day only.
+- [ ] **Regional selection**: iOS Region or explicit in-app country override; no precise GPS/location needed for holidays.
+- [ ] **Birthday**: separate appearance opt-in, local month/day only; birthday gift **already exists** and must never duplicate or be altered.
+- [ ] **Overlaps**: birthday vs Christmas, leap-day birthday in non-leap years, manual preview and Off priority.
+- [ ] **Automatic vs opt-in**: current H0 implementation is dormant and defaults OFF until player-facing consent/privacy decisions. Product should eventually feel automatic once enabled.
+- [ ] **Lighting boundaries**: keep the existing 6:00 AM and 6:00 PM visual routing unless the owner chooses a different policy; this is not a GPS sunrise/sunset system.
+- [ ] **Missing-image fallback**: stay on the existing safe art for 3 missing Berry Collection variants and any Xcode asset not yet owner-approved.
+
+## QA and release rules
+- [ ] Source integrity and Swift/Foundation smoke.
+- [ ] Named iPhone 16e simulator Swift/XCTest including boundary/fallback proof, no retired iPhone 14 Pro gate.
+- [ ] Owner reviews alpha edges at actual size and verifies clock numerals remain live SwiftUI text, not baked image.
+- [ ] Real iPhone 16e app UI QA, including safe areas, fast repeated taps, 8×8/12×12/24×24 gameplay touch mapping, saved mode, scores, wallet, Story/Daily/Birthday payouts, purchases and existing cosmetics.
+- [ ] Only after approval, decide build number, IPA, merge/release. **Do not infer app readiness from image ZIP validation or green source-only tests.**
+
+**Immediate scope during artwork generation cooldown:** advance H5 deterministic calendar routing and tests, formalize remaining alpha QA, and preserve Build 4.5 unresolved invalid-tool check without blocking all progress.
