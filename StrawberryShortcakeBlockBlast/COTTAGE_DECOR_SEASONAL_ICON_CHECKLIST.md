@@ -25,8 +25,8 @@ Give this family a distinct, clear **decorating** theme: a cute strawberry-roof 
 | CD-03 | Christmas | Day | Snow-frosted strawberry cottage with wreath, red ribbon, candy canes, festive flowerpot, paintbrush and ribbon spool; SECOND image selected | ✅ GENERATED | ✅ OWNER APPROVED (most recent/second version) | ⚠ checkerboard/alpha edge QA pending | ⬜ source PNG import pending | ⬜ |
 | CD-04 | Christmas | Night | Moonlit snowy strawberry cottage, glowing windows, lit evergreen trees, wreath, decorating paintbrush, flowerpot, red check ribbon spool and crescent | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ checkerboard/true-alpha edge QA pending | ⬜ original PNG not staged | ⬜ |
 | CD-05 | Thanksgiving | Day | Sunny strawberry-roof cottage with golden maple wreath, pumpkins, strawberry berry pie, flower pot, paintbrush and orange gingham ribbon spool | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ original RGB/off-white background; RGBA edge QA pending | ⬜ PNG source not staged | ⬜ |
-| CD-06 | Thanksgiving | Night | Moonlit autumn strawberry cottage, glowing windows, harvest lanterns, pumpkin planters, berry pie, flowerpot, paintbrush, violet ribbon spool and autumn gingham | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ RGB/off-white background; alpha cleanup QA pending | ⬜ source PNG not imported | ⬜ |
-| CD-07 | Birthday | Day | Strawberry cottage with frosted cake decorations, party balloons, present planter, bright pink decorating bow | ⬜ | ⬜ | ⬜ | ⬜ |
+| CD-06 | Thanksgiving | Night | Moonlit autumn strawberry cottage, glowing windows, harvest lanterns, pumpkin planters, berry pie, flowerpot, paintbrush, violet ribbon spool and autumn gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ RGB/off-white background; RGBA edge QA pending | ⬜ source PNG not imported | ⬜ |
+| CD-07 | Birthday | Day | Sunny strawberry cottage with birthday cake, colorful balloons, gifts, strawberry planter, pink decorating brush, ribbon spool and pink gingham | ⬜ NEXT: one original generation | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
 | CD-08 | Birthday | Night | Moonlit lavender party cottage, candle glow, cake/present floral planters, balloons and decorative ribbons | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ## Task gates and handoff
@@ -136,3 +136,11 @@ Links: [H1-B04 checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md) · [Master
 - [ ] Preserve original PNG untouched; the displayed off-white backdrop is not verified transparency. Non-destructive RGBA edge QA, actual-size light/dark/checker previews, source hash ZIP, GitHub binary import, iOS image mapping and device QA remain pending.
 
 **H1-B05: 6/8 generated, 5/8 visually owner-approved; CD-06 awaiting review.**
+
+
+### CD-06 approval, CD-07 Birthday Day queued
+- [x] CD-06 Thanksgiving Night owner visually approved by “Good continue”. Freeze the accepted moonlit cottage with harvest lanterns, wreath, pumpkins, strawberry pie and gardening/decorating tools.
+- [ ] NEXT CD-07 Birthday Day: create exactly one new bright daytime image of the cottage-decorating tile, with recognizable strawberry-roof cottage, decorating brush, flowerpot and ribbon spool, plus birthday cake, balloons, gift and strawberry-pink bow. Obtain owner approval before CD-08 Birthday Night.
+- [ ] Original PNG source hashing, non-destructive RGBA cutout and edge QA, contact previews, package ZIP, verified GitHub binary import and real iPhone/Xcode testing are independent later stages. No game data or approved existing art touched.
+
+**H1-B05 current: 6/8 visually owner-approved; CD-07 is the next artwork.**
