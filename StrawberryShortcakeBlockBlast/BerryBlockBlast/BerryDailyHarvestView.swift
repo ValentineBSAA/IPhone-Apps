@@ -33,19 +33,21 @@ enum BerryDailyHistory {
         return try? JSONDecoder().decode(Attempt.self, from: data)
     }
 
-    static func activeEngine(defaults: UserDefaults = .standard) -> BerryEngine? {
-        guard outcome(defaults: defaults) == .active,
+    static func activeEngine(defaults: UserDefaults = .standard,
+                             now: Date = Date()) -> BerryEngine? {
+        guard outcome(on: now, defaults: defaults) == .active,
               let record = loadAttempt(defaults: defaults),
-              record.day == dateKey(for: Date()) else { return nil }
+              record.day == dateKey(for: now) else { return nil }
         return record.engine
     }
 
     /// At local midnight, a still-open attempt from yesterday expires as
     /// a loss. The new calendar day remains unspent and may start normally.
-    static func expirePriorAttemptIfNeeded(defaults: UserDefaults = .standard) {
+    static func expirePriorAttemptIfNeeded(defaults: UserDefaults = .standard,
+                                           now: Date = Date()) {
         guard var record = loadAttempt(defaults: defaults),
               record.outcome == .active,
-              record.day != dateKey(for: Date()) else { return }
+              record.day != dateKey(for: now) else { return }
         var results = defaults.dictionary(forKey: resultsKey) as? [String:String] ?? [:]
         if results[record.day] == nil || results[record.day] == Outcome.active.rawValue {
             results[record.day] = Outcome.lost.rawValue
@@ -61,10 +63,11 @@ enum BerryDailyHistory {
     /// Consumes the day's attempt immediately, before the first placement.
     /// Existing in-progress attempts can resume, but finished ones cannot.
     @discardableResult
-    static func beginToday(defaults: UserDefaults = .standard) -> Bool {
-        expirePriorAttemptIfNeeded(defaults: defaults)
-        if let current = outcome(defaults: defaults) { return current == .active }
-        let attempt = Attempt(day: dateKey(for: Date()), outcome: .active, engine: nil)
+    static func beginToday(defaults: UserDefaults = .standard,
+                           now: Date = Date()) -> Bool {
+        expirePriorAttemptIfNeeded(defaults: defaults, now: now)
+        if let current = outcome(on: now, defaults: defaults) { return current == .active }
+        let attempt = Attempt(day: dateKey(for: now), outcome: .active, engine: nil)
         if let encoded = try? JSONEncoder().encode(attempt) {
             defaults.set(encoded, forKey: attemptKey)
             var outcomes = defaults.dictionary(forKey: resultsKey) as? [String:String] ?? [:]
@@ -76,10 +79,11 @@ enum BerryDailyHistory {
     }
 
     static func saveActiveEngine(_ engine: BerryEngine,
-                                 defaults: UserDefaults = .standard) {
-        guard outcome(defaults: defaults) == .active,
+                                 defaults: UserDefaults = .standard,
+                                 now: Date = Date()) {
+        guard outcome(on: now, defaults: defaults) == .active,
               let record = loadAttempt(defaults: defaults),
-              record.day == dateKey(for: Date()) else { return }
+              record.day == dateKey(for: now) else { return }
         let update = Attempt(day: record.day, outcome: .active, engine: engine)
         if let encoded = try? JSONEncoder().encode(update) {
             defaults.set(encoded, forKey: attemptKey)
@@ -87,10 +91,11 @@ enum BerryDailyHistory {
     }
 
     private static func finishToday(_ outcome: Outcome,
-                                    defaults: UserDefaults = .standard) {
+                                    defaults: UserDefaults = .standard,
+                                    now: Date = Date()) {
         guard outcome == .won || outcome == .lost,
-              self.outcome(defaults: defaults) == .active else { return }
-        let day = dateKey(for: Date())
+              self.outcome(on: now, defaults: defaults) == .active else { return }
+        let day = dateKey(for: now)
         var outcomes = defaults.dictionary(forKey: resultsKey) as? [String:String] ?? [:]
         outcomes[day] = outcome.rawValue
         defaults.set(outcomes, forKey: resultsKey)
@@ -100,8 +105,9 @@ enum BerryDailyHistory {
         }
     }
 
-    static func markLostToday(defaults: UserDefaults = .standard) {
-        finishToday(.lost, defaults: defaults)
+    static func markLostToday(defaults: UserDefaults = .standard,
+                              now: Date = Date()) {
+        finishToday(.lost, defaults: defaults, now: now)
     }
 
     static var losses: Int {
