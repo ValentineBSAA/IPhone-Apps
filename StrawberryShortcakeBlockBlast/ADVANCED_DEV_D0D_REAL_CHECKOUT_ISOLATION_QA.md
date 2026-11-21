@@ -16,7 +16,7 @@ Unlike earlier D0b mock rules, these new tests exercise the **real `BerryGameSes
 - [x] `BerryGameSession.save()` writes standard inventory and Endless snapshots through the instance's selected preferences store. No inventory key changes, no schema migration, no game version change. Daily/Story singleton-backed operations are **not yet injectable or D0d-certified**.
 - [x] Added **9 new actual-session XCTest methods** with unique disposable preference suites, exercising Undo/Shuffle/Hint, multiple purchases, insufficient funds and overflow no-write guards, session reinitialization from saved inventory, old missing-Hint field compatibility, real ledger counters, and proving normal `.standard` inventory/spending keys unchanged.
 - [x] New named iPhone 16e [D0d CI workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0d-real-checkout-isolation-iphone16e.yml) runs the existing **6 D0 + 11 D0b + 10 D0c + 4 BerryEconomy + 9 D0d = 40 selected XCTest methods** and a Release build that excludes all internal QA panels.
-- [ ] Confirm GitHub Actions final `** TEST SUCCEEDED **`, exact suite counts and Release QA exclusion from actual logs. Code commit is not proof.
+- [x] [D0d GitHub Actions #44866663042](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44866663042) **SUCCESS**, confirmed from actual job log: **40/40 selected XCTest cases passing, zero failures**, Release builds with QA-only panels excluded; no IPA created.
 - [ ] Physical owner iPhone 16e checks for normal purchased inventory, persistent history, no double-debit, drawer resets and existing save resume. Do not mark fully player-accepted from simulator results.
 - [ ] Test crash/partial-commit recovery and multi-key atomicity separately: standard UserDefaults inventory and spending ledger are **not an atomic database transaction**.
 - [ ] Extend dependency injection before claiming full daily, Story, Boutique, special-tool, migration or rewards coverage.
@@ -41,3 +41,11 @@ Unlike earlier D0b mock rules, these new tests exercise the **real `BerryGameSes
 - [x] [Initial D0d run #44866568830](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44866568830) stopped **before Xcode build or XCTest** because the copied workflow still expected direct `BerryStandardToolTransaction.purchase` references inside GameSession and the QA lab. D0d intentionally replaces those call sites with `BerryStandardToolCheckout.purchase`.
 - [x] Corrected the workflow to verify both checkout call sites and the reducer implementation directly; [fresh run #44866663042](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44866663042) started. Do not report the initial workflow-check failure as an app or XCTest failure.
 - [ ] Await terminal compile and test results from fresh run, then update acceptance status. Original artwork, save keys and app version remain unchanged.
+
+
+## ✅ D0d final automated acceptance · November 20, 2026 (Arizona)
+- [x] [GitHub run #44866663042](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44866663042) terminal **SUCCESS** and logged `** TEST SUCCEEDED **` after named iPhone 16e simulator execution.
+- [x] Exact suite counts: `BerryDeveloperSandboxTests` **6/6**, `BerryDeveloperStateLabTests` **11/11**, `BerryStandardToolTransactionTests` **10/10**, `BerryEconomyTests` **4/4**, `BerryStandardToolCheckoutIsolationTests` **9/9**. Total **40/40**, **zero failures**.
+- [x] Production Release configuration successfully compiled, QA sandbox/panel symbols excluded; source, art and audio verification passed; no IPA or public release.
+- [x] The nine D0d cases executed actual GameSession standard-tool purchases with disposable real UserDefaults/ledger and tested no mutation to normal player inventory and spend keys.
+- [ ] **Not yet proved:** physical iPhone 16e UX, real multi-key crash atomicity, Store/Boutique checkout UI, Daily and Story saves, premium charges, quest/birthday reward writes, iPhone install/IPA, or full 59-scenario coverage. Keep draft PR.
