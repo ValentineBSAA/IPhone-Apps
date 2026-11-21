@@ -26,8 +26,8 @@ Give this family a distinct, clear **decorating** theme: a cute strawberry-roof 
 | CD-04 | Christmas | Night | Moonlit snowy strawberry cottage, glowing windows, lit evergreen trees, wreath, decorating paintbrush, flowerpot, red check ribbon spool and crescent | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ checkerboard/true-alpha edge QA pending | ⬜ original PNG not staged | ⬜ |
 | CD-05 | Thanksgiving | Day | Sunny strawberry-roof cottage with golden maple wreath, pumpkins, strawberry berry pie, flower pot, paintbrush and orange gingham ribbon spool | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ original RGB/off-white background; RGBA edge QA pending | ⬜ PNG source not staged | ⬜ |
 | CD-06 | Thanksgiving | Night | Moonlit autumn strawberry cottage, glowing windows, harvest lanterns, pumpkin planters, berry pie, flowerpot, paintbrush, violet ribbon spool and autumn gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ RGB/off-white background; RGBA edge QA pending | ⬜ source PNG not imported | ⬜ |
-| CD-07 | Birthday | Day | Sunny strawberry-roof decorating cottage, birthday cake, balloons, present, floral strawberry planter, pink paintbrush, ribbon spool and gingham bow | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ 1254px RGB, black outside badge; non-destructive RGBA cutout pending | ⬜ source PNG not staged | ⬜ |
-| CD-08 | Birthday | Night | Moonlit lavender party cottage, candle glow, cake/present floral planters, balloons and decorative ribbons | ⬜ | ⬜ | ⬜ | ⬜ |
+| CD-07 | Birthday | Day | Sunny strawberry-roof decorating cottage, birthday cake, balloons, present, floral strawberry planter, pink paintbrush, ribbon spool and gingham bow | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ 1254px RGB, black outside badge; RGBA cutout QA pending | ⬜ source PNG not staged | ⬜ |
+| CD-08 | Birthday | Night | Moonlit lavender cottage, glowing windows and lanterns, birthday cake with candle, balloons and gifts, decorating paintbrush, strawberry planter and ribbon spool | ⬜ NEXT: single original | ⬜ owner approval pending | ⬜ | ⬜ | ⬜ |
 
 ## Task gates and handoff
 - [x] Verify the separate `CottageDecorations` Home use-site, not to confuse with H1-B01 cottage/Classic hero assets.
@@ -153,3 +153,11 @@ Links: [H1-B04 checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md) · [Master
 - [ ] Original, matte and preview ZIP/checksums/GitHub binary import and physical iPhone QA remain open.
 
 **H1-B05: 7/8 generated, 6/8 owner-approved.**
+
+
+### CD-07 Birthday Day approved, CD-08 Birthday Night next
+- [x] CD-07 Birthday Day explicitly visually approved by owner (“Good continue”), despite RGB source black background requiring later non-destructive alpha cleanup. Preserve exact original.
+- [ ] NEXT CD-08 Birthday Night: exactly one visual candidate, strawberry-roof cottage at night with golden glowing windows, violet/lavender crescent and stars, pink cake/candle, balloons and gifts, strawberry flower pot, pink craft paintbrush, ribbon spool and party bow. Match previously accepted decorating category, no text. Await owner approval before marking 8/8.
+- [ ] Later: preserve all original PNGs and SHA-256, separate true RGBA cleanup, light/dark/checker previews at 64/96/144px, archive ZIP, GitHub binary import, and real iPhone QA. No app code or prior original assets changed.
+
+**Current H1-B05: 7/8 visually approved and 7/8 generated before CD-08.**
