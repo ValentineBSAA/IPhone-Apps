@@ -124,7 +124,12 @@ struct BerryDeveloperGardenView: View {
         var isPlanned: Bool { self == .notifications }
     }
     private var quickTools: [Tool] {
-        [.qaWallet, .diagnostics, .saves, .combo]
+        #if BERRY_DEVICE_QA
+        // Real iPhone QA: no live-wallet currency grant control.
+        return [.diagnostics, .saves, .combo]
+        #else
+        return [.qaWallet, .diagnostics, .saves, .combo]
+        #endif
     }
     private var advancedTools: [Tool] {
         #if BERRY_INTERNAL_QA
@@ -178,7 +183,7 @@ struct BerryDeveloperGardenView: View {
                         .tint(BerryStyle.strawberry)
                         .disabled(pin.count != 4)
                     } else {
-                        Text("INTERNAL QA • Only confirmed test-wallet grants can change your berries")
+                        Text("PRIVATE DEVICE QA • Isolated tests only; real-wallet grants disabled")
                             .font(.system(size: 10, weight: .bold, design: .rounded))
                             .foregroundStyle(BerryStyle.chocolate)
                             .multilineTextAlignment(.center)
@@ -288,7 +293,7 @@ struct BerryDeveloperGardenView: View {
                             }
                         }
                     }
-                    #if BERRY_INTERNAL_QA
+                    #if BERRY_INTERNAL_QA && !BERRY_DEVICE_QA
                     .alert("Add test strawberries?", isPresented: $qaGrantConfirmation) {
                         Button("Add \(qaPendingAmount.formatted()) QA berries") {
                             if let balance = BerryGameSession.grantQAStrawberries(qaPendingAmount) {
@@ -334,7 +339,11 @@ struct BerryDeveloperGardenView: View {
             BerryDeveloperQuestStoryLabPanel()
         #endif
         case .qaWallet:
-            #if BERRY_INTERNAL_QA
+            #if BERRY_DEVICE_QA
+            Text("Live strawberry grants are disabled in this private iPhone QA build. Use Commerce Lab and Quest & Story Lab to run real handlers with disposable test wallets. Your saved game wallet is not changed.")
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+            #elseif BERRY_INTERNAL_QA
             VStack(spacing: 12) {
                 Text("TEST CURRENCY • NOT GAMEPLAY REWARDS")
                     .font(.caption.bold())
@@ -446,7 +455,7 @@ struct BerryDeveloperGardenView: View {
                 Text(context.date.formatted(date: .abbreviated, time: .standard))
                     .font(.system(size: 17, weight: .bold, design: .monospaced))
             }
-            Text("This is the phone's current local clock. Automatic 6 AM/6 PM storefront switching is planned for Build 4.6.")
+            Text("This is your phone's current local clock. Automatic 6 AM/6 PM storefront switching is planned for the Night Market update.")
                 .font(.caption)
                 .multilineTextAlignment(.center)
         case .notifications:
