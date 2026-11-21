@@ -27,7 +27,7 @@ In `BerryModes.swift` Home screen, **More Adventures** uses `BerryGridNavigation
 | MA-04 | Christmas | Night | Moonlit snow-covered three-way strawberry signpost, luminous holiday pines, cottage windows and red-green gingham; second/latest visual chosen | ✅ GENERATED | ✅ OWNER ACCEPTED (latest shown image) | ⬜ actual alpha/edge QA pending | ⬜ source archive pending | ⬜ |
 | MA-05 | Thanksgiving | Day | Sunlit golden strawberry crossroads, three route icons, autumn leaves and trees, pumpkins, lattice berry pie, woven harvest basket and orange gingham bow | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ background/alpha QA pending | ⬜ original PNG not staged | ⬜ |
 | MA-06 | Thanksgiving | Night | Moonlit purple/amber garden crossroads, three symbol-only routes, lanterns, pumpkins, maple foliage, berry pie and basket | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ checkerboard/alpha edge QA pending | ⬜ original PNG not staged | ⬜ |
-| MA-07 | Birthday | Day | Sunny pink birthday strawberry signpost with three routes (lightning, cottage, crescent/star), cake, balloons, gifts, confetti and pink gingham | ⬜ NEXT: generate single original | ⬜ awaiting owner review | ⬜ | ⬜ | ⬜ |
+| MA-07 | Birthday | Day | Sunlit pink strawberry garden crossroads, three paths (lightning, strawberry cottage, crescent/stars), birthday cake, balloons, present and pink gingham | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ verify actual alpha/checkerboard | ⬜ original PNG not staged | ⬜ |
 | MA-08 | Birthday | Night | Lavender birthday crossroads, moonlit bunting, candle glow, balloons, strawberry confetti | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ## Gates and milestones
@@ -144,3 +144,11 @@ Links: [Seasonal icon matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) · [Daily Ha
 - [ ] Original PNG byte archival, actual transparency/alpha edge QA, 64/96px previews, RGB/RGBA separation, checked source ZIP and verified GitHub binary import remain separate pending stages. No app code, economy or saved data touched.
 
 **Current More Adventures: 6/8 visually approved, 6/8 generated before MA-07.**
+
+
+### MA-07 Birthday Day generation checkpoint
+- [x] One Birthday Day More Adventures icon generated and displayed in chat: bright garden three-arrow strawberry signpost, golden lightning, strawberry cottage, crescent/star, birthday cake with candle, balloons, gift box, spring flowers and pink gingham.
+- [ ] **MA-07 owner approval pending.** Do not generate MA-08 Birthday Night until owner accepts.
+- [ ] Apparent checkerboard background needs real PNG alpha and edge verification. Preserve source PNG; non-destructive RGBA candidate, small previews, checked ZIP and GitHub binary upload still pending.
+
+**More Adventures current: 7/8 generated, 6/8 visually approved; MA-07 awaits review.**
