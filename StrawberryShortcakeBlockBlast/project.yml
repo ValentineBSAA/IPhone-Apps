@@ -17,9 +17,9 @@ settings:
     INFOPLIST_KEY_UIStatusBarHidden: YES
     INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance: NO
     MARKETING_VERSION: "0.5.16"
-    CURRENT_PROJECT_VERSION: "47"
+    CURRENT_PROJECT_VERSION: "48"
     INFOPLIST_KEY_CFBundleShortVersionString: "0.5.16"
-    INFOPLIST_KEY_CFBundleVersion: "47"
+    INFOPLIST_KEY_CFBundleVersion: "48"
 targets:
   BerryBlockBlast:
     type: application
@@ -37,6 +37,10 @@ targets:
       configs:
         Debug:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BERRY_INTERNAL_QA"
+        # Only this private device QA branch enables the developer menu in Release.
+        # BERRY_DEVICE_QA disables live-wallet QA grants while allowing isolated labs.
+        Release:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BERRY_INTERNAL_QA BERRY_DEVICE_QA"
   BerryBlockBlastUITests:
     type: bundle.ui-testing
     platform: iOS
