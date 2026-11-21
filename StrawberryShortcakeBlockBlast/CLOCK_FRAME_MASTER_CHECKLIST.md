@@ -28,9 +28,9 @@ Each holiday needs a new, individually illustrated **Day** and **Night** counter
 |---|---|---|---|---|---|---|---|---|
 | C-03 | C-B02 | Halloween | Day | ✅ generated | ✅ OWNER APPROVED | ⚠ true RGBA source; alpha edge QA pending | ⬜ source package pending | ⬜ |
 | C-04 | C-B02 | Halloween | Night | ✅ generated | ✅ OWNER APPROVED | ⚠ true RGBA source; alpha edge QA pending | ⬜ source package pending | ⬜ |
-| C-05 | C-B03 | Christmas | Day | ⬜ next to generate; Halloween duplicates explicitly NOT counted | ⬜ | ⬜ | ⬜ | ⬜ |
-| C-06 | C-B03 | Christmas | Night | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| C-07 | C-B04 | Thanksgiving | Day | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| C-05 | C-B03 | Christmas | Day | ✅ original generated | ✅ OWNER APPROVED | ⬜ RGBA edge/halo QA pending | ⬜ source package pending | ⬜ |
+| C-06 | C-B03 | Christmas | Night | ✅ original generated | ✅ OWNER APPROVED | ⬜ RGBA edge/halo QA pending | ⬜ source package pending | ⬜ |
+| C-07 | C-B04 | Thanksgiving | Day | ⬜ NEXT: generate one design for review | ⬜ | ⬜ | ⬜ | ⬜ |
 | C-08 | C-B04 | Thanksgiving | Night | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | C-09 | C-B05 | Birthday | Day | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | C-10 | C-B05 | Birthday | Night | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -57,8 +57,10 @@ Each holiday needs a new, individually illustrated **Day** and **Night** counter
 - [x] C-03 Halloween Day generated and owner visually approved. The chosen source is an RGBA PNG, but edge/halo checks and archive staging are still pending.
 - [x] C-04 Halloween Night generated and owner visually approved. Preserve the first owner-approved nighttime frame, not later redundant regenerations.
 - [ ] Package C-03 and C-04 originals and RGBA QA copies, contact sheets and hashes; upload and verify separately from base clocks.
-- [ ] Next C-05 Christmas Day (not Halloween); create one individually reviewed wide blank-center plaque. Several later generations mistakenly repeated Halloween Night, **none counted** as C-05.
-- [ ] After owner approval, continue C-06 Christmas Night, C-07/C-08 Thanksgiving, C-09/C-10 Birthday.
+- [x] C-05 Christmas Day generated and individually visually approved by owner. Keep holiday snow, strawberry in Santa hat and red/gold detailing.
+- [x] C-06 Christmas Night generated and individually visually approved by owner. Preserve moonlit snowman-and-evergreen red gingham composition.
+- [ ] Package Christmas Day/Night originals + true RGBA/edge QA + previews + SHA manifest before GitHub binary staging.
+- [ ] NEXT: C-07 Thanksgiving Day, one image for approval, then C-08 Thanksgiving Night, then C-09/C-10 Birthday.
 - [ ] Optional later: seasonal overlay priority/region/holiday calendar QA from H0 without invasive location/GPS.
 
 **Always label each image and status explicitly. Never say source PNGs have landed on GitHub until the import workflow confirms it.**
@@ -66,3 +68,13 @@ Each holiday needs a new, individually illustrated **Day** and **Night** counter
 
 ## Owner approval correction / checkpoint
 C-03 Halloween Day and C-04 Halloween Night are approved visual designs by owner in chat. Both images can be opened as RGBA PNGs with transparent pixels, but edge-cleanliness, 64/96px previews, packaging, release import, Xcode integration and device QA remain separate open gates. **One new original per next review.** Any additional Halloween Night duplicates generated after C-04 approval are out-of-sequence and not additional approved semantic assets. Next item: **C-05 Christmas Day**.
+
+
+## Checkpoint: Christmas Day/Night visual approvals (November 20, 2026)
+- [x] **C-05 Christmas Day:** owner's explicit visual approval immediately before Christmas Night generation; glossy snowy red-and-gold strawberry frame, Santa-hat berry, blank cream center.
+- [x] **C-06 Christmas Night:** owner: “wonderful now Mark those complete and go onto the next generation”; winter moon, snowman, fir trees and a purple blank center; digitally displayed time will be drawn in SwiftUI, not painted into artwork.
+- [ ] Do NOT equate visual approval with verified transparent RGBA edges; inspect halos, render light/dark/checker previews, 64/96px legibility and package original PNGs separately with hashes.
+- [ ] Not yet GitHub-uploaded: these two binary PNGs; no Xcode icon import or physical iPhone QA claim.
+- [ ] **CURRENT NEXT: C-07 Thanksgiving DAY**, using the previously accepted harvest digital plaque as style reference, with separate C-08 NIGHT to follow.
+
+**Overall clock frame visual approvals: 6/10 (Regular Day/Night + Halloween Day/Night + Christmas Day/Night).** Other family stages are independent. Earlier erroneous extra Halloween generations remain excluded.
