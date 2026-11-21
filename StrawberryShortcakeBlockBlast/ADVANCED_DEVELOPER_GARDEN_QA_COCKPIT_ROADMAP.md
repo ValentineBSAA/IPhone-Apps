@@ -85,3 +85,14 @@ One-tap **Create scenario → Run checks → Review PASS/FAIL evidence → Disca
 - [x] Every scenario defines a fixture, an expected assertion, and a status; **all current scenario statuses remain planned or not implemented**. This is inventory, not proof any scenario has run.
 - [ ] Before D1, build a validator that flags newly introduced mechanics without a matching scenario and stops false PASS statuses without evidence.
 - [ ] D0 sandbox must be completed before any scenario can modify engine, wallet, rewards or saves.
+
+
+## D0 implementation milestone · November 20, 2026
+- [x] **Implementation actually started** in [draft PR #63](https://github.com/ValentineBSAA/IPhone-Apps/pull/63), `feature/berry-advanced-dev-d0-isolated-sandbox` based on Build 4.6, not in the planning PR.
+- [x] New internal-QA-only disposable `BerryEngine`-backed scenario runner with fixed UUIDs, in-memory state, 2-column selection, actual engine actions, automatic comparison and Discard; **no live GameSession/UserDefaults**.
+- [x] Two initial runnable fixtures: final action clearing a single 8×8 row for precisely **11 points**, and invalid placement into occupied cell returning no mutation. Real board generation is deterministic. No images generated.
+- [x] Six targeted XCTest methods authored, including snapshot protection of real wallet/save keys and deterministic rerun behavior. **No pass claim until CI finishes.**
+- [x] Updated [scenario catalog](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) to **48 planned/implemented test contracts**, where two D0 examples are `implemented_untested` pending automated and physical proof. Broader 46 scenarios are still planned/not implemented.
+- [ ] [D0 GitHub Actions #44862930573](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573) verifies Release compilation excludes QA code and runs only six new methods on named iPhone 16e; keep pending until final result verified.
+- [ ] Physical iPhone 16e checks using [exact D0 test steps](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d0-isolated-sandbox/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D0_SANDBOX_BUILD_AND_QA.md) only after green CI. No new IPA or install candidate yet.
+- [ ] Build D1 scenario registry and additional mechanism fixtures **only after D0 safety gate**. Do not reuse persistent QA wallet grants to simulate sandbox funds.
