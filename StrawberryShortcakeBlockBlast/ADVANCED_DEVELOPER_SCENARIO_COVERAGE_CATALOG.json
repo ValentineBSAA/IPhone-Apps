@@ -1,9 +1,9 @@
 {
   "schema": 1,
   "app": "Berry Berry Blast",
-  "status": "partial simulator QA coverage; all physical acceptance still pending",
-  "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests. D0 proof 6/6 on iPhone 16e simulator covers ONLY two fully implemented scenarios; do not imply full 48 scenario coverage or physical-device validation. D0b six scenarios are separate value-type policy implementations and remain unaccepted until named simulator results and owner physical UI tests are verified. GitHub Actions #44864274159 attempt 2: D0/D0b selected 17/17 XCTest green, with safe Release compile. Do not equate these mock policy fixtures with full production purchase/save or physical iPhone acceptance. D0c two implemented-untested shared production-rule contract checks are not complete end-to-end checkout coverage. Owner physical QA remains required. D1a Actions #44868413961 confirmed 64/64 selected iPhone 16e simulator XCTest passed, with ten real Boutique tests and Release QA exclusion. D1b has 10 new isolated Cottage/premium real-session XCTests authored, pending CI and device acceptance. D1a real Boutique tests are confined to actual isolated buyCosmetic calls and not full SwiftUI tap flows, premium purchases, or atomic multi-key cosmetic recovery. D1a tests now simulator-verified, owner-device-pending. D1b remains implemented_untested until actual terminal CI evidence. D1c adds seven one-tap real checkout Developer Garden scenario cards behind BERRY_INTERNAL_QA, with six XCTest authored and CI #44869555471 pending. Do not mark D1b or D1c scenarios PASS until individual final workflow logs are verified. UI card invocation is not identical to production Boutique tappath.",
-  "count": 77,
+  "status": "staged partial simulator QA; owner physical device acceptance pending",
+  "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests. D0 proof 6/6 on iPhone 16e simulator covers ONLY two fully implemented scenarios; do not imply full 48 scenario coverage or physical-device validation. D0b six scenarios are separate value-type policy implementations and remain unaccepted until named simulator results and owner physical UI tests are verified. GitHub Actions #44864274159 attempt 2: D0/D0b selected 17/17 XCTest green, with safe Release compile. Do not equate these mock policy fixtures with full production purchase/save or physical iPhone acceptance. D0c two implemented-untested shared production-rule contract checks are not complete end-to-end checkout coverage. Owner physical QA remains required. D1a Actions #44868413961 confirmed 64/64 selected iPhone 16e simulator XCTest passed, with ten real Boutique tests and Release QA exclusion. D1b has 10 new isolated Cottage/premium real-session XCTests authored, pending CI and device acceptance. D1a real Boutique tests are confined to actual isolated buyCosmetic calls and not full SwiftUI tap flows, premium purchases, or atomic multi-key cosmetic recovery. D1a tests now simulator-verified, owner-device-pending. D1b remains implemented_untested until actual terminal CI evidence. D1c adds seven one-tap real checkout Developer Garden scenario cards behind BERRY_INTERNAL_QA, with six XCTest authored and CI #44869555471 pending. Do not mark D1b or D1c scenarios PASS until individual final workflow logs are verified. UI card invocation is not identical to production Boutique tappath. D2a adds six actual premium tool-use and saved Endless restore contracts, pending CI #44870863706 final XCTest result. D1b CI #44869316684 and D1c #44869555471 first attempts failed one common JSONEncoder byte-order assertion, corrected by sorted-key encoding and second attempts pending. D2a is not proof of Story/Daily or end-to-end UI coverage.",
+  "count": 83,
   "status_values": [
     "planned",
     "implemented_untested",
@@ -1161,6 +1161,90 @@
       "test_ref": "BerryDeveloperCommerceLabTests",
       "manual_iphone_accepted": false,
       "scope_note": "D1c internal UI runner; actual production checkout methods with disposable UserDefaults and isolated real ledger. Not full production SwiftUI shop tap automation."
+    },
+    {
+      "id": "d2a-trowel-real-valid-use-restore",
+      "category": "tools",
+      "title": "Golden Trowel valid removal charges once and restores after restart",
+      "fixture": "Actual seeded one-move board, bought Trowel in disposable real GameSession, valid occupied cell",
+      "expected": "Removed cell persists; charge stays at zero after reopen; score and wallet intact",
+      "status": "implemented_untested",
+      "execution": "real_premium_tool_game_session_isolated_endless_restore",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d2a-valid-tools-save-restore:BerryGameSession.swift",
+      "test_ref": "BerryPremiumToolSaveRestoreTests",
+      "manual_iphone_accepted": false,
+      "scope_note": "D2a isolated valid tool handling + Endless restore, not user-facing shop/view taps or crash-durable atomic saves."
+    },
+    {
+      "id": "d2a-seed-real-valid-use-restore",
+      "category": "tools",
+      "title": "Starberry Seed valid placement persists after restart",
+      "fixture": "Actual seeded one-move board, one Seed charge, empty target 3,3",
+      "expected": "Cell planted, move count increases, exactly one charge used; reload preserves board and wallet",
+      "status": "implemented_untested",
+      "execution": "real_premium_tool_game_session_isolated_endless_restore",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d2a-valid-tools-save-restore:BerryGameSession.swift",
+      "test_ref": "BerryPremiumToolSaveRestoreTests",
+      "manual_iphone_accepted": false,
+      "scope_note": "D2a isolated valid tool handling + Endless restore, not user-facing shop/view taps or crash-durable atomic saves."
+    },
+    {
+      "id": "d2a-golden-strawberry-once-and-restore",
+      "category": "tools",
+      "title": "Golden Strawberry rescue saves consumed limit, board and score",
+      "fixture": "Actual seeded occupied board, one purchased Golden Strawberry charge, attempt first then second rescue after reload",
+      "expected": "Whole board cleared; score unchanged; one-use limit and zero charges persist; second rescue denied",
+      "status": "implemented_untested",
+      "execution": "real_premium_tool_game_session_isolated_endless_restore",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d2a-valid-tools-save-restore:BerryGameSession.swift",
+      "test_ref": "BerryPremiumToolSaveRestoreTests",
+      "manual_iphone_accepted": false,
+      "scope_note": "D2a isolated valid tool handling + Endless restore, not user-facing shop/view taps or crash-durable atomic saves."
+    },
+    {
+      "id": "d2a-invalid-trowel-seed-no-mutation",
+      "category": "tools",
+      "title": "Invalid premium action never consumes a charge or alters saved board",
+      "fixture": "Actual stored 8×8 board, Trowel outside grid and Seed at occupied cell",
+      "expected": "No charge or save mutation; purchase ledger untouched",
+      "status": "implemented_untested",
+      "execution": "real_premium_tool_game_session_isolated_endless_restore",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d2a-valid-tools-save-restore:BerryGameSession.swift",
+      "test_ref": "BerryPremiumToolSaveRestoreTests",
+      "manual_iphone_accepted": false,
+      "scope_note": "D2a isolated valid tool handling + Endless restore, not user-facing shop/view taps or crash-durable atomic saves."
+    },
+    {
+      "id": "d2a-mega-garden-isolated-save-restoration",
+      "category": "gameplay",
+      "title": "Valid 24×24 premium use changes only 24×24 saved slot",
+      "fixture": "Seed independent actual 8/12/24 Endless runs; select 24×24 using isolated store, use Trowel and reopen",
+      "expected": "24 board changed/reopened, 8 and 12 saved bytes preserved",
+      "status": "implemented_untested",
+      "execution": "real_premium_tool_game_session_isolated_endless_restore",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d2a-valid-tools-save-restore:BerryGameSession.swift",
+      "test_ref": "BerryPremiumToolSaveRestoreTests",
+      "manual_iphone_accepted": false,
+      "scope_note": "D2a isolated valid tool handling + Endless restore, not user-facing shop/view taps or crash-durable atomic saves."
+    },
+    {
+      "id": "d2a-real-saved-game-reopen-no-live-key-write",
+      "category": "progression",
+      "title": "Isolated valid-tool use and selectMode do not write normal player defaults",
+      "fixture": "Capture normal wallet/tool/size/legacy migration/score/endless save keys; complete isolated valid tool and reopen",
+      "expected": "All original player preference keys remain byte-identical; isolated board restored",
+      "status": "implemented_untested",
+      "execution": "real_premium_tool_game_session_isolated_endless_restore",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d2a-valid-tools-save-restore:BerryGameSession.swift",
+      "test_ref": "BerryPremiumToolSaveRestoreTests",
+      "manual_iphone_accepted": false,
+      "scope_note": "D2a isolated valid tool handling + Endless restore, not user-facing shop/view taps or crash-durable atomic saves."
     }
   ]
 }
