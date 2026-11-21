@@ -22,8 +22,8 @@ Use one standalone image-generation output per asset, never collage-generated so
 | ID | Group | Existing Night taxonomy counterpart | Seasonal target status |
 | ---: | --- | --- | --- |
 | 01 | HOME | Berry Classic | 8/8 visual samples approved; exact Classic vs Home mapping to confirm |
-| 02 | HOME | Berry Story | Not generated |
-| 03 | HOME | Daily Harvest | Not generated |
+| 02 | HOME | Berry Story | H1-B02: **8/8 visual designs approved**; [checklist](https://github.com/ValentineBSAA/IPhone-Apps/blob/artwork/berry-seasonal-berry-story-h1-b02/StrawberryShortcakeBlockBlast/BERRY_STORY_SEASONAL_ICON_CHECKLIST.md), original/RGBA QA ZIP ready; binary GitHub import and four cleanup mattes pending |
+| 03 | HOME | Daily Harvest | H1-B03: **8/8 visual designs approved**; [checklist](DAILY_HARVEST_SEASONAL_ICON_CHECKLIST.md), checked source/RGBA QA ZIP ready, 3 alpha candidates require review, binary import pending |
 | 04 | HOME | More Adventures | Not generated |
 | 05 | HOME | My Strawberry Cottage | Not generated |
 | 06 | HOME | Berry Collection | Not generated |
@@ -100,3 +100,15 @@ See [H1-B01 art manifest](ArtSource/SeasonalGarden/00_Specs_And_Ledgers/H1_Batch
 ### GitHub seasonal cottage import correction
 - [x] The original eight seasonal cottage Home/Classic concept PNGs were actually imported successfully via [Actions run #44847067327](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44847067327). They remain **separate** from clock frame art and require Xcode/device QA.
 
+
+
+## H1-B03 Daily Harvest seasonal Home tiles
+New isolated [Daily Harvest H1-B03 running checklist](DAILY_HARVEST_SEASONAL_ICON_CHECKLIST.md). Center a calendar page plus harvested berry basket, because the live Home tile represents daily attempt/resume/outcome status; do not invent dates or hardcode completion or reward text. Generate the eight variants one-by-one for owner approval. The prior H1-B02 Berry Story pack has eight approved designs and a verified 56,975,792-byte QA ZIP; four alpha candidates require owner visual QA and binary import to GitHub is still open.
+
+
+## H1-B03 Daily Harvest completed visual originals / verified archive
+- [x] Daily Harvest eight seasonal Home calendar-and-basket icon designs explicitly visually approved.
+- [x] Original/RGBA candidate QA ZIP prepared, SHA-256 `e3171cb083d3faf1062dd4d75844082a61506cbe5e3491543370f61fcf59cd24`. Five native transparency originals, three individually separated alpha candidates (DH01, DH03, DH07) still require edge approval.
+- [x] Release ZIP importer workflow installed on `main`: `.github/workflows/berry-daily-harvest-h1-b03-import.yml`. It checks the pinned archive and updates ONLY isolated Daily Harvest art branch when tag `berry-daily-harvest-h1-b03` is published.
+- [ ] User uploads verified ZIP as release asset; confirm importer success and original PNG staging, then conduct real iPhone image QA. **None of these have been staged merely by installing workflow.**
+- [ ] Next semantic source family: More Adventures Home tile H1-B04; distinguish navigation to Berry Blitz / Cozy Cottage / Nightmare from one game mode icon.
