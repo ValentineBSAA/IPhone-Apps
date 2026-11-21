@@ -51,11 +51,24 @@ struct PosiesTrackerHighlightsView: View {
                 (showFluidOunces ? String(format: "%.1f US fl oz recorded today", Double(total) / 29.5735295625)
                                  : "\(total) mL recorded today")
         case .medications:
-            return today.isEmpty ? "No medication entries today"
-                : "\(today.count) medication \(today.count == 1 ? "entry" : "entries") today"
+            guard !today.isEmpty else { return "No medication entries today" }
+            let statuses = ["Taken", "Skipped", "Planned", "Other"]
+            let details = statuses.compactMap { status -> String? in
+                let count = today.filter { $0.posture == status }.count
+                return count == 0 ? nil : "\(count) \(status.lowercased())"
+            }
+            let listed = statuses.reduce(0) { total, status in
+                total + today.filter { $0.posture == status }.count
+            }
+            return (details + (today.count > listed ? ["\(today.count - listed) unclassified"] : []))
+                .joined(separator: " · ") + " recorded today (not an adherence score)"
         case .sleep:
-            let mins = sevenDays.reduce(0) { $0 + max(0, Int($1.firstValue)) }
-            return sevenDays.isEmpty ? "No sleep/rest recorded this week" : "\(mins) minutes recorded this week"
+            let sleep = sevenDays.filter { $0.title == "Sleep" }
+                .reduce(0) { $0 + max(0, Int($1.firstValue)) }
+            let rest = sevenDays.filter { $0.title == "Rest" }
+                .reduce(0) { $0 + max(0, Int($1.firstValue)) }
+            return sevenDays.isEmpty ? "No sleep/rest recorded this week" :
+                "\(sleep) min sleep · \(rest) min rest recorded this week"
         case .posture:
             return sevenDays.isEmpty ? "No observations recorded this week" : "\(sevenDays.count) observations this week"
         default: return "Your saved records"

@@ -276,3 +276,14 @@
 - [ ] Real iPhone: Files backup + full restore/duplicate handling tested with synthetic entries.
 - [ ] Real iPhone: scheduled notifications, both themes, privacy/Journals, accessibility and offline use validated.
 - [ ] Advanced custom trackers, body map, widgets, encrypted backups and clinical-safe pattern comparisons deferred.
+
+
+## v0.2.9 Daily Care, candidate (not yet device-accepted)
+- [x] Branch from v0.2.8 successfully tested candidate, preserving original bundle ID, Core Data, approved artwork, iOS 16, no Watch/HealthKit.
+- [x] Four customizable, reversible hydration amounts and rest/sleep durations, separately persisted with validation and reset-to-default.
+- [x] Medication cabinet distinguishes recorded statuses and supports a manual log link. Failed profile saves no longer dismiss the editor.
+- [x] Sleep vs rest summaries and explicit medication status counts, without medical judgment or automatic adherence claims.
+- [x] Parser, preference validation and older-medication-archive regression tests; build version/IPA integrity assertions.
+- [x] GitHub [run 44848307666](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44848307666) completed SUCCESS with iOS builds and all tests; extracted IPA is v0.2.9 Build 272, `com.valentinebsaa.potstracker`, iOS 16 minimum, valid ZIP and Assets.car.
+- [ ] Physical iPhone QA of buttons, medication editing, manual logs, notifications, backups, old data and accessibility.
+- [ ] Merge to main only after device acceptance. See UX_V029.md.
