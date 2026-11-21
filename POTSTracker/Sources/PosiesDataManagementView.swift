@@ -86,50 +86,55 @@ struct PosiesDataManagementView: View {
 
                 GlassCard {
                     VStack(alignment: .leading, spacing: 12) {
-                        Label("Automatic backup", systemImage: "icloud")
+                        Label("iCloud backup", systemImage: "icloud")
                             .font(.headline)
-                        Text(cloud.iCloudAvailable == true
-                             ? "This installation can access app-managed iCloud Drive backups."
-                             : (cloud.iCloudAvailable == nil
-                                ? "Checking iCloud Drive support…"
-                                : "Automatic iCloud backup isn't available here. You can still save a copy using Files, including iCloud Drive if it's available."))
-                            .font(.subheadline).foregroundStyle(Color.potsSecondary)
-
-                        Toggle("Automatically back up to iCloud Drive", isOn: Binding(
-                            get: { automaticCloudBackup },
-                            set: { enabled in
-                                if enabled {
-                                    showCloudConsent = true
-                                } else {
-                                    automaticCloudBackup = false
-                                    cloud.setAutomaticConsent(false)
-                                }
-                            }
-                        ))
-                        .tint(.potsTeal)
-                        .disabled(cloud.iCloudAvailable != true || (journalLockEnabled && !canSeeJournal))
-                        if cloud.isSaving {
-                            ProgressView("Backing up…")
+                        if cloud.iCloudAvailable == nil {
+                            Text("Checking whether automatic iCloud backup is available…")
+                                .font(.subheadline).foregroundStyle(Color.potsSecondary)
+                        } else if cloud.iCloudAvailable == false {
+                            Text("Automatic iCloud backup isn't available with this installation. You can still save a copy using Files and choose iCloud Drive.")
                                 .font(.subheadline)
-                        }
-                        if let completed = cloud.lastSuccess {
-                            Label("Last verified backup: \(completed.formatted(date: .abbreviated, time: .shortened))",
-                                  systemImage: "checkmark.shield.fill")
-                                .font(.caption).foregroundStyle(Color.potsTeal)
+                                .foregroundStyle(Color.potsSecondary)
                         } else {
-                            Text("No automatic iCloud backup has been verified.")
+                            Text("Keep a private copy in your iCloud Drive, if you choose.")
+                                .font(.subheadline).foregroundStyle(Color.potsSecondary)
+                            Toggle("Automatic iCloud backup", isOn: Binding(
+                                get: { automaticCloudBackup },
+                                set: { enabled in
+                                    if enabled {
+                                        showCloudConsent = true
+                                    } else {
+                                        automaticCloudBackup = false
+                                        cloud.setAutomaticConsent(false)
+                                    }
+                                }
+                            ))
+                            .tint(.potsTeal)
+                            .disabled(journalLockEnabled && !canSeeJournal)
+
+                            if cloud.isSaving {
+                                ProgressView("Backing up…").font(.subheadline)
+                            }
+                            if let completed = cloud.lastSuccess {
+                                Label("Last backup saved: \(completed.formatted(date: .abbreviated, time: .shortened))",
+                                      systemImage: "checkmark.shield.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.potsTeal)
+                            } else {
+                                Text("No automatic backup saved yet.")
+                                    .font(.caption).foregroundStyle(Color.potsSecondary)
+                            }
+                            if let status = cloud.statusMessage {
+                                Text(status).font(.caption).foregroundStyle(Color.potsSecondary)
+                            }
+                            if automaticCloudBackup {
+                                Button("Back up now") { cloud.makeBackup() }
+                                    .buttonStyle(.bordered)
+                                    .disabled(cloud.isSaving)
+                            }
+                            Text("Automatic copies may include private health and Journal details. They don't have a separate app password.")
                                 .font(.caption).foregroundStyle(Color.potsSecondary)
                         }
-                        if let status = cloud.statusMessage {
-                            Text(status).font(.caption).foregroundStyle(Color.potsSecondary)
-                        }
-                        if automaticCloudBackup && cloud.iCloudAvailable == true {
-                            Button("Back up now") { cloud.makeBackup() }
-                                .buttonStyle(.bordered)
-                                .disabled(cloud.isSaving)
-                        }
-                        Text("Automatic backups can include sensitive health details and private Journal notes. Keep them in your private iCloud account. They don't have an extra app password.")
-                            .font(.caption).foregroundStyle(Color.potsSecondary)
                     }
                 }
 
@@ -471,10 +476,10 @@ private struct PosiesRestorePreviewSheet: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 VStack(alignment: .leading, spacing: 7) {
-                    Label("Keep your backup just for you", systemImage: "lock.shield")
+                    Label("A little privacy note", systemImage: "lock.shield")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.potsTeal)
-                    Text("It may contain private Journal notes and sensitive health details. Store the file somewhere secure and avoid sharing it publicly. It doesn't have an extra password.")
+                    Text("This file may contain personal health details. Please keep it somewhere private.")
                         .font(.subheadline)
                         .foregroundStyle(Color.potsSecondary)
                         .fixedSize(horizontal: false, vertical: true)
