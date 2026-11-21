@@ -746,7 +746,9 @@ final class BerryGameSession: ObservableObject {
             undos = afterUndos
             shuffles = afterShuffles
             hints = afterHints
-            save() // preserve the existing Endless snapshot save semantics
+            // Buying a helper changes inventory, not the board. A separate
+            // menu session must never clear a saved 8×8 Endless garden.
+            saveInventoryOnly()
         }
     }
 
@@ -806,16 +808,22 @@ final class BerryGameSession: ObservableObject {
         rewardsLog.insert("🧺 -\(cost) • Berry Boutique: \(id)", at: 0)
         rewardsLog = Array(rewardsLog.prefix(20))
         checkoutDefaults.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
-        save()
+        // Cosmetics do not change the game board; do not clear an unrelated
+        // saved Endless garden when shopping from the menu.
+        saveInventoryOnly()
         return true
     }
 
-    private func save() {
+    private func saveInventoryOnly() {
         let inventory = Inventory(berries: berries, undos: undos, shuffles: shuffles,
                                   totalEarnedBerries: totalEarnedBerries, hints: hints)
         if let data = try? JSONEncoder().encode(inventory) {
             checkoutDefaults.set(data, forKey: inventoryKey)
         }
+    }
+
+    private func save() {
+        saveInventoryOnly()
         // Daily Harvest keeps its independent original save policy.
         // Only the three standard-tool buy methods are D0d-certified.
         if activeMode == .daily {
