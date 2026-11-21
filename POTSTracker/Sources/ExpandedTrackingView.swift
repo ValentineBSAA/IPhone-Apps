@@ -230,11 +230,20 @@ struct ExpandedEntryEditor: View {
                 pickerGrid(fluidTypes, selected: $title)
                 if let previous = lastDrink, previous.firstValue > 0 {
                     Button {
-                        title = previous.title
-                        firstValue = String(previous.firstValue)
-                        secondValue = previous.secondValue > 0 ? String(previous.secondValue) : ""
+                        let matchesLast = title == previous.title &&
+                            firstValue == String(previous.firstValue) &&
+                            secondValue == (previous.secondValue > 0 ? String(previous.secondValue) : "")
+                        if matchesLast {
+                            title = ""
+                            firstValue = ""
+                            secondValue = ""
+                        } else {
+                            title = previous.title
+                            firstValue = String(previous.firstValue)
+                            secondValue = previous.secondValue > 0 ? String(previous.secondValue) : ""
+                        }
                     } label: {
-                        Label("Reuse last drink: \\(previous.title), \\(previous.firstValue) mL",
+                        Label("Reuse last drink: \(previous.title), \(previous.firstValue) mL",
                               systemImage: "arrow.counterclockwise")
                             .font(.caption.weight(.semibold))
                             .frame(maxWidth: .infinity, minHeight: 44)
@@ -252,13 +261,14 @@ struct ExpandedEntryEditor: View {
                 Text("Quick amounts").font(.caption.weight(.semibold))
                 HStack(spacing: 7) {
                     ForEach([125, 250, 350, 500], id: \.self) { amount in
-                        Button("\\(amount)") { firstValue = String(amount) }
+                        Button("\(amount)") { firstValue = PosiesChoiceBehavior.toggleAmount(firstValue, tapped: amount) }
                             .font(.caption.weight(.semibold))
                             .frame(maxWidth: .infinity, minHeight: 42)
                             .foregroundStyle(firstValue == String(amount) ? Color.white : Color.potsTeal)
                             .background(firstValue == String(amount) ? Color.potsButtonFill : Color.potsSurfaceMuted,
                                         in: RoundedRectangle(cornerRadius: 10))
-                            .accessibilityLabel("\\(amount) milliliters")
+                            .accessibilityLabel("\(amount) milliliters")
+                            .accessibilityHint(firstValue == String(amount) ? "Selected. Tap again to clear." : "Tap to enter this amount.")
                     }
                 }
                 Text("Sodium (optional)").font(.subheadline.weight(.semibold))
@@ -286,8 +296,14 @@ struct ExpandedEntryEditor: View {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 125), spacing: 8)], spacing: 8) {
                         ForEach(recentMedications, id: \.id) { item in
                             Button {
-                                title = item.title
-                                dose = PosiesEntryExtras.read(item.source).dose
+                                let itemDose = PosiesEntryExtras.read(item.source).dose
+                                if title == item.title && dose == itemDose {
+                                    title = ""
+                                    dose = ""
+                                } else {
+                                    title = item.title
+                                    dose = itemDose
+                                }
                                 // Never infer that a past dose was taken today.
                                 if editing == nil { positionOrStatus = "" }
                             } label: {
@@ -308,7 +324,7 @@ struct ExpandedEntryEditor: View {
                 Text("What happened?").font(.subheadline.weight(.semibold))
                 pickerGrid(medStatuses, selected: $positionOrStatus)
                 if positionOrStatus.isEmpty {
-                    Text("Choose a status to save. Nothing is assumed taken.")
+                    Text("Choose a status to save. Tap a selected status again to clear it. Nothing is assumed taken.")
                         .font(.caption).foregroundStyle(Color.potsSecondary)
                 }
                 Text("Optional details").font(.subheadline.weight(.semibold))
@@ -335,7 +351,7 @@ struct ExpandedEntryEditor: View {
                     DatePicker("Ended", selection: $sleepEnd, in: ...Date(),
                                displayedComponents: [.date, .hourAndMinute])
                     Text((1...2880).contains(sleepMinutes)
-                         ? "Duration: \\(sleepMinutes) minutes, including overnight rest."
+                         ? "Duration: \(sleepMinutes) minutes, including overnight rest."
                          : "End time must be after start time, within 48 hours.")
                         .font(.caption.weight(.medium))
                         .foregroundStyle((1...2880).contains(sleepMinutes) ? Color.potsTeal : Color.potsSecondary)
@@ -347,10 +363,13 @@ struct ExpandedEntryEditor: View {
                     }
                     HStack(spacing: 7) {
                         ForEach([15, 30, 60, 90], id: \.self) { minutes in
-                            Button("\\(minutes) min") { firstValue = String(minutes) }
+                            Button("\(minutes) min") { firstValue = PosiesChoiceBehavior.toggleAmount(firstValue, tapped: minutes) }
                                 .font(.caption.weight(.semibold))
                                 .frame(maxWidth: .infinity, minHeight: 42)
-                                .background(Color.potsSurfaceMuted, in: RoundedRectangle(cornerRadius: 11))
+                                .foregroundStyle(firstValue == String(minutes) ? Color.white : Color.potsTeal)
+                                .background(firstValue == String(minutes) ? Color.potsButtonFill : Color.potsSurfaceMuted,
+                                            in: RoundedRectangle(cornerRadius: 11))
+                                .accessibilityHint(firstValue == String(minutes) ? "Selected. Tap again to clear." : "Tap to enter this duration.")
                         }
                     }
                     .buttonStyle(.plain)
@@ -425,7 +444,7 @@ struct ExpandedEntryEditor: View {
             ForEach(options, id: \.self) { choice in
                 let active = selected.wrappedValue == choice
                 Button {
-                    selected.wrappedValue = choice
+                    selected.wrappedValue = PosiesChoiceBehavior.toggle(selected.wrappedValue, tapped: choice)
                 } label: {
                     Text(choice)
                         .font(.subheadline.weight(active ? .semibold : .regular))
@@ -436,6 +455,7 @@ struct ExpandedEntryEditor: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(active ? [.isSelected] : [])
+                .accessibilityHint(active ? "Selected. Tap again to clear." : "Tap to select.")
             }
         }
     }
