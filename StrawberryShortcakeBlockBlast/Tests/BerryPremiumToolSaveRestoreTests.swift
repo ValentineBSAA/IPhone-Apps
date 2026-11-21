@@ -124,13 +124,13 @@ final class BerryPremiumToolSaveRestoreTests: XCTestCase {
         let key = BerryGameSession.endlessSaveKey(side: 8)
         let before = try XCTUnwrap(store.data(forKey: key))
         let game = open(store)
+        // 8×8 mode selection may update migration bookkeeping. Capture
+        // persisted bytes BEFORE invalid actions, not afterward.
+        let afterSelect = try XCTUnwrap(store.data(forKey: key))
         XCTAssertFalse(game.useGoldenTrowel(row: -1, col: 30))
         XCTAssertFalse(game.useStarberrySeed(row: 1, col: 1))
         XCTAssertEqual(game.premiumCharges["trowel"], 1)
         XCTAssertEqual(game.premiumCharges["seed"], 1)
-        // selectMode performs the normal 8×8 legacy-migration save, so
-        // inspect the canonical bytes after mode opening, before invalid tools.
-        let afterSelect = try XCTUnwrap(store.data(forKey: key))
         XCTAssertEqual(store.data(forKey: key), afterSelect)
         XCTAssertEqual(try saved(store).moves, 1)
         XCTAssertEqual(game.engine.moves, 1)
