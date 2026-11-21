@@ -20,7 +20,7 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 | ID | Holiday | Time | Art intention | Original generated | Owner visual approval | True RGBA + 64/96px QA | GitHub source imported | Xcode/iPhone |
 |---|---|---|---|---|---|---|---|---|
 | BS-01 | Halloween | Day | Sunny pumpkin-strawberry storybook, orange/violet ribbon, friendly autumn accents | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
-| BS-02 | Halloween | Night | Moonlit purple enchanted storybook, small stars and candlelight, no horror | ⬜ NEXT: generate | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
+| BS-02 | Halloween | Night | Moonlit purple enchanted storybook, stars, crescent and luminous chapter star | 🟡 GENERATED | ⬜ AWAITING OWNER | ⬜ | ⬜ | ⬜ |
 | BS-03 | Christmas | Day | Snow-kissed red/green strawberry storybook with gold star and holly | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BS-04 | Christmas | Night | Warm fairy lights and moonlit blue snowy storybook | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BS-05 | Thanksgiving | Day | Warm harvest storybook, pie, maple leaves, cinnamon-gold chapter star | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -61,3 +61,9 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 - [ ] RGBA candidate checks, exact PNG archives, source staging in GitHub, Xcode mapping and physical iPhone QA remain outstanding and separate.
 
 **Visual approvals: 1/8 Berry Story**; 10/10 digital clock *designs* previously approved, tracked separately.
+
+
+### BS-02 generation checkpoint
+- [x] One Halloween Night Berry Story open-book illustration generated and shown in chat, matched to the BS-01 Day layout with crescent, stars and deep violet lighting.
+- [ ] Owner visual approval pending; **do not** record an approval until explicitly given. Preserve BS-01 Day approval.
+- [ ] No BS-02 PNG bytes committed to GitHub yet; archive + RGB/RGBA validation will be done after owner approval.
