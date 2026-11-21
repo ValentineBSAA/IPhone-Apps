@@ -72,6 +72,7 @@ struct ExpandedEntryEditor: View {
     @State private var useTimeRange: Bool
     @State private var sleepStart: Date
     @State private var sleepEnd: Date
+    @AppStorage("posiesMedicationProfilesV028") private var medicationProfilesData = Data()
 
     private let fluidTypes = ["Water", "Electrolyte drink", "Other drink", "Food / fluid"]
     private let sleepKinds = ["Sleep", "Rest"]
@@ -113,6 +114,11 @@ struct ExpandedEntryEditor: View {
         previousEntries.first {
             !$0.isDeleted && $0.category == LogCategory.hydration.rawValue
         }
+    }
+
+    private var savedProfiles: [PosiesMedicationProfile] {
+        (try? PosiesDataTransfer.decoder().decode(
+            [PosiesMedicationProfile].self, from: medicationProfilesData)) ?? []
     }
 
     private var recentMedications: [POTSLogEntry] {
@@ -292,6 +298,39 @@ struct ExpandedEntryEditor: View {
             VStack(alignment: .leading, spacing: 13) {
                 Label("Medication or supplement", systemImage: "pills.fill")
                     .font(.headline).foregroundStyle(Color.potsTeal)
+                NavigationLink {
+                    PosiesMedicationCabinetView()
+                } label: {
+                    Label("Manage my saved medication profiles", systemImage: "square.stack.3d.up")
+                        .frame(maxWidth: .infinity, minHeight: 47)
+                }
+                .buttonStyle(.bordered)
+                if !savedProfiles.isEmpty {
+                    Text("Choose a saved medication").font(.subheadline.weight(.semibold))
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 125), spacing: 8)], spacing: 8) {
+                        ForEach(savedProfiles) { profile in
+                            let chosen = title == profile.name && dose == profile.labelDose
+                            Button {
+                                if chosen {
+                                    title = ""
+                                    dose = ""
+                                } else {
+                                    title = profile.name
+                                    dose = profile.labelDose
+                                }
+                                // Profile selection is not confirmation of intake.
+                                if editing == nil { positionOrStatus = "" }
+                            } label: {
+                                Text(profile.name)
+                                    .font(.caption.weight(.semibold))
+                                    .lineLimit(2)
+                                    .frame(maxWidth: .infinity, minHeight: 46)
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityHint(chosen ? "Selected. Tap again to clear." : "Fills a draft; choose status and Save separately.")
+                        }
+                    }
+                }
                 if !recentMedications.isEmpty {
                     Text("Previously recorded").font(.subheadline.weight(.semibold))
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 125), spacing: 8)], spacing: 8) {
