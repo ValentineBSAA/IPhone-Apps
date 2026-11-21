@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "app": "Berry Berry Blast",
-  "status": "D0–D2b selected simulator pass; D2c/D2d/D3a pending",
-  "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests. D0 proof 6/6 on iPhone 16e simulator covers ONLY two fully implemented scenarios; do not imply full 48 scenario coverage or physical-device validation. D0b six scenarios are separate value-type policy implementations and remain unaccepted until named simulator results and owner physical UI tests are verified. GitHub Actions #44864274159 attempt 2: D0/D0b selected 17/17 XCTest green, with safe Release compile. Do not equate these mock policy fixtures with full production purchase/save or physical iPhone acceptance. D0c two implemented-untested shared production-rule contract checks are not complete end-to-end checkout coverage. Owner physical QA remains required. D1a Actions #44868413961 confirmed 64/64 selected iPhone 16e simulator XCTest passed, with ten real Boutique tests and Release QA exclusion. D1b has 10 new isolated Cottage/premium real-session XCTests authored, pending CI and device acceptance. D1a real Boutique tests are confined to actual isolated buyCosmetic calls and not full SwiftUI tap flows, premium purchases, or atomic multi-key cosmetic recovery. D1a tests now simulator-verified, owner-device-pending. D1b remains implemented_untested until actual terminal CI evidence. D1c adds seven one-tap real checkout Developer Garden scenario cards behind BERRY_INTERNAL_QA, with six XCTest authored and CI #44869555471 pending. Do not mark D1b or D1c scenarios PASS until individual final workflow logs are verified. UI card invocation is not identical to production Boutique tappath. D2a adds six actual premium tool-use and saved Endless restore contracts, pending CI #44870863706 final XCTest result. D1b CI #44869316684 and D1c #44869555471 first attempts failed one common JSONEncoder byte-order assertion, corrected by sorted-key encoding and second attempts pending. D2a is not proof of Story/Daily or end-to-end UI coverage. Final verified D1b Actions #44869316684 attempt2 74/74 PASS, D1c #44869555471 attempt2 80/80 PASS, D2a #44870863706 86/86 PASS, all named iPhone16e, Release-compile QA exclusion and no IPA. All physical owner UI QA still pending. Earlier one-failure CI attempt logs preserved; this evidence supersedes the corrected failures. D2b has seven real one-tap premium action fixtures and eight XCTest, CI #44871494518 pending. D1b 74/74, D1c 80/80, D2a 86/86 have final simulator-verified PASS; D2b remains implemented_untested until terminal log review. D2c adds eight actual Twister/Pantry/Mega Golden/combined rescue contracts, D2c Actions #44871838416 pending. D2b run #44871494518 pending at initial D2c staging. Game Over combined handler tested on occupied Endless fixture, NOT actual Story Game Over UI. Emergency combined Golden ledger and receipts routed via injected real session dependencies in D2c. D2b Actions #44871494518 attempt1: 94 XCTest, 2 failures caused by actual live best-score leakage in isolated Seed. D2c #44871838416 attempt1: 102 XCTest, same 2 failures. Fixed both session best-score write paths to injected defaults and protected real placement quest write for isolated sessions across D2b/D2c/D2d branches. Both workflows restarted attempt2. D2d 108-test #44872232106 initial pending. Never claim green without terminal logs. D3a extends optional now/date injection and selected UserDefaults across real Daily entry/resume/save/loss; eight new XCTest in #44872483508 (116 selected total) pending. Daily win/markCompleteToday, streak rewards and quest claims remain shared-state and NOT approved as isolated. Existing daily-midnight combined-streak scenario stays planned despite partial midnight fixture tests. D2b #44871494518 attempt2 TERMINAL SUCCESS: 94/94 selected XCTest, zero failures, named iPhone16e, Release compiled without internal QA panels, no IPA. Original attempt1 2 failures from Seed best-score leakage, fixed in source and accepted on retry. Physical owner iPhone16e UI acceptance still pending.",
+  "status": "D0–D2b simulator verified, D2c/D2d pending; owner physical acceptance pending",
+  "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests. D0 proof 6/6 on iPhone 16e simulator covers ONLY two fully implemented scenarios; do not imply full 48 scenario coverage or physical-device validation. D0b six scenarios are separate value-type policy implementations and remain unaccepted until named simulator results and owner physical UI tests are verified. GitHub Actions #44864274159 attempt 2: D0/D0b selected 17/17 XCTest green, with safe Release compile. Do not equate these mock policy fixtures with full production purchase/save or physical iPhone acceptance. D0c two implemented-untested shared production-rule contract checks are not complete end-to-end checkout coverage. Owner physical QA remains required. D1a Actions #44868413961 confirmed 64/64 selected iPhone 16e simulator XCTest passed, with ten real Boutique tests and Release QA exclusion. D1b has 10 new isolated Cottage/premium real-session XCTests authored, pending CI and device acceptance. D1a real Boutique tests are confined to actual isolated buyCosmetic calls and not full SwiftUI tap flows, premium purchases, or atomic multi-key cosmetic recovery. D1a tests now simulator-verified, owner-device-pending. D1b remains implemented_untested until actual terminal CI evidence. D1c adds seven one-tap real checkout Developer Garden scenario cards behind BERRY_INTERNAL_QA, with six XCTest authored and CI #44869555471 pending. Do not mark D1b or D1c scenarios PASS until individual final workflow logs are verified. UI card invocation is not identical to production Boutique tappath. D2a adds six actual premium tool-use and saved Endless restore contracts, pending CI #44870863706 final XCTest result. D1b CI #44869316684 and D1c #44869555471 first attempts failed one common JSONEncoder byte-order assertion, corrected by sorted-key encoding and second attempts pending. D2a is not proof of Story/Daily or end-to-end UI coverage. Final verified D1b Actions #44869316684 attempt2 74/74 PASS, D1c #44869555471 attempt2 80/80 PASS, D2a #44870863706 86/86 PASS, all named iPhone16e, Release-compile QA exclusion and no IPA. All physical owner UI QA still pending. Earlier one-failure CI attempt logs preserved; this evidence supersedes the corrected failures. D2b has seven real one-tap premium action fixtures and eight XCTest, CI #44871494518 pending. D1b 74/74, D1c 80/80, D2a 86/86 have final simulator-verified PASS; D2b remains implemented_untested until terminal log review. D2c adds eight actual Twister/Pantry/Mega Golden/combined rescue contracts, D2c Actions #44871838416 pending. D2b run #44871494518 pending at initial D2c staging. Game Over combined handler tested on occupied Endless fixture, NOT actual Story Game Over UI. Emergency combined Golden ledger and receipts routed via injected real session dependencies in D2c. D2b Actions #44871494518 attempt1: 94 XCTest, 2 failures caused by actual live best-score leakage in isolated Seed. D2c #44871838416 attempt1: 102 XCTest, same 2 failures. Fixed both session best-score write paths to injected defaults and protected real placement quest write for isolated sessions across D2b/D2c/D2d branches. Both workflows restarted attempt2. D2d 108-test #44872232106 initial pending. Never claim green without terminal logs. D3a extends optional now/date injection and selected UserDefaults across real Daily entry/resume/save/loss; eight new XCTest in #44872483508 (116 selected total) pending. Daily win/markCompleteToday, streak rewards and quest claims remain shared-state and NOT approved as isolated. Existing daily-midnight combined-streak scenario stays planned despite partial midnight fixture tests. D2b #44871494518 attempt2 TERMINAL SUCCESS: 94/94 selected XCTest, zero failures, named iPhone16e, Release compiled without internal QA panels, no IPA. Original attempt1 2 failures from Seed best-score leakage, fixed in source and accepted on retry. Physical owner iPhone16e UI acceptance still pending. D2b Actions #44871494518 attempt2 verified terminal SUCCESS: 94/94 XCTest, 0 failures, Release QA code exclusion and no IPA after correcting Seed best-score leakage. D2c/D2d/D3a still pending at this catalog update.",
   "count": 108,
   "status_values": [
     "planned",
@@ -1449,15 +1449,15 @@
       "latest_result": {
         "automated": "pass",
         "run_id": 44871494518,
-        "attempt": 2,
+        "run_attempt": 2,
         "url": "https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44871494518",
         "selected_tests_passed": 94,
         "failures": 0,
         "release_compiled": true,
         "qa_excluded_from_release": true,
-        "no_ipa": true,
         "physical_iPhone16e": "pending",
-        "scope": "real-handler isolated one-tap simulator checks, not live gameplay finger-tap UI or owner hardware"
+        "merge": "draft_unmerged",
+        "scope": "real handler isolated one-tap model, not complete production game-touch UI"
       },
       "implementation_ref": "feature/berry-advanced-dev-d2b-one-tap-tool-action-lab:BerryDeveloperToolActionLab.swift",
       "test_ref": "BerryDeveloperToolActionLabTests",
@@ -1475,15 +1475,15 @@
       "latest_result": {
         "automated": "pass",
         "run_id": 44871494518,
-        "attempt": 2,
+        "run_attempt": 2,
         "url": "https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44871494518",
         "selected_tests_passed": 94,
         "failures": 0,
         "release_compiled": true,
         "qa_excluded_from_release": true,
-        "no_ipa": true,
         "physical_iPhone16e": "pending",
-        "scope": "real-handler isolated one-tap simulator checks, not live gameplay finger-tap UI or owner hardware"
+        "merge": "draft_unmerged",
+        "scope": "real handler isolated one-tap model, not complete production game-touch UI"
       },
       "implementation_ref": "feature/berry-advanced-dev-d2b-one-tap-tool-action-lab:BerryDeveloperToolActionLab.swift",
       "test_ref": "BerryDeveloperToolActionLabTests",
@@ -1501,15 +1501,15 @@
       "latest_result": {
         "automated": "pass",
         "run_id": 44871494518,
-        "attempt": 2,
+        "run_attempt": 2,
         "url": "https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44871494518",
         "selected_tests_passed": 94,
         "failures": 0,
         "release_compiled": true,
         "qa_excluded_from_release": true,
-        "no_ipa": true,
         "physical_iPhone16e": "pending",
-        "scope": "real-handler isolated one-tap simulator checks, not live gameplay finger-tap UI or owner hardware"
+        "merge": "draft_unmerged",
+        "scope": "real handler isolated one-tap model, not complete production game-touch UI"
       },
       "implementation_ref": "feature/berry-advanced-dev-d2b-one-tap-tool-action-lab:BerryDeveloperToolActionLab.swift",
       "test_ref": "BerryDeveloperToolActionLabTests",
@@ -1527,15 +1527,15 @@
       "latest_result": {
         "automated": "pass",
         "run_id": 44871494518,
-        "attempt": 2,
+        "run_attempt": 2,
         "url": "https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44871494518",
         "selected_tests_passed": 94,
         "failures": 0,
         "release_compiled": true,
         "qa_excluded_from_release": true,
-        "no_ipa": true,
         "physical_iPhone16e": "pending",
-        "scope": "real-handler isolated one-tap simulator checks, not live gameplay finger-tap UI or owner hardware"
+        "merge": "draft_unmerged",
+        "scope": "real handler isolated one-tap model, not complete production game-touch UI"
       },
       "implementation_ref": "feature/berry-advanced-dev-d2b-one-tap-tool-action-lab:BerryDeveloperToolActionLab.swift",
       "test_ref": "BerryDeveloperToolActionLabTests",
@@ -1553,15 +1553,15 @@
       "latest_result": {
         "automated": "pass",
         "run_id": 44871494518,
-        "attempt": 2,
+        "run_attempt": 2,
         "url": "https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44871494518",
         "selected_tests_passed": 94,
         "failures": 0,
         "release_compiled": true,
         "qa_excluded_from_release": true,
-        "no_ipa": true,
         "physical_iPhone16e": "pending",
-        "scope": "real-handler isolated one-tap simulator checks, not live gameplay finger-tap UI or owner hardware"
+        "merge": "draft_unmerged",
+        "scope": "real handler isolated one-tap model, not complete production game-touch UI"
       },
       "implementation_ref": "feature/berry-advanced-dev-d2b-one-tap-tool-action-lab:BerryDeveloperToolActionLab.swift",
       "test_ref": "BerryDeveloperToolActionLabTests",
@@ -1579,15 +1579,15 @@
       "latest_result": {
         "automated": "pass",
         "run_id": 44871494518,
-        "attempt": 2,
+        "run_attempt": 2,
         "url": "https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44871494518",
         "selected_tests_passed": 94,
         "failures": 0,
         "release_compiled": true,
         "qa_excluded_from_release": true,
-        "no_ipa": true,
         "physical_iPhone16e": "pending",
-        "scope": "real-handler isolated one-tap simulator checks, not live gameplay finger-tap UI or owner hardware"
+        "merge": "draft_unmerged",
+        "scope": "real handler isolated one-tap model, not complete production game-touch UI"
       },
       "implementation_ref": "feature/berry-advanced-dev-d2b-one-tap-tool-action-lab:BerryDeveloperToolActionLab.swift",
       "test_ref": "BerryDeveloperToolActionLabTests",
@@ -1605,15 +1605,15 @@
       "latest_result": {
         "automated": "pass",
         "run_id": 44871494518,
-        "attempt": 2,
+        "run_attempt": 2,
         "url": "https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44871494518",
         "selected_tests_passed": 94,
         "failures": 0,
         "release_compiled": true,
         "qa_excluded_from_release": true,
-        "no_ipa": true,
         "physical_iPhone16e": "pending",
-        "scope": "real-handler isolated one-tap simulator checks, not live gameplay finger-tap UI or owner hardware"
+        "merge": "draft_unmerged",
+        "scope": "real handler isolated one-tap model, not complete production game-touch UI"
       },
       "implementation_ref": "feature/berry-advanced-dev-d2b-one-tap-tool-action-lab:BerryDeveloperToolActionLab.swift",
       "test_ref": "BerryDeveloperToolActionLabTests",
