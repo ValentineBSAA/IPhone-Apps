@@ -179,3 +179,17 @@ Links: [Seasonal icon matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) · [Daily Ha
 - [ ] Next semantic category: My Strawberry Cottage H1-B05, one separate image per approval with distinct Day/Night holiday versions. No existing Night/Story/Daily/clock artwork or game behavior changed.
 
 **H1-B04 visual approval authoritative total: 8/8. QA/import gates remain OPEN.**
+
+
+## H1-B04 final artwork archive checkpoint · 8/8 approved
+- [x] Preserved all **8 exact original 1254×1254 source PNGs**, Day/Night for Halloween, Christmas, Thanksgiving and Birthday. MA-04 uses the second/latest Christmas Night version, as documented in owner approval checkpoint.
+- [x] Saved **8 separately named true RGBA PNGs**: MA-01 and MA-03 native RGBA with source-identical bytes, MA-02/04/05/06/07/08 non-destructively background-removed **candidates**. Their edge/holes are **not yet owner approved**.
+- [x] Built **4 PNG contact sheets**: checkerboard, cream/light, dark plum, 64/96/144px icon sizes. Original bytes never overwritten.
+- [x] Source/candidate JSON+CSV SHA-256 manifest and README embedded. ZIP entries read back and verified against each image hash.
+- [x] Package `Berry_Berry_Blast_More_Adventures_H1_B04_8_Originals_RGBA_QA.zip` (56,638,702 bytes, SHA-256 `a505666b3e0afc60f9af9f4a8d2539af2de8d26da7c08ef0d7d284ef0ab4562d`).
+- [x] GitHub Actions release import workflow installed on `main`: `.github/workflows/berry-more-adventures-h1-b04-import.yml`, isolated branch target and pinned archive checksum.
+- [ ] Owner reviews alpha/edge cleanup for the **6 RGB originals**, especially thin white flower petals, snowy/sky gaps, balloon ribbons and gilded sign edges.
+- [ ] Upload the ZIP as release asset under tag `berry-more-adventures-h1-b04` and confirm workflow import success. **This update does not mean GitHub has the PNG binaries yet.**
+- [ ] Separate SwiftUI seasonal runtime mapping, source art approval, iPhone screenshot QA, save/score/achievement regression; no release/version bump here.
+
+**H1-B04 status: 8/8 visual designs approved and source+RGBA review archive ready. Binary GitHub image import, matte acceptance and app integration remain OPEN.** Next new family: My Strawberry Cottage H1-B05.
