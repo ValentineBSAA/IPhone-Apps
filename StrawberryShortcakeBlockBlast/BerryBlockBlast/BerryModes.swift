@@ -267,17 +267,17 @@ struct BerryHomeView: View {
                                 }
                                 BerryGridNavigationTile(
                                     title: "Berry Village", detail: "Watch our little world grow",
-                                    art: "BerryVillageMap", caption: "Explore Village") {
+                                    art: BerryArtResolver.displayName(for: "BerryVillageMap"), caption: "Explore Village") {
                                     showVillage = true
                                 }
                                 BerryGridNavigationTile(
                                     title: "Berry Quests", detail: "Three real goals every day",
-                                    art: "BerryQuestBoardArt", caption: "Daily Quests") {
+                                    art: BerryArtResolver.displayName(for: "BerryQuestBoardArt"), caption: "Daily Quests") {
                                     showQuests = true
                                 }
                                 BerryGridNavigationTile(
                                     title: "Berry Journal", detail: "Your personal berry scrapbook",
-                                    art: "BerryJournalArt", caption: "My Progress") {
+                                    art: BerryArtResolver.displayName(for: "BerryJournalArt"), caption: "My Progress") {
                                     showJournal = true
                                 }
                                 BerryGridNavigationTile(
