@@ -1,6 +1,6 @@
 # 🍓🏡 Berry Berry Blast · My Strawberry Cottage seasonal Home tile · H1-B05 running checklist
 
-**Opened:** November 20, 2026. **Branch:** `artwork/berry-seasonal-cottage-decor-h1-b05`. **Current visuals:** 0/8 generated and 0/8 owner-approved as of checklist creation.
+**Opened:** November 20, 2026. **Branch:** `artwork/berry-seasonal-cottage-decor-h1-b05`. **Current visuals:** CD-01 Halloween Day generated in chat, 1/8 generated and 0/8 owner-approved. Binary source not yet staged.
 **Semantic use:** `BerryModes.swift` Home tile: `title: "My Strawberry Cottage", detail: "Arrange your purchased garden decorations", art: "CottageDecorations", caption: "Decorate"`; tapping sets `showHomeCottage = true`.
 
 ## Why this is a new icon family and NOT H1-B01 again
@@ -20,7 +20,7 @@ Give this family a distinct, clear **decorating** theme: a cute strawberry-roof 
 
 | ID | Holiday | Time | Visual direction (decorator/editor semantics) | Generated | Owner visual approval | RGBA matte QA | Binary in GitHub | App/iPhone |
 |---|---|---|---|---|---|---|---|---|
-| CD-01 | Halloween | Day | Sunny strawberry-roof cottage, tiny pumpkin lanterns, flowerpot, ribbons/paintbrush, cheerful Halloween decorations | ⬜ NEXT | ⬜ | ⬜ | ⬜ | ⬜ |
+| CD-01 | Halloween | Day | Sunny strawberry-roof cottage with flowerpot, paintbrush, ribbon spool, pumpkin lanterns, autumn leaves and sunny orange-lavender gingham | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ RGB source with checkerboard, non-destructive alpha cleanup later | ⬜ original binary not staged | ⬜ |
 | CD-02 | Halloween | Night | Moonlit cottage with lit windows, purple pumpkins, glowing garden trim, lavender flowerpot and ribbons/paintbrush | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | CD-03 | Christmas | Day | Snow-frosted cottage with wreath, red ribbon, candy canes, snowy floral pots and festive decorator accents | ⬜ | ⬜ | ⬜ | ⬜ |
 | CD-04 | Christmas | Night | Cozy glowing snowy cottage, midnight evergreen lights, wreath, baubles, purple-tinted gardening decorations | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -32,7 +32,8 @@ Give this family a distinct, clear **decorating** theme: a cute strawberry-roof 
 ## Task gates and handoff
 - [x] Verify the separate `CottageDecorations` Home use-site, not to confuse with H1-B01 cottage/Classic hero assets.
 - [x] Create isolated H1-B05 branch and eight-image running checklist.
-- [ ] NEXT: generate **CD-01 Halloween Day** only; request explicit owner approval.
+- [x] CD-01 Halloween Day generated individually, shown to owner.
+- [ ] Owner explicitly approves CD-01 or requests changes. CD-02 Halloween Night follows approval only.
 - [ ] Continue CD-02 through CD-08, one separately reviewed original at a time, preserving previously approved exact files.
 - [ ] After 8/8 visual approvals, QA original PNG alpha or RGB checkerboard, non-destructive RGBA derivatives, checker/light/dark contact sheets, 64/96/144px previews, sha manifest and ZIP verification.
 - [ ] Owner approves cleaned alpha candidates, then verified release ZIP import into isolated GitHub art branch. No bulk overwrite.
@@ -42,3 +43,12 @@ Give this family a distinct, clear **decorating** theme: a cute strawberry-roof 
 **H1-B04 More Adventures:** 8/8 visually owner-approved. Source + RGBA candidate ZIP `Berry_Berry_Blast_More_Adventures_H1_B04_8_Originals_RGBA_QA.zip` SHA-256 `a505666b3e0afc60f9af9f4a8d2539af2de8d26da7c08ef0d7d284ef0ab4562d`. Only 2 native RGBA, remaining 6 need owner matte review. Import workflow `.github/workflows/berry-more-adventures-h1-b04-import.yml` staged on `main`; actual original binaries still await verified Release upload with tag `berry-more-adventures-h1-b04`.
 
 Links: [H1-B04 checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md) · [Master seasonal matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) · [Seasonal Epic #42](https://github.com/ValentineBSAA/IPhone-Apps/issues/42) · [Night Garden PR #40](https://github.com/ValentineBSAA/IPhone-Apps/pull/40).
+
+
+### CD-01 visual generation checkpoint
+- [x] One Halloween Day cottage-decorating badge displayed with shiny strawberry house, orange autumn foliage, lit pumpkin lanterns, paintbrush, strawberry flower pot, lavender ribbon spool and gingham bow, sunny daylight. Keeps decorating semantics rather than redoing H1-B01 Cottage/Home Classic hero images.
+- [ ] **Owner visual approval pending.** Do not count accepted or move to CD-02 until owner responds.
+- [ ] PNG is **RGB with checkerboard-looking background**: preserve source byte-for-byte and process as separate RGBA candidate with owner edge review only after design approval.
+- [ ] No H1-B05 PNG binaries uploaded to GitHub or routed into game yet; no code, economy, decoration inventory or other art families modified.
+
+**H1-B05: 1/8 generated, 0/8 visually approved.**
