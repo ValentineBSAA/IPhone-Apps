@@ -163,3 +163,17 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 - [ ] Next art family after packet confirmation: seasonal Daily Harvest Home tile family (8 versions, one at a time), not a redo of Berry Story or clock plaques.
 
 **Current Berry Story design approval: 8/8 COMPLETED. PNGs on GitHub: 0/8 until import.**
+
+
+## H1-B02 complete ORIGINALS packaging checkpoint
+- [x] **8/8 visually approved** Berry Story originals across Halloween, Christmas, Thanksgiving and Birthday, Day+Night.
+- [x] 8 exact-source PNGs preserved in standalone 1254 × 1254 Original folders, unchanged.
+- [x] 8 separate RGBA candidate entries, 4 native-alpha byte-identical images (BS-01..BS-04) and 4 conservative GrabCut matte candidates (BS-05..BS-08); no originals overwritten.
+- [x] Checked ZIP + SHA-256 JSON/CSV manifest + checkerboard, light, dark and 64/96/144px previews, generated as `Berry_Berry_Blast_Berry_Story_Seasonal_H1_B02_8_Sources_RGBA_QA.zip`.
+- [x] Package size **56,975,792 bytes**, SHA-256 `9f70bfd18c267315148ce9fbaf55b7628f98fbccf69c2cdf2ae3670054ab008b`; archive reads and per-image checksums verified.
+- [ ] **Owner to review actual BS-05..BS-08 cleanup edges** and approve or request corrections. Visual design approval is already recorded and unaffected.
+- [ ] Binary original and alpha candidate PNGs are **NOT yet imported into GitHub**. Never claim upload merely because a ZIP exists in this chat. Release import workflow only after owner QA acceptance; preserve the clock family and the 40 Night icons.
+- [ ] Separate SwiftUI/Xcode integration, gameplay regression and physical iPhone QA remain open.
+- [ ] New icon family to start separately: `Daily Harvest` seasonal Home tile, H1-B03 (8 visuals) under its own checklist.
+
+**Current status: Berry Story 8/8 visual designs approved; 8/8 source originals packaged; 4/4 cleanup candidates pending owner QA; 0/8 binaries committed to GitHub.**
