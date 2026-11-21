@@ -215,3 +215,16 @@ We must not accumulate endless successful isolated branches while the real iPhon
 - [ ] Follow-up: premium *usage* board-change restore tests, multi-key crash-safe purchase design, Story/Daily/quests/birthday, seasonal and Night mechanics, complete physical owner QA, then explicit merge/build/IPA decisions.
 
 D1b exact QA ledger: [Cottage & Premium Saved-Garden Safety](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d1b-cottage-premium-save-qa/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D1B_COTTAGE_PREMIUM_SAVE_QA.md). **No new IPA, no version bump, no merge.**
+
+---
+
+## D1c real Commerce Lab drafted · November 20, 2026
+- [x] [D1c draft PR #72](https://github.com/ValentineBSAA/IPhone-Apps/pull/72), stacked on D1b PR #71, adds a **real production-handler Commerce Lab** to Developer Garden's internal **two-column card grid**. Existing D0 engine, D0b policy lab, and original manual QA strawberry grant stay unchanged.
+- [x] **Seven one-tap internally disposable scenarios**: Cottage exact-price/one-short, Twister three charges, one-short Trowel, permanent Pantry duplicate, preserved 8/12/24 Endless saved gardens during actual purchases, and invalid Trowel usage. Each card **sets up + runs instantly**, reports expected vs actual, PASS/FAIL, and detects whether original player settings changed. Independent UserDefaults test suite and injected real economy ledger are cleared between runs and on exit.
+- [x] Six additional XCTest methods in `BerryDeveloperCommerceLabTests` verify all seven fixtures, repeat/reset, discard and owner-key preservation. Production Release excludes UI/model behind `BERRY_INTERNAL_QA`.
+- [ ] [D1c 80-selected iPhone 16e XCTest run #44869555471](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44869555471) was in progress at last inspection. **Do not mark passed until terminal results and actual test logs reviewed**. D1b 74-selected [run #44869316684](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44869316684) also pending at last check.
+- [x] **77 coverage contracts** in the master catalog: 20 older simulator verified/device pending, 4 D1b real-checkout CI pending, **7 D1c one-tap Commerce Lab CI pending**, 44 planned, 2 future Night items not implemented. Not a 77/77 pass claim.
+- [ ] D1c physical iPhone 16e interaction and layout acceptance, production SwiftUI shop tap paths, premium board-changing use/reopen checks and atomic multi-key purchase guarantees are still open. No IPA, no merge, no version bump.
+- [ ] Next D2/D3: build safe deterministic valid-use tool and game-over/board/save scenarios, then Story/Daily/quest and later seasonal and Night mechanics. One-tap coverage must not be mistaken for end-to-end production UI automation.
+
+[Exact D1c QA ledger](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d1c-real-commerce-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D1C_REAL_COMMERCE_COCKPIT_QA.md).
