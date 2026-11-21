@@ -299,12 +299,26 @@ struct SettingsPanel: View {
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Floral appearance")
                             .font(.headline)
-                        Picker("Appearance", selection: $posiesAppearance) {
-                            Text("System").tag("system")
-                            Text("Blossom").tag("light")
-                            Text("Midnight").tag("dark")
+                        HStack(spacing: 8) {
+                            ForEach(["system", "light", "dark"], id: \.self) { option in
+                                let active = posiesAppearance == option
+                                Button {
+                                    posiesAppearance = PosiesChoiceBehavior.toggle(posiesAppearance, tapped: option)
+                                } label: {
+                                    Text(option == "system" ? "System" : option == "light" ? "Blossom" : "Midnight")
+                                        .font(.subheadline.weight(active ? .semibold : .regular))
+                                        .frame(maxWidth: .infinity, minHeight: 48)
+                                        .foregroundStyle(active ? Color.white : Color.primary)
+                                        .background(active ? Color.potsButtonFill : Color.potsSurfaceMuted,
+                                                    in: RoundedRectangle(cornerRadius: 11))
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityAddTraits(active ? [.isSelected] : [])
+                                .accessibilityHint(active ? "Selected. Tap again to clear." : "Tap to select.")
+                            }
                         }
-                        .pickerStyle(.segmented)
+                        Text("Tap the selected theme again to clear it. With nothing selected, your iPhone's appearance is used.")
+                            .font(.caption).foregroundStyle(Color.potsSecondary)
                         Text("Blossom uses ivory and rose; Midnight uses soft charcoal-plum. System follows your iPhone.")
                             .font(.caption)
                             .foregroundStyle(Color.potsSecondary)
