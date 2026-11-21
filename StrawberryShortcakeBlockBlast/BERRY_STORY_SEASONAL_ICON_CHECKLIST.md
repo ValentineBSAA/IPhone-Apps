@@ -20,8 +20,8 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 | ID | Holiday | Time | Art intention | Original generated | Owner visual approval | True RGBA + 64/96px QA | GitHub source imported | Xcode/iPhone |
 |---|---|---|---|---|---|---|---|---|
 | BS-01 | Halloween | Day | Sunny pumpkin-strawberry storybook, orange/violet ribbon, friendly autumn accents | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
-| BS-02 | Halloween | Night | Moonlit purple enchanted storybook, stars, crescent and luminous chapter star | 🟡 GENERATED | ⬜ AWAITING OWNER | ⬜ | ⬜ | ⬜ |
-| BS-03 | Christmas | Day | Snow-kissed red/green strawberry storybook with gold star and holly | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| BS-02 | Halloween | Night | Moonlit purple enchanted storybook, stars, crescent and luminous chapter star | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
+| BS-03 | Christmas | Day | Snow-kissed red/green strawberry storybook with gold star and holly | ⬜ NEXT: generate single original | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
 | BS-04 | Christmas | Night | Warm fairy lights and moonlit blue snowy storybook | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BS-05 | Thanksgiving | Day | Warm harvest storybook, pie, maple leaves, cinnamon-gold chapter star | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BS-06 | Thanksgiving | Night | Candlelit plum and amber storybook, pumpkin and leaves | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -67,3 +67,12 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 - [x] One Halloween Night Berry Story open-book illustration generated and shown in chat, matched to the BS-01 Day layout with crescent, stars and deep violet lighting.
 - [ ] Owner visual approval pending; **do not** record an approval until explicitly given. Preserve BS-01 Day approval.
 - [ ] No BS-02 PNG bytes committed to GitHub yet; archive + RGB/RGBA validation will be done after owner approval.
+
+
+### H1-B02 owner visual checkpoint: Halloween paired, Christmas Day next
+- [x] BS-01 Halloween Day visually approved previously.
+- [x] BS-02 Halloween Night visually approved explicitly by owner; preserve the generated moonlit open-book, crescent, glowing star, pumpkin-berry and purple/orange bow artwork without regeneration.
+- [ ] NEXT BS-03 Christmas Day: single standalone open strawberry storybook icon, snowy daytime red/green/gold decorations and chapter star; await individual owner approval before Christmas Night.
+- [ ] Original PNG bytes, non-destructive RGBA processing, alpha/edge validation, contact sheets and GitHub binary staging remain independently pending. Existing 10 clock frames and 40 Night Garden artworks stay separate and unchanged.
+
+**Visual approvals: 2/8 Berry Story.**
