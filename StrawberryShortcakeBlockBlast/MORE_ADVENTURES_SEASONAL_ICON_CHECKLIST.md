@@ -28,7 +28,7 @@ In `BerryModes.swift` Home screen, **More Adventures** uses `BerryGridNavigation
 | MA-05 | Thanksgiving | Day | Sunlit golden strawberry crossroads, three route icons, autumn leaves and trees, pumpkins, lattice berry pie, woven harvest basket and orange gingham bow | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ background/alpha QA pending | ⬜ original PNG not staged | ⬜ |
 | MA-06 | Thanksgiving | Night | Moonlit purple/amber garden crossroads, three symbol-only routes, lanterns, pumpkins, maple foliage, berry pie and basket | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ checkerboard/alpha edge QA pending | ⬜ original PNG not staged | ⬜ |
 | MA-07 | Birthday | Day | Sunlit pink strawberry garden crossroads, three paths (lightning, strawberry cottage, crescent/stars), birthday cake, balloons, present and pink gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ verify actual alpha/checkerboard | ⬜ original PNG not staged | ⬜ |
-| MA-08 | Birthday | Night | Moonlit lavender three-path signpost, strawberry birthday cake, illuminated balloons, gifts, golden stars and pink-purple gingham | ⬜ NEXT: generate one original | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
+| MA-08 | Birthday | Night | Lavender moonlit garden crossroads, three route arrows, glowing cake candle, balloons, present and pink-purple gingham bow | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ checkerboard/actual alpha edge QA pending | ⬜ source PNG not staged | ⬜ |
 
 ## Gates and milestones
 - [x] Verify actual Home tile semantics and `MoreAdventures` asset lookup in existing SwiftUI source.
@@ -160,3 +160,11 @@ Links: [Seasonal icon matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) · [Daily Ha
 - [ ] PNG original preservation, RGBA checking and cleanup, 64/96px light/dark/checker proofs, complete 8-image SHA256 ZIP, GitHub image binary import and iPhone QA remain separate pending gates.
 
 **Current More Adventures visually approved: 7/8.**
+
+
+### MA-08 Birthday Night generated; final visual review pending
+- [x] Exactly one Birthday Night More Adventures icon generated and shown in chat: three pink-gold route signs (Berry Blitz lightning, Cozy Cottage strawberry cottage, Strawberry Nightmare crescent/stars), moonlit purple sky, lit garden lanterns, pink birthday cake, party balloons, gift, berries and lavender bow.
+- [ ] Await **explicit owner approval** of MA-08 before marking the More Adventures family visually complete (8/8). Current tally is 7/8 approved.
+- [ ] Visible checkerboard-style background requires actual alpha check and possible non-destructive background removal. Exact-original archives, QA sheets, 64/96px previews, approved RGBA, checked ZIP, GitHub PNG staging and iPhone runtime verification are independent pending milestones.
+
+**Current More Adventures: 8/8 generated, 7/8 visually approved; MA-08 pending owner.**
