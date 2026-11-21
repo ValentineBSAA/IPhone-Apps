@@ -148,6 +148,15 @@
 - [ ] Update this master roadmap, [active handoff](POTS_AND_POSIES_ACTIVE.md), [build checklist](../POTSTracker/BUILD_CHECKLIST.md) and relevant UX test plan with what changed and what is still pending.
 - [ ] Do not add private medical records, device logs with personally identifying data, backups, Apple certificates, secrets or provisioning keys to GitHub.
 
+## 2026-11-20 follow-up: v0.2.9 Daily Care implementation started
+
+- **Newest development branch:** [feature/pots-posies-v0.2.9-daily-care](https://github.com/ValentineBSAA/IPhone-Apps/tree/feature/pots-posies-v0.2.9-daily-care), built from the successful 0.2.8 commit.
+- **Draft review:** [PR #52](https://github.com/ValentineBSAA/IPhone-Apps/pull/52) against 0.2.8 so that changes remain isolated.
+- **CI workflow:** [run 44848307666](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44848307666) was in progress at this writing; **do not claim a passing build or available IPA until its conclusion/artifact is verified.**
+- **Candidate code implemented:** four adjustable hydration quick amounts and four independently adjustable rest/sleep durations, cancellable/resettable settings, tap-again-to-clear, medication cabinet last explicitly recorded event, manual medication logging shortcut, prevention of dismissing a medication profile on failed Save, separate sleep/rest totals and medication status counts without assumed adherence.
+- **New tests and physical QA:** `POTSTracker/Tests/PosiesDailyCareTests.swift` and [v0.2.9 test plan](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/pots-posies-v0.2.9-daily-care/POTSTracker/UX_V029.md).
+- **Not implemented yet:** full medication schedule automation, custom lifestyle tracker schema, advanced observational comparisons, encrypted backup, widgets and clinician appointment workflow; retain them in the roadmap. Real iPhone testing of v0.2.8 and v0.2.9 remains open. Do not merge until device QA.
+
 ## 7. Links and archival references
 
 - [Active handoff](POTS_AND_POSIES_ACTIVE.md)
