@@ -950,6 +950,7 @@ struct BerryGameView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Berry Story dialogue. Tap to read complete message.")
+        .accessibilityIdentifier("berry.story.dialogue")
         .alert("Berry Story", isPresented: $showFullStory) {
             Button("Back to the Garden", role: .cancel) {}
         } message: {
