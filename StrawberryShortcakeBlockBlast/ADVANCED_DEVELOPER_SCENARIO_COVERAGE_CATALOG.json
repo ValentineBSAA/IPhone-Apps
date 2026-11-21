@@ -2,8 +2,8 @@
   "schema": 1,
   "app": "Berry Berry Blast",
   "status": "roadmap-only, no test fixtures implemented",
-  "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests. D0 proof 6/6 on iPhone 16e simulator covers ONLY two fully implemented scenarios; do not imply full 48 scenario coverage or physical-device validation. D0b six scenarios are separate value-type policy implementations and remain unaccepted until named simulator results and owner physical UI tests are verified. GitHub Actions #44864274159 attempt 2: D0/D0b selected 17/17 XCTest green, with safe Release compile. Do not equate these mock policy fixtures with full production purchase/save or physical iPhone acceptance. D0c two implemented-untested shared production-rule contract checks are not complete end-to-end checkout coverage. Owner physical QA remains required.",
-  "count": 62,
+  "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests. D0 proof 6/6 on iPhone 16e simulator covers ONLY two fully implemented scenarios; do not imply full 48 scenario coverage or physical-device validation. D0b six scenarios are separate value-type policy implementations and remain unaccepted until named simulator results and owner physical UI tests are verified. GitHub Actions #44864274159 attempt 2: D0/D0b selected 17/17 XCTest green, with safe Release compile. Do not equate these mock policy fixtures with full production purchase/save or physical iPhone acceptance. D0c two implemented-untested shared production-rule contract checks are not complete end-to-end checkout coverage. Owner physical QA remains required. D1a real Boutique tests are confined to actual isolated buyCosmetic calls and not full SwiftUI tap flows, premium purchases, or atomic multi-key cosmetic recovery. Tests are implemented_untested until GitHub's terminal XCTest logs are checked.",
+  "count": 66,
   "status_values": [
     "planned",
     "implemented_untested",
@@ -911,6 +911,58 @@
       "implementation_ref": "feature/berry-advanced-dev-d0e-purchase-recovery:BerryStandardPurchaseJournal.swift",
       "manual_iphone_accepted": false,
       "scope_note": "Player-friendly repair UI to be designed; corrupt unresolved journal blocks standard tools."
+    },
+    {
+      "id": "d1a-boutique-real-checkout",
+      "category": "economy",
+      "title": "D1a real Boutique cosmetic buy persists exact ownership, wallet, ledger and receipt",
+      "fixture": "Construct BerryGameSession with disposable checkoutDefaults and actual injected BerryEconomyLedger. Buy an unowned approved block or border at canonical price.",
+      "expected": "One exact purchase debits wallet once, writes ownedCosmetics and reward receipt, and records exact per-item ledger spending.",
+      "status": "implemented_untested",
+      "execution": "real_session_isolated_boutique_purchase",
+      "latest_result": null,
+      "test_ref": "BerryBoutiqueCheckoutIsolationTests",
+      "implementation_ref": "feature/berry-advanced-dev-d1a-boutique-isolated-qa:BerryGameSession.swift",
+      "manual_iphone_accepted": false
+    },
+    {
+      "id": "d1a-boutique-price-duplicate-guards",
+      "category": "economy",
+      "title": "D1a Boutique insufficient funds, fake price, unapproved item and duplicate purchase guards",
+      "fixture": "Run real buyCosmetic with one berry short, incorrect cost, unknown ID, already-owned item and restart.",
+      "expected": "All invalid requests reject without wallet/ledger/receipt/ownership mutations; past ownership survives a new game session.",
+      "status": "implemented_untested",
+      "execution": "real_session_isolated_boutique_purchase",
+      "latest_result": null,
+      "test_ref": "BerryBoutiqueCheckoutIsolationTests",
+      "implementation_ref": "feature/berry-advanced-dev-d1a-boutique-isolated-qa:BerryBoutiquePurchasePolicy.swift",
+      "manual_iphone_accepted": false
+    },
+    {
+      "id": "d1a-boutique-free-skin-legacy-ownership",
+      "category": "progression",
+      "title": "D1a free strawberry skin, legacy ownership, appearance and capped reward history",
+      "fixture": "Seed isolated inventory, already-owned cosmetics, selected block style and board surface; buy free strawberry-fruit and paid rose border.",
+      "expected": "Free skin granted once without spending; existing owned cosmetics and equipped looks preserved, reward log limited to 20 entries.",
+      "status": "implemented_untested",
+      "execution": "real_session_isolated_boutique_purchase",
+      "latest_result": null,
+      "test_ref": "BerryBoutiqueCheckoutIsolationTests",
+      "implementation_ref": "feature/berry-advanced-dev-d1a-boutique-isolated-qa:BerryGameSession.swift",
+      "manual_iphone_accepted": false
+    },
+    {
+      "id": "d1a-boutique-helper-purchases-protect-endless-saves",
+      "category": "gameplay",
+      "title": "D1a Boutique and helper checkout from menu preserves all saved Endless sizes",
+      "fixture": "Seed independent 8×8/12×12/24×24 Endless slot bytes in isolated preferences, open fresh GameSession, buy cosmetic plus Undo/Hint.",
+      "expected": "All three saved board slots unchanged byte-for-byte; inventory purchase writes do not invoke board-save deletion; normal UserDefaults remains untouched.",
+      "status": "implemented_untested",
+      "execution": "real_session_isolated_boutique_purchase",
+      "latest_result": null,
+      "test_ref": "BerryBoutiqueCheckoutIsolationTests.testMenuCosmeticAndHelperPurchasesNeverEraseSavedEndlessBoards",
+      "implementation_ref": "feature/berry-advanced-dev-d1a-boutique-isolated-qa:BerryGameSession.swift",
+      "manual_iphone_accepted": false
     }
   ]
 }
