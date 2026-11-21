@@ -128,7 +128,9 @@ final class BerrySeasonalAssetResolverTests: XCTestCase {
     }
 
     func testLocalRegionAndTimeZoneChangesNoNetworkOrGPSRequired() {
-        let candidate = "BBB_Season_Christmas_Day_HomeClassic"
+        // 06:00 UTC is Dec 24 23:00 in Phoenix, but Dec 25 01:00
+        // in New York: the correct holiday counterpart is NIGHT, not Day.
+        let candidate = "BBB_Season_Christmas_Night_HomeClassic"
         let available: Set<String> = [candidate]
         let instantUTC = instant(2026, 12, 25, 6, zone: TimeZone(identifier: "UTC")!)
         let phoenixChoice = resolve(.homeClassic, at: instantUTC, assets: available,
