@@ -219,34 +219,29 @@ struct ExpandedEntryEditor: View {
             }
             .sheet(isPresented: $editingHydrationPresets) {
                 PosiesQuickPresetsEditor(stored: $hydrationQuickAmounts, title: "Hydration quick amounts",
-                                         unit: "mL", fallback: [125, 250, 350, 500], range: 1...10000)
+                                         featureID: "hydration", unit: "mL", fallback: [125, 250, 350, 500], range: 1...10000)
             }
             .sheet(isPresented: $editingRestPresets) {
                 PosiesQuickPresetsEditor(stored: $restQuickMinutes, title: "Rest and sleep durations",
-                                         unit: "minutes", fallback: [15, 30, 60, 90], range: 1...2880)
+                                         featureID: "sleep", unit: "minutes", fallback: [15, 30, 60, 90], range: 1...2880)
             }
         }
     }
 
     private var heading: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: 6) {
-                Label(category.title, systemImage: category.symbol)
-                    .font(.title3.bold())
-                    .foregroundStyle(Color.potsTeal)
-                Text("Only what you choose to record is saved. You can edit or delete it later.")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.potsSecondary)
-            }
+            PosiesFeatureHeading(featureID: category.rawValue,
+                                 title: category == .sleep ? "Sleep & rest" : category.title,
+                                 subtitle: "Record what you choose; edit or delete it later.",
+                                 artworkSize: 54)
         }
     }
 
     private var hydrationFields: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 13) {
-                Label("What did you drink?", systemImage: "drop.fill")
-                    .font(.headline).foregroundStyle(Color.potsTeal)
-                pickerGrid(fluidTypes, selected: $title)
+                PosiesFeatureSectionTitle(featureID: "hydration", title: "What did you drink?")
+                PosiesChoiceMenu(title: "Drink type", options: fluidTypes, selected: $title)
                 if let previous = lastDrink, previous.firstValue > 0 {
                     Button {
                         let matchesLast = title == previous.title &&
@@ -307,7 +302,7 @@ struct ExpandedEntryEditor: View {
                 }
                 Text("Helpful context (optional)")
                     .font(.subheadline.weight(.semibold))
-                tagGrid(["With food", "After activity", "Morning", "Before bed"])
+                PosiesTagsMenu(title: "Helpful context", options: ["With food", "After activity", "Morning", "Before bed"], selected: $selectedTags)
                 Text("These buttons enter amounts, not recommended targets. Sodium is recorded in mg, not grams of salt.")
                     .font(.caption).foregroundStyle(Color.potsSecondary)
             }
@@ -317,8 +312,7 @@ struct ExpandedEntryEditor: View {
     private var medicationFields: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 13) {
-                Label("Medication or supplement", systemImage: "pills.fill")
-                    .font(.headline).foregroundStyle(Color.potsTeal)
+                PosiesFeatureSectionTitle(featureID: "medications", title: "Medication or supplement")
                 NavigationLink {
                     PosiesMedicationCabinetView()
                 } label: {
@@ -383,13 +377,13 @@ struct ExpandedEntryEditor: View {
                 TextField("Dose or label (optional)", text: $dose)
                     .textFieldStyle(.roundedBorder)
                 Text("What happened?").font(.subheadline.weight(.semibold))
-                pickerGrid(medStatuses, selected: $positionOrStatus)
+                PosiesChoiceMenu(title: "Medication event", options: medStatuses, selected: $positionOrStatus)
                 if positionOrStatus.isEmpty {
                     Text("Choose a status to save. Tap a selected status again to clear it. Nothing is assumed taken.")
                         .font(.caption).foregroundStyle(Color.potsSecondary)
                 }
                 Text("Optional details").font(.subheadline.weight(.semibold))
-                tagGrid(["With food", "With water", "After eating", "Effect noticed"])
+                PosiesTagsMenu(title: "Optional details", options: ["With food", "With water", "After eating", "Effect noticed"], selected: $selectedTags)
                 TextField("Timing, reason or other context", text: $contextText, axis: .vertical)
                     .lineLimit(2...4).textFieldStyle(.roundedBorder)
                 Text("This is a personal record, not a dose recommendation or automatic medication adherence tracker.")
@@ -401,9 +395,9 @@ struct ExpandedEntryEditor: View {
     private var sleepFields: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 13) {
-                Label("Sleep or rest", systemImage: "moon.stars.fill")
-                    .font(.headline).foregroundStyle(Color.potsTeal)
-                pickerGrid(sleepKinds, selected: $title)
+                PosiesFeatureSectionTitle(featureID: "sleep",
+                                         title: title == "Rest" ? "Rest session" : "Sleep or rest")
+                PosiesChoiceMenu(title: "Sleep or rest", options: sleepKinds, selected: $title)
                 Toggle("Enter start and end times", isOn: $useTimeRange)
                     .tint(.potsTeal)
                 if useTimeRange {
@@ -444,9 +438,9 @@ struct ExpandedEntryEditor: View {
                     .buttonStyle(.bordered)
                 }
                 Text("How was it? (optional)").font(.subheadline.weight(.semibold))
-                pickerGrid(["Not rated", "Restful", "Okay", "Interrupted", "Poor"], selected: $quality)
+                PosiesChoiceMenu(title: "Quality", options: ["Restful", "Okay", "Interrupted", "Poor"], selected: $quality)
                 Text("Afterward (optional)").font(.subheadline.weight(.semibold))
-                pickerGrid(["Refreshed", "About the same", "Still tired", "Not sure"], selected: $recovery)
+                PosiesChoiceMenu(title: "How you felt afterward", options: ["Refreshed", "About the same", "Still tired", "Not sure"], selected: $recovery)
                 TextField("Fatigue, brain fog, interruptions or context", text: $contextText, axis: .vertical)
                     .lineLimit(2...4).textFieldStyle(.roundedBorder)
                 Text("Rest and sleep durations describe what you entered, not a sleep-quality score.")
@@ -458,9 +452,8 @@ struct ExpandedEntryEditor: View {
     private var postureFields: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 13) {
-                Label("Position observation", systemImage: "figure.stand")
-                    .font(.headline).foregroundStyle(Color.potsTeal)
-                pickerGrid(positions, selected: $positionOrStatus)
+                PosiesFeatureSectionTitle(featureID: "posture", title: "Position observation")
+                PosiesChoiceMenu(title: "Position", options: positions, selected: $positionOrStatus)
                 Text("Optional measurements").font(.subheadline.weight(.semibold))
                 HStack {
                     TextField("Heart rate", text: $firstValue)
@@ -474,7 +467,7 @@ struct ExpandedEntryEditor: View {
                 }
                 Text("What did you notice? (optional)")
                     .font(.subheadline.weight(.semibold))
-                tagGrid(["Lightheaded", "Palpitations", "Fatigued", "Uncomfortable"])
+                PosiesTagsMenu(title: "Symptoms noticed", options: ["Lightheaded", "Palpitations", "Fatigued", "Uncomfortable"], selected: $selectedTags)
                 TextField("Other symptoms or context", text: $contextText, axis: .vertical)
                     .lineLimit(2...5).textFieldStyle(.roundedBorder)
                 Text("Record only a position you were already in. This is not a guided standing test or diagnosis; stop if you feel unsafe.")
