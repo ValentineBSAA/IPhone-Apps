@@ -1,0 +1,145 @@
+name: Berry Berry Blast | I6 pinned physical iPhone UNSIGNED test IPA
+
+on:
+  push:
+    branches: [feature/berry-i6-physical-iphone-test-ipa]
+    paths:
+      - '.github/workflows/berry-i6-pinned-iphone-unsigned-test-ipa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: berry-i6-pinned-unsigned-device-package
+  cancel-in-progress: false
+
+jobs:
+  frozen-unsigned-preview:
+    runs-on: macos-15
+    timeout-minutes: 50
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    steps:
+      - name: Checkout exactly the previously simulator-verified complete I6 game source
+        uses: actions/checkout@v4
+        with:
+          ref: daa427728d7c3a9cc6f7a81499deffa3bfed7f69
+          persist-credentials: false
+
+      - name: Require frozen source, original app identity, iOS16, artwork and audio
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "daa427728d7c3a9cc6f7a81499deffa3bfed7f69"
+          python3 Tools/check_ios16_compat.py
+          python3 Tools/verify_artwork.py
+          python3 Tools/verify_audio_build2.py
+          grep -q 'PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.berryblockblast' project.yml
+          grep -q 'MARKETING_VERSION: "0.5.16"' project.yml
+          grep -q 'CURRENT_PROJECT_VERSION: "46"' project.yml
+          test -f UITests/BerryBoardAppearancePersistenceUITests.swift
+          test -f Tests/BerryShuffleContinueIsolationTests.swift
+          test -f Tests/BerryRescueUndoIsolationTests.swift
+          echo "Frozen I6 commit and 167 earlier successful iPhone16e tests verified as source provenance."
+
+      - name: Generate exact source Xcode project
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          xcodegen generate --spec project.yml
+
+      - name: Compile native iPhoneOS RELEASE without development QA
+        timeout-minutes: 30
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast \
+            -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath .build/I6-Device-Unsigned \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" build
+          APP=".build/I6-Device-Unsigned/Build/Products/Release-iphoneos/BerryBlockBlast.app"
+          test -f "$APP/Info.plist"
+          test -f "$APP/Assets.car"
+          test -f "$APP/BerryBlockBlast"
+          python3 Tools/verify_audio_build2.py --app "$APP"
+          if grep -qraE 'BerryDeveloperSandboxPanel|BerryDeveloperStateLabPanel|BerryDeveloperCommerceLabPanel|BerryDeveloperToolActionLabPanel|BerryDeveloperQuestStoryLabPanel|BerryQAIsolatedWallet' "$APP"; then
+            echo "BLOCKED: debug-only wallet or QA-only panels leaked into Release" >&2
+            exit 1
+          fi
+          echo "Native iPhoneOS Release app compiled and internal QA excluded."
+
+      - name: Package and verify exactly one unsigned private-test IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP=".build/I6-Device-Unsigned/Build/Products/Release-iphoneos/BerryBlockBlast.app"
+          mkdir -p dist/Payload
+          cp -R "$APP" dist/Payload/
+          IPA="dist/Berry-Berry-Blast-I6-v0.5.16-B46-UNSIGNED-PRIVATE-TEST.ipa"
+          (cd dist && zip -qry "$(basename "$IPA")" Payload)
+          unzip -t "$IPA" | tail -2
+          python3 Tools/verify_audio_build2.py --ipa "$IPA"
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, plistlib, zipfile
+          ipa = Path("dist/Berry-Berry-Blast-I6-v0.5.16-B46-UNSIGNED-PRIVATE-TEST.ipa")
+          with zipfile.ZipFile(ipa) as z:
+              names = set(z.namelist())
+              prefix = "Payload/BerryBlockBlast.app/"
+              assert prefix + "Assets.car" in names, "Missing approved image catalog"
+              assert prefix + "BerryBlockBlast" in names, "Missing iPhone executable"
+              info = plistlib.loads(z.read(prefix + "Info.plist"))
+              assert info["CFBundleIdentifier"] == "com.valentinebsaa.berryblockblast", info
+              assert info["CFBundleShortVersionString"] == "0.5.16", info
+              assert info["CFBundleVersion"] == "46", info
+              assert info["MinimumOSVersion"] == "16.0", info
+              assert "iPhoneOS" in info.get("CFBundleSupportedPlatforms", []), info
+              assert 1 in info["UIDeviceFamily"], info
+          data = ipa.read_bytes()
+          digest = hashlib.sha256(data).hexdigest()
+          Path("dist/IPA-SHA256.txt").write_text(f"{digest}  {ipa.name}\n")
+          print("Verified unsigned iPhoneOS private-test IPA; bytes =", len(data), "SHA256 =", digest)
+          PY
+          cat > dist/START-HERE-BEFORE-INSTALL.txt <<'TXT'
+          BERRY BERRY BLAST I6 | SHORT PRIVATE iPHONE TEST
+          UNSIGNED test IPA. Requires signing by your usual AltStore/NAS flow.
+          Source: daa427728d7c3a9cc6f7a81499deffa3bfed7f69
+          Bundle: com.valentinebsaa.berryblockblast
+          Version: 0.5.16, internal build 46, iOS 16+
+
+          BEFORE INSTALL: BACK UP the installed game and keep a copy of its
+          wallet, scores, purchases and Endless 8x8/12x12/24x24 saves.
+          Do NOT delete the old app merely to make this unsigned IPA install.
+          Re-signing or reinstallation may change an app's data container.
+
+          FIVE QUICK CHECKS AFTER YOUR OWN BACKUP + SAFE INSTALL:
+          [ ] 1. Launch, menu screens, music and volume: no crashes.
+          [ ] 2. Wallet, owned cosmetics and saved Endless score survive.
+          [ ] 3. Board Studio Blossom Glass -> Settings -> force-close -> reopen.
+          [ ] 4. Daily Harvest leaves and reopens as "Resume Today"; Story dialogue opens.
+          [ ] 5. Pause, Help, Quest Board and Special Tools all work normally.
+
+          Do not spend real saved berries just to test a feature until your
+          backup has been confirmed. Report first failure with a screenshot.
+          Full Story rescue and reward hardware acceptance happens separately.
+
+          NOT a public release; NOT Apple-signed; NOT physically verified.
+          GitHub source issue: https://github.com/ValentineBSAA/IPhone-Apps/issues/91
+          TXT
+
+      - name: Upload private test IPA and five-step quick-check sheet
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-Berry-Blast-I6-PRIVATE-UNSIGNED-iPhone-Test
+          path: |
+            StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-I6-v0.5.16-B46-UNSIGNED-PRIVATE-TEST.ipa
+            StrawberryShortcakeBlockBlast/dist/IPA-SHA256.txt
+            StrawberryShortcakeBlockBlast/dist/START-HERE-BEFORE-INSTALL.txt
+          retention-days: 14
+          if-no-files-found: error
