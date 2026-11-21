@@ -30,6 +30,9 @@ final class BerryGameSession: ObservableObject {
     /// this injection; unrelated singleton-backed game modes are not.
     private let checkoutDefaults: UserDefaults
     private let checkoutLedger: BerryEconomyLedger
+    /// Normal gameplay reads the local clock; isolated Daily QA can supply a
+    /// virtual date without changing the phone clock or other game modes.
+    private let nowProvider: () -> Date
     nonisolated static let goldenStrawberryCost = 250
     static let classicSaveKey = "berryblockblast.classic.engine.v055"
     static let classicSavedFlagKey = "berryblockblast.classic.savedFlag.v056b2"
@@ -78,15 +81,15 @@ final class BerryGameSession: ObservableObject {
         return saved.side == 8 && saved.moves > 0 && saved.hasMove()
     }
 
-    static func dailyDateKey() -> String {
-        let components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+    static func dailyDateKey(date: Date = Date()) -> String {
+        let components = Calendar.current.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", components.year ?? 2026, components.month ?? 1, components.day ?? 1)
     }
     private func modeKey(_ mode: BerryMode) -> String {
         switch mode {
         case .endless: saveKey
         case .story: "berryblockblast.story.engine.v1"
-        case .daily: "berryblockblast.daily.engine." + Self.dailyDateKey()
+        case .daily: "berryblockblast.daily.engine." + Self.dailyDateKey(date: nowProvider())
         case .cozy: "berryblockblast.cozy.engine.v1"
         case .challenge: "berryblockblast.blitz.engine.v1"
         case .superHard: "berryblockblast.nightmare.engine.v1"
@@ -116,16 +119,21 @@ final class BerryGameSession: ObservableObject {
         let size = [8, 12, 24].contains(requestedSize) ? requestedSize : 8
         if mode == .daily {
             // A daily attempt is consumed when the player enters play, not
-            // only when they win. Save the exact engine for same-day resume.
-            guard BerryDailyHistory.beginToday() else {
+            // only when they win. All Daily writes use this session's store
+            // and one fixed date for consistent midnight-boundary behavior.
+            let today = nowProvider()
+            guard BerryDailyHistory.beginToday(defaults: checkoutDefaults,
+                                              now: today) else {
                 engine = freshEngine()
                 previous = nil
                 gameOver = true
                 lastMessage = "Today's Daily Harvest is finished. A new attempt unlocks at midnight."
                 return
             }
-            engine = BerryDailyHistory.activeEngine() ?? freshEngine()
-            BerryDailyHistory.saveActiveEngine(engine)
+            engine = BerryDailyHistory.activeEngine(defaults: checkoutDefaults,
+                                                   now: today) ?? freshEngine()
+            BerryDailyHistory.saveActiveEngine(engine, defaults: checkoutDefaults,
+                                              now: today)
         } else if mode == .endless, let saved = Self.savedEndlessEngine(side: size, defaults: checkoutDefaults) {
             engine = saved
             if size == 8 {
@@ -161,7 +169,10 @@ final class BerryGameSession: ObservableObject {
         previousBerryEarnings = 0
         previousRewardEntry = nil
         gameOver = !engine.hasMove()
-        if mode == .daily && gameOver { BerryDailyHistory.markLostToday() }
+        if mode == .daily && gameOver {
+            BerryDailyHistory.markLostToday(defaults: checkoutDefaults,
+                                            now: nowProvider())
+        }
         lastEarned = 0
         lastClearedLines = 0
     }
@@ -175,7 +186,8 @@ final class BerryGameSession: ObservableObject {
             return side == 8 ? BerryEngine() : BerryEngine(side: side, hard: side == 24)
         }
         guard activeMode == .daily else { return BerryEngine() }
-        let components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        let components = Calendar.current.dateComponents([.year, .month, .day],
+                                                         from: nowProvider())
         let number = (components.year ?? 2026) * 10000 + (components.month ?? 1) * 100 + (components.day ?? 1)
         return BerryEngine(seed: UInt64(number))
     }
@@ -276,8 +288,10 @@ final class BerryGameSession: ObservableObject {
     }
 
     init(checkoutDefaults: UserDefaults = .standard,
-         checkoutLedger: BerryEconomyLedger? = nil) {
+         checkoutLedger: BerryEconomyLedger? = nil,
+         now: @escaping () -> Date = { Date() }) {
         self.checkoutDefaults = checkoutDefaults
+        self.nowProvider = now
         let selectedLedger = checkoutLedger ?? .shared
         self.checkoutLedger = selectedLedger
         // Complete an interrupted standard-tool purchase BEFORE decoding
@@ -857,7 +871,8 @@ final class BerryGameSession: ObservableObject {
         // Daily Harvest keeps its independent original save policy.
         // Only the three standard-tool buy methods are D0d-certified.
         if activeMode == .daily {
-            BerryDailyHistory.saveActiveEngine(engine)
+            BerryDailyHistory.saveActiveEngine(engine, defaults: checkoutDefaults,
+                                              now: nowProvider())
             return
         }
         // Only Sweet Endless persists an unfinished indefinite board.
