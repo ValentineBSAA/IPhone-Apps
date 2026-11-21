@@ -163,3 +163,11 @@ One-tap **Create scenario → Run checks → Review PASS/FAIL evidence → Disca
 - [x] [Scenario catalog](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) expanded to **62 contracts**: 13 D0–D0d simulator-pass/device-pending, 3 D0e implemented-untested, 44 planned, 2 not implemented.
 - [ ] True power-loss durability is **not guaranteed by UserDefaults**, and real multi-key writes are not atomic; this is best-effort journal replay, not a transactional database. Fault-injection device testing and player-friendly corrupt-journal messaging remain future work.
 - [ ] Keep all broader gameplay, Boutique, Story, Daily, Night, progression and approved artwork gates. No new IPA/version or feature merges without full game integration regression and physical iPhone approval.
+
+
+## ✅ D0e interrupted-purchase recovery simulator acceptance · November 20, 2026
+- [x] [D0e Actions #44867590124](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44867590124) final **SUCCESS**, named iPhone 16e **48/48 selected XCTest methods, zero failures** (D0 6, D0b 11, D0c 10, BerryEconomy 4, D0d 9, D0e 8). Release compiled without QA-only panels; no IPA.
+- [x] Real GameSession standard tool purchases can stage and replay the exact post-inventory and spending-ledger values. Simulated interruption tests cover journal-only, inventory-only, ledger-partial, second launch, corrupted pending, overflow/no overwrite and normal player storage untouched.
+- [x] [62-scenario catalog](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json): **16 simulator-pass/device-pending**, **44 planned**, **2 not implemented**. Zero new Developer Garden owner-device signoffs.
+- [ ] Best-effort UserDefaults replay is **not power-loss-durable or a truly atomic database transaction**. Physical iPhone process-kill and friendly corrupted-journal recovery UX remain required before production release.
+- [ ] [Draft D0e PR #68](https://github.com/ValentineBSAA/IPhone-Apps/pull/68) remains unmerged. Next move to actual whole-game coverage: Boutique, premium tools, Daily/Story save and reward boundaries, in separate isolated work packages, not one risky refactor.
