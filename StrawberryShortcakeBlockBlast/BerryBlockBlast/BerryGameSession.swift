@@ -517,36 +517,39 @@ final class BerryGameSession: ObservableObject {
         berries = amount > Int.max - berries ? Int.max : berries + amount
         totalEarnedBerries = amount > Int.max - totalEarnedBerries ? Int.max : totalEarnedBerries + amount
         if reason == "Completed berry lines" {
-            BerryEconomyLedger.shared.recordLineEarnings(amount, mode: activeMode)
+            checkoutLedger.recordLineEarnings(amount, mode: activeMode)
         }
         rewardsLog.insert("🍓 +\(amount) • \(reason)", at: 0)
         rewardsLog = Array(rewardsLog.prefix(20))
-        UserDefaults.standard.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
+        checkoutDefaults.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
         save()
     }
     func awardOnce(_ name: String, amount: Int, reason: String) {
         let key = "berryblockblast.award." + name
-        guard !UserDefaults.standard.bool(forKey: key) else { return }
-        UserDefaults.standard.set(true, forKey: key)
+        guard !checkoutDefaults.bool(forKey: key) else { return }
+        checkoutDefaults.set(true, forKey: key)
         earn(amount, reason: reason)
     }
     func rewardTutorial() { awardOnce("tutorial", amount: 25, reason: "Strawberry School") }
     func rewardDaily() {
-        let day = Self.dailyDateKey()
-        // Migrated completions were already paid by prior app versions.
-        // Never pay a second reward for a completed legacy date.
-        guard !BerryDailyHistory.completed.contains(day) else { return }
-        let dayNumber = BerryDailyHistory.nextStreakDay
+        let date = nowProvider()
+        let day = Self.dailyDateKey(date: date)
+        // Legacy completed challenges were already paid; never pay twice.
+        guard !BerryDailyHistory.completedDays(defaults: checkoutDefaults).contains(day) else { return }
+        let dayNumber = BerryDailyHistory.nextStreakDay(on: date,
+                                                         defaults: checkoutDefaults)
         let amount = BerryDailyHistory.reward(forStreakDay: dayNumber)
         awardOnce("daily-" + day, amount: amount,
                   reason: "Daily Harvest · Day \(dayNumber) streak")
-        if dayNumber == 7 {
+        if dayNumber == 7 && checkoutDefaults === UserDefaults.standard {
             BerryProgression.shared.celebrate("🏆 Seven-day berry streak! +50 strawberries!")
         }
     }
     func rewardStory(_ chapter: Int) {
         awardOnce("chapter-" + String(chapter), amount: 15 + min(35, chapter * 5), reason: "Story chapter")
-        BerryProgression.shared.recordStoryChapter(chapter)
+        if checkoutDefaults === UserDefaults.standard {
+            BerryProgression.shared.recordStoryChapter(chapter)
+        }
     }
     var nextCottageDecorationPrice: Int? {
         BerryEconomy.nextCottagePrice(owned: cottageDecorations)
@@ -697,8 +700,10 @@ final class BerryGameSession: ObservableObject {
         lastClearedLines = outcome.clearedLines
         if outcome.clearedLines > 0 {
             earn(outcome.clearedLines * 3, reason: "Starberry Seed line clearing")
-            BerryProgression.shared.recordPlacement(mode: activeMode,
-                                                     clearedLines: outcome.clearedLines)
+            if checkoutDefaults === UserDefaults.standard {
+                BerryProgression.shared.recordPlacement(mode: activeMode,
+                                                         clearedLines: outcome.clearedLines)
+            }
         }
         if engine.score > bestScore {
             bestScore = engine.score
