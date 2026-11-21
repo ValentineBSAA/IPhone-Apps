@@ -35,6 +35,7 @@ struct BerryDeveloperGardenView: View {
         case stateLab = "State & Timer Lab"
         case commerce = "Commerce Lab"
         case toolActions = "Tool Action Lab"
+        case questStory = "Quest & Story Lab"
         #endif
 
         var id: String { rawValue }
@@ -54,6 +55,7 @@ struct BerryDeveloperGardenView: View {
             case .stateLab: return "timer.circle.fill"
             case .commerce: return "basket.fill"
             case .toolActions: return "wand.and.stars"
+            case .questStory: return "book.closed.fill"
             #endif
             }
         }
@@ -75,6 +77,7 @@ struct BerryDeveloperGardenView: View {
             case .stateLab: return "BBBIconTools"
             case .commerce: return "BBBIconInventory"
             case .toolActions: return "BBBIconTools"
+            case .questStory: return "BBBIconInventory"
             #endif
             }
         }
@@ -94,6 +97,7 @@ struct BerryDeveloperGardenView: View {
             case .stateLab: return "Dev_Timers_Moon_Clock"
             case .commerce: return "Dev_Economy_Inspector_Two_Currencies"
             case .toolActions: return "Dev_Diagnostics_Strawberry_Pulse"
+            case .questStory: return "Dev_Diagnostics_Strawberry_Pulse"
             #endif
             }
         }
@@ -113,6 +117,7 @@ struct BerryDeveloperGardenView: View {
             case .stateLab: return "Mock wallets, charges, saves and time"
             case .commerce: return "One-tap real checkout in disposable test store"
             case .toolActions: return "Use real tools and reopen test gardens"
+            case .questStory: return "Complete quests and Story rewards with one tap"
             #endif
             }
         }
@@ -123,7 +128,7 @@ struct BerryDeveloperGardenView: View {
     }
     private var advancedTools: [Tool] {
         #if BERRY_INTERNAL_QA
-        return [.sandbox, .stateLab, .commerce, .toolActions, .economy, .build, .clock, .experimental, .notifications]
+        return [.sandbox, .stateLab, .commerce, .toolActions, .questStory, .economy, .build, .clock, .experimental, .notifications]
         #else
         return [.economy, .build, .clock, .experimental, .notifications]
         #endif
@@ -325,6 +330,8 @@ struct BerryDeveloperGardenView: View {
             BerryDeveloperCommerceLabPanel()
         case .toolActions:
             BerryDeveloperToolActionLabPanel()
+        case .questStory:
+            BerryDeveloperQuestStoryLabPanel()
         #endif
         case .qaWallet:
             #if BERRY_INTERNAL_QA
