@@ -1,0 +1,1207 @@
+{
+  "schema_version": "1.0",
+  "product": "Berry Berry Blast",
+  "package_date": "2026-11-20",
+  "package_tag": "berry-h1-approved-all-20261120",
+  "purpose": "Exact-source consolidated GitHub art staging package, not an app update or runtime integration.",
+  "unique_visually_approved_originals": 55,
+  "prior_archive_count": 7,
+  "existing_family_source_count": 50,
+  "new_berry_collection_approved_source_count": 5,
+  "families": {
+    "Berry Collection": 5,
+    "Berry Home Classic": 8,
+    "Berry Story": 8,
+    "Daily Harvest": 8,
+    "Digital Clock Frames": 10,
+    "More Adventures": 8,
+    "My Strawberry Cottage Decorations": 8
+  },
+  "included_packages": [
+    {
+      "batch": "H1-B01",
+      "family": "Berry Home Classic",
+      "archive_filename": "Berry_Berry_Blast_Seasonal_H1_Batch01_8_Approved_Sources.zip",
+      "archive_bytes": 22072457,
+      "archive_sha256": "67bea35a6b8d6195d00a0aba2e3fdd7cecbcc473093d3cabeb74f39862bfc2c3",
+      "files_extracted": 12,
+      "declared_originals": 8,
+      "manifest_checked": true
+    },
+    {
+      "batch": "C-FULL-01",
+      "family": "Digital Clock Frames",
+      "archive_filename": "Berry_Berry_Blast_Clock_Family_C01_C10_Sources_RGBA_Review.zip",
+      "archive_bytes": 53721015,
+      "archive_sha256": "ea8eb15bf6ad838b3972388e8d47c540fe85385d9ac80bc5b2af30a39320f413",
+      "files_extracted": 27,
+      "declared_originals": 10,
+      "manifest_checked": true
+    },
+    {
+      "batch": "H1-B02",
+      "family": "Berry Story",
+      "archive_filename": "Berry_Berry_Blast_Berry_Story_Seasonal_H1_B02_8_Sources_RGBA_QA.zip",
+      "archive_bytes": 56975792,
+      "archive_sha256": "9f70bfd18c267315148ce9fbaf55b7628f98fbccf69c2cdf2ae3670054ab008b",
+      "files_extracted": 23,
+      "declared_originals": 8,
+      "manifest_checked": true
+    },
+    {
+      "batch": "H1-B03",
+      "family": "Daily Harvest",
+      "archive_filename": "Berry_Berry_Blast_Daily_Harvest_H1_B03_8_Originals_RGBA_QA.zip",
+      "archive_bytes": 50806509,
+      "archive_sha256": "e3171cb083d3faf1062dd4d75844082a61506cbe5e3491543370f61fcf59cd24",
+      "files_extracted": 23,
+      "declared_originals": 8,
+      "manifest_checked": true
+    },
+    {
+      "batch": "H1-B04",
+      "family": "More Adventures",
+      "archive_filename": "Berry_Berry_Blast_More_Adventures_H1_B04_8_Originals_RGBA_QA.zip",
+      "archive_bytes": 56638702,
+      "archive_sha256": "a505666b3e0afc60f9af9f4a8d2539af2de8d26da7c08ef0d7d284ef0ab4562d",
+      "files_extracted": 23,
+      "declared_originals": 8,
+      "manifest_checked": true
+    },
+    {
+      "batch": "H1-B05",
+      "family": "My Strawberry Cottage Decorations",
+      "archive_filename": "Berry_Berry_Blast_Cottage_Decor_H1_B05_8_Originals_RGBA_QA.zip",
+      "archive_bytes": 56158942,
+      "archive_sha256": "78730fd5ee2e1885bd90c2cabdb94e817903e0830c8babc9d10970501a4b7393",
+      "files_extracted": 23,
+      "declared_originals": 8,
+      "manifest_checked": true
+    },
+    {
+      "batch": "C-B01",
+      "family": "Earlier base clock duplicate/reference",
+      "archive_filename": "Berry_Berry_Blast_Base_Clock_Frames_B01_Day_Night_RGBA.zip",
+      "archive_bytes": 9159252,
+      "archive_sha256": "ef36481929c5db6074d0bda3298614439e298dc4a4ae7f74d5f8e747aa5cd83a",
+      "files_extracted": 8,
+      "declared_originals": 0,
+      "manifest_checked": true
+    }
+  ],
+  "pending_generation": [
+    "BC-06 Thanksgiving Night",
+    "BC-07 Birthday Day",
+    "BC-08 Birthday Night"
+  ],
+  "outstanding_technical_gates": [
+    "Owner review of RGBA cleanup mattes",
+    "Additional RGBA processing of H1-B01 and H1-B06 originals",
+    "Verified import of source files to isolated GitHub artwork branch",
+    "iPhone device UI QA and runtime day-night/holiday switching"
+  ],
+  "existing_github_art_not_duplicated": "Night Garden 40 earlier approved originals/RGBA assets are a separate pre-existing GitHub track (PR #40) and are NOT in any of the seven available ZIPs; preserve those assets unchanged.",
+  "unverified_assumptions": "Prior ZIP manifests supply owner visual approvals and candidate states; no production alpha claims are inferred.",
+  "entries": [
+    {
+      "id": "C-02",
+      "batch": "H1-B01",
+      "family": "Berry Home Classic",
+      "holiday": "Halloween",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Day/Originals/Season_Halloween_Day_HomeClassic_Original.png",
+      "original_sha256": "60d8cba7681d068e2d4e33948496b1172db80dbc6c9116bd4e625e6ac22a1ebb",
+      "original_bytes": 2655314,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-02",
+      "batch": "H1-B01",
+      "family": "Berry Home Classic",
+      "holiday": "Halloween",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Night/Originals/Season_Halloween_Night_HomeClassic_Original.png",
+      "original_sha256": "c13aaad5e24f7be35be6172eb2aa5557c550e7c1c0c5cd6f376ba455bb6bb889",
+      "original_bytes": 2489125,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-02",
+      "batch": "H1-B01",
+      "family": "Berry Home Classic",
+      "holiday": "Christmas",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Day/Originals/Season_Christmas_Day_HomeClassic_Original.png",
+      "original_sha256": "75bed7cd4c973b1026468e60b7c4ecbd7e80b21f6beab250c4f7aef338c23521",
+      "original_bytes": 2631789,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-02",
+      "batch": "H1-B01",
+      "family": "Berry Home Classic",
+      "holiday": "Christmas",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Night/Originals/Season_Christmas_Night_HomeClassic_Original.png",
+      "original_sha256": "20c24ead47256623cbd7fb98a467142117a5f0b46ed157797eeadb9ad699f01a",
+      "original_bytes": 2844917,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-02",
+      "batch": "H1-B01",
+      "family": "Berry Home Classic",
+      "holiday": "Thanksgiving",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Day/Originals/Season_Thanksgiving_Day_HomeClassic_Original.png",
+      "original_sha256": "e2227647b24ed60a09d2d39f048434df197886c747c7e1f234b76a1de935fd1f",
+      "original_bytes": 2710447,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-02",
+      "batch": "H1-B01",
+      "family": "Berry Home Classic",
+      "holiday": "Thanksgiving",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Night/Originals/Season_Thanksgiving_Night_HomeClassic_Original.png",
+      "original_sha256": "edaefa5473288cc1f56c0daaf8504276394226b980528c442278d5054d0d2d07",
+      "original_bytes": 2724163,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-02",
+      "batch": "H1-B01",
+      "family": "Berry Home Classic",
+      "holiday": "Birthday",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Day/Originals/Season_Birthday_Day_HomeClassic_Original.png",
+      "original_sha256": "0a63bdf510bb89cf65722d4648afc3d774c9e3b225d53440e7ef717048f09d16",
+      "original_bytes": 2507864,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-02",
+      "batch": "H1-B01",
+      "family": "Berry Home Classic",
+      "holiday": "Birthday",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Night/Originals/Season_Birthday_Night_HomeClassic_Original.png",
+      "original_sha256": "7c40d05709a13c331d23be0f0e601236aee2f4819f4983aea1275996e14bf1e6",
+      "original_bytes": 2613091,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-01",
+      "batch": "C-FULL-01",
+      "family": "Digital Clock Frames",
+      "holiday": "Base",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Base/Day/Originals/BBB_Clock_Base_Day_Original.png",
+      "original_sha256": "d6b023f8b698f57016a39e8cf63d3954369b176504843aea1dca10cec6fa0d09",
+      "original_bytes": 2013557,
+      "original_dimensions": [
+        1774,
+        887
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Base/Day/RGBA_Candidates/BBB_Clock_Base_Day_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "d6b023f8b698f57016a39e8cf63d3954369b176504843aea1dca10cec6fa0d09",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-02",
+      "batch": "C-FULL-01",
+      "family": "Digital Clock Frames",
+      "holiday": "Base",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Base/Night/Originals/BBB_Clock_Base_Night_Original.png",
+      "original_sha256": "eaeebd1fdb168ed26d62f40d2b90cb9849f001dc831a5004ff96428e528d544b",
+      "original_bytes": 2214635,
+      "original_dimensions": [
+        1774,
+        887
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Base/Night/RGBA_Candidates/BBB_Clock_Base_Night_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "eaeebd1fdb168ed26d62f40d2b90cb9849f001dc831a5004ff96428e528d544b",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-03",
+      "batch": "C-FULL-01",
+      "family": "Digital Clock Frames",
+      "holiday": "Halloween",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Halloween/Day/Originals/BBB_Clock_Halloween_Day_Original.png",
+      "original_sha256": "6f7e21c9ed9638343a47156d8444086842abf1cbb3fb7e4dac54d99825e2c141",
+      "original_bytes": 2285333,
+      "original_dimensions": [
+        1774,
+        887
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Halloween/Day/RGBA_Candidates/BBB_Clock_Halloween_Day_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "6f7e21c9ed9638343a47156d8444086842abf1cbb3fb7e4dac54d99825e2c141",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-04",
+      "batch": "C-FULL-01",
+      "family": "Digital Clock Frames",
+      "holiday": "Halloween",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Halloween/Night/Originals/BBB_Clock_Halloween_Night_Original.png",
+      "original_sha256": "4069cb12565c4d11286b1abfa6866d9d9925546ad99d9aedc5b265f124c59e39",
+      "original_bytes": 2267786,
+      "original_dimensions": [
+        1752,
+        897
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Halloween/Night/RGBA_Candidates/BBB_Clock_Halloween_Night_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "4069cb12565c4d11286b1abfa6866d9d9925546ad99d9aedc5b265f124c59e39",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-05",
+      "batch": "C-FULL-01",
+      "family": "Digital Clock Frames",
+      "holiday": "Christmas",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Christmas/Day/Originals/BBB_Clock_Christmas_Day_Original.png",
+      "original_sha256": "5eb4bf8c16bb99a47968e4c5f00d0cc59949deb6f908f58fb3b760443c525077",
+      "original_bytes": 2354101,
+      "original_dimensions": [
+        1774,
+        887
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Christmas/Day/RGBA_Candidates/BBB_Clock_Christmas_Day_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "5eb4bf8c16bb99a47968e4c5f00d0cc59949deb6f908f58fb3b760443c525077",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-06",
+      "batch": "C-FULL-01",
+      "family": "Digital Clock Frames",
+      "holiday": "Christmas",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Christmas/Night/Originals/BBB_Clock_Christmas_Night_Original.png",
+      "original_sha256": "b047bb456755213894ac06eec482009e14032266eff44df7579bf46faa7e4d12",
+      "original_bytes": 2344740,
+      "original_dimensions": [
+        1774,
+        887
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Christmas/Night/RGBA_Candidates/BBB_Clock_Christmas_Night_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "b047bb456755213894ac06eec482009e14032266eff44df7579bf46faa7e4d12",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-07",
+      "batch": "C-FULL-01",
+      "family": "Digital Clock Frames",
+      "holiday": "Thanksgiving",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Thanksgiving/Day/Originals/BBB_Clock_Thanksgiving_Day_Original.png",
+      "original_sha256": "50ad1ed47e177c69f8d1f07d064bada257fdde0a27080b23239b8582b9b674b2",
+      "original_bytes": 2291110,
+      "original_dimensions": [
+        1774,
+        887
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Thanksgiving/Day/RGBA_Candidates/BBB_Clock_Thanksgiving_Day_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "50ad1ed47e177c69f8d1f07d064bada257fdde0a27080b23239b8582b9b674b2",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-08",
+      "batch": "C-FULL-01",
+      "family": "Digital Clock Frames",
+      "holiday": "Thanksgiving",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Thanksgiving/Night/Originals/BBB_Clock_Thanksgiving_Night_Original.png",
+      "original_sha256": "8490b26b299200b1fb8ac46c3903b8f237f8fa487104ce0f8a6dd3e687797df3",
+      "original_bytes": 2153937,
+      "original_dimensions": [
+        1774,
+        887
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Thanksgiving/Night/RGBA_Candidates/BBB_Clock_Thanksgiving_Night_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "83e31c3da82e6a563e0b6584bd80852f3eba9ca1c315604e63527457048089d0",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-09",
+      "batch": "C-FULL-01",
+      "family": "Digital Clock Frames",
+      "holiday": "Birthday",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Birthday/Day/Originals/BBB_Clock_Birthday_Day_Original.png",
+      "original_sha256": "d731ab45a093a835b4ed278e8eebbb16602bc61f2c6575698904de6d96b619e2",
+      "original_bytes": 2294909,
+      "original_dimensions": [
+        1774,
+        887
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Birthday/Day/RGBA_Candidates/BBB_Clock_Birthday_Day_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "d731ab45a093a835b4ed278e8eebbb16602bc61f2c6575698904de6d96b619e2",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "C-10",
+      "batch": "C-FULL-01",
+      "family": "Digital Clock Frames",
+      "holiday": "Birthday",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Birthday/Night/Originals/BBB_Clock_Birthday_Night_Original.png",
+      "original_sha256": "06ec1b161f7d611f2605962b007840e36cced932613a2dc0160faa7d815b6495",
+      "original_bytes": 2166379,
+      "original_dimensions": [
+        1774,
+        887
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Birthday/Night/RGBA_Candidates/BBB_Clock_Birthday_Night_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "2bb215ee1bdcd125d6a5fccff84ac4881966dae2a2d32e1471121fe7667d9ac2",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BS-01",
+      "batch": "H1-B02",
+      "family": "Berry Story",
+      "holiday": "Halloween",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Day/Originals/Season_Halloween_Day_BerryStory_Original.png",
+      "original_sha256": "2ae4a46655d48aed611cdf6e9250dfa4fe1676ad242db8b7adb70a2e3e286575",
+      "original_bytes": 2509236,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Day/RGBA_Candidates/Season_Halloween_Day_BerryStory_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "2ae4a46655d48aed611cdf6e9250dfa4fe1676ad242db8b7adb70a2e3e286575",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BS-02",
+      "batch": "H1-B02",
+      "family": "Berry Story",
+      "holiday": "Halloween",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Night/Originals/Season_Halloween_Night_BerryStory_Original.png",
+      "original_sha256": "4ad69c881a33d238eb4761ef373effeefc9a659fdd81b211a4723cb57ae68cc6",
+      "original_bytes": 2639799,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Night/RGBA_Candidates/Season_Halloween_Night_BerryStory_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "4ad69c881a33d238eb4761ef373effeefc9a659fdd81b211a4723cb57ae68cc6",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BS-03",
+      "batch": "H1-B02",
+      "family": "Berry Story",
+      "holiday": "Christmas",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Day/Originals/Season_Christmas_Day_BerryStory_Original.png",
+      "original_sha256": "8aba56c31bd1c54807787179b22dcd5093bb8a56afa9f3246bc7c5bbe6b7e900",
+      "original_bytes": 2679430,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Day/RGBA_Candidates/Season_Christmas_Day_BerryStory_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "8aba56c31bd1c54807787179b22dcd5093bb8a56afa9f3246bc7c5bbe6b7e900",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BS-04",
+      "batch": "H1-B02",
+      "family": "Berry Story",
+      "holiday": "Christmas",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Night/Originals/Season_Christmas_Night_BerryStory_Original.png",
+      "original_sha256": "372b0eacd20bc23d4ba15fa70b5d96fe31cf02b04c51c826f72e8cb50f53096c",
+      "original_bytes": 2732725,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Night/RGBA_Candidates/Season_Christmas_Night_BerryStory_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "372b0eacd20bc23d4ba15fa70b5d96fe31cf02b04c51c826f72e8cb50f53096c",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BS-05",
+      "batch": "H1-B02",
+      "family": "Berry Story",
+      "holiday": "Thanksgiving",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Day/Originals/Season_Thanksgiving_Day_BerryStory_Original.png",
+      "original_sha256": "44911e1395043581ff2e025c01b05a04c646e412bfbccadbe9fa398c8184be9c",
+      "original_bytes": 2435875,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Day/RGBA_Candidates/Season_Thanksgiving_Day_BerryStory_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "5c09ea922ee51a03e16a95aa56f0ebab9087cde9d1e0a06f5ba79159eb03912a",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BS-06",
+      "batch": "H1-B02",
+      "family": "Berry Story",
+      "holiday": "Thanksgiving",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Night/Originals/Season_Thanksgiving_Night_BerryStory_Original.png",
+      "original_sha256": "a60d04b709303424692b66f584c6735574f60f104cd1a8f9821297b6e41d52ae",
+      "original_bytes": 2507760,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Night/RGBA_Candidates/Season_Thanksgiving_Night_BerryStory_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "79083ef6bbd98ad8ca6defd698036b052967928629dbe14ed787e30b0bafd6ac",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BS-07",
+      "batch": "H1-B02",
+      "family": "Berry Story",
+      "holiday": "Birthday",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Day/Originals/Season_Birthday_Day_BerryStory_Original.png",
+      "original_sha256": "dc62d0a8cc9e19001aa4dbee4102c151bdd7326927b12e82ba8a83ad170daf48",
+      "original_bytes": 2470231,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Day/RGBA_Candidates/Season_Birthday_Day_BerryStory_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "b1250a1e90f2399949b79daff182c37348c8964e6f36476fb5c609a1cc21e476",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BS-08",
+      "batch": "H1-B02",
+      "family": "Berry Story",
+      "holiday": "Birthday",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Night/Originals/Season_Birthday_Night_BerryStory_Original.png",
+      "original_sha256": "eaaaf79008329ed2e78ba307d7d3f00b55e631eb6884f7a0aa970f9f5433bb7d",
+      "original_bytes": 2398758,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Night/RGBA_Candidates/Season_Birthday_Night_BerryStory_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "f50c9b01960650880cb307008f9a3a9568d7b6dfddedd060869d19ed6774dffe",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "DH-01",
+      "batch": "H1-B03",
+      "family": "Daily Harvest",
+      "holiday": "Halloween",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Day/Originals/Season_Halloween_Day_DailyHarvest_Original.png",
+      "original_sha256": "eb32a52bdd5da242537e9cfa542dc86df23beb40ef68b7b1b9c8b712804731c5",
+      "original_bytes": 2254211,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Day/RGBA_Candidates/Season_Halloween_Day_DailyHarvest_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "671abbe7618ba974a831e0a1524d87c5f66452ecd292601cacda36a4a6b10416",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "DH-02",
+      "batch": "H1-B03",
+      "family": "Daily Harvest",
+      "holiday": "Halloween",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Night/Originals/Season_Halloween_Night_DailyHarvest_Original.png",
+      "original_sha256": "2bed9f908a91b2a28f4c92f447675e8661c979ae7a9f68bb50931d66a05d383f",
+      "original_bytes": 2333980,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Night/RGBA_Candidates/Season_Halloween_Night_DailyHarvest_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "2bed9f908a91b2a28f4c92f447675e8661c979ae7a9f68bb50931d66a05d383f",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "DH-03",
+      "batch": "H1-B03",
+      "family": "Daily Harvest",
+      "holiday": "Christmas",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Day/Originals/Season_Christmas_Day_DailyHarvest_Original.png",
+      "original_sha256": "6d719a9cdd9f732b8c77c7510e08cb5e98db0f636e7eaec222e2d86ec0ef4741",
+      "original_bytes": 2648718,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Day/RGBA_Candidates/Season_Christmas_Day_DailyHarvest_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "3e402c6d23cb1df71b59c0d86a93214f2e538eb0cae6f021da089b43ae46cee9",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "DH-04",
+      "batch": "H1-B03",
+      "family": "Daily Harvest",
+      "holiday": "Christmas",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Night/Originals/Season_Christmas_Night_DailyHarvest_Original.png",
+      "original_sha256": "1572d57d6337db125fcab945e4d23f032bd2ac95626e57917812a644d3fe9f16",
+      "original_bytes": 2482762,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Night/RGBA_Candidates/Season_Christmas_Night_DailyHarvest_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "1572d57d6337db125fcab945e4d23f032bd2ac95626e57917812a644d3fe9f16",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "DH-05",
+      "batch": "H1-B03",
+      "family": "Daily Harvest",
+      "holiday": "Thanksgiving",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Day/Originals/Season_Thanksgiving_Day_DailyHarvest_Original.png",
+      "original_sha256": "35e7b83d23ff26c1388cfcad0a569c021cc4ba98b071d9e505b9503aff8a1fdd",
+      "original_bytes": 2341977,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Day/RGBA_Candidates/Season_Thanksgiving_Day_DailyHarvest_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "35e7b83d23ff26c1388cfcad0a569c021cc4ba98b071d9e505b9503aff8a1fdd",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "DH-06",
+      "batch": "H1-B03",
+      "family": "Daily Harvest",
+      "holiday": "Thanksgiving",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Night/Originals/Season_Thanksgiving_Night_DailyHarvest_Original.png",
+      "original_sha256": "f7d959943be5f940dbbd684229240fc3bd174aaa1af951e32182f2fb53a802f7",
+      "original_bytes": 2436451,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Night/RGBA_Candidates/Season_Thanksgiving_Night_DailyHarvest_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "f7d959943be5f940dbbd684229240fc3bd174aaa1af951e32182f2fb53a802f7",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "DH-07",
+      "batch": "H1-B03",
+      "family": "Daily Harvest",
+      "holiday": "Birthday",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Day/Originals/Season_Birthday_Day_DailyHarvest_Original.png",
+      "original_sha256": "fdb6508d35e1963772b905b22c110b82b52e217a6f90e75a7cedcea645aa6c1b",
+      "original_bytes": 2540222,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Day/RGBA_Candidates/Season_Birthday_Day_DailyHarvest_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "930d5211723e023010991867cff18f4596a2baa16460fa2d28cbc52f83239bcf",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "DH-08",
+      "batch": "H1-B03",
+      "family": "Daily Harvest",
+      "holiday": "Birthday",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Night/Originals/Season_Birthday_Night_DailyHarvest_Original.png",
+      "original_sha256": "ad7140459a6c8237bacae45d1ecc860c0f2988a177fb58b4deabb9759f5440ff",
+      "original_bytes": 2446822,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Night/RGBA_Candidates/Season_Birthday_Night_DailyHarvest_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "ad7140459a6c8237bacae45d1ecc860c0f2988a177fb58b4deabb9759f5440ff",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "MA-01",
+      "batch": "H1-B04",
+      "family": "More Adventures",
+      "holiday": "Halloween",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Day/Originals/Season_Halloween_Day_MoreAdventures_Original.png",
+      "original_sha256": "dfc9eb8e213d8b0055d9f5bca92ddb206327f1ca184b0a932a320820219d8a72",
+      "original_bytes": 2489561,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Day/RGBA_Candidates/Season_Halloween_Day_MoreAdventures_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "dfc9eb8e213d8b0055d9f5bca92ddb206327f1ca184b0a932a320820219d8a72",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "MA-02",
+      "batch": "H1-B04",
+      "family": "More Adventures",
+      "holiday": "Halloween",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Night/Originals/Season_Halloween_Night_MoreAdventures_Original.png",
+      "original_sha256": "8995caca298704b6941cedeedc8585c7c5374a32813ede2456a21c7e60f3c9bb",
+      "original_bytes": 2549757,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Night/RGBA_Candidates/Season_Halloween_Night_MoreAdventures_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "c62f12ccd0c360971597203d5150d18036a5be10a3d342e3669000952f1f2f0a",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "MA-03",
+      "batch": "H1-B04",
+      "family": "More Adventures",
+      "holiday": "Christmas",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Day/Originals/Season_Christmas_Day_MoreAdventures_Original.png",
+      "original_sha256": "191cb304fc15dbd1abe6da59a8a252cddc56cf7748d62e76a373773b96016f61",
+      "original_bytes": 2597884,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Day/RGBA_Candidates/Season_Christmas_Day_MoreAdventures_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "191cb304fc15dbd1abe6da59a8a252cddc56cf7748d62e76a373773b96016f61",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "MA-04",
+      "batch": "H1-B04",
+      "family": "More Adventures",
+      "holiday": "Christmas",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Night/Originals/Season_Christmas_Night_MoreAdventures_Original.png",
+      "original_sha256": "7bc0e948f0568a707c355bdd1b026a41f464d18523cb7e57cb29a6346f050ffb",
+      "original_bytes": 2824862,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Night/RGBA_Candidates/Season_Christmas_Night_MoreAdventures_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "cdc7ea446682f0ee1304a431f36d4c796cf875b569da38de3a1b54d59b727fa1",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "MA-05",
+      "batch": "H1-B04",
+      "family": "More Adventures",
+      "holiday": "Thanksgiving",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Day/Originals/Season_Thanksgiving_Day_MoreAdventures_Original.png",
+      "original_sha256": "36932cc8bb846d48e66f8b7d0cac99d5b8c997c8ccb755d2d5a1b6519d2c4eeb",
+      "original_bytes": 2522471,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Day/RGBA_Candidates/Season_Thanksgiving_Day_MoreAdventures_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "e8e853601f0b74388d09916913c4a0fe19b8754bcf68148b87e35415fb7869b9",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "MA-06",
+      "batch": "H1-B04",
+      "family": "More Adventures",
+      "holiday": "Thanksgiving",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Night/Originals/Season_Thanksgiving_Night_MoreAdventures_Original.png",
+      "original_sha256": "1a763a08f3a2ea7ec39ee5414b09d99b10357db2bee4f22454b2fb4a69f7710b",
+      "original_bytes": 2518609,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Night/RGBA_Candidates/Season_Thanksgiving_Night_MoreAdventures_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "224f3fbaa9c71bc3b362a38e84ce617b98aee7cf1d9f2f82540cab9f286d9399",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "MA-07",
+      "batch": "H1-B04",
+      "family": "More Adventures",
+      "holiday": "Birthday",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Day/Originals/Season_Birthday_Day_MoreAdventures_Original.png",
+      "original_sha256": "5006295c841e98fa77234ec4cb5924a423f2fab2c471c44fad3eef4cb89920d2",
+      "original_bytes": 2643109,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Day/RGBA_Candidates/Season_Birthday_Day_MoreAdventures_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "e39c751155f70244171be4e0fbedc989dd7fb2e1487ef437f8247e7ffbcc3540",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "MA-08",
+      "batch": "H1-B04",
+      "family": "More Adventures",
+      "holiday": "Birthday",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Night/Originals/Season_Birthday_Night_MoreAdventures_Original.png",
+      "original_sha256": "c9dc3dd80970ddeb4271f9ce39fd70351207b448f4e371b1169938dd193788f4",
+      "original_bytes": 2581006,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Night/RGBA_Candidates/Season_Birthday_Night_MoreAdventures_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "0dd6e8c4040dfa4172bb31f23a3630552f037402c8a6265704697bd7d1c5fb9e",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "CD-01",
+      "batch": "H1-B05",
+      "family": "My Strawberry Cottage Decorations",
+      "holiday": "Halloween",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Day/Originals/Season_Halloween_Day_CottageDecorations_Original.png",
+      "original_sha256": "918893862c775445ac03b64fa0ad4214a9168ea9688496ead83b9ba6f95b4d9d",
+      "original_bytes": 2506970,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Day/RGBA_Candidates/Season_Halloween_Day_CottageDecorations_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "810b09d7fdab15707ff81d18a2559338fe9167ef8577a2ecc358bee2a8441c9a",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "CD-02",
+      "batch": "H1-B05",
+      "family": "My Strawberry Cottage Decorations",
+      "holiday": "Halloween",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Night/Originals/Season_Halloween_Night_CottageDecorations_Original.png",
+      "original_sha256": "2e7f8da3d3d641cebc940fde024ef68be33ba6aee72366f7c0abddc3ab391b60",
+      "original_bytes": 2403198,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Night/RGBA_Candidates/Season_Halloween_Night_CottageDecorations_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "d4100cf50e137b6d8bf7ab2e2054d56fa6d444b9a4397d12453c90690656f081",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "CD-03",
+      "batch": "H1-B05",
+      "family": "My Strawberry Cottage Decorations",
+      "holiday": "Christmas",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Day/Originals/Season_Christmas_Day_CottageDecorations_Original.png",
+      "original_sha256": "61f927c1616f993abd60c5fd252c5ff9b965e5cd27a021d21efcbe50c779d1a4",
+      "original_bytes": 2792078,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Day/RGBA_Candidates/Season_Christmas_Day_CottageDecorations_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "e523014fc14891d7d736402c1fb79fc73c3c69afcc319e927da72a087cc76906",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "CD-04",
+      "batch": "H1-B05",
+      "family": "My Strawberry Cottage Decorations",
+      "holiday": "Christmas",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Night/Originals/Season_Christmas_Night_CottageDecorations_Original.png",
+      "original_sha256": "99c84dca74e8bfce4ef030de23d0dcd68a451ef1bebb25d04932392c2d8c60be",
+      "original_bytes": 2535408,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Night/RGBA_Candidates/Season_Christmas_Night_CottageDecorations_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "d7990746b8c6433da267765f61fb9ab54ae3861122080839f9bef3daa84c22fa",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "CD-05",
+      "batch": "H1-B05",
+      "family": "My Strawberry Cottage Decorations",
+      "holiday": "Thanksgiving",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Day/Originals/Season_Thanksgiving_Day_CottageDecorations_Original.png",
+      "original_sha256": "9f6cbebbaf4096c912ed1c39d4a02593b93a80a31dc4f5018f1f227a76bb0e13",
+      "original_bytes": 2377810,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Day/RGBA_Candidates/Season_Thanksgiving_Day_CottageDecorations_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "444e194abd2537f46c07649c7c3cbfe9b1820c859d70170567fa34480d87ea4a",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "CD-06",
+      "batch": "H1-B05",
+      "family": "My Strawberry Cottage Decorations",
+      "holiday": "Thanksgiving",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Night/Originals/Season_Thanksgiving_Night_CottageDecorations_Original.png",
+      "original_sha256": "914d0ac85ff9daeaa436baed1cbd0a406fc54e0b81a2c12cd14a241753c35758",
+      "original_bytes": 2477699,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Night/RGBA_Candidates/Season_Thanksgiving_Night_CottageDecorations_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "aed1090100b4917a30723bea820e0afccc3a60a2abd3a0e91cdea640018b2d38",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "CD-07",
+      "batch": "H1-B05",
+      "family": "My Strawberry Cottage Decorations",
+      "holiday": "Birthday",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Day/Originals/Season_Birthday_Day_CottageDecorations_Original.png",
+      "original_sha256": "833663eff283c3e30790df8a9b39175220621820c25b38fa2921e5640209aa84",
+      "original_bytes": 2280553,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Day/RGBA_Candidates/Season_Birthday_Day_CottageDecorations_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "b358b6dbf436b733c700e8d343505a479f3f0e898c950b403bb8ca6dac3aee2e",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "CD-08",
+      "batch": "H1-B05",
+      "family": "My Strawberry Cottage Decorations",
+      "holiday": "Birthday",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Night/Originals/Season_Birthday_Night_CottageDecorations_Original.png",
+      "original_sha256": "36709ac972c813f76b5177bfad9f0c6759a38cef3f3f78f16eb2646c4e4dc5de",
+      "original_bytes": 2613200,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGBA",
+      "visual_approved": true,
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Birthday/Night/RGBA_Candidates/Season_Birthday_Night_CottageDecorations_RGBA_Candidate.png",
+      "rgba_candidate_sha256": "36709ac972c813f76b5177bfad9f0c6759a38cef3f3f78f16eb2646c4e4dc5de",
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BC-01",
+      "batch": "H1-B06",
+      "family": "Berry Collection",
+      "holiday": "Halloween",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Day/Originals/Season_Halloween_Day_BerryCollection_Original.png",
+      "original_sha256": "f8b8d01b9214adaf74ba7b6231f5527d1c9cade50511f3fbf6068e84dcc7c129",
+      "original_bytes": 2383107,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BC-02",
+      "batch": "H1-B06",
+      "family": "Berry Collection",
+      "holiday": "Halloween",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Night/Originals/Season_Halloween_Night_BerryCollection_Original.png",
+      "original_sha256": "a7d79cb3a8a65e37465f69779f4e42387fdd0ae9cc987d973c8040e891fc29a3",
+      "original_bytes": 2430124,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BC-03",
+      "batch": "H1-B06",
+      "family": "Berry Collection",
+      "holiday": "Christmas",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Day/Originals/Season_Christmas_Day_BerryCollection_Original.png",
+      "original_sha256": "8651d73345ec107c6f7d15f314f833dbf97b1fafb621bb8ac60cb4bc8d2c5518",
+      "original_bytes": 2408752,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BC-04",
+      "batch": "H1-B06",
+      "family": "Berry Collection",
+      "holiday": "Christmas",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Night/Originals/Season_Christmas_Night_BerryCollection_Original.png",
+      "original_sha256": "88f9ae1bc11389115e35e8f817b73fc589b2fdeeeb3b2f706b03b5e574bda9d5",
+      "original_bytes": 2421308,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BC-05",
+      "batch": "H1-B06",
+      "family": "Berry Collection",
+      "holiday": "Thanksgiving",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Day/Originals/Season_Thanksgiving_Day_BerryCollection_Original.png",
+      "original_sha256": "644992834698061c6ca7fd2228b774102fd0a326f0394beb056f663afbda29df",
+      "original_bytes": 2466663,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    }
+  ]
+}
