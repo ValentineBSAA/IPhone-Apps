@@ -16,6 +16,13 @@ final class PosiesChoiceToggleTests: XCTestCase {
         XCTAssertEqual(PosiesChoiceBehavior.toggle("Blossom", tapped: "Midnight"), "Midnight")
     }
 
+    func testOptionalSeverityAndPostureCanBeRemoved() {
+        XCTAssertEqual(PosiesChoiceBehavior.toggleRating(-1, tapped: 7), 7)
+        XCTAssertEqual(PosiesChoiceBehavior.toggleRating(7, tapped: 7), -1)
+        XCTAssertEqual(PosiesChoiceBehavior.toggleRating(7, tapped: 0), 0)
+        XCTAssertEqual(PosiesChoiceBehavior.toggle("Sitting", tapped: "Sitting", empty: "Not specified"), "Not specified")
+    }
+
     func testQuickAmountAndSleepDurationCanBeCleared() {
         XCTAssertEqual(PosiesChoiceBehavior.toggleAmount("", tapped: 250), "250")
         XCTAssertEqual(PosiesChoiceBehavior.toggleAmount("250", tapped: 250), "")
