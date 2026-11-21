@@ -196,13 +196,17 @@ final class BerryCottagePremiumIsolationTests: XCTestCase {
         let originals = seedEndlessSlots(store)
         let ledger = BerryEconomyLedger(defaults: store)
         let game = BerryGameSession(checkoutDefaults: store, checkoutLedger: ledger)
-        let originalEngine = try JSONEncoder().encode(game.engine)
+        // JSONEncoder object key order is not guaranteed. Compare canonical
+        // sorted-key bytes so this asserts actual engine state, not JSON order.
+        let stableEncoder = JSONEncoder()
+        stableEncoder.outputFormatting = [.sortedKeys]
+        let originalEngine = try stableEncoder.encode(game.engine)
         game.buyCottageDecoration()
         XCTAssertTrue(game.buyPremium("twister"))
         XCTAssertTrue(game.buyPremium("pantry"))
         XCTAssertTrue(game.buyPremium("golden-strawberry"))
         verifyAllEndlessSlots(store, expected: originals)
-        XCTAssertEqual(try JSONEncoder().encode(game.engine), originalEngine)
+        XCTAssertEqual(try stableEncoder.encode(game.engine), originalEngine)
         XCTAssertEqual(ledger.spent, 60 + 200 + 600 + 250)
         XCTAssertEqual(try wallet(store), 1_890)
         let reopened = BerryGameSession(checkoutDefaults: store,
