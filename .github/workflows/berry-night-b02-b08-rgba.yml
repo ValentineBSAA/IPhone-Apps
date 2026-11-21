@@ -76,7 +76,7 @@ jobs:
       - name: Commit isolated candidates only, no live Xcode art
         run: |
           set -euo pipefail
-          git add -- 'StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/Batch_0[2-8]/' 'StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/_Batch_02_to_08_'
+          git add -- 'StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/'
           if git diff --cached --quiet; then
             echo 'Candidate PNGs already staged, no commit required.'
             exit 0
