@@ -129,3 +129,10 @@
 - [x] 10 new real Boutique XCTest cases plus 6 older Boutique tests and 48 D0–D0e = **64 selected named iPhone 16e tests** in [D1a workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868413961), pending terminal proof.
 - [x] [66-contract Advanced QA coverage registry](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) has 4 new D1a implemented-untested.
 - [ ] Real-device Boutique buy/equip/unequip and full shop view regression, cosmetic multi-key interruption recovery, premium tools, Story, Daily, Night and gameplay modes still separately open. No IPA.
+
+
+## ✅ D1a Boutique automated QA green
+- [x] [D1a Actions #44868413961](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868413961) **64/64 selected iPhone 16e XCTest cases PASS**, including 10 new real cosmetics purchase tests and 6 old Boutique tests, all 48 prior D0–D0e tests still green; Release excludes QA panels.
+- [x] Cosmetic/standard-helper inventory-only save fix verified protecting 8×8/12×12/24×24 Endless slots while shopping from a menu session. Canonical cosmetic prices, duplicate guards, real ledger/rewards and previously equipped looks verified in isolated store.
+- [x] [66-contract registry](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) now **20 simulator-verified/physical-device pending**, 44 planned and 2 not implemented.
+- [ ] Before more branch sprawl, audit full-game integration baseline, create ONE internal QA candidate and obtain real iPhone signoff. [PR #70](https://github.com/ValentineBSAA/IPhone-Apps/pull/70) remains draft. Cottage/Premium saved-board bug risk and Daily/Story/Night tests next.
