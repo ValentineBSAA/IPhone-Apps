@@ -88,3 +88,10 @@
 - [x] Unit tests cover exact cost/one short/invalid input, count overflow and invalid-use no charge deduction. [D0c workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0c-shared-tools-iphone16e.yml) selected regression with named iPhone 16e and Release QA exclusion; terminal status pending.
 - [x] Coverage catalog now **56 contracts**, only 2 new D0c entries implemented-but-untested pending CI. The existing 8 automated-pass D0/D0b contracts remain device-owner pending.
 - [ ] Full live store and ledger/endless-save injection, device taps, blocked tool charge and full app regression are still separate. No new image, IPA or release.
+
+
+## ✅ D0c verified shared production purchase policy
+- [x] [GitHub Actions #44865715817](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44865715817) **31/31 selected simulator tests PASS**, including 10 production-shared transaction cases. Release build excludes QA sandbox.
+- [x] Actual `BerryGameSession` Undo/Shuffle/Hint purchase and Hint charge use routes through the same defensive no-overflow, no-insufficient-funds reducer used by the disposable Developer Garden State & Timer Lab.
+- [x] [Scenario registry](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) remains honest: **10/56 simulator verified, 44 planned, 2 not implemented**, zero physically accepted in the D0 series.
+- [ ] Next step: injected production checkout/ledger/save adapters and physical owner iPhone 16e review, before any app release or merge. PR #66 intentionally draft.
