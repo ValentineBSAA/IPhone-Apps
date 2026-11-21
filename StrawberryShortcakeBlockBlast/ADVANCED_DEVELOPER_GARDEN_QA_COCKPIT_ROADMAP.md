@@ -326,3 +326,18 @@ D1b exact QA ledger: [Cottage & Premium Saved-Garden Safety](https://github.com/
 - [ ] Continue **whole-game** priorities: [Issue #78](https://github.com/ValentineBSAA/IPhone-Apps/issues/78) actual missing Village/Quest/Journal art references, approved seasonal image wiring, Build 4.7/4.8 Day/Night parity, Build 5 Village/quests and Build 6 unique Night Market/Moonberry economy. Do not reduce development to QA tools only. No merge/IPA/version bump.
 
 [D3b exact QA](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d3b-daily-streak-reward-isolation/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D3B_DAILY_STREAK_REWARD_QA.md).
+
+---
+
+## D4 actual game art integration: safe approved fallbacks · November 20, 2026
+
+- [x] Actual named iPhone16e simulator warnings and source audit confirmed **three missing Village/Quest/Journal image names**, documented in [issue #78](https://github.com/ValentineBSAA/IPhone-Apps/issues/78). The source catalog already bundles `BerryStory`, `HarvestReward`, `Milestone`.
+- [x] [D4 draft PR #80](https://github.com/ValentineBSAA/IPhone-Apps/pull/80) adds central `BerryArtResolver.displayName(for:)` with automatic precedence for final exact approved imagesets. Until final images exist, Village→`BerryStory`, Quest→`HarvestReward`, Journal→`Milestone`. All Home/Village/Quest/Journal production image references now render through it. No image file, user save, other asset name, game mechanic or UI grid changed.
+- [x] Four new actual UIKit asset-bundle XCTest verify exact or approved fallback for the three missing names, successful `UIImage(named:)` resolution, precedence for future final artwork, and unchanged existing assets.
+- [ ] [D4 128-case Actions #44873072496](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44873072496): previous D0–D3b 124 + four new, named iPhone16e simulator, iOS16/art/audio/source preflight, Release QA exclusion, no IPA. **Pending terminal CI**; no green claim yet.
+- [ ] [D3b 124-case Actions #44872785775](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44872785775): still pending when D4 source staged; verify independent complete result, fix failures.
+- [x] Machine-readable scenario catalog now **120 contracts**: 63 simulator verified/device pending, D3b8+D4 four implemented/CI pending, 43 planned, 2 future Night not implemented. Contracts are not passed XCTest.
+- [ ] Original approved images for Village/Quest/Journal must be located in user-approved release bundles or explicitly approved before integration. Temporary fallback solves missing frames, **not** final illustration quality or Day/Night variants. [Issue #78](https://github.com/ValentineBSAA/IPhone-Apps/issues/78) stays open until the owner visually accepts final results on physical iPhone16e.
+- [ ] Continue actual full-game work: D3c isolated quest/Story/Birthday claims, D4 approved seasonal illustrations, Build4.7/4.8 Day/Night parity, Build5 Strawberry Village/quests, Build6 unique Night Market/Moonberries. **No merge, IPA or version increment**.
+
+[D4 exact QA ledger](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-d4-safe-village-quest-journal-art-fallbacks/StrawberryShortcakeBlockBlast/D4_APPROVED_ART_FALLBACK_QA.md).
