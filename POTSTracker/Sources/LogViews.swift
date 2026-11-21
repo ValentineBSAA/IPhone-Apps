@@ -24,6 +24,15 @@ struct EntryEditor: View {
     @State private var secondSystolic: String
     @State private var secondDiastolic: String
     @State private var monitorPulse: String
+    @State private var flareEnabled: Bool
+    @State private var flareStart: Date
+    @State private var flareHasEnd: Bool
+    @State private var flareEnd: Date
+    @State private var flarePulse: String
+    @State private var flareTop: String
+    @State private var flareBottom: String
+    @State private var flareTriggers: Set<String>
+    @State private var flareHelped: String
     @State private var saveError: String?
     @State private var saveInProgress = false
     @FocusState private var inputFocused: Bool
@@ -58,12 +67,43 @@ struct EntryEditor: View {
         _secondSystolic = State(initialValue: savedVitals.secondSystolic.map(String.init) ?? "")
         _secondDiastolic = State(initialValue: savedVitals.secondDiastolic.map(String.init) ?? "")
         _monitorPulse = State(initialValue: savedVitals.monitorPulse.map(String.init) ?? "")
+        let flare = editing.flatMap { PosiesFlareContext.read($0.source) }
+        _flareEnabled = State(initialValue: flare != nil)
+        _flareStart = State(initialValue: flare?.startedAt ?? editing?.recordedAt ?? Date())
+        _flareHasEnd = State(initialValue: flare?.endedAt != nil)
+        _flareEnd = State(initialValue: flare?.endedAt ?? Date())
+        _flarePulse = State(initialValue: flare?.pulse.map(String.init) ?? "")
+        _flareTop = State(initialValue: flare?.systolic.map(String.init) ?? "")
+        _flareBottom = State(initialValue: flare?.diastolic.map(String.init) ?? "")
+        _flareTriggers = State(initialValue: Set(flare?.triggers ?? []))
+        _flareHelped = State(initialValue: flare?.whatHelped ?? "")
+    }
+
+    private var flareContext: PosiesFlareContext {
+        var value = PosiesFlareContext()
+        value.startedAt = flareStart
+        value.endedAt = flareHasEnd ? flareEnd : nil
+        value.pulse = flarePulse.isEmpty ? nil : Int(flarePulse)
+        value.systolic = flareTop.isEmpty ? nil : Int(flareTop)
+        value.diastolic = flareBottom.isEmpty ? nil : Int(flareBottom)
+        value.triggers = flareTriggers.sorted()
+        value.whatHelped = flareHelped.trimmingCharacters(in: .whitespacesAndNewlines)
+        return value
+    }
+    private var flareInputsValid: Bool {
+        (!flareHasEnd || flareEnd >= flareStart) &&
+        (flarePulse.isEmpty || (Int(flarePulse).map { (1...400).contains($0) } ?? false)) &&
+        (flareTop.isEmpty == flareBottom.isEmpty) &&
+        (flareTop.isEmpty || (Int(flareTop).map { (1...400).contains($0) } ?? false)) &&
+        (flareBottom.isEmpty || (Int(flareBottom).map { (1...400).contains($0) } ?? false)) &&
+        flareHelped.count <= 2000
     }
 
     private var valid: Bool {
         switch category {
         case .symptom:
-            return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+                (!flareEnabled || flareInputsValid)
         case .heartRate:
             guard let bpm = Int(firstValue) else { return false }
             return (1...400).contains(bpm)
@@ -214,6 +254,60 @@ struct EntryEditor: View {
                 Text("Choose 0 only if you actually want to record zero.")
                     .font(.caption)
                     .foregroundStyle(Color.potsSecondary)
+                Toggle("Add flare-up details (optional)", isOn: $flareEnabled)
+                    .tint(.potsTeal)
+                if flareEnabled {
+                    VStack(alignment: .leading, spacing: 11) {
+                        Label("One place for your observations", systemImage: "heart.text.square")
+                            .font(.subheadline.weight(.semibold)).foregroundStyle(Color.potsTeal)
+                        Text("Only include measurements you already have. No standing test or activity is required.")
+                            .font(.caption).foregroundStyle(Color.potsSecondary)
+                        DatePicker("When it started", selection: $flareStart, in: ...Date(),
+                                   displayedComponents: [.date, .hourAndMinute])
+                        Toggle("Add an end time", isOn: $flareHasEnd).tint(.potsTeal)
+                        if flareHasEnd {
+                            DatePicker("When it eased", selection: $flareEnd, in: flareStart...Date(),
+                                       displayedComponents: [.date, .hourAndMinute])
+                        }
+                        Text("What might have contributed? (optional)")
+                            .font(.subheadline.weight(.semibold))
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 8)], spacing: 8) {
+                            ForEach(["Heat", "Activity", "Standing", "After food", "Stress", "Not sure"], id: \.self) { tag in
+                                let chosen = flareTriggers.contains(tag)
+                                Button {
+                                    flareTriggers = PosiesChoiceBehavior.toggleInSet(flareTriggers, tapped: tag)
+                                } label: {
+                                    Text(tag).font(.caption.weight(chosen ? .semibold : .regular))
+                                        .frame(maxWidth: .infinity, minHeight: 44)
+                                        .foregroundStyle(chosen ? Color.white : Color.primary)
+                                        .background(chosen ? Color.potsButtonFill : Color.potsSurfaceMuted,
+                                                    in: RoundedRectangle(cornerRadius: 11))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        Text("Measurements you already recorded (optional)")
+                            .font(.subheadline.weight(.semibold))
+                        HStack {
+                            TextField("Pulse", text: $flarePulse).keyboardType(.numberPad)
+                                .textFieldStyle(.roundedBorder)
+                            Text("bpm").font(.caption).foregroundStyle(Color.potsSecondary)
+                        }
+                        HStack {
+                            TextField("BP top", text: $flareTop).keyboardType(.numberPad)
+                                .textFieldStyle(.roundedBorder)
+                            Text("/")
+                            TextField("BP bottom", text: $flareBottom).keyboardType(.numberPad)
+                                .textFieldStyle(.roundedBorder)
+                        }
+                        TextField("What helped or changed afterward? (optional)", text: $flareHelped, axis: .vertical)
+                            .lineLimit(2...5).textFieldStyle(.roundedBorder)
+                        Text("Possible triggers are only your observations. The app doesn't infer causes or a diagnosis.")
+                            .font(.caption).foregroundStyle(Color.potsSecondary)
+                    }
+                    .padding(12)
+                    .background(Color.potsSurfaceMuted, in: RoundedRectangle(cornerRadius: 15))
+                }
             }
         }
     }
@@ -502,6 +596,8 @@ struct EntryEditor: View {
             extra.secondDiastolic = category == .bloodPressure && secondReading ? Int(secondDiastolic) : nil
             extra.monitorPulse = category == .bloodPressure ? Int(monitorPulse) : nil
             entry.source = extra.stored()
+        } else if category == .symptom {
+            entry.source = flareEnabled ? flareContext.stored() : "manual"
         } else if editing == nil {
             entry.source = "manual"
         }
