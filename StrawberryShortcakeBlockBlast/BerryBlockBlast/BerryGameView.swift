@@ -743,6 +743,7 @@ struct BerryGameView: View {
                             .buttonStyle(.borderedProminent).tint(BerryStyle.strawberry).controlSize(.large)
                         Button(mode == .endless ? "Save Forever Garden & Return" : "Return to Village") { isPaused = false; onExit() }
                             .foregroundStyle(BerryStyle.leaf).fontWeight(.bold)
+                            .accessibilityIdentifier("berry.game.pause.return")
                     }
                     .padding(26).frame(maxWidth: 350)
                     .background(LinearGradient(colors: [BerryStyle.cream, Color(red: 1, green: 0.84, blue: 0.89)], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 28))
