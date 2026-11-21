@@ -1,0 +1,114 @@
+# Import owner-reviewed clock artwork only after a GitHub Release upload.
+name: Berry Berry Blast | Verify and stage all 10 clock frames
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: berry-clock-family-verified-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.release.tag_name == 'berry-clocks-c-full-01' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout isolated clock art branch
+        uses: actions/checkout@v4
+        with:
+          ref: artwork/berry-clock-frames-c-b01-staging
+          persist-credentials: true
+
+      - name: Download release ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download berry-clocks-c-full-01 \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern 'Berry_Berry_Blast_Clock_Family_C01_C10_Sources_RGBA_Review.zip' \
+            --dir "$RUNNER_TEMP" --clobber
+
+      - name: Verify archive, originals, alpha candidate and manifests
+        env:
+          ARCHIVE: ${{ runner.temp }}/Berry_Berry_Blast_Clock_Family_C01_C10_Sources_RGBA_Review.zip
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os, zipfile, hashlib, json, struct
+
+          path = Path(os.environ["ARCHIVE"])
+          expected = "ea8eb15bf6ad838b3972388e8d47c540fe85385d9ac80bc5b2af30a39320f413"
+          assert path.is_file(), "Clock ZIP is missing"
+          assert hashlib.sha256(path.read_bytes()).hexdigest() == expected, "ZIP SHA-256 mismatch"
+          prefix = "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/"
+          manifest_name = prefix+"00_Manifests/C_FULL_01_manifest.json"
+          previews = [
+              prefix+"_Previews/Berry_Berry_Blast_Clock_Family_Checker_QA.png",
+              prefix+"_Previews/Berry_Berry_Blast_Clock_Family_Light_QA.png",
+              prefix+"_Previews/Berry_Berry_Blast_Clock_Family_Dark_QA.png",
+              prefix+"_Previews/Berry_Berry_Blast_Clock_Family_96_240px_QA.png",
+          ]
+          with zipfile.ZipFile(path) as z:
+              assert z.testzip() is None
+              m=json.loads(z.read(manifest_name))
+              assert m["batch"] == "C-FULL-01" and len(m["entries"]) == 10
+              seen=set()
+              expected_paths={
+                  manifest_name,
+                  prefix+"00_Manifests/C_FULL_01_manifest.csv",
+                  prefix+"00_Manifests/C_FULL_01_README.md",
+                  *previews
+              }
+              for entry in m["entries"]:
+                  ident=entry["id"]
+                  assert ident not in seen and ident in {f"C-{i:02d}" for i in range(1,11)}
+                  seen.add(ident)
+                  for field,sha_name,rgba in [
+                      ("original_path","source_sha256",False),
+                      ("rgba_candidate_path","candidate_sha256",True),
+                  ]:
+                      name=entry[field]
+                      assert name.startswith(prefix), name
+                      assert ".." not in Path(name).parts and name.endswith(".png")
+                      blob=z.read(name)
+                      assert hashlib.sha256(blob).hexdigest()==entry[sha_name], name
+                      assert blob[:8]==bytes.fromhex("89504e470d0a1a0a")
+                      assert blob[12:16] == b"IHDR"
+                      w,h=struct.unpack(">II",blob[16:24])
+                      assert [w,h]==entry["pixel_size"]
+                      if rgba: assert blob[25] == 6, "RGBA candidate required"
+                      expected_paths.add(name)
+              assert seen=={f"C-{i:02d}" for i in range(1,11)}
+              assert set(z.namelist())==expected_paths, "Unexpected archive member"
+              for name in sorted(expected_paths):
+                  destination=Path(name)
+                  destination.parent.mkdir(parents=True,exist_ok=True)
+                  blob=z.read(name)
+                  if destination.is_file():
+                      assert destination.read_bytes()==blob, "Refusing to overwrite edited asset: "+name
+                  else:
+                      destination.write_bytes(blob)
+              print("Verified 10 original images, 10 separate RGBA candidates, QA previews and metadata.")
+              print("C-08 and C-10 candidates still require owner visual edge QA; no Xcode import.")
+          PY
+
+      - name: Commit checked source art only on isolated branch
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = 'artwork/berry-clock-frames-c-b01-staging'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- StrawberryShortcakeBlockBlast/ArtSource/ClockFrames
+          if git diff --cached --quiet; then
+            echo "All clock family art bytes already staged and unchanged."
+          else
+            git commit -m "art(clock): stage ten owner-approved originals and RGBA review candidates"
+            git push origin HEAD:artwork/berry-clock-frames-c-b01-staging
+          fi
