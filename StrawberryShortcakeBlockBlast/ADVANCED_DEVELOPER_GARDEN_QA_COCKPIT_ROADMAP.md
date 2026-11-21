@@ -103,3 +103,13 @@ One-tap **Create scenario → Run checks → Review PASS/FAIL evidence → Disca
 - [x] [GitHub Actions #44862930573](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573): **Release compiled excluding the QA sandbox** and named iPhone 16e XCTest **6/6 PASS, zero failures**.
 - [x] [48-contract scenario catalog](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) now records two `automated_pass_device_pending` examples, **44 planned and 2 unimplemented**. Do not report 48/48 tested.
 - [ ] Physical device UI/restore confirmation and owner approval pending; still not merged/released. Next D0b isolated mock wallets/time/saves before any mutation capable of influencing real gameplay or economy.
+
+
+## D0b state/time lab candidate · November 20, 2026
+- [x] New [draft PR #64](https://github.com/ValentineBSAA/IPhone-Apps/pull/64) based on previously green [D0 PR #63](https://github.com/ValentineBSAA/IPhone-Apps/pull/63).
+- [x] 6 new **sandbox-only** scenarios: exact-price Undo, one-berry-short Shuffle, zero Hint charges, in-memory BerryEngine save, corrupted data rejection, 3-second virtual pause/resume/expiry.
+- [x] Actual source `BerryEconomy` prices, `BerryEngine` Codable and `BerryTimedLifecycle` / `BerryCountdownMath` referenced in **mock value-state tests**. No real wallet/checkout, save-disk operations, phone clock, gifts or player preferences touched.
+- [x] New `State & Timer Lab` two-column card and scene; 11 new focused XCTest cases, plus the prior six D0 cases = **17 selected tests** for the [named iPhone 16e CI workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0b-state-time-iphone16e.yml).
+- [x] [Scenario coverage catalog](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) updated to **54 total**: 2 previously automated-pass/device-pending, 6 new implemented-untested, 44 future planned, 2 not implemented. CI result and physical QA pending.
+- [ ] **D0c** must inject isolated stores into actual production shop/tool and game save handlers before claiming end-to-end purchase or save migration tests. Current D0b mock wallets do not validate the live transactional pipeline.
+- [ ] Run 17 selected XCTests and Release compile-exclusion gate, inspect logs, then physical owner iPhone 16e acceptance before app version or IPA decision. Draft PR #64 remains unmerged.
