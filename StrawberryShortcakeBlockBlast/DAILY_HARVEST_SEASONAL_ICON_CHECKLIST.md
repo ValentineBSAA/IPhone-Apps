@@ -24,8 +24,8 @@ Use a clear **little tear-off calendar page (without printed numbers)** as the c
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | DH-01 | Halloween | Day | Sunny berry calendar, strawberry basket, smiling autumn lantern berries, orange/purple foliage | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ alpha/background QA pending | ⬜ source archive pending | ⬜ |
 | DH-02 | Halloween | Night | Moonlit calendar, basket of strawberries, crescent and stars, glowing witch-hat jack-o'-lantern berries | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source import pending | ⬜ |
-| DH-03 | Christmas | Day | Snow-topped red/green calendar, harvested strawberry basket, holly, bells, candy canes | 🟡 GENERATED (review candidate) | ⬜ AWAITING OWNER | ⚠ baked checkerboard possible, alpha QA pending | ⬜ originals not staged | ⬜ |
-| DH-04 | Christmas | Night | Moonlit snowy calendar, glowing lights, fir trees, soft frost and festive berries | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| DH-03 | Christmas | Day | Snow-topped red/green calendar, harvested strawberry basket, holly, bells, candy canes; approved second generated variant | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ baked checkerboard possible; alpha QA pending | ⬜ source import pending | ⬜ |
+| DH-04 | Christmas | Night | Moonlit snowy calendar, glowing lights, fir trees, soft frost and festive berries | ⬜ NEXT: generate a single original | ⬜ awaiting owner review | ⬜ | ⬜ | ⬜ |
 | DH-05 | Thanksgiving | Day | Harvest calendar, berry crate, gold maples, pumpkin and berry pie | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | DH-06 | Thanksgiving | Night | Plum/amber moonlit calendar, candlelit harvest baskets, foliage and berry pie | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | DH-07 | Birthday | Day | Pink candy calendar, strawberry cake and gift, confetti, bow and festive harvest basket | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -85,3 +85,12 @@ Links: [H1-B02 Berry Story running checklist](https://github.com/ValentineBSAA/I
 - [ ] These art PNGs have not been uploaded to GitHub; only the checklist and separate in-progress design tracking are committed.
 
 **Latest H1-B03 tally: 3/8 icon slots generated, 2/8 visual designs approved; 0/8 binary PNGs imported.**
+
+
+### DH-03 owner approval, DH-04 Christmas Night queued
+- [x] **DH-03 Christmas Day**: owner visually approved the second generated variant with red-green gingham ribbon, red calendar, harvest basket, golden sun, holly, snow, Christmas bells and candy canes. Preserve that specific original, not the first alternative.
+- [ ] **DH-04 Christmas Night**: generate exactly one companion showing the same daily calendar and strawberry harvest basket, moonlit sapphire-violet winter sky, lit snowy firs, a glowing crescent and festive decorations. Keep date numerals and labels out of static image.
+- [ ] Christmas Day background appears checkerboard in review; independently verify alpha and remove any baked backdrop non-destructively before RGBA candidate approval. No PNG bytes have been committed to GitHub yet.
+- [ ] Source/RGBA ZIP, checksums, transparency QA, and iPhone integration remain separate future gates.
+
+**Latest H1-B03 status: DH-01 Halloween Day, DH-02 Halloween Night, and DH-03 Christmas Day visually approved (3/8). DH-04 generation next.**
