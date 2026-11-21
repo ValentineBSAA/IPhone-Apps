@@ -182,3 +182,14 @@ One-tap **Create scenario → Run checks → Review PASS/FAIL evidence → Disca
 - [ ] [D1a Actions #44868413961](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868413961) final terminal result and exact case counts, plus Release QA exclusion. Do not mark D1a passed without log proof.
 - [ ] Future D1b: developer menu one-tap Boutique fixture UI and full view-driven purchase, equip/unequip and permanent ownership QA; D1c premium tools; D2 Daily/Story and quest/reward fixtures. These remain separate until tested.
 - [ ] Real iPhone owner acceptance, multi-key cosmetic purchase crash recovery and whole-game regression remain pending; no merged code, new IPA or app version.
+
+
+## Whole-game integration checkpoint after D1a · November 20, 2026
+We must not accumulate endless successful isolated branches while the real iPhone game remains unchanged. After D1a simulator acceptance, the next release-planning milestone is an **integrated internal build gate**, not another long sequence of mock test suites.
+
+- [ ] Review ancestry and cumulative diffs of [D0 #63](https://github.com/ValentineBSAA/IPhone-Apps/pull/63), [D0b #64](https://github.com/ValentineBSAA/IPhone-Apps/pull/64), [D0c #66](https://github.com/ValentineBSAA/IPhone-Apps/pull/66), [D0d #67](https://github.com/ValentineBSAA/IPhone-Apps/pull/67), [D0e #68](https://github.com/ValentineBSAA/IPhone-Apps/pull/68), and [D1a #70](https://github.com/ValentineBSAA/IPhone-Apps/pull/70) against the authoritative current Berry Berry Blast app branch. These are stacked drafts, not six production releases.
+- [ ] Before integration check actual game build/version, identity, iOS 16 target, saved-game backwards compatibility, original approved artwork and complete music/audio catalogs. Do not casually merge stale base code over newer features.
+- [ ] Produce ONE internal QA candidate only after CI and source integration checks. Keep internal Developer Garden gated and absent from public Release builds; do not ship a debug-enabled IPA as the public app.
+- [ ] Owner physical iPhone verifies Developer Garden D0/D0b, real Boutique purchase/equip/unequip, actual saved 8/12/24 games, helper purchase, gameplay controls and existing features. Keep exact pass/fail receipts and preserve prior live installs until explicitly approved.
+- [ ] Add Developer Garden visual Boutique scenario controls only after core source-integrity gate, then expand to premium/cottage, Daily Harvest, Berry Story, rewards/quests and Night experience as separate well-tested slices.
+- [ ] If end-to-end integration or physical QA reveals broader problems, repair these first rather than simply increasing the count of planned test contracts.
