@@ -60,3 +60,9 @@
 - [x] Six targeted tests authored for repeatability, score/clear, rejection, reset, saved keys and fixed tray IDs. [D0 CI](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573) checks Release sandbox exclusion and named iPhone 16e XCTest. **Status pending terminal result**.
 - [x] [Advanced QA scenario catalog](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) now contains **48 contracts**, including two D0 entries correctly marked **implemented_untested**, not accepted/tested-pass.
 - [ ] Separate hardware QA and signed-off sandbox safety. Live-wallet injection and Story/Daily/Quest/Shop scenarios are **not** implemented and remain isolated roadmap tasks. No user saves, app version or holiday assets changed.
+
+
+## ✅ D0 simulator QA completion · November 20, 2026
+- [x] [D0 Actions #44862930573](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573) **SUCCESS**, Release build excludes internal sandbox and selected iPhone 16e **6/6 XCTest methods passed**.
+- [x] Tested two new disposable engine setups; exact score/move, invalid placement, deterministic repeat/reset and real wallet/save nonmutation covered.
+- [ ] Owner physical iPhone 16e use test and source integration authorization open in [PR #63](https://github.com/ValentineBSAA/IPhone-Apps/pull/63). D1–D7 broader test coverage still roadmap, not complete.
