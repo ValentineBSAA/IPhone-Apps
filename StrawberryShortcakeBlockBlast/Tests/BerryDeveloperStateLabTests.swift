@@ -48,8 +48,9 @@ final class BerryDeveloperStateLabTests: XCTestCase {
         lab.prepare(.zeroToolCharge)
         XCTAssertTrue(lab.run().passed)
         XCTAssertEqual(lab.wallet.chargeCount(for: .hint), 0)
-        XCTAssertFalse(lab.wallet.use(.hint))
-        XCTAssertEqual(lab.wallet.chargeCount(for: .hint), 0)
+        var isolatedCopy = lab.wallet
+        XCTAssertFalse(isolatedCopy.use(.hint))
+        XCTAssertEqual(isolatedCopy.chargeCount(for: .hint), 0)
     }
 
     func testSandboxChargePurchaseUseAndNoDoubleSpend() {
