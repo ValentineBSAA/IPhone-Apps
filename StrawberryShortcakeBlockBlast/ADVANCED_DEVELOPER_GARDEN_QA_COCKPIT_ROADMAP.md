@@ -146,3 +146,11 @@ One-tap **Create scenario → Run checks → Review PASS/FAIL evidence → Disca
 - [x] QA registry now **59 scenarios**: 10 earlier simulator-pass/device-pending, 3 D0d implemented-untested, 44 planned, 2 not implemented.
 - [ ] Actual checkout workflow test job and Release safety result to verify before promoting scenarios.
 - [ ] Other Story/Daily/Boutique/premium/quests save handlers remain singleton-backed and **not D0d-injection-certified**. UserDefaults inventory and ledger are separate non-atomic writes; crash-recovery and full-UI/hardware QA remain open. Do not rush a production merge or IPA.
+
+
+## ✅ D0d actual-session checkout regression verified · November 20, 2026
+- [x] [D0d Actions #44866663042](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44866663042) **SUCCESS**. Exact log: **40 selected XCTest cases, zero failures**, comprising D0 6, D0b 11, D0c tool rules 10, existing economy 4 and D0d real-session checkout 9 on named iPhone 16e.
+- [x] Production Release built without internal QA panels/fixtures; sources, approved artwork and audio unchanged. No IPA or merge.
+- [x] [59-contract QA catalog](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) now records **13 simulator-pass/device-pending**, **44 planned** and **2 not implemented**. No false full-game or physical-device acceptance.
+- [x] Real `BerryGameSession` standard-tool purchase handlers use shared checked checkout callback and isolated injectable inventory preferences/real ledger in tests; legacy missing-Hint compatibility and exact save/ledger receipts verified. Standard production default storage remains the same.
+- [ ] **Next targeted stage:** prove partial-write/crash recovery or design a genuinely atomic transaction boundary for standard-tool wallet and ledger, then apply injected dependencies to additional shop, daily and premium handlers safely. Complete real iPhone UI QA separately.
