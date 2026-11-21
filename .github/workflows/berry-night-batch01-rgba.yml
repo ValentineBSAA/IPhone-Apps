@@ -1,0 +1,63 @@
+name: Berry Berry Blast | Night Batch 1 RGBA Candidate QA
+
+on:
+  push:
+    branches:
+      - artwork/berry-night-garden-40-rgba-staging
+    paths:
+      - .github/workflows/berry-night-batch01-rgba.yml
+      - StrawberryShortcakeBlockBlast/Tools/derive_night_rgba_batch01.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: berry-night-batch01-alpha-candidates
+  cancel-in-progress: false
+
+jobs:
+  batch01-validate-and-stage:
+    name: Batch 1 original RGB preserved; masked corner transparency
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: artwork/berry-night-garden-40-rgba-staging
+          persist-credentials: true
+      - name: Install image processing dependencies
+        run: python3 -m pip install --disable-pip-version-check 'Pillow>=10,<13' 'numpy>=1.26,<3' 'opencv-python-headless>=4.8,<5'
+      - name: Validate original source and non-destructive alpha masks
+        working-directory: StrawberryShortcakeBlockBlast
+        run: python3 Tools/derive_night_rgba_batch01.py
+      - name: Derive four RGBA candidates and proofs
+        working-directory: StrawberryShortcakeBlockBlast
+        run: python3 Tools/derive_night_rgba_batch01.py --apply
+      - name: Confirm re-run is safe and idempotent
+        working-directory: StrawberryShortcakeBlockBlast
+        run: python3 Tools/derive_night_rgba_batch01.py
+      - name: Upload preview evidence (not production Xcode assets)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-Night-Batch01-RGBA-Review-Only
+          path: StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/Batch_01_Core_Home/
+          retention-days: 90
+      - name: Commit only isolated RGBA candidates
+        run: |
+          set -euo pipefail
+          git add -- 'StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/Batch_01_Core_Home/'
+          if git diff --cached --quiet; then
+            echo 'Batch 1 candidates already match, no commit needed.'
+            exit 0
+          fi
+          candidate_count=$(git diff --cached --name-only | grep -E '/Night_.*_RGBA_CANDIDATE\.png$' | wc -l)
+          test "$candidate_count" -eq 4
+          if git diff --cached --name-only | grep -E '/Assets\.xcassets/|\.swift$|/Approved_40_Icon_Batches/'; then
+            echo 'ERROR: source, Swift or live Xcode asset files changed'
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'art(berry): stage Batch 1 four RGBA corner-matte candidates and preview proofs'
+          git push origin HEAD:refs/heads/artwork/berry-night-garden-40-rgba-staging
