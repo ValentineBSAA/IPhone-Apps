@@ -1,6 +1,6 @@
 # 🍓 Berry Berry Blast | D3e Birthday Gift, Calendar and Settings QA
 
-**Status: SOURCE-AUDITED ROADMAP ONLY.** Do not represent Birthday reward safety as implemented or simulator-verified yet. D3d and integrated I1 need terminal green results first. This audit is grounded in the production `BerryModes.swift`, `BerrySettingsHub.swift` and `BerryGameSession.swift` as of the I1 feature branch.
+**Status: ORIGINAL AUDIT + D3e IMPLEMENTATION CHECKPOINT.** Player-facing source and nine isolated XCTest are implemented on draft PR #84 based on D3c, **not simulator-verified yet**. D3d and D4 parent scenarios have now passed separately, but I1 integration and D3e independently remain under CI. This audit was grounded in the production `BerryModes.swift`, `BerrySettingsHub.swift` and `BerryGameSession.swift`.
 
 ## Existing game behavior to preserve
 
@@ -30,3 +30,12 @@
 Prioritize D3d [Quest & Story Lab PR #82](https://github.com/ValentineBSAA/IPhone-Apps/pull/82), parallel D4 [approved-image fallback PR #80](https://github.com/ValentineBSAA/IPhone-Apps/pull/80), and combined [I1 PR #83](https://github.com/ValentineBSAA/IPhone-Apps/pull/83). None is merged. Continue game-wide Story/Daily real UI QA, final approved art integration, Build4.7/4.8 Day/Night, Build5 Village and quests and Build6 genuine Night Market/Moonberries. The Developer Garden is a test tool for the *whole game*, not a substitute for delivering it.
 
 **No IPA, merge, release, version bump or player-data migrations from this roadmap.**
+
+## D3e source checkpoint · November 20, 2026
+
+- [x] [D3e draft PR #84](https://github.com/ValentineBSAA/IPhone-Apps/pull/84) adds production `BerryBirthdayPolicy`, validates month/day, Home birthday gift and claimed state use one method, and Settings' native two-column day picker offers only valid dates for a selected month. Old impossible dates show a gentle correction note; **no saved preference silently changed**.
+- [x] Original on-device month/day-only privacy and `birthday-YYYY` annual key, 100-strawberry amount, local-date check, claim wallet refresh and leap-day-only existing policy retained. No birthday year stored.
+- [x] Nine actual `BerryBirthdayPolicyIsolationTests` with separate stores, real `BerryGameSession`, Feb29 leap/nonleap and midnight dates, annual re-open/second-year gift, wrong-wallet rejection and unchanged original wallet/saves.
+- [ ] [D3e 141-selected Actions #44874176487](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44874176487) was running when this checkpoint was written; verify real terminal XCTest results, Release without internal QA panels and no IPA before marking the 9 new contracts verified.
+- [ ] D3e currently branches off D3c, separately from I1 (D3d Quest Lab + D4 artwork). After **both independent runs** are accepted, stage a fresh integration and run **152 selected XCTest** on combined source. Do not conflate independent passing branches with a tested whole game.
+- [ ] User's physical iPhone16e acceptance of birthday pickers, original 100-berry Claim, VoiceOver, stored invalid-date warning and restart behavior, plus unfinished Story/Daily/Day-Night/seasonal/Night work.
