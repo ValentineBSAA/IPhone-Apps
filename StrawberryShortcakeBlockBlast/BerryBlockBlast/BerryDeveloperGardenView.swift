@@ -14,6 +14,10 @@ struct BerryDeveloperGardenView: View {
     @State private var qaBalance = 0
     @State private var qaPendingAmount = 0
     @State private var qaGrantConfirmation = false
+    @State private var qaRestoreConfirmation = false
+    #if BERRY_INTERNAL_QA
+    @State private var qaRestorePoint: BerryGameSession.StrawberryCheatRestorePoint?
+    #endif
     @State private var qaError: String?
     @AppStorage("berryblockblast.touchDiagnostics") private var touchDiagnostics = false
     @ObservedObject private var economyLedger = BerryEconomyLedger.shared
@@ -301,6 +305,7 @@ struct BerryDeveloperGardenView: View {
                         Button("Add \(qaPendingAmount.formatted()) QA berries") {
                             if let balance = BerryGameSession.grantQAStrawberries(qaPendingAmount) {
                                 qaBalance = balance
+                                qaRestorePoint = BerryGameSession.qaCheatRestorePoint()
                                 qaError = nil
                                 qaAmountText = ""
                             } else {
@@ -380,9 +385,59 @@ struct BerryDeveloperGardenView: View {
                 if let qaError {
                     Text(qaError).font(.caption).foregroundStyle(.red)
                 }
-                Text("This is your private cheat tool. Nothing changes until you confirm. Added strawberries become part of your saved wallet and remain after relaunch. Every grant is recorded separately from natural gameplay earnings. Use a backup if you want to restore your original wallet later.")
+                Text("Before the first cheat, Developer Garden records your exact strawberry balance. Additional cheats keep that original number until you restore. Viewing or canceling changes nothing.")
                     .font(.caption)
                     .multilineTextAlignment(.center)
+                if let point = qaRestorePoint {
+                    VStack(spacing: 8) {
+                        Text("SAVED BEFORE CHEATS")
+                            .font(.caption.bold())
+                            .foregroundStyle(BerryStyle.strawberry)
+                        Text("🍓 \(point.preCheatBalance.formatted())")
+                            .font(.system(size: 23, weight: .black, design: .rounded))
+                        Text("Current saved balance: 🍓 \(qaBalance.formatted())")
+                            .font(.caption)
+                        Text("Recorded cheats: \(point.cheatCount)")
+                            .font(.caption)
+                        if qaBalance != point.lastCheatBalance {
+                            Text("Your balance also changed after the last cheat. Restoring the exact original amount will replace those later strawberry earnings or spending too. Other items and saves are not reset.")
+                                .font(.caption)
+                                .multilineTextAlignment(.center)
+                                .foregroundStyle(BerryStyle.chocolate)
+                        }
+                        Button("Restore previous balance • 🍓 \(point.preCheatBalance.formatted())") {
+                            qaRestoreConfirmation = true
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(BerryStyle.strawberry)
+                        .accessibilityIdentifier("berry.developer.cheat.restore-strawberries")
+                        .confirmationDialog(
+                            "Restore the exact strawberry balance?",
+                            isPresented: $qaRestoreConfirmation,
+                            titleVisibility: .visible
+                        ) {
+                            Button("Restore 🍓 \(point.preCheatBalance.formatted())") {
+                                if let balance = BerryGameSession.restorePreCheatStrawberries() {
+                                    qaBalance = balance
+                                    qaRestorePoint = BerryGameSession.qaCheatRestorePoint()
+                                    qaError = nil
+                                } else {
+                                    qaError = "Could not restore the original amount. Your current saved balance was left unchanged."
+                                }
+                            }
+                            Button("Keep current balance", role: .cancel) {}
+                        } message: {
+                            Text("Your current balance is 🍓 \(qaBalance.formatted()). This changes only strawberries to the recorded pre-cheat amount of 🍓 \(point.preCheatBalance.formatted()). It can also overwrite strawberries earned or spent after the cheat. Purchases, tools and saved games remain as they are.")
+                        }
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 16))
+                } else {
+                    Text("No cheat balance to restore yet. Your starting amount will be saved automatically when you confirm your first cheat.")
+                        .font(.caption)
+                        .multilineTextAlignment(.center)
+                }
                 let audit = BerryGameSession.qaGrantHistory()
                 if !audit.isEmpty {
                     Text("Recent QA grants")
@@ -396,6 +451,7 @@ struct BerryDeveloperGardenView: View {
             }
             .onAppear {
                 qaBalance = BerryGameSession.qaWalletBalance()
+                qaRestorePoint = BerryGameSession.qaCheatRestorePoint()
             }
             #else
             Text("Test-currency grants are not present in distribution builds.")
