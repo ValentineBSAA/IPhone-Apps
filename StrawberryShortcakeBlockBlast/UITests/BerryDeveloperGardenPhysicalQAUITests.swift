@@ -53,7 +53,10 @@ final class BerryDeveloperGardenPhysicalQAUITests: XCTestCase {
                       .waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["Review strawberry grant"].exists,
                       "A cheat must require an explicit confirmation before changing saves")
-        app.buttons["Done"].tap()
+        let closeTool = app.buttons["berry.developer.tool.done"]
+        XCTAssertTrue(closeTool.waitForExistence(timeout: 10),
+                      "Cheat sheet must have its own unambiguous Done control")
+        closeTool.tap()
 
         let more = app.buttons["More diagnostics and build information"]
         XCTAssertTrue(more.waitForExistence(timeout: 10))
