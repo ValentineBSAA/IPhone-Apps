@@ -21,8 +21,8 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 |---|---|---|---|---|---|---|---|---|
 | BS-01 | Halloween | Day | Sunny pumpkin-strawberry storybook, orange/violet ribbon, friendly autumn accents | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
 | BS-02 | Halloween | Night | Moonlit purple enchanted storybook, stars, crescent and luminous chapter star | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
-| BS-03 | Christmas | Day | Snow-kissed red/green strawberry storybook with gold star and holly | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⬜ | ⬜ | ⬜ |
-| BS-04 | Christmas | Night | Warm fairy lights and moonlit blue snowy storybook | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| BS-03 | Christmas | Day | Snow-kissed red/green strawberry storybook with gold star and holly | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
+| BS-04 | Christmas | Night | Warm fairy lights and moonlit blue snowy storybook | ⬜ NEXT: generate one original | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
 | BS-05 | Thanksgiving | Day | Warm harvest storybook, pie, maple leaves, cinnamon-gold chapter star | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BS-06 | Thanksgiving | Night | Candlelit plum and amber storybook, pumpkin and leaves | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BS-07 | Birthday | Day | Strawberry cake storybook with ribbons, balloon and sparkling chapter star | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -85,3 +85,11 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 - [x] BS-01 Halloween Day and BS-02 Halloween Night remain individually visually approved and unchanged.
 
 **Berry Story visual approval tally: 2/8; images generated: 3/8.**
+
+
+### Christmas pair progression
+- [x] BS-03 Christmas Day: visually approved by owner. Preserve snowy fir branches, candy canes, strawberry book, chapter star and red-green gingham with golden bells.
+- [ ] BS-04 Christmas Night: generate a matching open-storybook icon with a moonlit sapphire-violet snowy sky, fairy lights, snow-topped evergreens, glowing story pages and festive strawberry embellishments, without text; seek owner approval individually.
+- [ ] Source bytes, transparency QA, 64/96px proofs, ZIP/manifest and GitHub binary upload still pending.
+
+**Berry Story visual approvals: 3/8.**
