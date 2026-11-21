@@ -92,6 +92,17 @@ jobs:
               for holiday in ("Halloween", "Christmas", "Thanksgiving", "Birthday")
               for daynight in ("Day", "Night")
           }
+          proof_path = "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/_Previews/H1_Batch01_Review.jpg"
+          with zipfile.ZipFile(archive_path) as archive:
+              proof = archive.read(proof_path)
+          assert hashlib.sha256(proof).hexdigest() == "8539a3ce4d5e43309ba6c0eee7be9fc160063a62e54c44f7da98e7c9881b3404"
+          assert proof.startswith(bytes.fromhex("ffd8ff"))
+          proof_target = Path(proof_path)
+          proof_target.parent.mkdir(parents=True, exist_ok=True)
+          if proof_target.exists():
+              assert proof_target.read_bytes() == proof
+          else:
+              proof_target.write_bytes(proof)
           for e in m["entries"]:
               e["github_png_staged"] = True
           m["status"] = "Verified 8/8 source originals in isolated GitHub branch; RGBA/production routing/iPhone QA pending."
