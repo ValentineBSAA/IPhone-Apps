@@ -1,7 +1,7 @@
 import XCTest
 
 /// Deliberately tests the same Release config as the private real-device
-/// Developer Garden build, without spending or awarding owner strawberries.
+/// Developer Garden build. Checks cheats exist without actually granting coins.
 final class BerryDeveloperGardenPhysicalQAUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -39,12 +39,21 @@ final class BerryDeveloperGardenPhysicalQAUITests: XCTestCase {
         XCTAssertTrue(unlock.isEnabled)
         unlock.tap()
 
-        XCTAssertTrue(app.staticTexts["PRIVATE DEVICE QA • Isolated tests only; real-wallet grants disabled"]
+        XCTAssertTrue(app.staticTexts["HIDDEN DEVELOPER GARDEN • Tests are isolated; cheats change saves only when confirmed"]
                       .waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["berry.developer.tool.Diagnostics"].exists)
         XCTAssertTrue(app.buttons["berry.developer.tool.Save Inspector"].exists)
-        XCTAssertFalse(app.buttons["berry.developer.tool.Test Strawberries"].exists,
-                       "Real-player wallet grant must be hidden in physical QA")
+
+        // This is deliberately a permanent, opt-in CHEAT tool in installable
+        // Release builds. Never use a player's real wallet in simulator tests.
+        let cheat = app.buttons["berry.developer.tool.Cheat Strawberries"]
+        XCTAssertTrue(cheat.isHittable, "Owner's voluntary cheat control cannot disappear from Release")
+        cheat.tap()
+        XCTAssertTrue(app.staticTexts["OPTIONAL CHEAT • ADDS TO YOUR REAL SAVED WALLET"]
+                      .waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Review strawberry grant"].exists,
+                      "A cheat must require an explicit confirmation before changing saves")
+        app.buttons["Done"].tap()
 
         let more = app.buttons["More diagnostics and build information"]
         XCTAssertTrue(more.waitForExistence(timeout: 10))
@@ -61,7 +70,6 @@ final class BerryDeveloperGardenPhysicalQAUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["REAL CHECKOUT • DISPOSABLE TEST WALLET"]
                       .waitForExistence(timeout: 10),
                       "Physical QA must expose actual isolated purchase handlers, not a placeholder")
-        XCTAssertFalse(app.buttons["Add 100 QA berries"].exists)
 
         let capture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         capture.name = "Physical I6 QA: PIN developer menu and isolated Commerce Lab"
