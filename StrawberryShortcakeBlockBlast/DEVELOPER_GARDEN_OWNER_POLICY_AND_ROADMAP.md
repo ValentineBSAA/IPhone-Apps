@@ -15,7 +15,7 @@
 
 **Isolated tests: safe to repeat.** Scenario Sandbox, State & Timer Lab, Commerce Lab, Tool Action Lab, and Quest & Story Lab use separate disposable game state / economy ledgers. They must report expected vs actual, PASS/FAIL, and reset/discard. Running an isolated test must **never** change the owner's actual wallet, purchases, current run, saves, trophies or earned progress.
 
-**Optional cheats: intentionally alter the owner's game.** The **Cheat Strawberries** quick card is a real, opt-in cheat. The owner enters any valid positive amount, reviews the exact amount, then **confirms** before coins are added to their actual saved wallet. Declining/canceling makes no change. This cheat has an audit history and must not be mislabeled as naturally earned gameplay berries. Save backups remain recommended. Future cheats, such as manually preparing rare situations, must label whether they are sandbox-only or alter the real game, and require confirmation for persistent changes. Do not remove or silently disable voluntary cheats in a Release build.
+**Optional cheats: intentionally alter the owner's game.** The **Cheat Strawberries** quick card is a real, opt-in cheat. The owner enters any valid positive amount, reviews the exact amount, then **confirms** before coins are added to their actual saved wallet. Declining/canceling makes no change. It logs all grants separately from naturally earned berries. **Before the first cheat in a series it now saves the precise real strawberry count as a durable restore point**. Any following cheat retains the first baseline. A separate **Restore Previous Strawberry Balance** confirmation restores that exact pre-cheat amount after an app relaunch, and only changes the inventory's strawberry field. It does not reset owned tools, skins, scores or game saves. **Important:** restoring a baseline may also overwrite legitimate strawberries earned/spent *after* the cheat; show the current and saved amounts and explicitly warn before confirming. Saving a fresh baseline after restore starts a new cheat cycle. This is a UserDefaults recovery feature, **not** a fully power-loss-atomic transaction journal; backups remain recommended. Future cheats must distinguish isolated vs real-save actions, preserve pre-cheat values where meaningful, and offer confirmation/restore. Do not remove or silently disable voluntary cheats in a Release build.
 
 ## What's present in the candidate source now
 
@@ -35,7 +35,7 @@ Developer Garden is a **living subsystem**. Every gameplay or economy feature mu
 | Area | Current status | What it does or will do |
 | --- | --- | --- |
 | Settings long-press + PIN 1476 | ACTIVE source, HARDWARE QA pending | Hidden access in **Debug and Release**, no Home button |
-| Cheat Strawberries | ACTIVE source, HARDWARE QA pending | Voluntary, persistent wallet grant after confirmation, audit receipt |
+| Cheat Strawberries + exact restore | ACTIVE source, HARDWARE QA pending | Saves first pre-cheat balance, confirmed grant, restores exact previous number across launches; preserves other inventory/save fields |
 | Touch Diagnostics | ACTIVE source, HARDWARE QA pending | Shows board cell and gesture events; opt-in, no gameplay modification |
 | Save Inspector | ACTIVE source | Inspect existence of 8×8 / 12×12 / 24×24 Endless saved games, read-only |
 | Combo Preview | ACTIVE source | Show visual ×10/×20/×30/×50 without farming points |
@@ -56,7 +56,7 @@ Developer Garden is a **living subsystem**. Every gameplay or economy feature mu
 
 When real Moonberry game mechanics are implemented, add **all** of these, with independent acceptance:
 
-- [ ] **Cheat Moonberries** beside Cheat Strawberries: choose an amount, inspect the current Moonberry balance and new amount, explicitly confirm or cancel; actual persistent Moonberry balance changes only after confirming. Distinct wallet key and audit `cheat / not naturally earned`; repeat and restart reliably; guard negative, zero, integer overflow and duplicate taps.
+- [ ] **Cheat Moonberries** beside Cheat Strawberries: choose an amount, inspect the current Moonberry balance and new amount, explicitly confirm or cancel; actual persistent Moonberry balance changes only after confirming. Distinct wallet key and audit `cheat / not naturally earned`; repeat and restart reliably; guard negative, zero, integer overflow and duplicate taps. **Mirror exact pre-cheat restore** with a separate persistent original Moonberry balance and confirmation. Restoring Moonberries must never reset or change Strawberries, owned Night Market products, receipts or other game saves.
 - [ ] **Moonberry readout:** genuine authoritative balance, natural earned total, spent total, available rewards and pending receipts; don't misrepresent a summary ledger as authoritative funds.
 - [ ] **Earn Moonberries:** single-tap isolated fixtures for actual Endless milestone thresholds, first-time eligibility, repeated event, after Undo, after new season, and after restore/reopen; **never pay a duplicate reward** for the same event identity.
 - [ ] **Night Market shop:** load real eligible inventory, prices and owned/unowned cosmetics; exact-price buy, insufficient funds, double taps, sold-out/already-owned, refund/rollback, interrupted purchase journal and fresh launch recovery. Night Market transactions may debit Moonberries ONLY.
@@ -70,7 +70,8 @@ When real Moonberry game mechanics are implemented, add **all** of these, with i
 
 ### 2. 🍓 Existing Strawberry economy and voluntary owner cheats
 
-- [ ] Keep **Cheat Strawberries** accessible in every installable build behind the PIN; explicit preview → confirmation → one verified ledger/audit record, no accidental changes when canceled or viewing; reload the real wallet in UI immediately and after restart.
+- [ ] Keep **Cheat Strawberries** accessible in every installable build behind the PIN; explicit preview → confirmation → one recorded cheat audit entry, no accidental changes when canceled or viewing; reload the real wallet in UI immediately and after restart.
+- [ ] **Exact Strawberry Restore:** atomically as practicable save the real pre-first-cheat strawberry amount before editing inventory, retain baseline through multiple grants and force-closes, display **original/current/cheat count**, require separate confirmation to restore, preserve all tool charges, naturally earned counters, skins, scores and active 8×8/12×12/24×24 game saves. Explicitly warn that restoring exact old balance also overrides any *post-cheat* earnings or spending. One restored baseline cannot be applied twice; next cheat creates a fresh baseline. Corrupt restore records must never be silently overwritten with a cheat-inflated new baseline.
 - [ ] Allow future *deliberate* owner cheats such as add tool charges or unlock cosmetics, always with clear `CHANGES MY GAME` language, side-effect preview, audit, confirm/cancel and preferably a verified backup/restore path. Never silently interpret test fixtures as owner cheats.
 - [ ] Premium shop tests for Undo 40, Shuffle 50 and Hint 35, other approved Special Tools, owned charges, 0-charge and locked states, retry/rollback and failed checkout. Ensure an invalid action consumes no charge.
 - [ ] Dedicated restore-safe snapshots of wallet, owned skin inventory, receipts, high scores and 8/12/24 Endless slots before running any advanced QA action; isolated tests must compare before/after hashes.
@@ -114,7 +115,7 @@ When real Moonberry game mechanics are implemented, add **all** of these, with i
 
 No feature is complete until its *production mechanic*, *visual screen*, *Developer Garden fixture/optional cheat where appropriate*, *automated tests*, *real-device checklist*, and *GitHub roadmap* agree. New developer features are additive, not replacements: check hidden PIN and the old cards each build. If a production mechanic is not ready, keep the matching developer card labelled `COMING LATER` and make no fraudulent one-tap success claims.
 
-**Immediate owner testing gate (Build 48):** verify the real signed iPhoneOS app displays v0.5.16 B48, holding Settings build text opens PIN 1476, developer quick grid includes Cheat Strawberries, advanced Commerce/Quest labs open, the existing real wallet is unchanged without a confirmed cheat, and old saved Endless games are present. Keep a short five-step hardware checklist; the exhaustive scenarios belong in GitHub/automated tests.
+**Immediate owner testing gate (Build 48):** verify the real signed iPhoneOS app displays v0.5.16 B48, holding Settings build text opens PIN 1476, developer quick grid includes Cheat Strawberries and Moonberries & Night Market (clearly Coming Later), advanced Commerce/Quest labs open, and old saved Endless games are present. For cheats, record an existing real wallet amount, do one small confirmed addition, force-close/reopen, and confirm the exact original can be restored. **Do not perform irreversible tests without a backup.** Keep a short hardware checklist; exhaustive scenarios belong in GitHub/automated tests.
 
 ## Release gate added after owner reported Build46 failure
 
