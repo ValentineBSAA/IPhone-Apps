@@ -9,10 +9,10 @@ enum BerryBuildIdentity {
     static var buildNumber: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
     }
-    static var homeLabel: String { "🍓 v\(marketingVersion) • B\(buildNumber) • I6 TEST" }
-    static let revisionName = "I6 PRIVATE TEST"
-    static let sourceBranch = "feature/berry-i6-version-label-correction"
+    static var homeLabel: String { "🍓 v\(marketingVersion) • B\(buildNumber) • I6 QA" }
+    static let revisionName = "I6 DEVICE QA"
+    static let sourceBranch = "feature/berry-i6-internal-device-qa-build48"
     static var settingsLabel: String {
-        "Berry Berry Blast v\(marketingVersion) • Build \(buildNumber) • I6 Test"
+        "Berry Berry Blast v\(marketingVersion) • Build \(buildNumber) • I6 QA"
     }
 }
