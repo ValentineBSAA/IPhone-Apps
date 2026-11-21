@@ -233,6 +233,7 @@ struct BerryHomeView: View {
                                             activeMode = mode
                                         }
                                     }
+                                    .accessibilityIdentifier("berry.home.mode.\(mode.rawValue)")
                                 }
                                 BerryGridNavigationTile(
                                     title: "My Strawberry Cottage",
@@ -288,6 +289,7 @@ struct BerryHomeView: View {
                                     art: "DailyHarvest", caption: "View Calendar") {
                                     showDailyCalendar = true
                                 }
+                                .accessibilityIdentifier("berry.home.dailyCalendar")
 
                             }
                             Text("MUSIC, STYLE & EXTRAS")
