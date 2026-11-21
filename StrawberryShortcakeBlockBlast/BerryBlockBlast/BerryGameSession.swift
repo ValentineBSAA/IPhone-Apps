@@ -445,11 +445,11 @@ final class BerryGameSession: ObservableObject {
         engine = previous
         berries = max(0, berries - previousBerryEarnings)
         totalEarnedBerries = max(0, totalEarnedBerries - previousBerryEarnings)
-        BerryEconomyLedger.shared.reverseUndoneLineEarnings(
+        checkoutLedger.reverseUndoneLineEarnings(
             previousBerryEarnings, mode: activeMode)
         if let entry = previousRewardEntry, let index = rewardsLog.firstIndex(of: entry) {
             rewardsLog.remove(at: index)
-            UserDefaults.standard.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
+            checkoutDefaults.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
         }
         previousRewardEntry = nil
         previousBerryEarnings = 0
@@ -500,7 +500,7 @@ final class BerryGameSession: ObservableObject {
               berries >= BerryEconomy.shufflePrice,
               engine.reshuffleTray() else { return false }
         berries -= BerryEconomy.shufflePrice
-        BerryEconomyLedger.shared.recordSpend(BerryEconomy.shufflePrice,
+        checkoutLedger.recordSpend(BerryEconomy.shufflePrice,
                                               item: "Shuffle Continue")
         ensureEndlessPlayable()
         gameOver = !engine.hasMove()
@@ -512,7 +512,7 @@ final class BerryGameSession: ObservableObject {
         lastMessage = "🍓 Shuffle Continue! Your garden and score are safe."
         rewardsLog.insert("🍓 -\(BerryEconomy.shufflePrice) • Shuffle Continue", at: 0)
         rewardsLog = Array(rewardsLog.prefix(20))
-        UserDefaults.standard.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
+        checkoutDefaults.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
         save()
         return true
     }
