@@ -79,10 +79,24 @@ Use one standalone image-generation output per asset, never collage-generated so
 - [x] H1-B01: Halloween / Christmas / Thanksgiving / Birthday **Day + Night** cottage Home/Classic representatives generated and visually accepted (8 images).
 - [x] Original full-resolution images organized into checked ZIP with checksum manifest, downloadable in ChatGPT.
 - [x] Isolated art branch + draft PR #50 and a GitHub Release-ingest workflow installed, ZIP **not yet uploaded to GitHub Release**.
-- [ ] Run GitHub Release import and confirm all eight PNG blobs committed to art branch.
+- [x] GitHub Release import passed (Actions #44847067327); all eight source PNG blobs are staged in isolated seasonal art branch.
 - [ ] Check actual Home/Classic semantic routing and alpha quality; no Xcode integration yet.
 - [ ] H1-B02 after review: Story Home tile Day+Night × four holidays, or another approved semantic family based on H0 use-site audit.
 - [ ] Continue batches per this matrix until **all actual visible** seasonal icon use-sites have approved Day+Night art.
 - [ ] Complete calendar/region/opt-in behavior separately via draft PR #48, preserving existing birthday gift.
 
 See [H1-B01 art manifest](ArtSource/SeasonalGarden/00_Specs_And_Ledgers/H1_Batch01_Manifest.json), [source import PR #50](https://github.com/ValentineBSAA/IPhone-Apps/pull/50), [Night originals PR #40](https://github.com/ValentineBSAA/IPhone-Apps/pull/40), [Seasonal Epic #42](https://github.com/ValentineBSAA/IPhone-Apps/issues/42).
+
+
+## Approved live digital clock frame workflow (November 20, 2026)
+- [x] The **standard NONSEASONAL clock Day frame** is visually approved: glossy strawberry-pink, gingham bow, flowers and blank center for native `h:mm a` text.
+- [x] The **standard NONSEASONAL clock Night frame** is visually approved: violet, moon, stars, purple bow and completely blank center.
+- [x] Both source PNGs are already true RGBA; 1774×887 originals, exact duplicates as QA candidates, checker/cream/dark proof + ZIP verified.
+- [x] Clock-specific [running checklist](https://github.com/ValentineBSAA/IPhone-Apps/blob/artwork/berry-clock-frames-c-b01-staging/StrawberryShortcakeBlockBlast/CLOCK_FRAME_MASTER_CHECKLIST.md) committed; isolated [draft PR #53](https://github.com/ValentineBSAA/IPhone-Apps/pull/53). No clock binaries committed yet.
+- [ ] Upload the base clock ZIP to GitHub Release `berry-base-clocks-b01` with checksum `ef36481929c5db6074d0bda3298614439e298dc4a4ae7f74d5f8e747aa5cd83a`; import workflow on main verifies and stages only this separate clock branch.
+- [ ] Four holiday digital clock pairs after base frame: Halloween Day/Night, Christmas Day/Night, Thanksgiving Day/Night, Birthday Day/Night. **Generate ONE image at a time, with explicit approval per image**, not a batch of unapproved analog clocks.
+- [ ] Code renders live time in the clear blank central space; these are purely exterior frame illustrations. No analog clock faces, hands, tick marks, baked-in time, house backgrounds or app integration now.
+
+### GitHub seasonal cottage import correction
+- [x] The original eight seasonal cottage Home/Classic concept PNGs were actually imported successfully via [Actions run #44847067327](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44847067327). They remain **separate** from clock frame art and require Xcode/device QA.
+
