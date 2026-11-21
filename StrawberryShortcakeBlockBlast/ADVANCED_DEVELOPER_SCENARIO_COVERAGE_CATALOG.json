@@ -2,8 +2,8 @@
   "schema": 1,
   "app": "Berry Berry Blast",
   "status": "roadmap-only, no test fixtures implemented",
-  "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests. D0 proof 6/6 on iPhone 16e simulator covers ONLY two fully implemented scenarios; do not imply full 48 scenario coverage or physical-device validation. D0b six scenarios are separate value-type policy implementations and remain unaccepted until named simulator results and owner physical UI tests are verified. GitHub Actions #44864274159 attempt 2: D0/D0b selected 17/17 XCTest green, with safe Release compile. Do not equate these mock policy fixtures with full production purchase/save or physical iPhone acceptance.",
-  "count": 54,
+  "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests. D0 proof 6/6 on iPhone 16e simulator covers ONLY two fully implemented scenarios; do not imply full 48 scenario coverage or physical-device validation. D0b six scenarios are separate value-type policy implementations and remain unaccepted until named simulator results and owner physical UI tests are verified. GitHub Actions #44864274159 attempt 2: D0/D0b selected 17/17 XCTest green, with safe Release compile. Do not equate these mock policy fixtures with full production purchase/save or physical iPhone acceptance. D0c two implemented-untested shared production-rule contract checks are not complete end-to-end checkout coverage. Owner physical QA remains required.",
+  "count": 56,
   "status_values": [
     "planned",
     "implemented_untested",
@@ -694,6 +694,34 @@
       "test_ref": "BerryDeveloperStateLabTests",
       "manual_iphone_accepted": false,
       "scope_note": "Sandbox price policy/engine Codable/timer math; not full live checkout or disk save integration"
+    },
+    {
+      "id": "d0c-production-tool-purchase-reducer",
+      "category": "economy",
+      "title": "D0c production-shared Undo/Shuffle/Hint transaction guard",
+      "fixture": "Call the exact side-effect-free transaction reducer used in BerryGameSession.buyUndo, buyShuffle and buyHint; run exact-price, one-short, negative, zero-price and Int.max charge cases.",
+      "expected": "Successful purchases debit exact price and add one charge; all invalid inputs reject unchanged without overflow.",
+      "status": "implemented_untested",
+      "execution": "shared_production_rule_in_isolated_qa",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d0c-shared-tool-rules:BerryStandardToolTransaction.swift",
+      "test_ref": "BerryStandardToolTransactionTests",
+      "manual_iphone_accepted": false,
+      "scope_note": "Real session purchase decisions use reducer. Live ledger, persistence, full checkout UI are NOT injected or accepted."
+    },
+    {
+      "id": "d0c-production-hint-charge-policy",
+      "category": "tools",
+      "title": "D0c production-shared Hint charge consumed only after legal hint",
+      "fixture": "Call shared consumeCharge with eligible and ineligible underlying actions, zero/negative counts; exercise new BerryGameSession.useHintIfPossible call site.",
+      "expected": "Valid action consumes one charge; blocked/invalid/zero-count action consumes none.",
+      "status": "implemented_untested",
+      "execution": "shared_production_rule_in_isolated_qa",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d0c-shared-tool-rules:BerryStandardToolTransaction.swift",
+      "test_ref": "BerryStandardToolTransactionTests.testToolConsumptionOnlyAfterValidUnderlyingAction",
+      "manual_iphone_accepted": false,
+      "scope_note": "Tests shared rule and production call-site presence, not actual full Hint UI."
     }
   ]
 }
