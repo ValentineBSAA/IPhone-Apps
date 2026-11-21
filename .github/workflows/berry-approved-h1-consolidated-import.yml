@@ -1,4 +1,4 @@
-# One-package non-destructive import. This workflow does not merge into main or touch Assets.xcassets.
+# Non-destructive import of one consolidated artwork ZIP, intact or in eight Release parts. This workflow does not merge into main or touch Assets.xcassets.
 name: Berry Berry Blast | Import approved consolidated H1 artwork (55 originals)
 
 on:
@@ -26,16 +26,28 @@ jobs:
           persist-credentials: true
           fetch-depth: 1
 
-      - name: Download consolidated release ZIP
+      - name: Download master ZIP or reconstruct from eight smaller Release assets
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          gh release download berry-h1-approved-all-20261120 \
-            --repo "$GITHUB_REPOSITORY" \
-            --pattern 'Berry_Berry_Blast_ALL_Approved_Seasonal_Artwork_GitHub_2026-11-20.zip' \
-            --dir "$RUNNER_TEMP" --clobber
+          TAG='berry-h1-approved-all-20261120'
+          NAME='Berry_Berry_Blast_ALL_Approved_Seasonal_Artwork_GitHub_2026-11-20.zip'
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern "$NAME" --dir "$RUNNER_TEMP" --clobber || true
+          if [[ ! -f "$RUNNER_TEMP/$NAME" ]]; then
+            gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --pattern "$NAME.part*" --dir "$RUNNER_TEMP" --clobber
+            paths=()
+            for index in 01 02 03 04 05 06 07 08; do
+              part="$RUNNER_TEMP/$NAME.part$index"
+              test -s "$part" || { echo "Missing or empty ZIP part $index" >&2; exit 1; }
+              paths+=("$part")
+            done
+            cat "${paths[@]}" > "$RUNNER_TEMP/$NAME"
+          fi
+          echo 'Master artwork archive available; verifying pinned SHA-256 and all file contents.'
 
       - name: Validate every file and stage originals without overwriting changes
         shell: bash
