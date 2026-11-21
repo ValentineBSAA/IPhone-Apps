@@ -46,3 +46,11 @@ Before adding scenarios that invoke live app handlers, implement **D0c dependenc
 6. Close Developer Garden and compare the **real** existing wallet, tool inventory, bought cosmetics, 8/12/24 Endless saved boards and birthday/daily reward state. No changes are permitted.
 
 **No version bump, Xcode asset import, live wallet mutation, signed IPA, merge or public release.** Complete D0b tests and owner device review first.
+
+
+## CI attempt 1 diagnostic and corrected rerun
+- [x] [Initial GitHub Actions run #44863898002](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44863898002) completed **FAILURE** after a successful source/art/audio verification and Release compile-exclusion check. **No D0b XCTest methods were executed.**
+- [x] Exact root cause: copied CI setup wrote `$RUNNER_TEMP/berry-d0b-sims.json` but tried to read `$RUNNER_TEMP/berry-d0-sims.json`; and the later test step referred to the old `berry-d0-id` UDID path. This is a workflow filename mismatch, not a puzzle/economy/save/timer test failure.
+- [x] Fixed all simulator JSON/UDID file references in the [workflow on main](https://github.com/ValentineBSAA/IPhone-Apps/blob/main/.github/workflows/berry-d0b-state-time-iphone16e.yml). Corrected workflow was pushed and starts [fresh CI run #44864274159](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44864274159), including the finalized canonical-JSON engine comparison change.
+- [ ] Confirm the new CI run's terminal conclusion and **17 selected XCTest method counts** from logs. Mark iPhone simulator acceptance only after actual test execution.
+- [ ] Physical iPhone owner acceptance and production handler integration remain pending regardless of CI outcome.
