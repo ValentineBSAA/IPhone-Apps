@@ -5,6 +5,10 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/berry-approved-h1-consolidated-import.yml'
 
 permissions:
   contents: write
@@ -15,7 +19,7 @@ concurrency:
 
 jobs:
   verified-artwork-staging:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.release.tag_name == 'berry-h1-approved-all-20261120' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event.release.tag_name == 'berry-h1-approved-all-20261120' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -105,19 +109,55 @@ jobs:
               for name,sha in expected.items():
                   if digest(z.read(name))!=sha:
                       raise SystemExit('SHA-256 mismatch: '+name)
-              # All input content has been verified before mutation. Never overwrite
-              # an existing different source or alpha candidate, even on art branch.
+              # The first seasonal Batch 01 artwork is already in this branch.
+              # Its eight original PNG blobs are byte-identical to the archive.
+              # Two historical prose/manifest revisions differ; do not overwrite
+              # either one. Preserve the archive's alternate exact bytes in the
+              # consolidation audit folder. Any OTHER difference still fails.
+              historical = {
+                  base+'SeasonalGarden/00_Specs_And_Ledgers/H1_Batch01_Manifest.json',
+                  base+'SeasonalGarden/00_Specs_And_Ledgers/H1_Batch01_README.md',
+              }
+              relocated={}
               for name in names:
-                  dest=pathlib.Path(name)
-                  if dest.is_symlink():
-                      raise SystemExit('Refusing symlink target '+name)
-                  if dest.exists() and digest(dest.read_bytes()) != digest(z.read(name)):
-                      raise SystemExit('Existing artwork differs; refusing replacement: '+name)
+                  target=pathlib.Path(name)
+                  raw=z.read(name)
+                  if target.is_symlink(): raise SystemExit('Refusing symlink target '+name)
+                  if target.exists() and digest(target.read_bytes())!=digest(raw):
+                      if name not in historical:
+                          raise SystemExit('Existing artwork differs; refusing replacement: '+name)
+                      alternate=pathlib.Path(doc+'Preserved_H1_Batch01_Archive_Metadata/'+target.name)
+                      if alternate.exists() and digest(alternate.read_bytes())!=digest(raw):
+                          raise SystemExit('Archived metadata conflict: '+str(alternate))
+                      relocated[name]=alternate
+              # Freeze a machine-readable redirect ledger, including both hashes.
+              audit={
+                  'status': 'Two historical Batch 01 metadata files preserved without overwriting',
+                  'mapping': [
+                      {'archive_path':n,
+                       'staged_path':str(v),
+                       'zip_sha256':digest(z.read(n)),
+                       'existing_sha256':digest(pathlib.Path(n).read_bytes())}
+                      for n,v in sorted(relocated.items())
+                  ],
+              }
+              if len(relocated)!=2: raise SystemExit('Expected exactly two archived metadata differences')
+              audit_path=pathlib.Path(doc+'IMPORT_PRESERVED_METADATA_MAPPING.json')
+              audit_bytes=(json.dumps(audit,indent=2,sort_keys=True)+'\\n').encode()
+              if audit_path.exists() and audit_path.read_bytes()!=audit_bytes:
+                  raise SystemExit('Import metadata mapping changed unexpectedly')
               for name in names:
-                  dest=pathlib.Path(name)
-                  dest.parent.mkdir(parents=True,exist_ok=True)
-                  if not dest.exists():dest.write_bytes(z.read(name))
-              print('All 150 archive files checked; 55 approved original artworks staged. No existing image overwritten.')
+                  target=relocated.get(name,pathlib.Path(name))
+                  raw=z.read(name)
+                  if target.is_symlink(): raise SystemExit('Refusing symlink target '+str(target))
+                  if target.exists() and digest(target.read_bytes())!=digest(raw):
+                      raise SystemExit('Refusing to replace alternate metadata '+str(target))
+                  target.parent.mkdir(parents=True,exist_ok=True)
+                  if not target.exists(): target.write_bytes(raw)
+              audit_path.parent.mkdir(parents=True,exist_ok=True)
+              if not audit_path.exists():audit_path.write_bytes(audit_bytes)
+              print('Verified all 150 source archive entries and 55 approved unique originals.')
+              print('Existing 8 Home Classic PNGs preserved unchanged; two historical metadata variants archived separately.')
           PY
 
       - name: Commit to isolated artwork staging branch only
