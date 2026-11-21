@@ -287,3 +287,15 @@
 - [x] GitHub [run 44848307666](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44848307666) completed SUCCESS with iOS builds and all tests; extracted IPA is v0.2.9 Build 272, `com.valentinebsaa.potstracker`, iOS 16 minimum, valid ZIP and Assets.car.
 - [ ] Physical iPhone QA of buttons, medication editing, manual logs, notifications, backups, old data and accessibility.
 - [ ] Merge to main only after device acceptance. See UX_V029.md.
+
+## v0.2.10 Medication Library & Compact Cabinet (development candidate)
+- [x] User reported v0.2.9 Build 272 physical iPhone checks were working; their screenshot showed the medication cabinet's oversized introductory card and limited usefulness. Preserve all previous records and features.
+- [x] **159 searchable generic medication names** grouped across 11 broad browsing categories; many commonly recognized brand-name aliases, exact-only matching for saved profiles.
+- [x] Category chips and live search in a two-column grid with a compact medication profile dashboard and no redundant introductory panel.
+- [x] Short caution labels from a curated reviewed summary library, official MedlinePlus/DailyMed links, 17 verified direct reference pages, and an explicit warning that information is **not complete product labeling or advice**.
+- [x] No catalog-selected default strength, dose or regimen; use a draft requiring personal confirmation; all manual medication event statuses preserved.
+- [x] Existing saved medication profiles, archives, Core Data, stable app identifier, original 13 icons, iOS 16 and all-free offline experience are unchanged.
+- [x] New catalog lookup, aliases, no-prescribing, duplicate-name and warning-completeness unit tests; CI requires original suites and separate unsigned device/simulator compilation.
+- [ ] GitHub Actions v0.2.10 success and authenticated IPA package validation.
+- [ ] Physical iPhone: search generic and brand names, categories, reference details, link-out, draft, save/cancel, old existing profile, edit/remove, reminders, older backup restore, medical privacy, dark/light and VoiceOver.
+- [ ] Do not merge as stable before user confirms physical QA. See UX_V0210.md and the master roadmap.
