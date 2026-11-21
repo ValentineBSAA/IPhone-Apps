@@ -3,7 +3,7 @@
   "app": "Berry Berry Blast",
   "status": "roadmap-only, no test fixtures implemented",
   "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests. D0 proof 6/6 on iPhone 16e simulator covers ONLY two fully implemented scenarios; do not imply full 48 scenario coverage or physical-device validation. D0b six scenarios are separate value-type policy implementations and remain unaccepted until named simulator results and owner physical UI tests are verified. GitHub Actions #44864274159 attempt 2: D0/D0b selected 17/17 XCTest green, with safe Release compile. Do not equate these mock policy fixtures with full production purchase/save or physical iPhone acceptance. D0c two implemented-untested shared production-rule contract checks are not complete end-to-end checkout coverage. Owner physical QA remains required.",
-  "count": 59,
+  "count": 62,
   "status_values": [
     "planned",
     "implemented_untested",
@@ -830,6 +830,48 @@
       "implementation_ref": "feature/berry-advanced-dev-d0d-injected-checkout-ledger:BerryGameSession.swift",
       "test_ref": "BerryStandardToolCheckoutIsolationTests",
       "manual_iphone_accepted": false
+    },
+    {
+      "id": "d0e-staged-only-purchase-replay",
+      "category": "economy",
+      "title": "D0e actual GameSession recovers staged Undo purchase after restart",
+      "fixture": "Write valid standard purchase pending intent to isolated UserDefaults but do not write inventory/ledger; initialize real BerryGameSession with injected ledger.",
+      "expected": "One exact debit and charge on launch, intended inventory and spend totals restored, journal cleared and subsequent reopen does not charge again.",
+      "status": "implemented_untested",
+      "execution": "actual_session_recovery_isolated_preferences",
+      "latest_result": null,
+      "test_ref": "BerryStandardPurchaseRecoveryTests",
+      "implementation_ref": "feature/berry-advanced-dev-d0e-purchase-recovery:BerryStandardPurchaseJournal.swift",
+      "manual_iphone_accepted": false,
+      "scope_note": "Best-effort replay if intent persists; not power-loss durable storage."
+    },
+    {
+      "id": "d0e-partial-write-ledger-consistency",
+      "category": "economy",
+      "title": "D0e interrupted inventory and ledger writes recover exact totals",
+      "fixture": "Simulate crash after inventory update or between total-spent and per-item ledger-key writes, then initialize real session with same isolated store.",
+      "expected": "Absolute after-state completes with no duplicate charge; unrelated ledger items and other Endless save slots remain unchanged.",
+      "status": "implemented_untested",
+      "execution": "actual_session_recovery_isolated_preferences",
+      "latest_result": null,
+      "test_ref": "BerryStandardPurchaseRecoveryTests",
+      "implementation_ref": "feature/berry-advanced-dev-d0e-purchase-recovery:BerryStandardPurchaseJournal.swift",
+      "manual_iphone_accepted": false,
+      "scope_note": "No hardware process-kill test; simulated selective preference writes only."
+    },
+    {
+      "id": "d0e-corrupt-intent-safety-gate",
+      "category": "economy",
+      "title": "D0e malformed pending purchase safely blocks new standard-tool charges",
+      "fixture": "Insert malformed journal in isolated preferences and invoke real session buyUndo; also test ledger total overflow and duplicate intent staging.",
+      "expected": "Old inventory untouched and no ledger spend; retain corrupt evidence and refuse unsafe duplicate purchases.",
+      "status": "implemented_untested",
+      "execution": "actual_session_recovery_isolated_preferences",
+      "latest_result": null,
+      "test_ref": "BerryStandardPurchaseRecoveryTests",
+      "implementation_ref": "feature/berry-advanced-dev-d0e-purchase-recovery:BerryStandardPurchaseJournal.swift",
+      "manual_iphone_accepted": false,
+      "scope_note": "Player-friendly repair UI to be designed; corrupt unresolved journal blocks standard tools."
     }
   ]
 }
