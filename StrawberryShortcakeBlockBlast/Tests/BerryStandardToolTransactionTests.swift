@@ -11,7 +11,7 @@ final class BerryStandardToolTransactionTests: XCTestCase {
                       BerryEconomy.hintPrice] {
             let state = BerryStandardToolTransaction.purchase(
                 berries: price, charges: 0, price: price)
-            XCTAssertEqual(state, .init(berries: 0, charges: 1))
+            XCTAssertEqual(state, BerryStandardToolTransaction.UpdatedState(berries: 0, charges: 1))
         }
     }
 
@@ -52,7 +52,7 @@ final class BerryStandardToolTransactionTests: XCTestCase {
         XCTAssertEqual(BerryStandardToolTransaction.purchase(
             berries: Int.max, charges: Int.max - 1,
             price: BerryEconomy.shufflePrice),
-            .init(berries: Int.max - BerryEconomy.shufflePrice,
+            BerryStandardToolTransaction.UpdatedState(berries: Int.max - BerryEconomy.shufflePrice,
                   charges: Int.max))
     }
 
@@ -61,7 +61,7 @@ final class BerryStandardToolTransactionTests: XCTestCase {
         let price = BerryEconomy.hintPrice
         XCTAssertEqual(BerryStandardToolTransaction.purchase(
             berries: 200, charges: old, price: price),
-            .init(berries: 200 - price, charges: 4))
+            BerryStandardToolTransaction.UpdatedState(berries: 200 - price, charges: 4))
     }
 
     func testToolConsumptionOnlyAfterValidUnderlyingAction() {
