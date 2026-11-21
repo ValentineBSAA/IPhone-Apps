@@ -1,0 +1,230 @@
+{
+  "project": "Berry Berry Blast",
+  "batch": "C-FULL-01",
+  "visual_design_approvals": "10/10",
+  "asset_count": 10,
+  "technical_status": "8 native RGBA, 2 background-removed RGBA candidates; manual edge approval and iPhone/Xcode QA pending",
+  "preservation": "All original generated PNG bytes preserved; RGBA candidates never overwrite originals.",
+  "entries": [
+    {
+      "id": "C-01",
+      "season": "Base",
+      "appearance": "Day",
+      "owner_visual_approval": true,
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Base/Day/Originals/BBB_Clock_Base_Day_Original.png",
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Base/Day/RGBA_Candidates/BBB_Clock_Base_Day_RGBA_Candidate.png",
+      "original_mode": "RGBA",
+      "pixel_size": [
+        1774,
+        887
+      ],
+      "source_sha256": "d6b023f8b698f57016a39e8cf63d3954369b176504843aea1dca10cec6fa0d09",
+      "candidate_sha256": "d6b023f8b698f57016a39e8cf63d3954369b176504843aea1dca10cec6fa0d09",
+      "candidate_transparency": "verified PNG alpha channel and transparent corners",
+      "rgba_candidate_method": "identical original PNG, native RGBA",
+      "source_image_file": "a_high_quality_colorful_glossy_cartoon_vector_de.png",
+      "candidate_image_file": "a_high_quality_colorful_glossy_cartoon_vector_de.png",
+      "rgbanotfinal": false,
+      "xcode_imported": false,
+      "physical_device_qa": false
+    },
+    {
+      "id": "C-02",
+      "season": "Base",
+      "appearance": "Night",
+      "owner_visual_approval": true,
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Base/Night/Originals/BBB_Clock_Base_Night_Original.png",
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Base/Night/RGBA_Candidates/BBB_Clock_Base_Night_RGBA_Candidate.png",
+      "original_mode": "RGBA",
+      "pixel_size": [
+        1774,
+        887
+      ],
+      "source_sha256": "eaeebd1fdb168ed26d62f40d2b90cb9849f001dc831a5004ff96428e528d544b",
+      "candidate_sha256": "eaeebd1fdb168ed26d62f40d2b90cb9849f001dc831a5004ff96428e528d544b",
+      "candidate_transparency": "verified PNG alpha channel and transparent corners",
+      "rgba_candidate_method": "identical original PNG, native RGBA",
+      "source_image_file": "a_detailed_high_resolution_glossy_cartoon_night.png",
+      "candidate_image_file": "a_detailed_high_resolution_glossy_cartoon_night.png",
+      "rgbanotfinal": false,
+      "xcode_imported": false,
+      "physical_device_qa": false
+    },
+    {
+      "id": "C-03",
+      "season": "Halloween",
+      "appearance": "Day",
+      "owner_visual_approval": true,
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Halloween/Day/Originals/BBB_Clock_Halloween_Day_Original.png",
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Halloween/Day/RGBA_Candidates/BBB_Clock_Halloween_Day_RGBA_Candidate.png",
+      "original_mode": "RGBA",
+      "pixel_size": [
+        1774,
+        887
+      ],
+      "source_sha256": "6f7e21c9ed9638343a47156d8444086842abf1cbb3fb7e4dac54d99825e2c141",
+      "candidate_sha256": "6f7e21c9ed9638343a47156d8444086842abf1cbb3fb7e4dac54d99825e2c141",
+      "candidate_transparency": "verified PNG alpha channel and transparent corners",
+      "rgba_candidate_method": "identical original PNG, native RGBA",
+      "source_image_file": "a_high_quality_glossy_cartoon_halloween_day_di.png",
+      "candidate_image_file": "a_high_quality_glossy_cartoon_halloween_day_di.png",
+      "rgbanotfinal": false,
+      "xcode_imported": false,
+      "physical_device_qa": false
+    },
+    {
+      "id": "C-04",
+      "season": "Halloween",
+      "appearance": "Night",
+      "owner_visual_approval": true,
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Halloween/Night/Originals/BBB_Clock_Halloween_Night_Original.png",
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Halloween/Night/RGBA_Candidates/BBB_Clock_Halloween_Night_RGBA_Candidate.png",
+      "original_mode": "RGBA",
+      "pixel_size": [
+        1752,
+        897
+      ],
+      "source_sha256": "4069cb12565c4d11286b1abfa6866d9d9925546ad99d9aedc5b265f124c59e39",
+      "candidate_sha256": "4069cb12565c4d11286b1abfa6866d9d9925546ad99d9aedc5b265f124c59e39",
+      "candidate_transparency": "verified PNG alpha channel and transparent corners",
+      "rgba_candidate_method": "identical original PNG, native RGBA",
+      "source_image_file": "glossy_berry_halloween_frame.png",
+      "candidate_image_file": "glossy_berry_halloween_frame.png",
+      "rgbanotfinal": false,
+      "xcode_imported": false,
+      "physical_device_qa": false
+    },
+    {
+      "id": "C-05",
+      "season": "Christmas",
+      "appearance": "Day",
+      "owner_visual_approval": true,
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Christmas/Day/Originals/BBB_Clock_Christmas_Day_Original.png",
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Christmas/Day/RGBA_Candidates/BBB_Clock_Christmas_Day_RGBA_Candidate.png",
+      "original_mode": "RGBA",
+      "pixel_size": [
+        1774,
+        887
+      ],
+      "source_sha256": "5eb4bf8c16bb99a47968e4c5f00d0cc59949deb6f908f58fb3b760443c525077",
+      "candidate_sha256": "5eb4bf8c16bb99a47968e4c5f00d0cc59949deb6f908f58fb3b760443c525077",
+      "candidate_transparency": "verified PNG alpha channel and transparent corners",
+      "rgba_candidate_method": "identical original PNG, native RGBA",
+      "source_image_file": "glossy_berry_christmas_clock_frame_german_characte.png",
+      "candidate_image_file": "glossy_berry_christmas_clock_frame_german_characte.png",
+      "rgbanotfinal": false,
+      "xcode_imported": false,
+      "physical_device_qa": false
+    },
+    {
+      "id": "C-06",
+      "season": "Christmas",
+      "appearance": "Night",
+      "owner_visual_approval": true,
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Christmas/Night/Originals/BBB_Clock_Christmas_Night_Original.png",
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Christmas/Night/RGBA_Candidates/BBB_Clock_Christmas_Night_RGBA_Candidate.png",
+      "original_mode": "RGBA",
+      "pixel_size": [
+        1774,
+        887
+      ],
+      "source_sha256": "b047bb456755213894ac06eec482009e14032266eff44df7579bf46faa7e4d12",
+      "candidate_sha256": "b047bb456755213894ac06eec482009e14032266eff44df7579bf46faa7e4d12",
+      "candidate_transparency": "verified PNG alpha channel and transparent corners",
+      "rgba_candidate_method": "identical original PNG, native RGBA",
+      "source_image_file": "a_vibrant_glossy_high_detail_cartoon_christmas.png",
+      "candidate_image_file": "a_vibrant_glossy_high_detail_cartoon_christmas.png",
+      "rgbanotfinal": false,
+      "xcode_imported": false,
+      "physical_device_qa": false
+    },
+    {
+      "id": "C-07",
+      "season": "Thanksgiving",
+      "appearance": "Day",
+      "owner_visual_approval": true,
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Thanksgiving/Day/Originals/BBB_Clock_Thanksgiving_Day_Original.png",
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Thanksgiving/Day/RGBA_Candidates/BBB_Clock_Thanksgiving_Day_RGBA_Candidate.png",
+      "original_mode": "RGBA",
+      "pixel_size": [
+        1774,
+        887
+      ],
+      "source_sha256": "50ad1ed47e177c69f8d1f07d064bada257fdde0a27080b23239b8582b9b674b2",
+      "candidate_sha256": "50ad1ed47e177c69f8d1f07d064bada257fdde0a27080b23239b8582b9b674b2",
+      "candidate_transparency": "verified PNG alpha channel and transparent corners",
+      "rgba_candidate_method": "identical original PNG, native RGBA",
+      "source_image_file": "a_detailed_colorful_2d_glossy_cartoon_illustratio.png",
+      "candidate_image_file": "a_detailed_colorful_2d_glossy_cartoon_illustratio.png",
+      "rgbanotfinal": false,
+      "xcode_imported": false,
+      "physical_device_qa": false
+    },
+    {
+      "id": "C-08",
+      "season": "Thanksgiving",
+      "appearance": "Night",
+      "owner_visual_approval": true,
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Thanksgiving/Night/Originals/BBB_Clock_Thanksgiving_Night_Original.png",
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Thanksgiving/Night/RGBA_Candidates/BBB_Clock_Thanksgiving_Night_RGBA_Candidate.png",
+      "original_mode": "RGB",
+      "pixel_size": [
+        1774,
+        887
+      ],
+      "source_sha256": "8490b26b299200b1fb8ac46c3903b8f237f8fa487104ce0f8a6dd3e687797df3",
+      "candidate_sha256": "83e31c3da82e6a563e0b6584bd80852f3eba9ca1c315604e63527457048089d0",
+      "candidate_transparency": "verified PNG alpha channel and transparent corners",
+      "rgba_candidate_method": "non-destructive background separation, owner visual review still required",
+      "source_image_file": "a_vibrant_highly_detailed_cartoon_style_decorativ.png",
+      "candidate_image_file": "C08_grabcut_candidate.png",
+      "rgbanotfinal": true,
+      "xcode_imported": false,
+      "physical_device_qa": false
+    },
+    {
+      "id": "C-09",
+      "season": "Birthday",
+      "appearance": "Day",
+      "owner_visual_approval": true,
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Birthday/Day/Originals/BBB_Clock_Birthday_Day_Original.png",
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Birthday/Day/RGBA_Candidates/BBB_Clock_Birthday_Day_RGBA_Candidate.png",
+      "original_mode": "RGBA",
+      "pixel_size": [
+        1774,
+        887
+      ],
+      "source_sha256": "d731ab45a093a835b4ed278e8eebbb16602bc61f2c6575698904de6d96b619e2",
+      "candidate_sha256": "d731ab45a093a835b4ed278e8eebbb16602bc61f2c6575698904de6d96b619e2",
+      "candidate_transparency": "verified PNG alpha channel and transparent corners",
+      "rgba_candidate_method": "identical original PNG, native RGBA",
+      "source_image_file": "a_highly_detailed_glossy_colorful_cartoon_birth.png",
+      "candidate_image_file": "a_highly_detailed_glossy_colorful_cartoon_birth.png",
+      "rgbanotfinal": false,
+      "xcode_imported": false,
+      "physical_device_qa": false
+    },
+    {
+      "id": "C-10",
+      "season": "Birthday",
+      "appearance": "Night",
+      "owner_visual_approval": true,
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Birthday/Night/Originals/BBB_Clock_Birthday_Night_Original.png",
+      "rgba_candidate_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Birthday/Night/RGBA_Candidates/BBB_Clock_Birthday_Night_RGBA_Candidate.png",
+      "original_mode": "RGB",
+      "pixel_size": [
+        1774,
+        887
+      ],
+      "source_sha256": "06ec1b161f7d611f2605962b007840e36cced932613a2dc0160faa7d815b6495",
+      "candidate_sha256": "2bb215ee1bdcd125d6a5fccff84ac4881966dae2a2d32e1471121fe7667d9ac2",
+      "candidate_transparency": "verified PNG alpha channel and transparent corners",
+      "rgba_candidate_method": "non-destructive background separation, owner visual review still required",
+      "source_image_file": "a_highly_polished_colorful_glossy_cartoon_kawaii.png",
+      "candidate_image_file": "C10_grabcut_candidate.png",
+      "rgbanotfinal": true,
+      "xcode_imported": false,
+      "physical_device_qa": false
+    }
+  ]
+}

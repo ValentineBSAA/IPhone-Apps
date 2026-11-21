@@ -1,0 +1,17 @@
+{
+  "mapping": [
+    {
+      "archive_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/00_Specs_And_Ledgers/H1_Batch01_Manifest.json",
+      "existing_sha256": "2ee849c2f6a4d34141ddf2f0081b59af627562c81ece5d0a9d9acfe205ad9a71",
+      "staged_path": "StrawberryShortcakeBlockBlast/ArtSource/00_Consolidated_H1_2026-11-20/Preserved_H1_Batch01_Archive_Metadata/H1_Batch01_Manifest.json",
+      "zip_sha256": "2e562d00943f160c69c8ff45fe1ad3d9c616ba503012b0ea035f6514dd5212a9"
+    },
+    {
+      "archive_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/00_Specs_And_Ledgers/H1_Batch01_README.md",
+      "existing_sha256": "2aac88d47edb895178cc91482cdd756d8a1251357d679f40094cbb5e0c1dff94",
+      "staged_path": "StrawberryShortcakeBlockBlast/ArtSource/00_Consolidated_H1_2026-11-20/Preserved_H1_Batch01_Archive_Metadata/H1_Batch01_README.md",
+      "zip_sha256": "2b18ab9e9e5ab7d6ee111d3d979f4edc815f2124921f0d02abfec2fbc19f1b0b"
+    }
+  ],
+  "status": "Two historical Batch 01 metadata files preserved without overwriting"
+}

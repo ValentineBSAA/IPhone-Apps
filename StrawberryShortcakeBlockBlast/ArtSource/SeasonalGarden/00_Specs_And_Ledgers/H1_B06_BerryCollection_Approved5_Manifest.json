@@ -1,0 +1,110 @@
+{
+  "project": "Berry Berry Blast",
+  "batch": "H1-B06",
+  "family": "Berry Collection",
+  "state": "5 of 8 owner visually approved; BC-06 Thanksgiving Night, BC-07 Birthday Day, BC-08 Birthday Night not generated or approved",
+  "source_policy": "Five exact original PNGs copied, no synthetic RGBA generated. Original RGB checkerboard backgrounds require independent manual edge QA.",
+  "github_binary_staged": false,
+  "entries": [
+    {
+      "id": "BC-01",
+      "batch": "H1-B06",
+      "family": "Berry Collection",
+      "holiday": "Halloween",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Day/Originals/Season_Halloween_Day_BerryCollection_Original.png",
+      "original_sha256": "f8b8d01b9214adaf74ba7b6231f5527d1c9cade50511f3fbf6068e84dcc7c129",
+      "original_bytes": 2383107,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BC-02",
+      "batch": "H1-B06",
+      "family": "Berry Collection",
+      "holiday": "Halloween",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Halloween/Night/Originals/Season_Halloween_Night_BerryCollection_Original.png",
+      "original_sha256": "a7d79cb3a8a65e37465f69779f4e42387fdd0ae9cc987d973c8040e891fc29a3",
+      "original_bytes": 2430124,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BC-03",
+      "batch": "H1-B06",
+      "family": "Berry Collection",
+      "holiday": "Christmas",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Day/Originals/Season_Christmas_Day_BerryCollection_Original.png",
+      "original_sha256": "8651d73345ec107c6f7d15f314f833dbf97b1fafb621bb8ac60cb4bc8d2c5518",
+      "original_bytes": 2408752,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BC-04",
+      "batch": "H1-B06",
+      "family": "Berry Collection",
+      "holiday": "Christmas",
+      "appearance": "Night",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Christmas/Night/Originals/Season_Christmas_Night_BerryCollection_Original.png",
+      "original_sha256": "88f9ae1bc11389115e35e8f817b73fc589b2fdeeeb3b2f706b03b5e574bda9d5",
+      "original_bytes": 2421308,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    },
+    {
+      "id": "BC-05",
+      "batch": "H1-B06",
+      "family": "Berry Collection",
+      "holiday": "Thanksgiving",
+      "appearance": "Day",
+      "original_path": "StrawberryShortcakeBlockBlast/ArtSource/SeasonalGarden/Thanksgiving/Day/Originals/Season_Thanksgiving_Day_BerryCollection_Original.png",
+      "original_sha256": "644992834698061c6ca7fd2228b774102fd0a326f0394beb056f663afbda29df",
+      "original_bytes": 2466663,
+      "original_dimensions": [
+        1254,
+        1254
+      ],
+      "original_mode": "RGB",
+      "visual_approved": true,
+      "rgba_candidate_path": null,
+      "rgba_candidate_sha256": null,
+      "rgba_final_approved": false,
+      "runtime_integrated": false
+    }
+  ]
+}

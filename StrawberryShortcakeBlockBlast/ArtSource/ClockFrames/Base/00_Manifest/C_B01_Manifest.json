@@ -1,0 +1,50 @@
+{
+  "project": "Berry Berry Blast",
+  "family": "Base permanent Day/Night home clock (NONSEASONAL)",
+  "batch": "C-B01",
+  "status": "2/2 visual designs owner-approved, true RGBA source verified, Xcode and real iPhone QA pending.",
+  "warning": "Do not overwrite existing base Day icons, 30 legacy Night or 40 approved Night Garden icons.",
+  "entry_count": 2,
+  "entries": [
+    {
+      "batch": "C-B01",
+      "scope": "Base clock, permanent",
+      "appearance": "Day",
+      "semantic": "HomeDigitalClockFrame",
+      "source_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Base/Day/Originals/BBB_BaseClock_Day_Original.png",
+      "rgba_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Base/Day/RGBA_Candidates/BBB_BaseClock_Day_RGBA.png",
+      "sha256": "d6b023f8b698f57016a39e8cf63d3954369b176504843aea1dca10cec6fa0d09",
+      "size_bytes": 2013557,
+      "width": 1774,
+      "height": 887,
+      "transparent_pixels": 402343,
+      "partial_alpha_pixels": 1170654,
+      "opaque_pixels": 541,
+      "owner_visual_approval": "YES",
+      "source_alpha_check": "PASS_TRUE_RGBA",
+      "rgba_derivative": "EXACT_COPY_ALREADY_RGBA",
+      "xcode_import": "NOT_STARTED",
+      "physical_qa": "NOT_STARTED"
+    },
+    {
+      "batch": "C-B01",
+      "scope": "Base clock, permanent",
+      "appearance": "Night",
+      "semantic": "HomeDigitalClockFrame",
+      "source_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Base/Night/Originals/BBB_BaseClock_Night_Original.png",
+      "rgba_path": "StrawberryShortcakeBlockBlast/ArtSource/ClockFrames/Base/Night/RGBA_Candidates/BBB_BaseClock_Night_RGBA.png",
+      "sha256": "eaeebd1fdb168ed26d62f40d2b90cb9849f001dc831a5004ff96428e528d544b",
+      "size_bytes": 2214635,
+      "width": 1774,
+      "height": 887,
+      "transparent_pixels": 348319,
+      "partial_alpha_pixels": 1224957,
+      "opaque_pixels": 262,
+      "owner_visual_approval": "YES",
+      "source_alpha_check": "PASS_TRUE_RGBA",
+      "rgba_derivative": "EXACT_COPY_ALREADY_RGBA",
+      "xcode_import": "NOT_STARTED",
+      "physical_qa": "NOT_STARTED"
+    }
+  ]
+}
