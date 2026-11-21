@@ -32,8 +32,8 @@ Each holiday needs a new, individually illustrated **Day** and **Night** counter
 | C-06 | C-B03 | Christmas | Night | ✅ original generated | ✅ OWNER APPROVED | ⬜ RGBA edge/halo QA pending | ⬜ source package pending | ⬜ |
 | C-07 | C-B04 | Thanksgiving | Day | ✅ original generated | ✅ OWNER APPROVED | ⬜ RGBA/edge QA pending | ⬜ source package pending | ⬜ |
 | C-08 | C-B04 | Thanksgiving | Night | ✅ original generated | ✅ OWNER APPROVED | ⚠ checkerboard may be baked in; alpha verification/cleanup pending | ⬜ source package pending | ⬜ |
-| C-09 | C-B05 | Birthday | Day | ⬜ NEXT: generate one original for owner review | ⬜ | ⬜ | ⬜ | ⬜ |
-| C-10 | C-B05 | Birthday | Night | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| C-09 | C-B05 | Birthday | Day | ✅ original generated | ✅ OWNER APPROVED | ⬜ source alpha edge QA pending | ⬜ source package pending | ⬜ |
+| C-10 | C-B05 | Birthday | Night | ⬜ NEXT: one image to generate and review | ⬜ | ⬜ | ⬜ | ⬜ |
 
 **Thanksgiving reference:** owner previously accepted the harvest-themed wide strawberry clock plaque as the holiday *design baseline*, not as a replacement for the two regular clock images. This does **not** automatically approve both final Thanksgiving clock counterparts.
 
@@ -96,3 +96,11 @@ C-03 Halloween Day and C-04 Halloween Night are approved visual designs by owner
 - [ ] **NEXT C-09 Birthday Day**, generate one original matching the established wide plaque with large blank center, birthday-strawberry cake, balloons and pink sunny palette. Ask for owner review before C-10 Night.
 
 **Visual clock artwork approvals: 8/10: base Day/Night, Halloween Day/Night, Christmas Day/Night, Thanksgiving Day/Night.** C-09 and C-10 remain unapproved. This checklist is the source of truth; do not generate collages or merge unrelated image assets.
+
+
+## Birthday clock visual checkpoint
+- [x] C-09 Birthday Day: owner-approved pink gingham strawberry ribbon, cake/candle, balloons, gifts and sunny blank digital-clock center. Visually accepted only; source alpha quality, preview/ZIP, binary GitHub staging and iPhone runtime QA pending.
+- [ ] **Next C-10 Birthday Night:** generate exactly one Day-matched wide horizontal plaque with a blank lavender/purple center for SwiftUI live 12-hour digital time, moon/stars, illuminated birthday cake and candle, balloons and ribbon; wait for explicit owner acceptance.
+- [ ] Once C-10 accepted, assemble the **complete 10-clock family** in source originals / RGBA QA candidates / manifest / checker-light-dark proofs / ZIP, preserving all approved existing asset bytes and all Night Garden art separately.
+
+**Visual approvals now 9/10: Regular Day/Night 2, Halloween Day/Night 2, Christmas Day/Night 2, Thanksgiving Day/Night 2, Birthday Day 1.** Runtime and asset-pack status are independent.
