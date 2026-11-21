@@ -54,3 +54,10 @@ Before adding scenarios that invoke live app handlers, implement **D0c dependenc
 - [x] Fixed all simulator JSON/UDID file references in the [workflow on main](https://github.com/ValentineBSAA/IPhone-Apps/blob/main/.github/workflows/berry-d0b-state-time-iphone16e.yml). Corrected workflow was pushed and starts [fresh CI run #44864274159](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44864274159), including the finalized canonical-JSON engine comparison change.
 - [ ] Confirm the new CI run's terminal conclusion and **17 selected XCTest method counts** from logs. Mark iPhone simulator acceptance only after actual test execution.
 - [ ] Physical iPhone owner acceptance and production handler integration remain pending regardless of CI outcome.
+
+
+## CI attempt 2 Swift test syntax diagnostic
+- [x] [Corrected-filenames run #44864274159, attempt 1](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44864274159) passed normal source checks, Release compilation and named iPhone 16e simulator discovery, but the Debug XCTest target **failed to compile**. No runtime assertions executed.
+- [x] Exact cause: two D0b test-only `XCTAssertEqual` expressions called a throwing `canonical(_:) -> Data` helper on the right-hand side without `try` (lines 82 and 95). Both now use `try`. No production app, sandbox behavior, wallet or art source was modified.
+- [x] Rerun **attempt 2** accepted on the same GitHub Actions URL. It checks out the latest D0b branch, including the corrected test source and earlier canonical-JSON stabilization.
+- [ ] Recheck terminal 17 selected XCTest results and exact suite counts after attempt 2; keep all six new scenarios `implemented_untested` until confirmed.
