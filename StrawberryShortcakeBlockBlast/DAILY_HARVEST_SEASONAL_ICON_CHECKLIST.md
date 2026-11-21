@@ -29,7 +29,7 @@ Use a clear **little tear-off calendar page (without printed numbers)** as the c
 | DH-05 | Thanksgiving | Day | Warm sunlit calendar, harvested strawberries, berry pie, pumpkins, corn, autumn maple leaves and orange gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ true-alpha/edge QA pending | ⬜ original source not staged | ⬜ |
 | DH-06 | Thanksgiving | Night | Moonlit calendar, harvest basket, berry pie, corn, pumpkins, lanterns and plum-orange gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ RGBA/edge QA pending | ⬜ original source not staged | ⬜ |
 | DH-07 | Birthday | Day | Pink birthday calendar, strawberry cake, balloons, gifts, confetti, sunny berry basket and gingham bow | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ background/alpha QA pending | ⬜ source import pending | ⬜ |
-| DH-08 | Birthday | Night | Lavender moonlit calendar, sparkling balloons, cake candle, berries and ribbon | ⬜ NEXT: single original generation | ⬜ awaiting owner review | ⬜ | ⬜ | ⬜ |
+| DH-08 | Birthday | Night | Moonlit birthday calendar, strawberry basket, golden moon and stars, glowing cake candle, balloons and pink-lavender ribbon | 🟡 GENERATED | ⬜ AWAITING OWNER | ⬜ alpha/edge QA pending | ⬜ source binary not staged | ⬜ |
 
 ## Current checklist
 - [x] Verify actual `DailyHarvest` Home-card code use and daily outcome/resume semantics.
@@ -158,3 +158,11 @@ Links: [H1-B02 Berry Story running checklist](https://github.com/ValentineBSAA/I
 - [ ] No original PNGs claimed GitHub-imported; alpha/edge QC, RGBA derivatives, separate 64/96px proofs, ZIP/manifest, GitHub binary upload and real iPhone testing remain open.
 
 **Daily Harvest H1-B03: 7/8 generated, 7/8 approved.**
+
+
+### DH-08 Birthday Night generation checkpoint
+- [x] One matching birthday-night calendar and harvested strawberry basket original generated and shown in chat, with gold crescent, purple clouds, star sparkles, pink party cake and candle, balloons, birthday present and strawberry-pink/lavender bow.
+- [ ] **Owner visual approval of DH-08 pending.** Do not declare 8/8 owner approved until acceptance.
+- [ ] Source PNG on GitHub, RGBA alpha proof/cleanup if required, source+RGBA ZIP and iPhone QA are independently pending.
+
+**Daily Harvest H1-B03: 8/8 original designs generated, 7/8 owner approved.**
