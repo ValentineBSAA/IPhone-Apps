@@ -22,3 +22,10 @@
 The source deliberately does not change the original Game Over UI, birthday rewards, Day/Night or seasonal variants, quests' real player-facing tap integration, premium cross-key crash atomicity, Build5 Village evolution or Build6 Night Market/Moonberries. This is one integrated development checkpoint toward the entire game, not a publishable finished game.
 
 **No IPA, release, main merge, current-production replacement, or version bump without owner instruction.**
+
+## I1 first-attempt compiler failure and corrected rerun
+
+- [x] [I1 Actions #44873619553 attempt 1](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44873619553) **failed in the simulator test-build compiler**, while production Release QA-exclusion compilation completed. The run checked out the original ambiguous `BerryDeveloperQuestStoryLab.swift:203` array equality before the correction was committed. Failure is the same known D3d Swift type-check error, not a failed Quest/Story or artwork scenario assertion.
+- [x] I1 source has the exact correction: `first == 1 && second == 2 && third == 4 && fourth == 5`, preserving the original Village level values and no player-save modifications.
+- [x] Requested **I1 attempt 2**, which checks out the updated integration branch, with 143 selected XCTest, iOS16 and original art/audio checks, Release QA exclusion and no IPA.
+- [ ] Do not mark I1 green until attempt 2 is terminal SUCCESS with **143/143 selected XCTest, zero failures**, and the separate D3d/D4 runs have been reviewed. Owner physical iPhone16e remains pending.
