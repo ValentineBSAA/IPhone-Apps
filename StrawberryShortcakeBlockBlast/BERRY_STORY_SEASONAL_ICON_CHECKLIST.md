@@ -25,7 +25,7 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 | BS-04 | Christmas | Night | Moonlit Christmas open storybook, sapphire sky, glowing star, snowy trees, fairy lights | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
 | BS-05 | Thanksgiving | Day | Warm harvest storybook, pie, maple leaves, cinnamon-gold chapter star | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/background QA pending | ⬜ source archive pending | ⬜ |
 | BS-06 | Thanksgiving | Night | Candlelit plum and amber storybook, pumpkin, moon and leaves | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/background QA pending | ⬜ source archive pending | ⬜ |
-| BS-07 | Birthday | Day | Strawberry cake storybook with ribbons, balloon and sparkling chapter star | ⬜ NEXT: single image generation | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
+| BS-07 | Birthday | Day | Open strawberry storybook, cake, balloons, gifts and golden chapter star | 🟡 GENERATED | ⬜ AWAITING OWNER | ⚠ visible checkerboard; true RGBA/background cleanup pending | ⬜ source archive pending | ⬜ |
 | BS-08 | Birthday | Night | Lavender birthday storybook with candlelight, confetti, midnight stars | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ### Review gates / packaging
@@ -125,3 +125,12 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 - [ ] Original-to-RGBA QA, checkerboard/background removal where needed, 64px/96px previews, zip/hash manifest, verified GitHub image import and iPhone runtime QA remain pending.
 
 **Authoritative current tally: 6/8 Berry Story visually approved; 6/8 generated before BS-07; zero Berry Story PNG binaries staged in GitHub.** Earlier chronological counts in this ledger are historical snapshots.
+
+
+## BS-07 Birthday Day review checkpoint
+- [x] Birthday Day open-storybook emblem generated in chat, with a gold chapter star, pink cake and candle, balloon cluster, gifts and strawberry gingham ribbon.
+- [ ] Owner visual approval pending; do not advance to BS-08 until accepted.
+- [ ] The image shows a visible checkerboard. Preserve the unmodified original and verify real alpha; create separately reviewed RGBA version after visual approval, without falsely calling it transparent.
+- [ ] Source image binary remains outside GitHub until packaged and imported with verified hashes.
+
+**Current Berry Story tally: 7/8 generated, 6/8 owner-approved.**
