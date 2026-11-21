@@ -23,9 +23,9 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 | BS-02 | Halloween | Night | Moonlit purple enchanted storybook, stars, crescent and luminous chapter star | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
 | BS-03 | Christmas | Day | Snow-kissed red/green strawberry storybook with gold star and holly | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
 | BS-04 | Christmas | Night | Moonlit Christmas open storybook, sapphire sky, glowing star, snowy trees, fairy lights | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
-| BS-05 | Thanksgiving | Day | Warm harvest storybook, pie, maple leaves, cinnamon-gold chapter star | 🟡 GENERATED | ⬜ AWAITING OWNER | ⬜ alpha/background QA pending | ⬜ | ⬜ |
-| BS-06 | Thanksgiving | Night | Candlelit plum and amber storybook, pumpkin and leaves | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| BS-07 | Birthday | Day | Strawberry cake storybook with ribbons, balloon and sparkling chapter star | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| BS-05 | Thanksgiving | Day | Warm harvest storybook, pie, maple leaves, cinnamon-gold chapter star | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/background QA pending | ⬜ source archive pending | ⬜ |
+| BS-06 | Thanksgiving | Night | Candlelit plum and amber storybook, pumpkin, moon and leaves | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/background QA pending | ⬜ source archive pending | ⬜ |
+| BS-07 | Birthday | Day | Strawberry cake storybook with ribbons, balloon and sparkling chapter star | ⬜ NEXT: single image generation | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
 | BS-08 | Birthday | Night | Lavender birthday storybook with candlelight, confetti, midnight stars | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ### Review gates / packaging
@@ -116,3 +116,12 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 - [ ] Confirm true RGBA transparency and edges; original source ZIP, hashes and GitHub binary import remain pending.
 
 **Berry Story tally: 5/8 generated; 4/8 owner-approved.**
+
+
+## Latest owner approval checkpoint (supersedes earlier pending notes)
+- [x] BS-05 Thanksgiving Day individually visually approved by owner (“Good do night”).
+- [x] BS-06 Thanksgiving Night individually visually approved by owner (“Good go on”). Moonlit harvest storybook PNG generated in chat, not yet uploaded as a GitHub binary.
+- [ ] NEXT BS-07 Birthday Day: one open strawberry chapter book original with cake, balloons, candles and pink gingham; await explicit visual approval before BS-08 Birthday Night.
+- [ ] Original-to-RGBA QA, checkerboard/background removal where needed, 64px/96px previews, zip/hash manifest, verified GitHub image import and iPhone runtime QA remain pending.
+
+**Authoritative current tally: 6/8 Berry Story visually approved; 6/8 generated before BS-07; zero Berry Story PNG binaries staged in GitHub.** Earlier chronological counts in this ledger are historical snapshots.
