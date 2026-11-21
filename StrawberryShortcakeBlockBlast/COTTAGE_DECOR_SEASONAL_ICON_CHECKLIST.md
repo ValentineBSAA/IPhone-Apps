@@ -27,7 +27,7 @@ Give this family a distinct, clear **decorating** theme: a cute strawberry-roof 
 | CD-05 | Thanksgiving | Day | Sunny strawberry-roof cottage with golden maple wreath, pumpkins, strawberry berry pie, flower pot, paintbrush and orange gingham ribbon spool | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ original RGB/off-white background; RGBA edge QA pending | ⬜ PNG source not staged | ⬜ |
 | CD-06 | Thanksgiving | Night | Moonlit autumn strawberry cottage, glowing windows, harvest lanterns, pumpkin planters, berry pie, flowerpot, paintbrush, violet ribbon spool and autumn gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ RGB/off-white background; RGBA edge QA pending | ⬜ source PNG not imported | ⬜ |
 | CD-07 | Birthday | Day | Sunny strawberry-roof decorating cottage, birthday cake, balloons, present, floral strawberry planter, pink paintbrush, ribbon spool and gingham bow | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ 1254px RGB, black outside badge; RGBA cutout QA pending | ⬜ source PNG not staged | ⬜ |
-| CD-08 | Birthday | Night | Moonlit purple strawberry cottage, glowing windows, lanterns, balloons, cake candle, present, strawberry flowerpot, pink decorating paintbrush, ribbon spool and pink gingham | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ native RGBA with transparent corner verified; edge QA pending | ⬜ source PNG not imported | ⬜ |
+| CD-08 | Birthday | Night | Moonlit purple strawberry cottage, glowing windows, lanterns, balloons, cake candle, present, strawberry flowerpot, pink decorating paintbrush, ribbon spool and pink gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ native RGBA edge QA pending | ⬜ source PNG not imported | ⬜ |
 
 ## Task gates and handoff
 - [x] Verify the separate `CottageDecorations` Home use-site, not to confuse with H1-B01 cottage/Classic hero assets.
@@ -170,3 +170,14 @@ Links: [H1-B04 checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md) · [Master
 - [ ] On approval, preserve all eight exact original PNG bytes and separately derive any needed RGBA candidates, create source SHA-256 manifest, preview sheets against checker/light/dark and at 64/96/144px, then verify a single categorized ZIP and GitHub import. Keep prior artwork and game state unchanged.
 
 **H1-B05 current: 8/8 generated, 7/8 visually approved.**
+
+
+## Final visual approval checkpoint · H1-B05
+- [x] CD-08 Birthday Night explicitly approved by owner (“Good continue”). Freeze exact generated original; never regenerate or overwrite approved imagery.
+- [x] All eight My Strawberry Cottage **visual designs** approved: Halloween, Christmas, Thanksgiving and Birthday, each Day and Night.
+- [ ] Technical source audit: CD-01 through CD-07 are **RGB originals** (CD-07 black matte; CD-01..06 light/off-white or generated checkerboard), while CD-08 is native RGBA. Preserve all source bytes, derive **seven separate, non-destructive RGBA candidates** and keep CD-08 identical to original. Owner matte/halo acceptance is independent of art design approval.
+- [ ] Package exact originals, RGBA candidates, SHA-256 manifest, checker/cream/dark and 64/96/144px review proofs into verified ZIP. Await owner transparency QA.
+- [ ] Upload verified archive to isolated H1-B05 GitHub stage, then separate Xcode integration and physical iPhone QA. **No image binaries imported yet**, no runtime changes made.
+- [ ] Next artwork category after H1-B05 packaging: H1-B06 Berry Collection Home tile.
+
+**Authoritative visual tally: 8/8 approved; technical RGBA and GitHub binary staging incomplete.**
