@@ -12,7 +12,7 @@
 | Area | Status | Next acceptance gate |
 | --- | --- | --- |
 | Build 3 gameplay, original board and saves | ✅ Hardware-tested baseline | Regression after each release |
-| Build 4 player UI, tools, modes, dev lock, Blossom Glass | 🟠 Implemented on candidate branch; QA pending | CI, then iPhone 14 Pro |
+| Build 4 player UI, tools, modes, dev lock, Blossom Glass | 🟠 Partially hardware-verified in v0.5.16 Build48 | Owner confirmed hidden Garden + Strawberry cheat/restore; board-skin and full save regressions still open |
 | 30 daytime illustrations | ✅ On Build 4 branch in separate Xcode image sets | Appearance / tap testing |
 | 30 Night Edition counterparts | ✅ Imported as 30 individual Xcode imagesets on Build 4 development branch | CI + real-device night-visual QA |
 | Strawberry sun / moon clock icons | 🎨 Illustrated; not integrated | Independent PNG and UI approval |
@@ -21,6 +21,14 @@
 | In-context notices and Daily Quest fixes | 📋 Build 5 scope | In-menu visibility and reward QA |
 | Moonberries, night shop transactions and shop switch | 📋 Build 6 scope | Persistent economy + real-clock QA |
 | iPhone 16 AltStore install/signing | ⚠️ Unresolved | Capture exact installation error |
+
+## Latest on-device milestone and next step (November 21, 2026)
+
+**Verified CI source:** I6 v0.5.16 Build 48 from [successful run #44947069107](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44947069107), 8/8 actual native iPhone simulator UI checks, 169/169 engine/economy/restore tests, original audio and a private unsigned IPA. **Owner has now installed and verified the hidden Developer Garden opens, one real Cheat Strawberries grant works, and Restore Previous Strawberry Balance works on their physical iPhone.** This is a partial physical-device gate, not sign-off for all game modes or saved-game migration.
+
+**Short remaining Build 48 sanity check:** ensure old Endless saves, owned cosmetics and wallet remained intact through install; open one advanced isolated test lab. Do not mark unrelated Shop/Story/Quest or all device regressions complete without actual owner confirmation.
+
+**Next feature milestone is Gate A2, [Issue #95](https://github.com/ValentineBSAA/IPhone-Apps/issues/95):** implement accurate device-local **12-hour h:mm:ss a** on the existing Home bar and a **seconds-resolution HH:MM:SS** countdown to 6 PM Moonlight / 6 AM Sunrise, with deterministic transition tests and a read-only virtual time fixture in the permanent Developer Garden. This is independent of the approved decorative analog clock artwork, seasonal illustrations and Moonberry economy. Later sequence: **Gate B Night Edition visuals/clock artwork → Gate C Build5 notification/Village/Quest polish → Gate D Build6 real Moonberry Night Market + separate Moonberry cheats/restore**. Each addition keeps all already working Developer Garden controls.
 
 ## Night Edition assets: 30 exact pairings
 
