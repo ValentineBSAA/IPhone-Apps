@@ -171,9 +171,9 @@ struct BerryDeveloperGardenView: View {
     }
     private var advancedTools: [Tool] {
         #if BERRY_INTERNAL_QA
-        return [.sandbox, .stateLab, .commerce, .toolActions, .questStory, .economy, .moonberries, .build, .clock, .experimental, .notifications]
+        return [.notifications, .sandbox, .stateLab, .commerce, .toolActions, .questStory, .economy, .moonberries, .build, .clock, .experimental]
         #else
-        return [.economy, .moonberries, .build, .clock, .experimental, .notifications]
+        return [.notifications, .economy, .moonberries, .build, .clock, .experimental]
         #endif
     }
 
