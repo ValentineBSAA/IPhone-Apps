@@ -326,7 +326,7 @@ final class BerryGameSession: ObservableObject {
         previousRewardEntry = nil
         if engine.score > bestScore {
             bestScore = engine.score
-            UserDefaults.standard.set(bestScore, forKey: bestScoreKey(for: activeMode))
+            checkoutDefaults.set(bestScore, forKey: bestScoreKey(for: activeMode))
         }
         lastEarned = outcome.earned
         lastClearedLines = outcome.clearedLines
@@ -367,7 +367,12 @@ final class BerryGameSession: ObservableObject {
             }
         }
         gameOver = !engine.hasMove()
-        BerryProgression.shared.recordPlacement(mode: activeMode, clearedLines: outcome.clearedLines)
+        // Isolated QA sessions must not write real daily quest counters.
+        // The normal live session retains original progression callbacks.
+        if checkoutDefaults === UserDefaults.standard {
+            BerryProgression.shared.recordPlacement(mode: activeMode,
+                                                     clearedLines: outcome.clearedLines)
+        }
         save()
         return true
     }
@@ -683,7 +688,7 @@ final class BerryGameSession: ObservableObject {
         }
         if engine.score > bestScore {
             bestScore = engine.score
-            UserDefaults.standard.set(bestScore, forKey: bestScoreKey(for: activeMode))
+            checkoutDefaults.set(bestScore, forKey: bestScoreKey(for: activeMode))
         }
         ensureEndlessPlayable()
         gameOver = !engine.hasMove()
