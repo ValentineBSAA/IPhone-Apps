@@ -322,3 +322,11 @@
 - [x] Add focused input tracking and a keyboard-toolbar Done button for medication strength, bottle inventory, label name and notes. Interactive swipe-to-dismiss also available.
 - [ ] Build & CI validation of iOS 16 SwiftUI keyboard toolbar.
 - [ ] Real iPhone: both decimal fields expose a usable Done action, keyboard dismisses without saving, scroll-drag dismissal works, Save/Cancel still preserve intended state.
+
+## v0.3.0 icon and dropdown consistency across everyday trackers
+- [x] Consolidated reuse of the exact twelve approved feature images using a shared SwiftUI helper across Sleep/Rest, hydration, medications, symptoms, posture, heart rate, BP, reports, calendar, reminders and settings.
+- [x] Added reversible native menus for drink type, medication event status, sleep/rest type, quality/recovery, posture, heart-rate source/context, BP context and optional multi-context tags.
+- [x] Kept critical one-tap shortcut buttons (sleep minutes, hydration amounts, common symptoms); old “Not rated” and original data storage/Save remain intact.
+- [x] Added mapping/unit tests and workflow checks; original icon files and app identifier unchanged.
+- [ ] GitHub simulator/iPhone builds plus automated regression success on the final commit.
+- [ ] Physical iPhone QA, screenshots, large fonts and Blossom/Midnight contrast; old data/backup import remains untouched. No stable merge yet.

@@ -162,6 +162,19 @@ jobs:
           test -f Tests/PosiesDailyCareTests.swift
           test -f Tests/PosiesMedicationCatalogTests.swift
           test -f Tests/PosiesMedicationCabinetPolishTests.swift
+          test -f Tests/PosiesFeatureVisualsTests.swift
+          test -f Sources/PosiesFeatureVisuals.swift
+          grep -q 'PosiesFeatureHeading' Sources/ExpandedTrackingView.swift
+          grep -q 'PosiesChoiceMenu' Sources/ExpandedTrackingView.swift
+          grep -q 'PosiesTagsMenu' Sources/ExpandedTrackingView.swift
+          grep -q 'PosiesFeatureSectionTitle' Sources/LogViews.swift
+          grep -q 'PosiesChoiceMenu' Sources/LogViews.swift
+          grep -q 'PosiesFeatureIcon' Sources/PosiesHomeCarousel.swift
+          grep -q 'PosiesFeatureSectionTitle' Sources/PosiesReportsView.swift
+          grep -q 'PosiesFeatureIcon' Sources/PosiesCalendarView.swift
+          grep -q 'PosiesFeatureSectionTitle' Sources/PosiesRemindersView.swift
+          grep -q 'PosiesFeatureIcon' Sources/PosiesMedicationCabinetView.swift
+          echo "Verified original artwork and reversible dropdowns across tracker screens"
           grep -q '@FocusState private var focusedField' Sources/PosiesMedicationCabinetView.swift
           grep -q 'ToolbarItemGroup(placement: .keyboard)' Sources/PosiesMedicationCabinetView.swift
           grep -q 'scrollDismissesKeyboard(.interactively)' Sources/PosiesMedicationCabinetView.swift
