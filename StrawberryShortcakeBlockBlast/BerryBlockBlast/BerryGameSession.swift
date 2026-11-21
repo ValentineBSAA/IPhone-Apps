@@ -500,8 +500,10 @@ final class BerryGameSession: ObservableObject {
               berries >= BerryEconomy.shufflePrice,
               engine.reshuffleTray() else { return false }
         berries -= BerryEconomy.shufflePrice
-        BerryEconomyLedger.shared.recordSpend(BerryEconomy.shufflePrice,
-                                              item: "Shuffle Continue")
+        // The normal player session still uses the shared ledger.
+        // Disposable QA sessions must never charge the real player's ledger.
+        checkoutLedger.recordSpend(BerryEconomy.shufflePrice,
+                                   item: "Shuffle Continue")
         ensureEndlessPlayable()
         gameOver = !engine.hasMove()
         previous = nil
@@ -512,7 +514,7 @@ final class BerryGameSession: ObservableObject {
         lastMessage = "🍓 Shuffle Continue! Your garden and score are safe."
         rewardsLog.insert("🍓 -\(BerryEconomy.shufflePrice) • Shuffle Continue", at: 0)
         rewardsLog = Array(rewardsLog.prefix(20))
-        UserDefaults.standard.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
+        checkoutDefaults.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
         save()
         return true
     }
