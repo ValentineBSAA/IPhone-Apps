@@ -17,7 +17,15 @@ final class BerryProgression: ObservableObject {
         }
     }
     private let namespace = "berryberryblast.progression.v059."
-    private init() {}
+    /// Live UI uses .shared with the original device-local date and standard
+    /// preferences. Internal QA creates an entirely separate progression.
+    private let defaults: UserDefaults
+    private let nowProvider: () -> Date
+    init(defaults: UserDefaults = .standard,
+         now: @escaping () -> Date = { Date() }) {
+        self.defaults = defaults
+        self.nowProvider = now
+    }
 
     struct Quest: Identifiable {
         let id: String
@@ -28,12 +36,12 @@ final class BerryProgression: ObservableObject {
         let reward: Int
     }
 
-    private var today: String { BerryDailyHistory.dateKey(for: Date()) }
+    private var today: String { BerryDailyHistory.dateKey(for: nowProvider()) }
     private func key(_ suffix: String) -> String { namespace + today + "." + suffix }
-    private func count(_ name: String) -> Int { UserDefaults.standard.integer(forKey: key(name)) }
+    private func count(_ name: String) -> Int { defaults.integer(forKey: key(name)) }
     private func add(_ name: String, amount: Int = 1) {
         let value = min(1000000, count(name) + max(0, amount))
-        UserDefaults.standard.set(value, forKey: key(name))
+        defaults.set(value, forKey: key(name))
         revision &+= 1
     }
 
@@ -44,31 +52,31 @@ final class BerryProgression: ObservableObject {
             Quest(id: "moves", title: "Garden Gardener", detail: "Place 18 puzzle pieces", symbol: "hand.tap.fill", target: 18, reward: 20),
             Quest(id: "chapters", title: "Story Keeper", detail: "Finish a Berry Story chapter", symbol: "book.closed.fill", target: 1, reward: 35)
         ]
-        let offset = (Calendar.current.ordinality(of: .day, in: .era, for: Date()) ?? 0) % base.count
+        let offset = (Calendar.current.ordinality(of: .day, in: .era, for: nowProvider()) ?? 0) % base.count
         return (0..<3).map { base[(offset + $0) % base.count] }
     }
 
     func progress(for quest: Quest) -> Int { min(quest.target, count(quest.id)) }
-    func isClaimed(_ quest: Quest) -> Bool { UserDefaults.standard.bool(forKey: key("claimed." + quest.id)) }
+    func isClaimed(_ quest: Quest) -> Bool { defaults.bool(forKey: key("claimed." + quest.id)) }
     var claimedToday: Int { quests.filter(isClaimed).count }
-    var claimedTotal: Int { UserDefaults.standard.integer(forKey: namespace + "claimed.total") }
+    var claimedTotal: Int { defaults.integer(forKey: namespace + "claimed.total") }
 
     func recordPlacement(mode: BerryMode, clearedLines: Int) {
         add("moves")
         if clearedLines > 0 { add("lines", amount: clearedLines) }
         let modeName = mode.rawValue
-        var modes = UserDefaults.standard.stringArray(forKey: key("playedModes")) ?? []
+        var modes = defaults.stringArray(forKey: key("playedModes")) ?? []
         if !modes.contains(modeName) {
             modes.append(modeName)
-            UserDefaults.standard.set(modes, forKey: key("playedModes"))
+            defaults.set(modes, forKey: key("playedModes"))
             add("modes")
         }
     }
 
     func recordStoryChapter(_ chapter: Int) {
         let name = "chapter." + String(chapter)
-        if !UserDefaults.standard.bool(forKey: key(name)) {
-            UserDefaults.standard.set(true, forKey: key(name))
+        if !defaults.bool(forKey: key(name)) {
+            defaults.set(true, forKey: key(name))
             add("chapters")
         }
         celebrate("📖 Story chapter complete! The village is growing.")
@@ -77,11 +85,13 @@ final class BerryProgression: ObservableObject {
 
     @discardableResult
     func claim(_ quest: Quest, into session: BerryGameSession) -> Bool {
+        // Never mix a test progression store with a real owner's GameSession.
+        guard session.usesCheckoutDefaults(defaults) else { return false }
         guard quests.contains(where: { $0.id == quest.id }),
               progress(for: quest) >= quest.target,
               !isClaimed(quest) else { return false }
-        UserDefaults.standard.set(true, forKey: key("claimed." + quest.id))
-        UserDefaults.standard.set(claimedTotal + 1, forKey: namespace + "claimed.total")
+        defaults.set(true, forKey: key("claimed." + quest.id))
+        defaults.set(claimedTotal + 1, forKey: namespace + "claimed.total")
         // Historical payout keys are never re-used for new daily quests.
         session.awardOnce("quest-" + today + "-" + quest.id, amount: quest.reward, reason: "Berry Quest: " + quest.title)
         celebrate("🍓 " + quest.title + " · +" + String(quest.reward) + " strawberries!")
@@ -90,8 +100,8 @@ final class BerryProgression: ObservableObject {
     }
 
     var villageLevel: Int {
-        let chapter = max(1, UserDefaults.standard.integer(forKey: "berryblockblast.story.level"))
-        return min(5, 1 + (chapter - 1) / 2 + min(2, BerryDailyHistory.completed.count / 7))
+        let chapter = max(1, defaults.integer(forKey: "berryblockblast.story.level"))
+        return min(5, 1 + (chapter - 1) / 2 + min(2, BerryDailyHistory.completedDays(defaults: defaults).count / 7))
     }
 }
 

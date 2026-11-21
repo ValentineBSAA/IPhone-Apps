@@ -33,6 +33,11 @@ final class BerryGameSession: ObservableObject {
     /// Normal gameplay reads the local clock; isolated Daily QA can supply a
     /// virtual date without changing the phone clock or other game modes.
     private let nowProvider: () -> Date
+    /// Guards quest-claim payments against mixing an isolated QA progression
+    /// with a different (possibly live) GameSession preferences store.
+    func usesCheckoutDefaults(_ defaults: UserDefaults) -> Bool {
+        checkoutDefaults === defaults
+    }
     nonisolated static let goldenStrawberryCost = 250
     static let classicSaveKey = "berryblockblast.classic.engine.v055"
     static let classicSavedFlagKey = "berryblockblast.classic.savedFlag.v056b2"
