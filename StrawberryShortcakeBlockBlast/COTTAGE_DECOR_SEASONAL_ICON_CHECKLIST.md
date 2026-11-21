@@ -22,8 +22,8 @@ Give this family a distinct, clear **decorating** theme: a cute strawberry-roof 
 |---|---|---|---|---|---|---|---|---|
 | CD-01 | Halloween | Day | Sunny strawberry-roof cottage with flowerpot, paintbrush, ribbon spool, pumpkin lanterns, autumn leaves and sunny orange-lavender gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ original RGB/checkerboard; RGBA edge QA pending | ⬜ original PNG not yet staged | ⬜ |
 | CD-02 | Halloween | Night | Moonlit strawberry-roof cottage, glowing windows and pumpkin-berry lanterns, decorating brush, flowerpot, ribbon spool and purple-orange gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ RGB/off-white background; separate RGBA edge QA pending | ⬜ source PNG not yet staged | ⬜ |
-| CD-03 | Christmas | Day | Snow-frosted strawberry cottage with wreath, red ribbon, candy canes, festive flowerpot, paintbrush and ribbon spool | 🟡 GENERATED (2 candidates) | ⬜ OWNER SELECTION/APPROVAL PENDING | ⚠ checkerboard/background and alpha edges to verify | ⬜ neither source staged | ⬜ |
-| CD-04 | Christmas | Night | Cozy glowing snowy cottage, midnight evergreen lights, wreath, baubles, purple-tinted gardening decorations | ⬜ | ⬜ | ⬜ | ⬜ |
+| CD-03 | Christmas | Day | Snow-frosted strawberry cottage with wreath, red ribbon, candy canes, festive flowerpot, paintbrush and ribbon spool; SECOND image selected | ✅ GENERATED | ✅ OWNER APPROVED (most recent/second version) | ⚠ checkerboard/alpha edge QA pending | ⬜ source PNG import pending | ⬜ |
+| CD-04 | Christmas | Night | Moonlit snow-covered strawberry cottage with lit windows, decorated flowerpot, paintbrush, ribbon spool and holiday lights | ⬜ NEXT: generate one original | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
 | CD-05 | Thanksgiving | Day | Amber harvest cottage, strawberry pie window display, maple leaf garland, pumpkin planters, cozy decorating details | ⬜ | ⬜ | ⬜ | ⬜ |
 | CD-06 | Thanksgiving | Night | Candlelit autumn cottage with pumpkin planters, lanterns, maple wreath and moonlit decorated garden | ⬜ | ⬜ | ⬜ | ⬜ |
 | CD-07 | Birthday | Day | Strawberry cottage with frosted cake decorations, party balloons, present planter, bright pink decorating bow | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -86,3 +86,11 @@ Links: [H1-B04 checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md) · [Master
 - [ ] Once a CD-03 version is approved, proceed to CD-04 Christmas Night, one image at a time. Current approved count remains **2/8** (Halloween Day/Night).
 
 **H1-B05 current: 3/8 slots generated; 2/8 visually approved, CD-03 selection pending.**
+
+
+### CD-03 owner acceptance and CD-04 Christmas Night queued
+- [x] Owner replied “Good continue” after two CD-03 Christmas Day images. Interpret as approval of the **most recently shown (second) version**, while recording that they did not explicitly specify a number. Preserve the second exact original (`a_bright_colorful_highly_polished_cartoon_illust.png`), keep first as unapproved alternate; revise choice if the owner clarifies.
+- [ ] NEXT **CD-04 Christmas Night**, one full-res standalone illustration: same strawberry-roof Christmas decorating cottage, frosted roof and evergreens, moonlit indigo-violet night, warm glowing windows and garden lights, wreath, candy canes, painted planter, paintbrush, ribbon spool and red/purple gingham. No text.
+- [ ] Do not claim image transparency, GitHub binary staging, game runtime mapping or on-device QA. Background cleanup and RGBA candidates remain independent future gates.
+
+**Current H1-B05 visual approvals: 3/8; Christmas Night generation next.**
