@@ -339,3 +339,9 @@ Recommended sequence alongside existing milestones: H5 nonvisual calendar smoke/
 - [x] [D0d CI #44866663042](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44866663042) **SUCCESS**, named iPhone 16e simulator **40/40 selected tests passed** with actual standard-tool GameSession purchase and isolated real ledger/inventory store regression. Release builds without QA-only menus.
 - [x] [Draft PR #67](https://github.com/ValentineBSAA/IPhone-Apps/pull/67) preserves unchanged production defaults, pricing and saved-state schema. No feature branch merged into the installed game.
 - [ ] User physical-device acceptance, broader game/quest/night/shop regression, multi-key crash recovery and a formal build/IPA decision remain open. Current 59-scenario master QA catalog has 13 simulator-verified; do not equate it with the whole-game completion.
+
+
+## D0e purchase-recovery resilience · November 20, 2026
+- [x] [Draft PR #68](https://github.com/ValentineBSAA/IPhone-Apps/pull/68) adds replayable standard-tool purchase journal to avoid duplicated charges or missing ledger entries after interrupted separate preferences writes.
+- [x] Eight new iPhone simulator tests added to previous 40 for staged-only, partial-key, second-launch, malformed and overflow recovery; [D0e test workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0e-purchase-recovery-iphone16e.yml) gates acceptance.
+- [ ] This is best-effort UserDefaults recovery, **not** guaranteed durable atomic transactions. Physical-device QA, corrupt-recovery UI, broad gameplay integration, art/Night modes and release still pending. No shipped IPA or app version changed.
