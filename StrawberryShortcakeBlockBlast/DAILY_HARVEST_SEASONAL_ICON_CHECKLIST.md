@@ -24,7 +24,7 @@ Use a clear **little tear-off calendar page (without printed numbers)** as the c
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | DH-01 | Halloween | Day | Sunny berry calendar, strawberry basket, smiling autumn lantern berries, orange/purple foliage | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ alpha/background QA pending | ⬜ source archive pending | ⬜ |
 | DH-02 | Halloween | Night | Moonlit calendar, basket of strawberries, crescent and stars, glowing witch-hat jack-o'-lantern berries | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source import pending | ⬜ |
-| DH-03 | Christmas | Day | Snow-topped calendar, decorated basket, berry wreath, holly and golden bells | ⬜ NEXT: single original generation | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
+| DH-03 | Christmas | Day | Snow-topped red/green calendar, harvested strawberry basket, holly, bells, candy canes | 🟡 GENERATED (review candidate) | ⬜ AWAITING OWNER | ⚠ baked checkerboard possible, alpha QA pending | ⬜ originals not staged | ⬜ |
 | DH-04 | Christmas | Night | Moonlit snowy calendar, glowing lights, fir trees, soft frost and festive berries | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | DH-05 | Thanksgiving | Day | Harvest calendar, berry crate, gold maples, pumpkin and berry pie | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | DH-06 | Thanksgiving | Night | Plum/amber moonlit calendar, candlelit harvest baskets, foliage and berry pie | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -76,3 +76,12 @@ Links: [H1-B02 Berry Story running checklist](https://github.com/ValentineBSAA/I
 - [ ] Alpha/edge QA, exact original archive, RGBA version, preview sheet, source ZIP and verified GitHub binary upload are separate pending gates.
 
 **Daily Harvest visuals approved: 2/8.**
+
+
+### DH-03 Christmas Day generation review gate
+- [x] Christmas Day calendar + strawberry basket art generated; final review candidate is the red-green gingham bow version with snow, holly, bells, candy canes and a golden sun. An additional alternate render exists, **not approved nor counted** as another semantic use-site.
+- [ ] Owner must explicitly approve the chosen DH-03 visual before DH-04 Christmas Night. No automatic approvals.
+- [ ] The generated PNG shows a checkerboard-like background; preserve the original untouched and inspect alpha data, perform non-destructive RGBA extraction if baked, then checker/light/dark/64/96px QA.
+- [ ] These art PNGs have not been uploaded to GitHub; only the checklist and separate in-progress design tracking are committed.
+
+**Latest H1-B03 tally: 3/8 icon slots generated, 2/8 visual designs approved; 0/8 binary PNGs imported.**
