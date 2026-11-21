@@ -120,3 +120,13 @@ One-tap **Create scenario → Run checks → Review PASS/FAIL evidence → Disca
 - [x] Debug simulator named iPhone 16e, Release compiled with internal-only QA sandbox excluded, source/art/audio checks passed, no IPA shipped. CI runner-path and missing-`try` test syntax errors corrected, with both failures preserved in the [D0b QA ledger](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d0b-state-time-lab/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D0B_ISOLATED_STATE_LAB_QA.md).
 - [x] [Scenario catalog](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) currently **54** test contracts: 8 `automated_pass_device_pending` (2 D0 + 6 D0b), 44 `planned`, 2 `not_implemented`; this is NOT 54/54 tested.
 - [ ] Physical-owner iPhone 16e interface checks, **D0c injected real shop/save handler tests**, complete gameplay regression and merge/release approval remain open. D0b mock price checks do not assert production checkout safety.
+
+
+## D0c shared production transaction rules · November 20, 2026
+- [x] Opened [draft PR #66](https://github.com/ValentineBSAA/IPhone-Apps/pull/66) on top of D0b. This is the first small **production-connected** test slice: `BerryGameSession.buyUndo`, `buyShuffle`, `buyHint`, `useHintIfPossible` invoke the same pure `BerryStandardToolTransaction` reducer used by the isolated QA wallet.
+- [x] Preserved existing normal tool prices **Undo 40, Shuffle 50, Hint 35**, Undo snapshot invalidation, spend ledger and existing save calls. New invalid/negative/charge-overflow requests safely reject without debits.
+- [x] Added 10 new targeted shared-reducer XCTest methods, selected alongside 6 D0 and 11 D0b regression methods and the existing economy tests for the [named iPhone 16e workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0c-shared-tools-iphone16e.yml).
+- [x] [QA coverage catalog](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) now **56 total**: 8 prior automated-pass/device-pending, 2 new D0c implemented-untested, 44 planned and 2 not implemented. Do not claim whole-game coverage.
+- [ ] **D0c CI terminal pass** and physical user checks. No production merge/release or IPA while draft.
+- [ ] **Next D0d:** injection of real store/ledger/save dependencies, with isolated fixtures, before asserting full checkout, transaction atomicity or persistent migration testing.
+- [ ] User's existing Build 4.5 blocked-tool charge regression remains open for physical UI acceptance; no lengthy gameplay grinding needed when sandbox fixtures become production-backed.
