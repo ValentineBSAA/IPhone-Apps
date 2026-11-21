@@ -62,3 +62,11 @@ Note: this fallback affects only delivery, not the 55 image designs, approved so
 - [ ] Future completion: BC-06 Thanksgiving Night, BC-07 Birthday Day, BC-08 Birthday Night, then updated manifest and a separate QA-approved runtime branch. The separate prior 40 Night Garden images remain preserved.
 
 **Definitive milestone:** *GitHub staging import COMPLETE and verified, 55/55 approved originals present*. *App/runtime integration NOT YET COMPLETE*.
+
+
+## ✅ One-piece GitHub Release ZIP created successfully
+- [x] Workflow run [44860472753](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44860472753) **SUCCESS**: rebuilt and fully validated the master ZIP, detected 55 staged originals unchanged, and uploaded the verified one-piece archive to the same named Release.
+- [x] Confirmed GitHub Release now exposes [`Berry_Berry_Blast_ALL_Approved_Seasonal_Artwork_GitHub_2026-11-20.zip`](https://github.com/ValentineBSAA/IPhone-Apps/releases/download/berry-h1-approved-all-20261120/Berry_Berry_Blast_ALL_Approved_Seasonal_Artwork_GitHub_2026-11-20.zip), exact byte count **318,953,250**. The original eight upload parts remain available as backup.
+- [x] Source folders and `APP_ASSET_BINDINGS_DRAFT.json` already exist in dedicated staging branch; alpha review and Xcode runtime work remain intentionally separate.
+
+**Current decisive status: Release combined ZIP READY; GitHub organized 55-image asset source import READY; production runtime NOT YET CONNECTED.**
