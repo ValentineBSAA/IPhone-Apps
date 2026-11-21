@@ -224,7 +224,28 @@ final class BerryGameSession: ObservableObject {
     // Internal QA only. Use the existing saved Inventory data, never the board
     // save slot, and never the natural-earnings or economy reporting counters.
     static let qaGrantAuditKey = "berryberryblast.internalQA.grants.v046"
+    static let qaCheatRestoreKey = "berryberryblast.internalQA.strawberryRestorePoint.v048"
     static let qaWalletChanged = Notification.Name("berryberryblast.qaWalletDidChange.v046")
+
+    /// This preserves the REAL wallet amount before the first cheat of a series.
+    /// A second cheat does not overwrite the original baseline. It is stored
+    /// separately from the normal Inventory, all Endless slots and the ledger.
+    struct StrawberryCheatRestorePoint: Codable, Equatable {
+        let preCheatBalance: Int
+        let lastCheatBalance: Int
+        let cheatCount: Int
+        let capturedAt: String
+    }
+
+    static func qaCheatRestorePoint(defaults: UserDefaults = .standard) -> StrawberryCheatRestorePoint? {
+        guard let data = defaults.data(forKey: qaCheatRestoreKey),
+              let value = try? JSONDecoder().decode(StrawberryCheatRestorePoint.self, from: data),
+              value.preCheatBalance >= 0,
+              value.lastCheatBalance >= 0,
+              value.cheatCount > 0
+        else { return nil }
+        return value
+    }
 
     static func qaWalletBalance(defaults: UserDefaults = .standard) -> Int {
         guard let bytes = defaults.data(forKey: "berryblockblast.inventory.v3"),
@@ -239,26 +260,73 @@ final class BerryGameSession: ObservableObject {
 
     @discardableResult
     static func grantQAStrawberries(_ amount: Int,
-                                   defaults: UserDefaults = .standard) -> Int? {
-        guard amount > 0 else { return nil }
-        let key = "berryblockblast.inventory.v3"
-        let existing = defaults.data(forKey: key).flatMap {
-            try? JSONDecoder().decode(Inventory.self, from: $0)
+                                    defaults: UserDefaults = .standard) -> Int? {
+        guard amount > 0,
+              let existingBytes = defaults.data(forKey: "berryblockblast.inventory.v3"),
+              var inventory = try? JSONDecoder().decode(Inventory.self, from: existingBytes),
+              inventory.berries >= 0,
+              amount <= Int.max - inventory.berries
+        else { return nil }
+
+        // Never discard an unreadable existing restore record or silently
+        // replace the original baseline with a later, cheat-inflated balance.
+        let preceding = qaCheatRestorePoint(defaults: defaults)
+        if defaults.object(forKey: qaCheatRestoreKey) != nil && preceding == nil {
+            return nil
         }
-        guard var inventory = existing else { return nil }
-        guard inventory.berries >= 0,
-              amount <= Int.max - inventory.berries else { return nil }
         let before = inventory.berries
-        inventory.berries += amount
-        guard let updated = try? JSONEncoder().encode(inventory) else { return nil }
-        defaults.set(updated, forKey: key)
+        let after = before + amount
         let timestamp = ISO8601DateFormatter().string(from: Date())
-        let record = "\(timestamp) | QA +\(amount) | \(before) → \(inventory.berries)"
+        let point = StrawberryCheatRestorePoint(
+            preCheatBalance: preceding?.preCheatBalance ?? before,
+            lastCheatBalance: after,
+            cheatCount: (preceding?.cheatCount ?? 0) + 1,
+            capturedAt: preceding?.capturedAt ?? timestamp
+        )
+        inventory.berries = after
+        guard let pointData = try? JSONEncoder().encode(point),
+              let inventoryData = try? JSONEncoder().encode(inventory)
+        else { return nil }
+
+        // Save the original amount BEFORE editing live inventory so a
+        // terminated app can still offer the exact rollback. UserDefaults
+        // is not a power-loss atomic database; keep normal backup advice.
+        defaults.set(pointData, forKey: qaCheatRestoreKey)
+        guard defaults.data(forKey: qaCheatRestoreKey) == pointData else { return nil }
+        defaults.set(inventoryData, forKey: "berryblockblast.inventory.v3")
+        let record = "\(timestamp) | CHEAT +\(amount) | \(before) → \(after) | original \(point.preCheatBalance)"
         var history = defaults.stringArray(forKey: qaGrantAuditKey) ?? []
         history.insert(record, at: 0)
         defaults.set(Array(history.prefix(30)), forKey: qaGrantAuditKey)
         NotificationCenter.default.post(name: qaWalletChanged, object: nil)
-        return inventory.berries
+        return after
+    }
+
+    /// Owner-requested undo for cheat balances, NOT a reset of gameplay.
+    /// Restores exactly the pre-FIRST-cheat strawberry count and keeps other
+    /// inventory fields, owned skins, tools, saves and earned totals unchanged.
+    /// The UI must show a clear confirmation, especially if regular gameplay
+    /// has changed the balance since the cheat.
+    @discardableResult
+    static func restorePreCheatStrawberries(defaults: UserDefaults = .standard) -> Int? {
+        guard let point = qaCheatRestorePoint(defaults: defaults),
+              let original = defaults.data(forKey: "berryblockblast.inventory.v3"),
+              var inventory = try? JSONDecoder().decode(Inventory.self, from: original),
+              inventory.berries >= 0
+        else { return nil }
+
+        let before = inventory.berries
+        inventory.berries = point.preCheatBalance
+        guard let restored = try? JSONEncoder().encode(inventory) else { return nil }
+        defaults.set(restored, forKey: "berryblockblast.inventory.v3")
+        defaults.removeObject(forKey: qaCheatRestoreKey)
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+        let record = "\(timestamp) | CHEAT RESTORED | \(before) → \(point.preCheatBalance) | \(point.cheatCount) grant(s)"
+        var history = defaults.stringArray(forKey: qaGrantAuditKey) ?? []
+        history.insert(record, at: 0)
+        defaults.set(Array(history.prefix(30)), forKey: qaGrantAuditKey)
+        NotificationCenter.default.post(name: qaWalletChanged, object: nil)
+        return point.preCheatBalance
     }
     #endif
 
