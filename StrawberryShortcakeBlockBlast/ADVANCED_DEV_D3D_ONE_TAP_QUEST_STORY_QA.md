@@ -40,3 +40,8 @@ All five snapshot critical real player keys before and after, including wallet, 
 This lab calls actual model/transaction handlers, **not native production gameplay SwiftUI finger taps**, and does not prove power-loss atomicity or Story Game Over interactions. Birthday award/year-rollover, physically validated original Story/Daily/gameplay UI, final owner-approved seasonal/Village/Quest/Journal artwork, premium Day/Night parity, Build5 quests and Village evolution, Build6 distinct Night Market/Moonberries, full-game performance and save migration remain to be completed and tested.
 
 **No user-visible IPA/merge/release without explicit owner authorization.**
+
+## D3d CI failure and correction · November 20, 2026
+- [x] [D3d 139-test Actions #44873363717](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44873363717) **first attempt failed to compile the test binary**, not a gameplay test failure. Error: `BerryDeveloperQuestStoryLab.swift:203:57: ambiguous use of operator '=='` when comparing the four Village levels as arrays. The production Release QA-exclusion build had already passed.
+- [x] Replaced ambiguous array equality with four explicit integer comparisons: `first == 1 && second == 2 && third == 4 && fourth == 5`. The Quest, Story, Village rules, wallets and save data were not modified. Applied the same correction in the separate I1 integrated source.
+- [ ] Requested **D3d attempt 2**. Do not mark 139/139 passed until the new attempt finishes and actual terminal XCTest/Release/no-IPA evidence is inspected. [I1 143-case integration #44873619553](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44873619553) may have checked out the pre-fix code; rerun that separately if its first attempt fails.
