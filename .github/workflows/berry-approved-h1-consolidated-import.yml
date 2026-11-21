@@ -143,7 +143,7 @@ jobs:
               }
               if len(relocated)!=2: raise SystemExit('Expected exactly two archived metadata differences')
               audit_path=pathlib.Path(doc+'IMPORT_PRESERVED_METADATA_MAPPING.json')
-              audit_bytes=(json.dumps(audit,indent=2,sort_keys=True)+'\\n').encode()
+              audit_bytes=(json.dumps(audit,indent=2,sort_keys=True)+chr(10)).encode()
               if audit_path.exists() and audit_path.read_bytes()!=audit_bytes:
                   raise SystemExit('Import metadata mapping changed unexpectedly')
               for name in names:
