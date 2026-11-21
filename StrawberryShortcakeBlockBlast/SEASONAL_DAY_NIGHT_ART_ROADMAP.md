@@ -141,3 +141,16 @@ Stages are additive **after** the night visual foundation work has adequate stab
 **Starting a fresh ChatGPT conversation:** “Read `StrawberryShortcakeBlockBlast/BERRY_BUILD4_TO_BUILD6_NIGHT_ROADMAP.md`, `NIGHT_40_ICON_ART_APPROVAL_LEDGER.md`, and `SEASONAL_DAY_NIGHT_ART_ROADMAP.md` from the planning branch, plus Night Garden draft PR #40 and seasonal issues #42–47. Continue **from the current GitHub status**; do not recreate the already approved 40 Night icons or their RGBA assets. Seasonal artwork is *planned, not generated*. Preserve current Night/Build 5/6 roadmap, keep future seasonal themes a distinct overlay, and ask for visual owner approval before any new art imports or game builds.”
 
 **Stop condition for this documentation task:** Commit/update this plan and existing parent indexes only. **Do not generate new holiday imagery, change Swift/game files, merge PRs, publish an IPA, add a seasonal wallet, or mark any seasonal art completed.**
+
+
+## H0 continuation status: offline holiday calendar and use-site audit (November 20, 2026)
+
+The previous documentation-only task is complete. A new, **separately isolated, unmerged [draft PR #48](https://github.com/ValentineBSAA/IPhone-Apps/pull/48)** records the first H0 source audit and a **dormant date/region holiday resolver**. Detailed findings and next work queue: [SEASONAL_H0_USE_SITE_AND_CALENDAR_AUDIT.md](SEASONAL_H0_USE_SITE_AND_CALENDAR_AUDIT.md). The code does **not yet enable holiday art in the app**.
+
+- [x] Existing `BBBFrameChristmas`, `BBBFrameBirthday`, `BBBIconBirthday`, and `BBBIconSeasonal` asset files/Swift consumers cross-checked; existing Boutique seasonal category currently hidden.
+- [x] Existing birthday local month/day and separate once-per-year **100-strawberry** gift found; no change to that award or its ownership data.
+- [x] Isolated `BerrySeasonalCalendar.swift` and `BerrySeasonalCalendarTests.swift` proposal: local Gregorian date + time-zone, device Region or optional country override (not GPS); October 31 Halloween, December 25 Christmas, US fourth-Thursday Thanksgiving, opt-in month/day birthday; Feb 29 exact-date default, overlap preview and preference ordering. Automatic artwork defaults off pending UX approval.
+- [ ] Source-only code is not equivalent to a validated iOS build. CI/XCTest on draft PR, exhaustive per-use-site count, owner-approved activation schedule/opt-out, and physical iPhone16e remain OPEN.
+- [ ] H1 seasonal icon design/generation is NEXT AFTER H0 approval: one individually generated Day and one Night Home tile for each of four holidays, eight independently approved assets, then clock and full UI parity. **New seasonal PNG count remains zero.**
+
+**The 40 original Night icons and all 40 visually approved RGBA candidates remain separately staged in draft PR #40 and require Xcode/runtime/device QA.** No 4.7/4.8 or Build 5/6 scope is replaced, and no seasonal build number or release is assigned.
