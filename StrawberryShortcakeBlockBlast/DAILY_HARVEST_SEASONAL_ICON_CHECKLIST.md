@@ -25,7 +25,7 @@ Use a clear **little tear-off calendar page (without printed numbers)** as the c
 | DH-01 | Halloween | Day | Sunny berry calendar, strawberry basket, smiling autumn lantern berries, orange/purple foliage | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ alpha/background QA pending | ⬜ source archive pending | ⬜ |
 | DH-02 | Halloween | Night | Moonlit calendar, basket of strawberries, crescent and stars, glowing witch-hat jack-o'-lantern berries | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source import pending | ⬜ |
 | DH-03 | Christmas | Day | Snow-topped red/green calendar, harvested strawberry basket, holly, bells, candy canes; approved second generated variant | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ baked checkerboard possible; alpha QA pending | ⬜ source import pending | ⬜ |
-| DH-04 | Christmas | Night | Moonlit snowy calendar, glowing lights, fir trees, soft frost and festive berries | ⬜ NEXT: generate a single original | ⬜ awaiting owner review | ⬜ | ⬜ | ⬜ |
+| DH-04 | Christmas | Night | Moonlit snowy calendar with strawberry basket, glowing firs, gold crescent and stars, holly and bells | 🟡 GENERATED | ⬜ AWAITING OWNER | ⬜ alpha/edge QA pending | ⬜ original not staged | ⬜ |
 | DH-05 | Thanksgiving | Day | Harvest calendar, berry crate, gold maples, pumpkin and berry pie | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | DH-06 | Thanksgiving | Night | Plum/amber moonlit calendar, candlelit harvest baskets, foliage and berry pie | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | DH-07 | Birthday | Day | Pink candy calendar, strawberry cake and gift, confetti, bow and festive harvest basket | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -94,3 +94,11 @@ Links: [H1-B02 Berry Story running checklist](https://github.com/ValentineBSAA/I
 - [ ] Source/RGBA ZIP, checksums, transparency QA, and iPhone integration remain separate future gates.
 
 **Latest H1-B03 status: DH-01 Halloween Day, DH-02 Halloween Night, and DH-03 Christmas Day visually approved (3/8). DH-04 generation next.**
+
+
+### DH-04 Christmas Night generated, approval pending
+- [x] One Christmas Night original generated and shown in chat: gold crescent and stars in purple cloud sky, snowy evergreen fairy lights, strawberry date-free calendar, snow-capped harvested berry basket, gold bells and red/green gingham ribbon.
+- [ ] Await explicit owner visual approval for DH-04 before DH-05 Thanksgiving Day; **do not mark approved** from generation alone.
+- [ ] Inspect actual PNG alpha and edges, preserve exact original, then create separate RGBA candidates, 64/96px and light/dark/checker proofs, checksum ZIP and verified GitHub binary import.
+
+**Daily Harvest now 4/8 generated, 3/8 visually approved; PNG GitHub import and iPhone QA pending.**
