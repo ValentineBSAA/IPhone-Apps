@@ -66,7 +66,16 @@ enum BerryDailyHistory {
     static func beginToday(defaults: UserDefaults = .standard,
                            now: Date = Date()) -> Bool {
         expirePriorAttemptIfNeeded(defaults: defaults, now: now)
-        if let current = outcome(on: now, defaults: defaults) { return current == .active }
+        if let current = outcome(on: now, defaults: defaults) {
+            // Never issue a new hand if the separate outcome key says this
+            // attempt is active but its saved attempt record was damaged.
+            // The existing daily progress remains on disk for recovery.
+            guard current == .active,
+                  let record = loadAttempt(defaults: defaults),
+                  record.day == dateKey(for: now),
+                  record.outcome == .active else { return false }
+            return true
+        }
         let attempt = Attempt(day: dateKey(for: now), outcome: .active, engine: nil)
         if let encoded = try? JSONEncoder().encode(attempt) {
             defaults.set(encoded, forKey: attemptKey)
