@@ -271,6 +271,7 @@ struct BerryDailyHarvestView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                        .accessibilityIdentifier("berry.dailyCalendar.done")
                         .font(.system(size: 15, weight: .black, design: .rounded))
                         .tint(BerryStyle.strawberry)
                 }
