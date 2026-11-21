@@ -97,6 +97,10 @@ When real Moonberry game mechanics are implemented, add **all** of these, with i
 
 ### 5. 🌞🌙 Day/night visuals, seasonal art and clock
 
+**Build 49 implementation update (not yet approved):** Branch `feature/berry-i7-live-clock-seconds-b49` now implements the existing Home seconds + local calendar countdown and provides the same **read-only 5:59:58 → 6:00:00 AM/PM virtual clock fixture** in both Developer Garden **Timers & Clocks** and **State & Timer Lab**. It preserves all permanent PIN/Strawberry cheat/restore controls, same game saves, and does not claim actual Moonberry shop access. New deterministic model + native Home seconds tests are added, with terminal CI and owner physical iPhone QA still open. See [Issue #95](https://github.com/ValentineBSAA/IPhone-Apps/issues/95). The approved decorative analog clock remains **later**.
+
+
+
 **Clock/countdown priority, screenshot follow-up:** [Issue #95](https://github.com/ValentineBSAA/IPhone-Apps/issues/95). The Home header currently displays `1:59 PM` and `Moonlight in 4h 1m` because `BerryDayNightClock.swift` formats only hours/minutes, rounds remaining time to whole minutes, and ticks every 30 seconds. **Implement the second-accurate digital clock/countdown as a separate task before applying the already-approved decorative clock artwork.**
 
 - [ ] Home local time **`h:mm:ss a`** in 12-hour format, real iPhone device time, once per second. Display a stable, monospaced `Moonlight in HH:MM:SS` countdown toward **6 PM** and `Sunrise in HH:MM:SS` toward **6 AM**. Refresh from the real current `Date` + `Calendar` target, never a drifting accumulated decrement; no negative seconds or lingering old phase.
