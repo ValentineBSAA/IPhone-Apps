@@ -168,7 +168,7 @@ jobs:
           echo "Verified v0.2.10 library and original cabinet coverage"
           test -f Sources/PosiesQuickPresets.swift
           grep -q 'PosiesQuickPresets.values' Sources/ExpandedTrackingView.swift
-          grep -q 'latestRecordedEvent' Sources/PosiesMedicationCabinetView.swift
+          grep -q 'lastEvent(for:' Sources/PosiesMedicationCabinetView.swift
           grep -q 'if onSave(profile)' Sources/PosiesMedicationCabinetView.swift
           echo "Verified v0.2.10 quick choices and medication save protections"
           grep -q 'PosiesNotificationDelegate' Sources/POTSTrackerApp.swift
