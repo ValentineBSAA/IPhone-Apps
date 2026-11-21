@@ -49,3 +49,10 @@
 
 ## Next-chat instruction
 Read this handoff and **fetch latest branch and workflow state from GitHub first**. Do not assume the older chat title means v0.1.8 is the working version. Continue the current v0.2.8 test/fix loop, preserving all approved previous work. After device feedback, increment the semantic version for the following build and keep QA and handoff updated.
+
+## Newer staged work: v0.2.9 (do not skip physical QA)
+
+- Source branch: [feature/pots-posies-v0.2.9-daily-care](https://github.com/ValentineBSAA/IPhone-Apps/tree/feature/pots-posies-v0.2.9-daily-care); [draft PR #52](https://github.com/ValentineBSAA/IPhone-Apps/pull/52) targets the v0.2.8 branch.
+- Code adds adjustable hydration/rest shortcuts, recent manual medication status in cabinet, safer profile saving, separate rest/sleep totals and new tests. [v0.2.9 physical QA plan](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/pots-posies-v0.2.9-daily-care/POTSTracker/UX_V029.md).
+- [GitHub Actions run 44848307666](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44848307666) had started and was pending at this handoff update. Check its actual conclusion and the unsigned IPA before offering a build. Neither v0.2.8 nor v0.2.9 should be called physically verified merely because GitHub CI passed.
+- Do not accidentally reset from v0.2.9 to 0.1.8, or merge draft candidates into main before physical QA.
