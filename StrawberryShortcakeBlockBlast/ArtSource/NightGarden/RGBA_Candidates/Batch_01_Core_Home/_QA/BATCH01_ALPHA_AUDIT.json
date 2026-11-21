@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Night_Berry_Classic",
+    "original_sha256": "1d94e07b4b77d6e6d3879c49a14cfbceae7c12fe2b0f6f9188c501953f8f5a27",
+    "candidate_sha256": "87969fa32c1118f87c028a205c5c1cccd0154acd6cb5aa927ef5487a35d58307",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "status": "candidate_unapproved",
+    "fully_transparent": 78800,
+    "partial_alpha": 8283,
+    "fully_opaque": 1485433,
+    "transparent_fraction": 0.050111
+  },
+  {
+    "name": "Night_Berry_Story",
+    "original_sha256": "db2815da7ea4e1375aa820dc8d1e490f0afb17ee36fab8b6fefe61510522b350",
+    "candidate_sha256": "8ac48c6a3f48d6579ddaa1c64ea57118ccf35f32a7bcf13823663433d33e6780",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "status": "candidate_unapproved",
+    "fully_transparent": 78146,
+    "partial_alpha": 8758,
+    "fully_opaque": 1485612,
+    "transparent_fraction": 0.049695
+  },
+  {
+    "name": "Night_Daily_Harvest",
+    "original_sha256": "5c6cdd285b1c9c8cf0b5cb495b2e990b3979e951f3eefa16444cb075b8753408",
+    "candidate_sha256": "4b1721399a543d6ec2195262500b95ff5c34f9ae25c93f6067aec7c36d19f60b",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "status": "candidate_unapproved",
+    "fully_transparent": 78666,
+    "partial_alpha": 9046,
+    "fully_opaque": 1484804,
+    "transparent_fraction": 0.050026
+  },
+  {
+    "name": "Night_More_Adventures",
+    "original_sha256": "b274544841c008be9caeaaeb5f93c8d8b0eb37b8de274428de600fef0eb653d4",
+    "candidate_sha256": "2d67d0132c840df717e713c16bf365c6cb4e8ef1af524cf954d693d9a7c48392",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "status": "candidate_unapproved",
+    "fully_transparent": 78005,
+    "partial_alpha": 8630,
+    "fully_opaque": 1485881,
+    "transparent_fraction": 0.049605
+  }
+]

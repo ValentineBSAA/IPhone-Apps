@@ -1,0 +1,8 @@
+Batch 1: Night_Berry_Classic, Night_Berry_Story, Night_Daily_Harvest, Night_More_Adventures
+Batch 2: Night_My_Strawberry_Cottage, Night_Berry_Collection, Night_Strawberry_School, Night_Berry_Village
+Batch 3: Night_Berry_Quests, Night_Berry_Journal, Night_Daily_Streak, Night_Strawberry_Jukebox
+Batch 4: Night_Berry_Boutique, Night_Berry_Blitz, Night_Cozy_Cottage, Night_Strawberry_Nightmare
+Batch 5: Night_Gameplay, Night_Block_Appearance, Night_Audio, Night_Celebrations, Night_Accessibility, Night_Data_Restore
+Batch 6: Night_Undo, Night_Shuffle, Night_Hint, Night_Stats, Night_Tools, Night_Boutique
+Batch 7: Night_Golden_Trowel, Night_Ribbon_Twister, Night_Starberry_Seed, Night_Golden_Strawberry, Night_Picnic_Pantry, Night_Berry_Spyglass
+Batch 8: Night_Test_Strawberries, Night_Diagnostics, Night_Save_Inspector, Night_Combo_Preview, Night_Economy_Inspector, Night_Build_Information

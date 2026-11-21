@@ -1,0 +1,63 @@
+name: Berry Berry Blast | Stage 40 Approved Night Garden Icons
+on:
+  push:
+    branches:
+      - artwork/berry-night-garden-40-rgba-staging
+    paths:
+      - .github/workflows/berry-stage-approved-night-40.yml
+      - StrawberryShortcakeBlockBlast/Tools/stage_night_garden_40.py
+      - StrawberryShortcakeBlockBlast/ArtSource/NightGarden/README.md
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: berry-night-40-stage-originals
+  cancel-in-progress: false
+jobs:
+  import-approved-release-source:
+    name: Verify and stage exact V1 sources (not Xcode)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: artwork/berry-night-garden-40-rgba-staging
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Download approved GitHub Release V1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/berry-night-40
+          gh release download V1 --repo "$GITHUB_REPOSITORY" --pattern 'Berry_Berry_Blast_Night_Garden_40_Approved_GitHub_Ready.zip' --dir /tmp/berry-night-40
+          echo '3d4785171fe9ffe5ca019b814bfeb4ceba0663e33362496b1782db5f7f0f807c  /tmp/berry-night-40/Berry_Berry_Blast_Night_Garden_40_Approved_GitHub_Ready.zip' | sha256sum -c -
+      - name: Install PNG verification dependency
+        run: python3 -m pip install --disable-pip-version-check 'Pillow>=10,<13'
+      - name: Preflight exactly 40 original approved PNGs
+        working-directory: StrawberryShortcakeBlockBlast
+        run: python3 Tools/stage_night_garden_40.py /tmp/berry-night-40/Berry_Berry_Blast_Night_Garden_40_Approved_GitHub_Ready.zip
+      - name: Stage original PNGs and alpha review ledger
+        working-directory: StrawberryShortcakeBlockBlast
+        run: python3 Tools/stage_night_garden_40.py /tmp/berry-night-40/Berry_Berry_Blast_Night_Garden_40_Approved_GitHub_Ready.zip --apply
+      - name: Verify idempotent source import
+        working-directory: StrawberryShortcakeBlockBlast
+        run: python3 Tools/stage_night_garden_40.py /tmp/berry-night-40/Berry_Berry_Blast_Night_Garden_40_Approved_GitHub_Ready.zip
+      - name: Commit only separate art sources, never shipping assets
+        run: |
+          set -euo pipefail
+          git add -- 'StrawberryShortcakeBlockBlast/ArtSource/NightGarden/Approved_40_Icon_Batches'
+          if git diff --cached --quiet; then
+            echo 'Forty original Night Garden images already staged.'
+            exit 0
+          fi
+          orig_count=$(git diff --cached --name-only | grep -E '/Batch_[0-9]{2}_.*/Night_.*\.png$' | wc -l)
+          test "$orig_count" -eq 40
+          if git diff --cached --name-only | grep -E '/Assets\.xcassets/|\.swift$'; then
+            echo 'BLOCKED: attempting to touch a live Xcode source'
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'assets(berry): stage 40 owner-approved Night Garden originals for RGBA review'
+          git push origin HEAD:refs/heads/artwork/berry-night-garden-40-rgba-staging

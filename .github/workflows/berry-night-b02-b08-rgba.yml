@@ -1,0 +1,93 @@
+name: Berry Berry Blast | Night Batches 2-8 RGBA QA
+
+on:
+  push:
+    branches:
+      - artwork/berry-night-garden-40-rgba-staging
+    paths:
+      - .github/workflows/berry-night-b02-b08-rgba.yml
+      - StrawberryShortcakeBlockBlast/Tools/derive_night_rgba_b02_b08.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: berry-night-b02-b08-rgba
+  cancel-in-progress: false
+
+jobs:
+  convert-safe-candidates:
+    name: Validate 36 source PNGs and stage RGBA review candidates
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: artwork/berry-night-garden-40-rgba-staging
+          persist-credentials: true
+      - name: Install image tools
+        run: python3 -m pip install --disable-pip-version-check 'Pillow>=10,<13' 'numpy>=1.26,<3' 'opencv-python-headless>=4.8,<5'
+      - name: Fast preflight, exact approved checksums and alpha geometry
+        working-directory: StrawberryShortcakeBlockBlast
+        run: python3 Tools/derive_night_rgba_b02_b08.py
+      - name: Create separate RGBA candidate PNGs and comparisons
+        working-directory: StrawberryShortcakeBlockBlast
+        run: python3 Tools/derive_night_rgba_b02_b08.py --apply
+      - name: Recheck strict idempotence
+        working-directory: StrawberryShortcakeBlockBlast
+        run: python3 Tools/derive_night_rgba_b02_b08.py
+      - name: Confirm 40 originals and all candidate formats
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          root=Path('StrawberryShortcakeBlockBlast/ArtSource/NightGarden')
+          src=list((root/'Approved_40_Icon_Batches').glob('Batch_*/Night_*.png'))
+          b1=list((root/'RGBA_Candidates'/'Batch_01_Core_Home').glob('Night_*_RGBA_CANDIDATE.png'))
+          rest=list((root/'RGBA_Candidates').glob('Batch_0[2-8]/Night_*_RGBA_CANDIDATE.png'))
+          assert len(src)==40, len(src)
+          assert len(b1)==4, len(b1)
+          assert len(rest)==36, len(rest)
+          for path in b1+rest:
+              with Image.open(path) as im:
+                  assert im.mode=='RGBA' and im.size==(1254,1254), str(path)
+                  alpha=im.getchannel('A')
+                  assert alpha.getextrema()==(0,255)
+          print('PASS: 40 originals preserved; 40/40 real RGBA review candidates staged')
+          PY
+      - name: Upload all remaining QA candidates and previews for owner review
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-Night-RGBA-Batches-02-to-08-QA-Review
+          path: |
+            StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/Batch_02/
+            StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/Batch_03/
+            StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/Batch_04/
+            StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/Batch_05/
+            StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/Batch_06/
+            StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/Batch_07/
+            StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/Batch_08/
+            StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/_Batch_02_to_08_Alpha_Audit.csv
+            StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/_Batch_02_to_08_Manifest.json
+            StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/_Batch_02_to_08_README.md
+          retention-days: 90
+      - name: Commit isolated candidates only, no live Xcode art
+        run: |
+          set -euo pipefail
+          git add -- 'StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/'
+          if git diff --cached --quiet; then
+            echo 'Candidate PNGs already staged, no commit required.'
+            exit 0
+          fi
+          count=$(git diff --cached --name-only | grep -Ec '/Batch_0[2-8]/Night_.*_RGBA_CANDIDATE\.png$' || true)
+          test "$count" -eq 36
+          if git diff --cached --name-only | grep -E '/Assets\.xcassets/|\.swift$|/Approved_40_Icon_Batches/'; then
+            echo 'BLOCKED: attempted change to existing approved/game files'
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'art(berry): stage 36 RGBA candidates Batches 2-8 with proof sheets'
+          git push origin HEAD:refs/heads/artwork/berry-night-garden-40-rgba-staging
