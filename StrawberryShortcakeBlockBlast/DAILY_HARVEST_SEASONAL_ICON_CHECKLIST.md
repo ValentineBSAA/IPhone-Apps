@@ -28,8 +28,8 @@ Use a clear **little tear-off calendar page (without printed numbers)** as the c
 | DH-04 | Christmas | Night | Moonlit snowy calendar with strawberry basket, glowing firs, gold crescent and stars, holly and bells | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ original import pending | ⬜ |
 | DH-05 | Thanksgiving | Day | Warm sunlit calendar, harvested strawberries, berry pie, pumpkins, corn, autumn maple leaves and orange gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ true-alpha/edge QA pending | ⬜ original source not staged | ⬜ |
 | DH-06 | Thanksgiving | Night | Moonlit calendar, harvest basket, berry pie, corn, pumpkins, lanterns and plum-orange gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ RGBA/edge QA pending | ⬜ original source not staged | ⬜ |
-| DH-07 | Birthday | Day | Pink birthday calendar, strawberry cake, balloons, gifts, confetti, sunny berry basket and gingham bow | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ background checkerboard visible, alpha QA pending | ⬜ source import pending | ⬜ |
-| DH-08 | Birthday | Night | Lavender moonlit calendar, sparkling balloons, cake candle, berries and ribbon | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| DH-07 | Birthday | Day | Pink birthday calendar, strawberry cake, balloons, gifts, confetti, sunny berry basket and gingham bow | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ background/alpha QA pending | ⬜ source import pending | ⬜ |
+| DH-08 | Birthday | Night | Lavender moonlit calendar, sparkling balloons, cake candle, berries and ribbon | ⬜ NEXT: single original generation | ⬜ awaiting owner review | ⬜ | ⬜ | ⬜ |
 
 ## Current checklist
 - [x] Verify actual `DailyHarvest` Home-card code use and daily outcome/resume semantics.
@@ -150,3 +150,11 @@ Links: [H1-B02 Berry Story running checklist](https://github.com/ValentineBSAA/I
 - [ ] Visible checkerboard may be baked into RGB pixels. Preserve exact original PNG and inspect true alpha before creating a separate RGBA cleanup candidate. Later preview light/dark/checker and 64/96px, ZIP/checksum GitHub import and iPhone QA are still open.
 
 **Current H1-B03: 7/8 generated; 6/8 visually approved; DH-07 awaiting owner.**
+
+
+### Owner checkpoint: Birthday Day approved, final Birthday Night queued
+- [x] **DH-07 Birthday Day** visually approved by owner (“Good continue”). Preserve the original image exactly, including golden sun over date-free strawberry calendar, full harvest basket, balloons, cake candle and pink ribbon.
+- [ ] **NEXT DH-08 Birthday Night:** generate one matching moonlit calendar plus strawberry basket with glowing candle, balloons, crescent/stars and lavender/magenta bow. Await explicit owner acceptance before marking family 8/8 approved.
+- [ ] No original PNGs claimed GitHub-imported; alpha/edge QC, RGBA derivatives, separate 64/96px proofs, ZIP/manifest, GitHub binary upload and real iPhone testing remain open.
+
+**Daily Harvest H1-B03: 7/8 generated, 7/8 approved.**
