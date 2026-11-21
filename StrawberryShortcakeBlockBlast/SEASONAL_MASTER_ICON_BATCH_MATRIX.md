@@ -23,7 +23,7 @@ Use one standalone image-generation output per asset, never collage-generated so
 | ---: | --- | --- | --- |
 | 01 | HOME | Berry Classic | 8/8 visual samples approved; exact Classic vs Home mapping to confirm |
 | 02 | HOME | Berry Story | Not generated |
-| 03 | HOME | Daily Harvest | Not generated |
+| 03 | HOME | Daily Harvest | H1-B03: [8-image checklist](DAILY_HARVEST_SEASONAL_ICON_CHECKLIST.md) created; DH-01 Halloween Day next, 0/8 approved |
 | 04 | HOME | More Adventures | Not generated |
 | 05 | HOME | My Strawberry Cottage | Not generated |
 | 06 | HOME | Berry Collection | Not generated |
@@ -100,3 +100,7 @@ See [H1-B01 art manifest](ArtSource/SeasonalGarden/00_Specs_And_Ledgers/H1_Batch
 ### GitHub seasonal cottage import correction
 - [x] The original eight seasonal cottage Home/Classic concept PNGs were actually imported successfully via [Actions run #44847067327](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44847067327). They remain **separate** from clock frame art and require Xcode/device QA.
 
+
+
+## H1-B03 Daily Harvest seasonal Home tiles
+New isolated [Daily Harvest H1-B03 running checklist](DAILY_HARVEST_SEASONAL_ICON_CHECKLIST.md). Center a calendar page plus harvested berry basket, because the live Home tile represents daily attempt/resume/outcome status; do not invent dates or hardcode completion or reward text. Generate the eight variants one-by-one for owner approval. The prior H1-B02 Berry Story pack has eight approved designs and a verified 56,975,792-byte QA ZIP; four alpha candidates require owner visual QA and binary import to GitHub is still open.
