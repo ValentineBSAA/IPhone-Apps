@@ -29,7 +29,7 @@ Use a clear **little tear-off calendar page (without printed numbers)** as the c
 | DH-05 | Thanksgiving | Day | Warm sunlit calendar, harvested strawberries, berry pie, pumpkins, corn, autumn maple leaves and orange gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ true-alpha/edge QA pending | ⬜ original source not staged | ⬜ |
 | DH-06 | Thanksgiving | Night | Moonlit calendar, harvest basket, berry pie, corn, pumpkins, lanterns and plum-orange gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ RGBA/edge QA pending | ⬜ original source not staged | ⬜ |
 | DH-07 | Birthday | Day | Pink birthday calendar, strawberry cake, balloons, gifts, confetti, sunny berry basket and gingham bow | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ background/alpha QA pending | ⬜ source import pending | ⬜ |
-| DH-08 | Birthday | Night | Moonlit birthday calendar, strawberry basket, golden moon and stars, glowing cake candle, balloons and pink-lavender ribbon | 🟡 GENERATED | ⬜ AWAITING OWNER | ⬜ alpha/edge QA pending | ⬜ source binary not staged | ⬜ |
+| DH-08 | Birthday | Night | Moonlit birthday calendar, strawberry basket, golden moon and stars, glowing cake candle, balloons and pink-lavender ribbon | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ original binary import pending | ⬜ |
 
 ## Current checklist
 - [x] Verify actual `DailyHarvest` Home-card code use and daily outcome/resume semantics.
@@ -166,3 +166,14 @@ Links: [H1-B02 Berry Story running checklist](https://github.com/ValentineBSAA/I
 - [ ] Source PNG on GitHub, RGBA alpha proof/cleanup if required, source+RGBA ZIP and iPhone QA are independently pending.
 
 **Daily Harvest H1-B03: 8/8 original designs generated, 7/8 owner approved.**
+
+
+### DH-08 final visual approval · family completion checkpoint
+- [x] **DH-08 Birthday Night** expressly visually approved by owner ("Good continue"). Keep its original moonlit calendar, pink cake, balloon cluster, woven harvest basket and strawberry-themed ribbon.
+- [x] **H1-B03 Daily Harvest visually approved 8/8**, all four holidays (Halloween / Christmas / Thanksgiving / Birthday) and Day/Night paired.
+- [ ] Verify and archive **all eight exact original PNG bytes** with SHA-256 and original/alpha-candidate separation before making any claim of RGB-to-RGBA success.
+- [ ] Generate QA previews (checker, light, dark and 64/96px), package in a verified ZIP, stage through isolated GitHub binary import. No source PNGs considered in GitHub until import reports success.
+- [ ] Obtain separate alpha edge review and real iPhone appearance/routing acceptance before shipping.
+- [ ] Next distinct category from seasonal master matrix: **More Adventures** Home tile, H1-B04, eight separate original images, one generated per approval.
+
+**Latest authoritative status:** 8/8 visuals owner-approved; RGB/RGBA QC and GitHub binary staging are pending; do not overwrite earlier Night Garden, clocks, Story or H1-B01 cottage assets.
