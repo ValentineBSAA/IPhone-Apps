@@ -204,6 +204,8 @@ struct BerrySettingsHubView: View {
                 choice("Original Strawberry Jam", detail: "Hardware-tested board and border", icon: "square.grid.3x3.fill", selected: boardSurface == "original") {
                     boardSurface = "original"
                 }
+                .accessibilityIdentifier("berry.settings.board.original")
+                .accessibilityValue(boardSurface == "original" ? "Selected" : "Not selected")
                 Button {
                     boardSurface = "blossom-glass"
                 } label: {
@@ -228,6 +230,8 @@ struct BerrySettingsHubView: View {
                                       lineWidth: boardSurface == "blossom-glass" ? 2 : 1))
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("berry.settings.board.blossom-glass")
+                .accessibilityValue(boardSurface == "blossom-glass" ? "Selected" : "Not selected")
                 BerryGridInfoTile(
                     title: "Board Safety",
                     detail: "Board size, touch mapping and saved gameplay are unchanged.",
