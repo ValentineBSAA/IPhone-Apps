@@ -63,19 +63,22 @@ struct BerryQAIsolatedWallet {
 
     @discardableResult
     mutating func buy(_ tool: BerryQAIsolatedTool) -> Bool {
-        let cost = tool.price
-        guard cost > 0, balance >= cost,
-              chargeCount(for: tool) < Int.max else { return false }
-        balance -= cost
-        charges[tool] = chargeCount(for: tool) + 1
+        // Exercise the SAME policy reducer now used by the actual app's
+        // Undo/Shuffle/Hint handlers; store writes remain sandbox-only.
+        guard let updated = BerryStandardToolTransaction.purchase(
+            berries: balance, charges: chargeCount(for: tool), price: tool.price
+        ) else { return false }
+        balance = updated.berries
+        charges[tool] = updated.charges
         return true
     }
 
     @discardableResult
     mutating func use(_ tool: BerryQAIsolatedTool) -> Bool {
-        let count = chargeCount(for: tool)
-        guard count > 0 else { return false }
-        charges[tool] = count - 1
+        guard let remaining = BerryStandardToolTransaction.consumeCharge(
+            chargeCount(for: tool), actionIsValid: true
+        ) else { return false }
+        charges[tool] = remaining
         return true
     }
 }
