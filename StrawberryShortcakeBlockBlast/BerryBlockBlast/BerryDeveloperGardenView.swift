@@ -21,7 +21,7 @@ struct BerryDeveloperGardenView: View {
     private let columns = [GridItem(.flexible(), spacing: 11), GridItem(.flexible(), spacing: 11)]
 
     private enum Tool: String, CaseIterable, Identifiable {
-        case qaWallet = "Test Strawberries"
+        case qaWallet = "Cheat Strawberries"
         case diagnostics = "Diagnostics"
         case saves = "Save Inspector"
         case clock = "Timers & Clocks"
@@ -103,7 +103,7 @@ struct BerryDeveloperGardenView: View {
         }
         var blurb: String {
             switch self {
-            case .qaWallet: return "Type any QA-only berry amount"
+            case .qaWallet: return "Add strawberries to your saved game by choice"
             case .diagnostics: return "Read input and placement status"
             case .saves: return "Check saved Endless gardens"
             case .clock: return "Live local device time"
@@ -123,13 +123,10 @@ struct BerryDeveloperGardenView: View {
         }
         var isPlanned: Bool { self == .notifications }
     }
+    // Permanent hidden owner tools. Every candidate build must include these,
+    // including the optional, confirmed cheat wallet action.
     private var quickTools: [Tool] {
-        #if BERRY_DEVICE_QA
-        // Real iPhone QA: no live-wallet currency grant control.
-        return [.diagnostics, .saves, .combo]
-        #else
-        return [.qaWallet, .diagnostics, .saves, .combo]
-        #endif
+        [.qaWallet, .diagnostics, .saves, .combo]
     }
     private var advancedTools: [Tool] {
         #if BERRY_INTERNAL_QA
@@ -183,7 +180,7 @@ struct BerryDeveloperGardenView: View {
                         .tint(BerryStyle.strawberry)
                         .disabled(pin.count != 4)
                     } else {
-                        Text("PRIVATE DEVICE QA • Isolated tests only; real-wallet grants disabled")
+                        Text("HIDDEN DEVELOPER GARDEN • Tests are isolated; cheats change saves only when confirmed")
                             .font(.system(size: 10, weight: .bold, design: .rounded))
                             .foregroundStyle(BerryStyle.chocolate)
                             .multilineTextAlignment(.center)
@@ -294,8 +291,8 @@ struct BerryDeveloperGardenView: View {
                             }
                         }
                     }
-                    #if BERRY_INTERNAL_QA && !BERRY_DEVICE_QA
-                    .alert("Add test strawberries?", isPresented: $qaGrantConfirmation) {
+                    #if BERRY_INTERNAL_QA
+                    .alert("Add cheat strawberries?", isPresented: $qaGrantConfirmation) {
                         Button("Add \(qaPendingAmount.formatted()) QA berries") {
                             if let balance = BerryGameSession.grantQAStrawberries(qaPendingAmount) {
                                 qaBalance = balance
@@ -307,7 +304,7 @@ struct BerryDeveloperGardenView: View {
                         }
                         Button("Cancel", role: .cancel) {}
                     } message: {
-                        Text("Adds \(qaPendingAmount.formatted()) clearly marked QA strawberries to the saved wallet for testing. They are not counted as earned rewards or line income. This can be spent in the shop.")
+                        Text("This intentionally adds \(qaPendingAmount.formatted()) strawberries to YOUR SAVED WALLET. It is a cheat, not a natural gameplay reward. Your grant will be logged, and you can spend it in the shop. Cancel makes no change.")
                     }
                     #endif
                     .overlay(alignment: .center) {
@@ -340,13 +337,9 @@ struct BerryDeveloperGardenView: View {
             BerryDeveloperQuestStoryLabPanel()
         #endif
         case .qaWallet:
-            #if BERRY_DEVICE_QA
-            Text("Live strawberry grants are disabled in this private iPhone QA build. Use Commerce Lab and Quest & Story Lab to run real handlers with disposable test wallets. Your saved game wallet is not changed.")
-                .font(.subheadline)
-                .multilineTextAlignment(.center)
-            #elseif BERRY_INTERNAL_QA
+            #if BERRY_INTERNAL_QA
             VStack(spacing: 12) {
-                Text("TEST CURRENCY • NOT GAMEPLAY REWARDS")
+                Text("OPTIONAL CHEAT • ADDS TO YOUR REAL SAVED WALLET")
                     .font(.caption.bold())
                     .foregroundStyle(BerryStyle.strawberry)
                 Text("Current saved wallet: 🍓 \(qaBalance.formatted())")
@@ -382,7 +375,7 @@ struct BerryDeveloperGardenView: View {
                 if let qaError {
                     Text(qaError).font(.caption).foregroundStyle(.red)
                 }
-                Text("Enter any positive amount once. Confirmation is required. Grants are recorded separately as developer QA credits, not earned strawberries, and remain in your wallet after relaunch. Never use the debug grant in a public build.")
+                Text("This is your private cheat tool. Nothing changes until you confirm. Added strawberries become part of your saved wallet and remain after relaunch. Every grant is recorded separately from natural gameplay earnings. Use a backup if you want to restore your original wallet later.")
                     .font(.caption)
                     .multilineTextAlignment(.center)
                 let audit = BerryGameSession.qaGrantHistory()
