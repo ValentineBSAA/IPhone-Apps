@@ -35,9 +35,27 @@ struct PosiesPortableRecord: Codable, Identifiable, Equatable {
 
     var displayDetail: String {
         switch LogCategory(rawValue: category) {
-        case .heartRate: return "\(firstValue) bpm" + (posture.isEmpty ? "" : " · \(posture)")
-        case .bloodPressure: return "\(firstValue)/\(secondValue) mmHg"
-        case .symptom: return severity >= 0 ? "Severity \(severity)/10" : "No severity rating"
+        case .heartRate:
+            let extra = PosiesVitalsContext.read(source)
+            return "\(firstValue) bpm" + (posture.isEmpty ? "" : " · \(posture)") +
+                (extra.source.isEmpty ? "" : " · \(extra.source)") +
+                (extra.timing.isEmpty ? "" : " · \(extra.timing)")
+        case .bloodPressure:
+            let extra = PosiesVitalsContext.read(source)
+            let avg = extra.average(firstSystolic: Int(firstValue), firstDiastolic: Int(secondValue))
+            return "\(firstValue)/\(secondValue) mmHg" +
+                (extra.hasSecondReading ? " · Second \(extra.secondSystolic!)/\(extra.secondDiastolic!)" : "") +
+                (avg.map { " · Two-reading average \($0.0)/\($0.1)" } ?? "") +
+                (extra.monitorPulse.map { " · Pulse \($0) bpm" } ?? "") +
+                (extra.source.isEmpty ? "" : " · \(extra.source)")
+        case .symptom:
+            let flare = PosiesFlareContext.read(source)
+            let base = severity >= 0 ? "Severity \(severity)/10" : "No severity rating"
+            return base + (flare == nil ? "" : " · Flare-up observation") +
+                (flare?.triggers.isEmpty == false ? " · Possible factors: \(flare!.triggers.joined(separator: ", "))" : "") +
+                (flare?.pulse.map { " · Pulse \($0) bpm" } ?? "") +
+                (flare?.systolic.map { " · BP \($0)/\(flare!.diastolic ?? 0) mmHg" } ?? "") +
+                (flare?.whatHelped.isEmpty == false ? " · Afterward: \(flare!.whatHelped)" : "")
         case .hydration:
             let tags = PosiesEntryExtras.read(source).tags ?? []
             return "\(firstValue) mL" + (secondValue > 0 ? " · \(secondValue) mg sodium" : "") +
