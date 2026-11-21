@@ -111,8 +111,9 @@ final class PosiesCloudBackup: ObservableObject {
             do {
                 let request = NSFetchRequest<POTSLogEntry>(entityName: POTSData.entityName)
                 let records = try context.fetch(request).filter { !$0.isDeleted }.map(PosiesPortableRecord.init)
+                let count = records.count + PosiesMedicationLibrary.load().count
                 guard PosiesBackupPolicy.safeToReplacePreviousBackup(
-                    newCount: records.count, priorCount: self.lastRecordCount
+                    newCount: count, priorCount: self.lastRecordCount
                 ) else {
                     DispatchQueue.main.async {
                         self.finishWithError("No saved entries were found. Existing iCloud backups were left unchanged.")
@@ -122,13 +123,13 @@ final class PosiesCloudBackup: ObservableObject {
                 let data = try PosiesDataTransfer.encodeBackup(records)
                 DispatchQueue.global(qos: .utility).async {
                     do {
-                        try Self.writeAndVerify(data, to: container, count: records.count)
+                        try Self.writeAndVerify(data, to: container, count: count)
                         DispatchQueue.main.async {
                             let completedAt = Date()
                             self.defaults.set(completedAt, forKey: PosiesBackupPolicy.lastSuccessfulKey)
-                            self.defaults.set(records.count, forKey: PosiesBackupPolicy.lastCountKey)
+                            self.defaults.set(count, forKey: PosiesBackupPolicy.lastCountKey)
                             self.lastSuccess = completedAt
-                            self.lastRecordCount = records.count
+                            self.lastRecordCount = count
                             self.statusMessage = "iCloud Drive backup verified."
                             self.complete()
                         }
@@ -179,7 +180,7 @@ final class PosiesCloudBackup: ObservableObject {
                 let inspection = try PosiesDataTransfer.inspect(
                     verified, existingIDs: [], journalUnlocked: true
                 )
-                guard inspection.archive.records.count == count else {
+                guard inspection.archive.records.count + (inspection.archive.medicationProfiles?.count ?? 0) == count else {
                     throw CocoaError(.fileReadCorruptFile)
                 }
             } catch {
