@@ -49,6 +49,18 @@ final class PosiesMedicationCatalogTests: XCTestCase {
         XCTAssertTrue(PosiesMedicationCatalog.find("apixaban")!.caution.localizedCaseInsensitiveContains("bleeding"))
     }
 
+    func testEveryItemBuildsAnOfficialDrugNameLabelSearch() throws {
+        for reference in PosiesMedicationCatalog.all {
+            let components = try XCTUnwrap(URLComponents(url: reference.dailyMedSearchURL,
+                                                       resolvingAgainstBaseURL: false))
+            XCTAssertEqual(components.host, "dailymed.nlm.nih.gov")
+            XCTAssertEqual(components.queryItems?.first(where: { $0.name == "query" })?.value,
+                           reference.name)
+            XCTAssertEqual(components.queryItems?.first(where: { $0.name == "labeltype" })?.value,
+                           "all")
+        }
+    }
+
     func testExistingProfilesDoNotNeedCatalogOrSchemaMigration() throws {
         let legacy = PosiesMedicationProfile(name: "Ibuprofen", labelDose: "400", instructions: "Personal label")
         let data = try PosiesDataTransfer.encoder().encode([legacy])

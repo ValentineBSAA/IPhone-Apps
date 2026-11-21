@@ -355,8 +355,8 @@ struct PosiesMedicationReferenceDetail: View {
                                   systemImage: "arrow.up.right.square")
                                 .font(.subheadline)
                         }
-                        Link(destination: URL(string: "https://dailymed.nlm.nih.gov/dailymed/")!) {
-                            Label("Search FDA-submitted labeling on DailyMed",
+                        Link(destination: reference.dailyMedSearchURL) {
+                            Label("Find current labels for \(reference.name) on DailyMed",
                                   systemImage: "arrow.up.right.square")
                                 .font(.subheadline)
                         }

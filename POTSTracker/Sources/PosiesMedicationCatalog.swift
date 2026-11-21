@@ -90,6 +90,17 @@ struct PosiesMedicationReference: Identifiable, Equatable {
     }
     var hasDirectReference: Bool { detailURL.absoluteString != "https://medlineplus.gov/druginformation.html" }
 
+    /// DailyMed is an up-to-date FDA-submitted label search, not a guarantee
+    /// that every result is the same formulation as the person's own package.
+    var dailyMedSearchURL: URL {
+        var components = URLComponents(string: "https://dailymed.nlm.nih.gov/dailymed/search.cfm")!
+        components.queryItems = [
+            URLQueryItem(name: "labeltype", value: "all"),
+            URLQueryItem(name: "query", value: name)
+        ]
+        return components.url!
+    }
+
     /// A library name fills a DRAFT profile only. Never infer strength,
     /// administration, schedule, dose, treatment indication or intake status.
     var draftProfile: PosiesMedicationProfile {
