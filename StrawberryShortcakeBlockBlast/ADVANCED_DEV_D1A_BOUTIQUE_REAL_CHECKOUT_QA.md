@@ -41,3 +41,9 @@ We are expanding beyond the original standard Undo/Shuffle/Hint purchase system.
 - [ ] Verify Night/Story/Daily and old licensed skins have not been accidentally activated or changed.
 
 **Release gate:** Await CI and physical-device acceptance, then full-game regression. D1a is a bounded feature validation step in the larger Berry Berry Blast roadmap.
+
+
+## Follow-up save-risk audit
+- [x] Confirmed purchase-only save hazard in **cosmetic and standard-helper** paths, addressed by `saveInventoryOnly()` with 8/12/24 sentinel-slot regression.
+- [ ] **Not yet fixed or tested** for `buyCottageDecoration()` and `buyPremium()`: those paths still call the generic `save()` or `persistPremium()`, and may trigger the same 8×8 unplayed-board cleanup when invoked from a separate menu session. In D1b, inject their real data stores, preserve valid board state, and write explicit no-change tests for every Endless size.
+- [ ] Also audit `buyAndContinueWithShuffle()`, Golden Strawberry and other *board-changing* premium actions separately, because they may legitimately need a board snapshot. Do not blanket-change all save calls without checking gameplay semantics.
