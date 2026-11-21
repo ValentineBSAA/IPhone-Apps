@@ -50,6 +50,12 @@ Developer Garden is a **living subsystem**. Every gameplay or economy feature mu
 | **Moonberries & Night Market** | **PLANNED visual card added** | No actual Moonberries, Moonberry ledger or cheat yet; separate Build 6 delivery |
 | Expanded Village, holiday seasons, cosmetics & achievements | PLANNED | Feature fixtures follow actual systems as they are implemented |
 
+### Blueberry / Moonberry asset readiness on the Build49 source branch
+
+**New art-preview checkpoint:** six actual existing source PNGs are bundled: `BerryRewardBlueberrySparkle` (collectible), `BerryRewardMoonberryNightmare` (collectible), day/night `Moonberry_Currency` icons and day/night approved Night Market storefronts. The **Moonberries & Night Market** Developer Garden tool now displays these six images in a **two-column, read-only preview**; two unit tests cover their catalog references and bundle names. This is a safe visual addition to Build49, not a new Moonberry economy and not yet a simulator-/device-passed feature.
+
+The shop's real balance, transactions, earning, cheats and restore must remain labeled `COMING LATER` until Build6. **Blueberry Velvet** is a separate already implemented gradient/palette cosmetic with existing purchase/equip persistence, not an imported high-detail standalone Blueberry block-image set. If more artwork is desired for that skin, treat it as separately approved polish rather than assuming an asset exists.
+
 ### 1. 🫐 Moonberries, Moonberry cheats and Night Market: priority Build 6
 
 **The Moonberry system is separate from Strawberries.** Moonberries are not aliases for strawberry inventory, nor pretend numbers in the menu. Before Build 6 exists, the **Moonberries & Night Market** card must explicitly say `COMING LATER` and show no actionable grant, test receipt, Moonberry spending or fabricated live balance. The separately approved Moonberry visual asset can be a card icon; art availability does not imply the economy is live.
