@@ -21,8 +21,8 @@ Give this family a distinct, clear **decorating** theme: a cute strawberry-roof 
 | ID | Holiday | Time | Visual direction (decorator/editor semantics) | Generated | Owner visual approval | RGBA matte QA | Binary in GitHub | App/iPhone |
 |---|---|---|---|---|---|---|---|---|
 | CD-01 | Halloween | Day | Sunny strawberry-roof cottage with flowerpot, paintbrush, ribbon spool, pumpkin lanterns, autumn leaves and sunny orange-lavender gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ original RGB/checkerboard; RGBA edge QA pending | ⬜ original PNG not yet staged | ⬜ |
-| CD-02 | Halloween | Night | Moonlit strawberry-roof cottage, glowing windows and pumpkin-berry lanterns, decorating brush, flowerpot, ribbon spool and purple-orange gingham | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ RGB source / off-white baked background; separate RGBA QA pending | ⬜ source PNG not yet staged | ⬜ |
-| CD-03 | Christmas | Day | Snow-frosted cottage with wreath, red ribbon, candy canes, snowy floral pots and festive decorator accents | ⬜ | ⬜ | ⬜ | ⬜ |
+| CD-02 | Halloween | Night | Moonlit strawberry-roof cottage, glowing windows and pumpkin-berry lanterns, decorating brush, flowerpot, ribbon spool and purple-orange gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ RGB/off-white background; separate RGBA edge QA pending | ⬜ source PNG not yet staged | ⬜ |
+| CD-03 | Christmas | Day | Snow-frosted strawberry cottage, wreath, red ribbon, candy canes, festive planters, decorating brush and ribbon spool | ⬜ NEXT: single original generation | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
 | CD-04 | Christmas | Night | Cozy glowing snowy cottage, midnight evergreen lights, wreath, baubles, purple-tinted gardening decorations | ⬜ | ⬜ | ⬜ | ⬜ |
 | CD-05 | Thanksgiving | Day | Amber harvest cottage, strawberry pie window display, maple leaf garland, pumpkin planters, cozy decorating details | ⬜ | ⬜ | ⬜ | ⬜ |
 | CD-06 | Thanksgiving | Night | Candlelit autumn cottage with pumpkin planters, lanterns, maple wreath and moonlit decorated garden | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -69,3 +69,11 @@ Links: [H1-B04 checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md) · [Master
 - [ ] No source PNG binary uploaded into GitHub yet; real iPhone QA and runtime routing are independent future gates.
 
 **Latest: H1-B05 2/8 generated, 1/8 owner-approved.**
+
+
+### CD-02 owner approval, Christmas Day next
+- [x] **CD-02 Halloween Night** visually approved by owner (“Good continue”). Preserve accepted original as generated with illuminated strawberry cottage, purple Halloween lanterns and decorating props.
+- [ ] **NEXT CD-03 Christmas Day:** create one distinct *daytime* snowy holiday decorating cottage with recognizable strawberry roof, sunny winter sky, window wreath, holly, candy canes, floral pots, pink/gold decorating paintbrush, ribbon spool and festive gingham. Keep original editor/decorating meaning; no text or duplicate generic H1-B01 hero house.
+- [ ] After owner approval proceed to CD-04 Christmas Night. Original SHA archiving, separate RGBA alpha cleanup and review, checksummed ZIP, GitHub binary staging, Xcode and physical iPhone QA remain future gates.
+
+**Authoritative H1-B05: 2/8 visually approved, 2/8 generated before CD-03.**
