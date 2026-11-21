@@ -99,8 +99,8 @@ struct PosiesRemindersView: View {
             VStack(alignment: .leading, spacing: 16) {
                 GlassCard {
                     VStack(alignment: .leading, spacing: 11) {
-                        Label("Gentle reminders", systemImage: "bell.badge.fill")
-                            .font(.title3.bold()).foregroundStyle(Color.potsTeal)
+                        PosiesFeatureSectionTitle(featureID: "reminders",
+                                                   title: "Gentle reminders", artworkSize: 42)
                         Text("Choose your own schedule. Gentle iPhone reminders can be snoozed for 15 minutes. They never mark a medication as taken.")
                             .font(.subheadline).foregroundStyle(Color.potsSecondary)
                         Toggle("Show reminder type in notifications", isOn: $showReminderType)

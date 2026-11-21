@@ -88,9 +88,9 @@ struct PosiesReportsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 GlassCard {
                     VStack(alignment: .leading, spacing: 10) {
-                        Label("Your patterns over time", systemImage: "chart.bar.xaxis")
-                            .font(.title3.bold())
-                            .foregroundStyle(Color.potsTeal)
+                        PosiesFeatureHeading(featureID: "reports", title: "Your patterns over time",
+                                             subtitle: "Your own records, viewed together",
+                                             artworkSize: 51)
                         Picker("Report period", selection: $range) {
                             ForEach(PosiesDateRange.allCases) { period in
                                 Text(period.rawValue).tag(period)
@@ -109,7 +109,7 @@ struct PosiesReportsView: View {
 
                 GlassCard {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Recording activity").font(.headline)
+                        PosiesFeatureSectionTitle(featureID: "reports", title: "Recording activity")
                         if groupedBuckets.isEmpty {
                             missing
                         } else {
@@ -132,7 +132,7 @@ struct PosiesReportsView: View {
 
                 GlassCard {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Manually recorded heart rates").font(.headline)
+                        PosiesFeatureSectionTitle(featureID: "heartRate", title: "Manually recorded heart rates")
                         if heartRows.isEmpty {
                             missing
                         } else {
@@ -155,7 +155,7 @@ struct PosiesReportsView: View {
 
                 GlassCard {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Manually recorded blood pressure").font(.headline)
+                        PosiesFeatureSectionTitle(featureID: "bloodPressure", title: "Manually recorded blood pressure")
                         if bloodPressureRows.isEmpty {
                             missing
                         } else {
