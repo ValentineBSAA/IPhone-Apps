@@ -25,8 +25,8 @@ This is the player's **owned inventory, achievements, awards and personal record
 | ID | Holiday | Lighting | Visual direction | Generated | Owner approved | RGBA candidate QA | Source PNG GitHub | Runtime/iPhone QA |
 |---|---|---|---|---|---|---|---|---|
 | BC-01 | Halloween | Day | Sunlit pink strawberry treasure chest with gold earned medal and award card, orange leaves, pumpkin-berries, purple hat, autumn gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ RGB checkerboard backdrop; RGBA cleanup pending | ⬜ source PNG not staged | ⬜ |
-| BC-02 | Halloween | Night | Moonlit violet strawberry keepsake chest with gold medal and collectible card, glowing berry jack-o'-lanterns, autumn foliage and orange-purple gingham | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ 1254px RGB, off-white baked background; separate RGBA edge QA pending | ⬜ original PNG not staged | ⬜ |
-| BC-03 | Christmas | Day | Snow-touched berry keepsake chest, gold medal, candy-cane and holly decorations, red-green ribbon | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| BC-02 | Halloween | Night | Moonlit violet strawberry keepsake chest with gold medal and collectible card, glowing berry jack-o'-lanterns, autumn foliage and orange-purple gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ 1254px RGB, off-white baked background; RGBA QA pending | ⬜ original PNG not staged | ⬜ |
+| BC-03 | Christmas | Day | Sunny snowy strawberry keepsake chest, gold medal and trophy collectible card, holly and candy canes, evergreen lights and red-green gingham | ⬜ NEXT: single image generation | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
 | BC-04 | Christmas | Night | Snowy moonlit purple chest with glowing keepsakes, golden prize star, fir lights and berry holly | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BC-05 | Thanksgiving | Day | Sunlit amber berry treasure chest, medal, harvest sticker, maple leaves, pumpkins and berry pie | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BC-06 | Thanksgiving | Night | Candlelit plum-and-gold collection chest, moon/stars, pumpkins, leaves, berry harvest accents | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -73,3 +73,11 @@ References: [Seasonal master icon matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) 
 - [ ] No BC-02 source PNG binary committed to GitHub or imported into iOS assets; checksum/archive, separate cleanup, integration and physical iPhone QA pending.
 
 **H1-B06 latest: 2/8 originals generated, 1/8 visually approved, BC-02 owner review pending.**
+
+
+### BC-02 approved; BC-03 Christmas Day next
+- [x] BC-02 Halloween Night explicitly visually approved by owner (“Good continue”). Preserve open strawberry keepsake chest, gold berry medallion and trophy card, moonlit purple sky, harvest leaves and glowing berry lanterns as originally generated.
+- [ ] NEXT **BC-03 Christmas Day**: generate only one original of same recognizably open strawberry keepsake chest with gold earned achievement medallion and separate collectible award card; sunlight and gentle snow, wreath/holly, evergreen ornaments, candy canes, strawberry berries and red/green gingham bow. No words, score numbers or price tags.
+- [ ] Await explicit BC-03 visual approval before BC-04 Christmas Night. Originals, actual RGBA alpha edge QA, source hashes, preview sheets, ZIP GitHub import and iPhone runtime QA remain separate incomplete gates.
+
+**Current Berry Collection owner approvals: 2/8, generated 2/8 prior to BC-03.**
