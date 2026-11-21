@@ -71,11 +71,22 @@ struct RecordSnapshot: Identifiable, Equatable {
     var detail: String {
         switch type {
         case .heartRate:
-            return "\(firstValue) bpm" + (posture.isEmpty ? "" : " · \(posture)")
+            let extra = PosiesVitalsContext.read(source)
+            return "\(firstValue) bpm" + (posture.isEmpty ? "" : " · \(posture)") +
+                (extra.timing.isEmpty ? "" : " · \(extra.timing)")
         case .bloodPressure:
-            return "\(firstValue)/\(secondValue) mmHg" + (posture.isEmpty ? "" : " · \(posture)")
+            let extra = PosiesVitalsContext.read(source)
+            let paired = extra.average(firstSystolic: Int(firstValue), firstDiastolic: Int(secondValue))
+            return "\(firstValue)/\(secondValue) mmHg" +
+                (extra.hasSecondReading ? " + \(extra.secondSystolic!)/\(extra.secondDiastolic!)" : "") +
+                (paired.map { " · Avg \($0.0)/\($0.1)" } ?? "") +
+                (extra.monitorPulse.map { " · \($0) bpm" } ?? "")
         case .symptom:
-            return severity < 0 ? "Symptom recorded" : "Severity \(severity)/10"
+            let flare = PosiesFlareContext.read(source)
+            let base = severity < 0 ? "Symptom recorded" : "Severity \(severity)/10"
+            return base + (flare == nil ? "" : " · Flare-up note") +
+                (flare?.pulse.map { " · \($0) bpm" } ?? "") +
+                (flare?.triggers.isEmpty == false ? " · \(flare!.triggers.prefix(2).joined(separator: ", "))" : "")
         case .checkIn:
             return CheckInFormat.shortDetail(
                 feeling: CheckInFormat.feeling(title: title, posture: posture),
