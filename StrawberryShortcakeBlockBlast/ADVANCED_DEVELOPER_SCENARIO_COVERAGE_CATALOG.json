@@ -3,7 +3,7 @@
   "app": "Berry Berry Blast",
   "status": "roadmap-only, no test fixtures implemented",
   "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests.",
-  "count": 46,
+  "count": 48,
   "status_values": [
     "planned",
     "implemented_untested",
@@ -479,6 +479,32 @@
       "status": "planned",
       "execution": "isolated_fixture",
       "latest_result": null
+    },
+    {
+      "id": "line-clear-single-row",
+      "category": "gameplay",
+      "title": "D0 one move to clear one exact row",
+      "fixture": "8×8, row 4 has seven occupied cells, one unrelated occupied cell, fixed 1-cell piece in tray slot 0. Run at (3,7).",
+      "expected": "Exactly row 4 cleared; column clears 0; score increases 11 without 300-point all-board bonus; live saves remain untouched.",
+      "status": "implemented_untested",
+      "execution": "isolated_fixture",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d0-isolated-sandbox:BerryDeveloperScenarioSandbox.swift",
+      "test_ref": "BerryDeveloperSandboxTests.testOneMoveLineClearRunsActualEngineWithExactScoreAndNoBonus",
+      "manual_iphone_accepted": false
+    },
+    {
+      "id": "blocked-placement",
+      "category": "gameplay",
+      "title": "D0 occupied cell placement is fully rejected",
+      "fixture": "8×8, occupied (2,2), fixed tray. Attempt slot 0 at that same occupied cell.",
+      "expected": "Placement returns nil; exact canonical engine bytes unchanged; no score or move change; no persistent game state accessed.",
+      "status": "implemented_untested",
+      "execution": "isolated_fixture",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d0-isolated-sandbox:BerryDeveloperScenarioSandbox.swift",
+      "test_ref": "BerryDeveloperSandboxTests.testInvalidPlacementRejectsWithoutAnyEngineMutation",
+      "manual_iphone_accepted": false
     }
   ]
 }
