@@ -126,7 +126,8 @@ struct ExpandedEntryEditor: View {
     private var valid: Bool {
         switch category {
         case .hydration:
-            guard let ml = Int(firstValue), (1...10000).contains(ml) else { return false }
+            guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  let ml = Int(firstValue), (1...10000).contains(ml) else { return false }
             return secondValue.isEmpty || (Int(secondValue).map { (0...30000).contains($0) } ?? false)
         case .medications:
             return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
