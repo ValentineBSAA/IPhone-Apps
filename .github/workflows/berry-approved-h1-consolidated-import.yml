@@ -1,0 +1,124 @@
+# One-package non-destructive import. This workflow does not merge into main or touch Assets.xcassets.
+name: Berry Berry Blast | Import approved consolidated H1 artwork (55 originals)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: berry-h1-approved-all-20261120
+  cancel-in-progress: false
+
+jobs:
+  verified-artwork-staging:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.release.tag_name == 'berry-h1-approved-all-20261120' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout isolated artwork branch
+        uses: actions/checkout@v4
+        with:
+          ref: artwork/berry-seasonal-approved-h1-consolidated-20261120
+          persist-credentials: true
+          fetch-depth: 1
+
+      - name: Download consolidated release ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release download berry-h1-approved-all-20261120 \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern 'Berry_Berry_Blast_ALL_Approved_Seasonal_Artwork_GitHub_2026-11-20.zip' \
+            --dir "$RUNNER_TEMP" --clobber
+
+      - name: Validate every file and stage originals without overwriting changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$RUNNER_TEMP/Berry_Berry_Blast_ALL_Approved_Seasonal_Artwork_GitHub_2026-11-20.zip" <<'PY'
+          import hashlib, json, pathlib, stat, sys, zipfile
+          zpath = pathlib.Path(sys.argv[1])
+          expected_zip = '2e9e321a70aef320e849cd18d82533ae9e86fd6a23a36b02e584a55e25d4c210'
+          def digest(data): return hashlib.sha256(data).hexdigest()
+          if digest(zpath.read_bytes()) != expected_zip:
+              raise SystemExit('Refusing ZIP: consolidated archive SHA mismatch')
+          base = 'StrawberryShortcakeBlockBlast/ArtSource/'
+          doc = base + '00_Consolidated_H1_2026-11-20/'
+          with zipfile.ZipFile(zpath) as z:
+              if z.testzip() is not None: raise SystemExit('Archive failed integrity test')
+              names=z.namelist()
+              if len(names)!=150 or len(set(names))!=150:
+                  raise SystemExit('Unexpected ZIP entry count or duplicates')
+              for info in z.infolist():
+                  name=info.filename
+                  p=pathlib.PurePosixPath(name)
+                  mode=(info.external_attr>>16) & 0o170000
+                  if (p.is_absolute() or '..' in p.parts or '\\' in name
+                      or not name.startswith(base)
+                      or not p.parts[2] in ('SeasonalGarden', 'ClockFrames', '00_Consolidated_H1_2026-11-20')
+                      or info.is_dir() or mode not in (0, stat.S_IFREG)):
+                      raise SystemExit('Unsafe or unexpected archive member: '+name)
+              manifest=json.loads(z.read(doc+'CONSOLIDATED_ASSET_MANIFEST.json'))
+              approved=manifest['entries']
+              if len(approved)!=55 or manifest['unique_visually_approved_originals']!=55:
+                  raise SystemExit('Expected 55 exact approved original artworks')
+              expected_families={'Berry Home Classic':8, 'Digital Clock Frames':10,
+                                 'Berry Story':8, 'Daily Harvest':8, 'More Adventures':8,
+                                 'My Strawberry Cottage Decorations':8, 'Berry Collection':5}
+              if manifest['families'] != expected_families:
+                  raise SystemExit('Wrong artwork family counts')
+              for item in approved:
+                  name=item['original_path']
+                  if not name.endswith('_Original.png') or not name.startswith(base):
+                      raise SystemExit('Invalid original source path '+name)
+                  raw=z.read(name)
+                  if digest(raw)!=item['original_sha256']:
+                      raise SystemExit('Original PNG checksum mismatch '+name)
+                  if raw[:8] != bytes.fromhex('89504e470d0a1a0a'):
+                      raise SystemExit('Non-PNG original '+name)
+              checksum_lines=z.read(doc+'SHA256SUMS.txt').decode().splitlines()
+              expected={}
+              for line in checksum_lines:
+                  value,name=line.split('  ',1)
+                  if name in expected:raise SystemExit('Duplicate checksum entry '+name)
+                  expected[name]=value
+              if len(expected)!=149 or set(expected)!=set(names)-{doc+'SHA256SUMS.txt'}:
+                  raise SystemExit('SHA256SUMS inventory mismatch')
+              for name,sha in expected.items():
+                  if digest(z.read(name))!=sha:
+                      raise SystemExit('SHA-256 mismatch: '+name)
+              # All input content has been verified before mutation. Never overwrite
+              # an existing different source or alpha candidate, even on art branch.
+              for name in names:
+                  dest=pathlib.Path(name)
+                  if dest.is_symlink():
+                      raise SystemExit('Refusing symlink target '+name)
+                  if dest.exists() and digest(dest.read_bytes()) != digest(z.read(name)):
+                      raise SystemExit('Existing artwork differs; refusing replacement: '+name)
+              for name in names:
+                  dest=pathlib.Path(name)
+                  dest.parent.mkdir(parents=True,exist_ok=True)
+                  if not dest.exists():dest.write_bytes(z.read(name))
+              print('All 150 archive files checked; 55 approved original artworks staged. No existing image overwritten.')
+          PY
+
+      - name: Commit to isolated artwork staging branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = 'artwork/berry-seasonal-approved-h1-consolidated-20261120'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- StrawberryShortcakeBlockBlast/ArtSource
+          if git diff --cached --quiet; then
+            echo 'All exact artwork bytes already present. No changes.'
+          else
+            git commit -m 'art(seasonal): consolidate 55 approved original sources plus separate RGBA QA candidates'
+            git push origin HEAD:artwork/berry-seasonal-approved-h1-consolidated-20261120
+          fi
