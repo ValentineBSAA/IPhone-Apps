@@ -20,6 +20,11 @@ private struct PosiesBPPlot: Identifiable {
     var systolic: Int
     var diastolic: Int
 }
+private struct PosiesMedicationCount: Identifiable {
+    let status: String
+    let count: Int
+    var id: String { status }
+}
 
 struct PosiesReportsView: View {
     @FetchRequest(sortDescriptors: [NSSortDescriptor(key: "recordedAt", ascending: false)])
@@ -59,10 +64,11 @@ struct PosiesReportsView: View {
                          systolic: Int(row.firstValue), diastolic: Int(row.secondValue))
         }.sorted { $0.time < $1.time }
     }
-    private var medicationStatusCounts: [(String, Int)] {
+    private var medicationStatusCounts: [PosiesMedicationCount] {
         let medications = records.filter { $0.category == LogCategory.medications.rawValue }
         return ["Taken", "Skipped", "Planned", "Other"].map { status in
-            (status, medications.filter { $0.posture == status }.count)
+            PosiesMedicationCount(status: status,
+                                  count: medications.filter { $0.posture == status }.count)
         }
     }
 
@@ -175,14 +181,14 @@ struct PosiesReportsView: View {
                     VStack(alignment: .leading, spacing: 9) {
                         Text("Medication events you recorded").font(.headline)
                         let counts = medicationStatusCounts
-                        if counts.allSatisfy({ $0.1 == 0 }) {
+                        if counts.allSatisfy({ $0.count == 0 }) {
                             missing
                         } else {
-                            ForEach(counts, id: \.0) { status, count in
+                            ForEach(counts) { item in
                                 HStack {
-                                    Text(status).font(.subheadline)
+                                    Text(item.status).font(.subheadline)
                                     Spacer()
-                                    Text("\(count)").font(.subheadline.monospacedDigit())
+                                    Text("\(item.count)").font(.subheadline.monospacedDigit())
                                         .foregroundStyle(Color.potsTeal)
                                 }
                             }
