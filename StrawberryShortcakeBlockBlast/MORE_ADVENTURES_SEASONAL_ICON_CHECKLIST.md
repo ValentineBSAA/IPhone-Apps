@@ -24,7 +24,7 @@ In `BerryModes.swift` Home screen, **More Adventures** uses `BerryGridNavigation
 | MA-01 | Halloween | Day | Sunlit autumn garden crossroads with strawberry signpost, three icon routes (lightning, cottage, moon), lantern berries, autumn gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ RGBA/edge QA pending | ⬜ original PNG import pending | ⬜ |
 | MA-02 | Halloween | Night | Moonlit violet strawberry crossroads with lightning, warm cottage and moon/star arrows; glowing berry lanterns and pumpkins | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ background/alpha QA pending | ⬜ source PNG import pending | ⬜ |
 | MA-03 | Christmas | Day | Sunlit snowy strawberry crossroads with lightning, cottage and crescent/star arrows, evergreen lights, holly, candy canes and red-green gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ original PNG not staged | ⬜ |
-| MA-04 | Christmas | Night | Moonlit snowy crossroads with three symbolic routes, lit strawberry cottage, glowing holiday trees and red-green gingham | ⬜ NEXT: single original generation | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
+| MA-04 | Christmas | Night | Moonlit snowy strawberry crossroads, lit pines and cottage, lightning/cottage/crescent three-arrow signs, festive gingham | 🟡 GENERATED, 2 candidates displayed | ⬜ AWAITING OWNER SELECTION/APPROVAL | ⚠ alpha/checkerboard QA pending | ⬜ PNG originals not staged | ⬜ |
 | MA-05 | Thanksgiving | Day | Amber harvest three-path signpost, maple leaves, pumpkins, berry pie, berry harvest basket | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | MA-06 | Thanksgiving | Night | Candlelit plum/gold garden fork, moonlit pumpkin-berry lanterns, pie and autumn foliage | ⬜ | ⬜ | ⬜ | ⬜ |
 | MA-07 | Birthday | Day | Festive pink garden three-way signpost, strawberry cake, present, balloons and gold chapter-style star | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -96,3 +96,11 @@ Links: [Seasonal icon matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) · [Daily Ha
 - [ ] Await explicit MA-04 visual approval before moving to MA-05 Thanksgiving Day; original file archive, alpha/edge QA, RGBA candidate, ZIP and verified GitHub binary staging remain independent requirements.
 
 **Current More Adventures approvals: 3/8, MA-04 next.**
+
+
+### MA-04 Christmas Night generation review gate
+- [x] Christmas Night More Adventures scene generated and shown in chat. **Two outputs were produced, despite the one-image review protocol; only one MA-04 semantic icon will be approved and staged.** Both depict the three routes, moonlit snowy pines, glowing lanterns and cottage, with Christmas gingham.
+- [ ] Owner to accept a specific image (first or second, or request redo) before marking MA-04 approved or advancing to MA-05 Thanksgiving Day. **No automatic approval and no second semantic icon.**
+- [ ] Preserve the accepted image's exact PNG bytes when chosen, test real transparency against potential baked checkerboard, and prepare reviewed alpha and 64/96px proofs before GitHub binary import.
+
+**H1-B04 current: 4/8 semantic slots generated, 3/8 visually approved, MA-04 pending owner selection.**
