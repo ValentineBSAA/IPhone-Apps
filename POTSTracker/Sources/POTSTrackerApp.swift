@@ -178,6 +178,7 @@ enum DateTracking {
 
 @main
 struct POTSTrackerApp: App {
+    @UIApplicationDelegateAdaptor(PosiesNotificationDelegate.self) private var notificationDelegate
     @AppStorage("posiesAppearance") private var posiesAppearance = "system"
     private let persistence = PersistenceController.shared
     @Environment(\.scenePhase) private var scenePhase
