@@ -54,3 +54,7 @@
 - [D2b precise QA and owner-device checklist](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d2b-one-tap-tool-action-lab/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D2B_ONE_TAP_TOOL_ACTION_QA.md).
 - Seven one-tap **actual real game action** cards run independently against disposable UserDefaults and isolated ledger, then reopen the saved engine, show expected/actual PASS/FAIL. New D2b panel/model compiled only under BERRY_INTERNAL_QA, not production Release.
 - **Do not fabricate D2b CI result**. Review run #44871494518 and fix failures before progressing. Physical owner iPhone16e, gameplay swipe/taps and crash-atomic savings remain separate work. No IPA/merge/version bump.
+
+## Next D2c audited, not implemented
+- [D2c Twister, Pantry, 24×24 Golden and Game Over rescue design checklist](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D2C_TOOL_ACTION_RESCUE_ROADMAP.md) includes exact fixtures and guardrails for the next milestone. Do **not** code or claim success until D2b CI is green.
+- Audit found `buyAndUseGoldenStrawberry()` still writes directly to `BerryEconomyLedger.shared` and `UserDefaults.standard`. Never invoke that method from a temporary QA suite before isolating both write paths. Actual player checkout behavior is unchanged; this is a testing safety prerequisite.
