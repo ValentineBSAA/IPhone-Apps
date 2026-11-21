@@ -40,6 +40,11 @@ jobs:
           test -f UITests/BerryBoardAppearancePersistenceUITests.swift
           test -f UITests/BerryVersionIdentityUITests.swift
           test -f UITests/BerryDeveloperGardenPhysicalQAUITests.swift
+          test -f Tests/BerryCheatWalletRestoreTests.swift
+          grep -q 'qaCheatRestorePoint' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'restorePreCheatStrawberries' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'berry.developer.cheat.restore-strawberries' BerryBlockBlast/BerryDeveloperGardenView.swift
+          grep -q 'moonberries = "Moonberries & Night Market"' BerryBlockBlast/BerryDeveloperGardenView.swift
           grep -q 'SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BERRY_INTERNAL_QA"' project.yml
           grep -q 'berry.settings.version.developer' BerryBlockBlast/BerrySettingsHub.swift
           grep -q 'berry.developer.tool.' BerryBlockBlast/BerryDeveloperGardenView.swift
@@ -127,7 +132,7 @@ jobs:
             -resultBundlePath .build/I6/native-journeys.xcresult \
             -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO test
 
-      - name: Run all 161 integrated real gameplay, economy and regression XCTest
+      - name: Run all 169 real gameplay, cheat restore, economy and regression XCTest
         timeout-minutes: 25
         shell: bash
         run: |
@@ -160,7 +165,8 @@ jobs:
             -only-testing:BerryBlockBlastTests/BerryBirthdayPolicyIsolationTests \
             -only-testing:BerryBlockBlastTests/BerryBuild44BoutiqueToolsTests \
             -only-testing:BerryBlockBlastTests/BerryShuffleContinueIsolationTests \
-            -only-testing:BerryBlockBlastTests/BerryRescueUndoIsolationTests
+            -only-testing:BerryBlockBlastTests/BerryRescueUndoIsolationTests \
+            -only-testing:BerryBlockBlastTests/BerryCheatWalletRestoreTests
 
       - name: Ensure no IPA existed before corrected private packaging
         shell: bash
@@ -246,8 +252,13 @@ jobs:
 
           DEVICE QA: In Settings hold the build label for ~2 seconds, then
           enter PIN 1476. Open Commerce Lab and Quest & Story Lab for
-          isolated repeatable tests. Cheat Strawberries is deliberately available. It modifies your saved
-          wallet ONLY after entering an amount and confirming the grant.
+          isolated repeatable tests. Cheat Strawberries is optional and
+          changes your saved wallet ONLY after confirmation.
+          BEFORE EACH CHEAT: The exact previous strawberry balance is saved.
+          RESTORE: Open Cheat Strawberries again and choose Restore previous
+          balance. This restores the exact amount from before your first
+          cheat, even after an app restart. Later normal earnings/spending
+          will also be overwritten if you restore, so read the warning.
 
           FIVE QUICK CHECKS AFTER YOUR OWN BACKUP + SAFE INSTALL:
           [ ] 1. Launch: Home displays v0.5.16 / B48 / I6 QA; music works.
