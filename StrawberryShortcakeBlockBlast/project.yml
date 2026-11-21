@@ -37,6 +37,17 @@ targets:
       configs:
         Debug:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BERRY_INTERNAL_QA"
+  BerryBlockBlastUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: BerryBlockBlast
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.berryblockblast.uitests
   BerryBlockBlastTests:
     type: bundle.unit-test
     platform: iOS
@@ -60,3 +71,11 @@ schemes:
     test:
       targets:
         - BerryBlockBlastTests
+  BerryBlockBlastUI:
+    build:
+      targets:
+        BerryBlockBlast: all
+        BerryBlockBlastUITests: [test]
+    test:
+      targets:
+        - BerryBlockBlastUITests

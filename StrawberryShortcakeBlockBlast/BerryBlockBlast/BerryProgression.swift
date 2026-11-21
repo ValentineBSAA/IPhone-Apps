@@ -126,6 +126,7 @@ struct BerryQuestBoardView: View {
                     Image(BerryArtResolver.displayName(for: "BerryQuestBoardArt")).resizable().scaledToFit()
                         .frame(height: 125).accessibilityHidden(true)
                     Text("Berry Quest Board")
+                        .accessibilityIdentifier("berry.quests.title")
                         .font(.system(size: 28, weight: .black, design: .rounded))
                         .foregroundStyle(BerryStyle.strawberry)
                     Text("Three little adventures each day. Earn berries by actually playing, not by opening menus.")
@@ -174,6 +175,7 @@ struct BerryQuestBoardView: View {
                                 .font(.system(size: 11, weight: .heavy, design: .rounded))
                                 .buttonStyle(.borderedProminent)
                                 .tint(BerryStyle.strawberry)
+                                .accessibilityIdentifier("berry.quests.claim.\(quest.id)")
                                 .disabled(progress.isClaimed(quest) ||
                                           progress.progress(for: quest) < quest.target)
                             }
@@ -192,7 +194,10 @@ struct BerryQuestBoardView: View {
             }
             .background(BerryStyle.cream.ignoresSafeArea())
             .navigationTitle("Berry Quests")
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) {
+                Button("Done") { dismiss() }
+                    .accessibilityIdentifier("berry.quests.done")
+            } }
         }
     }
 }
@@ -236,6 +241,7 @@ struct BerryVillageView: View {
                             .strokeBorder(BerryStyle.strawberry.opacity(0.4), lineWidth: 2))
                         .accessibilityHidden(true)
                     Text("Strawberry Village")
+                        .accessibilityIdentifier("berry.village.title")
                         .font(.system(size: 27, weight: .black, design: .rounded))
                         .foregroundStyle(BerryStyle.strawberry)
                     Text("Restore the village through Story chapters, daily harvests and garden adventures.")
@@ -270,7 +276,10 @@ struct BerryVillageView: View {
             }
             .background(BerryStyle.cream.ignoresSafeArea())
             .navigationTitle("Berry Village")
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) {
+                Button("Done") { dismiss() }
+                    .accessibilityIdentifier("berry.village.done")
+            } }
             .sheet(isPresented: $showCottage) { BerryCottageGardenView(session: session) }
         }
     }
@@ -290,6 +299,7 @@ struct BerryJournalView: View {
                     Image(BerryArtResolver.displayName(for: "BerryJournalArt")).resizable().scaledToFit()
                         .frame(height: 118).accessibilityHidden(true)
                     Text("Berry Journal")
+                        .accessibilityIdentifier("berry.journal.title")
                         .font(.system(size: 28, weight: .black, design: .rounded))
                         .foregroundStyle(BerryStyle.strawberry)
                     Text("A scrapbook of everything you've grown and earned.")
@@ -325,7 +335,10 @@ struct BerryJournalView: View {
             }
             .background(BerryStyle.cream.ignoresSafeArea())
             .navigationTitle("Berry Journal")
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) {
+                Button("Done") { dismiss() }
+                    .accessibilityIdentifier("berry.journal.done")
+            } }
         }
     }
 }
