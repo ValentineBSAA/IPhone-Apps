@@ -97,11 +97,27 @@ struct HomeCustomizationView: View {
                 GlassCard {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Home spacing").font(.headline)
-                        Picker("Home spacing", selection: $density) {
-                            Text("Compact").tag("compact")
-                            Text("Comfortable").tag("comfortable")
+                        HStack(spacing: 9) {
+                            ForEach(["compact", "comfortable"], id: \.self) { option in
+                                let active = density == option
+                                Button {
+                                    density = PosiesChoiceBehavior.toggle(density, tapped: option)
+                                } label: {
+                                    Text(option == "compact" ? "Compact" : "Comfortable")
+                                        .font(.subheadline.weight(active ? .semibold : .regular))
+                                        .frame(maxWidth: .infinity, minHeight: 48)
+                                        .foregroundStyle(active ? Color.white : Color.primary)
+                                        .background(active ? Color.potsButtonFill : Color.potsSurfaceMuted,
+                                                    in: RoundedRectangle(cornerRadius: 12))
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityAddTraits(active ? [.isSelected] : [])
+                                .accessibilityHint(active ? "Selected. Tap again to clear." : "Tap to select.")
+                            }
                         }
-                        .pickerStyle(.segmented)
+                        Text("Tap a selected spacing again to clear it. With nothing selected, Home uses compact spacing.")
+                            .font(.caption)
+                            .foregroundStyle(Color.potsSecondary)
                         Text("The low-energy setting in More makes tap targets larger, independently of this choice.")
                             .font(.caption)
                             .foregroundStyle(Color.potsSecondary)
