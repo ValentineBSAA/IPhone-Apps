@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreData
 
 private struct PosiesMedicationDraft: Identifiable {
     let id: UUID
@@ -16,6 +17,15 @@ struct PosiesMedicationCabinetView: View {
     @State private var editing: PosiesMedicationDraft?
     @State private var deleting: UUID?
     @State private var errorText: String?
+    @FetchRequest(sortDescriptors: [NSSortDescriptor(key: "recordedAt", ascending: false)])
+    private var recordedEvents: FetchedResults<POTSLogEntry>
+
+    private func latestRecordedEvent(for profile: PosiesMedicationProfile) -> POTSLogEntry? {
+        recordedEvents.first {
+            !$0.isDeleted && $0.category == LogCategory.medications.rawValue &&
+            $0.title.localizedCaseInsensitiveCompare(profile.name) == .orderedSame
+        }
+    }
 
     var body: some View {
         ScrollView {
@@ -68,6 +78,16 @@ struct PosiesMedicationCabinetView: View {
                                 if !profile.instructions.isEmpty {
                                     Text(profile.instructions).font(.caption).foregroundStyle(Color.potsSecondary)
                                 }
+                                if let event = latestRecordedEvent(for: profile) {
+                                    Label("Last recorded: \(event.posture) · \(event.recordedAt.formatted(date: .abbreviated, time: .shortened))",
+                                          systemImage: "clock.arrow.circlepath")
+                                        .font(.caption).foregroundStyle(Color.potsSecondary)
+                                    Text("A planned record doesn't mean a dose was taken.")
+                                        .font(.caption2).foregroundStyle(Color.potsSecondary)
+                                } else {
+                                    Text("No events recorded for this medication name yet.")
+                                        .font(.caption).foregroundStyle(Color.potsSecondary)
+                                }
                                 HStack(spacing: 18) {
                                     Button("Edit") { editing = PosiesMedicationDraft(profile) }
                                     Spacer()
@@ -78,6 +98,13 @@ struct PosiesMedicationCabinetView: View {
                         }
                     }
                 }
+                NavigationLink {
+                    ExpandedEntryEditor(category: .medications)
+                } label: {
+                    Label("Record a medication event", systemImage: "square.and.pencil")
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                }
+                .buttonStyle(.bordered)
                 NavigationLink {
                     PosiesRemindersView()
                 } label: {
@@ -105,8 +132,10 @@ struct PosiesMedicationCabinetView: View {
                 if PosiesMedicationLibrary.save(copy) {
                     profiles = copy
                     PosiesCloudBackup.shared.noteRecordSaved()
+                    return true
                 } else {
                     errorText = "We couldn't save that medication profile. Please check the details and try again."
+                    return false
                 }
             }
         }
@@ -144,10 +173,10 @@ private struct PosiesMedicationProfileEditor: View {
     @State private var profile: PosiesMedicationProfile
     @State private var supplyText: String
     @State private var hasRefillDate: Bool
-    let onSave: (PosiesMedicationProfile) -> Void
+    let onSave: (PosiesMedicationProfile) -> Bool
 
     private let schedules = ["Daily", "Several times daily", "As needed", "Other"]
-    init(profile: PosiesMedicationProfile, onSave: @escaping (PosiesMedicationProfile) -> Void) {
+    init(profile: PosiesMedicationProfile, onSave: @escaping (PosiesMedicationProfile) -> Bool) {
         _profile = State(initialValue: profile)
         _supplyText = State(initialValue: profile.remainingSupply.map(String.init) ?? "")
         _hasRefillDate = State(initialValue: profile.refillDate != nil)
@@ -222,8 +251,9 @@ private struct PosiesMedicationProfileEditor: View {
                     Button("Save") {
                         profile.refillDate = hasRefillDate ? (profile.refillDate ?? Date()) : nil
                         profile.remainingSupply = supplyText.isEmpty ? nil : Int(supplyText)
-                        onSave(profile)
-                        dismiss()
+                        if onSave(profile) {
+                            dismiss()
+                        }
                     }
                     .disabled(!profile.safeToSave || (!supplyText.isEmpty && Int(supplyText) == nil))
                 }

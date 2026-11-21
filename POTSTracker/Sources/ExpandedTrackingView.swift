@@ -73,6 +73,10 @@ struct ExpandedEntryEditor: View {
     @State private var sleepStart: Date
     @State private var sleepEnd: Date
     @AppStorage("posiesMedicationProfilesV028") private var medicationProfilesData = Data()
+    @AppStorage("posiesHydrationQuickMLV029") private var hydrationQuickAmounts = ""
+    @AppStorage("posiesRestQuickMinutesV029") private var restQuickMinutes = ""
+    @State private var editingHydrationPresets = false
+    @State private var editingRestPresets = false
 
     private let fluidTypes = ["Water", "Electrolyte drink", "Other drink", "Food / fluid"]
     private let sleepKinds = ["Sleep", "Rest"]
@@ -213,6 +217,14 @@ struct ExpandedEntryEditor: View {
             } message: {
                 Text(errorText ?? "Please try again.")
             }
+            .sheet(isPresented: $editingHydrationPresets) {
+                PosiesQuickPresetsEditor(stored: $hydrationQuickAmounts, title: "Hydration quick amounts",
+                                         unit: "mL", fallback: [125, 250, 350, 500], range: 1...10000)
+            }
+            .sheet(isPresented: $editingRestPresets) {
+                PosiesQuickPresetsEditor(stored: $restQuickMinutes, title: "Rest and sleep durations",
+                                         unit: "minutes", fallback: [15, 30, 60, 90], range: 1...2880)
+            }
         }
     }
 
@@ -267,7 +279,8 @@ struct ExpandedEntryEditor: View {
                 }
                 Text("Quick amounts").font(.caption.weight(.semibold))
                 HStack(spacing: 7) {
-                    ForEach([125, 250, 350, 500], id: \.self) { amount in
+                    ForEach(PosiesQuickPresets.values(hydrationQuickAmounts, fallback: [125, 250, 350, 500],
+                                                 range: 1...10000), id: \.self) { amount in
                         Button("\(amount)") { firstValue = PosiesChoiceBehavior.toggleAmount(firstValue, tapped: amount) }
                             .font(.caption.weight(.semibold))
                             .frame(maxWidth: .infinity, minHeight: 42)
@@ -278,6 +291,14 @@ struct ExpandedEntryEditor: View {
                             .accessibilityHint(firstValue == String(amount) ? "Selected. Tap again to clear." : "Tap to enter this amount.")
                     }
                 }
+                Button {
+                    editingHydrationPresets = true
+                } label: {
+                    Label("Customize quick amounts", systemImage: "slider.horizontal.3")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
+                .accessibilityHint("Changes shortcuts only, not your recorded entries or a medical target.")
                 Text("Sodium (optional)").font(.subheadline.weight(.semibold))
                 HStack {
                     TextField("From the product label", text: $secondValue)
@@ -402,7 +423,8 @@ struct ExpandedEntryEditor: View {
                         Text("min").foregroundStyle(Color.potsSecondary)
                     }
                     HStack(spacing: 7) {
-                        ForEach([15, 30, 60, 90], id: \.self) { minutes in
+                        ForEach(PosiesQuickPresets.values(restQuickMinutes, fallback: [15, 30, 60, 90],
+                                                 range: 1...2880), id: \.self) { minutes in
                             Button("\(minutes) min") { firstValue = PosiesChoiceBehavior.toggleAmount(firstValue, tapped: minutes) }
                                 .font(.caption.weight(.semibold))
                                 .frame(maxWidth: .infinity, minHeight: 42)
@@ -413,6 +435,13 @@ struct ExpandedEntryEditor: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    Button {
+                        editingRestPresets = true
+                    } label: {
+                        Label("Customize quick durations", systemImage: "slider.horizontal.3")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.bordered)
                 }
                 Text("How was it? (optional)").font(.subheadline.weight(.semibold))
                 pickerGrid(["Not rated", "Restful", "Okay", "Interrupted", "Poor"], selected: $quality)
