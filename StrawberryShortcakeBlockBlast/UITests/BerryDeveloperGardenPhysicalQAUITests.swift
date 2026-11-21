@@ -63,7 +63,9 @@ final class BerryDeveloperGardenPhysicalQAUITests: XCTestCase {
         more.tap()
 
         let lab = app.buttons["berry.developer.tool.Commerce Lab"]
-        let devScroll = app.scrollViews.firstMatch
+        let devScroll = app.scrollViews["berry.developer.scroll"]
+        XCTAssertTrue(devScroll.waitForExistence(timeout: 10),
+                      "Developer Garden must expose the actual scrolling card grid")
         for _ in 0..<10 {
             if lab.isHittable { break }
             devScroll.swipeUp()
