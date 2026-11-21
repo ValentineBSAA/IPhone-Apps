@@ -12,6 +12,10 @@ enum PosiesChoiceBehavior {
         toggle(current, tapped: String(tapped))
     }
 
+    static func toggleRating(_ current: Int, tapped: Int, unrated: Int = -1) -> Int {
+        current == tapped ? unrated : tapped
+    }
+
     static func toggleInSet<T: Hashable>(_ choices: Set<T>, tapped: T) -> Set<T> {
         var updated = choices
         if !updated.insert(tapped).inserted { updated.remove(tapped) }
