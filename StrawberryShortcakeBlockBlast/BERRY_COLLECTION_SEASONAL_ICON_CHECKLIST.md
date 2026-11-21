@@ -25,7 +25,7 @@ This is the player's **owned inventory, achievements, awards and personal record
 | ID | Holiday | Lighting | Visual direction | Generated | Owner approved | RGBA candidate QA | Source PNG GitHub | Runtime/iPhone QA |
 |---|---|---|---|---|---|---|---|---|
 | BC-01 | Halloween | Day | Sunlit pink strawberry treasure chest with gold earned medal and award card, orange leaves, pumpkin-berries, purple hat, autumn gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ RGB checkerboard backdrop; RGBA cleanup pending | ⬜ source PNG not staged | ⬜ |
-| BC-02 | Halloween | Night | Moonlit violet strawberry keepsake chest with gold medal and collectible card, glowing strawberry jack-o'-lanterns, autumn foliage and gingham | ⬜ NEXT: single image generation | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
+| BC-02 | Halloween | Night | Moonlit violet strawberry keepsake chest with gold medal and collectible card, glowing berry jack-o'-lanterns, autumn foliage and orange-purple gingham | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ 1254px RGB, off-white baked background; separate RGBA edge QA pending | ⬜ original PNG not staged | ⬜ |
 | BC-03 | Christmas | Day | Snow-touched berry keepsake chest, gold medal, candy-cane and holly decorations, red-green ribbon | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BC-04 | Christmas | Night | Snowy moonlit purple chest with glowing keepsakes, golden prize star, fir lights and berry holly | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BC-05 | Thanksgiving | Day | Sunlit amber berry treasure chest, medal, harvest sticker, maple leaves, pumpkins and berry pie | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -64,3 +64,12 @@ References: [Seasonal master icon matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) 
 - [ ] Source original GitHub import, true alpha/edge QA, separately processed RGBA, 64/96px previews, ZIP manifest and physical iPhone/Xcode QA remain open; no app or prior artwork touched.
 
 **Berry Collection H1-B06: 1/8 visually approved; BC-02 next.**
+
+
+### BC-02 Halloween Night generation checkpoint
+- [x] One Halloween Night Berry Collection original generated and shown in chat: open strawberry treasure chest with gold achievement medal and trophy collectible card, purple velvet lining, crescent moon and stars, harvest leaves, hanging luminous strawberry jack-o'-lanterns, pumpkins and orange-purple gingham ribbon.
+- [x] Actual source metadata checked: 1254×1254 RGB, off-white top-left pixels (252,253,253), **not native transparent**. Preserve this approved-if-selected original byte-for-byte; later create a separate RGBA cleanup candidate and review edges against light/dark/checker and at small phone sizes.
+- [ ] **Await explicit BC-02 owner visual approval** before generating BC-03 Christmas Day.
+- [ ] No BC-02 source PNG binary committed to GitHub or imported into iOS assets; checksum/archive, separate cleanup, integration and physical iPhone QA pending.
+
+**H1-B06 latest: 2/8 originals generated, 1/8 visually approved, BC-02 owner review pending.**
