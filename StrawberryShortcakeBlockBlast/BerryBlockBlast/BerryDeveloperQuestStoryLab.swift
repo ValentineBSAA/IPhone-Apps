@@ -200,7 +200,7 @@ struct BerryDeveloperQuestStoryLab {
                 let third = tracker.villageLevel
                 store.set(7, forKey: "berryblockblast.story.level")
                 let fourth = tracker.villageLevel
-                passed = [first, second, third, fourth] == [1, 2, 4, 5]
+                passed = first == 1 && second == 2 && third == 4 && fourth == 5
                 actual = "Village progression \(first) → \(second) → " +
                          "\(third) → \(fourth)."
             } else {
