@@ -36,7 +36,7 @@ final class BerryLiveHomeSecondsUITests: XCTestCase {
                        "The Home clock must visibly tick while the app is open")
 
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        shot.name = "Build49 Home: live local 12-hour seconds and Moonlight/Sunrise countdown"
+        shot.name = "Build50 Home: live local 12-hour seconds and Moonlight/Sunrise countdown"
         shot.lifetime = .keepAlways
         add(shot)
     }

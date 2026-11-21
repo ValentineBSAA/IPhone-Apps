@@ -19,10 +19,18 @@ struct BerryDeveloperGardenView: View {
     @State private var qaRestorePoint: BerryGameSession.StrawberryCheatRestorePoint?
     #endif
     @State private var qaError: String?
+    @State private var qaSuccessNotice: String?
+    @State private var noticePreview: BerryNoticeKind = .information
+    @FocusState private var focusedNumber: NumberEntry?
     @AppStorage("berryblockblast.touchDiagnostics") private var touchDiagnostics = false
     @ObservedObject private var economyLedger = BerryEconomyLedger.shared
 
     private let columns = [GridItem(.flexible(), spacing: 11), GridItem(.flexible(), spacing: 11)]
+
+    private enum NumberEntry: Hashable {
+        case pin
+        case strawberryAmount
+    }
 
     private enum Tool: String, CaseIterable, Identifiable {
         case qaWallet = "Cheat Strawberries"
@@ -115,7 +123,7 @@ struct BerryDeveloperGardenView: View {
             case .diagnostics: return "Read input and placement status"
             case .saves: return "Check saved Endless gardens"
             case .clock: return "Live local device time"
-            case .notifications: return "Future notice preview"
+            case .notifications: return "Live strawberry notice styles"
             case .economy: return "Strawberry and future Moonberry status"
             case .moonberries: return "Planned Moonberry cheats, earning and night shop tests"
             case .build: return "Which app build is installed?"
@@ -130,7 +138,7 @@ struct BerryDeveloperGardenView: View {
             #endif
             }
         }
-        var isPlanned: Bool { self == .notifications || self == .moonberries }
+        var isPlanned: Bool { self == .moonberries }
     }
     // Permanent hidden owner tools. Every candidate build must include these,
     // including the optional, confirmed cheat wallet action.
@@ -163,9 +171,9 @@ struct BerryDeveloperGardenView: View {
     }
     private var advancedTools: [Tool] {
         #if BERRY_INTERNAL_QA
-        return [.sandbox, .stateLab, .commerce, .toolActions, .questStory, .economy, .moonberries, .build, .clock, .experimental, .notifications]
+        return [.notifications, .sandbox, .stateLab, .commerce, .toolActions, .questStory, .economy, .moonberries, .build, .clock, .experimental]
         #else
-        return [.economy, .moonberries, .build, .clock, .experimental, .notifications]
+        return [.notifications, .economy, .moonberries, .build, .clock, .experimental]
         #endif
     }
 
@@ -186,6 +194,7 @@ struct BerryDeveloperGardenView: View {
                             .multilineTextAlignment(.center)
                         SecureField("Developer PIN", text: $pin)
                             .keyboardType(.numberPad)
+                            .focused($focusedNumber, equals: .pin)
                             .textContentType(.oneTimeCode)
                             .multilineTextAlignment(.center)
                             .font(.title2.monospacedDigit())
@@ -203,6 +212,7 @@ struct BerryDeveloperGardenView: View {
                         }
                         Button("Unlock") {
                             if pin == "1476" {
+                                focusedNumber = nil
                                 unlocked = true
                                 pin = ""
                             } else {
@@ -283,8 +293,9 @@ struct BerryDeveloperGardenView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button("Done") { focusedNumber = nil; dismiss() }
                 }
+                BerryNumericKeyboardDone { focusedNumber = nil }
             }
             .sheet(item: $selectedTool) { tool in
                 NavigationStack {
@@ -325,6 +336,7 @@ struct BerryDeveloperGardenView: View {
                             }
                             .accessibilityIdentifier("berry.developer.tool.done")
                         }
+                        BerryNumericKeyboardDone { focusedNumber = nil }
                     }
                     #if BERRY_INTERNAL_QA
                     .alert("Add cheat strawberries?", isPresented: $qaGrantConfirmation) {
@@ -333,7 +345,9 @@ struct BerryDeveloperGardenView: View {
                                 qaBalance = balance
                                 qaRestorePoint = BerryGameSession.qaCheatRestorePoint()
                                 qaError = nil
+                                qaSuccessNotice = "Added \(qaPendingAmount.formatted()) strawberries. Your previous balance is saved for restoration."
                                 qaAmountText = ""
+                                focusedNumber = nil
                             } else {
                                 qaError = "Unable to add this amount. Check the saved wallet and number size."
                             }
@@ -383,6 +397,8 @@ struct BerryDeveloperGardenView: View {
                     .font(.headline)
                 TextField("Type amount, e.g. 1200", text: $qaAmountText)
                     .keyboardType(.numberPad)
+                    .focused($focusedNumber, equals: .strawberryAmount)
+                    .accessibilityIdentifier("berry.developer.cheat.amount")
                     .textContentType(.none)
                     .font(.system(size: 22, weight: .semibold, design: .rounded).monospacedDigit())
                     .multilineTextAlignment(.center)
@@ -405,12 +421,16 @@ struct BerryDeveloperGardenView: View {
                         return
                     }
                     qaPendingAmount = value
+                    focusedNumber = nil
                     qaGrantConfirmation = true
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(BerryStyle.strawberry)
                 if let qaError {
-                    Text(qaError).font(.caption).foregroundStyle(.red)
+                    BerryNoticeBanner(message: qaError, kind: .caution)
+                }
+                if let qaSuccessNotice {
+                    BerryNoticeBanner(message: qaSuccessNotice, kind: .success)
                 }
                 Text("Before the first cheat, Developer Garden records your exact strawberry balance. Additional cheats keep that original number until you restore. Viewing or canceling changes nothing.")
                     .font(.caption)
@@ -448,6 +468,7 @@ struct BerryDeveloperGardenView: View {
                                     qaBalance = balance
                                     qaRestorePoint = BerryGameSession.qaCheatRestorePoint()
                                     qaError = nil
+                                    qaSuccessNotice = "Restored your exact previous strawberry balance: \(balance.formatted())."
                                 } else {
                                     qaError = "Could not restore the original amount. Your current saved balance was left unchanged."
                                 }
@@ -479,6 +500,7 @@ struct BerryDeveloperGardenView: View {
             .onAppear {
                 qaBalance = BerryGameSession.qaWalletBalance()
                 qaRestorePoint = BerryGameSession.qaCheatRestorePoint()
+                qaSuccessNotice = nil
             }
             #else
             Text("Test-currency grants are not present in distribution builds.")
@@ -545,10 +567,32 @@ struct BerryDeveloperGardenView: View {
                 .font(.caption)
                 .multilineTextAlignment(.center)
         case .notifications:
-            Text("COMING LATER • Build 5")
-                .font(.headline)
+            Text("STRAWBERRY NOTICE STUDIO • SAFE PREVIEW")
+                .font(.caption.bold())
                 .foregroundStyle(BerryStyle.strawberry)
-            Text("In-app notice presentation tests are planned. No native iPhone alert is generated here.")
+            Text("Tap a style to preview the actual in-game banner. Nothing changes in your saved game and no system notification is sent.")
+                .font(.caption)
+                .multilineTextAlignment(.center)
+            LazyVGrid(columns: columns, spacing: 10) {
+                ForEach(BerryNoticeKind.allCases) { variant in
+                    Button(variant.rawValue) {
+                        noticePreview = variant
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(BerryStyle.strawberry)
+                    .accessibilityIdentifier("berry.developer.notice.\(variant.id.lowercased())")
+                }
+            }
+            BerryNoticeBanner(
+                message: noticePreview == .success
+                    ? "Your berry reward has been saved!"
+                    : noticePreview == .caution
+                    ? "Check your garden before continuing."
+                    : "Your next sweet adventure is ready.",
+                kind: noticePreview
+            )
+            .accessibilityIdentifier("berry.developer.notice.preview")
+            Text("System permissions and irreversible purchase/cheat confirmations remain native iOS dialogs for clarity and accessibility.")
                 .font(.caption)
                 .multilineTextAlignment(.center)
         case .economy:

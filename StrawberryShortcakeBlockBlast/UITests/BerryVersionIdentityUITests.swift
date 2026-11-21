@@ -1,7 +1,7 @@
 import XCTest
 
 /// Regression for the old "Build 4.6 VISUAL LAB" hardcoded Home / Settings
-/// labels surviving after the actual app version changed to v0.5.16 build 49.
+/// labels surviving after the actual app version changed to v0.5.16 build 50.
 final class BerryVersionIdentityUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -14,14 +14,14 @@ final class BerryVersionIdentityUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 30))
 
-        let home = app.staticTexts["🍓 v0.5.16 • B49 • I7 QA"]
+        let home = app.staticTexts["🍓 v0.5.16 • B50 • I8 QA"]
         XCTAssertTrue(home.waitForExistence(timeout: 15),
-                      "Home must show the real Info.plist v0.5.16 and build 49, not the legacy B4.6 Visual Lab label")
+                      "Home must show the real Info.plist v0.5.16 and build 50, not the legacy B4.6 Visual Lab label")
         XCTAssertFalse(app.staticTexts.matching(
             NSPredicate(format: "label CONTAINS[c] %@", "VISUAL LAB")).firstMatch.exists)
 
         app.buttons["Settings"].tap()
-        let expected = app.staticTexts["Berry Berry Blast v0.5.16 • Build 49 • I7 QA"]
+        let expected = app.staticTexts["Berry Berry Blast v0.5.16 • Build 50 • I8 QA"]
         let scroll = app.scrollViews.firstMatch
         XCTAssertTrue(scroll.waitForExistence(timeout: 10))
         for _ in 0..<5 {
@@ -34,7 +34,7 @@ final class BerryVersionIdentityUITests: XCTestCase {
             NSPredicate(format: "label CONTAINS[c] %@", "VISUAL LAB")).firstMatch.exists)
 
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        shot.name = "I6 actual version and build after correcting old UI"
+        shot.name = "I8 actual version and build after correcting old UI"
         shot.lifetime = .keepAlways
         add(shot)
     }

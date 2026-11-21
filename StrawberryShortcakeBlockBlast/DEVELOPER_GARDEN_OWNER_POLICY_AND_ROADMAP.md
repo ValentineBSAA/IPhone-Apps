@@ -20,9 +20,24 @@
 ## What's present in the candidate source now
 
 - **Quick grid:** Cheat Strawberries; Diagnostics / live touch readout; read-only Save Inspector; visual-only Combo Preview ×10/×20/×30/×50.
-- **Advanced grid:** Scenario Sandbox; State & Timer Lab; Commerce Lab; Tool Action Lab; Quest & Story Lab; Economy Inspector; Build Information; live device clock; Experimental Features (status); Notification Test (properly marked planned).
+- **Advanced grid:** Scenario Sandbox; State & Timer Lab; Commerce Lab; Tool Action Lab; Quest & Story Lab; Economy Inspector; Build Information; live device clock; Experimental Features (status); Notification Test (three live visual-only strawberry notice styles).
 - **Persistent access:** Settings version long-press opens PIN, all advanced controls present in an actual `Release` app, no developer dashboard icon on Home.
-- **Current verification:** Build 48 CI [#44947069107](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44947069107) **passed 8/8 native UI and 169/169 model tests**, compiled and verified its private unsigned IPA. Physical iPhone owner **confirmed** hidden Developer Garden access, one Strawberry cheat grant, and exact-balance restore. All other untested player journeys and whole-game hardware acceptance remain open.
+- **Current verification:** Build 48 CI [#44947069107](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44947069107) **passed 8/8 native UI and 169/169 model tests**, compiled and verified its private unsigned IPA. Physical iPhone owner **confirmed** hidden Developer Garden access, first Strawberry grant and exact-balance restore; Build49 owner also passed the live clock and short device checklist. All other untested player journeys and whole-game hardware acceptance remain open.
+
+## Build 49 owner-verified result and Build 50 I8 polish (2026-11-21)
+
+**Owner verified Build 49 on physical iPhone, with screenshot evidence**: v0.5.16 B49 I7 QA home, the local `h:mm:ss a` and `Moonlight in HH:MM:SS` countdown, saved Strawberry wallet 53, real Cheat Strawberries 53 → 253 and exact Restore Previous Balance 253 → 53, and the short checklist passed. Original B49 IPA hit `PackageExtractionFailed`; identical-app **ZIP-normalized diagnostic IPA installed**, so its compatible ZIP normalization belongs in all future unsigned IPA workflows.
+
+**Build 50 I8 source added, automated/native real-device status pending**, tracked at [Issue #98](https://github.com/ValentineBSAA/IPhone-Apps/issues/98). It preserves all confirmed behaviors and adds:
+
+- [x] Actual **number-pad Done toolbar** for developer PIN and Cheat Strawberries amount. Native keyboard accessory dismisses without automatically confirming any cheat; focus stays outside wallet/persistent state. Reusable for future Moonberry quantity/price numeric fields.
+- [x] Actual **strawberry-themed in-app success / information / caution notice** using existing Strawberry_Currency art, accessible text and card styling. Reused by game reward toast, global progression celebration, and confirmed Developer Garden grant/restore. Native iOS confirmation dialogs remain native for destructive/financial/cheat operations.
+- [x] Permanent **Notification Test** is now a live read-only preview: three styles selectable in two-column developer grid, no system notification sent, no wallet/score/save mutation.
+- [x] Use the **only clock image currently committed** to the Xcode asset catalog, `Dev_Timers_Moon_Clock`, as an unobtrusive **nighttime Home clock ornament**. Preserve the existing B49 clock/countdown logic and 12-hour seconds. The **full approved standalone analog Home clock face assets for day/night are NOT present under those names in the current catalog**; obtain/approve them separately before claiming complete clock art integration.
+- [x] Build 50 source stamps same iOS16+ bundle, marketing v0.5.16 and internal Build50 I8 QA. New notice model and native keyboard/notification regression sources included.
+- [ ] **Release-mode Xcode compile, existing and new native simulator/UI tests, model tests, actual normalized iPhoneOS IPA, and real-iPhone owner acceptance**. Leave owner-working B49 installed until terminal green CI and backing up saved data.
+
+The rest of the Night Edition, Build5 and Build6 feature roadmap remains intact, especially **Cheat Moonberries and separate exact balance restore after the real Moonberry economy exists**.
 
 ## One permanent testing system for the WHOLE game
 

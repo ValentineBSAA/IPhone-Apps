@@ -48,18 +48,7 @@ private struct BerryMilestoneBanner: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         if let text = progress.celebrationText {
-            HStack(spacing: 9) {
-                Image(systemName: "star.circle.fill")
-                    .foregroundStyle(.yellow)
-                Text(text)
-                    .font(.system(size: 14, weight: .black, design: .rounded))
-                    .multilineTextAlignment(.center)
-            }
-            .foregroundStyle(BerryStyle.chocolate)
-            .padding(13)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
-            .overlay(RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(BerryStyle.strawberry.opacity(0.5), lineWidth: 2))
+            BerryNoticeBanner(message: text, kind: .success)
             .padding(.horizontal, 18)
             .padding(.top, 55)
             .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))

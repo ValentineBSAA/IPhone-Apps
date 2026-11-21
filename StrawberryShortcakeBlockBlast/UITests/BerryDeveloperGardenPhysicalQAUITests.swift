@@ -27,7 +27,7 @@ final class BerryDeveloperGardenPhysicalQAUITests: XCTestCase {
             scroll.swipeUp()
         }
         XCTAssertTrue(version.isHittable, "Actual Settings version label must be reachable")
-        XCTAssertEqual(version.label, "Berry Berry Blast v0.5.16 • Build 49 • I7 QA")
+        XCTAssertEqual(version.label, "Berry Berry Blast v0.5.16 • Build 50 • I8 QA")
         version.press(forDuration: 2.1)
 
         let pin = app.secureTextFields["Four digit developer PIN"]
@@ -77,7 +77,7 @@ final class BerryDeveloperGardenPhysicalQAUITests: XCTestCase {
                       "Physical QA must expose actual isolated purchase handlers, not a placeholder")
 
         let capture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        capture.name = "Physical I6 QA: PIN developer menu and isolated Commerce Lab"
+        capture.name = "Physical I8 QA: PIN developer menu and isolated Commerce Lab"
         capture.lifetime = .keepAlways
         add(capture)
     }

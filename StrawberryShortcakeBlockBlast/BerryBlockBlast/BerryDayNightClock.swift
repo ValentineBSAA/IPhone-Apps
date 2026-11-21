@@ -108,8 +108,18 @@ struct BerryLiveDayNightClock: View {
 
     private func clockRow(compact: Bool) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: nightNow ? "moon.stars.fill" : "sun.max.fill")
-                .accessibilityLabel(nightNow ? "Night Garden" : "Day Garden")
+            if nightNow {
+                // Reuse the actual bundled strawberry/moon clock art as a
+                // compact night-time ornament, never as a second timekeeper.
+                Image("Dev_Timers_Moon_Clock")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 19, height: 19)
+                    .accessibilityLabel("Night Garden")
+            } else {
+                Image(systemName: "sun.max.fill")
+                    .accessibilityLabel("Day Garden")
+            }
             Text(clock)
                 .monospacedDigit()
                 .lineLimit(1)

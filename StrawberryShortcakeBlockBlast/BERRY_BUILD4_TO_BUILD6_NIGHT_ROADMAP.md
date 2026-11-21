@@ -15,12 +15,12 @@
 | Build 4 player UI, tools, modes, dev lock, Blossom Glass | 🟠 Partially hardware-verified in v0.5.16 Build48 | Owner confirmed hidden Garden + Strawberry cheat/restore; board-skin and full save regressions still open |
 | 30 daytime illustrations | ✅ On Build 4 branch in separate Xcode image sets | Appearance / tap testing |
 | 30 Night Edition counterparts | ✅ Imported as 30 individual Xcode imagesets on Build 4 development branch | CI + real-device night-visual QA |
-| Strawberry sun / moon clock icons | 🎨 Illustrated; not integrated | Independent PNG and UI approval |
+| Strawberry sun / moon clock icons | 🟠 One existing moon-clock PNG integrated as small night ornament in Build50 source | Full day/night analog clock faces still require asset onboarding and owner approval |
 | Real live menu clock and day/night presentation | 📋 Planned | Midnight, timezone and app-resume QA |
 | **Second-accurate live time and transition countdown** | 🟠 **Build49 source + tests implemented** ([Issue #95](https://github.com/ValentineBSAA/IPhone-Apps/issues/95)); CI/device pending | 12-hour `h:mm:ss a`, `Moonlight/Sunrise in HH:MM:SS` at 6 PM/6 AM, native and real-device verification |
 | In-context notices and Daily Quest fixes | 📋 Build 5 scope | In-menu visibility and reward QA |
 | Moonberries, night shop transactions and shop switch | 📋 Build 6 scope | Persistent economy + real-clock QA |
-| iPhone 16 AltStore install/signing | ⚠️ Unresolved | Capture exact installation error |
+| iPhone 16 AltStore install/signing | ✅ Build49 ZIP-normalized diagnostic IPA installed successfully | Preserve normalized ZIP packaging in Build50 workflow and recheck |
 
 ## Latest on-device milestone and next step (November 21, 2026)
 
@@ -29,6 +29,18 @@
 **Short remaining Build 48 sanity check:** ensure old Endless saves, owned cosmetics and wallet remained intact through install; open one advanced isolated test lab. Do not mark unrelated Shop/Story/Quest or all device regressions complete without actual owner confirmation.
 
 **Next feature milestone is Gate A2, [Issue #95](https://github.com/ValentineBSAA/IPhone-Apps/issues/95):** implement accurate device-local **12-hour h:mm:ss a** on the existing Home bar and a **seconds-resolution HH:MM:SS** countdown to 6 PM Moonlight / 6 AM Sunrise, with deterministic transition tests and a read-only virtual time fixture in the permanent Developer Garden. This is independent of the approved decorative analog clock artwork, seasonal illustrations and Moonberry economy. Later sequence: **Gate B Night Edition visuals/clock artwork → Gate C Build5 notification/Village/Quest polish → Gate D Build6 real Moonberry Night Market + separate Moonberry cheats/restore**. Each addition keeps all already working Developer Garden controls.
+
+## Build49 owner pass → Build50 focused polish checkpoint (November 21, 2026)
+
+**Physical Build49 pass (confirmed by owner):** app installed when its IPA ZIP was normalized; `3:39:57 PM` Home clock and `Moonlight in 02:20:03` countdown were visible and working, and Developer Garden preserved the exact original Strawberry wallet (53 → 253 → 53 with audit). Short owner checklist passed. **Never regress the successful normalized IPA packaging**.
+
+**Build50 I8 source implementation, CI/device QA still open:** [Issue #98](https://github.com/ValentineBSAA/IPhone-Apps/issues/98) scopes reusable number-pad Done for PIN and cheat amount; accessible cream/pink strawberry notices for actual in-game reward/progression and a visual-only Notification Test lab; a subtle night ornament from the actual `Dev_Timers_Moon_Clock` PNG. Screens remain grid-first and real save/restore behavior unchanged. New build identity `v0.5.16 Build 50 I8 QA`. Only the Developer Garden moon-clock artwork exists by name in the current asset catalog; the full illustrated day/night analog clock pair remains a **separate asset-onboarding and approval gate**. Do not pretend it was bundled.
+
+- [x] Build50 source code written and separate branch, with new native and unit tests.
+- [ ] Build50 Release simulator/UI/model regression success; normalized unsigned IPA produced and integrity verified.
+- [ ] Owner iPhone confirms keyboard **Done**, notifications, unobstructed live countdown and continued saves/cheat restoration.
+- [ ] Later: add the complete approved decorative analog clock artwork only when actual final assets are available, without rewriting or hiding the B49 clock logic.
+- [ ] Continue Build5 Village/Quest/seasonal notices and Build6 real Moonberries + separate cheat/restore after the focused polish passes.
 
 ## Night Edition assets: 30 exact pairings
 
