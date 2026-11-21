@@ -351,3 +351,10 @@ Recommended sequence alongside existing milestones: H5 nonvisual calendar smoke/
 - [x] [D0e CI #44867590124](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44867590124): **48/48** selected XCTest cases pass with zero failures on named iPhone 16e. Release build excludes all internal Developer Garden QA-only panels.
 - [x] Standard-tool purchase intent replay test scenarios (3 new, 8 methods) validated without changing real saves, approved art, gameplay prices or Night experience.
 - [ ] Not production-merged. UserDefaults still not truly atomic/durable, physical device QA and future real-world shop, Story, Daily, Night and complete gameplay validation remain separate. [Draft PR #68](https://github.com/ValentineBSAA/IPhone-Apps/pull/68).
+
+
+## D1a whole-game Boutique and saved-garden QA expansion · November 20, 2026
+- [x] [D1a draft PR #70](https://github.com/ValentineBSAA/IPhone-Apps/pull/70) adds canonical Boutique cosmetic pricing and isolated real purchase regression, maintaining original prices, art, wallet ownership and equipped appearance settings.
+- [x] Menu cosmetic and standard Helper purchases now use inventory-only saves; regression tests verify none of the existing Sweet Endless 8×8/12×12/24×24 board slots are overwritten or deleted by these purchases.
+- [x] [D1a iPhone 16e workflow #44868413961](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868413961) selects **64 tests**: 48 previous D0–D0e, 6 older Boutique, 10 new Boutique; terminal run pending. Release QA-only exclusions checked.
+- [ ] Future Developer Garden testing moves through Boutique UI, premium tools, Daily Harvest, Story, quests and Night features; artwork and game features remain separate. No iPhone IPA, merge or version change.
