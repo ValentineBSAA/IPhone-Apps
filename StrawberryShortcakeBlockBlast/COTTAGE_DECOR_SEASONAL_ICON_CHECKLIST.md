@@ -21,7 +21,7 @@ Give this family a distinct, clear **decorating** theme: a cute strawberry-roof 
 | ID | Holiday | Time | Visual direction (decorator/editor semantics) | Generated | Owner visual approval | RGBA matte QA | Binary in GitHub | App/iPhone |
 |---|---|---|---|---|---|---|---|---|
 | CD-01 | Halloween | Day | Sunny strawberry-roof cottage with flowerpot, paintbrush, ribbon spool, pumpkin lanterns, autumn leaves and sunny orange-lavender gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ original RGB/checkerboard; RGBA edge QA pending | ⬜ original PNG not yet staged | ⬜ |
-| CD-02 | Halloween | Night | Moonlit strawberry cottage with lit windows, purple jack-o'-lantern berries, decorative flowerpot, brush and ribbon spool | ⬜ NEXT: single image generation | ⬜ awaits owner review | ⬜ | ⬜ | ⬜ |
+| CD-02 | Halloween | Night | Moonlit strawberry-roof cottage, glowing windows and pumpkin-berry lanterns, decorating brush, flowerpot, ribbon spool and purple-orange gingham | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ RGB source / off-white baked background; separate RGBA QA pending | ⬜ source PNG not yet staged | ⬜ |
 | CD-03 | Christmas | Day | Snow-frosted cottage with wreath, red ribbon, candy canes, snowy floral pots and festive decorator accents | ⬜ | ⬜ | ⬜ | ⬜ |
 | CD-04 | Christmas | Night | Cozy glowing snowy cottage, midnight evergreen lights, wreath, baubles, purple-tinted gardening decorations | ⬜ | ⬜ | ⬜ | ⬜ |
 | CD-05 | Thanksgiving | Day | Amber harvest cottage, strawberry pie window display, maple leaf garland, pumpkin planters, cozy decorating details | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -60,3 +60,12 @@ Links: [H1-B04 checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md) · [Master
 - [ ] Design approval is separate from real RGBA alpha/edge verification and GitHub PNG binary staging; source original is immutable and no game code/economy/inventory or earlier artwork families are modified.
 
 **H1-B05 visual approvals: 1/8; CD-02 next.**
+
+
+### CD-02 Halloween Night original generated, approval pending
+- [x] One independent CD-02 Halloween Night decorating badge generated and shown in chat. The recognizable strawberry-roof cottage has golden windows, purple shutters, spooky-cute strawberry lanterns, orange leaves, moon/stars, flowerpot, paintbrush and ribbon spool.
+- [ ] **Owner visual approval pending**. Do not mark approved nor generate CD-03 until owner explicitly accepts.
+- [ ] Original image is 1254x1254 RGB with an off-white background (not transparent). Preserve original, create a **separate** RGBA background-removed candidate after acceptance, check subtle white halos and at 64/96px before any app import.
+- [ ] No source PNG binary uploaded into GitHub yet; real iPhone QA and runtime routing are independent future gates.
+
+**Latest: H1-B05 2/8 generated, 1/8 owner-approved.**
