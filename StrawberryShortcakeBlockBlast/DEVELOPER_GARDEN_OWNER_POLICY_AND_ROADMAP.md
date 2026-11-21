@@ -22,7 +22,7 @@
 - **Quick grid:** Cheat Strawberries; Diagnostics / live touch readout; read-only Save Inspector; visual-only Combo Preview ×10/×20/×30/×50.
 - **Advanced grid:** Scenario Sandbox; State & Timer Lab; Commerce Lab; Tool Action Lab; Quest & Story Lab; Economy Inspector; Build Information; live device clock; Experimental Features (status); Notification Test (properly marked planned).
 - **Persistent access:** Settings version long-press opens PIN, all advanced controls present in an actual `Release` app, no developer dashboard icon on Home.
-- **Current verification:** Build 48 native UI/161 gameplay regression + packaging is **pending terminal CI and physical iPhone acceptance**. **Do not mark pass before inspecting logs**.
+- **Current verification:** Build 48 CI [#44947069107](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44947069107) **passed 8/8 native UI and 169/169 model tests**, compiled and verified its private unsigned IPA. Physical iPhone owner **confirmed** hidden Developer Garden access, one Strawberry cheat grant, and exact-balance restore. All other untested player journeys and whole-game hardware acceptance remain open.
 
 ## One permanent testing system for the WHOLE game
 
@@ -34,8 +34,8 @@ Developer Garden is a **living subsystem**. Every gameplay or economy feature mu
 
 | Area | Current status | What it does or will do |
 | --- | --- | --- |
-| Settings long-press + PIN 1476 | ACTIVE source, HARDWARE QA pending | Hidden access in **Debug and Release**, no Home button |
-| Cheat Strawberries + exact restore | ACTIVE source, HARDWARE QA pending | Saves first pre-cheat balance, confirmed grant, restores exact previous number across launches; preserves other inventory/save fields |
+| Settings long-press + PIN 1476 | **OWNER iPHONE PASS** | Hidden access in **Debug and Release**, no Home button |
+| Cheat Strawberries + exact restore | **OWNER iPHONE PASS: single grant + restore** | Saved pre-cheat balance and confirmed restore worked for owner. Multiple consecutive grants and unrelated save continuity still need explicit owner QA |
 | Touch Diagnostics | ACTIVE source, HARDWARE QA pending | Shows board cell and gesture events; opt-in, no gameplay modification |
 | Save Inspector | ACTIVE source | Inspect existence of 8×8 / 12×12 / 24×24 Endless saved games, read-only |
 | Combo Preview | ACTIVE source | Show visual ×10/×20/×30/×50 without farming points |
@@ -97,6 +97,15 @@ When real Moonberry game mechanics are implemented, add **all** of these, with i
 
 ### 5. 🌞🌙 Day/night visuals, seasonal art and clock
 
+**Clock/countdown priority, screenshot follow-up:** [Issue #95](https://github.com/ValentineBSAA/IPhone-Apps/issues/95). The Home header currently displays `1:59 PM` and `Moonlight in 4h 1m` because `BerryDayNightClock.swift` formats only hours/minutes, rounds remaining time to whole minutes, and ticks every 30 seconds. **Implement the second-accurate digital clock/countdown as a separate task before applying the already-approved decorative clock artwork.**
+
+- [ ] Home local time **`h:mm:ss a`** in 12-hour format, real iPhone device time, once per second. Display a stable, monospaced `Moonlight in HH:MM:SS` countdown toward **6 PM** and `Sunrise in HH:MM:SS` toward **6 AM**. Refresh from the real current `Date` + `Calendar` target, never a drifting accumulated decrement; no negative seconds or lingering old phase.
+- [ ] Test local 5:59:58/59 PM → 6:00:00 PM and 5:59:58/59 AM → 6:00:00 AM, simulated time zone/DST/calendar, mid-afternoon, app resume/relaunch, offline and manual clock adjustments. Preserve visual-only night status until the real Moonberry market exists.
+- [ ] **Developer Garden State & Timer Lab** receives a read-only virtual-date second-tick and 6 AM/6 PM transition preview that proves the actual Home time/countdown policy, without changing system time or owner saves. It must be covered by native Release tests before the task is signed off.
+- [ ] When the approved analog clock artwork is added, display it from this **same validated time source and countdown logic**, not a second divergent clock model. Preserve two-column grids, time accessibility, tiny-screen readability and original game economy.
+
+
+
 - [ ] Apply all **approved** daytime and matching nighttime game/world illustrations with fallback, without altering original assets or grid geometry; distinguish asset imported vs actually displayed.
 - [ ] Preview 6 AM–6 PM day and 6 PM–6 AM night using **injected 12-hour local time**; handle suspended apps, DST, timezone, midnight, manual clock and offline.
 - [ ] Add opt-in, non-destructive visual previews for Halloween, Thanksgiving, Christmas, birthdays and other owner-approved holidays, **both day and night**; select themes by controlled date, preview contrast and revert without buying or unlocking anything.
@@ -115,7 +124,9 @@ When real Moonberry game mechanics are implemented, add **all** of these, with i
 
 No feature is complete until its *production mechanic*, *visual screen*, *Developer Garden fixture/optional cheat where appropriate*, *automated tests*, *real-device checklist*, and *GitHub roadmap* agree. New developer features are additive, not replacements: check hidden PIN and the old cards each build. If a production mechanic is not ready, keep the matching developer card labelled `COMING LATER` and make no fraudulent one-tap success claims.
 
-**Immediate owner testing gate (Build 48):** verify the real signed iPhoneOS app displays v0.5.16 B48, holding Settings build text opens PIN 1476, developer quick grid includes Cheat Strawberries and Moonberries & Night Market (clearly Coming Later), advanced Commerce/Quest labs open, and old saved Endless games are present. For cheats, record an existing real wallet amount, do one small confirmed addition, force-close/reopen, and confirm the exact original can be restored. **Do not perform irreversible tests without a backup.** Keep a short hardware checklist; exhaustive scenarios belong in GitHub/automated tests.
+**Build 48 actual owner iPhone status (November 21, 2026):** The owner confirmed the **hidden Developer Garden can be opened**, a **confirmed Strawberry cheat grant succeeds**, and **Restore Previous Strawberry Balance succeeds** on the installed Build 48 app. These are real physical-device confirmations and are no longer merely simulator claims. CI [#44947069107](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44947069107) independently passed 8 native UI and 169 model/restore tests, with a verified unsigned IPA. **Do not generalize** these confirmations to all advanced labs, repeated cheats, the 8×8/12×12/24×24 saved-game migrations, offline/device time, or a complete public release, which still need owner signoff.
+
+**Remaining short Build 48 check:** preserve a verified game-data backup, then spot-check that existing Endless saves/cosmetics are unchanged and that an isolated Commerce or Quest & Story Lab opens without modifying the real wallet. Avoid exhausting manual tests. **Next deliberately separate feature:** [issue #95](https://github.com/ValentineBSAA/IPhone-Apps/issues/95), a second-accurate 12-hour digital Home clock and 6 PM/6 AM countdown (before decorative clock art). Keep the permanent PIN menu and Cheat Strawberries + exact restore in every subsequent installable build.
 
 ## Release gate added after owner reported Build46 failure
 
