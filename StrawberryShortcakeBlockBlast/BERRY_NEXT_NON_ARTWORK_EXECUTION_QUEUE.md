@@ -121,3 +121,11 @@
 - [x] [GitHub Actions #44867590124](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44867590124) **SUCCESS**: **48/48** selected iPhone 16e simulator tests passed including eight real standard-tool partial-purchase replay tests; Release compiled without QA-only UI.
 - [x] [62-contract coverage registry](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) now has **16 simulator-pass/device-pending, 44 planned, 2 not implemented**.
 - [ ] Physical iPhone 16e acceptance, real process-kill/power-loss durability, a friendly corrupt-intent recovery UI and broad Boutique/Story/Daily/Night regression are not passed by this selected suite. [PR #68](https://github.com/ValentineBSAA/IPhone-Apps/pull/68) stays draft; no IPA.
+
+
+## D1a Boutique real checkout and saved Endless preservation
+- [x] [Draft PR #70](https://github.com/ValentineBSAA/IPhone-Apps/pull/70) starts whole-game QA coverage of **Berry Boutique** beyond standard tools. Real `buyCosmetic` uses exact canonical approved prices, injects separated ownership/rewards/inventory/ledger, and preserves existing equipped visuals and game wallet by default.
+- [x] Saved-garden bug risk addressed: purchase-only inventory writes no longer call board-save logic that could clear an 8×8 saved Endless run when shopping from a fresh menu session; 8/12/24 preservation regression authored.
+- [x] 10 new real Boutique XCTest cases plus 6 older Boutique tests and 48 D0–D0e = **64 selected named iPhone 16e tests** in [D1a workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868413961), pending terminal proof.
+- [x] [66-contract Advanced QA coverage registry](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) has 4 new D1a implemented-untested.
+- [ ] Real-device Boutique buy/equip/unequip and full shop view regression, cosmetic multi-key interruption recovery, premium tools, Story, Daily, Night and gameplay modes still separately open. No IPA.
