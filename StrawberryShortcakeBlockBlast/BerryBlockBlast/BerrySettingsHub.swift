@@ -130,6 +130,7 @@ struct BerrySettingsHubView: View {
                                     .strokeBorder(BerryStyle.strawberry.opacity(0.24), lineWidth: 1))
                             }
                             .buttonStyle(BerryPolishPressStyle())
+                            .accessibilityIdentifier("berry.settings.\(category.rawValue)")
                         }
                     }
                 }
@@ -283,6 +284,7 @@ struct BerrySettingsHubView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    .accessibilityIdentifier("berry.settings.birthday.month")
                 }.settingCard()
                 VStack(spacing: 9) {
                     Image(systemName: "birthday.cake.fill")
@@ -293,6 +295,7 @@ struct BerrySettingsHubView: View {
                         ForEach(1...BerryBirthdayPolicy.maximumDay(month: birthdayMonth), id: \.self) { n in Text("\(n)").tag(n) }
                     }
                     .pickerStyle(.menu)
+                    .accessibilityIdentifier("berry.settings.birthday.day")
                 }.settingCard()
             }
             if birthdayMonth > 0 && birthdayDay > 0 &&
