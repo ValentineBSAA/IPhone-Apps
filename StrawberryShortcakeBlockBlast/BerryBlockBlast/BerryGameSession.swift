@@ -675,44 +675,51 @@ final class BerryGameSession: ObservableObject {
     }
 
     func buyUndo() {
-        guard berries >= BerryEconomy.undoPrice else { return }
-        // Purchases must invalidate the undo snapshot to prevent currency duplication.
+        guard let state = BerryStandardToolTransaction.purchase(
+            berries: berries, charges: undos, price: BerryEconomy.undoPrice
+        ) else { return }
+        // Only a successful purchase invalidates the undo snapshot.
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
-        berries -= BerryEconomy.undoPrice
+        berries = state.berries
+        undos = state.charges
         BerryEconomyLedger.shared.recordSpend(BerryEconomy.undoPrice, item: "Undo")
-        undos += 1
         save()
     }
 
     func buyShuffle() {
-        guard berries >= BerryEconomy.shufflePrice else { return }
-        // Purchases must invalidate the undo snapshot to prevent currency duplication.
+        guard let state = BerryStandardToolTransaction.purchase(
+            berries: berries, charges: shuffles, price: BerryEconomy.shufflePrice
+        ) else { return }
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
-        berries -= BerryEconomy.shufflePrice
+        berries = state.berries
+        shuffles = state.charges
         BerryEconomyLedger.shared.recordSpend(BerryEconomy.shufflePrice, item: "Shuffle")
-        shuffles += 1
         save()
     }
 
     func buyHint() {
-        guard berries >= BerryEconomy.hintPrice else { return }
+        guard let state = BerryStandardToolTransaction.purchase(
+            berries: berries, charges: hints, price: BerryEconomy.hintPrice
+        ) else { return }
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
-        berries -= BerryEconomy.hintPrice
+        berries = state.berries
+        hints = state.charges
         BerryEconomyLedger.shared.recordSpend(BerryEconomy.hintPrice, item: "Hint")
-        hints += 1
         save()
     }
 
     @discardableResult
     func useHintIfPossible() -> BerryEngine.BerryHint? {
         guard hints > 0, !gameOver, let hint = engine.suggestedMove() else { return nil }
-        hints -= 1
+        guard let remaining = BerryStandardToolTransaction.consumeCharge(
+            hints, actionIsValid: true) else { return nil }
+        hints = remaining
         save()
         return hint
     }
