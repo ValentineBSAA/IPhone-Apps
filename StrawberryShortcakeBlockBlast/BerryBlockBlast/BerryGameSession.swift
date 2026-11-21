@@ -305,6 +305,11 @@ final class BerryGameSession: ObservableObject {
         // injected store as inventory. Production defaults remain unchanged.
         ownedCosmetics = checkoutDefaults.stringArray(forKey: "berryblockblast.shop.owned.v056b2") ?? []
         rewardsLog = checkoutDefaults.stringArray(forKey: "berryblockblast.rewards.v1") ?? []
+        // D1b: load Cottage and premium ownership from the same selected store.
+        // Live sessions still use standard preferences; QA stays disposable.
+        cottageDecorations = checkoutDefaults.integer(forKey: "berryblockblast.cottage.decorations")
+        premiumCharges = checkoutDefaults.dictionary(forKey: "berryberryblast.premium.charges.v059") as? [String: Int] ?? [:]
+        premiumOwned = checkoutDefaults.stringArray(forKey: "berryberryblast.premium.permanent.v059") ?? []
     }
 
     @discardableResult
@@ -535,15 +540,22 @@ final class BerryGameSession: ObservableObject {
         previousBerryEarnings = 0
         previousRewardEntry = nil
         berries -= price
-        BerryEconomyLedger.shared.recordSpend(price, item: "Cottage Decoration")
+        checkoutLedger.recordSpend(price, item: "Cottage Decoration")
         cottageDecorations += 1
-        UserDefaults.standard.set(cottageDecorations, forKey: "berryblockblast.cottage.decorations")
-        save()
+        checkoutDefaults.set(cottageDecorations, forKey: "berryblockblast.cottage.decorations")
+        // Buying decor changes inventory only, not the current puzzle board.
+        saveInventoryOnly()
     }
-    private func persistPremium() {
-        UserDefaults.standard.set(premiumCharges, forKey: "berryberryblast.premium.charges.v059")
-        UserDefaults.standard.set(premiumOwned, forKey: "berryberryblast.premium.permanent.v059")
-        save()
+    private func persistPremium(boardChanged: Bool = true) {
+        checkoutDefaults.set(premiumCharges, forKey: "berryberryblast.premium.charges.v059")
+        checkoutDefaults.set(premiumOwned, forKey: "berryberryblast.premium.permanent.v059")
+        // Purchasing only changes inventory. Actual tool usage changes
+        // the game board and retains its original board-saving behavior.
+        if boardChanged {
+            save()
+        } else {
+            saveInventoryOnly()
+        }
     }
 
     /// Golden Trowel 150, Ribbon Twister 200 (three uses), Starberry Seed 230,
@@ -556,18 +568,28 @@ final class BerryGameSession: ObservableObject {
         guard let price = prices[id], berries >= price else { return false }
         let permanent = id == "pantry" || id == "spyglass"
         if permanent && premiumOwned.contains(id) { return false }
+        if !permanent {
+            let increment = id == "twister" ? 3 : 1
+            guard premiumCharges[id, default: 0] >= 0,
+                  premiumCharges[id, default: 0] <= Int.max - increment else {
+                return false
+            }
+        }
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
         berries -= price
-        BerryEconomyLedger.shared.recordSpend(price, item: id)
+        checkoutLedger.recordSpend(price, item: id)
         if permanent {
             premiumOwned.append(id)
-            BerryProgression.shared.celebrate("✨ Lifetime upgrade unlocked: " + id.capitalized)
+            // Avoid posting a real progression celebration from an isolated QA session.
+            if checkoutDefaults === UserDefaults.standard {
+                BerryProgression.shared.celebrate("✨ Lifetime upgrade unlocked: " + id.capitalized)
+            }
         } else {
             premiumCharges[id, default: 0] += id == "twister" ? 3 : 1
         }
-        persistPremium()
+        persistPremium(boardChanged: false)
         return true
     }
 
