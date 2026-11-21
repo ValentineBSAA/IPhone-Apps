@@ -26,7 +26,7 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 | BS-05 | Thanksgiving | Day | Warm harvest storybook, pie, maple leaves, cinnamon-gold chapter star | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/background QA pending | ⬜ source archive pending | ⬜ |
 | BS-06 | Thanksgiving | Night | Candlelit plum and amber storybook, pumpkin, moon and leaves | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/background QA pending | ⬜ source archive pending | ⬜ |
 | BS-07 | Birthday | Day | Open strawberry storybook, cake, balloons, gifts and golden chapter star | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ checkerboard transparency QA pending | ⬜ source archive pending | ⬜ |
-| BS-08 | Birthday | Night | Lavender birthday storybook with candlelight, star, crescent, confetti and balloons | 🟡 GENERATED | ⬜ AWAITING OWNER | ⚠ inspect checkerboard/alpha later | ⬜ source archive pending | ⬜ |
+| BS-08 | Birthday | Night | Lavender birthday storybook with candlelight, star, crescent, confetti and balloons | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ cleanup/edge QA pending | ⬜ source archive pending | ⬜ |
 
 ### Review gates / packaging
 - [x] Verified GitHub master icon taxonomy: Berry Story = family #02; app Home source points to `BerryStory` and dynamic chapter status.
@@ -151,3 +151,15 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 - [ ] Check native alpha vs baked checkerboard before producing RGBA candidate; leave original unchanged. Package the full 8-image category after approval, with previews and SHA-256 source manifest, then separately stage binary PNGs in GitHub.
 
 **Current Berry Story progress: 8/8 generated, 7/8 owner visually approved; production RGBA/GitHub integration pending.**
+
+
+## BS-08 owner approval and full family checkpoint (November 20, 2026)
+- [x] BS-08 Birthday Night approved by owner in chat (“Good go on”). Preserve the exact previously generated moonlit birthday open-book source.
+- [x] **All eight Berry Story seasonal designs visually approved**: Halloween, Christmas, Thanksgiving and Birthday, each Day/Night.
+- [ ] Preserve the eight original PNG bytes and SHA-256 values separately from any RGBA conversions.
+- [ ] Background cleanup required on BS-05 through BS-08: last four sources are RGB, with BS-07/08 containing baked checkerboard. Do not claim alpha until measured.
+- [ ] Package all eight sources and RGBA candidates and 3 background QA sheets + 64/96 previews. Visual review of RGBA candidates remains independent of original visual acceptance.
+- [ ] Stage PNGs on GitHub through verified art import workflow and do not merge into game until later Xcode/device QA.
+- [ ] Next art family after packet confirmation: seasonal Daily Harvest Home tile family (8 versions, one at a time), not a redo of Berry Story or clock plaques.
+
+**Current Berry Story design approval: 8/8 COMPLETED. PNGs on GitHub: 0/8 until import.**
