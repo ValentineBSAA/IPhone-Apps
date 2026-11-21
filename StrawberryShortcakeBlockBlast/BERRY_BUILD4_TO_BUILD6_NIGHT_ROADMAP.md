@@ -5,6 +5,8 @@
 **Known-good restore point:** Build 3, commit `b4ffda288b7a778a79a860c8d8ebc2cab3e5755b`, physically tested on iPhone 14 Pro.  
 **Rule:** A feature is *not complete* because a PNG exists or Swift code compiles. Check off a task only after its stated verification has passed. Never overwrite the tested Build 3 baseline.
 
+> **Permanent owner requirement, updated November 21, 2026:** The PIN-hidden Developer Garden must remain in **every installable build, Debug and Release**, and continue expanding with the game. It must offer opt-in cheats for real owner data **with confirmation** and separate truly isolated test labs. In particular, Build 6 includes a dedicated **Cheat Moonberries** control **once the real Moonberry ledger exists**; do not fake a Moonberry balance in Build 48. [Full Developer Garden inventory, seven-system expansion plan and gates](DEVELOPER_GARDEN_OWNER_POLICY_AND_ROADMAP.md). **No release acceptance** if version-label long-press, PIN 1476, Strawberry cheats, isolated labs or saved games are missing from the actual iPhone IPA.
+
 ## Current status
 
 | Area | Status | Next acceptance gate |
@@ -106,6 +108,9 @@ The first command validates only; the second creates 30 distinct `Night_*.images
 - [ ] Repeat device save/restart/regression QA before approving.
 
 ### Gate D · Build 6: actual Moonberry Night Market
+
+- [ ] **Developer Garden counterpart required:** implement and test a separate **Cheat Moonberries** card (voluntary real balance edit only after confirmation/audit) and isolated fixtures for Moonberry earning, first-time milestones, store purchases, duplicate receipts, crash recovery, cross-currency safety and day/night time boundaries. Its current B48 **Coming Later** card is NOT a functional cheat or a real Moonberry economy.
+- [ ] Every Build 6 feature delivers its matching two-column developer fixture in the same development milestone, never as a detached follow-up.
 - [ ] Separate durable Strawberry and Moonberry ledgers; earn Moonberries via real Endless milestones.
 - [ ] Prevent duplicate milestone rewards after Undo, reload, session restart and season transition.
 - [ ] Daytime Berry Boutique and nighttime Moonberry Market use scheduled local time and the approved separate shop illustration.
