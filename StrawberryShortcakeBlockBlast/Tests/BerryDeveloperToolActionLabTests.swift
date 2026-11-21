@@ -5,9 +5,9 @@ import XCTest
 #if BERRY_INTERNAL_QA
 @MainActor
 final class BerryDeveloperToolActionLabTests: XCTestCase {
-    func testAllSevenOneTapRealPremiumToolScenariosPass() {
+    func testAllElevenOneTapRealPremiumToolScenariosPass() {
         var lab = BerryDeveloperToolActionLab()
-        XCTAssertEqual(BerryQAToolActionScenario.allCases.count, 7)
+        XCTAssertEqual(BerryQAToolActionScenario.allCases.count, 11)
         for choice in BerryQAToolActionScenario.allCases {
             lab.prepare(choice)
             let receipt = lab.run()
