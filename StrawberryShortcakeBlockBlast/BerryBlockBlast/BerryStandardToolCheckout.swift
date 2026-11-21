@@ -6,7 +6,7 @@ import Foundation
 /// The reducer checks affordability and charge overflow BEFORE this executor
 /// invokes its injected effects. No UserDefaults or live ledger is accessed
 /// by this type; the caller chooses which storage/ledger to use.
-enum BerryStandardToolKind: String, CaseIterable {
+enum BerryStandardToolKind: String, CaseIterable, Codable {
     case undo = "Undo"
     case shuffle = "Shuffle"
     case hint = "Hint"
