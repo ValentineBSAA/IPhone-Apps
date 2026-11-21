@@ -19,7 +19,7 @@ struct PosiesReminder: Codable, Identifiable, Equatable {
     var displayTime: Date {
         Calendar.current.date(from: DateComponents(year: 2000, month: 1, day: 1, hour: hour, minute: minute)) ?? Date()
     }
-    static let supportedCategories = ["Check-in", "Hydration", "Medication", "Rest", "Personal"]
+    static let supportedCategories = ["Check-in", "Medication", "Refill", "Hydration", "Blood Pressure", "Heart Rate", "Rest", "Journal", "Personal"]
 }
 
 enum PosiesNotificationScheduler {
@@ -28,6 +28,7 @@ enum PosiesNotificationScheduler {
     static func refresh(_ rules: [PosiesReminder],
                         quietStart: Int,
                         quietEnd: Int,
+                        revealType: Bool = false,
                         completion: @escaping (String?) -> Void) {
         let center = UNUserNotificationCenter.current()
         center.getPendingNotificationRequests { pending in
@@ -45,10 +46,17 @@ enum PosiesNotificationScheduler {
                     for day in rule.weekdays {
                         guard (1...7).contains(day) else { continue }
                         let content = UNMutableNotificationContent()
-                        // Deliberately neutral, including medication reminders.
-                        content.title = "POTS & Posies"
-                        content.body = "A gentle reminder is ready whenever you are."
+                        // Notification details are hidden on the Lock Screen
+                        // until someone explicitly opts into showing type labels.
+                        content.title = PosiesReminderPresentation.title(
+                            for: rule.category, revealType: revealType)
+                        content.body = PosiesReminderPresentation.body
+                        content.categoryIdentifier = PosiesReminderPresentation.categoryIdentifier
+                        content.threadIdentifier = "posies-" + rule.category.lowercased().replacingOccurrences(of: " ", with: "-")
                         content.sound = .default
+                        if let flower = PosiesNotificationArtwork.attachment() {
+                            content.attachments = [flower]
+                        }
                         let components = DateComponents(hour: rule.hour, minute: rule.minute, weekday: day)
                         let request = UNNotificationRequest(
                             identifier: prefix + rule.id.uuidString + "-\(day)",
@@ -75,6 +83,7 @@ struct PosiesRemindersView: View {
     @AppStorage("posiesReminderRulesV1") private var storedRules = ""
     @AppStorage("posiesQuietStartHour") private var quietStartHour = 22
     @AppStorage("posiesQuietEndHour") private var quietEndHour = 8
+    @AppStorage("posiesRevealReminderTypeV028") private var showReminderType = false
     @State private var editing: ReminderEditRoute?
     @State private var permissionStatus = ""
     @State private var statusMessage: String?
@@ -92,8 +101,14 @@ struct PosiesRemindersView: View {
                     VStack(alignment: .leading, spacing: 11) {
                         Label("Gentle reminders", systemImage: "bell.badge.fill")
                             .font(.title3.bold()).foregroundStyle(Color.potsTeal)
-                        Text("Choose your own schedule. Reminders never mean a medicine was taken or a check-in was completed.")
+                        Text("Choose your own schedule. Gentle iPhone reminders can be snoozed for 15 minutes. They never mark a medication as taken.")
                             .font(.subheadline).foregroundStyle(Color.potsSecondary)
+                        Toggle("Show reminder type in notifications", isOn: $showReminderType)
+                            .tint(Color.potsTeal)
+                        Text(showReminderType
+                             ? "A notification may say Medication or Blood Pressure, but never the medication name or dose."
+                             : "Private mode: Lock Screen reminders won't mention your medication, symptom or measurement.")
+                            .font(.caption).foregroundStyle(Color.potsSecondary)
                         if !permissionStatus.isEmpty {
                             Text(permissionStatus)
                                 .font(.caption).foregroundStyle(Color.potsSecondary)
@@ -192,6 +207,7 @@ struct PosiesRemindersView: View {
         .onAppear { refreshStatus() }
         .onChange(of: quietStartHour) { _ in sync() }
         .onChange(of: quietEndHour) { _ in sync() }
+        .onChange(of: showReminderType) { _ in sync() }
         .sheet(item: $editing) { route in
             ReminderForm(rule: route.rule) { updated in
                 var list = rules
@@ -247,7 +263,10 @@ struct PosiesRemindersView: View {
         sync()
     }
     private func sync() {
-        PosiesNotificationScheduler.refresh(rules, quietStart: quietStartHour, quietEnd: quietEndHour) {
+        PosiesNotificationScheduler.refresh(
+            rules, quietStart: quietStartHour, quietEnd: quietEndHour,
+            revealType: showReminderType
+        ) {
             error in
             if let error { permissionStatus = error }
         }

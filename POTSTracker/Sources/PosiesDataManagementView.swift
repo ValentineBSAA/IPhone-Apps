@@ -333,6 +333,7 @@ struct PosiesDataManagementView: View {
                 PosiesRestorePreviewSheet(
                     existingCount: preview.existing,
                     newCount: preview.additions,
+                    newProfileCount: preview.profileAdditions,
                     onRestore: { restorePreview(preview) },
                     onDone: {
                         self.preview = nil
@@ -352,18 +353,17 @@ struct PosiesDataManagementView: View {
     }
 
     private func restorePreview(_ approved: PosiesImportPreview) {
-        guard approved.additions > 0 else {
+        guard approved.additions > 0 || approved.profileAdditions > 0 else {
             showRestoreConfirmation = false
             preview = nil
             return
         }
         do {
+            let profileCount = approved.profileAdditions
             let count = try PosiesDataTransfer.restore(approved, context: context)
             showRestoreConfirmation = false
             preview = nil
-            outcomeText = count == 1
-                ? "Your entry is back on this iPhone. Your existing notes were left as they were."
-                : "Your \(count) entries are back on this iPhone. Your existing notes were left as they were."
+            outcomeText = "Restored \(count) \(count == 1 ? "entry" : "entries") and \(profileCount) medication \(profileCount == 1 ? "profile" : "profiles"). Your existing records were kept."
         } catch {
             showRestoreConfirmation = false
             preview = nil
@@ -377,11 +377,12 @@ struct PosiesDataManagementView: View {
             return
         }
         switch PosiesManualBackupAccess.evaluate(
-            recordCount: entries.count, lockEnabled: journalLockEnabled,
+            recordCount: entries.count + PosiesMedicationLibrary.load().count,
+            lockEnabled: journalLockEnabled,
             unlocked: journalAccess.unlocked
         ) {
         case .noEntries:
-            errorText = "Nothing has been recorded yet. Save a first entry, then return here to create a backup. You don't need to connect iCloud."
+            errorText = "Nothing has been recorded or saved in your medication cabinet yet. Add a first entry or profile, then come back to make your backup."
         case .ready:
             exportAction = "backup"
             confirmExport = true
@@ -450,10 +451,11 @@ enum PosiesRestoreCopy {
 private struct PosiesRestorePreviewSheet: View {
     let existingCount: Int
     let newCount: Int
+    let newProfileCount: Int
     let onRestore: () -> Void
     let onDone: () -> Void
 
-    private var allHere: Bool { newCount == 0 }
+    private var allHere: Bool { newCount == 0 && newProfileCount == 0 }
 
     var body: some View {
         ScrollView {
@@ -470,7 +472,9 @@ private struct PosiesRestorePreviewSheet: View {
                     Text(PosiesRestoreCopy.heading(newCount: newCount))
                         .font(.title2.bold())
                         .foregroundStyle(.primary)
-                    Text(PosiesRestoreCopy.detail(existingCount: existingCount, newCount: newCount))
+                    Text(allHere
+                         ? PosiesRestoreCopy.detail(existingCount: existingCount, newCount: newCount)
+                         : "\(newCount) new entries and \(newProfileCount) medication profiles are ready to restore. Existing records won't be overwritten.")
                         .font(.body)
                         .foregroundStyle(Color.potsSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -491,7 +495,8 @@ private struct PosiesRestorePreviewSheet: View {
                 Button {
                     if allHere { onDone() } else { onRestore() }
                 } label: {
-                    Text(PosiesRestoreCopy.button(newCount: newCount))
+                    Text(allHere ? "All done"
+                         : (newProfileCount == 0 ? PosiesRestoreCopy.button(newCount: newCount) : "Restore my saved information"))
                         .font(.headline)
                         .frame(maxWidth: .infinity, minHeight: 52)
                 }

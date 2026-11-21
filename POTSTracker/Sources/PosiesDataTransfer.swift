@@ -35,9 +35,27 @@ struct PosiesPortableRecord: Codable, Identifiable, Equatable {
 
     var displayDetail: String {
         switch LogCategory(rawValue: category) {
-        case .heartRate: return "\(firstValue) bpm" + (posture.isEmpty ? "" : " · \(posture)")
-        case .bloodPressure: return "\(firstValue)/\(secondValue) mmHg"
-        case .symptom: return severity >= 0 ? "Severity \(severity)/10" : "No severity rating"
+        case .heartRate:
+            let extra = PosiesVitalsContext.read(source)
+            return "\(firstValue) bpm" + (posture.isEmpty ? "" : " · \(posture)") +
+                (extra.source.isEmpty ? "" : " · \(extra.source)") +
+                (extra.timing.isEmpty ? "" : " · \(extra.timing)")
+        case .bloodPressure:
+            let extra = PosiesVitalsContext.read(source)
+            let avg = extra.average(firstSystolic: Int(firstValue), firstDiastolic: Int(secondValue))
+            return "\(firstValue)/\(secondValue) mmHg" +
+                (extra.hasSecondReading ? " · Second \(extra.secondSystolic!)/\(extra.secondDiastolic!)" : "") +
+                (avg.map { " · Two-reading average \($0.0)/\($0.1)" } ?? "") +
+                (extra.monitorPulse.map { " · Pulse \($0) bpm" } ?? "") +
+                (extra.source.isEmpty ? "" : " · \(extra.source)")
+        case .symptom:
+            let flare = PosiesFlareContext.read(source)
+            let base = severity >= 0 ? "Severity \(severity)/10" : "No severity rating"
+            return base + (flare == nil ? "" : " · Flare-up observation") +
+                (flare?.triggers.isEmpty == false ? " · Possible factors: \(flare!.triggers.joined(separator: ", "))" : "") +
+                (flare?.pulse.map { " · Pulse \($0) bpm" } ?? "") +
+                (flare?.systolic.map { " · BP \($0)/\(flare!.diastolic ?? 0) mmHg" } ?? "") +
+                (flare?.whatHelped.isEmpty == false ? " · Afterward: \(flare!.whatHelped)" : "")
         case .hydration:
             let tags = PosiesEntryExtras.read(source).tags ?? []
             return "\(firstValue) mL" + (secondValue > 0 ? " · \(secondValue) mg sodium" : "") +
@@ -65,6 +83,8 @@ struct PosiesBackupFile: Codable {
     var schemaVersion: Int = 1
     var createdAt: Date = Date()
     var records: [PosiesPortableRecord]
+    // Optional for backward compatibility: all pre-v0.2.8 JSON files decode.
+    var medicationProfiles: [PosiesMedicationProfile]? = nil
 }
 
 struct PosiesImportPreview {
@@ -72,6 +92,10 @@ struct PosiesImportPreview {
     let existing: Int
     let additions: Int
     let journalCount: Int
+    var profileAdditions: Int {
+        PosiesMedicationLibrary.missing(
+            archive.medicationProfiles ?? [], from: PosiesMedicationLibrary.load()).count
+    }
 }
 
 enum PosiesDataTransfer {
@@ -106,7 +130,9 @@ enum PosiesDataTransfer {
     }
 
     static func encodeBackup(_ records: [PosiesPortableRecord]) throws -> Data {
-        try encoder().encode(PosiesBackupFile(records: records))
+        var archive = PosiesBackupFile(records: records)
+        archive.medicationProfiles = PosiesMedicationLibrary.load()
+        return try encoder().encode(archive)
     }
 
     static func inspect(_ data: Data, existingIDs: Set<UUID>, journalUnlocked: Bool) throws -> PosiesImportPreview {
@@ -116,6 +142,13 @@ enum PosiesDataTransfer {
             throw TransferError.wrongFile
         }
         guard archive.records.count <= 100000 else { throw TransferError.tooMany }
+        let profiles = archive.medicationProfiles ?? []
+        guard profiles.count <= PosiesMedicationLibrary.maximumProfiles,
+              profiles.allSatisfy(\.safeToSave),
+              Set(profiles.map(\.id)).count == profiles.count,
+              PosiesMedicationLibrary.load().count + PosiesMedicationLibrary.missing(
+                  profiles, from: PosiesMedicationLibrary.load()).count <= PosiesMedicationLibrary.maximumProfiles
+        else { throw TransferError.invalidRecord }
         let ids = archive.records.map(\.id)
         guard Set(ids).count == ids.count else { throw TransferError.duplicates }
         let supported = Set(LogCategory.allCases.map(\.rawValue))
@@ -163,6 +196,9 @@ enum PosiesDataTransfer {
         }
         do {
             try POTSData.save(context)
+            // Profiles are only merged by UUID after record import is valid.
+            // They are never interpreted as medication intake events.
+            PosiesMedicationLibrary.merge(preview.archive.medicationProfiles ?? [])
             return added
         } catch {
             context.rollback()

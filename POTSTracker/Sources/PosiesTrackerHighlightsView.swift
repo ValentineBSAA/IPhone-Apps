@@ -12,6 +12,9 @@ private struct PosiesTrackerDay: Identifiable {
 struct PosiesTrackerHighlightsView: View {
     let category: LogCategory
     let records: [RecordSnapshot]
+    @AppStorage("posiesHydrationGoalMLV028") private var personalHydrationGoal = 0
+    @AppStorage("posiesHydrationShowOuncesV028") private var showFluidOunces = false
+
 
     private var sevenDays: [RecordSnapshot] {
         let start = Calendar.current.date(byAdding: .day, value: -6,
@@ -44,7 +47,9 @@ struct PosiesTrackerHighlightsView: View {
         switch category {
         case .hydration:
             let total = today.reduce(0) { $0 + max(0, Int($1.firstValue)) }
-            return today.isEmpty ? "Not recorded today" : "\(total) mL recorded today"
+            return today.isEmpty ? "Not recorded today" :
+                (showFluidOunces ? String(format: "%.1f US fl oz recorded today", Double(total) / 29.5735295625)
+                                 : "\(total) mL recorded today")
         case .medications:
             return today.isEmpty ? "No medication entries today"
                 : "\(today.count) medication \(today.count == 1 ? "entry" : "entries") today"
@@ -78,6 +83,31 @@ struct PosiesTrackerHighlightsView: View {
                     Text(summary)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.potsTeal)
+                    if category == .hydration {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Toggle("Show US fluid ounces in summary", isOn: $showFluidOunces)
+                                .tint(.potsTeal)
+                                .font(.subheadline)
+                            Stepper(value: $personalHydrationGoal, in: 0...10000, step: 250) {
+                                Text(personalHydrationGoal == 0
+                                     ? "Personal daily goal: Off"
+                                     : "My chosen daily goal: \(personalHydrationGoal) mL")
+                                    .font(.subheadline.weight(.medium))
+                            }
+                            Text("A goal is optional and set only by you. Follow your clinician's advice about fluids and sodium.")
+                                .font(.caption)
+                                .foregroundStyle(Color.potsSecondary)
+                            if personalHydrationGoal > 0 {
+                                let actual = today.reduce(0) { $0 + max(0, Int($1.firstValue)) }
+                                ProgressView(value: Double(min(actual, personalHydrationGoal)),
+                                             total: Double(personalHydrationGoal))
+                                    .tint(.potsTeal)
+                                Text("\(actual) mL of your personal \(personalHydrationGoal) mL goal recorded")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.potsSecondary)
+                            }
+                        }
+                    }
                     if !daily.isEmpty {
                         Chart(daily) { item in
                             BarMark(

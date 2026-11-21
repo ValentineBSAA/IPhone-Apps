@@ -134,6 +134,22 @@ struct EntriesForCategory: View {
                     )
                 }
 
+                if category == .medications {
+                    NavigationLink {
+                        PosiesMedicationCabinetView()
+                    } label: {
+                        HStack {
+                            Image(systemName: "pills.fill")
+                            Text("My medication cabinet")
+                            Spacer()
+                            Image(systemName: "arrow.right")
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                    }
+                    .buttonStyle(.bordered)
+                }
+
                 if category == .heartRate {
                     HStack(spacing: 10) {
                         Button { adding = true } label: {
