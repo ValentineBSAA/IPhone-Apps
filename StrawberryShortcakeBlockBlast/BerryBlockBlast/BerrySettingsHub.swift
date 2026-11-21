@@ -142,6 +142,7 @@ struct BerrySettingsHubView: View {
                         .font(.system(size: 11, weight: .bold, design: .rounded))
                         .foregroundStyle(BerryStyle.chocolate.opacity(0.67))
                         .contentShape(Rectangle())
+                        .accessibilityIdentifier("berry.settings.version.developer")
                         .onLongPressGesture(minimumDuration: 1.8) {
                             #if BERRY_INTERNAL_QA
                             showDeveloperGateway = true
