@@ -11,8 +11,12 @@ final class BerryClockCountdownSecondTests: XCTestCase {
         return cal
     }
 
-    private func date(_ y: Int = 2026, _ m: Int = 11, _ d: Int = 21,
-                      _ h: Int, _ min: Int, _ sec: Int, cal: Calendar) -> Date {
+    private func date(_ h: Int, _ min: Int, _ sec: Int, cal: Calendar) -> Date {
+        date(2026, 11, 21, h, min, sec, cal: cal)
+    }
+
+    private func date(_ y: Int, _ m: Int, _ d: Int, _ h: Int,
+                      _ min: Int, _ sec: Int, cal: Calendar) -> Date {
         cal.date(from: DateComponents(year: y, month: m, day: d,
                                       hour: h, minute: min, second: sec))!
     }
