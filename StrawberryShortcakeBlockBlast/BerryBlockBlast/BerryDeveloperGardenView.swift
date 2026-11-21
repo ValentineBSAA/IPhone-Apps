@@ -32,6 +32,7 @@ struct BerryDeveloperGardenView: View {
         case combo = "Combo Preview"
         #if BERRY_INTERNAL_QA
         case sandbox = "Scenario Sandbox"
+        case stateLab = "State & Timer Lab"
         #endif
 
         var id: String { rawValue }
@@ -48,6 +49,7 @@ struct BerryDeveloperGardenView: View {
             case .combo: return "sparkles.rectangle.stack.fill"
             #if BERRY_INTERNAL_QA
             case .sandbox: return "square.grid.2x2.fill"
+            case .stateLab: return "timer.circle.fill"
             #endif
             }
         }
@@ -66,6 +68,7 @@ struct BerryDeveloperGardenView: View {
             case .combo: return "Milestone"
             #if BERRY_INTERNAL_QA
             case .sandbox: return "BBBIconTools"
+            case .stateLab: return "BBBIconTools"
             #endif
             }
         }
@@ -82,6 +85,7 @@ struct BerryDeveloperGardenView: View {
             case .combo: return "Dev_Combo_Preview_Fireworks"
             #if BERRY_INTERNAL_QA
             case .sandbox: return "Dev_Diagnostics_Strawberry_Pulse"
+            case .stateLab: return "Dev_Timers_Moon_Clock"
             #endif
             }
         }
@@ -98,6 +102,7 @@ struct BerryDeveloperGardenView: View {
             case .combo: return "Test celebrations without rewards"
             #if BERRY_INTERNAL_QA
             case .sandbox: return "Run isolated board fixtures without saves"
+            case .stateLab: return "Mock wallets, charges, saves and time"
             #endif
             }
         }
@@ -108,7 +113,7 @@ struct BerryDeveloperGardenView: View {
     }
     private var advancedTools: [Tool] {
         #if BERRY_INTERNAL_QA
-        return [.sandbox, .economy, .build, .clock, .experimental, .notifications]
+        return [.sandbox, .stateLab, .economy, .build, .clock, .experimental, .notifications]
         #else
         return [.economy, .build, .clock, .experimental, .notifications]
         #endif
@@ -304,6 +309,8 @@ struct BerryDeveloperGardenView: View {
         #if BERRY_INTERNAL_QA
         case .sandbox:
             BerryDeveloperSandboxPanel()
+        case .stateLab:
+            BerryDeveloperStateLabPanel()
         #endif
         case .qaWallet:
             #if BERRY_INTERNAL_QA
