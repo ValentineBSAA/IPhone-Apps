@@ -290,9 +290,23 @@ private struct ReminderForm: View {
             Form {
                 Section("Reminder") {
                     TextField("Reminder name", text: $rule.name)
-                    Picker("Type", selection: $rule.category) {
-                        ForEach(PosiesReminder.supportedCategories, id: \.self) { title in
-                            Text(title).tag(title)
+                    Text("Type").font(.subheadline.weight(.semibold))
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 115))], spacing: 8) {
+                        ForEach(PosiesReminder.supportedCategories, id: \.self) { category in
+                            let chosen = rule.category == category
+                            Button {
+                                rule.category = PosiesChoiceBehavior.toggle(rule.category, tapped: category)
+                            } label: {
+                                Text(category)
+                                    .font(.subheadline.weight(chosen ? .semibold : .regular))
+                                    .frame(maxWidth: .infinity, minHeight: 44)
+                                    .foregroundStyle(chosen ? Color.white : Color.primary)
+                                    .background(chosen ? Color.potsButtonFill : Color.potsSurfaceMuted,
+                                                in: RoundedRectangle(cornerRadius: 11))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityAddTraits(chosen ? [.isSelected] : [])
+                            .accessibilityHint(chosen ? "Selected. Tap again to clear." : "Tap to choose reminder type.")
                         }
                     }
                     DatePicker("Time", selection: time, displayedComponents: .hourAndMinute)
@@ -304,9 +318,7 @@ private struct ReminderForm: View {
                             let chosen = rule.weekdays.contains(weekday)
                             Button(weekdayName(weekday)) {
                                 if chosen {
-                                    if rule.weekdays.count > 1 {
-                                        rule.weekdays.removeAll { $0 == weekday }
-                                    }
+                                    rule.weekdays.removeAll { $0 == weekday }
                                 } else {
                                     rule.weekdays.append(weekday)
                                     rule.weekdays.sort()
@@ -318,7 +330,13 @@ private struct ReminderForm: View {
                             .background(chosen ? Color.potsButtonFill : Color.potsSurfaceMuted,
                                         in: RoundedRectangle(cornerRadius: 11))
                             .buttonStyle(.plain)
+                            .accessibilityAddTraits(chosen ? [.isSelected] : [])
+                            .accessibilityHint(chosen ? "Selected. Tap again to clear." : "Tap to add this day.")
                         }
+                    }
+                    if rule.weekdays.isEmpty {
+                        Text("Choose at least one day before saving. You can tap any selected day again to remove it.")
+                            .font(.caption).foregroundStyle(Color.potsSecondary)
                     }
                 }
                 Section {
@@ -336,7 +354,7 @@ private struct ReminderForm: View {
                         dismiss()
                     }
                     .disabled(rule.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-                              rule.name.count > 120 || rule.weekdays.isEmpty)
+                              rule.name.count > 120 || rule.weekdays.isEmpty || rule.category.isEmpty)
                 }
             }
         }
