@@ -298,6 +298,7 @@ struct BerryDeveloperGardenView: View {
                                 previewMilestone = nil
                                 selectedTool = nil
                             }
+                            .accessibilityIdentifier("berry.developer.tool.done")
                         }
                     }
                     #if BERRY_INTERNAL_QA
