@@ -1,6 +1,6 @@
 # 🍓 Berry Berry Blast · Advanced Developer Garden / QA Cockpit
 
-**Status: ROADMAP / DESIGN ONLY.** Build on the existing **Build 4.6 Developer Garden**, do not replace it. Goal: test every supported game mechanic **without hours of manual scoring, quests, purchases, or repeated play**.
+**Status: ACTIVE STAGED DEVELOPMENT, draft/unmerged.** Build on the existing **Build 4.6 Developer Garden**, do not replace it. Goal: test every supported game mechanic **without hours of manual scoring, quests, purchases, or repeated play**.
 
 ## Product promise
 One-tap **Create scenario → Run checks → Review PASS/FAIL evidence → Discard sandbox**. Scenarios are deterministic and use isolated testing state, not the player's actual saves, history, shops, inventory or wallet.
@@ -201,3 +201,17 @@ We must not accumulate endless successful isolated branches while the real iPhon
 - [x] [66-scenario QA registry](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) now **20 simulator-pass/device-pending, 44 planned, 2 not implemented**. These are 20 scenario contracts covered by 64 selected XCTest methods, not 20 app features shipped.
 - [ ] **Physical iPhone QA and whole-game integration checkpoint** remain open. [D1a PR #70](https://github.com/ValentineBSAA/IPhone-Apps/pull/70) stays draft/unmerged, no new IPA/version.
 - [ ] **Next focused audit:** Cottage and Premium purchases still use generic save/premium save paths that may clear a parked 8×8 Endless board from a menu session. D1b must preserve the board without disrupting actual board-changing tool-use saves. Daily Harvest, Story and Night follow after an integrated candidate.
+
+---
+
+## ✅ D1a accepted and D1b Cottage/premium follow-on started · November 20, 2026
+- [x] **D1a confirmed:** [Actions #44868413961](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868413961) finished SUCCESS. Actual XCTest logs confirm **64/64 selected iPhone 16e simulator tests, zero failures**: 48 D0–D0e, 6 existing Boutique checks and 10 new real `buyCosmetic` tests. Release build excluded QA internals; no IPA.
+- [x] D1a inventory-only changes protect previously saved Endless slots from standard-helper and cosmetic purchases made from a fresh menu session. Physical owner acceptance, full SwiftUI tap paths and crash-atomic multiple keys remain open.
+- [x] [D1b draft PR #71](https://github.com/ValentineBSAA/IPhone-Apps/pull/71) continues on a branch based on D1a. Confirmed Cottage and premium-only purchase save risk: their prior generic `save()` could remove an unplayed 8×8 Endless snapshot. Changed checkout-only paths to injected real ledger/preferences + inventory-only persistence; actual premium board-changing usage keeps original full-board saves.
+- [x] Added 10 new actual isolated `BerryCottagePremiumIsolationTests` for six premium SKUs, Cottage pricing, permanent purchase duplicate/overflow guards, 8/12/24 sentinel saved-garden protection, backward-compatible inventory and no writes to real player defaults.
+- [x] Catalog now has **70 scenario contracts**: 20 simulator verified/device pending, 4 D1b implemented-awaiting-CI, 44 planned, 2 future Night not implemented. Not 70/70 tested.
+- [ ] [Dedicated D1b iPhone 16e 74-selected-test workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d1b-cottage-premium-iphone16e.yml). Inspect actual terminal logs, do not count 74/74 until confirmed.
+- [ ] D1c: internal two-column Developer Garden one-tap **real checkout against an isolated disposable store**, receipt/expected/actual/Reset and no side effect on live saved gardens. Existing D0/D0b mock QA panels remain labeled truthfully and are not silently upgraded to real checkout.
+- [ ] Follow-up: premium *usage* board-change restore tests, multi-key crash-safe purchase design, Story/Daily/quests/birthday, seasonal and Night mechanics, complete physical owner QA, then explicit merge/build/IPA decisions.
+
+D1b exact QA ledger: [Cottage & Premium Saved-Garden Safety](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d1b-cottage-premium-save-qa/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D1B_COTTAGE_PREMIUM_SAVE_QA.md). **No new IPA, no version bump, no merge.**
