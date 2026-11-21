@@ -3,7 +3,7 @@
   "app": "Berry Berry Blast",
   "status": "roadmap-only, no test fixtures implemented",
   "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests. D0 proof 6/6 on iPhone 16e simulator covers ONLY two fully implemented scenarios; do not imply full 48 scenario coverage or physical-device validation. D0b six scenarios are separate value-type policy implementations and remain unaccepted until named simulator results and owner physical UI tests are verified. GitHub Actions #44864274159 attempt 2: D0/D0b selected 17/17 XCTest green, with safe Release compile. Do not equate these mock policy fixtures with full production purchase/save or physical iPhone acceptance. D0c two implemented-untested shared production-rule contract checks are not complete end-to-end checkout coverage. Owner physical QA remains required.",
-  "count": 56,
+  "count": 59,
   "status_values": [
     "planned",
     "implemented_untested",
@@ -748,6 +748,46 @@
       "test_ref": "BerryStandardToolTransactionTests.testToolConsumptionOnlyAfterValidUnderlyingAction",
       "manual_iphone_accepted": false,
       "scope_note": "Tests shared rule and production call-site presence, not actual full Hint UI."
+    },
+    {
+      "id": "d0d-real-session-purchase-persist-ledger",
+      "category": "economy",
+      "title": "D0d actual GameSession standard purchase stores inventory and spend ledger",
+      "fixture": "Construct real BerryGameSession with a disposable UserDefaults suite and real BerryEconomyLedger(defaults:); buy Undo, Shuffle, Hint.",
+      "expected": "Same production methods debit exact costs and persist updated tool charges, JSON inventory and ledger totals only in isolated preferences.",
+      "status": "implemented_untested",
+      "execution": "real_session_isolated_defaults_and_ledger",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d0d-injected-checkout-ledger:BerryGameSession.swift",
+      "test_ref": "BerryStandardToolCheckoutIsolationTests",
+      "manual_iphone_accepted": false,
+      "scope_note": "Standard tools only; not a full shop UI or atomic multi-key disk transaction."
+    },
+    {
+      "id": "d0d-real-session-rejected-checkout-no-writes",
+      "category": "tools",
+      "title": "D0d real GameSession insufficient funds and charge overflow reject without persistence",
+      "fixture": "Use isolated UserDefaults and ledger, seed 49 berries for Shuffle or Int.max Hint charges; call actual session purchase methods.",
+      "expected": "No inventory bytes changed, ledger stays zero and no tool charge created or overflowed.",
+      "status": "implemented_untested",
+      "execution": "real_session_isolated_defaults_and_ledger",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d0d-injected-checkout-ledger:BerryGameSession.swift",
+      "test_ref": "BerryStandardToolCheckoutIsolationTests",
+      "manual_iphone_accepted": false
+    },
+    {
+      "id": "d0d-real-session-legacy-inventory-reopen",
+      "category": "progression",
+      "title": "D0d actual standard-tool inventory backward compatibility and reopen",
+      "fixture": "Seed legacy encoded inventory without hints into isolated defaults; construct real session, buy Hint and reopen a second session.",
+      "expected": "Legacy missing hints defaults to zero; new inventory includes hints; earned total and original keys preserved; second real session reloads charges and berries.",
+      "status": "implemented_untested",
+      "execution": "real_session_isolated_defaults_and_ledger",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d0d-injected-checkout-ledger:BerryGameSession.swift",
+      "test_ref": "BerryStandardToolCheckoutIsolationTests",
+      "manual_iphone_accepted": false
     }
   ]
 }
