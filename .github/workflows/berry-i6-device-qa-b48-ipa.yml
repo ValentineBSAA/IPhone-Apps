@@ -40,11 +40,11 @@ jobs:
           test -f UITests/BerryBoardAppearancePersistenceUITests.swift
           test -f UITests/BerryVersionIdentityUITests.swift
           test -f UITests/BerryDeveloperGardenPhysicalQAUITests.swift
-          grep -q 'BERRY_INTERNAL_QA BERRY_DEVICE_QA' project.yml
+          grep -q 'SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BERRY_INTERNAL_QA"' project.yml
           grep -q 'berry.settings.version.developer' BerryBlockBlast/BerrySettingsHub.swift
           grep -q 'berry.developer.tool.' BerryBlockBlast/BerryDeveloperGardenView.swift
-          grep -q 'PRIVATE DEVICE QA' BerryBlockBlast/BerryDeveloperGardenView.swift
-          grep -q 'Live strawberry grants are disabled' BerryBlockBlast/BerryDeveloperGardenView.swift
+          grep -q 'HIDDEN DEVELOPER GARDEN' BerryBlockBlast/BerryDeveloperGardenView.swift
+          grep -q 'OPTIONAL CHEAT' BerryBlockBlast/BerryDeveloperGardenView.swift
           grep -q 'CURRENT_PROJECT_VERSION: "48"' project.yml
           grep -q 'INFOPLIST_KEY_CFBundleVersion: "48"' project.yml
           grep -q 'v\\(marketingVersion) • B\\(buildNumber) • I6 QA' BerryBlockBlast/BerryBuildIdentity.swift
@@ -79,7 +79,7 @@ jobs:
           xcodegen generate --spec project.yml
           xcodebuild -list -project BerryBlockBlast.xcodeproj
 
-      - name: Compile private device QA Release with PIN lab enabled and live-wallet grant disabled
+      - name: Compile owner QA Release with PIN labs and optional confirmed cheat tools
         timeout-minutes: 15
         shell: bash
         run: |
@@ -91,7 +91,7 @@ jobs:
           APP='build-i6-release/Build/Products/Release-iphonesimulator/BerryBlockBlast.app'
           test -d "$APP"
           # Intentional in this private QA candidate: real isolated Developer Garden
-          # is included in device Release. Its wallet grant UI is compile-time disabled.
+          # is included in every Release. The intentional cheat needs explicit confirmation.
           test -f "$APP/BerryBlockBlast"
 
       - name: Locate exact named iPhone 16e simulator
@@ -191,8 +191,8 @@ jobs:
           python3 Tools/verify_audio_build2.py --app "$APP"
           # This is intentionally an internal Release QA build, not distribution.
           # Verified by the native PIN long-press UI test in Release configuration.
-          grep -q 'BERRY_INTERNAL_QA BERRY_DEVICE_QA' project.yml
-          grep -q 'Live strawberry grants are disabled' BerryBlockBlast/BerryDeveloperGardenView.swift
+          grep -q 'SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BERRY_INTERNAL_QA"' project.yml
+          grep -q 'OPTIONAL CHEAT' BerryBlockBlast/BerryDeveloperGardenView.swift
           echo "Private Build 48 iPhoneOS Release compiled with PIN-protected isolated QA enabled."
 
       - name: Package and verify exactly one unsigned private-test IPA
@@ -234,8 +234,9 @@ jobs:
           Bundle: com.valentinebsaa.berryblockblast
           Version: 0.5.16, internal build 48, iOS 16+
 
-          FIXED: Home and Settings now show v0.5.16, internal Build 48,
-          and I6 QA. Prior IPA excluded the developer menu, now fixed.
+          FIXED: Home and Settings show v0.5.16, internal Build 48,
+          and I6 QA. Holding Settings version now opens the permanent,
+          PIN-hidden Developer Garden and its optional cheat tools.
           Confirm that exact label to distinguish the corrected IPA.
 
           BEFORE INSTALL: BACK UP the installed game and keep a copy of its
@@ -245,17 +246,19 @@ jobs:
 
           DEVICE QA: In Settings hold the build label for ~2 seconds, then
           enter PIN 1476. Open Commerce Lab and Quest & Story Lab for
-          isolated repeatable tests. Test Strawberries/live wallet grants
-          are intentionally hidden to protect existing player data.
+          isolated repeatable tests. Cheat Strawberries is deliberately available. It modifies your saved
+          wallet ONLY after entering an amount and confirming the grant.
 
           FIVE QUICK CHECKS AFTER YOUR OWN BACKUP + SAFE INSTALL:
           [ ] 1. Launch: Home displays v0.5.16 / B48 / I6 QA; music works.
           [ ] 2. Wallet, owned cosmetics and saved Endless score survive.
           [ ] 3. Board Studio Blossom Glass -> Settings -> force-close -> reopen.
           [ ] 4. Daily Harvest leaves and reopens as "Resume Today"; Story dialogue opens.
-          [ ] 5. Settings build label long-press opens PIN 1476 / Developer Garden.
+          [ ] 5. Hold Settings build label 2s, enter PIN 1476, verify Cheat Strawberries and Commerce Lab cards.
 
-          Do not spend real saved berries just to test a feature until your
+          Cheat Strawberries intentionally changes the real saved wallet only
+          after confirmation; isolated lab cards do not. Do not spend berries
+          just to test a feature until your
           backup has been confirmed. Report first failure with a screenshot.
           Full Story rescue and reward hardware acceptance happens separately.
 
