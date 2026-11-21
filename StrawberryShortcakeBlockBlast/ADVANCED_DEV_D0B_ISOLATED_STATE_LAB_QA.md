@@ -14,7 +14,7 @@ Create instant tests for funds, charges, save formats and countdown boundaries *
 - [x] `BerryDeveloperStateLabPanel.swift`: additional **State & Timer Lab** card in the Developer Garden's existing advanced **two-column grid**, itself a two-column fixture picker with mock balance/charges, expected/actual PASS/FAIL, Run and Discard.
 - [x] Existing D0 `Scenario Sandbox`, Developer Garden controls, real-wallet QA grant and user settings preserved byte-identical apart from the necessary new menu cases. No new images needed.
 - [x] **11 new targeted XCTest cases authored**, plus existing six D0 cases included in the combined named iPhone 16e simulator job.
-- [ ] [GitHub Actions D0b test run](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0b-state-time-iphone16e.yml) must prove Release build without QA code and the full selected 17-test suite green before automated acceptance.
+- [x] [GitHub Actions D0b run #44864274159, attempt 2](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44864274159) **SUCCESS**: Release compiled with QA sandbox excluded, named iPhone 16e XCTest **6/6 D0 + 11/11 D0b = 17/17, zero failures**. Physical acceptance remains separate.
 - [ ] Owner real iPhone 16e Developer Garden card layout, repeat/discard and unchanged wallet/save acceptance. No IPA is built or released as part of this workflow.
 
 ## Six preconfigured one-tap fixtures
@@ -29,7 +29,7 @@ Create instant tests for funds, charges, save formats and countdown boundaries *
 
 ## Testing receipts
 - [x] New tests cover six scenario receipts, money boundaries, overflow guards, save roundtrip at 8/12/24, corrupted-byte isolation, virtual pause/deadline, rerun/discard and real saved UserDefaults-key snapshots.
-- [ ] CI result and exact XCTest counts to be recorded only after terminal GitHub job conclusion and job-log inspection.
+- [x] Final job logs directly inspected: `BerryDeveloperSandboxTests` 6/6, `BerryDeveloperStateLabTests` 11/11, 17/17 total, zero failures and `** TEST SUCCEEDED **`.
 - [ ] Mac/iOS physical interface QA after separate approved installable build. Do not mark screenshot or simulator-only checks as an owner physical pass.
 
 ## Important technical limitation
@@ -60,4 +60,12 @@ Before adding scenarios that invoke live app handlers, implement **D0c dependenc
 - [x] [Corrected-filenames run #44864274159, attempt 1](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44864274159) passed normal source checks, Release compilation and named iPhone 16e simulator discovery, but the Debug XCTest target **failed to compile**. No runtime assertions executed.
 - [x] Exact cause: two D0b test-only `XCTAssertEqual` expressions called a throwing `canonical(_:) -> Data` helper on the right-hand side without `try` (lines 82 and 95). Both now use `try`. No production app, sandbox behavior, wallet or art source was modified.
 - [x] Rerun **attempt 2** accepted on the same GitHub Actions URL. It checks out the latest D0b branch, including the corrected test source and earlier canonical-JSON stabilization.
-- [ ] Recheck terminal 17 selected XCTest results and exact suite counts after attempt 2; keep all six new scenarios `implemented_untested` until confirmed.
+- [x] Attempt 2 completed **SUCCESS**. All 17 selected XCTest cases passed on named iPhone 16e. Six new scenarios are now `automated_pass_device_pending`, not physically owner-accepted.
+
+
+## Final verified D0b selected regression · November 20, 2026
+- [x] [GitHub Actions #44864274159 attempt 2](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44864274159) reached terminal **SUCCESS**. Its job log explicitly reports `** TEST SUCCEEDED **`.
+- [x] `BerryDeveloperSandboxTests` **6 tests, zero failures**. `BerryDeveloperStateLabTests` **11 tests, zero failures**. Combined selected XCTest **17/17 passed** in named iPhone 16e simulator.
+- [x] Source integrity, verified artwork/audio, XcodeGen, iOS16 compatible Release compilation with internal QA code excluded, and no IPA packaging all passed in the successful run.
+- [x] Earlier failures remain documented as CI shell file-name mismatch and two missing `try` markers in test-only assertions. No changes to production puzzle rules, wallet or save handlers.
+- [ ] **Not yet complete:** physical owner iPhone 16e UI/fixture check, real shop charge handlers and persistent save-service injection, full-app regression, release approval. Keep draft PR #64 unmerged.
