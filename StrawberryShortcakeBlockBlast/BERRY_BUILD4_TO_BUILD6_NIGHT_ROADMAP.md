@@ -109,6 +109,18 @@ The first command validates only; the second creates 30 distinct `Night_*.images
 - [x] New dedicated deterministic unit tests and native Home screen seconds test added to source. Existing hidden Garden PIN/cheat/restore tests retained.
 - [ ] **B49 full simulator + model CI terminal green; native unsigned IPA integrity; owner real-iPhone time/seconds and saves verification** (do not mark until evidence exists). Build 48 remains the confirmed rollback/previous install.
 
+### Ready Blueberry and Moonberry artwork incorporated into the Build 49 source
+
+**Owner direction:** Do not hold back approved game artwork merely because Build 5/6 economies are planned later. Use the assets that are already in the Xcode asset catalog, but do not activate missing mechanics.
+
+- [x] Verified actual PNG plus `Contents.json` for `BerryRewardBlueberrySparkle` and `BerryRewardMoonberryNightmare`, both referenced by existing collectible reward catalog.
+- [x] Verified day and night `Moonberry_Currency` and `Night_Moonberry_Currency` PNG image sets and day/night `Approved_Night_Market_Storefront`/`Night_Approved_Night_Market_Storefront` artwork.
+- [x] Added a **six-image, two-column approved art preview** to the hidden Developer Garden **Moonberries & Night Market** card in Build49 source. This is a visual preview only, no shop purchases, live balances, rewards or save changes.
+- [x] Added two new XCTest source checks for all six PNGs and their existing collectible references; native simulator/Release gate **not yet run**.
+- [ ] Validate these assets visibly on a real iPhone in Build49, including compact layouts and contrast; keep Build48 rollback intact.
+- [ ] **Blueberry Velvet** is already a working purchasable blue/violet code-rendered skin, not a new approved image-backed premium block PNG set. If the owner wants a more distinctive image-based upgrade, approve its specific tile artwork separately and preserve current saved skin/equip states.
+- [ ] True Moonberry wallet, market inventory, checkout, earn/cheat/restore and 6 PM shop opening **remain Build6**. The presence of images is not proof that commerce exists.
+
 ### Gate A2 · Live seconds and real transition countdown (independent of approved clock artwork)
 
 **Owner request from real iPhone screenshot, November 21, 2026:** [Issue #95](https://github.com/ValentineBSAA/IPhone-Apps/issues/95). The existing Home header already reads local time and says e.g. `1:59 PM · Day Garden` with `Moonlight in 4h 1m`, but it drops **seconds** and rounds the remaining time to whole minutes. **Fix this digital header independently and before integrating the approved decorative analog clock**. Do not alter the verified v0.5.16 Build 48 IPA; implement this in the next deliberate, separately tested version.
