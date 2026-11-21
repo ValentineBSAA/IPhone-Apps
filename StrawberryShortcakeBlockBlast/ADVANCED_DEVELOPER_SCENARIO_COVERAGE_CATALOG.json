@@ -2,7 +2,7 @@
   "schema": 1,
   "app": "Berry Berry Blast",
   "status": "roadmap-only, no test fixtures implemented",
-  "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests.",
+  "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests. D0 proof 6/6 on iPhone 16e simulator covers ONLY two fully implemented scenarios; do not imply full 48 scenario coverage or physical-device validation.",
   "count": 48,
   "status_values": [
     "planned",
@@ -10,7 +10,8 @@
     "pass",
     "fail",
     "blocked",
-    "not_implemented"
+    "not_implemented",
+    "automated_pass_device_pending"
   ],
   "rules": [
     "Every new mechanic requires a scenario coverage entry.",
@@ -486,9 +487,19 @@
       "title": "D0 one move to clear one exact row",
       "fixture": "8×8, row 4 has seven occupied cells, one unrelated occupied cell, fixed 1-cell piece in tray slot 0. Run at (3,7).",
       "expected": "Exactly row 4 cleared; column clears 0; score increases 11 without 300-point all-board bonus; live saves remain untouched.",
-      "status": "implemented_untested",
+      "status": "automated_pass_device_pending",
       "execution": "isolated_fixture",
-      "latest_result": null,
+      "latest_result": {
+        "automated": "pass",
+        "workflow_run_id": 44862930573,
+        "workflow_url": "https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573",
+        "suite": "BerryDeveloperSandboxTests",
+        "total_cases": 6,
+        "failed_cases": 0,
+        "release_qa_code_excluded": true,
+        "physical_iphone_16e": "pending",
+        "app_integration": "draft_unmerged"
+      },
       "implementation_ref": "feature/berry-advanced-dev-d0-isolated-sandbox:BerryDeveloperScenarioSandbox.swift",
       "test_ref": "BerryDeveloperSandboxTests.testOneMoveLineClearRunsActualEngineWithExactScoreAndNoBonus",
       "manual_iphone_accepted": false
@@ -499,9 +510,19 @@
       "title": "D0 occupied cell placement is fully rejected",
       "fixture": "8×8, occupied (2,2), fixed tray. Attempt slot 0 at that same occupied cell.",
       "expected": "Placement returns nil; exact canonical engine bytes unchanged; no score or move change; no persistent game state accessed.",
-      "status": "implemented_untested",
+      "status": "automated_pass_device_pending",
       "execution": "isolated_fixture",
-      "latest_result": null,
+      "latest_result": {
+        "automated": "pass",
+        "workflow_run_id": 44862930573,
+        "workflow_url": "https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573",
+        "suite": "BerryDeveloperSandboxTests",
+        "total_cases": 6,
+        "failed_cases": 0,
+        "release_qa_code_excluded": true,
+        "physical_iphone_16e": "pending",
+        "app_integration": "draft_unmerged"
+      },
       "implementation_ref": "feature/berry-advanced-dev-d0-isolated-sandbox:BerryDeveloperScenarioSandbox.swift",
       "test_ref": "BerryDeveloperSandboxTests.testInvalidPlacementRejectsWithoutAnyEngineMutation",
       "manual_iphone_accepted": false
