@@ -171,3 +171,14 @@ One-tap **Create scenario → Run checks → Review PASS/FAIL evidence → Disca
 - [x] [62-scenario catalog](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json): **16 simulator-pass/device-pending**, **44 planned**, **2 not implemented**. Zero new Developer Garden owner-device signoffs.
 - [ ] Best-effort UserDefaults replay is **not power-loss-durable or a truly atomic database transaction**. Physical iPhone process-kill and friendly corrupted-journal recovery UX remain required before production release.
 - [ ] [Draft D0e PR #68](https://github.com/ValentineBSAA/IPhone-Apps/pull/68) remains unmerged. Next move to actual whole-game coverage: Boutique, premium tools, Daily/Story save and reward boundaries, in separate isolated work packages, not one risky refactor.
+
+
+## D1a real Berry Boutique testing and saved-garden protection · November 20, 2026
+- [x] Opened [D1a draft PR #70](https://github.com/ValentineBSAA/IPhone-Apps/pull/70), based on verified D0e, beginning whole-game QA expansion beyond Undo/Shuffle/Hint into real Boutique ownership and cosmetics.
+- [x] Central `BerryBoutiquePurchasePolicy` preserves existing 11 approved cosmetic prices and rejects unknown IDs, swapped costs, unaffordable or duplicate purchases. Real `BerryGameSession.buyCosmetic` now uses injected storage and real ledger for testable isolated purchase effects.
+- [x] Separated `saveInventoryOnly()` from board-changing `save()`, protecting existing **8×8 / 12×12 / 24×24 Sweet Endless** saved boards from menu Boutique and Helper purchases.
+- [x] Ten new real purchase XCTests authored (wallet, ownership, exact ledger, reward receipt, free item, old ownership, UI appearance preference preservation, duplicates, no standard player writes and saved-board bytes), plus six existing Boutique tests and 48 prior D0–D0e tests = **64 selected named iPhone 16e regression cases**.
+- [x] [QA scenario catalog](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) now **66 contracts**: 16 previously simulator-pass/device-pending, 4 D1a implemented-awaiting-CI, 44 planned, 2 not implemented.
+- [ ] [D1a Actions #44868413961](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868413961) final terminal result and exact case counts, plus Release QA exclusion. Do not mark D1a passed without log proof.
+- [ ] Future D1b: developer menu one-tap Boutique fixture UI and full view-driven purchase, equip/unequip and permanent ownership QA; D1c premium tools; D2 Daily/Story and quest/reward fixtures. These remain separate until tested.
+- [ ] Real iPhone owner acceptance, multi-key cosmetic purchase crash recovery and whole-game regression remain pending; no merged code, new IPA or app version.
