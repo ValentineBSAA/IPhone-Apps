@@ -98,7 +98,20 @@ struct BerryDeveloperQuestStoryLab {
             "berryberryblast.progression.v059.2026-11-20.moves",
             "berryberryblast.progression.v059.2026-11-20.chapters"
         ] + [8, 12, 24].map { BerryGameSession.endlessSaveKey(side: $0) }
-        let original = watched.map {
+        let virtualQuestKeys = (20...23).flatMap { day -> [String] in
+            let date = String(format: "2026-11-%02d", day)
+            let prefix = "berryberryblast.progression.v059." + date + "."
+            return [
+                prefix + "moves", prefix + "lines", prefix + "modes",
+                prefix + "chapters", prefix + "playedModes",
+                prefix + "claimed.moves", prefix + "claimed.chapters",
+                prefix + "chapter.2",
+                "berryblockblast.award.quest-" + date + "-moves",
+                "berryblockblast.award.quest-" + date + "-chapters"
+            ]
+        }
+        let watchedPlayerKeys = watched + virtualQuestKeys
+        let original = watchedPlayerKeys.map {
             UserDefaults.standard.object(forKey: $0) as? NSObject
         }
         var passed = false
@@ -221,7 +234,7 @@ struct BerryDeveloperQuestStoryLab {
             }
         }
 
-        let current = watched.map {
+        let current = watchedPlayerKeys.map {
             UserDefaults.standard.object(forKey: $0) as? NSObject
         }
         let playerSafe = original == current
