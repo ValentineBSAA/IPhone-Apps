@@ -34,6 +34,7 @@ struct BerryDeveloperGardenView: View {
         case sandbox = "Scenario Sandbox"
         case stateLab = "State & Timer Lab"
         case commerce = "Commerce Lab"
+        case toolActions = "Tool Action Lab"
         #endif
 
         var id: String { rawValue }
@@ -52,6 +53,7 @@ struct BerryDeveloperGardenView: View {
             case .sandbox: return "square.grid.2x2.fill"
             case .stateLab: return "timer.circle.fill"
             case .commerce: return "basket.fill"
+            case .toolActions: return "wand.and.stars"
             #endif
             }
         }
@@ -72,6 +74,7 @@ struct BerryDeveloperGardenView: View {
             case .sandbox: return "BBBIconTools"
             case .stateLab: return "BBBIconTools"
             case .commerce: return "BBBIconInventory"
+            case .toolActions: return "BBBIconTools"
             #endif
             }
         }
@@ -90,6 +93,7 @@ struct BerryDeveloperGardenView: View {
             case .sandbox: return "Dev_Diagnostics_Strawberry_Pulse"
             case .stateLab: return "Dev_Timers_Moon_Clock"
             case .commerce: return "Dev_Economy_Inspector_Two_Currencies"
+            case .toolActions: return "Dev_Diagnostics_Strawberry_Pulse"
             #endif
             }
         }
@@ -108,6 +112,7 @@ struct BerryDeveloperGardenView: View {
             case .sandbox: return "Run isolated board fixtures without saves"
             case .stateLab: return "Mock wallets, charges, saves and time"
             case .commerce: return "One-tap real checkout in disposable test store"
+            case .toolActions: return "Use real tools and reopen test gardens"
             #endif
             }
         }
@@ -118,7 +123,7 @@ struct BerryDeveloperGardenView: View {
     }
     private var advancedTools: [Tool] {
         #if BERRY_INTERNAL_QA
-        return [.sandbox, .stateLab, .commerce, .economy, .build, .clock, .experimental, .notifications]
+        return [.sandbox, .stateLab, .commerce, .toolActions, .economy, .build, .clock, .experimental, .notifications]
         #else
         return [.economy, .build, .clock, .experimental, .notifications]
         #endif
@@ -318,6 +323,8 @@ struct BerryDeveloperGardenView: View {
             BerryDeveloperStateLabPanel()
         case .commerce:
             BerryDeveloperCommerceLabPanel()
+        case .toolActions:
+            BerryDeveloperToolActionLabPanel()
         #endif
         case .qaWallet:
             #if BERRY_INTERNAL_QA
