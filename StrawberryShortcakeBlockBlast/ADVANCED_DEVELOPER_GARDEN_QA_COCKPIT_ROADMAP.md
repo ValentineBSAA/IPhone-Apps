@@ -279,3 +279,21 @@ D1b exact QA ledger: [Cottage & Premium Saved-Garden Safety](https://github.com/
 - [ ] Next broader targets: D3 actual Daily/Story/quests/birthday tests with injectable persistence, D4 seasonal approved artwork, Build4.7/4.8 Day/Night parity, Build5 Village/quests and Build6 distinct Night modes, Moonberry wallet and Night Market. **Keep working on the whole game, not only the Developer Garden.**
 
 [Exact D2c QA ledger](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d2c-premium-actions-rescue/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D2C_PREMIUM_ACTION_RESCUE_QA.md).
+
+---
+
+## D2b/D2c real Seed isolation regression and D2d eleven-card Tool Action Lab · November 20, 2026
+
+**A real defect was caught, not a test-only serialization issue.**
+- [x] [D2b Actions #44871494518](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44871494518) attempt 1 ran **94 selected XCTest; two assertions failed** inside one internal Tool Action Lab case: Starberry Seed used correctly and persisted, but the test session wrote a live `UserDefaults.standard` best-score key.
+- [x] [D2c Actions #44871838416](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44871838416) attempt 1 ran **102 selected XCTest; the identical two failures**. Both first attempts had successful production Release builds and named iPhone16e test execution; neither was a pass.
+- [x] Fixed **both** best-score persistence sites in `BerryGameSession` (`drop` and `useStarberrySeed`) to write `checkoutDefaults`, which remains `.standard` in live sessions. Also guarded `BerryProgression.shared.recordPlacement` in actual `drop` so isolated test sessions do not increment real quest state. Applied same corrections directly to D2b, D2c and D2d feature branches. This preserves normal player behavior and blocks QA leakage.
+- [x] Requested **attempt 2 reruns** for D2b 94 and D2c 102. **Final terminal log evidence pending at this writing.** Do not certify either yet.
+- [x] New [D2d draft PR #76](https://github.com/ValentineBSAA/IPhone-Apps/pull/76) stacked on D2c extends the existing `BERRY_INTERNAL_QA` two-column **Tool Action Lab** from **seven to eleven** one-tap real actions: (1) Twister L-shape rotation and charge/restart, (2) permanent Pantry stash and return across two restarts, (3) 24×24 Golden rescue across four occupied patches with independent 8/12 saved games, (4) exact 250-berry combined Golden purchase/rescue/receipt/ledger/reopen.
+- [x] Six additional `BerryDeveloperToolActionExpansionTests` and updated existing enum coverage count to eleven. [D2d 108-test Actions #44872232106](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44872232106), Release QA exclusions and no-IPA gate started, **not yet accepted**.
+- [x] Master catalog now **102 scenario contracts**: **37 simulator verified/device pending, 7 D2b implemented/CI pending, 8 D2c implemented/CI pending, 4 D2d implemented/CI pending, 44 planned, 2 future Night not implemented**. These are tracking contracts, not the number of passed XCTest.
+- [ ] Audit and repair any new CI failure; update final test counts and corresponding scenario statuses only when terminal XCTest evidence confirms them.
+- [ ] Owner physical iPhone16e remains essential, including actual gameplay tool gestures, Story Game Over purchase path and two-column card accessibility. This lab uses real methods, not end-to-end native SwiftUI taps.
+- [ ] Broad D3 Daily/Story/quests/birthday injection and isolated virtual dates already audited in [D3 roadmap](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D3_DAILY_STORY_PROGRESSION_QA_ROADMAP.md); full game's seasons, Day/Night, Build5 village and Build6 Night Market remain open.
+
+[D2d exact QA ledger](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d2d-premium-one-tap-expansion/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D2D_ONE_TAP_PREMIUM_EXPANSION_QA.md). **No merge, IPA, signed release or version bump.**
