@@ -12,7 +12,7 @@
 - [x] Added an internal-only **Scenario Sandbox** card under Developer Garden's expanded 2-column advanced grid; board preview, selected fixture, Run and Discard buttons, PASS/FAIL expected/actual info. No new illustration required.
 - [x] Preserved historical **real-wallet QA grant** as an unchanged, explicitly separate legacy tool. Never route it through this new sandbox.
 - [x] Added **6 iPhone XCTest methods**: exact line clear, invalid move state equality, repeated-run determinism, discard/reset, no mutation of real save/wallet preference keys, and stable tray IDs.
-- [ ] **GitHub Actions [D0 iPhone 16e and Release compiler gate](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0-developer-sandbox-iphone16e.yml)** must complete green before declaring automated acceptance. Release compile must exclude QA-only panel/code, while Debug simulator tests run the six new cases.
+- [x] **GitHub Actions [#44862930573](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573) SUCCESS**: source/audio/artwork integrity, Release compilation without QA-only panel, named iPhone 16e Debug simulator **six sandbox XCTests passed, zero failures**. This is automated acceptance only, not physical-owner approval.
 - [ ] Verify on **physical iPhone 16e**: Settings build-text 1.8-sec long press → Developer Garden PIN → More diagnostics → Scenario Sandbox; scenario card layout readable in 2 columns, Run/Discard works, Done returns to unchanged actual saved board and wallet.
 - [ ] Additional scenarios and broader D1/D2/D3 fixture injection only after isolation/physical baseline accepted. Do not mutate real `BerryGameSession` or daily history.
 
@@ -35,5 +35,13 @@ Next D1 creates a typed scenario registry based on the [46 planned contracts](ht
 
 ## CI checkpoint (Release compile)
 - [x] [Actions #44862930573](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573): **Release target compiled successfully with QA sandbox excluded**, after source integrity and original art/audio checks passed.
-- [ ] Named iPhone 16e six-test suite currently executing; do not assert full green until the job's final conclusion and test counts are checked.
+- [x] Named iPhone 16e XCTest suite **6/6 PASS**, zero failures. Verified from actual job logs: `BerryDeveloperSandboxTests` passed, `Executed 6 tests, with 0 failures`, `** TEST SUCCEEDED **`.
 - [ ] Physical iPhone QA and production merge/release remain open.
+
+
+## ✅ Actual automated QA results
+- [x] Completed [D0 run #44862930573](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573) with terminal conclusion **SUCCESS**.
+- [x] **6/6** new `BerryDeveloperSandboxTests` methods passed on named iPhone 16e simulator; selected unit suite log confirms no failures.
+- [x] Existing game source/art/audio integrity passed, Release built with sandbox feature excluded, and no IPA was created/published.
+- [ ] **Physical owner iPhone 16e acceptance remains open**: inspect board preview and two-column card in actual Developer Garden; confirm Run twice, Discard and original game/wallet after closing.
+- [ ] Full mechanics coverage still needs D1–D7; 46 other roadmap contracts are not runnable yet. PR #63 remains draft, not shipped.
