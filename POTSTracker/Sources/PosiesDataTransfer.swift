@@ -65,6 +65,8 @@ struct PosiesBackupFile: Codable {
     var schemaVersion: Int = 1
     var createdAt: Date = Date()
     var records: [PosiesPortableRecord]
+    // Optional for backward compatibility: all pre-v0.2.8 JSON files decode.
+    var medicationProfiles: [PosiesMedicationProfile]? = nil
 }
 
 struct PosiesImportPreview {
@@ -72,6 +74,10 @@ struct PosiesImportPreview {
     let existing: Int
     let additions: Int
     let journalCount: Int
+    var profileAdditions: Int {
+        PosiesMedicationLibrary.missing(
+            archive.medicationProfiles ?? [], from: PosiesMedicationLibrary.load()).count
+    }
 }
 
 enum PosiesDataTransfer {
@@ -106,7 +112,9 @@ enum PosiesDataTransfer {
     }
 
     static func encodeBackup(_ records: [PosiesPortableRecord]) throws -> Data {
-        try encoder().encode(PosiesBackupFile(records: records))
+        var archive = PosiesBackupFile(records: records)
+        archive.medicationProfiles = PosiesMedicationLibrary.load()
+        return try encoder().encode(archive)
     }
 
     static func inspect(_ data: Data, existingIDs: Set<UUID>, journalUnlocked: Bool) throws -> PosiesImportPreview {
@@ -116,6 +124,13 @@ enum PosiesDataTransfer {
             throw TransferError.wrongFile
         }
         guard archive.records.count <= 100000 else { throw TransferError.tooMany }
+        let profiles = archive.medicationProfiles ?? []
+        guard profiles.count <= PosiesMedicationLibrary.maximumProfiles,
+              profiles.allSatisfy(\.safeToSave),
+              Set(profiles.map(\.id)).count == profiles.count,
+              PosiesMedicationLibrary.load().count + PosiesMedicationLibrary.missing(
+                  profiles, from: PosiesMedicationLibrary.load()).count <= PosiesMedicationLibrary.maximumProfiles
+        else { throw TransferError.invalidRecord }
         let ids = archive.records.map(\.id)
         guard Set(ids).count == ids.count else { throw TransferError.duplicates }
         let supported = Set(LogCategory.allCases.map(\.rawValue))
@@ -163,6 +178,9 @@ enum PosiesDataTransfer {
         }
         do {
             try POTSData.save(context)
+            // Profiles are only merged by UUID after record import is valid.
+            // They are never interpreted as medication intake events.
+            PosiesMedicationLibrary.merge(preview.archive.medicationProfiles ?? [])
             return added
         } catch {
             context.rollback()
