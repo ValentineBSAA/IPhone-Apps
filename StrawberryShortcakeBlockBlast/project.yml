@@ -37,10 +37,11 @@ targets:
       configs:
         Debug:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BERRY_INTERNAL_QA"
-        # Only this private device QA branch enables the developer menu in Release.
-        # BERRY_DEVICE_QA disables live-wallet QA grants while allowing isolated labs.
+        # Owner requirement: Developer Garden, isolated labs and optional
+        # confirmed cheats persist in installable Release builds until the
+        # owner expressly requests otherwise. Keep the menu hidden behind PIN.
         Release:
-          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BERRY_INTERNAL_QA BERRY_DEVICE_QA"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BERRY_INTERNAL_QA"
   BerryBlockBlastUITests:
     type: bundle.ui-testing
     platform: iOS
