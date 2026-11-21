@@ -154,3 +154,12 @@ One-tap **Create scenario → Run checks → Review PASS/FAIL evidence → Disca
 - [x] [59-contract QA catalog](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) now records **13 simulator-pass/device-pending**, **44 planned** and **2 not implemented**. No false full-game or physical-device acceptance.
 - [x] Real `BerryGameSession` standard-tool purchase handlers use shared checked checkout callback and isolated injectable inventory preferences/real ledger in tests; legacy missing-Hint compatibility and exact save/ledger receipts verified. Standard production default storage remains the same.
 - [ ] **Next targeted stage:** prove partial-write/crash recovery or design a genuinely atomic transaction boundary for standard-tool wallet and ledger, then apply injected dependencies to additional shop, daily and premium handlers safely. Complete real iPhone UI QA separately.
+
+
+## D0e interrupted-purchase recovery safety milestone · November 20, 2026
+- [x] Opened [draft PR #68](https://github.com/ValentineBSAA/IPhone-Apps/pull/68), based on D0d, adding versioned `BerryStandardPurchaseJournal` and real `BerryGameSession` automatic recovery before saved inventory is decoded.
+- [x] Journal holds exact post-inventory bytes and **absolute** real spending totals, preventing duplicate charge on repeated replay. It stages before writing inventory/ledger and preserves corrupt unresolved entries rather than silently deleting purchase evidence.
+- [x] Eight new actual-session interruption XCTest methods authored; combined **48 selected** on named iPhone 16e with Release QA-panel exclusion via [D0e workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0e-purchase-recovery-iphone16e.yml). Await terminal CI proof.
+- [x] [Scenario catalog](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) expanded to **62 contracts**: 13 D0–D0d simulator-pass/device-pending, 3 D0e implemented-untested, 44 planned, 2 not implemented.
+- [ ] True power-loss durability is **not guaranteed by UserDefaults**, and real multi-key writes are not atomic; this is best-effort journal replay, not a transactional database. Fault-injection device testing and player-friendly corrupt-journal messaging remain future work.
+- [ ] Keep all broader gameplay, Boutique, Story, Daily, Night, progression and approved artwork gates. No new IPA/version or feature merges without full game integration regression and physical iPhone approval.
