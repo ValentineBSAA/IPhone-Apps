@@ -174,3 +174,22 @@ jobs:
             git commit -m 'art(seasonal): consolidate 55 approved original sources plus separate RGBA QA candidates'
             git push origin HEAD:artwork/berry-seasonal-approved-h1-consolidated-20261120
           fi
+
+      - name: Publish verified one-piece master ZIP to the same GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG='berry-h1-approved-all-20261120'
+          NAME='Berry_Berry_Blast_ALL_Approved_Seasonal_Artwork_GitHub_2026-11-20.zip'
+          MASTER="$RUNNER_TEMP/$NAME"
+          test -s "$MASTER"
+          # The extraction step has already verified the pinned ZIP hash, all
+          # 55 source images and all 150 package entries before this upload.
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | grep -Fxq "$NAME"; then
+            echo 'The verified one-piece master ZIP is already attached.'
+          else
+            gh release upload "$TAG" "$MASTER" --repo "$GITHUB_REPOSITORY"
+            echo 'Published the single combined ZIP as a new Release asset.'
+          fi
