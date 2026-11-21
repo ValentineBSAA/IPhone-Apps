@@ -96,3 +96,10 @@ One-tap **Create scenario → Run checks → Review PASS/FAIL evidence → Disca
 - [ ] [D0 GitHub Actions #44862930573](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573) verifies Release compilation excludes QA code and runs only six new methods on named iPhone 16e; keep pending until final result verified.
 - [ ] Physical iPhone 16e checks using [exact D0 test steps](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d0-isolated-sandbox/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D0_SANDBOX_BUILD_AND_QA.md) only after green CI. No new IPA or install candidate yet.
 - [ ] Build D1 scenario registry and additional mechanism fixtures **only after D0 safety gate**. Do not reuse persistent QA wallet grants to simulate sandbox funds.
+
+
+## ✅ D0 automated acceptance · November 20, 2026
+- [x] [Draft PR #63](https://github.com/ValentineBSAA/IPhone-Apps/pull/63): real-engine reusable single-row-clear and occupied-cell-rejection fixtures in isolated `BERRY_INTERNAL_QA` Developer Garden panel.
+- [x] [GitHub Actions #44862930573](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573): **Release compiled excluding the QA sandbox** and named iPhone 16e XCTest **6/6 PASS, zero failures**.
+- [x] [48-contract scenario catalog](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) now records two `automated_pass_device_pending` examples, **44 planned and 2 unimplemented**. Do not report 48/48 tested.
+- [ ] Physical device UI/restore confirmation and owner approval pending; still not merged/released. Next D0b isolated mock wallets/time/saves before any mutation capable of influencing real gameplay or economy.
