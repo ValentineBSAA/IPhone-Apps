@@ -168,19 +168,30 @@ struct EntryEditor: View {
                 TextField("Or type a symptom", text: $title)
                     .textFieldStyle(.roundedBorder)
                     .focused($inputFocused)
-                HStack {
-                    Text("Severity")
-                        .font(.subheadline.weight(.medium))
-                    Spacer()
-                    Picker("Severity", selection: $severity) {
-                        Text("Not rated").tag(-1)
-                        ForEach(0...10, id: \.self) { score in
-                            Text("\(score) / 10").tag(score)
+                Text("Severity (optional)").font(.subheadline.weight(.semibold))
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 55), spacing: 7)], spacing: 7) {
+                    ForEach(0...10, id: \.self) { score in
+                        let chosen = severity == score
+                        Button {
+                            severity = chosen ? -1 : score
+                        } label: {
+                            Text("\(score)")
+                                .font(.subheadline.weight(chosen ? .bold : .medium))
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .foregroundStyle(chosen ? Color.white : Color.primary)
+                                .background(chosen ? Color.potsButtonFill : Color.potsSurfaceMuted,
+                                            in: RoundedRectangle(cornerRadius: 11))
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Severity \(score) out of 10")
+                        .accessibilityAddTraits(chosen ? [.isSelected] : [])
+                        .accessibilityHint(chosen ? "Selected. Tap again to clear." : "Tap to record this rating.")
                     }
-                    .pickerStyle(.menu)
                 }
-                Text("Severity is optional. Choose 0 only if you actually want to record zero.")
+                Text(severity < 0 ? "Not rated. You can leave this blank." :
+                     "Tap the highlighted number again to remove your rating.")
+                    .font(.caption).foregroundStyle(Color.potsSecondary)
+                Text("Choose 0 only if you actually want to record zero.")
                     .font(.caption)
                     .foregroundStyle(Color.potsSecondary)
             }
@@ -314,16 +325,27 @@ struct EntryEditor: View {
     }
 
     private var posturePicker: some View {
-        HStack {
-            Text("Position")
-                .font(.subheadline.weight(.medium))
-            Spacer()
-            Picker("Position", selection: $posture) {
-                ForEach(positions, id: \.self) { option in
-                    Text(option).tag(option)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Position (optional)")
+                .font(.subheadline.weight(.semibold))
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 8)], spacing: 8) {
+                ForEach(positions.filter { $0 != "Not specified" }, id: \.self) { option in
+                    let chosen = posture == option
+                    Button {
+                        posture = PosiesChoiceBehavior.toggle(posture, tapped: option, empty: "Not specified")
+                    } label: {
+                        Text(option)
+                            .font(.subheadline.weight(chosen ? .semibold : .regular))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .foregroundStyle(chosen ? Color.white : Color.primary)
+                            .background(chosen ? Color.potsButtonFill : Color.potsSurfaceMuted,
+                                        in: RoundedRectangle(cornerRadius: 11))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(chosen ? [.isSelected] : [])
+                    .accessibilityHint(chosen ? "Selected. Tap again to clear." : "Tap to record this position.")
                 }
             }
-            .pickerStyle(.menu)
         }
     }
 
