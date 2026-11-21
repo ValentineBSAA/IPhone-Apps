@@ -315,3 +315,9 @@ Recommended sequence alongside existing milestones: H5 nonvisual calendar smoke/
 - [x] Debug simulator named iPhone 16e, Release compiled with internal-only QA sandbox excluded, source/art/audio checks passed, no IPA shipped. CI runner-path and missing-`try` test syntax errors corrected, with both failures preserved in the [D0b QA ledger](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d0b-state-time-lab/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D0B_ISOLATED_STATE_LAB_QA.md).
 - [x] [Scenario catalog](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) currently **54** test contracts: 8 `automated_pass_device_pending` (2 D0 + 6 D0b), 44 `planned`, 2 `not_implemented`; this is NOT 54/54 tested.
 - [ ] Physical-owner iPhone 16e interface checks, **D0c injected real shop/save handler tests**, complete gameplay regression and merge/release approval remain open. D0b mock price checks do not assert production checkout safety.
+
+
+## D0c QA-to-production tool-policy bridge · November 20, 2026
+- [x] [Draft PR #66](https://github.com/ValentineBSAA/IPhone-Apps/pull/66) uses a common tool transaction reducer in both the real game Undo/Shuffle/Hint buying methods and the Developer Garden isolated wallet, addressing the previous mock-policy divergence. Preserves same normal prices, save and ledger behavior, with overflow/negative-state guards.
+- [x] Ten new shared-rule tests added, plus D0 and D0b regression selected; [named iPhone 16e workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0c-shared-tools-iphone16e.yml) gates any acceptance.
+- [ ] Next real store/ledger/save injection and physical QA before shipping. Build 4.7/4.8/5/6 and seasonal art remain independent planned work; no new IPA and no changes to main gameplay.
