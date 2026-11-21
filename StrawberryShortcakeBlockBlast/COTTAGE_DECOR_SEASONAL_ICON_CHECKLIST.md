@@ -27,7 +27,7 @@ Give this family a distinct, clear **decorating** theme: a cute strawberry-roof 
 | CD-05 | Thanksgiving | Day | Sunny strawberry-roof cottage with golden maple wreath, pumpkins, strawberry berry pie, flower pot, paintbrush and orange gingham ribbon spool | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ original RGB/off-white background; RGBA edge QA pending | ⬜ PNG source not staged | ⬜ |
 | CD-06 | Thanksgiving | Night | Moonlit autumn strawberry cottage, glowing windows, harvest lanterns, pumpkin planters, berry pie, flowerpot, paintbrush, violet ribbon spool and autumn gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ RGB/off-white background; RGBA edge QA pending | ⬜ source PNG not imported | ⬜ |
 | CD-07 | Birthday | Day | Sunny strawberry-roof decorating cottage, birthday cake, balloons, present, floral strawberry planter, pink paintbrush, ribbon spool and gingham bow | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ 1254px RGB, black outside badge; RGBA cutout QA pending | ⬜ source PNG not staged | ⬜ |
-| CD-08 | Birthday | Night | Moonlit lavender cottage, glowing windows and lanterns, birthday cake with candle, balloons and gifts, decorating paintbrush, strawberry planter and ribbon spool | ⬜ NEXT: single original | ⬜ owner approval pending | ⬜ | ⬜ | ⬜ |
+| CD-08 | Birthday | Night | Moonlit purple strawberry cottage, glowing windows, lanterns, balloons, cake candle, present, strawberry flowerpot, pink decorating paintbrush, ribbon spool and pink gingham | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ native RGBA with transparent corner verified; edge QA pending | ⬜ source PNG not imported | ⬜ |
 
 ## Task gates and handoff
 - [x] Verify the separate `CottageDecorations` Home use-site, not to confuse with H1-B01 cottage/Classic hero assets.
@@ -161,3 +161,12 @@ Links: [H1-B04 checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md) · [Master
 - [ ] Later: preserve all original PNGs and SHA-256, separate true RGBA cleanup, light/dark/checker previews at 64/96/144px, archive ZIP, GitHub binary import, and real iPhone QA. No app code or prior original assets changed.
 
 **Current H1-B05: 7/8 visually approved and 7/8 generated before CD-08.**
+
+
+### CD-08 Birthday Night generated · final visual approval pending
+- [x] One standalone birthday-night cottage decorating icon generated and shown in chat. Moonlit purple sky with crescent, glowing strawberry-roof cottage and windows, balloons, party cake with candle, gift, planter, craft brush, ribbon spool and pink gingham bow.
+- [x] PNG image observed 1254×1254 RGBA, top-left alpha zero. This checks native alpha existence only, not full fringe/edge QA or final production readiness.
+- [ ] **Await explicit CD-08 owner visual approval.** Do not call full family 8/8 owner-approved until accepted; currently 7/8 approved.
+- [ ] On approval, preserve all eight exact original PNG bytes and separately derive any needed RGBA candidates, create source SHA-256 manifest, preview sheets against checker/light/dark and at 64/96/144px, then verify a single categorized ZIP and GitHub import. Keep prior artwork and game state unchanged.
+
+**H1-B05 current: 8/8 generated, 7/8 visually approved.**
