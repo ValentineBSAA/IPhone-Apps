@@ -25,7 +25,7 @@ In `BerryModes.swift` Home screen, **More Adventures** uses `BerryGridNavigation
 | MA-02 | Halloween | Night | Moonlit violet strawberry crossroads with lightning, warm cottage and moon/star arrows; glowing berry lanterns and pumpkins | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ background/alpha QA pending | ⬜ source PNG import pending | ⬜ |
 | MA-03 | Christmas | Day | Sunlit snowy strawberry crossroads with lightning, cottage and crescent/star arrows, evergreen lights, holly, candy canes and red-green gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ original PNG not staged | ⬜ |
 | MA-04 | Christmas | Night | Moonlit snow-covered three-way strawberry signpost, luminous holiday pines, cottage windows and red-green gingham; second/latest visual chosen | ✅ GENERATED | ✅ OWNER ACCEPTED (latest shown image) | ⬜ actual alpha/edge QA pending | ⬜ source archive pending | ⬜ |
-| MA-05 | Thanksgiving | Day | Amber autumn three-path strawberry signpost (lightning, cottage, crescent/stars), harvest leaves, pumpkins, berry pie and basket | ⬜ NEXT: one standalone original | ⬜ owner approval pending | ⬜ | ⬜ | ⬜ |
+| MA-05 | Thanksgiving | Day | Sunlit golden strawberry crossroads, three route icons, autumn leaves and trees, pumpkins, lattice berry pie, woven harvest basket and orange gingham bow | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ visible checkerboard; verify actual alpha later | ⬜ original PNG not staged | ⬜ |
 | MA-06 | Thanksgiving | Night | Candlelit plum/gold garden fork, moonlit pumpkin-berry lanterns, pie and autumn foliage | ⬜ | ⬜ | ⬜ | ⬜ |
 | MA-07 | Birthday | Day | Festive pink garden three-way signpost, strawberry cake, present, balloons and gold chapter-style star | ⬜ | ⬜ | ⬜ | ⬜ |
 | MA-08 | Birthday | Night | Lavender birthday crossroads, moonlit bunting, candle glow, balloons, strawberry confetti | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -112,3 +112,11 @@ Links: [Seasonal icon matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) · [Daily Ha
 - [ ] Source and RGBA image binaries not in GitHub; transparent matte verification, 64/96px screen legibility, ZIP checksum import, Xcode integration and physical-device acceptance remain pending.
 
 **Current More Adventures status: 4/8 visually accepted, MA-05 is next.**
+
+
+### MA-05 Thanksgiving Day generated · review gate
+- [x] One image created and shown for MA-05 Thanksgiving Day, retaining all three More Adventures symbols (Blitz lightning, Cozy Cottage building, Nightmare crescent and stars) with warm daytime harvest landscape, maple leaves, pumpkins, strawberry basket, berry pie and orange gingham bow.
+- [ ] Await explicit owner visual approval before generating MA-06 Thanksgiving Night. No approval inferred from generation.
+- [ ] Image shows checkerboard-style background; verify real PNG alpha rather than treating checkerboard as proof. Source bytes, RGBA candidate, checksum ZIP, 64/96px previews, GitHub binary stage and iPhone QA remain independent pending gates.
+
+**Authoritative latest: 5/8 generated, 4/8 visually accepted; MA-05 pending owner approval.**
