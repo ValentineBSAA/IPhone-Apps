@@ -21,7 +21,7 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 |---|---|---|---|---|---|---|---|---|
 | BS-01 | Halloween | Day | Sunny pumpkin-strawberry storybook, orange/violet ribbon, friendly autumn accents | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
 | BS-02 | Halloween | Night | Moonlit purple enchanted storybook, stars, crescent and luminous chapter star | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
-| BS-03 | Christmas | Day | Snow-kissed red/green strawberry storybook with gold star and holly | ⬜ NEXT: generate single original | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
+| BS-03 | Christmas | Day | Snow-kissed red/green strawberry storybook with gold star and holly | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⬜ | ⬜ | ⬜ |
 | BS-04 | Christmas | Night | Warm fairy lights and moonlit blue snowy storybook | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BS-05 | Thanksgiving | Day | Warm harvest storybook, pie, maple leaves, cinnamon-gold chapter star | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BS-06 | Thanksgiving | Night | Candlelit plum and amber storybook, pumpkin and leaves | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -76,3 +76,12 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 - [ ] Original PNG bytes, non-destructive RGBA processing, alpha/edge validation, contact sheets and GitHub binary staging remain independently pending. Existing 10 clock frames and 40 Night Garden artworks stay separate and unchanged.
 
 **Visual approvals: 2/8 Berry Story.**
+
+
+### BS-03 generation checkpoint
+- [x] Christmas Day standalone original generated and presented for owner review in chat.
+- [ ] Await explicit owner approval of BS-03 before moving on to BS-04 Christmas Night.
+- [ ] No Berry Story image binary is claimed as GitHub-staged; await approval before source/RGBA manifest and ZIP preparation.
+- [x] BS-01 Halloween Day and BS-02 Halloween Night remain individually visually approved and unchanged.
+
+**Berry Story visual approval tally: 2/8; images generated: 3/8.**
