@@ -432,7 +432,8 @@ private struct PosiesMedicationProfileEditor: View {
             units: PosiesMedicationMeasurements.strengthUnits, max: 1000000)
     }
     private var supplyIsValid: Bool {
-        PosiesMedicationMeasurements.validPair(
+        // Keep legacy 0-count inventory editable without converting or deleting it.
+        isOriginalLegacySupply || PosiesMedicationMeasurements.validPair(
             amount: supplyText, unit: supplyUnit,
             units: PosiesMedicationMeasurements.supplyUnits, max: 100000)
     }
