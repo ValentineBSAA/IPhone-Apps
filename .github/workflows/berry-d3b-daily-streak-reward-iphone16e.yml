@@ -1,0 +1,155 @@
+name: Berry Berry Blast | D3b real Daily completion, streak and reward safety
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/berry-d3b-daily-streak-reward-iphone16e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  d3b-daily-rewards:
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    steps:
+      - name: Checkout D3b real Daily streak and reward isolation branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/berry-advanced-dev-d3b-daily-streak-reward-isolation
+          persist-credentials: false
+
+      - name: Verify source inputs and actual production call sites
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 Tools/check_ios16_compat.py
+          python3 Tools/verify_artwork.py
+          python3 Tools/verify_audio_build2.py
+          grep -q 'enum BerryStandardToolTransaction' BerryBlockBlast/BerryStandardToolTransaction.swift
+          grep -q 'BerryStandardToolTransaction.purchase' BerryBlockBlast/BerryStandardToolCheckout.swift
+          grep -q 'BerryStandardToolTransaction.consumeCharge' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'BerryStandardToolCheckout.purchase' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'BerryStandardToolCheckout.purchase' BerryBlockBlast/BerryDeveloperStateLab.swift
+          grep -q 'init(defaults: UserDefaults = .standard)' BerryBlockBlast/BerryEconomyLedger.swift
+          grep -q 'init(checkoutDefaults: UserDefaults = .standard' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'enum BerryStandardPurchaseJournal' BerryBlockBlast/BerryStandardPurchaseJournal.swift
+          grep -q 'BerryStandardPurchaseJournal.prepare' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'BerryStandardPurchaseJournal.recover' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'applyStandardToolSpendRecovery' BerryBlockBlast/BerryEconomyLedger.swift
+          grep -q 'enum BerryBoutiquePurchasePolicy' BerryBlockBlast/BerryBoutiquePurchasePolicy.swift
+          grep -q 'BerryBoutiquePurchasePolicy.canPurchase' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'saveInventoryOnly()' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'persistPremium(boardChanged: false)' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'checkoutDefaults.set(cottageDecorations' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'checkoutLedger.recordSpend(price, item: id)' BerryBlockBlast/BerryGameSession.swift
+          test -f Tests/BerryCottagePremiumIsolationTests.swift
+          test -f Tests/BerryDeveloperCommerceLabTests.swift
+          grep -q '#if BERRY_INTERNAL_QA' BerryBlockBlast/BerryDeveloperCommerceLab.swift
+          grep -q '#if BERRY_INTERNAL_QA' BerryBlockBlast/BerryDeveloperCommerceLabPanel.swift
+          grep -q 'BerryDeveloperCommerceLabPanel()' BerryBlockBlast/BerryDeveloperGardenView.swift
+          test -f Tests/BerryPremiumToolSaveRestoreTests.swift
+          test -f Tests/BerryDeveloperToolActionLabTests.swift
+          test -f Tests/BerryPremiumAdvancedRescueIsolationTests.swift
+          test -f Tests/BerryDeveloperToolActionExpansionTests.swift
+          test -f Tests/BerryDailyIsolatedCalendarTests.swift
+          test -f Tests/BerryDailyRewardIsolationTests.swift
+          grep -q 'static func completedDays(defaults:' BerryBlockBlast/BerryDailyHarvestView.swift
+          grep -q 'checkoutDefaults.set(rewardsLog, forKey: "berryblockblast.rewards.v1")' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'now: @escaping () -> Date' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'guard current == .active' BerryBlockBlast/BerryDailyHarvestView.swift
+          grep -q 'case goldenCheckout = "Buy & Rescue Garden"' BerryBlockBlast/BerryDeveloperToolActionLab.swift
+          grep -q 'BerryDeveloperToolActionLabPanel()' BerryBlockBlast/BerryDeveloperGardenView.swift
+          grep -q 'checkoutLedger.recordSpend(Self.goldenStrawberryCost' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'checkoutDefaults.set(rewardsLog, forKey: "berryblockblast.rewards.v1")' BerryBlockBlast/BerryGameSession.swift
+          grep -q '#if BERRY_INTERNAL_QA' BerryBlockBlast/BerryDeveloperToolActionLab.swift
+          grep -q '#if BERRY_INTERNAL_QA' BerryBlockBlast/BerryDeveloperToolActionLabPanel.swift
+          grep -q 'BerryDeveloperToolActionLabPanel()' BerryBlockBlast/BerryDeveloperGardenView.swift
+          grep -q 'savedEndlessEngine(side: size, defaults: checkoutDefaults)' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'checkoutLedger.recordSpend(cost, item: id)' BerryBlockBlast/BerryGameSession.swift
+          grep -q '#if BERRY_INTERNAL_QA' BerryBlockBlast/BerryDeveloperScenarioSandbox.swift
+          grep -q '#if BERRY_INTERNAL_QA' BerryBlockBlast/BerryDeveloperStateLab.swift
+          grep -q '#if BERRY_INTERNAL_QA' BerryBlockBlast/BerryDeveloperStateLabPanel.swift
+
+      - name: Generate native iOS project
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          xcodegen generate --spec project.yml
+
+      - name: Compile production Release without QA-only panels
+        timeout-minutes: 15
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build-d3b-release \
+            CODE_SIGNING_ALLOWED=NO build
+          APP='build-d3b-release/Build/Products/Release-iphonesimulator/BerryBlockBlast.app'
+          test -d "$APP"
+          if grep -qraE 'BerryDeveloperSandboxPanel|BerryDeveloperStateLabPanel|BerryDeveloperCommerceLabPanel|BerryDeveloperCommerceLab|BerryDeveloperToolActionLabPanel|BerryDeveloperToolActionLab|BerryQAIsolatedWallet' "$APP"; then
+            echo 'QA-only sandbox symbol leaked into Release bundle' >&2
+            exit 1
+          fi
+          echo 'Release app compiled. Internal QA panels and fake wallets absent.'
+
+      - name: Discover the named iPhone 16e simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available -j > "$RUNNER_TEMP/berry-d3b-sims.json"
+          python3 - "$RUNNER_TEMP/berry-d3b-sims.json" "$RUNNER_TEMP/berry-d3b-id" <<'PY'
+          import json,sys
+          j=json.load(open(sys.argv[1]))
+          ids=[device['udid'] for devices in j['devices'].values()
+               for device in devices if device.get('isAvailable') and device.get('name')=='iPhone 16e']
+          if not ids: raise SystemExit('Required named iPhone 16e unavailable; no replacement device allowed')
+          with open(sys.argv[2],'w') as out: out.write(ids[0])
+          print('iPhone 16e:',ids[0])
+          PY
+
+      - name: Run D3b Daily completion, rewards and D0–D3a regression on iPhone 16e
+        timeout-minutes: 20
+        shell: bash
+        run: |
+          set -euo pipefail
+          SIM="$(cat "$RUNNER_TEMP/berry-d3b-id")"
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast -configuration Debug \
+            -sdk iphonesimulator -destination "platform=iOS Simulator,id=$SIM" \
+            -derivedDataPath build-d3b-tests -parallel-testing-enabled NO \
+            -only-testing:BerryBlockBlastTests/BerryDeveloperSandboxTests \
+            -only-testing:BerryBlockBlastTests/BerryDeveloperStateLabTests \
+            -only-testing:BerryBlockBlastTests/BerryStandardToolTransactionTests \
+            -only-testing:BerryBlockBlastTests/BerryEconomyTests \
+            -only-testing:BerryBlockBlastTests/BerryStandardToolCheckoutIsolationTests \
+            -only-testing:BerryBlockBlastTests/BerryStandardPurchaseRecoveryTests \
+            -only-testing:BerryBlockBlastTests/BerryBoutiqueCheckoutIsolationTests \
+            -only-testing:BerryBlockBlastTests/BerryCottagePremiumIsolationTests \
+            -only-testing:BerryBlockBlastTests/BerryDeveloperCommerceLabTests \
+            -only-testing:BerryBlockBlastTests/BerryPremiumToolSaveRestoreTests \
+            -only-testing:BerryBlockBlastTests/BerryDeveloperToolActionLabTests \
+            -only-testing:BerryBlockBlastTests/BerryPremiumAdvancedRescueIsolationTests \
+            -only-testing:BerryBlockBlastTests/BerryDeveloperToolActionExpansionTests \
+            -only-testing:BerryBlockBlastTests/BerryDailyIsolatedCalendarTests \
+            -only-testing:BerryBlockBlastTests/BerryDailyRewardIsolationTests \
+            -only-testing:BerryBlockBlastTests/BerryBuild44BoutiqueToolsTests \
+            CODE_SIGNING_ALLOWED=NO test
+
+      - name: Ensure this run did not create an IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find . -type f -name '*.ipa' -print -quit | grep -q .; then
+            echo 'Unexpected IPA artifact created' >&2
+            exit 1
+          fi
+          echo 'Tests only. No release, IPA or player-data export.'
