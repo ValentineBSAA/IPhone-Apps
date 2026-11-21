@@ -14,6 +14,10 @@ struct BerryDeveloperGardenView: View {
     @State private var qaBalance = 0
     @State private var qaPendingAmount = 0
     @State private var qaGrantConfirmation = false
+    @State private var qaRestoreConfirmation = false
+    #if BERRY_INTERNAL_QA
+    @State private var qaRestorePoint: BerryGameSession.StrawberryCheatRestorePoint?
+    #endif
     @State private var qaError: String?
     @AppStorage("berryblockblast.touchDiagnostics") private var touchDiagnostics = false
     @ObservedObject private var economyLedger = BerryEconomyLedger.shared
@@ -21,12 +25,13 @@ struct BerryDeveloperGardenView: View {
     private let columns = [GridItem(.flexible(), spacing: 11), GridItem(.flexible(), spacing: 11)]
 
     private enum Tool: String, CaseIterable, Identifiable {
-        case qaWallet = "Test Strawberries"
+        case qaWallet = "Cheat Strawberries"
         case diagnostics = "Diagnostics"
         case saves = "Save Inspector"
         case clock = "Timers & Clocks"
         case notifications = "Notification Test"
         case economy = "Economy Inspector"
+        case moonberries = "Moonberries & Night Market"
         case build = "Build Information"
         case experimental = "Experimental Features"
         case combo = "Combo Preview"
@@ -47,6 +52,7 @@ struct BerryDeveloperGardenView: View {
             case .clock: return "clock.fill"
             case .notifications: return "bell.badge.fill"
             case .economy: return "creditcard.fill"
+            case .moonberries: return "moon.stars.fill"
             case .build: return "hammer.fill"
             case .experimental: return "flask.fill"
             case .combo: return "sparkles.rectangle.stack.fill"
@@ -69,6 +75,7 @@ struct BerryDeveloperGardenView: View {
             case .clock: return "BBBIconSeasonal"
             case .notifications: return "BBBIconHelp"
             case .economy: return "Strawberry_Currency"
+            case .moonberries: return "Night_Moonberry_Currency"
             case .build: return "BBBIconSettings"
             case .experimental: return "Night_Developer_Mode_Strawberry_Lock"
             case .combo: return "Milestone"
@@ -89,6 +96,7 @@ struct BerryDeveloperGardenView: View {
             case .clock: return "Dev_Timers_Moon_Clock"
             case .notifications: return "Dev_Notification_Test_Berry_Bell"
             case .economy: return "Dev_Economy_Inspector_Two_Currencies"
+            case .moonberries: return "Dev_Economy_Inspector_Two_Currencies"
             case .build: return "Dev_Build_Information_Berry_Blueprint"
             case .experimental: return "Dev_Experimental_Features_Moon_Potion"
             case .combo: return "Dev_Combo_Preview_Fireworks"
@@ -103,12 +111,13 @@ struct BerryDeveloperGardenView: View {
         }
         var blurb: String {
             switch self {
-            case .qaWallet: return "Type any QA-only berry amount"
+            case .qaWallet: return "Add strawberries to your saved game by choice"
             case .diagnostics: return "Read input and placement status"
             case .saves: return "Check saved Endless gardens"
             case .clock: return "Live local device time"
             case .notifications: return "Future notice preview"
             case .economy: return "Strawberry and future Moonberry status"
+            case .moonberries: return "Planned Moonberry cheats, earning and night shop tests"
             case .build: return "Which app build is installed?"
             case .experimental: return "Which themes are enabled?"
             case .combo: return "Test celebrations without rewards"
@@ -121,16 +130,18 @@ struct BerryDeveloperGardenView: View {
             #endif
             }
         }
-        var isPlanned: Bool { self == .notifications }
+        var isPlanned: Bool { self == .notifications || self == .moonberries }
     }
+    // Permanent hidden owner tools. Every candidate build must include these,
+    // including the optional, confirmed cheat wallet action.
     private var quickTools: [Tool] {
         [.qaWallet, .diagnostics, .saves, .combo]
     }
     private var advancedTools: [Tool] {
         #if BERRY_INTERNAL_QA
-        return [.sandbox, .stateLab, .commerce, .toolActions, .questStory, .economy, .build, .clock, .experimental, .notifications]
+        return [.sandbox, .stateLab, .commerce, .toolActions, .questStory, .economy, .moonberries, .build, .clock, .experimental, .notifications]
         #else
-        return [.economy, .build, .clock, .experimental, .notifications]
+        return [.economy, .moonberries, .build, .clock, .experimental, .notifications]
         #endif
     }
 
@@ -178,7 +189,7 @@ struct BerryDeveloperGardenView: View {
                         .tint(BerryStyle.strawberry)
                         .disabled(pin.count != 4)
                     } else {
-                        Text("INTERNAL QA • Only confirmed test-wallet grants can change your berries")
+                        Text("HIDDEN DEVELOPER GARDEN • Tests are isolated; cheats change saves only when confirmed")
                             .font(.system(size: 10, weight: .bold, design: .rounded))
                             .foregroundStyle(BerryStyle.chocolate)
                             .multilineTextAlignment(.center)
@@ -226,6 +237,7 @@ struct BerryDeveloperGardenView: View {
                                     }
                                 }
                                 .buttonStyle(BerryPolishPressStyle())
+                                .accessibilityIdentifier("berry.developer.tool.\(tool.rawValue)")
                             }
                         }
                         Button(showAdvanced ? "Hide extra diagnostics" : "More diagnostics and build information") {
@@ -241,6 +253,7 @@ struct BerryDeveloperGardenView: View {
                 .padding(18)
                 .frame(maxWidth: .infinity)
             }
+            .accessibilityIdentifier("berry.developer.scroll")
             .background(BerryStyle.softPink.ignoresSafeArea())
             .navigationTitle("Berry Garden")
             .navigationBarTitleDisplayMode(.inline)
@@ -286,13 +299,15 @@ struct BerryDeveloperGardenView: View {
                                 previewMilestone = nil
                                 selectedTool = nil
                             }
+                            .accessibilityIdentifier("berry.developer.tool.done")
                         }
                     }
                     #if BERRY_INTERNAL_QA
-                    .alert("Add test strawberries?", isPresented: $qaGrantConfirmation) {
+                    .alert("Add cheat strawberries?", isPresented: $qaGrantConfirmation) {
                         Button("Add \(qaPendingAmount.formatted()) QA berries") {
                             if let balance = BerryGameSession.grantQAStrawberries(qaPendingAmount) {
                                 qaBalance = balance
+                                qaRestorePoint = BerryGameSession.qaCheatRestorePoint()
                                 qaError = nil
                                 qaAmountText = ""
                             } else {
@@ -301,7 +316,7 @@ struct BerryDeveloperGardenView: View {
                         }
                         Button("Cancel", role: .cancel) {}
                     } message: {
-                        Text("Adds \(qaPendingAmount.formatted()) clearly marked QA strawberries to the saved wallet for testing. They are not counted as earned rewards or line income. This can be spent in the shop.")
+                        Text("This intentionally adds \(qaPendingAmount.formatted()) strawberries to YOUR SAVED WALLET. It is a cheat, not a natural gameplay reward. Your grant will be logged, and you can spend it in the shop. Cancel makes no change.")
                     }
                     #endif
                     .overlay(alignment: .center) {
@@ -336,7 +351,7 @@ struct BerryDeveloperGardenView: View {
         case .qaWallet:
             #if BERRY_INTERNAL_QA
             VStack(spacing: 12) {
-                Text("TEST CURRENCY • NOT GAMEPLAY REWARDS")
+                Text("OPTIONAL CHEAT • ADDS TO YOUR REAL SAVED WALLET")
                     .font(.caption.bold())
                     .foregroundStyle(BerryStyle.strawberry)
                 Text("Current saved wallet: 🍓 \(qaBalance.formatted())")
@@ -372,9 +387,59 @@ struct BerryDeveloperGardenView: View {
                 if let qaError {
                     Text(qaError).font(.caption).foregroundStyle(.red)
                 }
-                Text("Enter any positive amount once. Confirmation is required. Grants are recorded separately as developer QA credits, not earned strawberries, and remain in your wallet after relaunch. Never use the debug grant in a public build.")
+                Text("Before the first cheat, Developer Garden records your exact strawberry balance. Additional cheats keep that original number until you restore. Viewing or canceling changes nothing.")
                     .font(.caption)
                     .multilineTextAlignment(.center)
+                if let point = qaRestorePoint {
+                    VStack(spacing: 8) {
+                        Text("SAVED BEFORE CHEATS")
+                            .font(.caption.bold())
+                            .foregroundStyle(BerryStyle.strawberry)
+                        Text("🍓 \(point.preCheatBalance.formatted())")
+                            .font(.system(size: 23, weight: .black, design: .rounded))
+                        Text("Current saved balance: 🍓 \(qaBalance.formatted())")
+                            .font(.caption)
+                        Text("Recorded cheats: \(point.cheatCount)")
+                            .font(.caption)
+                        if qaBalance != point.lastCheatBalance {
+                            Text("Your balance also changed after the last cheat. Restoring the exact original amount will replace those later strawberry earnings or spending too. Other items and saves are not reset.")
+                                .font(.caption)
+                                .multilineTextAlignment(.center)
+                                .foregroundStyle(BerryStyle.chocolate)
+                        }
+                        Button("Restore previous balance • 🍓 \(point.preCheatBalance.formatted())") {
+                            qaRestoreConfirmation = true
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(BerryStyle.strawberry)
+                        .accessibilityIdentifier("berry.developer.cheat.restore-strawberries")
+                        .confirmationDialog(
+                            "Restore the exact strawberry balance?",
+                            isPresented: $qaRestoreConfirmation,
+                            titleVisibility: .visible
+                        ) {
+                            Button("Restore 🍓 \(point.preCheatBalance.formatted())") {
+                                if let balance = BerryGameSession.restorePreCheatStrawberries() {
+                                    qaBalance = balance
+                                    qaRestorePoint = BerryGameSession.qaCheatRestorePoint()
+                                    qaError = nil
+                                } else {
+                                    qaError = "Could not restore the original amount. Your current saved balance was left unchanged."
+                                }
+                            }
+                            Button("Keep current balance", role: .cancel) {}
+                        } message: {
+                            Text("Your current balance is 🍓 \(qaBalance.formatted()). This changes only strawberries to the recorded pre-cheat amount of 🍓 \(point.preCheatBalance.formatted()). It can also overwrite strawberries earned or spent after the cheat. Purchases, tools and saved games remain as they are.")
+                        }
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 16))
+                } else {
+                    Text("No cheat balance to restore yet. Your starting amount will be saved automatically when you confirm your first cheat.")
+                        .font(.caption)
+                        .multilineTextAlignment(.center)
+                }
                 let audit = BerryGameSession.qaGrantHistory()
                 if !audit.isEmpty {
                     Text("Recent QA grants")
@@ -388,6 +453,7 @@ struct BerryDeveloperGardenView: View {
             }
             .onAppear {
                 qaBalance = BerryGameSession.qaWalletBalance()
+                qaRestorePoint = BerryGameSession.qaCheatRestorePoint()
             }
             #else
             Text("Test-currency grants are not present in distribution builds.")
@@ -446,7 +512,7 @@ struct BerryDeveloperGardenView: View {
                 Text(context.date.formatted(date: .abbreviated, time: .standard))
                     .font(.system(size: 17, weight: .bold, design: .monospaced))
             }
-            Text("This is the phone's current local clock. Automatic 6 AM/6 PM storefront switching is planned for Build 4.6.")
+            Text("This is your phone's current local clock. Automatic 6 AM/6 PM storefront switching is planned for the Night Market update.")
                 .font(.caption)
                 .multilineTextAlignment(.center)
         case .notifications:
@@ -488,6 +554,24 @@ struct BerryDeveloperGardenView: View {
                 .multilineTextAlignment(.center)
             Text("Moonberries and the Night Market are planned for Build 6, not active here.")
                 .font(.caption.bold())
+        case .moonberries:
+            Text("COMING LATER • BUILD 6")
+                .font(.headline.bold())
+                .foregroundStyle(BerryStyle.strawberry)
+            Text("Moonberries and the Night Market are not live in this build. No Moonberry balance, spending, or cheat is available yet. This is a roadmap preview, not a working test.")
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+            LazyVGrid(columns: columns, spacing: 11) {
+                economyMetric("Cheat Moonberries", "Planned")
+                economyMetric("Earn & Reward Tests", "Planned")
+                economyMetric("Moonberry Ledger", "Planned")
+                economyMetric("Night Market Purchases", "Planned")
+                economyMetric("6 AM / 6 PM Switch", "Planned")
+                economyMetric("Rollback & Saves", "Planned")
+            }
+            Text("When Build 6 implements a real separate Moonberry economy, this card must gain isolated one-tap PASS/FAIL fixtures and an optional, confirmed Cheat Moonberries control. Never invent a balance or write to the Strawberry wallet.")
+                .font(.caption)
+                .multilineTextAlignment(.center)
         case .build:
             Text(BerryBuildIdentity.settingsLabel)
                 .font(.subheadline.bold())
