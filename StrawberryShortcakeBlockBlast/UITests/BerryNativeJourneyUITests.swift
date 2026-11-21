@@ -116,8 +116,7 @@ final class BerryNativeJourneyUITests: XCTestCase {
         app.buttons["Pause game"].tap()
         XCTAssertTrue(app.staticTexts["A Little Berry Break"].waitForExistence(timeout: 10))
         // This is the overlay's actual player-facing exit action.
-        app.buttons["Return to Village"].matching(
-            NSPredicate(format: "label == %@", "Return to Village")).firstMatch.tap()
+        app.buttons["berry.game.pause.return"].tap()
         XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 10))
     }
 }
