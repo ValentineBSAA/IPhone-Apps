@@ -1,6 +1,6 @@
 # 🍓 D2c Safe Premium-Tool Actions and Game Over Rescue · Design Gate
 
-**Status: PLANNED ONLY.** Do not implement, count passed, merge or release from this roadmap. This file is an explicit continuation of [D2b Tool Action Lab draft PR #74](https://github.com/ValentineBSAA/IPhone-Apps/pull/74) and the [master QA epic #61](https://github.com/ValentineBSAA/IPhone-Apps/issues/61).
+**Status: D2c real-handler source and eight isolated regression tests IMPLEMENTED on draft PR #75, CI and owner QA pending. Internal on-device D2d one-tap UI expansion and Story Game Over view remain PLANNED ONLY.** Do not count unverified checks as passed, merge or release from this roadmap. This file is an explicit continuation of [D2b Tool Action Lab draft PR #74](https://github.com/ValentineBSAA/IPhone-Apps/pull/74) and the [master QA epic #61](https://github.com/ValentineBSAA/IPhone-Apps/issues/61).
 
 **Entry condition:** D2b [94 selected iPhone 16e XCTest run #44871494518](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44871494518) must finish green, with QA source excluded from production Release and no IPA. Its owner physical testing remains a separate step and is not automatically accepted.
 
@@ -37,3 +37,8 @@
 
 ## 6. After D2c, continue the entire game roadmap
 D3: Daily, Story, quest/birthday progress and clock boundaries using injected persistence. D4: seasonal approved icon and fallback integration. Build 4.7/4.8: Day/Night entire UI and core mode visual parity. Build 5: Daily Quests, Village evolution; Build 6: genuinely separate Night Market/Moonberry economy, modes and Story. Maintain the approved source-art library and the project's existing issue links. **Developer testing is tooling for the whole game, not the game itself.**
+
+### November 20 implementation checkpoint
+- [x] Real Twister, Pantry, 24×24 Golden rescue and combined pay/rescue **handler** tests are now coded in [D2c PR #75](https://github.com/ValentineBSAA/IPhone-Apps/pull/75), with the relevant shared wallet/receipt writes injected. Eight new XCTest methods.
+- [ ] [D2c 102 selected simulator XCTest #44871838416](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44871838416) pending at the time of this edit. Verify terminal logs before claiming pass.
+- [ ] The tests use occupied playable Endless fixtures, **not authentic player-facing Story Game Over flow**. Preserve remaining UI/Game Over, physical QA, crash recovery and whole-game roadmap tasks.
