@@ -66,3 +66,11 @@
 - [x] [D0 Actions #44862930573](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573) **SUCCESS**, Release build excludes internal sandbox and selected iPhone 16e **6/6 XCTest methods passed**.
 - [x] Tested two new disposable engine setups; exact score/move, invalid placement, deterministic repeat/reset and real wallet/save nonmutation covered.
 - [ ] Owner physical iPhone 16e use test and source integration authorization open in [PR #63](https://github.com/ValentineBSAA/IPhone-Apps/pull/63). D1–D7 broader test coverage still roadmap, not complete.
+
+
+## D0b State & Timer Lab in isolated PR #64
+- [x] [D0b draft PR #64](https://github.com/ValentineBSAA/IPhone-Apps/pull/64): six new disposable value-state tests for test-wallet exact-price/insufficient-funds/zero-charge, `BerryEngine` in-memory Codable valid/corrupt snapshots and virtual Blitz pause/expiry.
+- [x] Eleven D0b XCTest cases added, existing six D0 kept; `BERRY_INTERNAL_QA` Release exclusion preserved. Two-column internal Developer Garden card added without image generation or player data changes.
+- [x] Advanced QA roadmap catalog now **54 contracts**, of which six D0b are **implemented_untested** until CI results confirmed, and two D0 already simulator-pass pending physical review.
+- [ ] [Combined D0+D0b named iPhone 16e CI](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0b-state-time-iphone16e.yml) final result/receipt; no IPA/merge without owner QA.
+- [ ] D0c actual production transaction/save adapters with injected separate stores. D0b mocked purchase guard tests should not count as full live shop coverage.
