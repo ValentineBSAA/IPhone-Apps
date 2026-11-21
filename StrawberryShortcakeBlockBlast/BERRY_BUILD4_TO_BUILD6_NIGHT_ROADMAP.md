@@ -17,7 +17,7 @@
 | 30 Night Edition counterparts | ✅ Imported as 30 individual Xcode imagesets on Build 4 development branch | CI + real-device night-visual QA |
 | Strawberry sun / moon clock icons | 🎨 Illustrated; not integrated | Independent PNG and UI approval |
 | Real live menu clock and day/night presentation | 📋 Planned | Midnight, timezone and app-resume QA |
-| **Second-accurate live time and transition countdown** | 📋 [Issue #95](https://github.com/ValentineBSAA/IPhone-Apps/issues/95), independent of decorative clock | 12-hour `h:mm:ss a`, `Moonlight/Sunrise in HH:MM:SS` at 6 PM/6 AM, update each second, real-device QA |
+| **Second-accurate live time and transition countdown** | 🟠 **Build49 source + tests implemented** ([Issue #95](https://github.com/ValentineBSAA/IPhone-Apps/issues/95)); CI/device pending | 12-hour `h:mm:ss a`, `Moonlight/Sunrise in HH:MM:SS` at 6 PM/6 AM, native and real-device verification |
 | In-context notices and Daily Quest fixes | 📋 Build 5 scope | In-menu visibility and reward QA |
 | Moonberries, night shop transactions and shop switch | 📋 Build 6 scope | Persistent economy + real-clock QA |
 | iPhone 16 AltStore install/signing | ⚠️ Unresolved | Capture exact installation error |
@@ -99,6 +99,27 @@ The first command validates only; the second creates 30 distinct `Night_*.images
 - [ ] Test Home, Pause, Settings, Help and proper grid layouts.
 - [ ] On physical iPhone 14 Pro, resume existing endless score, moves, purchases and unlocked cosmetics without reset.
 - [ ] Record issues and fix *only* regressions; do not merge until signed off.
+
+### Build 49 implementation checkpoint (November 21, 2026)
+
+- [x] **Source written in separate I7 Build 49 branch** `feature/berry-i7-live-clock-seconds-b49` using the exact known-good Build 48 engine and its persistent PIN-enabled Developer Garden.
+- [x] `BerryDayNightClock.swift` now formats the actual iPhone-local **12-hour `h:mm:ss a`** time and actual **`HH:MM:SS`** Moonlight/Sunrise countdown. It samples `Date()` each second, reacts to foreground/significant-time changes, and computes the next local 6 AM/6 PM calendar boundary without relying on accumulated ticks.
+- [x] Compact same Home pill with a small-screen fallback, stable monospaced digits and accessible time/countdown labels; no new artwork, shop or economy changes.
+- [x] Permanent Developer Garden **Timers & Clocks** and **State & Timer Lab** share a read-only four-scenario 5:59:58/6:00 AM/PM preview that never alters real time, game progress or currency.
+- [x] New dedicated deterministic unit tests and native Home screen seconds test added to source. Existing hidden Garden PIN/cheat/restore tests retained.
+- [ ] **B49 full simulator + model CI terminal green; native unsigned IPA integrity; owner real-iPhone time/seconds and saves verification** (do not mark until evidence exists). Build 48 remains the confirmed rollback/previous install.
+
+### Ready Blueberry and Moonberry artwork incorporated into the Build 49 source
+
+**Owner direction:** Do not hold back approved game artwork merely because Build 5/6 economies are planned later. Use the assets that are already in the Xcode asset catalog, but do not activate missing mechanics.
+
+- [x] Verified actual PNG plus `Contents.json` for `BerryRewardBlueberrySparkle` and `BerryRewardMoonberryNightmare`, both referenced by existing collectible reward catalog.
+- [x] Verified day and night `Moonberry_Currency` and `Night_Moonberry_Currency` PNG image sets and day/night `Approved_Night_Market_Storefront`/`Night_Approved_Night_Market_Storefront` artwork.
+- [x] Added a **six-image, two-column approved art preview** to the hidden Developer Garden **Moonberries & Night Market** card in Build49 source. This is a visual preview only, no shop purchases, live balances, rewards or save changes.
+- [x] Added two new XCTest source checks for all six PNGs and their existing collectible references; native simulator/Release gate **not yet run**.
+- [ ] Validate these assets visibly on a real iPhone in Build49, including compact layouts and contrast; keep Build48 rollback intact.
+- [ ] **Blueberry Velvet** is already a working purchasable blue/violet code-rendered skin, not a new approved image-backed premium block PNG set. If the owner wants a more distinctive image-based upgrade, approve its specific tile artwork separately and preserve current saved skin/equip states.
+- [ ] True Moonberry wallet, market inventory, checkout, earn/cheat/restore and 6 PM shop opening **remain Build6**. The presence of images is not proof that commerce exists.
 
 ### Gate A2 · Live seconds and real transition countdown (independent of approved clock artwork)
 
