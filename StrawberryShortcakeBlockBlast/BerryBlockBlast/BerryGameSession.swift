@@ -301,6 +301,10 @@ final class BerryGameSession: ObservableObject {
         if let inventory = checkoutDefaults.data(forKey: inventoryKey), let saved = try? JSONDecoder().decode(Inventory.self, from: inventory) {
             berries = saved.berries; undos = saved.undos; shuffles = saved.shuffles; totalEarnedBerries = saved.totalEarnedBerries; hints = saved.hints
         }
+        // D1a: Boutique purchases and reward receipts load from the same
+        // injected store as inventory. Production defaults remain unchanged.
+        ownedCosmetics = checkoutDefaults.stringArray(forKey: "berryblockblast.shop.owned.v056b2") ?? []
+        rewardsLog = checkoutDefaults.stringArray(forKey: "berryblockblast.rewards.v1") ?? []
     }
 
     @discardableResult
@@ -788,22 +792,20 @@ final class BerryGameSession: ObservableObject {
     /// Shop purchases are cosmetics only. Core rules and Berry Classic scoring
     /// never depend on purchases; old earned strawberries remain spendable.
     func buyCosmetic(id: String, cost: Int) -> Bool {
-        let valid: [String:Int] = ["strawberry-fruit":0,"blueberry-blocks":90,"vanilla-blocks":90,
-            "rose-border":75,"mint-border":75,"berry-sparkle":100,
-            "raspberry-blocks":110,"lemon-blocks":110,"chocolate-blocks":120,
-            "mint-blocks":110,"blackberry-blocks":130]
-        guard valid[id] == cost, cost >= 0, berries >= cost,
-              !ownedCosmetics.contains(id) else { return false }
+        guard BerryBoutiquePurchasePolicy.canPurchase(
+            id: id, proposedCost: cost, berries: berries,
+            owned: ownedCosmetics
+        ) else { return false }
         previous = nil
         previousBerryEarnings = 0
         previousRewardEntry = nil
         berries -= cost
-        BerryEconomyLedger.shared.recordSpend(cost, item: id)
+        checkoutLedger.recordSpend(cost, item: id)
         ownedCosmetics.append(id)
-        UserDefaults.standard.set(ownedCosmetics, forKey: "berryblockblast.shop.owned.v056b2")
+        checkoutDefaults.set(ownedCosmetics, forKey: "berryblockblast.shop.owned.v056b2")
         rewardsLog.insert("🧺 -\(cost) • Berry Boutique: \(id)", at: 0)
         rewardsLog = Array(rewardsLog.prefix(20))
-        UserDefaults.standard.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
+        checkoutDefaults.set(rewardsLog, forKey: "berryblockblast.rewards.v1")
         save()
         return true
     }
