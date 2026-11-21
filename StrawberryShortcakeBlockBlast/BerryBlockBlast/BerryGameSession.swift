@@ -276,7 +276,12 @@ final class BerryGameSession: ObservableObject {
     init(checkoutDefaults: UserDefaults = .standard,
          checkoutLedger: BerryEconomyLedger? = nil) {
         self.checkoutDefaults = checkoutDefaults
-        self.checkoutLedger = checkoutLedger ?? .shared
+        let selectedLedger = checkoutLedger ?? .shared
+        self.checkoutLedger = selectedLedger
+        // Complete an interrupted standard-tool purchase BEFORE decoding
+        // inventory. This replays absolute values and never charges twice.
+        _ = BerryStandardPurchaseJournal.recover(
+            in: checkoutDefaults, ledger: selectedLedger)
         bestScore = checkoutDefaults.integer(forKey: bestKey)
         if let data = checkoutDefaults.data(forKey: saveKey),
            let restored = try? JSONDecoder().decode(Save.self, from: data),
@@ -683,48 +688,69 @@ final class BerryGameSession: ObservableObject {
         return true
     }
 
-    func buyUndo() {
-        _ = BerryStandardToolCheckout.purchase(.undo, berries: berries,
-                                              charges: undos) { receipt in
-            // A rejected checkout must not invalidate an available Undo.
+    /// Shared standard-tool checkout, with one recovery intent written
+    /// before either inventory or spending-ledger keys are modified.
+    /// Only Undo/Shuffle/Hint are D0e-covered, not other shop purchases.
+    private func buyStandardTool(_ tool: BerryStandardToolKind) {
+        let charges: Int
+        switch tool {
+        case .undo: charges = undos
+        case .shuffle: charges = shuffles
+        case .hint: charges = hints
+        }
+        _ = BerryStandardToolCheckout.purchase(
+            tool, berries: berries, charges: charges
+        ) { receipt in
+            // Assemble the exact post-purchase inventory BEFORE changing
+            // any in-memory game state or legacy preference key.
+            var afterUndos = undos
+            var afterShuffles = shuffles
+            var afterHints = hints
+            switch tool {
+            case .undo: afterUndos = receipt.chargesAfter
+            case .shuffle: afterShuffles = receipt.chargesAfter
+            case .hint: afterHints = receipt.chargesAfter
+            }
+            let postInventory = Inventory(
+                berries: receipt.berriesAfter,
+                undos: afterUndos,
+                shuffles: afterShuffles,
+                totalEarnedBerries: totalEarnedBerries,
+                hints: afterHints
+            )
+            guard let bytes = try? JSONEncoder().encode(postInventory),
+                  let intent = BerryStandardPurchaseJournal.prepare(
+                    receipt: receipt, inventoryAfter: bytes,
+                    ledger: checkoutLedger
+                  ),
+                  BerryStandardPurchaseJournal.stage(
+                    intent, in: checkoutDefaults
+                  ) else { return }
+
+            // Commit+repair the real inventory and real ledger through
+            // the SAME narrow recovery path tested by an interrupted
+            // process launch. If persistence is interrupted, the staged
+            // intent is applied on next session init.
+            guard BerryStandardPurchaseJournal.recover(
+                in: checkoutDefaults, ledger: checkoutLedger
+            ) else { return }
+
             previous = nil
             previousBerryEarnings = 0
             previousRewardEntry = nil
             berries = receipt.berriesAfter
-            undos = receipt.chargesAfter
-            checkoutLedger.recordSpend(receipt.price,
-                                                  item: receipt.tool.rawValue)
-            save()
+            undos = afterUndos
+            shuffles = afterShuffles
+            hints = afterHints
+            save() // preserve the existing Endless snapshot save semantics
         }
     }
 
-    func buyShuffle() {
-        _ = BerryStandardToolCheckout.purchase(.shuffle, berries: berries,
-                                              charges: shuffles) { receipt in
-            previous = nil
-            previousBerryEarnings = 0
-            previousRewardEntry = nil
-            berries = receipt.berriesAfter
-            shuffles = receipt.chargesAfter
-            checkoutLedger.recordSpend(receipt.price,
-                                                  item: receipt.tool.rawValue)
-            save()
-        }
-    }
+    func buyUndo() { buyStandardTool(.undo) }
 
-    func buyHint() {
-        _ = BerryStandardToolCheckout.purchase(.hint, berries: berries,
-                                              charges: hints) { receipt in
-            previous = nil
-            previousBerryEarnings = 0
-            previousRewardEntry = nil
-            berries = receipt.berriesAfter
-            hints = receipt.chargesAfter
-            checkoutLedger.recordSpend(receipt.price,
-                                                  item: receipt.tool.rawValue)
-            save()
-        }
-    }
+    func buyShuffle() { buyStandardTool(.shuffle) }
+
+    func buyHint() { buyStandardTool(.hint) }
 
     @discardableResult
     func useHintIfPossible() -> BerryEngine.BerryHint? {
