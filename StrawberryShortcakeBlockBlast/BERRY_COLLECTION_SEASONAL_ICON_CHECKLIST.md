@@ -1,7 +1,7 @@
 # 🍓🏆 Berry Berry Blast | H1-B06 Berry Collection Seasonal Home Icon Running Checklist
 
 **Opened:** November 20, 2026. **Isolated branch:** `artwork/berry-seasonal-berry-collection-h1-b06`.  
-**Current status:** 0/8 generated, 0/8 visually approved. Start with **BC-01 Halloween Day**.
+**Current status:** BC-01 Halloween Day generated; 1/8 image slots generated and 0/8 visually owner-approved. Await explicit owner review.
 
 ## Actual app semantics
 In `BerryModes.swift` the Home grid tile resolves to:
@@ -24,7 +24,7 @@ This is the player's **owned inventory, achievements, awards and personal record
 
 | ID | Holiday | Lighting | Visual direction | Generated | Owner approved | RGBA candidate QA | Source PNG GitHub | Runtime/iPhone QA |
 |---|---|---|---|---|---|---|---|---|
-| BC-01 | Halloween | Day | Sunlit strawberry treasure chest, golden berry medal and sticker award, friendly pumpkin lanterns, autumn gingham | ⬜ NEXT | ⬜ | ⬜ | ⬜ | ⬜ |
+| BC-01 | Halloween | Day | Sunlit pink strawberry treasure chest with gold earned medal and award card, orange leaves, pumpkin-berries, purple hat, autumn gingham | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ RGB with checkerboard-style background; RGBA cleanup pending | ⬜ source not staged | ⬜ |
 | BC-02 | Halloween | Night | Moonlit violet keepsake chest with gold award and collectible, glowing pumpkin-berries and lanterns | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BC-03 | Christmas | Day | Snow-touched berry keepsake chest, gold medal, candy-cane and holly decorations, red-green ribbon | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BC-04 | Christmas | Night | Snowy moonlit purple chest with glowing keepsakes, golden prize star, fir lights and berry holly | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -36,7 +36,8 @@ This is the player's **owned inventory, achievements, awards and personal record
 ## Production ledger
 - [x] Verified exact Berry Collection Home role and art string in current tracked SwiftUI code.
 - [x] Isolated H1-B06 branch and current 8-image checklist opened.
-- [ ] Generate **BC-01 Halloween Day**, show one standalone image and await individual owner approval.
+- [x] Generate **BC-01 Halloween Day** as one standalone image and show it to owner.
+- [ ] Obtain explicit BC-01 owner visual approval before BC-02 Halloween Night.
 - [ ] BC-02 through BC-08 each receive their own image + explicit approval before proceeding.
 - [ ] Process true RGBA and QA at multiple backgrounds/phone UI sizes, then originals/RGBA manifest + ZIP.
 - [ ] Review alpha separately, stage binaries to GitHub Release/import and verify, then later Xcode + iPhone appearance QA.
@@ -47,3 +48,11 @@ H1-B05 Cottage Decorations: **8/8 visuals approved**. Exact-original/QA archive 
 Other batches remain tracked independently in master seasonal matrix; no IPA/build/runtime changes implied by this icon production pass.
 
 References: [Seasonal master icon matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) · [Previous H1-B05 checklist](COTTAGE_DECOR_SEASONAL_ICON_CHECKLIST.md) · [Seasonal epic #42](https://github.com/ValentineBSAA/IPhone-Apps/issues/42).
+
+
+### BC-01 Halloween Day generation checkpoint
+- [x] One Halloween Day Berry Collection icon presented in chat: a large open red strawberry keepsake chest, gold berry achievement medallion, trophy award card, sunny harvest decoration, friendly jack-o'-lantern berries and autumn gingham bow. No fake score or price text.
+- [ ] Individual owner visual approval pending; do not advance to BC-02 until accepted.
+- [ ] Generated original is 1254×1254 RGB with light checkerboard-style background (not verified alpha). Freeze exact original; future separate RGBA cutout candidate with light/dark/small-scale QA after approval. No binary uploaded to GitHub and no game asset routing yet.
+
+**H1-B06 latest tally: 1/8 generated, 0/8 visually approved.**
