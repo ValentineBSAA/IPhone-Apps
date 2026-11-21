@@ -1,4 +1,6 @@
+import Foundation
 import XCTest
+@testable import BerryBlockBlast
 
 /// Real production cheat + restore code, exercised only in disposable local
 /// UserDefaults suites. NEVER awards or restores the physical owner's balance.
