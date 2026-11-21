@@ -32,8 +32,7 @@ jobs:
           python3 Tools/verify_artwork.py
           python3 Tools/verify_audio_build2.py
           grep -q 'enum BerryStandardToolTransaction' BerryBlockBlast/BerryStandardToolTransaction.swift
-          grep -q 'BerryStandardToolTransaction.purchase' BerryBlockBlast/BerryGameSession.swift
-          grep -q 'BerryStandardToolTransaction.purchase' BerryBlockBlast/BerryDeveloperStateLab.swift
+          grep -q 'BerryStandardToolTransaction.purchase' BerryBlockBlast/BerryStandardToolCheckout.swift
           grep -q 'BerryStandardToolTransaction.consumeCharge' BerryBlockBlast/BerryGameSession.swift
           grep -q 'BerryStandardToolCheckout.purchase' BerryBlockBlast/BerryGameSession.swift
           grep -q 'BerryStandardToolCheckout.purchase' BerryBlockBlast/BerryDeveloperStateLab.swift
