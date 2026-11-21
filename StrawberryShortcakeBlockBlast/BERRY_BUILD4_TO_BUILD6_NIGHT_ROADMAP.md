@@ -17,7 +17,7 @@
 | 30 Night Edition counterparts | ✅ Imported as 30 individual Xcode imagesets on Build 4 development branch | CI + real-device night-visual QA |
 | Strawberry sun / moon clock icons | 🎨 Illustrated; not integrated | Independent PNG and UI approval |
 | Real live menu clock and day/night presentation | 📋 Planned | Midnight, timezone and app-resume QA |
-| **Second-accurate live time and transition countdown** | 📋 [Issue #95](https://github.com/ValentineBSAA/IPhone-Apps/issues/95), independent of decorative clock | 12-hour `h:mm:ss a`, `Moonlight/Sunrise in HH:MM:SS` at 6 PM/6 AM, update each second, real-device QA |
+| **Second-accurate live time and transition countdown** | 🟠 **Build49 source + tests implemented** ([Issue #95](https://github.com/ValentineBSAA/IPhone-Apps/issues/95)); CI/device pending | 12-hour `h:mm:ss a`, `Moonlight/Sunrise in HH:MM:SS` at 6 PM/6 AM, native and real-device verification |
 | In-context notices and Daily Quest fixes | 📋 Build 5 scope | In-menu visibility and reward QA |
 | Moonberries, night shop transactions and shop switch | 📋 Build 6 scope | Persistent economy + real-clock QA |
 | iPhone 16 AltStore install/signing | ⚠️ Unresolved | Capture exact installation error |
@@ -99,6 +99,15 @@ The first command validates only; the second creates 30 distinct `Night_*.images
 - [ ] Test Home, Pause, Settings, Help and proper grid layouts.
 - [ ] On physical iPhone 14 Pro, resume existing endless score, moves, purchases and unlocked cosmetics without reset.
 - [ ] Record issues and fix *only* regressions; do not merge until signed off.
+
+### Build 49 implementation checkpoint (November 21, 2026)
+
+- [x] **Source written in separate I7 Build 49 branch** `feature/berry-i7-live-clock-seconds-b49` using the exact known-good Build 48 engine and its persistent PIN-enabled Developer Garden.
+- [x] `BerryDayNightClock.swift` now formats the actual iPhone-local **12-hour `h:mm:ss a`** time and actual **`HH:MM:SS`** Moonlight/Sunrise countdown. It samples `Date()` each second, reacts to foreground/significant-time changes, and computes the next local 6 AM/6 PM calendar boundary without relying on accumulated ticks.
+- [x] Compact same Home pill with a small-screen fallback, stable monospaced digits and accessible time/countdown labels; no new artwork, shop or economy changes.
+- [x] Permanent Developer Garden **Timers & Clocks** and **State & Timer Lab** share a read-only four-scenario 5:59:58/6:00 AM/PM preview that never alters real time, game progress or currency.
+- [x] New dedicated deterministic unit tests and native Home screen seconds test added to source. Existing hidden Garden PIN/cheat/restore tests retained.
+- [ ] **B49 full simulator + model CI terminal green; native unsigned IPA integrity; owner real-iPhone time/seconds and saves verification** (do not mark until evidence exists). Build 48 remains the confirmed rollback/previous install.
 
 ### Gate A2 · Live seconds and real transition countdown (independent of approved clock artwork)
 
