@@ -22,7 +22,7 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 | BS-01 | Halloween | Day | Sunny pumpkin-strawberry storybook, orange/violet ribbon, friendly autumn accents | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
 | BS-02 | Halloween | Night | Moonlit purple enchanted storybook, stars, crescent and luminous chapter star | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
 | BS-03 | Christmas | Day | Snow-kissed red/green strawberry storybook with gold star and holly | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source archive pending | ⬜ |
-| BS-04 | Christmas | Night | Warm fairy lights and moonlit blue snowy storybook | ⬜ NEXT: generate one original | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
+| BS-04 | Christmas | Night | Moonlit Christmas open storybook, sapphire sky, glowing star, snowy trees, fairy lights | 🟡 GENERATED | ⬜ AWAITING OWNER | ⬜ | ⬜ | ⬜ |
 | BS-05 | Thanksgiving | Day | Warm harvest storybook, pie, maple leaves, cinnamon-gold chapter star | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BS-06 | Thanksgiving | Night | Candlelit plum and amber storybook, pumpkin and leaves | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | BS-07 | Birthday | Day | Strawberry cake storybook with ribbons, balloon and sparkling chapter star | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -93,3 +93,10 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 - [ ] Source bytes, transparency QA, 64/96px proofs, ZIP/manifest and GitHub binary upload still pending.
 
 **Berry Story visual approvals: 3/8.**
+
+
+### BS-04 Christmas Night image generated (review gate)
+- [x] One Christmas Night storybook original created and shown in chat with moonlit sapphire sky, gold chapter star, snow, candy canes, evergreens and illuminated pages.
+- [ ] Owner must explicitly approve BS-04; it is **not approved yet**. On approval BS-05 Thanksgiving Day is next.
+- [ ] Binary PNG GitHub upload, RGBA edge/alpha validation, ZIP, integration and device QA remain pending.
+**Berry Story: 4/8 generated, 3/8 approved.**
