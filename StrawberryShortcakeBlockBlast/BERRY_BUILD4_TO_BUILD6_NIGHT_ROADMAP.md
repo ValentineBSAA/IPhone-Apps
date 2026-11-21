@@ -345,3 +345,9 @@ Recommended sequence alongside existing milestones: H5 nonvisual calendar smoke/
 - [x] [Draft PR #68](https://github.com/ValentineBSAA/IPhone-Apps/pull/68) adds replayable standard-tool purchase journal to avoid duplicated charges or missing ledger entries after interrupted separate preferences writes.
 - [x] Eight new iPhone simulator tests added to previous 40 for staged-only, partial-key, second-launch, malformed and overflow recovery; [D0e test workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0e-purchase-recovery-iphone16e.yml) gates acceptance.
 - [ ] This is best-effort UserDefaults recovery, **not** guaranteed durable atomic transactions. Physical-device QA, corrupt-recovery UI, broad gameplay integration, art/Night modes and release still pending. No shipped IPA or app version changed.
+
+
+## ✅ D0e resilient tool purchases verified in simulator · November 20, 2026
+- [x] [D0e CI #44867590124](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44867590124): **48/48** selected XCTest cases pass with zero failures on named iPhone 16e. Release build excludes all internal Developer Garden QA-only panels.
+- [x] Standard-tool purchase intent replay test scenarios (3 new, 8 methods) validated without changing real saves, approved art, gameplay prices or Night experience.
+- [ ] Not production-merged. UserDefaults still not truly atomic/durable, physical device QA and future real-world shop, Story, Daily, Night and complete gameplay validation remain separate. [Draft PR #68](https://github.com/ValentineBSAA/IPhone-Apps/pull/68).
