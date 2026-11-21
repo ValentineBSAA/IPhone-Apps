@@ -127,6 +127,14 @@ struct BerryDeveloperStateLab {
 
     init() { prepare(.exactPriceUndo) }
 
+    /// Stable data comparisons across encodes; ordinary JSON dictionaries
+    /// have no guaranteed key order.
+    private static func canonicalBytes(_ engine: BerryEngine) -> Data? {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return try? encoder.encode(engine)
+    }
+
     mutating func prepare(_ next: BerryQAStateScenario) {
         scenario = next
         let balance: Int
@@ -170,12 +178,12 @@ struct BerryDeveloperStateLab {
 
         case .memorySave:
             let original = BerryEngine(side: 8, seed: 20261120)
-            let encoded = try? JSONEncoder().encode(original)
+            let encoded = Self.canonicalBytes(original)
             do {
                 try saves.save(original, key: "fixture")
                 let restored = try saves.restore(key: "fixture")
-                let match = encoded != nil && restored != nil &&
-                    (try? JSONEncoder().encode(restored!)) == encoded
+                let match = encoded != nil &&
+                    restored.flatMap { Self.canonicalBytes($0) } == encoded
                 success = match && saves.byteCount(key: "fixture") > 0
                 actual = "In-memory bytes: \(saves.byteCount(key: "fixture")); restored identical: \(match)."
             } catch {
@@ -188,9 +196,9 @@ struct BerryDeveloperStateLab {
             do {
                 try saves.save(original, key: "good")
                 saves.setCorruptedBytes(Data("{not valid engine".utf8), key: "bad")
-                let originalBytes = try JSONEncoder().encode(original)
+                let originalBytes = Self.canonicalBytes(original)
                 let good = try saves.restore(key: "good")
-                let goodBytes = try good.map { try JSONEncoder().encode($0) }
+                let goodBytes = good.flatMap { Self.canonicalBytes($0) }
                 let corruptionRejected: Bool
                 do {
                     _ = try saves.restore(key: "bad")
@@ -198,7 +206,8 @@ struct BerryDeveloperStateLab {
                 } catch {
                     corruptionRejected = true
                 }
-                success = corruptionRejected && originalBytes == goodBytes
+                success = corruptionRejected && originalBytes != nil &&
+                    originalBytes == goodBytes
                 actual = "Bad payload rejected: \(corruptionRejected); good snapshot intact: \(originalBytes == goodBytes)."
             } catch {
                 success = false
