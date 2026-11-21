@@ -269,16 +269,19 @@ struct BerryHomeView: View {
                                     art: BerryArtResolver.displayName(for: "BerryVillageMap"), caption: "Explore Village") {
                                     showVillage = true
                                 }
+                                .accessibilityIdentifier("berry.home.village")
                                 BerryGridNavigationTile(
                                     title: "Berry Quests", detail: "Three real goals every day",
                                     art: BerryArtResolver.displayName(for: "BerryQuestBoardArt"), caption: "Daily Quests") {
                                     showQuests = true
                                 }
+                                .accessibilityIdentifier("berry.home.quests")
                                 BerryGridNavigationTile(
                                     title: "Berry Journal", detail: "Your personal berry scrapbook",
                                     art: BerryArtResolver.displayName(for: "BerryJournalArt"), caption: "My Progress") {
                                     showJournal = true
                                 }
+                                .accessibilityIdentifier("berry.home.journal")
                                 BerryGridNavigationTile(
                                     title: "Daily Streak", detail: "Calendar, win streak and daily outcome",
                                     art: "DailyHarvest", caption: "View Calendar") {
