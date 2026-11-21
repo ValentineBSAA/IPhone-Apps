@@ -102,3 +102,9 @@
 - [x] Nine new iOS XCTest methods cover exact live purchases, saved inventory, real ledger totals, reopening the game session, legacy missing-Hint compatibility and rejected-checkout zero writes; selected combined 40-test [D0d workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0d-real-checkout-isolation-iphone16e.yml).
 - [x] [59-scenario coverage catalog](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) includes three D0d `implemented_untested` contracts while CI pending, plus 10 previously simulator passed.
 - [ ] CI terminal proof, actual iPhone UI acceptance, partial-commit/crash-recovery testing and full-game save/service isolation are separate. No IPA/new artwork/game release.
+
+
+## ✅ D0d actual GameSession isolated checkout regression green
+- [x] [GitHub Actions #44866663042](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44866663042) **40/40 PASS**, including nine new `BerryStandardToolCheckoutIsolationTests` running actual GameSession buys with a disposable UserDefaults suite and actual isolated ledger; Release compiled with QA panels excluded.
+- [x] [Scenario catalog](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json): **13/59 simulator verified**, 44 planned, 2 not implemented. Real physical iPhone signoff still zero for the new Developer Garden.
+- [ ] Keep [PR #67](https://github.com/ValentineBSAA/IPhone-Apps/pull/67) draft until owner taps and separately approved build; guard against partial multi-key inventory/ledger writes and broaden next to production-backed premium/Story/Daily only behind isolated stores.
