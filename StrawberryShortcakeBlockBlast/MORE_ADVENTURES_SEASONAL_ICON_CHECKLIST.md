@@ -28,7 +28,7 @@ In `BerryModes.swift` Home screen, **More Adventures** uses `BerryGridNavigation
 | MA-05 | Thanksgiving | Day | Sunlit golden strawberry crossroads, three route icons, autumn leaves and trees, pumpkins, lattice berry pie, woven harvest basket and orange gingham bow | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ background/alpha QA pending | ⬜ original PNG not staged | ⬜ |
 | MA-06 | Thanksgiving | Night | Moonlit purple/amber garden crossroads, three symbol-only routes, lanterns, pumpkins, maple foliage, berry pie and basket | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ checkerboard/alpha edge QA pending | ⬜ original PNG not staged | ⬜ |
 | MA-07 | Birthday | Day | Sunlit pink strawberry garden crossroads, three paths (lightning, strawberry cottage, crescent/stars), birthday cake, balloons, present and pink gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ verify actual alpha/checkerboard | ⬜ original PNG not staged | ⬜ |
-| MA-08 | Birthday | Night | Lavender moonlit garden crossroads, three route arrows, glowing cake candle, balloons, present and pink-purple gingham bow | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ checkerboard/actual alpha edge QA pending | ⬜ source PNG not staged | ⬜ |
+| MA-08 | Birthday | Night | Lavender moonlit garden crossroads, three route arrows, glowing cake candle, balloons, present and pink-purple gingham bow | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source PNG not yet staged | ⬜ |
 
 ## Gates and milestones
 - [x] Verify actual Home tile semantics and `MoreAdventures` asset lookup in existing SwiftUI source.
@@ -168,3 +168,14 @@ Links: [Seasonal icon matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) · [Daily Ha
 - [ ] Visible checkerboard-style background requires actual alpha check and possible non-destructive background removal. Exact-original archives, QA sheets, 64/96px previews, approved RGBA, checked ZIP, GitHub PNG staging and iPhone runtime verification are independent pending milestones.
 
 **Current More Adventures: 8/8 generated, 7/8 visually approved; MA-08 pending owner.**
+
+
+## H1-B04 8/8 visual approval checkpoint · current
+- [x] MA-08 Birthday Night explicitly visually approved (“Good continue”); preserve generated original exactly without regeneration.
+- [x] More Adventures H1-B04 now has all eight designs individually **owner visually approved**: Halloween, Christmas, Thanksgiving, Birthday × Day/Night.
+- [ ] **Technical review:** 2 originals (MA-01 and MA-03) have true RGBA alpha; 6 originals (MA-02, MA-04, MA-05, MA-06, MA-07, MA-08) are RGB and visibly include checkerboard-like backgrounds. Preserve exact originals and produce separately tracked RGBA *candidates*, not pretend alpha is finished.
+- [ ] Create a SHA-256 verified archive with originals, RGBA candidates, checker/light/dark and 64/96/144 pixel review sheets; obtain owner alpha cleanup approval before production use.
+- [ ] GitHub binary import through isolated artwork branch only after upload/verification; no image file is currently staged merely because approval checklist is updated.
+- [ ] Next semantic category: My Strawberry Cottage H1-B05, one separate image per approval with distinct Day/Night holiday versions. No existing Night/Story/Daily/clock artwork or game behavior changed.
+
+**H1-B04 visual approval authoritative total: 8/8. QA/import gates remain OPEN.**
