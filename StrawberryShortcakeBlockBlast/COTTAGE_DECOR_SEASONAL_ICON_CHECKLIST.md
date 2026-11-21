@@ -22,7 +22,7 @@ Give this family a distinct, clear **decorating** theme: a cute strawberry-roof 
 |---|---|---|---|---|---|---|---|---|
 | CD-01 | Halloween | Day | Sunny strawberry-roof cottage with flowerpot, paintbrush, ribbon spool, pumpkin lanterns, autumn leaves and sunny orange-lavender gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ original RGB/checkerboard; RGBA edge QA pending | ⬜ original PNG not yet staged | ⬜ |
 | CD-02 | Halloween | Night | Moonlit strawberry-roof cottage, glowing windows and pumpkin-berry lanterns, decorating brush, flowerpot, ribbon spool and purple-orange gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ RGB/off-white background; separate RGBA edge QA pending | ⬜ source PNG not yet staged | ⬜ |
-| CD-03 | Christmas | Day | Snow-frosted strawberry cottage, wreath, red ribbon, candy canes, festive planters, decorating brush and ribbon spool | ⬜ NEXT: single original generation | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
+| CD-03 | Christmas | Day | Snow-frosted strawberry cottage with wreath, red ribbon, candy canes, festive flowerpot, paintbrush and ribbon spool | 🟡 GENERATED (2 candidates) | ⬜ OWNER SELECTION/APPROVAL PENDING | ⚠ checkerboard/background and alpha edges to verify | ⬜ neither source staged | ⬜ |
 | CD-04 | Christmas | Night | Cozy glowing snowy cottage, midnight evergreen lights, wreath, baubles, purple-tinted gardening decorations | ⬜ | ⬜ | ⬜ | ⬜ |
 | CD-05 | Thanksgiving | Day | Amber harvest cottage, strawberry pie window display, maple leaf garland, pumpkin planters, cozy decorating details | ⬜ | ⬜ | ⬜ | ⬜ |
 | CD-06 | Thanksgiving | Night | Candlelit autumn cottage with pumpkin planters, lanterns, maple wreath and moonlit decorated garden | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -77,3 +77,12 @@ Links: [H1-B04 checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md) · [Master
 - [ ] After owner approval proceed to CD-04 Christmas Night. Original SHA archiving, separate RGBA alpha cleanup and review, checksummed ZIP, GitHub binary staging, Xcode and physical iPhone QA remain future gates.
 
 **Authoritative H1-B05: 2/8 visually approved, 2/8 generated before CD-03.**
+
+
+### CD-03 Christmas Day generation checkpoint
+- [x] Two candidate Christmas Day cottage decorating icons were produced and shown in chat: both show sunlit snow-covered strawberry roof, Christmas wreath/candy canes/evergreens, and clear flowerpot, paintbrush and ribbon spool decor symbols. **Both count toward one CD-03 icon slot only**.
+- [ ] Request the owner to approve the **first or second candidate**, or request changes. The second image is the latest displayed and should not be presumed selected until owner responds.
+- [ ] Only the chosen full original should enter the production archive; preserve unaltered original PNG bytes and record its SHA-256. Do not claim true transparency from visible checkerboard: check actual alpha and produce separately reviewed RGBA candidate when needed.
+- [ ] Once a CD-03 version is approved, proceed to CD-04 Christmas Night, one image at a time. Current approved count remains **2/8** (Halloween Day/Night).
+
+**H1-B05 current: 3/8 slots generated; 2/8 visually approved, CD-03 selection pending.**
