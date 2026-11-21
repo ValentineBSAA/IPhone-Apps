@@ -23,7 +23,7 @@ Give this family a distinct, clear **decorating** theme: a cute strawberry-roof 
 | CD-01 | Halloween | Day | Sunny strawberry-roof cottage with flowerpot, paintbrush, ribbon spool, pumpkin lanterns, autumn leaves and sunny orange-lavender gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ original RGB/checkerboard; RGBA edge QA pending | ⬜ original PNG not yet staged | ⬜ |
 | CD-02 | Halloween | Night | Moonlit strawberry-roof cottage, glowing windows and pumpkin-berry lanterns, decorating brush, flowerpot, ribbon spool and purple-orange gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ RGB/off-white background; separate RGBA edge QA pending | ⬜ source PNG not yet staged | ⬜ |
 | CD-03 | Christmas | Day | Snow-frosted strawberry cottage with wreath, red ribbon, candy canes, festive flowerpot, paintbrush and ribbon spool; SECOND image selected | ✅ GENERATED | ✅ OWNER APPROVED (most recent/second version) | ⚠ checkerboard/alpha edge QA pending | ⬜ source PNG import pending | ⬜ |
-| CD-04 | Christmas | Night | Moonlit snow-covered strawberry cottage with lit windows, decorated flowerpot, paintbrush, ribbon spool and holiday lights | ⬜ NEXT: generate one original | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
+| CD-04 | Christmas | Night | Moonlit snowy strawberry cottage, glowing windows, lit evergreen trees, wreath, decorating paintbrush, flowerpot, red check ribbon spool and crescent | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ visible checkerboard; verify alpha and clean separately | ⬜ source PNG not staged | ⬜ |
 | CD-05 | Thanksgiving | Day | Amber harvest cottage, strawberry pie window display, maple leaf garland, pumpkin planters, cozy decorating details | ⬜ | ⬜ | ⬜ | ⬜ |
 | CD-06 | Thanksgiving | Night | Candlelit autumn cottage with pumpkin planters, lanterns, maple wreath and moonlit decorated garden | ⬜ | ⬜ | ⬜ | ⬜ |
 | CD-07 | Birthday | Day | Strawberry cottage with frosted cake decorations, party balloons, present planter, bright pink decorating bow | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -94,3 +94,12 @@ Links: [H1-B04 checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md) · [Master
 - [ ] Do not claim image transparency, GitHub binary staging, game runtime mapping or on-device QA. Background cleanup and RGBA candidates remain independent future gates.
 
 **Current H1-B05 visual approvals: 3/8; Christmas Night generation next.**
+
+
+### CD-04 Christmas Night generation and review checkpoint
+- [x] One new CD-04 Christmas Night image generated in chat, distinct from CD-03 daytime: moonlit violet starry sky, snow-frosted strawberry roof, cozy glowing windows, festive lights and candy canes, strawberry flower pot, pink decorating paintbrush and ribbon spool.
+- [ ] **Owner visual approval pending**; do not generate CD-05 Thanksgiving Day or mark CD-04 accepted until response.
+- [ ] Original image displays a checkerboard-looking background; actual alpha must be verified and separated non-destructively. Preserve the original unchanged, and prepare light/dark/checker/64px/96px review before committing source and RGBA candidates via checked ZIP import.
+- [ ] No CD-04 image binary is uploaded to GitHub yet; game build and iPhone QA are unaffected.
+
+**Current H1-B05: 4/8 generated, 3/8 visually owner-approved, Christmas Night awaiting review.**
