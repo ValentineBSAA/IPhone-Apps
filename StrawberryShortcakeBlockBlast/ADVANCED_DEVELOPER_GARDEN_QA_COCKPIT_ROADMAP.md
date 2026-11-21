@@ -79,3 +79,9 @@ One-tap **Create scenario → Run checks → Review PASS/FAIL evidence → Disca
 
 
 **Tracking issue:** https://github.com/ValentineBSAA/IPhone-Apps/issues/undefined
+
+## Machine-readable initial test coverage registry
+- [x] Created [46 explicit scenario contracts](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json), split across gameplay (12), tools (11), economy (5), progression (7), calendar/seasons (6), future Night experience (2) and visuals (3).
+- [x] Every scenario defines a fixture, an expected assertion, and a status; **all current scenario statuses remain planned or not implemented**. This is inventory, not proof any scenario has run.
+- [ ] Before D1, build a validator that flags newly introduced mechanics without a matching scenario and stops false PASS statuses without evidence.
+- [ ] D0 sandbox must be completed before any scenario can modify engine, wallet, rewards or saves.
