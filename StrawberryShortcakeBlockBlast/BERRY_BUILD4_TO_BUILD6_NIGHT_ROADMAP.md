@@ -296,3 +296,9 @@ Recommended sequence alongside existing milestones: H5 nonvisual calendar smoke/
 - [x] D0 game-data isolation is structural: disposable `BerryEngine` instances, fixed UUIDs, deterministic replay, no production `BerryGameSession`, wallet, saved progress, preferences or economy mutations. Existing persistent QA grant remains separate.
 - [x] Added six targeted XCTest methods and named iPhone 16e/Release compile check [Actions #44862930573](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573). Release target successfully compiles with the QA harness excluded; targeted Debug test run must be checked before automated gate closes.
 - [ ] Owner device QA, complete coverage of daily/Story/shop/quest/undo/night and eventual app release remain separate. This D0 milestone does not absorb 4.7/4.8/5/6 or change any game version.
+
+
+## D0 automated sandbox QA complete · November 20, 2026
+- [x] [Actions #44862930573](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44862930573) **SUCCESS**: QA-only Developer Sandbox excluded from Release build; **6/6 selected tests passed on iPhone 16e simulator**.
+- [x] [Draft PR #63](https://github.com/ValentineBSAA/IPhone-Apps/pull/63) remains isolated from the production Build 4.6 chain; live wallet, saves, gameplay, art, costs, and app version unaffected.
+- [ ] Physical-device owner signoff and future developer scenario work pending; D0 proof does not certify Night Game/Market, 4.7/4.8, Build 5/6 or every planned mechanic.
