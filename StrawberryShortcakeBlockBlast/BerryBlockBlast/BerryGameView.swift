@@ -458,20 +458,11 @@ struct BerryGameView: View {
                     .zIndex(9)
             }
             if let rewardToast {
-                Text(rewardToast)
-                    .font(.system(size: 13, weight: .black, design: .rounded))
-                    .foregroundStyle(BerryStyle.chocolate)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 15)
-                    .padding(.vertical, 11)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
-                    .overlay(RoundedRectangle(cornerRadius: 18)
-                        .strokeBorder(BerryStyle.strawberry.opacity(0.7), lineWidth: 2))
+                BerryNoticeBanner(message: rewardToast, kind: .success)
                     .frame(maxWidth: min(335, width - 36))
                     .position(x: width / 2, y: height * 0.23)
                     .allowsHitTesting(false)
                     .zIndex(11)
-                    .accessibilityLabel(rewardToast)
             }
             }
             .frame(width: width, height: height)
