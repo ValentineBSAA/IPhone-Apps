@@ -228,3 +228,20 @@ D1b exact QA ledger: [Cottage & Premium Saved-Garden Safety](https://github.com/
 - [ ] Next D2/D3: build safe deterministic valid-use tool and game-over/board/save scenarios, then Story/Daily/quest and later seasonal and Night mechanics. One-tap coverage must not be mistaken for end-to-end production UI automation.
 
 [Exact D1c QA ledger](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d1c-real-commerce-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D1C_REAL_COMMERCE_COCKPIT_QA.md).
+
+---
+
+## D1b/D1c simulator failure recovery and D2a actual premium use · November 20, 2026
+
+**D1b and D1c first attempts were NOT green:** [D1b Actions #44869316684](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44869316684) ran **74 cases with 1 failure**, and [D1c Actions #44869555471](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44869555471) ran **80 cases with that same 1 failure**. Other selected cases passed, including all six newly introduced D1c Commerce Lab tests. The failing check was `BerryCottagePremiumIsolationTests.testCottageAndPremiumMenuBuysPreserveAllThreeEndlessSaves`, asserting raw engine JSON bytes were identical even though encoder dictionary key ordering is not guaranteed.
+
+- [x] Repaired the **test assertion, not production game behavior**, on both D1b and D1c branches: canonical sorted-key JSON encoding of engine before and after. Original independent 8/12/24 save bytes remain compared byte-for-byte. **Both Actions runs have been re-run as attempt 2; terminal results pending**. Do not call them passed without final evidence.
+- [x] Started [D2a draft PR #73](https://github.com/ValentineBSAA/IPhone-Apps/pull/73), stacked on D1c, focusing on actual **premium-tool use** rather than more purchases.
+- [x] `BerryGameSession` mode selection now consistently uses injected preference storage to read saved Sweet Endless board size, legacy-migration bookkeeping, current best score and restored engine. Defaults to the original live storage for actual users.
+- [x] Six new actual real-session/engine XCTest methods: valid occupied-cell Trowel and restart; valid Starberry Seed with saved move count; successful Golden Strawberry rescue with score and one-per-run limit after restart; invalid tool no-charge/no-save; independent 24×24 save/reopen preserving 8×8 and 12×12; and original player's keys unchanged.
+- [ ] [D2a workflow #44870863706](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44870863706) selects **86 tests**, with original 80 regression methods plus six new D2a tests on named iPhone 16e simulator. Release QA-exclusion, source/art/audio preflight and no-IPA gate required. **Started but not yet accepted** at this checkpoint.
+- [x] Master coverage catalog **83 contracts**: 20 verified simulator/device pending, 4 D1b CI pending, 7 D1c CI pending, 6 D2a CI pending, 44 planned, 2 future Night not implemented. Never call this 83 tests passed.
+- [ ] Next **D2b**: add user-friendly Developer Garden two-column Tool Action Lab with one-tap *valid-use* actual tool scenarios, expected/actual receipts, in-memory/isolated save/reopen and Reset. Only stage after simulator evidence verifies D2a source and no normal owner-data writes.
+- [ ] Longer-term: Twister/Pantry actual board changes, full 24×24 Golden rescue, game-over/blocked-tool cases, Story, Daily, quests, birthday, seasonal, Night and physical device QA. No release/IPA/merge/version bump.
+
+[D2a exact QA ledger](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d2a-valid-tools-save-restore/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D2A_PREMIUM_TOOL_SAVE_RESTORE_QA.md). The first-run failures were test serialization nondeterminism, **not proof of a broken actual saved game**, and must be resolved by passing terminal CI on both affected branches.
