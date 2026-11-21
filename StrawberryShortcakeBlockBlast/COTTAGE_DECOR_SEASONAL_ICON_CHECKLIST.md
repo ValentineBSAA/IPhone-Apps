@@ -181,3 +181,17 @@ Links: [H1-B04 checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md) · [Master
 - [ ] Next artwork category after H1-B05 packaging: H1-B06 Berry Collection Home tile.
 
 **Authoritative visual tally: 8/8 approved; technical RGBA and GitHub binary staging incomplete.**
+
+
+## H1-B05 source and RGBA package verified (November 20, 2026)
+- [x] 8 exact 1254x1254 original PNGs frozen, one per owner-approved season/Day-Night use, including second selected CD-03 Christmas Day.
+- [x] 8 separate RGBA candidate files: 1 native RGBA byte-identical (CD-08), **7 foreground-segmentation cutout candidates** (CD-01..07), all with actual alpha (not merely a checkerboard picture).
+- [x] Full-size previews on checkerboard, light/cream and dark/plum plus 64/96/144 pixel game-UI readability sheet.
+- [x] Source and candidate SHA-256 JSON/CSV manifest, README and original/candidate folder separation in a ZIP; archive test and all per-image checksums passed.
+- [x] ZIP `Berry_Berry_Blast_Cottage_Decor_H1_B05_8_Originals_RGBA_QA.zip`, **56,158,942 bytes**, SHA-256 `78730fd5ee2e1885bd90c2cabdb94e817903e0830c8babc9d10970501a4b7393`.
+- [ ] OWNER QA: visually approve the 7 newly cleaned cutouts for halos, missing vines/flowers, snow and ribbon loops on light/dark backgrounds and at phone-icon sizes. Avoid conflating design approval (complete) with RGBA quality (pending).
+- [ ] GitHub original/source image binaries **0/8 uploaded** until the release import checks pass; ZIP existence alone does not mean GitHub has these pictures.
+- [ ] Xcode asset import, automatic event/day-night switching and physical iPhone QA remain separate untouched gates.
+- [ ] Next category: H1-B06 **Berry Collection** Home tile (inventory/awards/personal records), eight Day/Night seasonal originals, one at a time.
+
+**Authoritative: CD-01..08 all visually approved and packaged; seven alpha candidates pending owner QA, no originals shipped into the app.**
