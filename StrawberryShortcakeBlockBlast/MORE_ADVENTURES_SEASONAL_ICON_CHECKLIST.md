@@ -22,7 +22,7 @@ In `BerryModes.swift` Home screen, **More Adventures** uses `BerryGridNavigation
 | ID | Event | Appearance | Distinctive theme and fixed semantic shape | Original image | Owner visual approval | RGBA QA | PNG in GitHub | Xcode/iPhone |
 |---|---|---|---|---|---|---|---|---|
 | MA-01 | Halloween | Day | Sunlit autumn garden crossroads with strawberry signpost, three icon routes (lightning, cottage, moon), lantern berries, autumn gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ RGBA/edge QA pending | ⬜ original PNG import pending | ⬜ |
-| MA-02 | Halloween | Night | Moonlit violet garden crossroads with three routes, illuminated berry lanterns, tiny stars and friendly pumpkins | ⬜ NEXT: single image generation | ⬜ awaiting owner review | ⬜ | ⬜ | ⬜ |
+| MA-02 | Halloween | Night | Moonlit violet strawberry crossroads with lightning, warm cottage and moon/star arrows; glowing berry lanterns and pumpkins | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ checkerboard-looking background; alpha QA pending | ⬜ PNG import pending | ⬜ |
 | MA-03 | Christmas | Day | Snowy red-green berry pathways, small decorated cozy cottage, gold adventure star, snow-topped strawberry signpost | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | MA-04 | Christmas | Night | Indigo snowy forked paths, warm lit cottage and twinkling Christmas trees, berry lights and crescent | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | MA-05 | Thanksgiving | Day | Amber harvest three-path signpost, maple leaves, pumpkins, berry pie, berry harvest basket | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -64,3 +64,11 @@ Links: [Seasonal icon matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) · [Daily Ha
 - [ ] All true-alpha and checkerboard edge QA, source/RGBA archival ZIP and GitHub binary import, Xcode integration and real iPhone testing are distinct pending gates.
 
 **H1-B04 More Adventures now 1/8 visually approved; MA-02 generation next.**
+
+
+### MA-02 Halloween Night generated, review requested
+- [x] One Halloween Night crossroads illustration generated and shown to owner. Keeps the three recognizable arrows: lightning for Berry Blitz, strawberry cottage for Cozy Cottage, crescent/stars for Strawberry Nightmare. Features a moonlit purple garden, lanterns, witch-hat berry jack-o'-lanterns and strawberry gingham bow.
+- [ ] **MA-02 owner visual approval pending.** MA-03 Christmas Day generation follows explicit acceptance only.
+- [ ] Visual checkerboard might be baked: retain original PNG untouched and inspect real alpha, matte edges, then make separate RGBA candidate and light/dark/64px/96px proofs. No image PNG yet imported into GitHub.
+
+**More Adventures: 2/8 generated, 1/8 owner approved.**
