@@ -1,9 +1,9 @@
 {
   "schema": 1,
   "app": "Berry Berry Blast",
-  "status": "D0-D2a simulator verified; D2b and D2c implementation awaiting CI; owner device pending",
-  "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests. D0 proof 6/6 on iPhone 16e simulator covers ONLY two fully implemented scenarios; do not imply full 48 scenario coverage or physical-device validation. D0b six scenarios are separate value-type policy implementations and remain unaccepted until named simulator results and owner physical UI tests are verified. GitHub Actions #44864274159 attempt 2: D0/D0b selected 17/17 XCTest green, with safe Release compile. Do not equate these mock policy fixtures with full production purchase/save or physical iPhone acceptance. D0c two implemented-untested shared production-rule contract checks are not complete end-to-end checkout coverage. Owner physical QA remains required. D1a Actions #44868413961 confirmed 64/64 selected iPhone 16e simulator XCTest passed, with ten real Boutique tests and Release QA exclusion. D1b has 10 new isolated Cottage/premium real-session XCTests authored, pending CI and device acceptance. D1a real Boutique tests are confined to actual isolated buyCosmetic calls and not full SwiftUI tap flows, premium purchases, or atomic multi-key cosmetic recovery. D1a tests now simulator-verified, owner-device-pending. D1b remains implemented_untested until actual terminal CI evidence. D1c adds seven one-tap real checkout Developer Garden scenario cards behind BERRY_INTERNAL_QA, with six XCTest authored and CI #44869555471 pending. Do not mark D1b or D1c scenarios PASS until individual final workflow logs are verified. UI card invocation is not identical to production Boutique tappath. D2a adds six actual premium tool-use and saved Endless restore contracts, pending CI #44870863706 final XCTest result. D1b CI #44869316684 and D1c #44869555471 first attempts failed one common JSONEncoder byte-order assertion, corrected by sorted-key encoding and second attempts pending. D2a is not proof of Story/Daily or end-to-end UI coverage. Final verified D1b Actions #44869316684 attempt2 74/74 PASS, D1c #44869555471 attempt2 80/80 PASS, D2a #44870863706 86/86 PASS, all named iPhone16e, Release-compile QA exclusion and no IPA. All physical owner UI QA still pending. Earlier one-failure CI attempt logs preserved; this evidence supersedes the corrected failures. D2b has seven real one-tap premium action fixtures and eight XCTest, CI #44871494518 pending. D1b 74/74, D1c 80/80, D2a 86/86 have final simulator-verified PASS; D2b remains implemented_untested until terminal log review. D2c adds eight actual Twister/Pantry/Mega Golden/combined rescue contracts, D2c Actions #44871838416 pending. D2b run #44871494518 pending at initial D2c staging. Game Over combined handler tested on occupied Endless fixture, NOT actual Story Game Over UI. Emergency combined Golden ledger and receipts routed via injected real session dependencies in D2c.",
-  "count": 98,
+  "status": "D0–D2a simulator certified, D2b 94/D2c 102 reruns and D2d 108 initial simulator pending",
+  "safety": "All scenario execution MUST be isolated from normal saved progress, wallet, purchases and user settings. No PIN-only protection; BERRY_INTERNAL_QA compile gate. Mark actual status only after running tests. D0 proof 6/6 on iPhone 16e simulator covers ONLY two fully implemented scenarios; do not imply full 48 scenario coverage or physical-device validation. D0b six scenarios are separate value-type policy implementations and remain unaccepted until named simulator results and owner physical UI tests are verified. GitHub Actions #44864274159 attempt 2: D0/D0b selected 17/17 XCTest green, with safe Release compile. Do not equate these mock policy fixtures with full production purchase/save or physical iPhone acceptance. D0c two implemented-untested shared production-rule contract checks are not complete end-to-end checkout coverage. Owner physical QA remains required. D1a Actions #44868413961 confirmed 64/64 selected iPhone 16e simulator XCTest passed, with ten real Boutique tests and Release QA exclusion. D1b has 10 new isolated Cottage/premium real-session XCTests authored, pending CI and device acceptance. D1a real Boutique tests are confined to actual isolated buyCosmetic calls and not full SwiftUI tap flows, premium purchases, or atomic multi-key cosmetic recovery. D1a tests now simulator-verified, owner-device-pending. D1b remains implemented_untested until actual terminal CI evidence. D1c adds seven one-tap real checkout Developer Garden scenario cards behind BERRY_INTERNAL_QA, with six XCTest authored and CI #44869555471 pending. Do not mark D1b or D1c scenarios PASS until individual final workflow logs are verified. UI card invocation is not identical to production Boutique tappath. D2a adds six actual premium tool-use and saved Endless restore contracts, pending CI #44870863706 final XCTest result. D1b CI #44869316684 and D1c #44869555471 first attempts failed one common JSONEncoder byte-order assertion, corrected by sorted-key encoding and second attempts pending. D2a is not proof of Story/Daily or end-to-end UI coverage. Final verified D1b Actions #44869316684 attempt2 74/74 PASS, D1c #44869555471 attempt2 80/80 PASS, D2a #44870863706 86/86 PASS, all named iPhone16e, Release-compile QA exclusion and no IPA. All physical owner UI QA still pending. Earlier one-failure CI attempt logs preserved; this evidence supersedes the corrected failures. D2b has seven real one-tap premium action fixtures and eight XCTest, CI #44871494518 pending. D1b 74/74, D1c 80/80, D2a 86/86 have final simulator-verified PASS; D2b remains implemented_untested until terminal log review. D2c adds eight actual Twister/Pantry/Mega Golden/combined rescue contracts, D2c Actions #44871838416 pending. D2b run #44871494518 pending at initial D2c staging. Game Over combined handler tested on occupied Endless fixture, NOT actual Story Game Over UI. Emergency combined Golden ledger and receipts routed via injected real session dependencies in D2c. D2b Actions #44871494518 attempt1: 94 XCTest, 2 failures caused by actual live best-score leakage in isolated Seed. D2c #44871838416 attempt1: 102 XCTest, same 2 failures. Fixed both session best-score write paths to injected defaults and protected real placement quest write for isolated sessions across D2b/D2c/D2d branches. Both workflows restarted attempt2. D2d 108-test #44872232106 initial pending. Never claim green without terminal logs.",
+  "count": 102,
   "status_values": [
     "planned",
     "implemented_untested",
@@ -1642,6 +1642,62 @@
       "test_ref": "BerryPremiumAdvancedRescueIsolationTests",
       "manual_iphone_accepted": false,
       "scope_note": "Actual production handler with disposable storage; not Game Over SwiftUI view tap path or crash-atomic UserDefaults transaction."
+    },
+    {
+      "id": "d2d-twister-one-tap-real-restore",
+      "category": "tools",
+      "title": "One-tap Ribbon Twister rotates a non-symmetric piece and verifies persisted charges and tray",
+      "fixture": "Tap new internal Tool Action Lab card; construct a genuine legally played engine, real injected BerryGameSession and disposable UserDefaults suite, execute actual handler, reopen saved game.",
+      "expected": "PASS only with real premium effect, exact charge/wallet/ledger/receipt, independent save safety and normal player-key nonmutation.",
+      "status": "implemented_untested",
+      "execution": "internal_qa_one_tap_real_premium_tool_and_saved_game_restore",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d2d-premium-one-tap-expansion:BerryDeveloperToolActionLab.swift",
+      "test_ref": "BerryDeveloperToolActionExpansionTests",
+      "manual_iphone_accepted": false,
+      "scope_note": "Real GameSession methods and saved-engine handling, NOT production touch UI or true Story Game Over."
+    },
+    {
+      "id": "d2d-pantry-one-tap-two-reopens",
+      "category": "tools",
+      "title": "One-tap Picnic Pantry stash and swap pass on a real saved garden after two restarts",
+      "fixture": "Tap new internal Tool Action Lab card; construct a genuine legally played engine, real injected BerryGameSession and disposable UserDefaults suite, execute actual handler, reopen saved game.",
+      "expected": "PASS only with real premium effect, exact charge/wallet/ledger/receipt, independent save safety and normal player-key nonmutation.",
+      "status": "implemented_untested",
+      "execution": "internal_qa_one_tap_real_premium_tool_and_saved_game_restore",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d2d-premium-one-tap-expansion:BerryDeveloperToolActionLab.swift",
+      "test_ref": "BerryDeveloperToolActionExpansionTests",
+      "manual_iphone_accepted": false,
+      "scope_note": "Real GameSession methods and saved-engine handling, NOT production touch UI or true Story Game Over."
+    },
+    {
+      "id": "d2d-mega-golden-one-tap-isolated-saves",
+      "category": "gameplay",
+      "title": "One-tap Golden Strawberry rescue clears all 24×24 patches and preserves other saves",
+      "fixture": "Tap new internal Tool Action Lab card; construct a genuine legally played engine, real injected BerryGameSession and disposable UserDefaults suite, execute actual handler, reopen saved game.",
+      "expected": "PASS only with real premium effect, exact charge/wallet/ledger/receipt, independent save safety and normal player-key nonmutation.",
+      "status": "implemented_untested",
+      "execution": "internal_qa_one_tap_real_premium_tool_and_saved_game_restore",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d2d-premium-one-tap-expansion:BerryDeveloperToolActionLab.swift",
+      "test_ref": "BerryDeveloperToolActionExpansionTests",
+      "manual_iphone_accepted": false,
+      "scope_note": "Real GameSession methods and saved-engine handling, NOT production touch UI or true Story Game Over."
+    },
+    {
+      "id": "d2d-combined-golden-one-tap-250-receipt",
+      "category": "economy",
+      "title": "One-tap actual combined Golden Strawberry spend 250, ledger, receipt, one rescue and restart",
+      "fixture": "Tap new internal Tool Action Lab card; construct a genuine legally played engine, real injected BerryGameSession and disposable UserDefaults suite, execute actual handler, reopen saved game.",
+      "expected": "PASS only with real premium effect, exact charge/wallet/ledger/receipt, independent save safety and normal player-key nonmutation.",
+      "status": "implemented_untested",
+      "execution": "internal_qa_one_tap_real_premium_tool_and_saved_game_restore",
+      "latest_result": null,
+      "implementation_ref": "feature/berry-advanced-dev-d2d-premium-one-tap-expansion:BerryDeveloperToolActionLab.swift",
+      "test_ref": "BerryDeveloperToolActionExpansionTests",
+      "manual_iphone_accepted": false,
+      "scope_note": "Real GameSession methods and saved-engine handling, NOT production touch UI or true Story Game Over."
     }
   ]
 }
