@@ -1,5 +1,26 @@
 # 🍓 Berry Berry Blast · LIVE DIGITAL CLOCK FRAME MASTER CHECKLIST
 
+## CURRENT VERIFIED PACKAGING CHECKPOINT · November 20, 2026
+
+**MASTER VISUAL STATUS: ✅ 10/10 OWNER APPROVED.** This supersedes earlier intermediate “next image” statements below.
+
+| Current delivery gate | Status |
+|---|---|
+| One-by-one original art owner approval C-01–C-10 | ✅ COMPLETE 10/10 |
+| Original full-resolution PNG bytes preserved unchanged | ✅ COMPLETE 10/10 in prepared ZIP |
+| Genuine alpha in original PNG | ✅ 8/10 |
+| Non-destructive RGBA cleanup candidate for checkerboard RGB originals C-08 and C-10 | ✅ generated 2/2; **manual edge approval still pending** |
+| Full family SHA manifest, checker/light/dark preview sheets and small-size QA | ✅ package prepared and ZIP integrity/hashes verified |
+| Import full 10-clock family into isolated GitHub art branch | ⏳ Owner must upload approved ZIP under tag `berry-clocks-c-full-01`; import not yet triggered |
+| SwiftUI native live time, Xcode 16 support, iPhone QA | ⬜ Not started; do not claim shipping |
+
+**Prepared ZIP:** `Berry_Berry_Blast_Clock_Family_C01_C10_Sources_RGBA_Review.zip`; 53,721,015 bytes; SHA-256 `ea8eb15bf6ad838b3972388e8d47c540fe85385d9ac80bc5b2af30a39320f413`.
+
+**Verified import workflow installed on main:** `.github/workflows/berry-clock-family-verified-import.yml`. Publish a GitHub release with tag `berry-clocks-c-full-01` and attach the exact ZIP filename; the workflow verifies the SHA, ten pairs, PNG dimensions and RGBA types before writing to **this isolated art branch only**. Refrain from importing it directly into the shipping app until two cleanup previews receive visual edge approval.
+
+**Next production workflow:** assess C-08/C-10 light/dark/checker edge quality; stage the complete family after release import; return to the 40-family seasonal matrix for the next semantic icon family, **generating one design at a time with individual Day/Night approvals**. Do not alter base/Night Garden art in PR #40 or existing Xcode image sets.
+
+
 **Owner checkpoint:** November 20, 2026 · **Review status:** 2/2 regular Day/Night frames visually approved.
 **Staging branch:** `artwork/berry-clock-frames-c-b01-staging` (isolated, not merged).
 **Package:** `Berry_Berry_Blast_Base_Clock_Frames_B01_Day_Night_RGBA.zip` · SHA-256 `ef36481929c5db6074d0bda3298614439e298dc4a4ae7f74d5f8e747aa5cd83a` · 9,159,252 bytes.
