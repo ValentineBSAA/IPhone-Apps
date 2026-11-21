@@ -1,7 +1,7 @@
 # 🍓🧭 Berry Berry Blast | H1-B04 More Adventures Seasonal Home Icon Checklist
 
 **Opened:** November 20, 2026. **Branch:** `artwork/berry-seasonal-more-adventures-h1-b04`. **Source category:** 04/HOME in `SEASONAL_MASTER_ICON_BATCH_MATRIX.md`.
-**Status at creation:** 0/8 generated, 0/8 owner approved, zero H1-B04 source PNG binaries committed.
+**Latest status:** MA-01 Halloween Day generated for review; 1/8 generated, 0/8 owner-approved. No H1-B04 source PNG binaries committed.
 
 ## Semantic ground truth from app source
 In `BerryModes.swift` Home screen, **More Adventures** uses `BerryGridNavigationTile(title: "More Adventures", art: "MoreAdventures", caption: "Explore")`; tapping opens `showMore` and lets the player choose **Berry Blitz**, **Cozy Cottage**, or **Strawberry Nightmare**. It does not start a single book/calendar or automatically change a game mode.
@@ -21,7 +21,7 @@ In `BerryModes.swift` Home screen, **More Adventures** uses `BerryGridNavigation
 
 | ID | Event | Appearance | Distinctive theme and fixed semantic shape | Original image | Owner visual approval | RGBA QA | PNG in GitHub | Xcode/iPhone |
 |---|---|---|---|---|---|---|---|---|
-| MA-01 | Halloween | Day | Sunlit autumn garden crossroads, pink strawberry signpost with three icon-only routes, friendly pumpkin-berry, orange/purple gingham, strawberry blossoms | ⬜ NEXT | ⬜ | ⬜ | ⬜ | ⬜ |
+| MA-01 | Halloween | Day | Sunlit autumn garden crossroads with pink strawberry signpost, three symbol-only arrow routes (lightning, cottage, moon), jack-o'-lantern berries and autumn gingham | 🟡 GENERATED | ⬜ AWAITING OWNER REVIEW | ⬜ actual transparency/edge QA pending | ⬜ source PNG not staged | ⬜ |
 | MA-02 | Halloween | Night | Moonlit violet garden crossroads with same three choices, tiny golden stars, lit berry lanterns, friendly ghosts and pumpkins | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | MA-03 | Christmas | Day | Snowy red-green berry pathways, small decorated cozy cottage, gold adventure star, snow-topped strawberry signpost | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | MA-04 | Christmas | Night | Indigo snowy forked paths, warm lit cottage and twinkling Christmas trees, berry lights and crescent | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -33,7 +33,8 @@ In `BerryModes.swift` Home screen, **More Adventures** uses `BerryGridNavigation
 ## Gates and milestones
 - [x] Verify actual Home tile semantics and `MoreAdventures` asset lookup in existing SwiftUI source.
 - [x] Create isolated H1-B04 branch and running checklist.
-- [ ] Generate **MA-01 Halloween Day** as one standalone original; request explicit visual approval.
+- [x] Generate **MA-01 Halloween Day** as one standalone original and present for review.
+- [ ] MA-01 individual owner visual approval; do not advance to MA-02 until expressly accepted.
 - [ ] Continue MA-02 through MA-08, one image/owner approval at a time.
 - [ ] Prepare non-destructive original/RGBA QA ZIP, source hashes, previews and per-image approval manifest.
 - [ ] Verified GitHub Release importer, stage original binaries and inspect results.
@@ -47,3 +48,11 @@ In `BerryModes.swift` Home screen, **More Adventures** uses `BerryGridNavigation
 - **Night Garden:** previous 40/40 original and RGBA visual approvals retained, with runtime integration still pending.
 
 Links: [Seasonal icon matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) · [Daily Harvest checklist](DAILY_HARVEST_SEASONAL_ICON_CHECKLIST.md) · [Seasonal epic #42](https://github.com/ValentineBSAA/IPhone-Apps/issues/42).
+
+
+### MA-01 artwork generation review gate
+- [x] MA-01 Halloween Day generated and displayed in chat, depicting three clearly distinct route symbols on a strawberry garden signpost: Blitz lightning, Cozy Cottage, and Nightmare moon/stars. Seasonal Halloween ornaments surround rather than replace the three-choice meaning.
+- [ ] **Owner visual approval pending.** Next item MA-02 Halloween Night only after acceptance.
+- [ ] Exact-original PNG hash/archive, true RGBA matte QA, 64/96px scale and GitHub import are not yet done. Existing Night Garden and prior seasonal art untouched.
+
+**H1-B04 tally: 1/8 generated, 0/8 visually approved.**
