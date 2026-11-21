@@ -113,3 +113,10 @@ One-tap **Create scenario → Run checks → Review PASS/FAIL evidence → Disca
 - [x] [Scenario coverage catalog](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) updated to **54 total**: 2 previously automated-pass/device-pending, 6 new implemented-untested, 44 future planned, 2 not implemented. CI result and physical QA pending.
 - [ ] **D0c** must inject isolated stores into actual production shop/tool and game save handlers before claiming end-to-end purchase or save migration tests. Current D0b mock wallets do not validate the live transactional pipeline.
 - [ ] Run 17 selected XCTests and Release compile-exclusion gate, inspect logs, then physical owner iPhone 16e acceptance before app version or IPA decision. Draft PR #64 remains unmerged.
+
+
+## D0b successful iPhone 16e simulator gate · November 20, 2026
+- [x] [D0b workflow #44864274159, attempt 2](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44864274159) finished **SUCCESS**; actual job log reports **17/17 selected XCTest passed, zero failures** (6 previous D0 and 11 new D0b).
+- [x] Debug simulator named iPhone 16e, Release compiled with internal-only QA sandbox excluded, source/art/audio checks passed, no IPA shipped. CI runner-path and missing-`try` test syntax errors corrected, with both failures preserved in the [D0b QA ledger](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d0b-state-time-lab/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D0B_ISOLATED_STATE_LAB_QA.md).
+- [x] [Scenario catalog](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) currently **54** test contracts: 8 `automated_pass_device_pending` (2 D0 + 6 D0b), 44 `planned`, 2 `not_implemented`; this is NOT 54/54 tested.
+- [ ] Physical-owner iPhone 16e interface checks, **D0c injected real shop/save handler tests**, complete gameplay regression and merge/release approval remain open. D0b mock price checks do not assert production checkout safety.
