@@ -234,7 +234,6 @@ final class BerryPremiumAdvancedRescueIsolationTests: XCTestCase {
 
         // Existing purchased rescue charge means the combined checkout
         // must not debit again. Use the charge through its separate action.
-        store.set(250, forKey: "qa.unused") // isolated marker, no player key
         store.set(["golden-strawberry": 1], forKey: chargesKey)
         let chargedGame = open(store)
         XCTAssertFalse(chargedGame.buyAndUseGoldenStrawberry())
