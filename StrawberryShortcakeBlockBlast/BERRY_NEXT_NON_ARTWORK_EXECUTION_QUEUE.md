@@ -43,3 +43,12 @@
 - [ ] Only after approval, decide build number, IPA, merge/release. **Do not infer app readiness from image ZIP validation or green source-only tests.**
 
 **Immediate scope during artwork generation cooldown:** advance H5 deterministic calendar routing and tests, formalize remaining alpha QA, and preserve Build 4.5 unresolved invalid-tool check without blocking all progress.
+
+
+## New workstream: Advanced Developer Garden QA Cockpit (D0–D7)
+- [x] Actual Build 4.6 Developer Garden implementation audited before writing this plan: hidden Settings long-press, PIN, two-column cards, read-only diagnostics/saves, economy inspector, combo preview and existing **live-wallet QA grant** identified.
+- [x] Dedicated [Issue #61](https://github.com/ValentineBSAA/IPhone-Apps/issues/61), [developer QA roadmap](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_GARDEN_QA_COCKPIT_ROADMAP.md), and [draft planning PR #62](https://github.com/ValentineBSAA/IPhone-Apps/pull/62) opened.
+- [ ] **D0 FIRST:** isolated, disposable test-fixture state and explicit restoration/cleanup with tests proving real saves, inventory, currency and gifts unchanged. Do not route existing permanent QA wallet grants into this sandbox.
+- [ ] D1 scenario gallery and one-tap Setup/Run/Results/Discard; D2 board/gameplay modes; D3 special tools, invalid charges, shops and wallet; D4 Story/Daily/quests/birthday/upgrade/save scenarios; D5 H5 seasonal/time previews and future Night game; D6 audio/visual/input/performance; D7 CI/regression receipts.
+- [ ] User goal: no long grinding just to reach line clears, high combos, game over, locked quests, near-expiry timers, invalid tool states, or rare rewards. Every fixture reports deterministic expected/actual outcomes, with BLOCKED/NOT IMPLEMENTED distinguished from PASS.
+- [ ] Roadmap is **design-only**; no new Developer Garden UI, sandbox engine integration, app release or IPA has been made.
