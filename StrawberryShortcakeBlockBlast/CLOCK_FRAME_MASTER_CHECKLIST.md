@@ -26,7 +26,7 @@ Each holiday needs a new, individually illustrated **Day** and **Night** counter
 
 | ID | Batch | Holiday | Appearance | Illustration | Visual review | RGBA QA | GitHub source | Runtime |
 |---|---|---|---|---|---|---|---|---|
-| C-03 | C-B02 | Halloween | Day | ⬜ next | ⬜ | ⬜ | ⬜ | ⬜ |
+| C-03 | C-B02 | Halloween | Day | 🟡 GENERATED, owner review pending | ⬜ NOT APPROVED | ⚠ RGB with checkerboard baked into background, needs RGBA cleanup after approval | ⬜ | ⬜ |
 | C-04 | C-B02 | Halloween | Night | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | C-05 | C-B03 | Christmas | Day | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | C-06 | C-B03 | Christmas | Night | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -54,7 +54,9 @@ Each holiday needs a new, individually illustrated **Day** and **Night** counter
 - [ ] Release-triggered GitHub import succeeds and the two binary original source PNGs are verified in the isolated branch.
 - [ ] Native SwiftUI clock overlay integrated and verified at live 12-hour clock, timezone and foreground updates.
 - [ ] Test on iPhone 16e: safe height/width, text contrast/size, accessibility, correct automatic 6AM/6PM standard Day/Night transition.
-- [ ] Produce C-03 Halloween Day image, then one-by-one through C-10 after owner approvals.
+- [x] Produce C-03 Halloween Day **review candidate** (single image only). Not approved until owner responds; source currently RGB and includes checkerboard background, so do NOT present it as true RGBA or import it into Xcode.
+- [ ] Owner visually accepts or requests a redo of C-03. After acceptance, remove its baked checkerboard cleanly and audit alpha before packaging.
+- [ ] Continue C-04 Halloween Night, then one-by-one through C-10, only after each owner approval.
 - [ ] Optional later: seasonal overlay priority/region/holiday calendar QA from H0 without invasive location/GPS.
 
 **Always label each image and status explicitly. Never say source PNGs have landed on GitHub until the import workflow confirms it.**
