@@ -23,8 +23,8 @@ In `BerryModes.swift` Home screen, **More Adventures** uses `BerryGridNavigation
 |---|---|---|---|---|---|---|---|---|
 | MA-01 | Halloween | Day | Sunlit autumn garden crossroads with strawberry signpost, three icon routes (lightning, cottage, moon), lantern berries, autumn gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ RGBA/edge QA pending | ⬜ original PNG import pending | ⬜ |
 | MA-02 | Halloween | Night | Moonlit violet strawberry crossroads with lightning, warm cottage and moon/star arrows; glowing berry lanterns and pumpkins | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ background/alpha QA pending | ⬜ source PNG import pending | ⬜ |
-| MA-03 | Christmas | Day | Sunlit snowy strawberry crossroads with lightning, cottage and crescent/star arrows, evergreen lights, holly, candy canes and red-green gingham | 🟡 GENERATED | ⬜ AWAITING OWNER | ⬜ alpha/edge QA pending | ⬜ original PNG not staged | ⬜ |
-| MA-04 | Christmas | Night | Indigo snowy forked paths, warm lit cottage and twinkling Christmas trees, berry lights and crescent | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| MA-03 | Christmas | Day | Sunlit snowy strawberry crossroads with lightning, cottage and crescent/star arrows, evergreen lights, holly, candy canes and red-green gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ original PNG not staged | ⬜ |
+| MA-04 | Christmas | Night | Moonlit snowy crossroads with three symbolic routes, lit strawberry cottage, glowing holiday trees and red-green gingham | ⬜ NEXT: single original generation | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
 | MA-05 | Thanksgiving | Day | Amber harvest three-path signpost, maple leaves, pumpkins, berry pie, berry harvest basket | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | MA-06 | Thanksgiving | Night | Candlelit plum/gold garden fork, moonlit pumpkin-berry lanterns, pie and autumn foliage | ⬜ | ⬜ | ⬜ | ⬜ |
 | MA-07 | Birthday | Day | Festive pink garden three-way signpost, strawberry cake, present, balloons and gold chapter-style star | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -88,3 +88,11 @@ Links: [Seasonal icon matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) · [Daily Ha
 - [ ] Preserve original PNG unchanged; actual RGBA/alpha and edge QA, 64/96px previews, checked source ZIP, binary GitHub upload, Xcode and physical iPhone acceptance still pending.
 
 **Current H1-B04 tally: 3/8 generated, 2/8 visually owner-approved.**
+
+
+### MA-03 approved · MA-04 Christmas Night queued
+- [x] **MA-03 Christmas Day** visually approved by owner (“Good continue”). Freeze the generated bright snow-and-sun three-signpost original; do not overwrite or regenerate.
+- [ ] **NEXT MA-04 Christmas Night**: one standalone moonlit companion with three recognizable arrows for Berry Blitz lightning, Cozy Cottage strawberry cottage and Strawberry Nightmare crescent/star, snowy evergreen fairy lights and warm cottage glow. No text or printed status.
+- [ ] Await explicit MA-04 visual approval before moving to MA-05 Thanksgiving Day; original file archive, alpha/edge QA, RGBA candidate, ZIP and verified GitHub binary staging remain independent requirements.
+
+**Current More Adventures approvals: 3/8, MA-04 next.**
