@@ -35,8 +35,10 @@ enum BerryStandardToolCheckout {
     /// performs the existing wallet, ledger, and save updates; a test provides
     /// an isolated UserDefaults suite and isolated BerryEconomyLedger instead.
     ///
-    /// This is intentionally synchronous and NOT an idempotent UI purchase
-    /// token or a crash-safe multi-key database transaction.
+    /// This synchronous executor alone is not durable. Production
+    /// BerryGameSession wraps its commit in BerryStandardPurchaseJournal for
+    /// replayable interruption recovery. Neither is a power-loss-durable,
+    /// multi-key database transaction or a UI checkout idempotency token.
     @discardableResult
     static func purchase(
         _ tool: BerryStandardToolKind,
