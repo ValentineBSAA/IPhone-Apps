@@ -95,3 +95,10 @@
 - [x] Actual `BerryGameSession` Undo/Shuffle/Hint purchase and Hint charge use routes through the same defensive no-overflow, no-insufficient-funds reducer used by the disposable Developer Garden State & Timer Lab.
 - [x] [Scenario registry](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) remains honest: **10/56 simulator verified, 44 planned, 2 not implemented**, zero physically accepted in the D0 series.
 - [ ] Next step: injected production checkout/ledger/save adapters and physical owner iPhone 16e review, before any app release or merge. PR #66 intentionally draft.
+
+
+## D0d live GameSession checkout isolated test fixtures
+- [x] [Draft PR #67](https://github.com/ValentineBSAA/IPhone-Apps/pull/67) exercises real standard-tool checkout methods and real ledger in independently named, disposable `UserDefaults` suites. It shares a validated checkout callback across production and QA rather than only testing mock balances.
+- [x] Nine new iOS XCTest methods cover exact live purchases, saved inventory, real ledger totals, reopening the game session, legacy missing-Hint compatibility and rejected-checkout zero writes; selected combined 40-test [D0d workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0d-real-checkout-isolation-iphone16e.yml).
+- [x] [59-scenario coverage catalog](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) includes three D0d `implemented_untested` contracts while CI pending, plus 10 previously simulator passed.
+- [ ] CI terminal proof, actual iPhone UI acceptance, partial-commit/crash-recovery testing and full-game save/service isolation are separate. No IPA/new artwork/game release.
