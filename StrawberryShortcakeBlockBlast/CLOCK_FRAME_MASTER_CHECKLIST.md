@@ -33,7 +33,7 @@ Each holiday needs a new, individually illustrated **Day** and **Night** counter
 | C-07 | C-B04 | Thanksgiving | Day | ✅ original generated | ✅ OWNER APPROVED | ⬜ RGBA/edge QA pending | ⬜ source package pending | ⬜ |
 | C-08 | C-B04 | Thanksgiving | Night | ✅ original generated | ✅ OWNER APPROVED | ⚠ checkerboard may be baked in; alpha verification/cleanup pending | ⬜ source package pending | ⬜ |
 | C-09 | C-B05 | Birthday | Day | ✅ original generated | ✅ OWNER APPROVED | ⬜ source alpha edge QA pending | ⬜ source package pending | ⬜ |
-| C-10 | C-B05 | Birthday | Night | ⬜ NEXT: one image to generate and review | ⬜ | ⬜ | ⬜ | ⬜ |
+| C-10 | C-B05 | Birthday | Night | ✅ original generated | ✅ OWNER APPROVED | ⚠ verify alpha/checkerboard edge, cleanup pending | ⬜ source package pending | ⬜ |
 
 **Thanksgiving reference:** owner previously accepted the harvest-themed wide strawberry clock plaque as the holiday *design baseline*, not as a replacement for the two regular clock images. This does **not** automatically approve both final Thanksgiving clock counterparts.
 
@@ -104,3 +104,14 @@ C-03 Halloween Day and C-04 Halloween Night are approved visual designs by owner
 - [ ] Once C-10 accepted, assemble the **complete 10-clock family** in source originals / RGBA QA candidates / manifest / checker-light-dark proofs / ZIP, preserving all approved existing asset bytes and all Night Garden art separately.
 
 **Visual approvals now 9/10: Regular Day/Night 2, Halloween Day/Night 2, Christmas Day/Night 2, Thanksgiving Day/Night 2, Birthday Day 1.** Runtime and asset-pack status are independent.
+
+
+## Clock visual family COMPLETE: C-10 owner approval (November 20, 2026)
+- [x] **C-10 Birthday Night**: owner explicitly approved the lavender-purple moonlit birthday digital-clock plaque, strawberry ribbon, cake/candle, balloons, gifts and empty dynamic digital-time center.
+- [x] All ten designs visually owner-approved: C-01/C-02 regular Day/Night, C-03/C-04 Halloween, C-05/C-06 Christmas, C-07/C-08 Thanksgiving, C-09/C-10 Birthday.
+- [ ] NEXT STAGE: freeze approved originals, inspect each for true alpha vs baked checkerboard, remove any baked checkerboards with careful visual QA, produce non-destructive RGBA candidates and checker/light/dark 64px and 96px contact sheets.
+- [ ] Build full family ZIP with individual hashes, original and RGBA folders, approval statuses, and import workflow; upload to verified GitHub staging without changing any existing Night Garden or app Xcode assets.
+- [ ] After 10/10 source/RGBA QC and staging, move into separate seasonal icon families from `SEASONAL_MASTER_ICON_BATCH_MATRIX.md`, using **one-image-at-a-time owner review** and holiday Day/Night pairing.
+- [ ] Native SwiftUI `h:mm a` live overlay, locale and day/night switching, accessibility, physical iPhone QA and Xcode integration are separate future release gates.
+
+**Visual design approvals: 10/10 COMPLETE. Technical RGBA/packaging/GitHub source import: IN PROGRESS, not complete.**
