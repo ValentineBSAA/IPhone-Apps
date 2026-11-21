@@ -348,21 +348,17 @@ struct PosiesMedicationReferenceDetail: View {
                 GlassCard {
                     VStack(alignment: .leading, spacing: 9) {
                         Text("Check current official information").font(.headline)
-                        Link {
+                        Link(destination: reference.detailURL) {
                             Label(reference.hasDirectReference ?
                                   "Read MedlinePlus information for this medicine" :
                                   "Search MedlinePlus for this medicine",
                                   systemImage: "arrow.up.right.square")
                                 .font(.subheadline)
-                        } destination: {
-                            reference.detailURL
                         }
-                        Link {
+                        Link(destination: URL(string: "https://dailymed.nlm.nih.gov/dailymed/")!) {
                             Label("Search FDA-submitted labeling on DailyMed",
                                   systemImage: "arrow.up.right.square")
                                 .font(.subheadline)
-                        } destination: {
-                            URL(string: "https://dailymed.nlm.nih.gov/dailymed/")!
                         }
                         Text("Reference names and brief cautions reviewed \(PosiesMedicationCatalog.reviewedOn). Official labels may change after this date.")
                             .font(.caption).foregroundStyle(Color.potsSecondary)
