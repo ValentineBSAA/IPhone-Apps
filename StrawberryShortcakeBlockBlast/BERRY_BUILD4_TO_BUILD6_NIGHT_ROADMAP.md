@@ -327,3 +327,9 @@ Recommended sequence alongside existing milestones: H5 nonvisual calendar smoke/
 - [x] [D0c run #44865715817](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44865715817) successful on named iPhone 16e simulator: **31/31 selected XCTest** (6 D0 board, 11 D0b policy, 10 D0c shared transaction, 4 economy), **zero failures** and QA controls excluded from Release.
 - [x] Existing Undo/Shuffle/Hint game purchase handlers now invoke the same pure transaction safety rules as disposable sandbox, retaining unchanged prices and persistent purchase side effects for valid states. No image generation, IPA or version change.
 - [ ] Still gated: physical iPhone UI, complete live shop and saved-state adapter QA, Build 4.5 blocked-tool charge acceptance, wider Night/Story/Quest regression. D0c [PR #66](https://github.com/ValentineBSAA/IPhone-Apps/pull/66) stays draft.
+
+
+## D0d real standard-tool checkout, isolated wallet and ledger · November 20, 2026
+- [x] [Draft PR #67](https://github.com/ValentineBSAA/IPhone-Apps/pull/67) refines actual GameSession Undo/Shuffle/Hint purchasing so tests can supply their own separate inventory preferences and actual ledger, while production defaults remain exactly the established storage/recording behavior.
+- [x] Nine new selected iPhone XCTest cases and [D0d test workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0d-real-checkout-isolation-iphone16e.yml) cover actual purchase persistence, 8/12/24 save-key nonmutation, historical missing Hint compatibility, too-few-berries/overflow and no real spend recording.
+- [ ] Confirm complete 40-test regression plus QA-free Release compilation; physical owner iPhone and future Daily/Story/Boutique/Night integration independently pending. No user saves or existing artwork changed.
