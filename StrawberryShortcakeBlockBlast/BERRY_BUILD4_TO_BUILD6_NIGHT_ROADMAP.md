@@ -321,3 +321,9 @@ Recommended sequence alongside existing milestones: H5 nonvisual calendar smoke/
 - [x] [Draft PR #66](https://github.com/ValentineBSAA/IPhone-Apps/pull/66) uses a common tool transaction reducer in both the real game Undo/Shuffle/Hint buying methods and the Developer Garden isolated wallet, addressing the previous mock-policy divergence. Preserves same normal prices, save and ledger behavior, with overflow/negative-state guards.
 - [x] Ten new shared-rule tests added, plus D0 and D0b regression selected; [named iPhone 16e workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0c-shared-tools-iphone16e.yml) gates any acceptance.
 - [ ] Next real store/ledger/save injection and physical QA before shipping. Build 4.7/4.8/5/6 and seasonal art remain independent planned work; no new IPA and no changes to main gameplay.
+
+
+## ✅ D0c transaction decision regression accepted · November 20, 2026
+- [x] [D0c run #44865715817](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44865715817) successful on named iPhone 16e simulator: **31/31 selected XCTest** (6 D0 board, 11 D0b policy, 10 D0c shared transaction, 4 economy), **zero failures** and QA controls excluded from Release.
+- [x] Existing Undo/Shuffle/Hint game purchase handlers now invoke the same pure transaction safety rules as disposable sandbox, retaining unchanged prices and persistent purchase side effects for valid states. No image generation, IPA or version change.
+- [ ] Still gated: physical iPhone UI, complete live shop and saved-state adapter QA, Build 4.5 blocked-tool charge acceptance, wider Night/Story/Quest regression. D0c [PR #66](https://github.com/ValentineBSAA/IPhone-Apps/pull/66) stays draft.
