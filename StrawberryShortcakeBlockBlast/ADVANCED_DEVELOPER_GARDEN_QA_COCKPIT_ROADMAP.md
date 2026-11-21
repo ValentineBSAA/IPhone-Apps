@@ -137,3 +137,12 @@ One-tap **Create scenario → Run checks → Review PASS/FAIL evidence → Disca
 - [x] Release build compiled and excluded the `BERRY_INTERNAL_QA` panels/fake wallets. Approved artwork/audio integrity unchanged, no IPA or release artifact.
 - [x] Two D0c contracts promoted to `automated_pass_device_pending` in the [56-contract catalog](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json): **10 simulator-pass/device-pending, 44 planned, 2 not implemented**.
 - [ ] D0c [draft PR #66](https://github.com/ValentineBSAA/IPhone-Apps/pull/66) remains unmerged; physical iPhone testing and injected real checkout, ledger and save-disk paths are NOT accepted. Keep next D0d small and isolated.
+
+
+## D0d actual-session isolated checkout and ledger · November 20, 2026
+- [x] New [draft PR #67](https://github.com/ValentineBSAA/IPhone-Apps/pull/67), based on D0c. Real `BerryGameSession.buyUndo/buyShuffle/buyHint` now share `BerryStandardToolCheckout` with the QA lab, retaining original prices and save/ledger effects via a checked callback.
+- [x] Normal app still constructs `BerryGameSession()` with original `UserDefaults.standard` / `BerryEconomyLedger.shared`. New injected `checkoutDefaults` and isolated real ledger can be supplied in a test session, proving actual inventory encoding, ledger writes and reload without touching player data.
+- [x] Added **9 D0d actual-session XCTest cases**, including purchase/reopen, insufficient funds and overflow no-write, legacy missing-hint compatibility and proof of unchanged real preferences. Combined selected regression **40 XCTest methods** on named iPhone 16e, Release QA exclusion enforced in [D0d workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0d-real-checkout-isolation-iphone16e.yml).
+- [x] QA registry now **59 scenarios**: 10 earlier simulator-pass/device-pending, 3 D0d implemented-untested, 44 planned, 2 not implemented.
+- [ ] Actual checkout workflow test job and Release safety result to verify before promoting scenarios.
+- [ ] Other Story/Daily/Boutique/premium/quests save handlers remain singleton-backed and **not D0d-injection-certified**. UserDefaults inventory and ledger are separate non-atomic writes; crash-recovery and full-UI/hardware QA remain open. Do not rush a production merge or IPA.
