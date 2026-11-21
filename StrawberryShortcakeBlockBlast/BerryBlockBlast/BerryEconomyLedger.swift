@@ -36,6 +36,19 @@ final class BerryEconomyLedger: ObservableObject {
         defaults.set(spentByItem, forKey: Self.spendingByItemKey)
     }
 
+    /// Restore an already authorized standard-tool purchase by assigning
+    /// absolute after-values. Safe to replay after an interrupted write:
+    /// unlike recordSpend, this never counts the same purchase twice.
+    /// Only the purchased item's slot is modified, preserving other items.
+    func applyStandardToolSpendRecovery(totalAfter: Int, item: String,
+                                        itemAfter: Int) {
+        guard totalAfter >= 0, itemAfter >= 0, !item.isEmpty else { return }
+        spent = totalAfter
+        spentByItem[item] = itemAfter
+        defaults.set(spent, forKey: Self.spentKey)
+        defaults.set(spentByItem, forKey: Self.spendingByItemKey)
+    }
+
     /// Only actual line-earned strawberries are attributed to a game mode.
     /// Story prizes, tutorial rewards and quest prizes remain outside this
     /// per-mode breakdown instead of inventing a source mode.
