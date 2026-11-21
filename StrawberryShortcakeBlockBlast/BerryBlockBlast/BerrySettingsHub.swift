@@ -290,10 +290,18 @@ struct BerrySettingsHubView: View {
                     Text("Birthday Day").bold()
                     Picker("Day", selection: $birthdayDay) {
                         Text("Not Set").tag(0)
-                        ForEach(1...31, id: \.self) { n in Text("\(n)").tag(n) }
+                        ForEach(1...BerryBirthdayPolicy.maximumDay(month: birthdayMonth), id: \.self) { n in Text("\(n)").tag(n) }
                     }
                     .pickerStyle(.menu)
                 }.settingCard()
+            }
+            if birthdayMonth > 0 && birthdayDay > 0 &&
+               !BerryBirthdayPolicy.isValid(month: birthdayMonth, day: birthdayDay) {
+                Text("That date isn't available in your selected month. Choose a valid day to enable the birthday celebration.")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(BerryStyle.strawberry)
+                    .multilineTextAlignment(.center)
+                    .accessibilityLabel("Birthday date needs correction")
             }
             if birthdayToday {
                 Text("🎂 Happy Birthday! Your Strawberry Village is celebrating.")
@@ -331,11 +339,8 @@ struct BerrySettingsHubView: View {
     }
 
     private var birthdayToday: Bool {
-        let today = Date()
-        let calendar = Calendar.current
-        return birthdayMonth > 0 && birthdayDay > 0 &&
-            calendar.component(.month, from: today) == birthdayMonth &&
-            calendar.component(.day, from: today) == birthdayDay
+        BerryBirthdayPolicy.isBirthday(month: birthdayMonth,
+                                       day: birthdayDay, on: Date())
     }
     private func surfaceName(_ id: String) -> String {
         switch id {
