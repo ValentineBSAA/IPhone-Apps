@@ -263,3 +263,19 @@ D1b exact QA ledger: [Cottage & Premium Saved-Garden Safety](https://github.com/
 - [ ] **Next D2c**: actual positive-use Ribbon Twister + Picnic Pantry on seeded boards, 24×24 Golden Strawberry Game Over rescue and restart, plus engine/test UI adapters. Then Story/Daily/quests/birthday, full day/night seasonal art and Night Market requirements remain on original game roadmap.
 
 [D2b detailed QA file](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d2b-one-tap-tool-action-lab/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D2B_ONE_TAP_TOOL_ACTION_QA.md). The final product still aims at an entire berry puzzle game, not merely this debug cockpit.
+
+---
+
+## D2c real premium handler QA staged · November 20, 2026
+
+- [x] [D2c draft PR #75](https://github.com/ValentineBSAA/IPhone-Apps/pull/75), stacked on D2b PR #74, implements narrow **real premium handler and rescue** coverage, not another general release.
+- [x] Safety fix: combined `BerryGameSession.buyAndUseGoldenStrawberry()` now uses `checkoutLedger` for spending and `checkoutDefaults` for reward receipts instead of shared/global storage, matching production defaults and ensuring isolated QA sessions do not change actual player data. Removed unsupported claim that multi-key UserDefaults writes are crash-atomic.
+- [x] **Eight D2c real-session XCTest** cover valid non-symmetric Ribbon Twister rotation/reopen, invalid Twister guards, Picnic Pantry stash/swap/reopen, invalid Pantry guards, 24×24 Golden Strawberry clearing occupied cells in all four quadrants while preserving 8/12 saved runs, exact 250-berry combined buy/rescue/reopen with isolated real ledger/receipt, negative combined rescue guards, and normal-player key nonmutation.
+- [ ] [D2c Actions #44871838416](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44871838416) selects **102 XCTest** (D0–D2b 94 + D2c eight), on named iPhone16e simulator. Verify actual terminal 102/102 PASS, production Release QA-exclusion and no IPA **before** acceptance. Do not imply that code existing proves it.
+- [ ] [D2b #44871494518](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44871494518), 94 selected, was in progress when D2c was committed. Confirm its terminal run independently, fix any failure before accepting D2b as a stable parent.
+- [x] Coverage catalog now has **98 contracts**: 37 previously simulator verified/device pending, 7 D2b simulator-pending, 8 D2c simulator-pending, 44 planned, 2 future Night not implemented. Not 98 passed tests.
+- [ ] D2d: expose **four new disposable one-tap D2c actions** in Tool Action Lab after D2c source passes simulator CI (Twister, Pantry, Mega Golden, combined rescue). Keep two-column cards, expected/actual receipts, full temporary-suite isolation and non-player wallet guarantees.
+- [ ] Story **Game Over** production View and authentic blocked-run checkout UI have not been tested; D2c currently tests an occupied playable Endless board's combined handler only. Never claim the actual Story Game Over purchase path is verified. Crash-atomic multi-key purchase durability, full owner physical QA and the rest of the game remain pending.
+- [ ] Next broader targets: D3 actual Daily/Story/quests/birthday tests with injectable persistence, D4 seasonal approved artwork, Build4.7/4.8 Day/Night parity, Build5 Village/quests and Build6 distinct Night modes, Moonberry wallet and Night Market. **Keep working on the whole game, not only the Developer Garden.**
+
+[Exact D2c QA ledger](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d2c-premium-actions-rescue/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D2C_PREMIUM_ACTION_RESCUE_QA.md).
