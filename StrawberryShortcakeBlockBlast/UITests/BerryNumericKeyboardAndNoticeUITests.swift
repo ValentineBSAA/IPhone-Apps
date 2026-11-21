@@ -58,12 +58,15 @@ final class BerryNumericKeyboardAndNoticeUITests: XCTestCase {
         XCTAssertTrue(more.waitForExistence(timeout: 10))
         more.tap()
         let devScroll = app.scrollViews["berry.developer.scroll"]
+        XCTAssertTrue(devScroll.waitForExistence(timeout: 10))
+        // The working Notification Test is intentionally first in advanced
+        // cards. Scroll once to bring that row onto the screen instead of
+        // querying isHittable on an offscreen LazyVGrid cell (XCUITest can
+        // throw "Activation point invalid" before it can auto-scroll).
+        devScroll.swipeUp()
         let notices = app.buttons["berry.developer.tool.Notification Test"]
-        for _ in 0..<12 {
-            if notices.isHittable { break }
-            devScroll.swipeUp()
-        }
-        XCTAssertTrue(notices.isHittable, "Actual notification preview tool must be reachable")
+        XCTAssertTrue(notices.waitForExistence(timeout: 10),
+                      "Notification Test card should exist in the expanded grid")
         notices.tap()
         XCTAssertTrue(app.staticTexts["STRAWBERRY NOTICE STUDIO • SAFE PREVIEW"]
                       .waitForExistence(timeout: 10))
