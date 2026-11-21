@@ -27,8 +27,8 @@ In `BerryModes.swift` Home screen, **More Adventures** uses `BerryGridNavigation
 | MA-04 | Christmas | Night | Moonlit snow-covered three-way strawberry signpost, luminous holiday pines, cottage windows and red-green gingham; second/latest visual chosen | ✅ GENERATED | ✅ OWNER ACCEPTED (latest shown image) | ⬜ actual alpha/edge QA pending | ⬜ source archive pending | ⬜ |
 | MA-05 | Thanksgiving | Day | Sunlit golden strawberry crossroads, three route icons, autumn leaves and trees, pumpkins, lattice berry pie, woven harvest basket and orange gingham bow | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ background/alpha QA pending | ⬜ original PNG not staged | ⬜ |
 | MA-06 | Thanksgiving | Night | Moonlit purple/amber garden crossroads, three symbol-only routes, lanterns, pumpkins, maple foliage, berry pie and basket | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ checkerboard/alpha edge QA pending | ⬜ original PNG not staged | ⬜ |
-| MA-07 | Birthday | Day | Sunlit pink strawberry garden crossroads, three paths (lightning, strawberry cottage, crescent/stars), birthday cake, balloons, present and pink gingham | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ verify actual alpha/checkerboard | ⬜ original PNG not staged | ⬜ |
-| MA-08 | Birthday | Night | Lavender birthday crossroads, moonlit bunting, candle glow, balloons, strawberry confetti | ⬜ | ⬜ | ⬜ | ⬜ |
+| MA-07 | Birthday | Day | Sunlit pink strawberry garden crossroads, three paths (lightning, strawberry cottage, crescent/stars), birthday cake, balloons, present and pink gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ verify actual alpha/checkerboard | ⬜ original PNG not staged | ⬜ |
+| MA-08 | Birthday | Night | Moonlit lavender three-path signpost, strawberry birthday cake, illuminated balloons, gifts, golden stars and pink-purple gingham | ⬜ NEXT: generate one original | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
 
 ## Gates and milestones
 - [x] Verify actual Home tile semantics and `MoreAdventures` asset lookup in existing SwiftUI source.
@@ -152,3 +152,11 @@ Links: [Seasonal icon matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) · [Daily Ha
 - [ ] Apparent checkerboard background needs real PNG alpha and edge verification. Preserve source PNG; non-destructive RGBA candidate, small previews, checked ZIP and GitHub binary upload still pending.
 
 **More Adventures current: 7/8 generated, 6/8 visually approved; MA-07 awaits review.**
+
+
+### MA-07 owner approval and MA-08 final design queued
+- [x] **MA-07 Birthday Day** visually approved by owner (“Good continue”). Preserve existing image with three arrow symbols (lightning, strawberry cottage, crescent/stars), sunny sky, cake, balloons, present and pink bow.
+- [ ] **NEXT MA-08 Birthday Night**: one independent image of the same three choices, with a deep violet starry sky, golden moon, candlelit birthday cake, pink/lavender balloons, gift, glowing garden lanterns and strawberry-themed gingham ribbon. Await explicit owner visual acceptance before calling More Adventures 8/8 approved.
+- [ ] PNG original preservation, RGBA checking and cleanup, 64/96px light/dark/checker proofs, complete 8-image SHA256 ZIP, GitHub image binary import and iPhone QA remain separate pending gates.
+
+**Current More Adventures visually approved: 7/8.**
