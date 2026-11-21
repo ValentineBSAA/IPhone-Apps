@@ -355,3 +355,18 @@ D1b exact QA ledger: [Cottage & Premium Saved-Garden Safety](https://github.com/
 - [ ] **Next**: D3d internal one-tap Story/Quest QA UI + birthday-safe actions, authentic SwiftUI gameplay/quest button user-interaction tests, final approved Home/Village/Quest/Journal art, all seasonal Day/Night variants and distinct Night Market mechanics. Owner physical iPhone 16e acceptance, 8/12/24 saved-state migration and wide mode regression remain separate.
 
 [D3c exact source/QA ledger](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d3c-quest-story-isolated-progression/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D3C_QUEST_STORY_VILLAGE_QA.md). No IPA, merge, signed upload or version bump.
+
+---
+
+## D3d five-card Quest & Story Lab internal implementation · November 20, 2026
+
+- [x] [D3b Daily completion/streak/rewards Actions #44872785775](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44872785775): **124/124 selected XCTest PASS**, zero failures; iPhone16e simulator, Release QA exclusion and no IPA.
+- [x] [D3d draft PR #82](https://github.com/ValentineBSAA/IPhone-Apps/pull/82) stacked on [D3c PR #81](https://github.com/ValentineBSAA/IPhone-Apps/pull/81), extends the internal **two-column** Developer Garden with a **Quest & Story Lab** alongside existing eleven-card Tool Action Lab.
+- [x] Five actual single-tap disposable GameSession/Progression scenarios: Garden Gardener 18 moves, 20 berries once + restart; Story chapter 2 and Story Keeper 35+25=60 berries/2 receipts; three-of-four quest rotation across four virtual days; Village unlocks levels 1→2→4→5; and cross-store wrong-wallet refusal. Expected/Actual PASS/FAIL, repeat/reset and real owner-key nonmutation across four virtual dates. No phone clock change, no owner rewards or save writes.
+- [x] D3d `BERRY_INTERNAL_QA` model and native panel plus seven additional `BerryDeveloperQuestStoryLabTests`. [D3d Actions #44873363717](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44873363717) selects **139 XCTest** from the D0–D3c stack, source/audio/art/iOS16 preflight and Release QA symbols excluded, no IPA. **Pending terminal CI**, not an accepted pass.
+- [ ] D3c [132-case Actions #44873090908](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44873090908) terminal result pending; D4 approved art [128-case Actions #44873072496](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44873072496) is a **separate sibling branch** under PR #80. Do not claim a merged or simultaneously tested game build from these separate PRs.
+- [x] Master registry updated to **133 scenario contracts** (including 5 D3d implemented, CI pending), not 133 passed tests. Follow prior statuses and preserve D4 art requirements.
+- [ ] Owner iPhone16e physical acceptance for real Story/Quest screens, Developer Garden two-column cards, native taps and save integrity. D3d calls real models, not full user-facing touch workflows. Multi-key crash recovery remains unproven.
+- [ ] Next broad work: safe birthday/yearly-award tests, Daily/Story UI interactions, complete D4 owner-approved final art, seasonal Day/Night variation, Build 5 Village/quest growth, Build 6 Night Market/Moonberries and complete game release regression.
+
+[D3d QA ledger](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d3d-one-tap-quest-story-lab/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D3D_ONE_TAP_QUEST_STORY_QA.md). No merge, IPA, signed release or version bump.
