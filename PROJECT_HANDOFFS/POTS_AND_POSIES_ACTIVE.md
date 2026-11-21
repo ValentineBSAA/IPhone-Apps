@@ -2,12 +2,14 @@
 
 > **Authoritative handoff for continuing the full original POTS & Posies chat**. The conversation formerly called “POTS & Posies 0.1.8” advanced well beyond that version. Do not reset to 0.1.8 or discard v0.2.x work.
 
+**START HERE:** [Complete master roadmap and all agreed future features](POTS_AND_POSIES_MASTER_ROADMAP.md). It includes the long-term free-premium backlog, versioned plan, polish passes, immutable decisions and physical QA gates.
+
 ## Where we are
 - Repository: `ValentineBSAA/IPhone-Apps`.
 - Source: `POTSTracker/`.
 - Baseline on `main`: **v0.2.7, GitHub build 247**, per latest prior-device handoff.
 - **Active next build:** v0.2.8 "Premium Guided Care & Native Reminders" on branch `feature/pots-posies-v0.2.8-premium-care`.
-- GitHub Actions workflow: `.github/workflows/pots-build-1.yml`. Active pipeline when this handoff was authored: [run 270](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44846154529), source SHA `73dd762e186453e765cb022add377eef6c114592`. **Check its current conclusion before declaring success**. During preparation, simulator and physical-device *compilation* succeeded and an unsigned IPA artifact was uploaded. Simulator unit tests were still in progress.
+- GitHub Actions workflow: `.github/workflows/pots-build-1.yml`. Active pipeline when this handoff was authored: [run 270](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44846154529), source SHA `73dd762e186453e765cb022add377eef6c114592`. At the latest verified check, [CI run 270](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44846154529) **completed successfully**, including the build and automated tests. Physical-device acceptance is still required; always recheck the latest GitHub state before making release claims.
 - Build is unsigned; must be signed with an authorized compatible AltStore method. Build success is not physical-device acceptance.
 
 ## Immutable project constraints
@@ -42,6 +44,7 @@
 - [v0.2.8 CI run 270](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44846154529)
 - [Existing features and QA history](../POTSTracker/BUILD_CHECKLIST.md)
 - [v0.2.5 device QA plan](../POTSTracker/UX_V025.md)
+- [Complete master roadmap and cross-chat decisions](POTS_AND_POSIES_MASTER_ROADMAP.md)
 - [Premium feature roadmap](../POTSTracker/PREMIUM_FEATURE_ROADMAP.md)
 
 ## Next-chat instruction
