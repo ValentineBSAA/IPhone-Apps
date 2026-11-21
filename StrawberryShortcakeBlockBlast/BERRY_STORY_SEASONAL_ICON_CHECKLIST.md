@@ -26,7 +26,7 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 | BS-05 | Thanksgiving | Day | Warm harvest storybook, pie, maple leaves, cinnamon-gold chapter star | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/background QA pending | ⬜ source archive pending | ⬜ |
 | BS-06 | Thanksgiving | Night | Candlelit plum and amber storybook, pumpkin, moon and leaves | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/background QA pending | ⬜ source archive pending | ⬜ |
 | BS-07 | Birthday | Day | Open strawberry storybook, cake, balloons, gifts and golden chapter star | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ checkerboard transparency QA pending | ⬜ source archive pending | ⬜ |
-| BS-08 | Birthday | Night | Lavender birthday storybook with candlelight, confetti, midnight stars | ⬜ NEXT: generate one original | ⬜ awaiting owner review | ⬜ | ⬜ | ⬜ |
+| BS-08 | Birthday | Night | Lavender birthday storybook with candlelight, star, crescent, confetti and balloons | 🟡 GENERATED | ⬜ AWAITING OWNER | ⚠ inspect checkerboard/alpha later | ⬜ source archive pending | ⬜ |
 
 ### Review gates / packaging
 - [x] Verified GitHub master icon taxonomy: Berry Story = family #02; app Home source points to `BerryStory` and dynamic chapter status.
@@ -143,3 +143,11 @@ Berry Story is a **chapter-based game mode**, not a cottage building. The existi
 - [ ] Once BS-08 approved, package all eight Berry Story originals with provenance and SHA-256, then separate RGBA review, GitHub release import and later Xcode QA. Do not mark these steps complete early.
 
 **Current Berry Story approvals: 7/8, originals generated: 7/8.**
+
+
+### BS-08 Birthday Night generation checkpoint
+- [x] One Birthday Night open-book illustration generated and shown in chat, with star, crescent moon, glowing strawberry cake candle, balloons, present, pink gingham ribbon and violet night backdrop.
+- [ ] Await **explicit owner visual approval**; do not label image approved or the 8/8 family finished prematurely.
+- [ ] Check native alpha vs baked checkerboard before producing RGBA candidate; leave original unchanged. Package the full 8-image category after approval, with previews and SHA-256 source manifest, then separately stage binary PNGs in GitHub.
+
+**Current Berry Story progress: 8/8 generated, 7/8 owner visually approved; production RGBA/GitHub integration pending.**
