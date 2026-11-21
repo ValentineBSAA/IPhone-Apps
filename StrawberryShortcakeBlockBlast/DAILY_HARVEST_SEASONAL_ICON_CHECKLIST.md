@@ -27,8 +27,8 @@ Use a clear **little tear-off calendar page (without printed numbers)** as the c
 | DH-03 | Christmas | Day | Snow-topped red/green calendar, harvested strawberry basket, holly, bells, candy canes; approved second generated variant | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ baked checkerboard possible; alpha QA pending | ⬜ source import pending | ⬜ |
 | DH-04 | Christmas | Night | Moonlit snowy calendar with strawberry basket, glowing firs, gold crescent and stars, holly and bells | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ original import pending | ⬜ |
 | DH-05 | Thanksgiving | Day | Warm sunlit calendar, harvested strawberries, berry pie, pumpkins, corn, autumn maple leaves and orange gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ true-alpha/edge QA pending | ⬜ original source not staged | ⬜ |
-| DH-06 | Thanksgiving | Night | Moonlit calendar, harvest basket, berry pie, corn, pumpkins, lanterns and plum-orange gingham | 🟡 GENERATED | ⬜ AWAITING OWNER | ⬜ RGBA/edge QA pending | ⬜ original source not staged | ⬜ |
-| DH-07 | Birthday | Day | Pink candy calendar, strawberry cake and gift, confetti, bow and festive harvest basket | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| DH-06 | Thanksgiving | Night | Moonlit calendar, harvest basket, berry pie, corn, pumpkins, lanterns and plum-orange gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ RGBA/edge QA pending | ⬜ original source not staged | ⬜ |
+| DH-07 | Birthday | Day | Pink birthday calendar, strawberry cake, balloons, confetti, bow, festive harvest basket | ⬜ NEXT: generate single original | ⬜ awaiting owner review | ⬜ | ⬜ | ⬜ |
 | DH-08 | Birthday | Night | Lavender moonlit calendar, sparkling balloons, cake candle, berries and ribbon | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ## Current checklist
@@ -134,3 +134,11 @@ Links: [H1-B02 Berry Story running checklist](https://github.com/ValentineBSAA/I
 - [ ] Preserve exact PNG source; source import, true-alpha validation, checker/light/dark and 64/96px previews, and separately approved RGBA candidate remain open.
 
 **H1-B03 current: 6/8 generated, 5/8 owner visually approved.**
+
+
+### Latest owner checkpoint: DH-06 Thanksgiving Night approved, DH-07 next
+- [x] DH-06 Thanksgiving Night visually approved by owner (“Good continue”). Preserve existing generated moonlit calendar-and-harvest-basket design with berry pie, pumpkins, lanterns and plum-orange gingham.
+- [ ] **NEXT DH-07 Birthday Day**: one standalone glossy strawberry calendar + basket icon; birthday cake, balloons, gifts, confetti and pink gingham in a cheerful daytime setting. No printed date, numbers, status text or rewards. Owner approval required before DH-08 Birthday Night.
+- [ ] All source-image archival, RGBA/edge QA, contact sheets, ZIP checksums, GitHub binary import, Xcode integration and device QA remain separate pending steps.
+
+**Current tally: Daily Harvest 6/8 visually approved; DH-07 next.**
