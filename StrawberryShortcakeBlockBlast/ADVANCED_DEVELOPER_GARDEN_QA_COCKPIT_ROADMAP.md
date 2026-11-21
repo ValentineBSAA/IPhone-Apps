@@ -130,3 +130,10 @@ One-tap **Create scenario → Run checks → Review PASS/FAIL evidence → Disca
 - [ ] **D0c CI terminal pass** and physical user checks. No production merge/release or IPA while draft.
 - [ ] **Next D0d:** injection of real store/ledger/save dependencies, with isolated fixtures, before asserting full checkout, transaction atomicity or persistent migration testing.
 - [ ] User's existing Build 4.5 blocked-tool charge regression remains open for physical UI acceptance; no lengthy gameplay grinding needed when sandbox fixtures become production-backed.
+
+
+## ✅ D0c automated rule-parity acceptance · November 20, 2026
+- [x] [D0c Actions #44865715817](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44865715817) terminal **SUCCESS**. Exact iPhone 16e simulator log: **31 selected XCTests, 0 failures**, comprising D0 6, D0b 11, shared transaction 10, existing economy 4.
+- [x] Release build compiled and excluded the `BERRY_INTERNAL_QA` panels/fake wallets. Approved artwork/audio integrity unchanged, no IPA or release artifact.
+- [x] Two D0c contracts promoted to `automated_pass_device_pending` in the [56-contract catalog](ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json): **10 simulator-pass/device-pending, 44 planned, 2 not implemented**.
+- [ ] D0c [draft PR #66](https://github.com/ValentineBSAA/IPhone-Apps/pull/66) remains unmerged; physical iPhone testing and injected real checkout, ledger and save-disk paths are NOT accepted. Keep next D0d small and isolated.
