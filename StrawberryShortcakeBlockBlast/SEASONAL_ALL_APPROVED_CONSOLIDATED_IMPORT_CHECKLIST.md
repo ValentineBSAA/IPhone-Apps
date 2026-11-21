@@ -38,3 +38,13 @@ The previously supplied **Base Clock two-image ZIP** is also preserved in extrac
 The paths in the ZIP already begin at `StrawberryShortcakeBlockBlast/ArtSource/`. Upload the ZIP as a **GitHub Release asset**, not a loose file into `main` or into Xcode's `Assets.xcassets`. The importer stages only the ArtSource tree, refuses mismatched bytes on existing files, and verifies all hashes before committing.
 
 **Status:** Complete visually approved source consolidation, pending GitHub binary import and technical transparency approval. No runtime/gameplay/save/economy modifications.
+
+
+## Chat delivery-size fallback (same single master ZIP bytes, split for upload)
+- [x] Full master ZIP is verified, 318,953,250 bytes, pinned SHA-256 `2e9e321a70aef320e849cd18d82533ae9e86fd6a23a36b02e584a55e25d4c210`; too large for one ChatGPT downloadable attachment.
+- [x] Split exact ZIP bytes into eight *ordered* files `Berry_Berry_Blast_ALL_Approved_Seasonal_Artwork_GitHub_2026-11-20.zip.part01` through `.part08`: first seven 45,000,000 bytes each, eighth 3,953,250 bytes.
+- [x] Parts concatenated in order were locally verified to yield exactly the master ZIP SHA-256 above. Optional Windows script `Reassemble_Berry_Berry_Blast_Seasonal_Master.ps1` verifies the reassembled SHA if one physical ZIP is preferred.
+- [x] GitHub workflow on `main`: `.github/workflows/berry-approved-h1-consolidated-import.yml` now accepts EITHER the intact ZIP OR all eight parts attached to **one release** with tag `berry-h1-approved-all-20261120`, reassembles in order, checks SHA-256 + 55 original hashes + each archived file and stages only to the isolated branch.
+- [ ] User uploads all eight part files to a draft GitHub Release, then publishes it. **Do not publish before all eight attachments are present.** Verify workflow success; no GitHub PNG blob import has been claimed before it runs.
+
+Note: this fallback affects only delivery, not the 55 image designs, approved source bytes, manifest contents or QA status.
