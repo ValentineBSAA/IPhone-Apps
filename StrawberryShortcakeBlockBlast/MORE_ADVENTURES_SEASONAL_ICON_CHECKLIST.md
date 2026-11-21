@@ -23,7 +23,7 @@ In `BerryModes.swift` Home screen, **More Adventures** uses `BerryGridNavigation
 |---|---|---|---|---|---|---|---|---|
 | MA-01 | Halloween | Day | Sunlit autumn garden crossroads with strawberry signpost, three icon routes (lightning, cottage, moon), lantern berries, autumn gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ RGBA/edge QA pending | ⬜ original PNG import pending | ⬜ |
 | MA-02 | Halloween | Night | Moonlit violet strawberry crossroads with lightning, warm cottage and moon/star arrows; glowing berry lanterns and pumpkins | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ background/alpha QA pending | ⬜ source PNG import pending | ⬜ |
-| MA-03 | Christmas | Day | Sunlit snowy strawberry crossroads; lightning, cottage and crescent/star signs, festive evergreen, holly and candy cane decorations | ⬜ NEXT: generate one original | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
+| MA-03 | Christmas | Day | Sunlit snowy strawberry crossroads with lightning, cottage and crescent/star arrows, evergreen lights, holly, candy canes and red-green gingham | 🟡 GENERATED | ⬜ AWAITING OWNER | ⬜ alpha/edge QA pending | ⬜ original PNG not staged | ⬜ |
 | MA-04 | Christmas | Night | Indigo snowy forked paths, warm lit cottage and twinkling Christmas trees, berry lights and crescent | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | MA-05 | Thanksgiving | Day | Amber harvest three-path signpost, maple leaves, pumpkins, berry pie, berry harvest basket | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | MA-06 | Thanksgiving | Night | Candlelit plum/gold garden fork, moonlit pumpkin-berry lanterns, pie and autumn foliage | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -80,3 +80,11 @@ Links: [Seasonal icon matrix](SEASONAL_MASTER_ICON_BATCH_MATRIX.md) · [Daily Ha
 - [ ] MA-03 requires explicit owner approval before Christmas Night; source/RGBA alpha QA, full-size original archives, ZIP hashes and GitHub binary import are independent future gates.
 
 **H1-B04: 2/8 original designs approved; Christmas Day next.**
+
+
+### MA-03 Christmas Day generated · owner review gate
+- [x] One original MA-03 image created and displayed in chat: snowy sunny garden crossroads with the three distinctive icon arrows (lightning/Blitz, cottage/Cozy Cottage, crescent-star/Nightmare), strawberry-topped signpost, snowy Christmas trees, holly, candy canes and red-green gingham bow.
+- [ ] **Await explicit owner visual approval** before generating MA-04 Christmas Night. No unapproved variants counted.
+- [ ] Preserve original PNG unchanged; actual RGBA/alpha and edge QA, 64/96px previews, checked source ZIP, binary GitHub upload, Xcode and physical iPhone acceptance still pending.
+
+**Current H1-B04 tally: 3/8 generated, 2/8 visually owner-approved.**
