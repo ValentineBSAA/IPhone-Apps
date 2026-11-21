@@ -210,3 +210,10 @@
 - **Tests:** `POTSTracker/Tests/PosiesMedicationCabinetPolishTests.swift` checks old-profile decoding, structured round-trips, numeric and unit validation, catalog draft non-prescribing, and US fl oz inventory selection.
 - **Latest candidate CI:** [run 44868754092](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868754092) started after the latest code update. Check actual result and unsigned IPA before calling a build ready. No v0.3.0 device approval yet.
 - **Still on the v0.3.0 roadmap:** optional flare timelines, transparent noncausal patterns, clinician exports, advanced low-energy UI and physical QA. This is a cabinet polish increment, not a claim those features were completed.
+
+## v0.3.0 Build 285 automated acceptance (2026-11-20 Phoenix)
+
+- [GitHub Actions run 44868754092](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868754092) **completed SUCCESS** at commit `12b3fdf2e42dc51d10ccbd5b3703b64d964b4de6`, including simulator/iPhone builds, regression tests and unsigned IPA package. Artifact ID `14692729730` (`POTS-and-Posies-v0.3.0-iOS16-unsigned`) is available.
+- Unsigned IPA was extracted and ZIP integrity verified. Actual `Info.plist` confirms `CFBundleShortVersionString=0.3.0`, `CFBundleVersion=285`, `CFBundleIdentifier=com.valentinebsaa.potstracker`, `MinimumOSVersion=16.0`; `Assets.car` and app icon present. The delivered direct IPA is `POTS-and-Posies-v0.3.0-build285-unsigned.ipa`.
+- **Still pending:** real iPhone QA for structured medication strength/units, container/form/schedule dropdown, decimal bottle inventory, cancelling and editing, old saved Ibuprofen `400` without inferred `mg`, JSON backup/restore, reminders, official safety links, themes/VoiceOver, and data persistence. Build success does not equal physical acceptance.
+- **Not yet part of the build:** planned v0.3.0 flare timeline, clinician export and advanced noncausal trends. Do not merge draft PR #69 or label feature milestone stable until developed and tested.
