@@ -102,7 +102,7 @@ struct BerryQuestBoardView: View {
     private func questArt(for id: String) -> String {
         switch id {
         case "lines": return "HarvestReward"
-        case "modes": return "BerryVillageMap"
+        case "modes": return BerryArtResolver.displayName(for: "BerryVillageMap")
         case "moves": return "CottageDecorations"
         case "chapters": return "BerryStory"
         default: return "Milestone"
@@ -113,7 +113,7 @@ struct BerryQuestBoardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    Image("BerryQuestBoardArt").resizable().scaledToFit()
+                    Image(BerryArtResolver.displayName(for: "BerryQuestBoardArt")).resizable().scaledToFit()
                         .frame(height: 125).accessibilityHidden(true)
                     Text("Berry Quest Board")
                         .font(.system(size: 28, weight: .black, design: .rounded))
@@ -219,7 +219,7 @@ struct BerryVillageView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 15) {
-                    Image("BerryVillageMap").resizable().scaledToFit()
+                    Image(BerryArtResolver.displayName(for: "BerryVillageMap")).resizable().scaledToFit()
                         .frame(maxWidth: 355).frame(height: 215)
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                         .overlay(RoundedRectangle(cornerRadius: 20)
@@ -277,7 +277,7 @@ struct BerryJournalView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 13) {
-                    Image("BerryJournalArt").resizable().scaledToFit()
+                    Image(BerryArtResolver.displayName(for: "BerryJournalArt")).resizable().scaledToFit()
                         .frame(height: 118).accessibilityHidden(true)
                     Text("Berry Journal")
                         .font(.system(size: 28, weight: .black, design: .rounded))
@@ -290,7 +290,7 @@ struct BerryJournalView: View {
                                          art: "BerryStory", value: "\(chapters)")
                         BerryGridInfoTile(title: "Strawberry Village",
                                          detail: "Five village locations",
-                                         art: "BerryVillageMap",
+                                         art: BerryArtResolver.displayName(for: "BerryVillageMap"),
                                          value: "Level \(progress.villageLevel)/5")
                         BerryGridInfoTile(title: "Sweet Harvest", detail: "Lifetime cleared lines",
                                          art: "HarvestReward", value: "\(lifetimeLines)")
@@ -299,7 +299,7 @@ struct BerryJournalView: View {
                                          art: "DailyHarvest",
                                          value: "\(BerryDailyHistory.completed.count)")
                         BerryGridInfoTile(title: "Quest Rewards", detail: "Claimed berry quests",
-                                         art: "BerryQuestBoardArt", value: "\(progress.claimedTotal)")
+                                         art: BerryArtResolver.displayName(for: "BerryQuestBoardArt"), value: "\(progress.claimedTotal)")
                         BerryGridInfoTile(title: "Berry Collection", detail: "Cosmetics owned",
                                          art: "BerryCollection", value: "\(session.ownedCosmetics.count)")
                         BerryGridInfoTile(title: "My Cottage", detail: "Decorations collected",
