@@ -173,7 +173,7 @@ struct EntryEditor: View {
                     ForEach(0...10, id: \.self) { score in
                         let chosen = severity == score
                         Button {
-                            severity = chosen ? -1 : score
+                            severity = PosiesChoiceBehavior.toggleRating(severity, tapped: score)
                         } label: {
                             Text("\(score)")
                                 .font(.subheadline.weight(chosen ? .bold : .medium))
