@@ -43,7 +43,8 @@ struct PosiesCalendarView: View {
                 GlassCard {
                     VStack(alignment: .leading, spacing: 13) {
                         HStack {
-                            Text("Your calendar").font(.title3.bold())
+                            PosiesFeatureSectionTitle(featureID: "calendar",
+                                                       title: "Your calendar", artworkSize: 37)
                             Spacer()
                             Button(showingYear ? "Close year" : "Year") {
                                 withAnimation(.easeInOut(duration: 0.2)) { showingYear.toggle() }
@@ -125,9 +126,7 @@ struct PosiesCalendarView: View {
                             ForEach(dailyRecords) { record in
                                 Button { editingRoute = RecordEditRoute(objectID: record.id) } label: {
                                     HStack(spacing: 10) {
-                                        Image(systemName: record.symbol)
-                                            .foregroundStyle(Color.potsTeal)
-                                            .frame(width: 28)
+                                        PosiesFeatureIcon(featureID: record.category, width: 32)
                                         VStack(alignment: .leading, spacing: 3) {
                                             Text(record.categoryLabel).font(.subheadline.weight(.semibold))
                                             Text(record.detail).font(.caption)

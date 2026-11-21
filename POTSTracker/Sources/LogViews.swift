@@ -133,9 +133,13 @@ struct EntryEditor: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 17) {
-                    Text("Add only what is useful. You can edit an entry later.")
-                        .font(.footnote)
-                        .foregroundStyle(Color.potsSecondary)
+                    HStack(spacing: 10) {
+                        PosiesFeatureIcon(featureID: category.rawValue, width: 42)
+                        Text("Record what feels useful; edit it later.")
+                            .font(.subheadline).foregroundStyle(Color.potsSecondary)
+                        Spacer(minLength: 0)
+                    }.padding(10)
+                        .background(Color.potsSurface, in: RoundedRectangle(cornerRadius: 15))
                     switch category {
                     case .symptom: symptomFields
                     case .heartRate: heartRateFields
@@ -209,20 +213,23 @@ struct EntryEditor: View {
     private var symptomFields: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 14) {
-                Text("What happened?")
-                    .font(.headline)
+                PosiesFeatureSectionTitle(featureID: "symptom", title: "What happened?")
+                PosiesChoiceMenu(title: "Choose a symptom",
+                                 options: symptoms.filter { $0 != "Other" },
+                                 selected: $title)
+                Text("Quick choices").font(.caption.weight(.semibold))
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 108), spacing: 8)], spacing: 8) {
-                    ForEach(symptoms, id: \.self) { item in
-                        Button(item) {
-                            title = PosiesChoiceBehavior.toggle(title, tapped: item == "Other" ? "" : item)
-                        }
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(title == item ? Color.white : Color.primary)
-                        .frame(maxWidth: .infinity, minHeight: lowEnergyMode ? 56 : 43)
-                        .background(title == item ? Color.potsButtonFill : Color.potsTeal.opacity(0.12), in: RoundedRectangle(cornerRadius: 13))
-                        .buttonStyle(.plain)
-                        .accessibilityAddTraits(title == item ? [.isSelected] : [])
-                        .accessibilityHint(title == item ? "Selected. Tap again to clear." : "Tap to select this symptom.")
+                    ForEach(["Dizziness", "Palpitations", "Fatigue", "Brain fog"], id: \.self) { item in
+                        let active = title == item
+                        Button(item) { title = PosiesChoiceBehavior.toggle(title, tapped: item) }
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(active ? Color.white : Color.primary)
+                            .frame(maxWidth: .infinity, minHeight: lowEnergyMode ? 56 : 43)
+                            .background(active ? Color.potsButtonFill : Color.potsTeal.opacity(0.12),
+                                        in: RoundedRectangle(cornerRadius: 13))
+                            .buttonStyle(.plain)
+                            .accessibilityAddTraits(active ? [.isSelected] : [])
+                            .accessibilityHint(active ? "Selected. Tap again to clear." : "Tap to select.")
                     }
                 }
                 TextField("Or type a symptom", text: $title)
@@ -315,8 +322,7 @@ struct EntryEditor: View {
     private var heartRateFields: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 13) {
-                Label("Record a heart-rate reading", systemImage: "heart.fill")
-                    .font(.headline).foregroundStyle(Color.potsTeal)
+                PosiesFeatureSectionTitle(featureID: "heartRate", title: "Record a heart-rate reading")
                 Text("Enter the number shown on your own monitor, or a manually counted pulse.")
                     .font(.subheadline).foregroundStyle(Color.potsSecondary)
                 measurementGuide
@@ -328,12 +334,14 @@ struct EntryEditor: View {
                 }
                 Text("How did you measure? (optional)")
                     .font(.subheadline.weight(.semibold))
-                choiceGrid(["Finger monitor", "Cuff monitor", "Manual pulse", "Other"],
-                           selected: $vitalContext.source)
+                PosiesChoiceMenu(title: "Reading source",
+                                 options: ["Finger monitor", "Cuff monitor", "Manual pulse", "Other"],
+                                 selected: $vitalContext.source)
                 Text("When was it taken? (optional)")
                     .font(.subheadline.weight(.semibold))
-                choiceGrid(["Resting", "After activity", "During symptoms", "Other"],
-                           selected: $vitalContext.timing)
+                PosiesChoiceMenu(title: "Reading context",
+                                 options: ["Resting", "After activity", "During symptoms", "Other"],
+                                 selected: $vitalContext.timing)
                 posturePicker
                 Text("A reading is one observation, not a diagnosis. No camera pulse value is ever auto-saved.")
                     .font(.caption).foregroundStyle(Color.potsSecondary)
@@ -344,8 +352,7 @@ struct EntryEditor: View {
     private var bloodPressureFields: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 13) {
-                Label("Record blood pressure", systemImage: "waveform.path.ecg")
-                    .font(.headline).foregroundStyle(Color.potsTeal)
+                PosiesFeatureSectionTitle(featureID: "bloodPressure", title: "Record blood pressure")
                 Text("Use the numbers from your own blood-pressure monitor.")
                     .font(.subheadline).foregroundStyle(Color.potsSecondary)
                 measurementGuide
@@ -398,8 +405,9 @@ struct EntryEditor: View {
                 choiceGrid(["Upper-arm cuff", "Wrist cuff", "Other monitor"], selected: $vitalContext.source)
                 Text("When was it taken? (optional)")
                     .font(.subheadline.weight(.semibold))
-                choiceGrid(["Resting", "After activity", "During symptoms", "Other"],
-                           selected: $vitalContext.timing)
+                PosiesChoiceMenu(title: "Reading context",
+                                 options: ["Resting", "After activity", "During symptoms", "Other"],
+                                 selected: $vitalContext.timing)
                 posturePicker
                 Text("This app records measurements without diagnosing or recommending a change in medication.")
                     .font(.caption).foregroundStyle(Color.potsSecondary)
@@ -467,8 +475,7 @@ struct EntryEditor: View {
     private var journalFields: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Today's thoughts")
-                    .font(.headline)
+                PosiesFeatureSectionTitle(featureID: "journal", title: "Today's thoughts")
                 TextField("Write a note, experience, or question for your clinician", text: $notes, axis: .vertical)
                     .lineLimit(5...12)
                     .textFieldStyle(.roundedBorder)
@@ -480,8 +487,7 @@ struct EntryEditor: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 13) {
                 HStack {
-                    Text("How are you feeling?")
-                        .font(.headline)
+                    PosiesFeatureSectionTitle(featureID: "checkIn", title: "How are you feeling?")
                     Spacer()
                     Text("Optional check-in")
                         .font(.caption)

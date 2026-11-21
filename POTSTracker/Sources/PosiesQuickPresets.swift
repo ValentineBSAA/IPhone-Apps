@@ -23,15 +23,17 @@ struct PosiesQuickPresetsEditor: View {
     @Environment(\.dismiss) private var dismiss
     @Binding private var stored: String
     let title: String
+    let featureID: String
     let unit: String
     let fallback: [Int]
     let range: ClosedRange<Int>
     @State private var amounts: [String]
 
-    init(stored: Binding<String>, title: String, unit: String,
+    init(stored: Binding<String>, title: String, featureID: String, unit: String,
          fallback: [Int], range: ClosedRange<Int>) {
         _stored = stored
         self.title = title
+        self.featureID = featureID
         self.unit = unit
         self.fallback = fallback
         self.range = range
@@ -49,8 +51,7 @@ struct PosiesQuickPresetsEditor: View {
             ScrollView {
                 GlassCard {
                     VStack(alignment: .leading, spacing: 14) {
-                        Label("My quick-entry buttons", systemImage: "slider.horizontal.3")
-                            .font(.headline).foregroundStyle(Color.potsTeal)
+                        PosiesFeatureSectionTitle(featureID: featureID, title: "My quick-entry buttons")
                         Text("Choose four different amounts. These shortcuts fill a draft only; you still choose when to save.")
                             .font(.subheadline).foregroundStyle(Color.potsSecondary)
                         ForEach(0..<4, id: \.self) { index in

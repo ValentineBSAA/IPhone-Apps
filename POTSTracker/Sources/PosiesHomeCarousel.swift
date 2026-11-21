@@ -235,11 +235,11 @@ struct PosiesHomeCarousel: View {
         return VStack(alignment: .leading, spacing: 12) {
             pageHeader("Daily wellbeing", subtitle: "Only what you recorded")
             VStack(spacing: 9) {
-                summaryRow("drop.fill", title: "Hydration",
+                summaryRow("hydration", title: "Hydration",
                            detail: water.isEmpty ? "Not recorded" : "\(volume) mL recorded")
-                summaryRow("moon.stars.fill", title: "Sleep & rest",
+                summaryRow("sleep", title: "Sleep & rest",
                            detail: sleep.isEmpty ? "Not recorded" : "\(rest) minutes recorded")
-                summaryRow("pills.fill", title: "Medication notes",
+                summaryRow("medications", title: "Medication notes",
                            detail: medications.isEmpty ? "Not recorded" : "\(medications.count) entries")
             }
             Spacer(minLength: 1)
@@ -254,8 +254,7 @@ struct PosiesHomeCarousel: View {
             Spacer(minLength: 1)
             if let (rule, when) = nextReminder {
                 HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: "bell.badge.fill")
-                        .foregroundStyle(Color.potsTeal).font(.title2)
+                    PosiesFeatureIcon(featureID: "reminders", width: 35)
                     VStack(alignment: .leading, spacing: 5) {
                         Text("A reminder is scheduled").font(.headline).lineLimit(2)
                         Text(when.formatted(date: .abbreviated, time: .shortened))
@@ -290,10 +289,9 @@ struct PosiesHomeCarousel: View {
         }
     }
 
-    private func summaryRow(_ symbol: String, title: String, detail: String) -> some View {
+    private func summaryRow(_ featureID: String, title: String, detail: String) -> some View {
         HStack(spacing: 9) {
-            Image(systemName: symbol)
-                .font(.subheadline).foregroundStyle(Color.potsTeal).frame(width: 22)
+            PosiesFeatureIcon(featureID: featureID, width: 29)
             Text(title).font(.subheadline.weight(.semibold))
             Spacer(minLength: 5)
             Text(detail).font(.subheadline).foregroundStyle(Color.potsSecondary)

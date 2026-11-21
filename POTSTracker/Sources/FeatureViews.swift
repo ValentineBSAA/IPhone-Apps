@@ -313,8 +313,7 @@ struct SettingsPanel: View {
             VStack(alignment: .leading, spacing: 16) {
                 GlassCard {
                     VStack(alignment: .leading, spacing: 14) {
-                        Text("Floral appearance")
-                            .font(.headline)
+                        PosiesFeatureSectionTitle(featureID: "settings", title: "Floral appearance")
                         HStack(spacing: 8) {
                             ForEach(["system", "light", "dark"], id: \.self) { option in
                                 let active = posiesAppearance == option

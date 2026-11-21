@@ -299,3 +299,34 @@
 - [ ] GitHub Actions v0.2.10 success and authenticated IPA package validation.
 - [ ] Physical iPhone: search generic and brand names, categories, reference details, link-out, draft, save/cancel, old existing profile, edit/remove, reminders, older backup restore, medical privacy, dark/light and VoiceOver.
 - [ ] Do not merge as stable before user confirms physical QA. See UX_V0210.md and the master roadmap.
+
+## v0.3.0 next version (version baseline staged, not feature-complete)
+- [x] User instructed that **the next version after the successful v0.2.10 Build 282 must be v0.3.0**, not v0.2.11.
+- [x] Preserve successfully built unsigned v0.2.10 artifact and do not rewrite or overwrite that branch.
+- [x] Create new v0.3.0 development branch from accepted v0.2.10 source with `MARKETING_VERSION: "0.3.0"`, and update CI version check and unsigned IPA naming together.
+- [x] Keep all existing data, medications and approved artwork unchanged, iOS 16 and the existing app identifier.
+- [ ] Confirm v0.3.0 CI can build a **version-only baseline**; this is a technical identity smoke test, not proof the v0.3.0 feature roadmap is implemented.
+- [ ] Implement the existing v0.3.0 roadmap: optional flare timeline/context, careful observational summaries with missing-day handling and sample sizes, clinician-ready export and appointment-note improvements.
+- [ ] Add tests for each *implemented* 0.3.0 feature and iPhone physical QA before considering the feature milestone stable.
+- [ ] Do not merge stage branches or change the published main branch without accepted testing. See UX_V030.md.
+
+## v0.3.0 | Premium medication cabinet polish, awaiting QA
+- [x] Reorganize medication profile into compact preview and sections: bottle label, form/frequency dropdowns, remaining supply, refills, optional collapsed notes.
+- [x] Structured optional strength and inventory units (mg/mcg/g/mL/IU/etc; tablets/capsules/mL/US fl oz/etc); original older free-text strength untouched and never guessed.
+- [x] Dedicated supply field supports decimals for US fl oz while keeping old integer amount readable; no automatic dose calculations or decrementing.
+- [x] Dropdown selections can be cleared, and invalid strength/amount pair prevents Save.
+- [x] Saved cards show strength/form/supply only when explicitly entered; official safety links remain accessible.
+- [ ] Complete v0.3.0 CI, tests and physical iPhone QA; retain all future flare and clinician export work.
+
+## v0.3.0 iPhone decimal-keyboard usability correction
+- [x] Add focused input tracking and a keyboard-toolbar Done button for medication strength, bottle inventory, label name and notes. Interactive swipe-to-dismiss also available.
+- [ ] Build & CI validation of iOS 16 SwiftUI keyboard toolbar.
+- [ ] Real iPhone: both decimal fields expose a usable Done action, keyboard dismisses without saving, scroll-drag dismissal works, Save/Cancel still preserve intended state.
+
+## v0.3.0 icon and dropdown consistency across everyday trackers
+- [x] Consolidated reuse of the exact twelve approved feature images using a shared SwiftUI helper across Sleep/Rest, hydration, medications, symptoms, posture, heart rate, BP, reports, calendar, reminders and settings.
+- [x] Added reversible native menus for drink type, medication event status, sleep/rest type, quality/recovery, posture, heart-rate source/context, BP context and optional multi-context tags.
+- [x] Kept critical one-tap shortcut buttons (sleep minutes, hydration amounts, common symptoms); old “Not rated” and original data storage/Save remain intact.
+- [x] Added mapping/unit tests and workflow checks; original icon files and app identifier unchanged.
+- [ ] GitHub simulator/iPhone builds plus automated regression success on the final commit.
+- [ ] Physical iPhone QA, screenshots, large fonts and Blossom/Midnight contrast; old data/backup import remains untouched. No stable merge yet.
