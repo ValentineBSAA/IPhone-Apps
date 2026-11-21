@@ -24,6 +24,12 @@ final class BerryGameSession: ObservableObject {
     private var previousBerryEarnings = 0
     private var previousRewardEntry: String?
     private var activeMode: BerryMode = .endless
+    /// Normal gameplay uses standard defaults and the shared ledger.
+    /// An isolated QA instance can inject an independent preferences suite
+    /// and ledger. Only standard-tool buy paths are currently certified for
+    /// this injection; unrelated singleton-backed game modes are not.
+    private let checkoutDefaults: UserDefaults
+    private let checkoutLedger: BerryEconomyLedger
     nonisolated static let goldenStrawberryCost = 250
     static let classicSaveKey = "berryblockblast.classic.engine.v055"
     static let classicSavedFlagKey = "berryblockblast.classic.savedFlag.v056b2"
@@ -267,9 +273,12 @@ final class BerryGameSession: ObservableObject {
         var totalEarnedBerries: Int
     }
 
-    init() {
-        bestScore = UserDefaults.standard.integer(forKey: bestKey)
-        if let data = UserDefaults.standard.data(forKey: saveKey),
+    init(checkoutDefaults: UserDefaults = .standard,
+         checkoutLedger: BerryEconomyLedger? = nil) {
+        self.checkoutDefaults = checkoutDefaults
+        self.checkoutLedger = checkoutLedger ?? .shared
+        bestScore = checkoutDefaults.integer(forKey: bestKey)
+        if let data = checkoutDefaults.data(forKey: saveKey),
            let restored = try? JSONDecoder().decode(Save.self, from: data),
            restored.engine.board.count == 8, restored.engine.board.allSatisfy({ $0.count == 8 }),
            restored.engine.tray.count == 3 {
@@ -278,13 +287,13 @@ final class BerryGameSession: ObservableObject {
             undos = restored.undos
             shuffles = restored.shuffles
             totalEarnedBerries = restored.totalEarnedBerries
-        } else if let data = UserDefaults.standard.data(forKey: "berryblockblast.saved-game.v1"),
+        } else if let data = checkoutDefaults.data(forKey: "berryblockblast.saved-game.v1"),
                   let restored = try? JSONDecoder().decode(BerryEngine.self, from: data),
                   restored.board.count == 8, restored.board.allSatisfy({ $0.count == 8 }), restored.tray.count == 3 {
             engine = restored
         } else { engine = BerryEngine() }
         gameOver = !engine.hasMove()
-        if let inventory = UserDefaults.standard.data(forKey: inventoryKey), let saved = try? JSONDecoder().decode(Inventory.self, from: inventory) {
+        if let inventory = checkoutDefaults.data(forKey: inventoryKey), let saved = try? JSONDecoder().decode(Inventory.self, from: inventory) {
             berries = saved.berries; undos = saved.undos; shuffles = saved.shuffles; totalEarnedBerries = saved.totalEarnedBerries; hints = saved.hints
         }
     }
@@ -675,43 +684,46 @@ final class BerryGameSession: ObservableObject {
     }
 
     func buyUndo() {
-        guard let state = BerryStandardToolTransaction.purchase(
-            berries: berries, charges: undos, price: BerryEconomy.undoPrice
-        ) else { return }
-        // Only a successful purchase invalidates the undo snapshot.
-        previous = nil
-        previousBerryEarnings = 0
-        previousRewardEntry = nil
-        berries = state.berries
-        undos = state.charges
-        BerryEconomyLedger.shared.recordSpend(BerryEconomy.undoPrice, item: "Undo")
-        save()
+        _ = BerryStandardToolCheckout.purchase(.undo, berries: berries,
+                                              charges: undos) { receipt in
+            // A rejected checkout must not invalidate an available Undo.
+            previous = nil
+            previousBerryEarnings = 0
+            previousRewardEntry = nil
+            berries = receipt.berriesAfter
+            undos = receipt.chargesAfter
+            checkoutLedger.recordSpend(receipt.price,
+                                                  item: receipt.tool.rawValue)
+            save()
+        }
     }
 
     func buyShuffle() {
-        guard let state = BerryStandardToolTransaction.purchase(
-            berries: berries, charges: shuffles, price: BerryEconomy.shufflePrice
-        ) else { return }
-        previous = nil
-        previousBerryEarnings = 0
-        previousRewardEntry = nil
-        berries = state.berries
-        shuffles = state.charges
-        BerryEconomyLedger.shared.recordSpend(BerryEconomy.shufflePrice, item: "Shuffle")
-        save()
+        _ = BerryStandardToolCheckout.purchase(.shuffle, berries: berries,
+                                              charges: shuffles) { receipt in
+            previous = nil
+            previousBerryEarnings = 0
+            previousRewardEntry = nil
+            berries = receipt.berriesAfter
+            shuffles = receipt.chargesAfter
+            checkoutLedger.recordSpend(receipt.price,
+                                                  item: receipt.tool.rawValue)
+            save()
+        }
     }
 
     func buyHint() {
-        guard let state = BerryStandardToolTransaction.purchase(
-            berries: berries, charges: hints, price: BerryEconomy.hintPrice
-        ) else { return }
-        previous = nil
-        previousBerryEarnings = 0
-        previousRewardEntry = nil
-        berries = state.berries
-        hints = state.charges
-        BerryEconomyLedger.shared.recordSpend(BerryEconomy.hintPrice, item: "Hint")
-        save()
+        _ = BerryStandardToolCheckout.purchase(.hint, berries: berries,
+                                              charges: hints) { receipt in
+            previous = nil
+            previousBerryEarnings = 0
+            previousRewardEntry = nil
+            berries = receipt.berriesAfter
+            hints = receipt.chargesAfter
+            checkoutLedger.recordSpend(receipt.price,
+                                                  item: receipt.tool.rawValue)
+            save()
+        }
     }
 
     @discardableResult
@@ -773,9 +785,11 @@ final class BerryGameSession: ObservableObject {
     private func save() {
         let inventory = Inventory(berries: berries, undos: undos, shuffles: shuffles,
                                   totalEarnedBerries: totalEarnedBerries, hints: hints)
-        if let data = try? JSONEncoder().encode(inventory) { UserDefaults.standard.set(data, forKey: inventoryKey) }
-        // Daily Harvest has exactly one resumable same-day attempt.
-        // Never overwrite the existing legacy Endless / Classic save keys.
+        if let data = try? JSONEncoder().encode(inventory) {
+            checkoutDefaults.set(data, forKey: inventoryKey)
+        }
+        // Daily Harvest keeps its independent original save policy.
+        // Only the three standard-tool buy methods are D0d-certified.
         if activeMode == .daily {
             BerryDailyHistory.saveActiveEngine(engine)
             return
@@ -784,9 +798,9 @@ final class BerryGameSession: ObservableObject {
         guard activeMode == .endless else { return }
         let key = Self.endlessSaveKey(side: engine.side)
         if engine.moves > 0, let data = try? JSONEncoder().encode(engine) {
-            UserDefaults.standard.set(data, forKey: key)
+            checkoutDefaults.set(data, forKey: key)
         } else if engine.moves == 0 {
-            UserDefaults.standard.removeObject(forKey: key)
+            checkoutDefaults.removeObject(forKey: key)
         }
     }
 }

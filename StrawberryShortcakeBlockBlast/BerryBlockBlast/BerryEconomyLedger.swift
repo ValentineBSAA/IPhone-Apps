@@ -15,11 +15,16 @@ final class BerryEconomyLedger: ObservableObject {
     @Published private(set) var earnedByMode: [String:Int]
     @Published private(set) var spentByItem: [String:Int]
 
-    private init() {
-        spent = UserDefaults.standard.integer(forKey: Self.spentKey)
-        earnedByMode = UserDefaults.standard.dictionary(forKey: Self.earnedByModeKey)
+    /// Production remains `.shared`; QA may create a second ledger using
+    /// a disposable preferences suite, leaving the real ledger untouched.
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        spent = defaults.integer(forKey: Self.spentKey)
+        earnedByMode = defaults.dictionary(forKey: Self.earnedByModeKey)
             as? [String:Int] ?? [:]
-        spentByItem = UserDefaults.standard.dictionary(forKey: Self.spendingByItemKey)
+        spentByItem = defaults.dictionary(forKey: Self.spendingByItemKey)
             as? [String:Int] ?? [:]
     }
 
@@ -27,8 +32,8 @@ final class BerryEconomyLedger: ObservableObject {
         guard cost > 0 else { return }
         spent += cost
         spentByItem[item, default: 0] += cost
-        UserDefaults.standard.set(spent, forKey: Self.spentKey)
-        UserDefaults.standard.set(spentByItem, forKey: Self.spendingByItemKey)
+        defaults.set(spent, forKey: Self.spentKey)
+        defaults.set(spentByItem, forKey: Self.spendingByItemKey)
     }
 
     /// Only actual line-earned strawberries are attributed to a game mode.
@@ -37,14 +42,14 @@ final class BerryEconomyLedger: ObservableObject {
     func recordLineEarnings(_ amount: Int, mode: BerryMode) {
         guard amount > 0 else { return }
         earnedByMode[mode.rawValue, default: 0] += amount
-        UserDefaults.standard.set(earnedByMode, forKey: Self.earnedByModeKey)
+        defaults.set(earnedByMode, forKey: Self.earnedByModeKey)
     }
 
     func reverseUndoneLineEarnings(_ amount: Int, mode: BerryMode) {
         guard amount > 0 else { return }
         earnedByMode[mode.rawValue, default: 0] =
             max(0, earnedByMode[mode.rawValue, default: 0] - amount)
-        UserDefaults.standard.set(earnedByMode, forKey: Self.earnedByModeKey)
+        defaults.set(earnedByMode, forKey: Self.earnedByModeKey)
     }
 
     var mostSpentItem: (name: String, berries: Int)? {

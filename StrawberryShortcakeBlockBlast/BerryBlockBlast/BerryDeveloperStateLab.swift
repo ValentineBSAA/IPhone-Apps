@@ -63,14 +63,20 @@ struct BerryQAIsolatedWallet {
 
     @discardableResult
     mutating func buy(_ tool: BerryQAIsolatedTool) -> Bool {
-        // Exercise the SAME policy reducer now used by the actual app's
-        // Undo/Shuffle/Hint handlers; store writes remain sandbox-only.
-        guard let updated = BerryStandardToolTransaction.purchase(
-            berries: balance, charges: chargeCount(for: tool), price: tool.price
-        ) else { return false }
-        balance = updated.berries
-        charges[tool] = updated.charges
-        return true
+        let kind: BerryStandardToolKind
+        switch tool {
+        case .undo: kind = .undo
+        case .shuffle: kind = .shuffle
+        case .hint: kind = .hint
+        }
+        // Execute the same checkout orchestration and validation used by the
+        // actual BerryGameSession; the callback writes only disposable values.
+        return BerryStandardToolCheckout.purchase(
+            kind, berries: balance, charges: chargeCount(for: tool)
+        ) { receipt in
+            balance = receipt.berriesAfter
+            charges[tool] = receipt.chargesAfter
+        }
     }
 
     @discardableResult
