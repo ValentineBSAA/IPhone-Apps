@@ -358,3 +358,9 @@ Recommended sequence alongside existing milestones: H5 nonvisual calendar smoke/
 - [x] Menu cosmetic and standard Helper purchases now use inventory-only saves; regression tests verify none of the existing Sweet Endless 8×8/12×12/24×24 board slots are overwritten or deleted by these purchases.
 - [x] [D1a iPhone 16e workflow #44868413961](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868413961) selects **64 tests**: 48 previous D0–D0e, 6 older Boutique, 10 new Boutique; terminal run pending. Release QA-only exclusions checked.
 - [ ] Future Developer Garden testing moves through Boutique UI, premium tools, Daily Harvest, Story, quests and Night features; artwork and game features remain separate. No iPhone IPA, merge or version change.
+
+
+## ✅ D1a Boutique and Endless-save safety regression verified · November 20, 2026
+- [x] [D1a Actions #44868413961](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868413961) **64/64 selected tests pass** on named iPhone 16e with 0 failures, including actual cosmetic checkout and all prior D0–D0e tests; Release excludes QA controls.
+- [x] Cosmetic ownership/price, real spend ledger and receipt, legacy equipped visuals and 8×8/12×12/24×24 saved Endless preservation tested with disposable game stores. [D1a draft PR #70](https://github.com/ValentineBSAA/IPhone-Apps/pull/70) remains unmerged and not installed.
+- [ ] Finish cumulative source integration/physical iPhone QA before broader release. Cottage/Premium menu purchase save protection, full Boutique taps, Story/Daily/Night and approved art rollout separately pending.
