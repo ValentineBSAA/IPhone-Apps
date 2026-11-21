@@ -87,12 +87,9 @@ struct PosiesTrackerHighlightsView: View {
         if category.isExtended {
             GlassCard {
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 9) {
-                        Image(systemName: "chart.bar.xaxis")
-                            .foregroundStyle(Color.potsTeal)
-                        Text("Your recent notes")
-                            .font(.headline)
-                    }
+                    PosiesFeatureSectionTitle(featureID: category.rawValue,
+                        title: category == .sleep ? "Sleep & rest at a glance" : "Your recent notes",
+                        artworkSize: 34)
                     Text(summary)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.potsTeal)

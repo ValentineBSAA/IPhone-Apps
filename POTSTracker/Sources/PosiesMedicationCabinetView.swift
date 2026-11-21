@@ -173,11 +173,7 @@ struct PosiesMedicationCabinetView: View {
         return GlassCard {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: profile.dosageForm == "Liquid" || profile.dosageForm == "Drops"
-                          ? "drop.fill" : "pills.fill")
-                        .font(.title3).foregroundStyle(Color.potsTeal)
-                        .frame(width: 34, height: 38)
-                        .background(Color.potsSurfaceMuted, in: RoundedRectangle(cornerRadius: 10))
+                    PosiesFeatureIcon(featureID: "medications", width: 39)
                     Text(profile.name)
                         .font(.headline).lineLimit(2).minimumScaleFactor(0.8)
                     Spacer(minLength: 0)
@@ -474,12 +470,7 @@ private struct PosiesMedicationProfileEditor: View {
                     GlassCard {
                         VStack(alignment: .leading, spacing: 9) {
                             HStack(spacing: 12) {
-                                Image(systemName: isLiquid ? "drop.fill" : "pills.fill")
-                                    .font(.title2)
-                                    .foregroundStyle(Color.potsTeal)
-                                    .frame(width: 49, height: 49)
-                                    .background(Color.potsSurfaceMuted,
-                                                in: RoundedRectangle(cornerRadius: 14))
+                                PosiesFeatureIcon(featureID: "medications", width: 52)
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(profile.name.isEmpty ? "New medication" : profile.name)
                                         .font(.headline).lineLimit(2)
