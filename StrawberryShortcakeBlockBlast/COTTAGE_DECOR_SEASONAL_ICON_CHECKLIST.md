@@ -25,7 +25,7 @@ Give this family a distinct, clear **decorating** theme: a cute strawberry-roof 
 | CD-03 | Christmas | Day | Snow-frosted strawberry cottage with wreath, red ribbon, candy canes, festive flowerpot, paintbrush and ribbon spool; SECOND image selected | ✅ GENERATED | ✅ OWNER APPROVED (most recent/second version) | ⚠ checkerboard/alpha edge QA pending | ⬜ source PNG import pending | ⬜ |
 | CD-04 | Christmas | Night | Moonlit snowy strawberry cottage, glowing windows, lit evergreen trees, wreath, decorating paintbrush, flowerpot, red check ribbon spool and crescent | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ checkerboard/true-alpha edge QA pending | ⬜ original PNG not staged | ⬜ |
 | CD-05 | Thanksgiving | Day | Sunny strawberry-roof cottage with golden maple wreath, pumpkins, strawberry berry pie, flower pot, paintbrush and orange gingham ribbon spool | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ original RGB/off-white background; RGBA edge QA pending | ⬜ PNG source not staged | ⬜ |
-| CD-06 | Thanksgiving | Night | Moonlit autumn strawberry cottage, glowing windows, harvest lanterns, pumpkin planters, pie, flowerpot, decorating paintbrush and ribbon spool | ⬜ NEXT: generate one image | ⬜ awaiting owner review | ⬜ | ⬜ | ⬜ |
+| CD-06 | Thanksgiving | Night | Moonlit autumn strawberry cottage, glowing windows, harvest lanterns, pumpkin planters, berry pie, flowerpot, paintbrush, violet ribbon spool and autumn gingham | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ RGB/off-white background; alpha cleanup QA pending | ⬜ source PNG not imported | ⬜ |
 | CD-07 | Birthday | Day | Strawberry cottage with frosted cake decorations, party balloons, present planter, bright pink decorating bow | ⬜ | ⬜ | ⬜ | ⬜ |
 | CD-08 | Birthday | Night | Moonlit lavender party cottage, candle glow, cake/present floral planters, balloons and decorative ribbons | ⬜ | ⬜ | ⬜ | ⬜ |
 
@@ -128,3 +128,11 @@ Links: [H1-B04 checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md) · [Master
 - [ ] Await explicit owner approval before CD-07 Birthday Day. Original/QA candidate PNG hashing, true background transparency validation, ZIP, GitHub binary staging and iPhone app routing are separate future gates.
 
 **Current H1-B05 visuals approved: 5/8; CD-06 generation next.**
+
+
+### CD-06 Thanksgiving Night generation checkpoint
+- [x] One Thanksgiving Night Cottage Decorations image generated and shown for owner review, with crescent and stars, warm amber window lights, pumpkin decorations, autumn leaf wreath, strawberry lattice pie, berry flowerpot, pink paintbrush, purple ribbon spool and gingham bow.
+- [ ] **Await explicit CD-06 owner visual approval** before proceeding to CD-07 Birthday Day.
+- [ ] Preserve original PNG untouched; the displayed off-white backdrop is not verified transparency. Non-destructive RGBA edge QA, actual-size light/dark/checker previews, source hash ZIP, GitHub binary import, iOS image mapping and device QA remain pending.
+
+**H1-B05: 6/8 generated, 5/8 visually owner-approved; CD-06 awaiting review.**
