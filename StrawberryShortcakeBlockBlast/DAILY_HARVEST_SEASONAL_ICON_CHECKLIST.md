@@ -22,8 +22,8 @@ Use a clear **little tear-off calendar page (without printed numbers)** as the c
 ## Eight separate design/QA gates
 | ID | Holiday | Appearance | Design direction | Generated | Owner approved | RGBA edge QA | Source in GitHub | iPhone |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| DH-01 | Halloween | Day | Sunny berry calendar, strawberry basket, smiling autumn lantern berries, orange/purple foliage | 🟡 GENERATED | ⬜ AWAITING OWNER | ⚠ inspect whether checkerboard is baked in | ⬜ not uploaded | ⬜ |
-| DH-02 | Halloween | Night | Indigo moonlit calendar, glowing berry harvest, playful ghosts & pumpkin-berry lanterns | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| DH-01 | Halloween | Day | Sunny berry calendar, strawberry basket, smiling autumn lantern berries, orange/purple foliage | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ alpha/background QA pending | ⬜ source archive pending | ⬜ |
+| DH-02 | Halloween | Night | Indigo moonlit calendar, glowing berry harvest, playful ghosts & pumpkin-berry lanterns | ⬜ NEXT: generate single original | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
 | DH-03 | Christmas | Day | Snow-topped calendar, decorated basket, berry wreath, holly and golden bells | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | DH-04 | Christmas | Night | Moonlit snowy calendar, glowing lights, fir trees, soft frost and festive berries | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | DH-05 | Thanksgiving | Day | Harvest calendar, berry crate, gold maples, pumpkin and berry pie | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -52,3 +52,11 @@ Links: [H1-B02 Berry Story running checklist](https://github.com/ValentineBSAA/I
 - [ ] Check apparent checkerboard: original PNG alpha channel must be verified and matte corrected if necessary after original visual approval.
 
 **Current H1-B03 totals: 1/8 generated, 0/8 approved.**
+
+
+### DH-01 approved; DH-02 next
+- [x] DH-01 Halloween Day visually approved by owner (“Good continue”). Preserve existing approved original with daily calendar, ripe strawberry basket, playful pumpkin berries, sunlight and orange/violet bow.
+- [ ] NEXT DH-02 Halloween Night: same Daily Harvest semantic symbols (calendar page plus berry basket), distinct indigo/violet moonlit lighting, stars and friendly jack-o'-lantern strawberry accents, no static date numbers or text. Generate **one** image, wait for owner acceptance before DH-03.
+- [ ] Actual source PNG GitHub binary import, RGBA alpha/edge QA, packaging and live app integration remain pending.
+
+**Daily Harvest tally: 1/8 approved, 1/8 generated before DH-02.**
