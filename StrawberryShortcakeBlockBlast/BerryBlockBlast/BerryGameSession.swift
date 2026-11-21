@@ -675,43 +675,46 @@ final class BerryGameSession: ObservableObject {
     }
 
     func buyUndo() {
-        guard let state = BerryStandardToolTransaction.purchase(
-            berries: berries, charges: undos, price: BerryEconomy.undoPrice
-        ) else { return }
-        // Only a successful purchase invalidates the undo snapshot.
-        previous = nil
-        previousBerryEarnings = 0
-        previousRewardEntry = nil
-        berries = state.berries
-        undos = state.charges
-        BerryEconomyLedger.shared.recordSpend(BerryEconomy.undoPrice, item: "Undo")
-        save()
+        _ = BerryStandardToolCheckout.purchase(.undo, berries: berries,
+                                              charges: undos) { receipt in
+            // A rejected checkout must not invalidate an available Undo.
+            previous = nil
+            previousBerryEarnings = 0
+            previousRewardEntry = nil
+            berries = receipt.berriesAfter
+            undos = receipt.chargesAfter
+            BerryEconomyLedger.shared.recordSpend(receipt.price,
+                                                  item: receipt.tool.rawValue)
+            save()
+        }
     }
 
     func buyShuffle() {
-        guard let state = BerryStandardToolTransaction.purchase(
-            berries: berries, charges: shuffles, price: BerryEconomy.shufflePrice
-        ) else { return }
-        previous = nil
-        previousBerryEarnings = 0
-        previousRewardEntry = nil
-        berries = state.berries
-        shuffles = state.charges
-        BerryEconomyLedger.shared.recordSpend(BerryEconomy.shufflePrice, item: "Shuffle")
-        save()
+        _ = BerryStandardToolCheckout.purchase(.shuffle, berries: berries,
+                                              charges: shuffles) { receipt in
+            previous = nil
+            previousBerryEarnings = 0
+            previousRewardEntry = nil
+            berries = receipt.berriesAfter
+            shuffles = receipt.chargesAfter
+            BerryEconomyLedger.shared.recordSpend(receipt.price,
+                                                  item: receipt.tool.rawValue)
+            save()
+        }
     }
 
     func buyHint() {
-        guard let state = BerryStandardToolTransaction.purchase(
-            berries: berries, charges: hints, price: BerryEconomy.hintPrice
-        ) else { return }
-        previous = nil
-        previousBerryEarnings = 0
-        previousRewardEntry = nil
-        berries = state.berries
-        hints = state.charges
-        BerryEconomyLedger.shared.recordSpend(BerryEconomy.hintPrice, item: "Hint")
-        save()
+        _ = BerryStandardToolCheckout.purchase(.hint, berries: berries,
+                                              charges: hints) { receipt in
+            previous = nil
+            previousBerryEarnings = 0
+            previousRewardEntry = nil
+            berries = receipt.berriesAfter
+            hints = receipt.chargesAfter
+            BerryEconomyLedger.shared.recordSpend(receipt.price,
+                                                  item: receipt.tool.rawValue)
+            save()
+        }
     }
 
     @discardableResult
