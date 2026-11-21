@@ -136,17 +136,19 @@ enum BerryDailyHistory {
         return String(format: "%04d-%02d-%02d", components.year ?? 1970,
                       components.month ?? 1, components.day ?? 1)
     }
-    static var completed: Set<String> {
-        let legacy = UserDefaults.standard.string(forKey: "berryblockblast.daily.completed") ?? ""
-        let entries = UserDefaults.standard.stringArray(forKey: key) ?? []
+    static func completedDays(defaults: UserDefaults = .standard) -> Set<String> {
+        let legacy = defaults.string(forKey: "berryblockblast.daily.completed") ?? ""
+        let entries = defaults.stringArray(forKey: key) ?? []
         return Set(entries + (legacy.isEmpty ? [] : [legacy]))
     }
-    static func markCompleteToday() {
-        guard outcome() == .active else { return }
-        finishToday(.won)
-        var values = completed
-        values.insert(dateKey(for: Date()))
-        UserDefaults.standard.set(values.sorted(), forKey: key)
+    static var completed: Set<String> { completedDays() }
+    static func markCompleteToday(defaults: UserDefaults = .standard,
+                                  now: Date = Date()) {
+        guard outcome(on: now, defaults: defaults) == .active else { return }
+        finishToday(.won, defaults: defaults, now: now)
+        var values = completedDays(defaults: defaults)
+        values.insert(dateKey(for: now))
+        defaults.set(values.sorted(), forKey: key)
     }
     /// Award for a new challenge completion, based on yesterday's intact
     /// streak. Day 7 and every further consecutive day pay 50 berries.
@@ -154,28 +156,37 @@ enum BerryDailyHistory {
     static func reward(forStreakDay day: Int) -> Int {
         rewardLadder[min(6, max(0, day - 1))]
     }
-    static var nextStreakDay: Int {
-        if outcome() == .lost { return 1 }
-        let today = Calendar.current.startOfDay(for: Date())
-        guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today) else { return 1 }
-        guard completed.contains(dateKey(for: yesterday)) else { return 1 }
+    static func nextStreakDay(on date: Date,
+                                  defaults: UserDefaults = .standard) -> Int {
+        if outcome(on: date, defaults: defaults) == .lost { return 1 }
+        let today = Calendar.current.startOfDay(for: date)
+        guard let yesterday = Calendar.current.date(byAdding: .day, value: -1,
+                                                    to: today) else { return 1 }
+        let dates = completedDays(defaults: defaults)
+        guard dates.contains(dateKey(for: yesterday)) else { return 1 }
         var cursor = yesterday
         var count = 0
-        while completed.contains(dateKey(for: cursor)) {
+        while dates.contains(dateKey(for: cursor)) {
             count += 1
-            guard let previous = Calendar.current.date(byAdding: .day, value: -1, to: cursor) else { break }
+            guard let previous = Calendar.current.date(byAdding: .day,
+                                                        value: -1, to: cursor) else { break }
             cursor = previous
         }
         return min(10000, count + 1)
     }
-    static var rewardToday: Int {
-        if outcome() == .won || outcome() == .lost { return 0 }
-        return reward(forStreakDay: nextStreakDay)
+    static var nextStreakDay: Int { nextStreakDay(on: Date()) }
+    static func rewardToday(on date: Date,
+                            defaults: UserDefaults = .standard) -> Int {
+        if outcome(on: date, defaults: defaults) == .won ||
+           outcome(on: date, defaults: defaults) == .lost { return 0 }
+        return reward(forStreakDay: nextStreakDay(on: date, defaults: defaults))
     }
-    static var streak: Int {
-        if outcome() == .lost { return 0 }
-        let dates = completed
-        var day = Calendar.current.startOfDay(for: Date())
+    static var rewardToday: Int { rewardToday(on: Date()) }
+    static func streak(on date: Date,
+                       defaults: UserDefaults = .standard) -> Int {
+        if outcome(on: date, defaults: defaults) == .lost { return 0 }
+        let dates = completedDays(defaults: defaults)
+        var day = Calendar.current.startOfDay(for: date)
         if !dates.contains(dateKey(for: day)),
            let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: day) {
             day = yesterday
@@ -188,6 +199,7 @@ enum BerryDailyHistory {
         }
         return count
     }
+    static var streak: Int { streak(on: Date()) }
 }
 
 struct BerryDailyHarvestView: View {
