@@ -438,7 +438,7 @@ struct ExpandedEntryEditor: View {
                     .buttonStyle(.bordered)
                 }
                 Text("How was it? (optional)").font(.subheadline.weight(.semibold))
-                PosiesChoiceMenu(title: "Quality", options: ["Restful", "Okay", "Interrupted", "Poor"], selected: $quality)
+                PosiesChoiceMenu(title: "Quality", options: ["Not rated", "Restful", "Okay", "Interrupted", "Poor"], selected: $quality)
                 Text("Afterward (optional)").font(.subheadline.weight(.semibold))
                 PosiesChoiceMenu(title: "How you felt afterward", options: ["Refreshed", "About the same", "Still tired", "Not sure"], selected: $recovery)
                 TextField("Fatigue, brain fog, interruptions or context", text: $contextText, axis: .vertical)
