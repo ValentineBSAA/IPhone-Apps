@@ -108,3 +108,10 @@
 - [x] [GitHub Actions #44866663042](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44866663042) **40/40 PASS**, including nine new `BerryStandardToolCheckoutIsolationTests` running actual GameSession buys with a disposable UserDefaults suite and actual isolated ledger; Release compiled with QA panels excluded.
 - [x] [Scenario catalog](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json): **13/59 simulator verified**, 44 planned, 2 not implemented. Real physical iPhone signoff still zero for the new Developer Garden.
 - [ ] Keep [PR #67](https://github.com/ValentineBSAA/IPhone-Apps/pull/67) draft until owner taps and separately approved build; guard against partial multi-key inventory/ledger writes and broaden next to production-backed premium/Story/Daily only behind isolated stores.
+
+
+## D0e safe standard-tool purchase recovery candidate
+- [x] [Draft PR #68](https://github.com/ValentineBSAA/IPhone-Apps/pull/68) stages versioned Undo/Shuffle/Hint pending purchase intent before actual inventory and ledger updates; real GameSession replays exact after-state on restart to avoid duplicate charges.
+- [x] Eight interrupted-state tests added (staged only, partial inventory, partial ledger, repeated launch, corrupt intent, no other save changes, overflow) in [D0e CI](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0e-purchase-recovery-iphone16e.yml), with all previous 40 tests selected.
+- [x] [62-scenario coverage registry](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json): 3 new D0e entries implemented-untested, prior 13 simulator passed.
+- [ ] CI terminal result, physical iPhone acceptance, true power-loss durability limitations, player-friendly recovery screen and full-game purchase/mode/Story save integration remain open. No IPA/release.
