@@ -30,3 +30,12 @@ This is a non-destructive addition to [Night Garden master roadmap](BERRY_BUILD4
 **Separate work not completed by the 40 icons:** dual premium digital clocks, occupied night blocks/tray states, all day/night UI surfaces, berry fireworks, separate Night game modes/Story, and unique Night Market item inventory. Follow [S2–S7](BERRY_BUILD4_TO_BUILD6_NIGHT_ROADMAP.md) and [N1–N4](https://github.com/ValentineBSAA/IPhone-Apps/issues/23). Build 6 still governs transactional Night Market. `Night_Berry_Boutique` and `Night_Boutique` are two deliberately separate assets (Home vs gameplay toolbar).
 
 **Do not merge or ship from asset approval alone.**
+
+## RGBA conversion update · 20 November 2026
+
+- **40/40 original standalone PNG illustrations:** owner-approved, preserved and staged in isolated [Night Garden artwork branch](https://github.com/ValentineBSAA/IPhone-Apps/tree/artwork/berry-night-garden-40-rgba-staging).
+- **40/40 true-RGBA PNG candidates:** generated and committed under `StrawberryShortcakeBlockBlast/ArtSource/NightGarden/RGBA_Candidates/` with exact source checksums, per-batch comparisons and alpha audit. [GitHub Actions #44843011429](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44843011429) **GREEN**.
+- **4/40 candidates:** Batch 1 visually approved by owner. **36/40 candidates:** Batches 2–8 **await visual approval**. Image conversion is not integration/approval.
+- Batches 2–8 technique audit: 16 dark matte, 13 pale/checkerboard, 5 full-scene rounded cards (night sky deliberately retained), 2 already RGBA. Painted card assets have transparent corner arcs but retain their backgrounds; owner decision about final presentation is pending.
+- Next: review for edge artifacts/halo at 64/96px, validate actual iPhone 16e screens, then integrate as separate Xcode image sets in Build 4.7/4.8. No changes to the currently deployed game, Day art, 30 legacy night assets, Night Market transaction rules or save data.
+- [Draft source/RGBA PR #40](https://github.com/ValentineBSAA/IPhone-Apps/pull/40) remains unmerged, intentionally separate from the shipping application branch.
