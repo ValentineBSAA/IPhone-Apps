@@ -245,3 +245,21 @@ D1b exact QA ledger: [Cottage & Premium Saved-Garden Safety](https://github.com/
 - [ ] Longer-term: Twister/Pantry actual board changes, full 24×24 Golden rescue, game-over/blocked-tool cases, Story, Daily, quests, birthday, seasonal, Night and physical device QA. No release/IPA/merge/version bump.
 
 [D2a exact QA ledger](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d2a-valid-tools-save-restore/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D2A_PREMIUM_TOOL_SAVE_RESTORE_QA.md). The first-run failures were test serialization nondeterminism, **not proof of a broken actual saved game**, and must be resolved by passing terminal CI on both affected branches.
+
+---
+
+## ✅ D1b/D1c/D2a simulator acceptance, D2b Tool Action Lab implementation · November 20, 2026
+
+**Full selected CI successes now documented from actual GitHub Actions logs:**
+- [x] [D1b #44869316684](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44869316684), attempt 2: **74/74 XCTest PASS, zero failures**; named iPhone16e simulator, production Release QA exclusion, no IPA.
+- [x] [D1c #44869555471](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44869555471), attempt 2: **80/80 PASS, zero failures**; all six new real Commerce Lab XCTest accepted under selected automated gate.
+- [x] [D2a #44870863706](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44870863706), first attempt: **86/86 PASS, zero failures**; isolated real valid Trowel/Seed/Golden Strawberry use, independent 8/12/24 Endless save/reopen, production Release QA exclusion, no IPA.
+- [x] The common first-attempt D1b/D1c false failure was fixed in XCTest using sorted-key deterministic engine JSON. Do not erase earlier failure history, but terminal reruns are green. Physical acceptance still outstanding.
+- [x] New **D2b draft [PR #74](https://github.com/ValentineBSAA/IPhone-Apps/pull/74)** extends the existing Developer Garden Advanced two-column grid with **Tool Action Lab**. Seven isolated **one-tap actual game-engine and GameSession tool-use scenarios**, each executing instantly with temporary real session+saved engine+injected ledger+wallet, showing expected/actual and PASS/FAIL with reset, preserving user keys.
+- [x] D2b scenarios: Trowel valid cell removal/reopen, Seed planting/reopen, Golden Strawberry rescue/reopen, Golden rescue second-attempt rejection, invalid premium targets no-charge/no-save, 24×24 save independence, and actual Trowel buy/use/reopen in one tap. Eight new XCTest methods added.
+- [ ] [D2b Actions #44871494518](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44871494518) selects **94 tests** (previous 86 plus eight D2b), preflights artwork/audio/iOS16, builds Release with all internal diagnostic models/panels excluded, verifies named iPhone16e simulator and no IPA. At this documentation checkpoint, tests are *not* accepted until terminal logs verify them.
+- [x] Master catalog updated to **90 scenario contracts**: 37 earlier simulator verified/device pending, seven D2b implemented/CI-pending, 44 planned, two future Night not implemented. Do not confuse 90 contracts with 90 XCTest.
+- [ ] D2b physical owner iPhone16e QA and production gameplay UI taps remain open. No IPA, version bump, merge, signed release or claim of multi-key crash atomicity.
+- [ ] **Next D2c**: actual positive-use Ribbon Twister + Picnic Pantry on seeded boards, 24×24 Golden Strawberry Game Over rescue and restart, plus engine/test UI adapters. Then Story/Daily/quests/birthday, full day/night seasonal art and Night Market requirements remain on original game roadmap.
+
+[D2b detailed QA file](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d2b-one-tap-tool-action-lab/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D2B_ONE_TAP_TOOL_ACTION_QA.md). The final product still aims at an entire berry puzzle game, not merely this debug cockpit.
