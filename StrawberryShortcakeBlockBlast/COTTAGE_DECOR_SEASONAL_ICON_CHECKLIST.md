@@ -20,8 +20,8 @@ Give this family a distinct, clear **decorating** theme: a cute strawberry-roof 
 
 | ID | Holiday | Time | Visual direction (decorator/editor semantics) | Generated | Owner visual approval | RGBA matte QA | Binary in GitHub | App/iPhone |
 |---|---|---|---|---|---|---|---|---|
-| CD-01 | Halloween | Day | Sunny strawberry-roof cottage with flowerpot, paintbrush, ribbon spool, pumpkin lanterns, autumn leaves and sunny orange-lavender gingham | 🟡 GENERATED | ⬜ AWAITING OWNER APPROVAL | ⚠ RGB source with checkerboard, non-destructive alpha cleanup later | ⬜ original binary not staged | ⬜ |
-| CD-02 | Halloween | Night | Moonlit cottage with lit windows, purple pumpkins, glowing garden trim, lavender flowerpot and ribbons/paintbrush | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| CD-01 | Halloween | Day | Sunny strawberry-roof cottage with flowerpot, paintbrush, ribbon spool, pumpkin lanterns, autumn leaves and sunny orange-lavender gingham | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ original RGB/checkerboard; RGBA edge QA pending | ⬜ original PNG not yet staged | ⬜ |
+| CD-02 | Halloween | Night | Moonlit strawberry cottage with lit windows, purple jack-o'-lantern berries, decorative flowerpot, brush and ribbon spool | ⬜ NEXT: single image generation | ⬜ awaits owner review | ⬜ | ⬜ | ⬜ |
 | CD-03 | Christmas | Day | Snow-frosted cottage with wreath, red ribbon, candy canes, snowy floral pots and festive decorator accents | ⬜ | ⬜ | ⬜ | ⬜ |
 | CD-04 | Christmas | Night | Cozy glowing snowy cottage, midnight evergreen lights, wreath, baubles, purple-tinted gardening decorations | ⬜ | ⬜ | ⬜ | ⬜ |
 | CD-05 | Thanksgiving | Day | Amber harvest cottage, strawberry pie window display, maple leaf garland, pumpkin planters, cozy decorating details | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -52,3 +52,11 @@ Links: [H1-B04 checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md) · [Master
 - [ ] No H1-B05 PNG binaries uploaded to GitHub or routed into game yet; no code, economy, decoration inventory or other art families modified.
 
 **H1-B05: 1/8 generated, 0/8 visually approved.**
+
+
+### CD-01 owner approval and CD-02 night design next
+- [x] CD-01 Halloween Day visually approved by owner (“Good continue”). Freeze the approved original: glossy strawberry roof cottage, bright sun, pumpkin-berry lanterns, autumn florals, decorating brush/flowerpot and purple ribbon spool.
+- [ ] **NEXT CD-02 Halloween Night:** generate exactly one owner-review image, preserving a recognizable decorated strawberry cottage, flowerpot, decorating brush or ribbon spool, Halloween lanterns, purple night sky with moon/stars and lit windows. Do not reproduce the generic H1-B01 cottage hero.
+- [ ] Design approval is separate from real RGBA alpha/edge verification and GitHub PNG binary staging; source original is immutable and no game code/economy/inventory or earlier artwork families are modified.
+
+**H1-B05 visual approvals: 1/8; CD-02 next.**
