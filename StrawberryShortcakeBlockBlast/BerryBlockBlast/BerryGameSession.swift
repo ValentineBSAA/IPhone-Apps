@@ -47,9 +47,9 @@ final class BerryGameSession: ObservableObject {
         }
     }
 
-    static func savedEndlessEngine(side: Int) -> BerryEngine? {
+    static func savedEndlessEngine(side: Int,
+                                  defaults: UserDefaults = .standard) -> BerryEngine? {
         guard [8, 12, 24].contains(side) else { return nil }
-        let defaults = UserDefaults.standard
         if let data = defaults.data(forKey: endlessSaveKey(side: side)),
            let snapshot = try? JSONDecoder().decode(BerryEngine.self, from: data),
            snapshot.side == side, snapshot.moves > 0 { return snapshot }
@@ -94,23 +94,25 @@ final class BerryGameSession: ObservableObject {
         }
     }
     func selectMode(_ mode: BerryMode) {
+        // D2a: selected game mode reads its own injected store for Endless
+        // board/size/migration. Normal sessions still use standard defaults.
         activeMode = mode
         let scoreKey = bestScoreKey(for: mode)
         // Preserve legacy scores for old modes only. The new 12×12 and 24×24
         // scoreboards must start independently, not inherit an 8×8 record.
         let hasNewBoardSize = mode == .endless &&
-            [12, 24].contains(UserDefaults.standard.integer(forKey: "berryblockblast.endless.boardSize.v056b2"))
+            [12, 24].contains(checkoutDefaults.integer(forKey: "berryblockblast.endless.boardSize.v056b2"))
         if mode != .superHard && mode != .classic && mode != .challenge &&
-           !hasNewBoardSize && UserDefaults.standard.object(forKey: scoreKey) == nil {
+           !hasNewBoardSize && checkoutDefaults.object(forKey: scoreKey) == nil {
             // Earlier versions shared one best-score key for five modes.
             // Seed independent records from it so an upgrade never loses that number.
-            UserDefaults.standard.set(UserDefaults.standard.integer(forKey: bestKey), forKey: scoreKey)
+            checkoutDefaults.set(checkoutDefaults.integer(forKey: bestKey), forKey: scoreKey)
         }
-        bestScore = UserDefaults.standard.integer(forKey: scoreKey)
+        bestScore = checkoutDefaults.integer(forKey: scoreKey)
         // Sweet Endless is the only mode that resumes its board. Keep legacy
         // Classic/non-Endless saves on disk for safe rollback, but never resume
         // them in this build. A selected garden size resumes only its own slot.
-        let requestedSize = UserDefaults.standard.integer(forKey: "berryblockblast.endless.boardSize.v056b2")
+        let requestedSize = checkoutDefaults.integer(forKey: "berryblockblast.endless.boardSize.v056b2")
         let size = [8, 12, 24].contains(requestedSize) ? requestedSize : 8
         if mode == .daily {
             // A daily attempt is consumed when the player enters play, not
@@ -124,12 +126,12 @@ final class BerryGameSession: ObservableObject {
             }
             engine = BerryDailyHistory.activeEngine() ?? freshEngine()
             BerryDailyHistory.saveActiveEngine(engine)
-        } else if mode == .endless, let saved = Self.savedEndlessEngine(side: size) {
+        } else if mode == .endless, let saved = Self.savedEndlessEngine(side: size, defaults: checkoutDefaults) {
             engine = saved
             if size == 8 {
-                UserDefaults.standard.set(true, forKey: Self.legacyEndlessMigratedKey)
+                checkoutDefaults.set(true, forKey: Self.legacyEndlessMigratedKey)
                 if let data = try? JSONEncoder().encode(saved) {
-                    UserDefaults.standard.set(data, forKey: Self.endlessSaveKey(side: 8))
+                    checkoutDefaults.set(data, forKey: Self.endlessSaveKey(side: 8))
                 }
             }
         } else {
@@ -142,7 +144,7 @@ final class BerryGameSession: ObservableObject {
         case .cozy: engine.configureDifficulty(.cozyGentle)
         case .story:
             engine.configureDifficulty(.storyProgressive,
-                stage: UserDefaults.standard.integer(forKey: "berryblockblast.story.level"))
+                stage: checkoutDefaults.integer(forKey: "berryblockblast.story.level"))
         default: engine.configureDifficulty(nil)
         }
         lastMessage = nil
@@ -168,7 +170,7 @@ final class BerryGameSession: ObservableObject {
         if activeMode == .cozy { return BerryEngine(cozy: true) }
         if activeMode == .superHard { return BerryEngine(side: 12, hard: true) }
         if activeMode == .endless {
-            let requested = UserDefaults.standard.integer(forKey: "berryblockblast.endless.boardSize.v056b2")
+            let requested = checkoutDefaults.integer(forKey: "berryblockblast.endless.boardSize.v056b2")
             let side = [8, 12, 24].contains(requested) ? requested : 8
             return side == 8 ? BerryEngine() : BerryEngine(side: side, hard: side == 24)
         }
@@ -183,7 +185,7 @@ final class BerryGameSession: ObservableObject {
     private func bestScoreKey(for mode: BerryMode) -> String {
         switch mode {
         case .endless:
-            let side = UserDefaults.standard.integer(forKey: "berryblockblast.endless.boardSize.v056b2")
+            let side = checkoutDefaults.integer(forKey: "berryblockblast.endless.boardSize.v056b2")
             return Self.endlessScoreKey(side: side)
         case .story: return "berryblockblast.story.best-score.v055"
         case .daily: return "berryblockblast.daily.best-score.v055"
