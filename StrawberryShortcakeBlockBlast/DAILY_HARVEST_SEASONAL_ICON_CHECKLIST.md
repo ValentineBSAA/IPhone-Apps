@@ -26,7 +26,7 @@ Use a clear **little tear-off calendar page (without printed numbers)** as the c
 | DH-02 | Halloween | Night | Moonlit calendar, basket of strawberries, crescent and stars, glowing witch-hat jack-o'-lantern berries | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source import pending | ⬜ |
 | DH-03 | Christmas | Day | Snow-topped red/green calendar, harvested strawberry basket, holly, bells, candy canes; approved second generated variant | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ baked checkerboard possible; alpha QA pending | ⬜ source import pending | ⬜ |
 | DH-04 | Christmas | Night | Moonlit snowy calendar with strawberry basket, glowing firs, gold crescent and stars, holly and bells | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ original import pending | ⬜ |
-| DH-05 | Thanksgiving | Day | Harvest calendar, berry crate, gold maples, pumpkin and berry pie | ⬜ NEXT: single image generation | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
+| DH-05 | Thanksgiving | Day | Warm sunlit calendar, harvested strawberries, berry pie, pumpkins, corn, autumn maple leaves and orange gingham | 🟡 GENERATED | ⬜ AWAITING OWNER | ⬜ true-alpha/edge QA pending | ⬜ original source not staged | ⬜ |
 | DH-06 | Thanksgiving | Night | Plum/amber moonlit calendar, candlelit harvest baskets, foliage and berry pie | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | DH-07 | Birthday | Day | Pink candy calendar, strawberry cake and gift, confetti, bow and festive harvest basket | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | DH-08 | Birthday | Night | Lavender moonlit calendar, sparkling balloons, cake candle, berries and ribbon | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -110,3 +110,11 @@ Links: [H1-B02 Berry Story running checklist](https://github.com/ValentineBSAA/I
 - [ ] All source PNG binary import, actual alpha/edge verification, RGBA candidates, checker/light/dark and small-scale proofs, ZIP manifest and Xcode/physical iPhone QA remain separate open gates.
 
 **Current Daily Harvest: 4/8 visually approved; DH-05 next.**
+
+
+### DH-05 Thanksgiving Day candidate generated
+- [x] One individually generated image shown in chat: cream-faced number-free spiral calendar, gold sunlight, woven strawberry basket, orange checkered bow, pumpkins, corn, maple leaves and lattice strawberry pie.
+- [ ] Await explicit visual approval before DH-06 Thanksgiving Night.
+- [ ] Keep exact source image intact and inspect true transparency rather than assuming image background is transparent; RGBA QA/ZIP/GitHub binary import/Xcode device QA remain separate.
+
+**Current Daily Harvest: 5/8 designs generated, 4/8 visually approved, DH-05 awaiting review.**
