@@ -24,7 +24,7 @@ Use one standalone image-generation output per asset, never collage-generated so
 | 01 | HOME | Berry Classic | 8/8 visual samples approved; exact Classic vs Home mapping to confirm |
 | 02 | HOME | Berry Story | H1-B02: **8/8 visual designs approved**; [checklist](https://github.com/ValentineBSAA/IPhone-Apps/blob/artwork/berry-seasonal-berry-story-h1-b02/StrawberryShortcakeBlockBlast/BERRY_STORY_SEASONAL_ICON_CHECKLIST.md), original/RGBA QA ZIP ready; binary GitHub import and four cleanup mattes pending |
 | 03 | HOME | Daily Harvest | H1-B03: **8/8 visual designs approved**; [checklist](DAILY_HARVEST_SEASONAL_ICON_CHECKLIST.md), checked source/RGBA QA ZIP ready, 3 alpha candidates require review, binary import pending |
-| 04 | HOME | More Adventures | Not generated |
+| 04 | HOME | More Adventures | H1-B04: [new eight-image running checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md); MA-01 Halloween Day next, 0/8 owner-approved |
 | 05 | HOME | My Strawberry Cottage | Not generated |
 | 06 | HOME | Berry Collection | Not generated |
 | 07 | HOME | Strawberry School | Not generated |
@@ -112,3 +112,7 @@ New isolated [Daily Harvest H1-B03 running checklist](DAILY_HARVEST_SEASONAL_ICO
 - [x] Release ZIP importer workflow installed on `main`: `.github/workflows/berry-daily-harvest-h1-b03-import.yml`. It checks the pinned archive and updates ONLY isolated Daily Harvest art branch when tag `berry-daily-harvest-h1-b03` is published.
 - [ ] User uploads verified ZIP as release asset; confirm importer success and original PNG staging, then conduct real iPhone image QA. **None of these have been staged merely by installing workflow.**
 - [ ] Next semantic source family: More Adventures Home tile H1-B04; distinguish navigation to Berry Blitz / Cozy Cottage / Nightmare from one game mode icon.
+
+
+## Next family H1-B04: More Adventures
+Grounded in the actual SwiftUI More Adventures Home tile with `showMore` navigation to Berry Blitz, Cozy Cottage and Strawberry Nightmare. Each seasonal Day/Night icon must communicate a branching choice of **three paths**, not a calendar or book. Start at [MA-01 Halloween Day](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md), one image per owner approval. Existing approved art packs and future runtime logic stay separate.
