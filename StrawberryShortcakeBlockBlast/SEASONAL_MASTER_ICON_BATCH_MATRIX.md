@@ -24,8 +24,8 @@ Use one standalone image-generation output per asset, never collage-generated so
 | 01 | HOME | Berry Classic | 8/8 visual samples approved; exact Classic vs Home mapping to confirm |
 | 02 | HOME | Berry Story | H1-B02: **8/8 visual designs approved**; [checklist](https://github.com/ValentineBSAA/IPhone-Apps/blob/artwork/berry-seasonal-berry-story-h1-b02/StrawberryShortcakeBlockBlast/BERRY_STORY_SEASONAL_ICON_CHECKLIST.md), original/RGBA QA ZIP ready; binary GitHub import and four cleanup mattes pending |
 | 03 | HOME | Daily Harvest | H1-B03: **8/8 visual designs approved**; [checklist](DAILY_HARVEST_SEASONAL_ICON_CHECKLIST.md), checked source/RGBA QA ZIP ready, 3 alpha candidates require review, binary import pending |
-| 04 | HOME | More Adventures | H1-B04: [new eight-image running checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md); MA-01 Halloween Day next, 0/8 owner-approved |
-| 05 | HOME | My Strawberry Cottage | Not generated |
+| 04 | HOME | More Adventures | H1-B04: **8/8 visuals approved**; [checklist](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md) and SHA-256 verified original+RGBA ZIP ready; 6 alpha candidates pending owner review and GitHub binary upload |
+| 05 | HOME | My Strawberry Cottage | H1-B05: [new 8-image decorating-specific checklist](COTTAGE_DECOR_SEASONAL_ICON_CHECKLIST.md); CD-01 Halloween Day next, 0/8 owner-approved |
 | 06 | HOME | Berry Collection | Not generated |
 | 07 | HOME | Strawberry School | Not generated |
 | 08 | HOME | Berry Village | Not generated |
@@ -116,3 +116,7 @@ New isolated [Daily Harvest H1-B03 running checklist](DAILY_HARVEST_SEASONAL_ICO
 
 ## Next family H1-B04: More Adventures
 Grounded in the actual SwiftUI More Adventures Home tile with `showMore` navigation to Berry Blitz, Cozy Cottage and Strawberry Nightmare. Each seasonal Day/Night icon must communicate a branching choice of **three paths**, not a calendar or book. Start at [MA-01 Halloween Day](MORE_ADVENTURES_SEASONAL_ICON_CHECKLIST.md), one image per owner approval. Existing approved art packs and future runtime logic stay separate.
+
+
+## H1-B05 Home / My Strawberry Cottage decorating icons
+Different from the eight H1-B01 cottage/Classic visual direction originals: this family follows actual `art: "CottageDecorations"` in Home, whose destination is the decoration editor. [Dedicated checklist](COTTAGE_DECOR_SEASONAL_ICON_CHECKLIST.md) created; one source image per owner approval, exact originals and RGBA candidate files kept separate. H1-B04 More Adventures 8/8 visual design complete with checked archive SHA `a505666b3e0afc60f9af9f4a8d2539af2de8d26da7c08ef0d7d284ef0ab4562d`; GitHub release binary import and 6 matte candidate reviews are still pending.
