@@ -231,6 +231,7 @@ struct BerryDeveloperGardenView: View {
                                     }
                                 }
                                 .buttonStyle(BerryPolishPressStyle())
+                                .accessibilityIdentifier("berry.developer.tool.\(tool.rawValue)")
                             }
                         }
                         Button(showAdvanced ? "Hide extra diagnostics" : "More diagnostics and build information") {
