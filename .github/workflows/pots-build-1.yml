@@ -162,6 +162,10 @@ jobs:
           test -f Tests/PosiesDailyCareTests.swift
           test -f Tests/PosiesMedicationCatalogTests.swift
           test -f Tests/PosiesMedicationCabinetPolishTests.swift
+          grep -q '@FocusState private var focusedField' Sources/PosiesMedicationCabinetView.swift
+          grep -q 'ToolbarItemGroup(placement: .keyboard)' Sources/PosiesMedicationCabinetView.swift
+          grep -q 'scrollDismissesKeyboard(.interactively)' Sources/PosiesMedicationCabinetView.swift
+          echo "Verified v0.3.0 medication editor keyboard dismissal controls"
           grep -q 'struct PosiesMedicationProfile' Sources/PosiesPremiumModels.swift
           grep -q 'PosiesMedicationMeasurements.validPair' Sources/PosiesPremiumModels.swift
           grep -q 'selectionMenu' Sources/PosiesMedicationCabinetView.swift

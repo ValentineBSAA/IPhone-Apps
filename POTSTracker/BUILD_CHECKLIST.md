@@ -317,3 +317,8 @@
 - [x] Dropdown selections can be cleared, and invalid strength/amount pair prevents Save.
 - [x] Saved cards show strength/form/supply only when explicitly entered; official safety links remain accessible.
 - [ ] Complete v0.3.0 CI, tests and physical iPhone QA; retain all future flare and clinician export work.
+
+## v0.3.0 iPhone decimal-keyboard usability correction
+- [x] Add focused input tracking and a keyboard-toolbar Done button for medication strength, bottle inventory, label name and notes. Interactive swipe-to-dismiss also available.
+- [ ] Build & CI validation of iOS 16 SwiftUI keyboard toolbar.
+- [ ] Real iPhone: both decimal fields expose a usable Done action, keyboard dismisses without saving, scroll-drag dismissal works, Save/Cancel still preserve intended state.

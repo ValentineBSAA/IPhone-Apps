@@ -410,6 +410,12 @@ private struct PosiesMedicationProfileEditor: View {
     @State private var hasRefillDate: Bool
     @State private var showLabelDetails = false
     @State private var saveFailed = false
+    /// A decimal pad has no Return/Done key on iPhone. Track the active editor
+    /// so an explicit, accessible keyboard toolbar can dismiss every field.
+    @FocusState private var focusedField: MedicationField?
+    private enum MedicationField: Hashable {
+        case name, strength, supply, instructions, notes, legacyLabel
+    }
     let onSave: (PosiesMedicationProfile) -> Bool
 
     init(profile: PosiesMedicationProfile, onSave: @escaping (PosiesMedicationProfile) -> Bool) {
@@ -493,12 +499,16 @@ private struct PosiesMedicationProfileEditor: View {
                                 .font(.headline).foregroundStyle(Color.potsTeal)
                             TextField("Medication name (from your label)", text: $profile.name)
                                 .textFieldStyle(.roundedBorder)
+                                .focused($focusedField, equals: .name)
+                                .submitLabel(.done)
+                                .onSubmit { focusedField = nil }
                                 .accessibilityLabel("Medication name")
                             Text("Strength shown on label (optional)")
                                 .font(.subheadline.weight(.semibold))
                             HStack(spacing: 9) {
                                 TextField("e.g. 400", text: $strengthText)
                                     .keyboardType(.decimalPad).textFieldStyle(.roundedBorder)
+                                    .focused($focusedField, equals: .strength)
                                     .accessibilityLabel("Label strength amount")
                                 selectionMenu("Unit", value: strengthUnit,
                                               options: PosiesMedicationMeasurements.strengthUnits) {
@@ -534,6 +544,7 @@ private struct PosiesMedicationProfileEditor: View {
                             HStack(spacing: 9) {
                                 TextField("e.g. 30", text: $supplyText)
                                     .keyboardType(.decimalPad).textFieldStyle(.roundedBorder)
+                                    .focused($focusedField, equals: .supply)
                                     .accessibilityLabel("Amount remaining in the bottle")
                                 selectionMenu("Unit", value: supplyUnit,
                                               options: PosiesMedicationMeasurements.supplyUnits) {
@@ -567,11 +578,16 @@ private struct PosiesMedicationProfileEditor: View {
                                 TextField("Directions copied from my label (optional)",
                                           text: $profile.instructions, axis: .vertical)
                                     .lineLimit(2...5).textFieldStyle(.roundedBorder)
+                                    .focused($focusedField, equals: .instructions)
                                 TextField("My notes (optional)", text: $profile.notes, axis: .vertical)
                                     .lineLimit(2...5).textFieldStyle(.roundedBorder)
+                                    .focused($focusedField, equals: .notes)
                                 TextField("Older free-text label value (kept for compatibility)",
                                           text: $profile.labelDose)
                                     .textFieldStyle(.roundedBorder)
+                                    .focused($focusedField, equals: .legacyLabel)
+                                    .submitLabel(.done)
+                                    .onSubmit { focusedField = nil }
                                 if !profile.labelDose.isEmpty {
                                     Text("Older entries may contain a number without a unit. We keep it exactly as entered and never assume it means mg.")
                                         .font(.caption).foregroundStyle(Color.potsSecondary)
@@ -591,6 +607,8 @@ private struct PosiesMedicationProfileEditor: View {
                 .padding(.bottom, 20)
             }
             .background(Color.potsBackground.ignoresSafeArea())
+            // Drag or swipe the form to reveal content behind the keyboard.
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle("Medication profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -600,6 +618,14 @@ private struct PosiesMedicationProfileEditor: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { saveProfile() }
                         .disabled(!canSave)
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        focusedField = nil
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .accessibilityLabel("Done editing, dismiss keyboard")
                 }
             }
             .alert("That profile wasn't saved", isPresented: $saveFailed) {
@@ -646,6 +672,7 @@ private struct PosiesMedicationProfileEditor: View {
 
     private func saveProfile() {
         guard canSave else { return }
+        focusedField = nil
         profile.strengthAmount = strengthText.isEmpty ? nil : strengthText.trimmingCharacters(in: .whitespaces)
         profile.strengthUnit = strengthUnit.isEmpty ? nil : strengthUnit
         profile.dosageForm = form.isEmpty ? nil : form
