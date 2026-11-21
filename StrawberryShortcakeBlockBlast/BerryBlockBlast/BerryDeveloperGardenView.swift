@@ -134,6 +134,30 @@ struct BerryDeveloperGardenView: View {
     }
     // Permanent hidden owner tools. Every candidate build must include these,
     // including the optional, confirmed cheat wallet action.
+    private func berryApprovedArtPreview(_ name: String, title: String,
+                                        detail: String) -> some View {
+        VStack(spacing: 6) {
+            Image(name)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity)
+                .frame(height: 100)
+                .accessibilityHidden(true)
+            Text(title)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
+            Text(detail)
+                .font(.caption2)
+                .foregroundStyle(BerryStyle.chocolate.opacity(0.8))
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, minHeight: 150)
+        .padding(8)
+        .background(.white, in: RoundedRectangle(cornerRadius: 15))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("berry.developer.art.preview.\(name)")
+    }
+
     private var quickTools: [Tool] {
         [.qaWallet, .diagnostics, .saves, .combo]
     }
@@ -341,6 +365,7 @@ struct BerryDeveloperGardenView: View {
             BerryDeveloperSandboxPanel()
         case .stateLab:
             BerryDeveloperStateLabPanel()
+            BerryClockTransitionPreview()
         case .commerce:
             BerryDeveloperCommerceLabPanel()
         case .toolActions:
@@ -509,10 +534,14 @@ struct BerryDeveloperGardenView: View {
                 .font(.caption)
         case .clock:
             TimelineView(.periodic(from: .now, by: 1)) { context in
-                Text(context.date.formatted(date: .abbreviated, time: .standard))
-                    .font(.system(size: 17, weight: .bold, design: .monospaced))
+                Text(BerryDayNightAppearance.clockText(context.date))
+                    .font(.system(size: 18, weight: .bold, design: .monospaced))
+                Text(BerryDayNightAppearance.countdownText(at: context.date))
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .monospacedDigit()
             }
-            Text("This is your phone's current local clock. Automatic 6 AM/6 PM storefront switching is planned for the Night Market update.")
+            BerryClockTransitionPreview()
+            Text("The real iPhone clock and visual 6 AM/6 PM countdown work now. The Moonberry Night Market and its actual shop switch remain Build 6 features.")
                 .font(.caption)
                 .multilineTextAlignment(.center)
         case .notifications:
@@ -569,6 +598,26 @@ struct BerryDeveloperGardenView: View {
                 economyMetric("6 AM / 6 PM Switch", "Planned")
                 economyMetric("Rollback & Saves", "Planned")
             }
+            Text("READY ARTWORK • VISUAL PREVIEW ONLY")
+                .font(.caption.bold())
+                .foregroundStyle(BerryStyle.strawberry)
+            LazyVGrid(columns: columns, spacing: 11) {
+                berryApprovedArtPreview("Moonberry_Currency", title: "Moonberry • Day",
+                                        detail: "Currency art ready")
+                berryApprovedArtPreview("Night_Moonberry_Currency", title: "Moonberry • Night",
+                                        detail: "Currency art ready")
+                berryApprovedArtPreview("Approved_Night_Market_Storefront",
+                                        title: "Market • Day", detail: "Approved preview")
+                berryApprovedArtPreview("Night_Approved_Night_Market_Storefront",
+                                        title: "Market • Night", detail: "Approved preview")
+                berryApprovedArtPreview("BerryRewardBlueberrySparkle",
+                                        title: "Blueberry Sparkle", detail: "Collectible art ready")
+                berryApprovedArtPreview("BerryRewardMoonberryNightmare",
+                                        title: "Moonberry Nightmare", detail: "Collectible art ready")
+            }
+            Text("This gallery uses actual bundled PNG artwork and changes no purchases, real time, Strawberry balance, saved progress or Moonberry balance.")
+                .font(.caption)
+                .multilineTextAlignment(.center)
             Text("When Build 6 implements a real separate Moonberry economy, this card must gain isolated one-tap PASS/FAIL fixtures and an optional, confirmed Cheat Moonberries control. Never invent a balance or write to the Strawberry wallet.")
                 .font(.caption)
                 .multilineTextAlignment(.center)

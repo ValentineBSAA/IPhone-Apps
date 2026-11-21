@@ -27,7 +27,7 @@ final class BerryDeveloperGardenPhysicalQAUITests: XCTestCase {
             scroll.swipeUp()
         }
         XCTAssertTrue(version.isHittable, "Actual Settings version label must be reachable")
-        XCTAssertEqual(version.label, "Berry Berry Blast v0.5.16 • Build 48 • I6 QA")
+        XCTAssertEqual(version.label, "Berry Berry Blast v0.5.16 • Build 49 • I7 QA")
         version.press(forDuration: 2.1)
 
         let pin = app.secureTextFields["Four digit developer PIN"]
