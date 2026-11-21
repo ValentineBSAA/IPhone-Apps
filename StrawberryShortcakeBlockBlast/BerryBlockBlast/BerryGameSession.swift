@@ -534,8 +534,10 @@ final class BerryGameSession: ObservableObject {
     func rewardDaily() {
         let date = nowProvider()
         let day = Self.dailyDateKey(date: date)
-        // Legacy completed challenges were already paid; never pay twice.
-        guard !BerryDailyHistory.completedDays(defaults: checkoutDefaults).contains(day) else { return }
+        // Legacy completed and lost challenges cannot pay a second time.
+        guard BerryDailyHistory.outcome(on: date, defaults: checkoutDefaults) != .lost,
+              !BerryDailyHistory.completedDays(defaults: checkoutDefaults).contains(day)
+        else { return }
         let dayNumber = BerryDailyHistory.nextStreakDay(on: date,
                                                          defaults: checkoutDefaults)
         let amount = BerryDailyHistory.reward(forStreakDay: dayNumber)
