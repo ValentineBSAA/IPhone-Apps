@@ -918,9 +918,28 @@
       "title": "D1a real Boutique cosmetic buy persists exact ownership, wallet, ledger and receipt",
       "fixture": "Construct BerryGameSession with disposable checkoutDefaults and actual injected BerryEconomyLedger. Buy an unowned approved block or border at canonical price.",
       "expected": "One exact purchase debits wallet once, writes ownedCosmetics and reward receipt, and records exact per-item ledger spending.",
-      "status": "implemented_untested",
+      "status": "automated_pass_device_pending",
       "execution": "real_session_isolated_boutique_purchase",
-      "latest_result": null,
+      "latest_result": {
+        "automated": "pass",
+        "run_id": 44868413961,
+        "url": "https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868413961",
+        "suite": "BerryBoutiqueCheckoutIsolationTests",
+        "suite_passed": 10,
+        "existing_boutique_passed": 6,
+        "combined_selected_passed": 64,
+        "failures": 0,
+        "release_qa_controls_excluded": true,
+        "saved_endless_sizes_protected": [
+          8,
+          12,
+          24
+        ],
+        "physical_iphone_16e": "pending",
+        "view_tap_e2e": "not_tested",
+        "cosmetic_crash_atomicity": "not_proven",
+        "merge": "draft_unmerged"
+      },
       "test_ref": "BerryBoutiqueCheckoutIsolationTests",
       "implementation_ref": "feature/berry-advanced-dev-d1a-boutique-isolated-qa:BerryGameSession.swift",
       "manual_iphone_accepted": false
@@ -931,9 +950,28 @@
       "title": "D1a Boutique insufficient funds, fake price, unapproved item and duplicate purchase guards",
       "fixture": "Run real buyCosmetic with one berry short, incorrect cost, unknown ID, already-owned item and restart.",
       "expected": "All invalid requests reject without wallet/ledger/receipt/ownership mutations; past ownership survives a new game session.",
-      "status": "implemented_untested",
+      "status": "automated_pass_device_pending",
       "execution": "real_session_isolated_boutique_purchase",
-      "latest_result": null,
+      "latest_result": {
+        "automated": "pass",
+        "run_id": 44868413961,
+        "url": "https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868413961",
+        "suite": "BerryBoutiqueCheckoutIsolationTests",
+        "suite_passed": 10,
+        "existing_boutique_passed": 6,
+        "combined_selected_passed": 64,
+        "failures": 0,
+        "release_qa_controls_excluded": true,
+        "saved_endless_sizes_protected": [
+          8,
+          12,
+          24
+        ],
+        "physical_iphone_16e": "pending",
+        "view_tap_e2e": "not_tested",
+        "cosmetic_crash_atomicity": "not_proven",
+        "merge": "draft_unmerged"
+      },
       "test_ref": "BerryBoutiqueCheckoutIsolationTests",
       "implementation_ref": "feature/berry-advanced-dev-d1a-boutique-isolated-qa:BerryBoutiquePurchasePolicy.swift",
       "manual_iphone_accepted": false
@@ -944,9 +982,28 @@
       "title": "D1a free strawberry skin, legacy ownership, appearance and capped reward history",
       "fixture": "Seed isolated inventory, already-owned cosmetics, selected block style and board surface; buy free strawberry-fruit and paid rose border.",
       "expected": "Free skin granted once without spending; existing owned cosmetics and equipped looks preserved, reward log limited to 20 entries.",
-      "status": "implemented_untested",
+      "status": "automated_pass_device_pending",
       "execution": "real_session_isolated_boutique_purchase",
-      "latest_result": null,
+      "latest_result": {
+        "automated": "pass",
+        "run_id": 44868413961,
+        "url": "https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868413961",
+        "suite": "BerryBoutiqueCheckoutIsolationTests",
+        "suite_passed": 10,
+        "existing_boutique_passed": 6,
+        "combined_selected_passed": 64,
+        "failures": 0,
+        "release_qa_controls_excluded": true,
+        "saved_endless_sizes_protected": [
+          8,
+          12,
+          24
+        ],
+        "physical_iphone_16e": "pending",
+        "view_tap_e2e": "not_tested",
+        "cosmetic_crash_atomicity": "not_proven",
+        "merge": "draft_unmerged"
+      },
       "test_ref": "BerryBoutiqueCheckoutIsolationTests",
       "implementation_ref": "feature/berry-advanced-dev-d1a-boutique-isolated-qa:BerryGameSession.swift",
       "manual_iphone_accepted": false
@@ -957,9 +1014,28 @@
       "title": "D1a Boutique and helper checkout from menu preserves all saved Endless sizes",
       "fixture": "Seed independent 8×8/12×12/24×24 Endless slot bytes in isolated preferences, open fresh GameSession, buy cosmetic plus Undo/Hint.",
       "expected": "All three saved board slots unchanged byte-for-byte; inventory purchase writes do not invoke board-save deletion; normal UserDefaults remains untouched.",
-      "status": "implemented_untested",
+      "status": "automated_pass_device_pending",
       "execution": "real_session_isolated_boutique_purchase",
-      "latest_result": null,
+      "latest_result": {
+        "automated": "pass",
+        "run_id": 44868413961,
+        "url": "https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44868413961",
+        "suite": "BerryBoutiqueCheckoutIsolationTests",
+        "suite_passed": 10,
+        "existing_boutique_passed": 6,
+        "combined_selected_passed": 64,
+        "failures": 0,
+        "release_qa_controls_excluded": true,
+        "saved_endless_sizes_protected": [
+          8,
+          12,
+          24
+        ],
+        "physical_iphone_16e": "pending",
+        "view_tap_e2e": "not_tested",
+        "cosmetic_crash_atomicity": "not_proven",
+        "merge": "draft_unmerged"
+      },
       "test_ref": "BerryBoutiqueCheckoutIsolationTests.testMenuCosmeticAndHelperPurchasesNeverEraseSavedEndlessBoards",
       "implementation_ref": "feature/berry-advanced-dev-d1a-boutique-isolated-qa:BerryGameSession.swift",
       "manual_iphone_accepted": false
