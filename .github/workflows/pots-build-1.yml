@@ -1,4 +1,4 @@
-name: POTS & Posies | v0.2.10 Medication Library & Cabinet Redesign iOS 16
+name: POTS & Posies | v0.3.0 Next Milestone Baseline iOS 16
 
 on:
   workflow_dispatch:
@@ -120,7 +120,7 @@ jobs:
           BUILD="$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$INFO")"
           BUNDLE="$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$INFO")"
           echo "Installed app identity: $BUNDLE · v$VERSION (build $BUILD)"
-          test "$VERSION" = "0.2.10"
+          test "$VERSION" = "0.3.0"
           test "$BUILD" = "$GITHUB_RUN_NUMBER"
           test "$BUNDLE" = "com.valentinebsaa.potstracker"
           DISPLAY="$(/usr/libexec/PlistBuddy -c 'Print CFBundleDisplayName' "$INFO")"
@@ -165,17 +165,17 @@ jobs:
           grep -q 'PosiesMedicationCatalogView' Sources/PosiesMedicationCabinetView.swift
           grep -q 'PosiesMedicationReferenceDetail' Sources/PosiesMedicationCabinetView.swift
           grep -q 'PosiesMedicationCatalog.find' Sources/PosiesMedicationCabinetView.swift
-          echo "Verified v0.2.10 library and original cabinet coverage"
+          echo "Verified v0.3.0 library and original cabinet coverage"
           test -f Sources/PosiesQuickPresets.swift
           grep -q 'PosiesQuickPresets.values' Sources/ExpandedTrackingView.swift
           grep -q 'lastEvent(for:' Sources/PosiesMedicationCabinetView.swift
           grep -q 'if onSave(profile)' Sources/PosiesMedicationCabinetView.swift
-          echo "Verified v0.2.10 quick choices and medication save protections"
+          echo "Verified v0.3.0 quick choices and medication save protections"
           grep -q 'PosiesNotificationDelegate' Sources/POTSTrackerApp.swift
           grep -q 'PosiesGentleGuidance' Sources/LogViews.swift
           grep -q 'PosiesMedicationLibrary' Sources/PosiesDataTransfer.swift
           grep -q 'posiesRevealReminderTypeV028' Sources/PosiesRemindersView.swift
-          echo "Verified v0.2.10 guided vitals, medication cabinet, private notifications and backup compatibility"
+          echo "Verified v0.3.0 guided vitals, medication cabinet, private notifications and backup compatibility"
 
           test -f Sources/PosiesChoiceBehavior.swift
           grep -q 'PosiesChoiceBehavior.toggleAmount' Sources/ExpandedTrackingView.swift
@@ -194,7 +194,7 @@ jobs:
           test ! -f POTSTracker.entitlements
           echo "Verified: carousel, opted-in iCloud runtime detection, Files fallback and retained AltStore signing"
 
-          echo "Verified v0.2.10 trackers, calendar, reports, reminders, data transfer and regression source"
+          echo "Verified v0.3.0 trackers, calendar, reports, reminders, data transfer and regression source"
 
           grep -q 'TabNavigationRevisions' Sources/DashboardView.swift
           echo "Verified: tab-stack root routing regression test is present"
@@ -209,13 +209,13 @@ jobs:
           set -euo pipefail
           mkdir -p dist/Payload
           cp -R build-device/Build/Products/Release-iphoneos/POTSTracker.app dist/Payload/
-          (cd dist && zip -qr POTS-and-Posies-v0.2.10-iOS16-unsigned.ipa Payload)
-          unzip -l dist/POTS-and-Posies-v0.2.10-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
+          (cd dist && zip -qr POTS-and-Posies-v0.3.0-iOS16-unsigned.ipa Payload)
+          unzip -l dist/POTS-and-Posies-v0.3.0-iOS16-unsigned.ipa | grep -q 'Payload/POTSTracker.app/Info.plist'
 
       - name: Upload unsigned IPA build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: POTS-and-Posies-v0.2.10-iOS16-unsigned
+          name: POTS-and-Posies-v0.3.0-iOS16-unsigned
           path: POTSTracker/dist/*.ipa
           if-no-files-found: error
           retention-days: 30
