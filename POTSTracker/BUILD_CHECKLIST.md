@@ -284,6 +284,6 @@
 - [x] Medication cabinet distinguishes recorded statuses and supports a manual log link. Failed profile saves no longer dismiss the editor.
 - [x] Sleep vs rest summaries and explicit medication status counts, without medical judgment or automatic adherence claims.
 - [x] Parser, preference validation and older-medication-archive regression tests; build version/IPA integrity assertions.
-- [ ] Run full GitHub iOS simulator, unsigned device and unit tests; validate unsigned IPA.
+- [x] GitHub [run 44848307666](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/44848307666) completed SUCCESS with iOS builds and all tests; extracted IPA is v0.2.9 Build 272, `com.valentinebsaa.potstracker`, iOS 16 minimum, valid ZIP and Assets.car.
 - [ ] Physical iPhone QA of buttons, medication editing, manual logs, notifications, backups, old data and accessibility.
 - [ ] Merge to main only after device acceptance. See UX_V029.md.
