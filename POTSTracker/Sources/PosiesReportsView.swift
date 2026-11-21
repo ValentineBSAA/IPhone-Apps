@@ -14,6 +14,13 @@ private struct PosiesPulsePlot: Identifiable {
     var bpm: Int
 }
 
+private struct PosiesBPPlot: Identifiable {
+    var id: UUID
+    var time: Date
+    var systolic: Int
+    var diastolic: Int
+}
+
 struct PosiesReportsView: View {
     @FetchRequest(sortDescriptors: [NSSortDescriptor(key: "recordedAt", ascending: false)])
     private var entries: FetchedResults<POTSLogEntry>
@@ -43,6 +50,22 @@ struct PosiesReportsView: View {
             .map { PosiesPulsePlot(id: $0.id, time: $0.recordedAt, bpm: Int($0.firstValue)) }
             .sorted { $0.time < $1.time }
     }
+    private var bloodPressureRows: [PosiesBPPlot] {
+        records.filter {
+            $0.category == LogCategory.bloodPressure.rawValue &&
+                (1...400).contains($0.firstValue) && (1...400).contains($0.secondValue)
+        }.map { row in
+            PosiesBPPlot(id: row.id, time: row.recordedAt,
+                         systolic: Int(row.firstValue), diastolic: Int(row.secondValue))
+        }.sorted { $0.time < $1.time }
+    }
+    private var medicationStatusCounts: [(String, Int)] {
+        let medications = records.filter { $0.category == LogCategory.medications.rawValue }
+        return ["Taken", "Skipped", "Planned", "Other"].map { status in
+            (status, medications.filter { $0.posture == status }.count)
+        }
+    }
+
     private var groupedBuckets: [PosiesTrendBucket] {
         let weekly = range == .year || range == .all
         let counts = Dictionary(grouping: records) { row -> Date in
@@ -126,6 +149,51 @@ struct PosiesReportsView: View {
 
                 GlassCard {
                     VStack(alignment: .leading, spacing: 12) {
+                        Text("Manually recorded blood pressure").font(.headline)
+                        if bloodPressureRows.isEmpty {
+                            missing
+                        } else {
+                            Chart(bloodPressureRows) { reading in
+                                PointMark(
+                                    x: .value("When", reading.time),
+                                    y: .value("Systolic mmHg", reading.systolic)
+                                ).foregroundStyle(Color.potsTeal)
+                                PointMark(
+                                    x: .value("When", reading.time),
+                                    y: .value("Diastolic mmHg", reading.diastolic)
+                                ).foregroundStyle(Color.potsSecondary)
+                            }
+                            .frame(height: 175)
+                            .chartYAxis { AxisMarks(position: .leading) }
+                            Text("Rose: top number · Gray: bottom number. Only your saved measurements, not continuous monitoring.")
+                                .font(.caption).foregroundStyle(Color.potsSecondary)
+                        }
+                    }
+                }
+
+                GlassCard {
+                    VStack(alignment: .leading, spacing: 9) {
+                        Text("Medication events you recorded").font(.headline)
+                        let counts = medicationStatusCounts
+                        if counts.allSatisfy({ $0.1 == 0 }) {
+                            missing
+                        } else {
+                            ForEach(counts, id: \.0) { status, count in
+                                HStack {
+                                    Text(status).font(.subheadline)
+                                    Spacer()
+                                    Text("\(count)").font(.subheadline.monospacedDigit())
+                                        .foregroundStyle(Color.potsTeal)
+                                }
+                            }
+                            Text("These counts never imply a dose was taken just because a reminder was scheduled.")
+                                .font(.caption).foregroundStyle(Color.potsSecondary)
+                        }
+                    }
+                }
+
+                GlassCard {
+                    VStack(alignment: .leading, spacing: 12) {
                         Text("Most recorded symptoms").font(.headline)
                         if symptomRows.isEmpty { missing }
                         else {
@@ -163,7 +231,7 @@ struct PosiesReportsView: View {
                         NavigationLink {
                             PosiesDataManagementView()
                         } label: {
-                            Label("Export PDF, CSV or backup", systemImage: "square.and.arrow.up")
+                            Label("Prepare an appointment report or backup", systemImage: "square.and.arrow.up")
                                 .frame(maxWidth: .infinity, minHeight: 47)
                         }
                         .buttonStyle(.borderedProminent).tint(Color.potsButtonFill)
