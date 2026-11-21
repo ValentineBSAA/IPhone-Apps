@@ -25,8 +25,8 @@ Use a clear **little tear-off calendar page (without printed numbers)** as the c
 | DH-01 | Halloween | Day | Sunny berry calendar, strawberry basket, smiling autumn lantern berries, orange/purple foliage | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ alpha/background QA pending | ⬜ source archive pending | ⬜ |
 | DH-02 | Halloween | Night | Moonlit calendar, basket of strawberries, crescent and stars, glowing witch-hat jack-o'-lantern berries | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ source import pending | ⬜ |
 | DH-03 | Christmas | Day | Snow-topped red/green calendar, harvested strawberry basket, holly, bells, candy canes; approved second generated variant | ✅ GENERATED | ✅ OWNER APPROVED | ⚠ baked checkerboard possible; alpha QA pending | ⬜ source import pending | ⬜ |
-| DH-04 | Christmas | Night | Moonlit snowy calendar with strawberry basket, glowing firs, gold crescent and stars, holly and bells | 🟡 GENERATED | ⬜ AWAITING OWNER | ⬜ alpha/edge QA pending | ⬜ original not staged | ⬜ |
-| DH-05 | Thanksgiving | Day | Harvest calendar, berry crate, gold maples, pumpkin and berry pie | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| DH-04 | Christmas | Night | Moonlit snowy calendar with strawberry basket, glowing firs, gold crescent and stars, holly and bells | ✅ GENERATED | ✅ OWNER APPROVED | ⬜ alpha/edge QA pending | ⬜ original import pending | ⬜ |
+| DH-05 | Thanksgiving | Day | Harvest calendar, berry crate, gold maples, pumpkin and berry pie | ⬜ NEXT: single image generation | ⬜ owner review pending | ⬜ | ⬜ | ⬜ |
 | DH-06 | Thanksgiving | Night | Plum/amber moonlit calendar, candlelit harvest baskets, foliage and berry pie | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | DH-07 | Birthday | Day | Pink candy calendar, strawberry cake and gift, confetti, bow and festive harvest basket | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | DH-08 | Birthday | Night | Lavender moonlit calendar, sparkling balloons, cake candle, berries and ribbon | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -102,3 +102,11 @@ Links: [H1-B02 Berry Story running checklist](https://github.com/ValentineBSAA/I
 - [ ] Inspect actual PNG alpha and edges, preserve exact original, then create separate RGBA candidates, 64/96px and light/dark/checker proofs, checksum ZIP and verified GitHub binary import.
 
 **Daily Harvest now 4/8 generated, 3/8 visually approved; PNG GitHub import and iPhone QA pending.**
+
+
+### DH-04 approved / Thanksgiving Day next
+- [x] DH-04 Christmas Night visually approved by owner (“Good continue”). Preserve its original moonlit Christmas harvest-calendar artwork, do not regenerate.
+- [ ] **NEXT DH-05 Thanksgiving Day**: one original square Home tile with centered day-calendar page and fresh strawberry basket, gold maple leaves, pumpkins, berry pie, harvest gingham and sunny amber accents, without printed dates/words. Owner approval required before DH-06 Thanksgiving Night.
+- [ ] All source PNG binary import, actual alpha/edge verification, RGBA candidates, checker/light/dark and small-scale proofs, ZIP manifest and Xcode/physical iPhone QA remain separate open gates.
+
+**Current Daily Harvest: 4/8 visually approved; DH-05 next.**
