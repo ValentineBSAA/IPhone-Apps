@@ -81,3 +81,10 @@
 - [x] Debug simulator named iPhone 16e, Release compiled with internal-only QA sandbox excluded, source/art/audio checks passed, no IPA shipped. CI runner-path and missing-`try` test syntax errors corrected, with both failures preserved in the [D0b QA ledger](https://github.com/ValentineBSAA/IPhone-Apps/blob/feature/berry-advanced-dev-d0b-state-time-lab/StrawberryShortcakeBlockBlast/ADVANCED_DEV_D0B_ISOLATED_STATE_LAB_QA.md).
 - [x] [Scenario catalog](https://github.com/ValentineBSAA/IPhone-Apps/blob/planning/berry-advanced-developer-qa-cockpit/StrawberryShortcakeBlockBlast/ADVANCED_DEVELOPER_SCENARIO_COVERAGE_CATALOG.json) currently **54** test contracts: 8 `automated_pass_device_pending` (2 D0 + 6 D0b), 44 `planned`, 2 `not_implemented`; this is NOT 54/54 tested.
 - [ ] Physical-owner iPhone 16e interface checks, **D0c injected real shop/save handler tests**, complete gameplay regression and merge/release approval remain open. D0b mock price checks do not assert production checkout safety.
+
+
+## D0c production-shared standard tool rules
+- [x] [Draft PR #66](https://github.com/ValentineBSAA/IPhone-Apps/pull/66) adds shared side-effect-free `BerryStandardToolTransaction` to actual `BerryGameSession` Undo/Shuffle/Hint purchases and legal Hint charge-use; D0b QA lab now tests **the same production decision logic**.
+- [x] Unit tests cover exact cost/one short/invalid input, count overflow and invalid-use no charge deduction. [D0c workflow](https://github.com/ValentineBSAA/IPhone-Apps/actions/workflows/berry-d0c-shared-tools-iphone16e.yml) selected regression with named iPhone 16e and Release QA exclusion; terminal status pending.
+- [x] Coverage catalog now **56 contracts**, only 2 new D0c entries implemented-but-untested pending CI. The existing 8 automated-pass D0/D0b contracts remain device-owner pending.
+- [ ] Full live store and ledger/endless-save injection, device taps, blocked tool charge and full app regression are still separate. No new image, IPA or release.
