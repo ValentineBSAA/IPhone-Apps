@@ -1,0 +1,548 @@
+import SwiftUI
+import UniformTypeIdentifiers
+import UIKit
+
+enum DS {
+    static let ink = Color(red: 0.027, green: 0.040, blue: 0.094)
+    static let card = Color(red: 0.074, green: 0.097, blue: 0.170)
+    static let cardBright = Color(red: 0.104, green: 0.139, blue: 0.216)
+    static let mint = Color(red: 0.29, green: 0.96, blue: 0.82)
+    static let violet = Color(red: 0.63, green: 0.54, blue: 1.0)
+    static let muted = Color(red: 0.65, green: 0.73, blue: 0.82)
+    static let amber = Color(red: 1.0, green: 0.77, blue: 0.39)
+    static let gradient = LinearGradient(colors: [mint, violet], startPoint: .topLeading, endPoint: .bottomTrailing)
+}
+
+struct GlassCard<Content: View>: View {
+    @ViewBuilder var content: Content
+    var body: some View {
+        content
+            .padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                RoundedRectangle(cornerRadius: 23, style: .continuous)
+                    .fill(DS.card.opacity(0.96))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 23, style: .continuous)
+                            .strokeBorder(.white.opacity(0.09), lineWidth: 1)
+                    }
+            }
+    }
+}
+
+struct GlowButton: View {
+    let title: String
+    let symbol: String
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: symbol)
+                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 15)
+                .foregroundStyle(DS.ink)
+                .background(DS.gradient, in: RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct DaySixRootView: View {
+    @AppStorage("daysix.didFinishOnboarding.v1") private var didFinishOnboarding = false
+
+    var body: some View {
+        TabView {
+            DashboardView()
+                .tabItem { Label("Home", systemImage: "square.grid.2x2.fill") }
+            ManagedAppsView()
+                .tabItem { Label("My Apps", systemImage: "square.stack.3d.up.fill") }
+            RenewalCenterView()
+                .tabItem { Label("Renew", systemImage: "arrow.triangle.2.circlepath") }
+            IPAInstallView()
+                .tabItem { Label("Install", systemImage: "square.and.arrow.down.fill") }
+            MoreView()
+                .tabItem { Label("More", systemImage: "ellipsis.circle.fill") }
+        }
+        .tint(DS.mint)
+        .toolbarColorScheme(.dark, for: .tabBar)
+        .fullScreenCover(isPresented: Binding(
+            get: { !didFinishOnboarding },
+            set: { if !$0 { didFinishOnboarding = true } })) {
+            DaySixOnboardingView { didFinishOnboarding = true }
+        }
+    }
+}
+
+struct DaySixBackground<Content: View>: View {
+    @ViewBuilder let content: Content
+    var body: some View {
+        ZStack {
+            DS.ink.ignoresSafeArea()
+            RadialGradient(colors: [DS.violet.opacity(0.19), .clear],
+                           center: .topTrailing, startRadius: 0, endRadius: 430)
+                .ignoresSafeArea()
+            content
+        }
+    }
+}
+
+struct SectionHeading: View {
+    let title: String
+    let subtitle: String
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title).font(.system(size: 29, weight: .bold, design: .rounded))
+            Text(subtitle).font(.subheadline).foregroundStyle(DS.muted)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+struct DashboardView: View {
+    @EnvironmentObject private var store: DaySixStore
+    @State private var showAdd = false
+
+    var body: some View {
+        NavigationStack {
+            DaySixBackground {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("DAY SIX")
+                                    .tracking(4)
+                                    .font(.system(size: 12, weight: .heavy))
+                                    .foregroundStyle(DS.mint)
+                                Text("Your apps, protected.")
+                                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                            }
+                            Spacer()
+                            Image(systemName: "checkmark.shield.fill")
+                                .font(.system(size: 31, weight: .medium))
+                                .foregroundStyle(DS.gradient)
+                                .frame(width: 62, height: 62)
+                                .background(DS.cardBright, in: RoundedRectangle(cornerRadius: 19))
+                        }
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: 17) {
+                                HStack {
+                                    Label("RENEWAL MONITOR", systemImage: "arrow.triangle.2.circlepath")
+                                        .font(.caption.bold()).tracking(1.3)
+                                        .foregroundStyle(DS.mint)
+                                    Spacer()
+                                    Text("DAY 6 OF 7")
+                                        .font(.caption2.bold())
+                                        .foregroundStyle(DS.muted)
+                                }
+                                Text(store.urgentCount > 0 ? "Renewal needed." :
+                                     store.selfExpiresAt == nil ? "Check signing setup." : "Looking good.")
+                                    .font(.system(size: 27, weight: .bold, design: .rounded))
+                                Text(store.urgentCount > 0
+                                     ? "\(store.urgentCount) signature(s) are due, including DaySix itself when necessary."
+                                     : store.selfExpiresAt == nil
+                                       ? "DaySix's own signing expiry is unknown. Check SideStore, then add other apps to track."
+                                       : "DaySix is monitoring its own signature. Other apps can be added below.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(DS.muted)
+                                HStack(spacing: 10) {
+                                    Image(systemName: store.urgentCount > 0 ? "exclamationmark.circle.fill" : "checkmark.seal.fill")
+                                    Text(store.urgentCount > 0 ? "Action required" : "Tracking active")
+                                }
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(store.urgentCount > 0 ? DS.amber : DS.mint)
+                                if store.urgentCount > 0 {
+                                    GlowButton(title: "Run Renewal Shortcut", symbol: "arrow.clockwise") {
+                                        RefreshLauncher.runConfiguredShortcut()
+                                    }
+                                    Text("This launches your saved Shortcut. Confirm the new signing date afterward.")
+                                        .font(.caption2).foregroundStyle(DS.muted)
+                                }
+                            }
+                        }
+                        HStack(spacing: 12) {
+                            stat(number: "\(store.apps.count + 1)", label: "Monitored apps", symbol: "square.stack.fill")
+                            stat(number: "\(store.urgentCount)", label: "Due now", symbol: "clock.arrow.circlepath")
+                        }
+                        Text("THIS IPHONE APP")
+                            .font(.caption.bold()).tracking(1.5).foregroundStyle(DS.muted)
+                        SelfSignatureCard()
+                        HStack {
+                            Text("UPCOMING RENEWALS")
+                                .font(.caption.bold()).tracking(1.5)
+                                .foregroundStyle(DS.muted)
+                            Spacer()
+                            Text("Verified dates only").font(.caption2).foregroundStyle(DS.muted)
+                        }
+                        if store.apps.isEmpty {
+                            GlassCard {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Image(systemName: "plus.app.fill")
+                                        .font(.system(size: 28)).foregroundStyle(DS.violet)
+                                    Text("Nothing tracked yet").font(.headline)
+                                    Text("Import an IPA with SideStore, then add it here to monitor renewal deadlines.")
+                                        .font(.subheadline).foregroundStyle(DS.muted)
+                                    GlowButton(title: "Track an App", symbol: "plus") { showAdd = true }
+                                }
+                            }
+                        } else {
+                            ForEach(store.apps.sorted(by: { $0.refreshDueAt < $1.refreshDueAt }).prefix(4)) { app in
+                                TrackedAppCard(app: app)
+                            }
+                        }
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Label("Designed to be accurate", systemImage: "checkmark.shield")
+                                    .font(.headline).foregroundStyle(DS.mint)
+                                Text("DaySix doesn't claim that an app renewed until you verify the new expiration date. SideStore and the iOS Shortcuts automation do the signing.")
+                                    .font(.footnote).foregroundStyle(DS.muted)
+                            }
+                        }
+                    }
+                    .padding(20)
+                }
+            }
+            .navigationBarHidden(true)
+            .sheet(isPresented: $showAdd) { AddTrackedAppView() }
+        }
+    }
+
+    private func stat(number: String, label: String, symbol: String) -> some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 9) {
+                Image(systemName: symbol).foregroundStyle(DS.violet).font(.title3)
+                Text(number).font(.system(size: 29, weight: .bold, design: .rounded))
+                Text(label).font(.caption).foregroundStyle(DS.muted)
+            }
+        }
+    }
+}
+
+struct TrackedAppCard: View {
+    @EnvironmentObject private var store: DaySixStore
+    let app: TrackedApp
+    @State private var confirmVerified = false
+    var body: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 13) {
+                HStack(spacing: 12) {
+                    Image(systemName: "app.fill")
+                        .font(.title2).foregroundStyle(DS.gradient)
+                        .frame(width: 46, height: 46)
+                        .background(DS.cardBright, in: RoundedRectangle(cornerRadius: 14))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(app.name).font(.headline)
+                        Text(app.bundleID.isEmpty ? "Manually tracked" : app.bundleID)
+                            .font(.caption).lineLimit(1).foregroundStyle(DS.muted)
+                    }
+                    Spacer()
+                    Text(app.isExpired ? "Expired" : app.isDue ? "Due" : "\(app.daysLeft)d")
+                        .font(.caption.bold())
+                        .foregroundStyle(app.isDue ? DS.amber : DS.mint)
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background((app.isDue ? DS.amber : DS.mint).opacity(0.1),
+                                    in: Capsule())
+                }
+                HStack {
+                    Label("Expires \(app.expiresAt.formatted(date: .abbreviated, time: .omitted))",
+                          systemImage: "calendar")
+                        .font(.caption).foregroundStyle(DS.muted)
+                    Spacer()
+                    Button("Verified renewed") { confirmVerified = true }
+                        .font(.caption.bold()).foregroundStyle(DS.mint)
+                }
+                if app.lastAttempt != nil && app.isDue {
+                    Text("Automation attempted. Confirm the new expiry in SideStore.")
+                        .font(.caption2).foregroundStyle(DS.amber)
+                }
+            }
+        }
+        .confirmationDialog("Did SideStore show a renewed seven-day expiry?",
+                            isPresented: $confirmVerified, titleVisibility: .visible) {
+            Button("Yes, I verified it") { store.verifyRenewed(app) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This changes the renewal date only after you confirm a real successful signing.")
+        }
+    }
+}
+
+struct ManagedAppsView: View {
+    @EnvironmentObject private var store: DaySixStore
+    @State private var showAdd = false
+    var body: some View {
+        NavigationStack {
+            DaySixBackground {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        SectionHeading(title: "My Apps",
+                                       subtitle: "DaySix monitors itself; add other apps to track them.")
+                        SelfSignatureCard()
+                        GlowButton(title: "Add Tracked App", symbol: "plus.app.fill") { showAdd = true }
+                        if store.apps.isEmpty {
+                            GlassCard {
+                                Text("No apps added yet. iOS does not allow DaySix to scan your installed apps automatically.")
+                                    .font(.subheadline).foregroundStyle(DS.muted)
+                            }
+                        }
+                        ForEach(store.apps) { app in
+                            TrackedAppCard(app: app)
+                                .contextMenu {
+                                    Button("Remove from Tracking", systemImage: "trash", role: .destructive) {
+                                        store.delete(app)
+                                    }
+                                }
+                        }
+                        Text("Hold an app card to remove it. Removing a card does not uninstall the app.")
+                            .font(.caption).foregroundStyle(DS.muted)
+                    }
+                    .padding(20)
+                }
+            }
+            .navigationBarHidden(true)
+            .sheet(isPresented: $showAdd) { AddTrackedAppView() }
+        }
+    }
+}
+
+struct AddTrackedAppView: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var store: DaySixStore
+    @State private var name = ""
+    @State private var bundleID = ""
+    @State private var renewalDate = Date.now
+    @State private var sourceURL = ""
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("App details") {
+                    TextField("App name", text: $name)
+                    TextField("Bundle ID (optional)", text: $bundleID)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    TextField("IPA download URL (optional)", text: $sourceURL)
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.URL)
+                        .autocorrectionDisabled()
+                }
+                Section("Last successful signing") {
+                    DatePicker("Verified on", selection: $renewalDate,
+                               in: ...Date.now, displayedComponents: .date)
+                    Text("DaySix will flag renewal six calendar days after this date. Set the date shown by your signing app.")
+                        .font(.footnote).foregroundStyle(DS.muted)
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(DS.ink)
+            .navigationTitle("Track an App")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        store.add(name: name, bundleID: bundleID,
+                                  lastVerifiedRenewal: renewalDate, sourceURL: sourceURL)
+                        dismiss()
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .fontWeight(.bold)
+                }
+            }
+        }
+        .tint(DS.mint)
+    }
+}
+
+struct IPAInstallView: View {
+    // This monitor-only build has no signing engine. The previous Files
+    // button opened a share sheet and falsely suggested installation.
+    // Keep this screen truthful until the integrated signer replaces it.
+    var body: some View {
+        NavigationStack {
+            DaySixBackground {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        SectionHeading(
+                            title: "Install an IPA",
+                            subtitle: "The built-in signing engine is being integrated.")
+
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: 13) {
+                                Label("Installer not active in this build",
+                                      systemImage: "wrench.and.screwdriver.fill")
+                                    .font(.headline)
+                                    .foregroundStyle(DS.amber)
+                                Text("This version of DaySix monitors expiration dates but cannot sign or install an IPA.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.white)
+                                Text("The old Choose IPA File button only shared the file. It didn't start installation, so that misleading button has been removed.")
+                                    .font(.footnote)
+                                    .foregroundStyle(DS.muted)
+                                Divider().overlay(.white.opacity(0.08))
+                                Label("Integrated signer in development",
+                                      systemImage: "checkmark.shield.fill")
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(DS.mint)
+                                Text("The next signing-capable build will use a real IPA picker and a confirmation step connected directly to the signing engine. You won't need a separate SideStore installation for its core signing interface.")
+                                    .font(.footnote)
+                                    .foregroundStyle(DS.muted)
+                            }
+                        }
+                    }
+                    .padding(20)
+                    .padding(.bottom, 24)
+                }
+            }
+            .navigationBarHidden(true)
+        }
+    }
+}
+
+struct MoreView: View {
+    @EnvironmentObject private var store: DaySixStore
+    private let recipe = "FIRST: In Shortcuts, create a shortcut named DaySix Refresh.\n1. Set VPN: Connect LocalDevVPN\n2. Open URLs: sidestore://\n3. Wait 5 seconds (iOS 27 workaround)\n4. DaySix: Record Refresh Attempt\n5. SideStore: Refresh All Apps\n\nTHEN: In Shortcuts → Automation → Time of Day → Daily → Run Immediately:\n1. DaySix: Check DaySix Refresh\n2. If result is True\n3. Run Shortcut: DaySix Refresh\n4. End If\n\nOn iOS 27, opening SideStore may require the iPhone to be unlocked. If unattended automation cannot wake SideStore, open it manually when notified. No success is assumed until the expiry changes."
+    var body: some View {
+        NavigationStack {
+            DaySixBackground {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        SectionHeading(title: "More", subtitle: "Automation, connection, and preferences.")
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: 13) {
+                                Label("Day-six automation", systemImage: "clock.arrow.2.circlepath")
+                                    .font(.headline).foregroundStyle(DS.mint)
+                                Text("Use a named 'DaySix Refresh' Shortcut for one-tap manual renewal and a separate daily automation that calls it only when DaySix detects a due signature. SideStore still performs signing, including DaySix itself if SideStore manages the installation.")
+                                    .font(.subheadline).foregroundStyle(DS.muted)
+                                HStack(spacing: 10) {
+                                    Button {
+                                        RefreshLauncher.runConfiguredShortcut()
+                                    } label: {
+                                        Label("Run Refresh", systemImage: "arrow.clockwise")
+                                            .font(.subheadline.bold())
+                                    }
+                                    Button {
+                                        RefreshLauncher.openShortcutEditor()
+                                    } label: {
+                                        Label("New Shortcut", systemImage: "plus")
+                                            .font(.subheadline.bold())
+                                    }
+                                }
+                                .tint(DS.mint)
+                                Text(recipe).font(.footnote).foregroundStyle(.white.opacity(0.9))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(13)
+                                    .background(DS.ink, in: RoundedRectangle(cornerRadius: 12))
+                                Button {
+                                    UIPasteboard.general.string = recipe
+                                } label: {
+                                    Label("Copy Setup Steps", systemImage: "doc.on.doc")
+                                        .font(.subheadline.bold()).foregroundStyle(DS.mint)
+                                }
+                            }
+                        }
+                        NavigationLink {
+                            DaySixNotificationSettingsView()
+                        } label: {
+                            GlassCard {
+                                HStack(spacing: 13) {
+                                    Image(systemName: "bell.badge.fill")
+                                        .font(.title2).foregroundStyle(DS.mint)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("iPhone Notifications").font(.headline)
+                                        Text("Native iOS banners, sounds, permissions, alert types and a test.")
+                                            .font(.caption).foregroundStyle(DS.muted)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right").foregroundStyle(DS.muted)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        NavigationLink {
+                            ReliabilityCenterView()
+                        } label: {
+                            GlassCard {
+                                HStack(spacing: 13) {
+                                    Image(systemName: "lifepreserver.fill")
+                                        .font(.title2).foregroundStyle(DS.mint)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Reliability Lab").font(.headline)
+                                        Text("Background checks, automation backups and rescue steps.")
+                                            .font(.caption).foregroundStyle(DS.muted)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right").foregroundStyle(DS.muted)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        NavigationLink {
+                            RenewalHistoryView()
+                        } label: {
+                            GlassCard {
+                                HStack {
+                                    Image(systemName: "clock.arrow.circlepath")
+                                        .font(.title2).foregroundStyle(DS.violet)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Renewal History").font(.headline)
+                                        Text("See actual signing changes and Shortcuts attempts.")
+                                            .font(.caption).foregroundStyle(DS.muted)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right").foregroundStyle(DS.muted)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Toggle(isOn: $store.remindersEnabled) {
+                                    Label("Day-six reminders", systemImage: "bell.badge.fill")
+                                }
+                                .tint(DS.mint)
+                                NavigationLink {
+                                    DaySixNotificationSettingsView()
+                                } label: {
+                                    Label("Manage Native iPhone Notifications",
+                                          systemImage: "bell.badge.fill")
+                                        .foregroundStyle(DS.mint)
+                                }
+                                Text("iOS manages banners, sounds, badges and Lock Screen alerts. DaySix schedules local renewal reminders even when background refresh cannot run.")
+                                    .font(.footnote).foregroundStyle(DS.muted)
+                            }
+                        }
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: 13) {
+                                Label("Signing & setup", systemImage: "shield.lefthalf.filled")
+                                    .font(.headline).foregroundStyle(DS.violet)
+                                Button("Open SideStore") { openSideStore() }
+                                Link("SideStore installation instructions",
+                                     destination: URL(string: "https://docs.sidestore.io/docs/installation/install.html")!)
+                                Link("Official SideInstaller project",
+                                     destination: URL(string: "https://github.com/FrizzleM/SideInstaller")!)
+                                Text("To renew DaySix itself, it must be listed in SideStore's My Apps. Reinstall it from inside SideStore if necessary. Apple still limits free developer signatures to seven days.")
+                                    .font(.footnote).foregroundStyle(DS.muted)
+                            }
+                            .tint(DS.mint)
+                        }
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("DaySix \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev")").font(.subheadline.bold())
+                                Text("Local-first. No analytics. No Apple credentials stored. Tracking is manual until a verified signer integration is available.")
+                                    .font(.footnote).foregroundStyle(DS.muted)
+                            }
+                        }
+                    }
+                    .padding(20)
+                }
+            }
+            .navigationBarHidden(true)
+        }
+    }
+}
+
+private func openSideStore() {
+    guard let url = URL(string: "sidestore://") else { return }
+    UIApplication.shared.open(url)
+}

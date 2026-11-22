@@ -1,0 +1,63 @@
+name: DaySix - Signing Policy Tests
+
+on:
+  push:
+    branches:
+      - main
+      - feature/daysix-ios-signing-dashboard
+    paths:
+      - "DaySix/App/**"
+      - "DaySix/Tests/**"
+      - "DaySix/SignerLab/preview_brand.py"
+      - "DaySix/SignerLab/simple_nav.py"
+      - "DaySix/SignerLab/DaySixSignerHome.swift"
+      - "DaySix/SignerLab/Tests/**"
+      - ".github/workflows/daysix-policy-tests.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "DaySix/App/**"
+      - "DaySix/Tests/**"
+      - "DaySix/SignerLab/preview_brand.py"
+      - "DaySix/SignerLab/simple_nav.py"
+      - "DaySix/SignerLab/DaySixSignerHome.swift"
+      - "DaySix/SignerLab/Tests/**"
+      - ".github/workflows/daysix-policy-tests.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: daysix-policy-${{ github.event_name }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  provisioning-and-renewal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout DaySix sources
+        uses: actions/checkout@v4
+
+      - name: Swift toolchain version
+        run: swift --version
+
+      - name: Compile policy and signature parsing tests
+        run: |
+          swiftc DaySix/App/RenewalPolicy.swift \
+            DaySix/App/SigningReadiness.swift \
+            DaySix/App/SelfProvisioning.swift \
+            DaySix/Tests/main.swift \
+            -o /tmp/daysix-policy-tests
+
+      - name: Parse all iPhone SwiftUI, AppIntents and notification sources
+        run: |
+          # Syntax validation only: the full iOS SDK typecheck still needs Xcode.
+          swiftc -frontend -parse DaySix/App/*.swift
+
+      - name: Run expiry, retry, and policy tests
+        run: /tmp/daysix-policy-tests
+
+      - name: Verify signer-lab identity isolation and provenance
+        run: python3 DaySix/SignerLab/Tests/test_preview_brand.py

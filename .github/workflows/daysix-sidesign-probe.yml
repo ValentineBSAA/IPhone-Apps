@@ -1,0 +1,49 @@
+name: DaySix - SideSign Library Probe
+
+on:
+  push:
+    branches:
+      - feature/daysix-ios-signing-dashboard
+    paths:
+      - "DaySix/SignerLab/SideSignPackageProbe/**"
+      - ".github/workflows/daysix-sidesign-probe.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "DaySix/SignerLab/SideSignPackageProbe/**"
+      - ".github/workflows/daysix-sidesign-probe.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: daysix-sidesign-${{ github.event_name }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  library-link:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install AnisetteKit CPU emulator headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libunicorn-dev pkg-config
+
+      - name: Check Swift toolchain
+        run: swift --version
+
+      - name: Resolve official SideSign GPLv3 library and dependencies
+        working-directory: DaySix/SignerLab/SideSignPackageProbe
+        run: swift package resolve
+
+      - name: Build standalone library importer
+        working-directory: DaySix/SignerLab/SideSignPackageProbe
+        run: swift build -c release
+
+      - name: Execute dependency linkage proof
+        working-directory: DaySix/SignerLab/SideSignPackageProbe
+        run: swift run -c release DaySixSideSignProbe
