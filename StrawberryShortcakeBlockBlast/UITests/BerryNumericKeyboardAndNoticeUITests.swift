@@ -33,6 +33,8 @@ final class BerryNumericKeyboardAndNoticeUITests: XCTestCase {
         XCTAssertTrue(keyboardDone.waitForExistence(timeout: 10),
                       "Number pad for PIN must supply a custom Done button")
         keyboardDone.tap()
+        let pinClosed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.keyboards.firstMatch)
+        XCTAssertEqual(XCTWaiter.wait(for: [pinClosed], timeout: 5), .completed, "PIN keyboard must disappear when Done is tapped")
         XCTAssertTrue(app.buttons["Unlock"].isEnabled)
         app.buttons["Unlock"].tap()
 
