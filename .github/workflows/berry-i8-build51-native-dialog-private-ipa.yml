@@ -1,0 +1,353 @@
+name: Berry Berry Blast | I8 Build51 physical iPhone keypad and popup fix private IPA
+
+on:
+  push:
+    branches: [feature/berry-i8-build51-native-done-notice-preview]
+    paths:
+      - '.github/workflows/berry-i8-build51-native-dialog-private-ipa.yml'
+      - 'StrawberryShortcakeBlockBlast/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: berry-i8-build51-native-dialog-private-ipa
+  cancel-in-progress: false
+
+jobs:
+  native-screen-journeys:
+    runs-on: macos-15
+    timeout-minutes: 70
+    defaults:
+      run:
+        working-directory: StrawberryShortcakeBlockBlast
+    steps:
+      - name: Checkout I8 Build51 keyboard, notices and clock art candidate
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Protect iOS16, artwork and audio
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 Tools/check_ios16_compat.py
+          python3 Tools/verify_artwork.py
+          python3 Tools/verify_audio_build2.py
+          test -f UITests/BerryNativeJourneyUITests.swift
+          test -f UITests/BerryDailyStoryJourneyUITests.swift
+          test -f UITests/BerryBoardAppearancePersistenceUITests.swift
+          test -f UITests/BerryVersionIdentityUITests.swift
+          test -f UITests/BerryDeveloperGardenPhysicalQAUITests.swift
+          test -f UITests/BerryLiveHomeSecondsUITests.swift
+          test -f UITests/BerryNumericKeyboardAndNoticeUITests.swift
+          test -f Tests/BerryNoticeBannerTests.swift
+          test -f BerryBlockBlast/BerryNoticeBanner.swift
+          test -f BerryBlockBlast/BerryNoticeModal.swift
+          grep -q 'popupView(activePopup)' BerryBlockBlast/BerryDeveloperGardenView.swift
+          test -f BerryBlockBlast/BerryNumericEntryField.swift
+          grep -q 'BerryNumericEntryField' BerryBlockBlast/BerryDeveloperGardenView.swift
+          grep -q 'BerryNoticeBanner' BerryBlockBlast/BerryGameView.swift
+          grep -q 'BerryNoticeBanner' BerryBlockBlast/BerryBlockBlastApp.swift
+          grep -q 'Dev_Timers_Moon_Clock' BerryBlockBlast/BerryDayNightClock.swift
+          test -f Tests/BerryClockCountdownSecondTests.swift
+          test -f Tests/BerryReadyBlueberryMoonberryArtTests.swift
+          grep -q 'dateFormat = "h:mm:ss a"' BerryBlockBlast/BerryDayNightClock.swift
+          grep -q 'Timer.publish(every: 1' BerryBlockBlast/BerryDayNightClock.swift
+          grep -q 'BerryClockTransitionPreview()' BerryBlockBlast/BerryDeveloperGardenView.swift
+          grep -q 'berry.developer.art.preview.' BerryBlockBlast/BerryDeveloperGardenView.swift
+          test -f Tests/BerryCheatWalletRestoreTests.swift
+          grep -q 'qaCheatRestorePoint' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'restorePreCheatStrawberries' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'berry.developer.cheat.restore-strawberries' BerryBlockBlast/BerryDeveloperGardenView.swift
+          grep -q 'moonberries = "Moonberries & Night Market"' BerryBlockBlast/BerryDeveloperGardenView.swift
+          grep -q 'SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BERRY_INTERNAL_QA"' project.yml
+          grep -q 'berry.settings.version.developer' BerryBlockBlast/BerrySettingsHub.swift
+          grep -q 'berry.developer.tool.' BerryBlockBlast/BerryDeveloperGardenView.swift
+          grep -q 'HIDDEN DEVELOPER GARDEN' BerryBlockBlast/BerryDeveloperGardenView.swift
+          grep -q 'OPTIONAL CHEAT' BerryBlockBlast/BerryDeveloperGardenView.swift
+          grep -q 'CURRENT_PROJECT_VERSION: "51"' project.yml
+          grep -q 'INFOPLIST_KEY_CFBundleVersion: "51"' project.yml
+          grep -q 'v\\(marketingVersion) • B\\(buildNumber) • I8 QA' BerryBlockBlast/BerryBuildIdentity.swift
+          if grep -qi 'VISUAL LAB\|B4\.6' BerryBlockBlast/BerryBuildIdentity.swift; then
+            echo 'Legacy Build 4.6 version text still in player label' >&2
+            exit 1
+          fi
+          grep -q 'berry.boutique.category.' BerryBlockBlast/BerryBoutiqueView.swift
+          grep -q 'berry.boutique.board.' BerryBlockBlast/BerryBoutiqueView.swift
+          grep -q 'berry.settings.board.blossom-glass' BerryBlockBlast/BerrySettingsHub.swift
+          grep -q 'berry.home.mode.' BerryBlockBlast/BerryModes.swift
+          grep -q 'berry.story.dialogue' BerryBlockBlast/BerryGameView.swift
+          grep -q 'berry.dailyCalendar.done' BerryBlockBlast/BerryDailyHarvestView.swift
+          test -f Tests/BerryShuffleContinueIsolationTests.swift
+          test -f Tests/BerryRescueUndoIsolationTests.swift
+          grep -q 'checkoutLedger.reverseUndoneLineEarnings' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'checkoutLedger.recordSpend(BerryEconomy.shufflePrice' BerryBlockBlast/BerryGameSession.swift
+          grep -q 'type: bundle.ui-testing' project.yml
+          grep -q 'BerryBlockBlastUI:' project.yml
+          grep -q 'berry.home.quests' BerryBlockBlast/BerryModes.swift
+          grep -q 'berry.home.village' BerryBlockBlast/BerryModes.swift
+          grep -q 'berry.home.journal' BerryBlockBlast/BerryModes.swift
+          grep -q 'berry.game.pause.return' BerryBlockBlast/BerryGameView.swift
+          grep -q 'berry.settings.birthday.month' BerryBlockBlast/BerrySettingsHub.swift
+          grep -q 'berry.quests.claim.' BerryBlockBlast/BerryProgression.swift
+
+      - name: Generate native iOS project with independent UI test scheme
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          xcodegen generate --spec project.yml
+          xcodebuild -list -project BerryBlockBlast.xcodeproj
+
+      - name: Compile owner QA Release with PIN labs and optional confirmed cheat tools
+        timeout-minutes: 15
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build-i8-b51-release CODE_SIGNING_ALLOWED=NO build
+          APP='build-i8-b51-release/Build/Products/Release-iphonesimulator/BerryBlockBlast.app'
+          test -d "$APP"
+          # Intentional in this private QA candidate: real isolated Developer Garden
+          # is included in every Release. The intentional cheat needs explicit confirmation.
+          test -f "$APP/BerryBlockBlast"
+
+      - name: Locate exact named iPhone 16e simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available -j > "$RUNNER_TEMP/berry-i8-sims.json"
+          python3 - "$RUNNER_TEMP/berry-i8-sims.json" "$GITHUB_ENV" <<'PY'
+          import json,sys
+          data=json.load(open(sys.argv[1]))
+          ids=[x['udid'] for ds in data['devices'].values() for x in ds
+               if x.get('isAvailable') and x.get('name')=='iPhone 16e']
+          if not ids:
+              raise SystemExit('BLOCKED: named iPhone 16e simulator unavailable')
+          with open(sys.argv[2],'a') as out:
+              out.write('BERRY_I8_SIM='+ids[0]+'\n')
+          print('Selected iPhone 16e:',ids[0])
+          PY
+
+      - name: Run ten iPhone UI journeys including real keypad dismissal, real popups and Developer Garden in Release
+        timeout-minutes: 28
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcrun simctl boot "$BERRY_I8_SIM" || true
+          xcrun simctl bootstatus "$BERRY_I8_SIM" -b
+          mkdir -p .build/I8B51
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlastUI -configuration Release \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,id=$BERRY_I8_SIM" \
+            -derivedDataPath .build/I8B51/derived \
+            -resultBundlePath .build/I8B51/native-journeys.xcresult \
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO test
+
+      - name: Run 182 gameplay, clock, notice-artwork, economy and restore regression tests
+        timeout-minutes: 25
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,id=$BERRY_I8_SIM" \
+            -derivedDataPath .build/I8B51/derived \
+            -resultBundlePath .build/I8B51/connected-regression.xcresult \
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO test \
+            -only-testing:BerryBlockBlastTests/BerryDeveloperSandboxTests \
+            -only-testing:BerryBlockBlastTests/BerryDeveloperStateLabTests \
+            -only-testing:BerryBlockBlastTests/BerryStandardToolTransactionTests \
+            -only-testing:BerryBlockBlastTests/BerryEconomyTests \
+            -only-testing:BerryBlockBlastTests/BerryStandardToolCheckoutIsolationTests \
+            -only-testing:BerryBlockBlastTests/BerryStandardPurchaseRecoveryTests \
+            -only-testing:BerryBlockBlastTests/BerryBoutiqueCheckoutIsolationTests \
+            -only-testing:BerryBlockBlastTests/BerryCottagePremiumIsolationTests \
+            -only-testing:BerryBlockBlastTests/BerryDeveloperCommerceLabTests \
+            -only-testing:BerryBlockBlastTests/BerryPremiumToolSaveRestoreTests \
+            -only-testing:BerryBlockBlastTests/BerryDeveloperToolActionLabTests \
+            -only-testing:BerryBlockBlastTests/BerryPremiumAdvancedRescueIsolationTests \
+            -only-testing:BerryBlockBlastTests/BerryDeveloperToolActionExpansionTests \
+            -only-testing:BerryBlockBlastTests/BerryDailyIsolatedCalendarTests \
+            -only-testing:BerryBlockBlastTests/BerryDailyRewardIsolationTests \
+            -only-testing:BerryBlockBlastTests/BerryQuestStoryProgressIsolationTests \
+            -only-testing:BerryBlockBlastTests/BerryDeveloperQuestStoryLabTests \
+            -only-testing:BerryBlockBlastTests/BerryApprovedArtFallbackTests \
+            -only-testing:BerryBlockBlastTests/BerryBirthdayPolicyIsolationTests \
+            -only-testing:BerryBlockBlastTests/BerryBuild44BoutiqueToolsTests \
+            -only-testing:BerryBlockBlastTests/BerryShuffleContinueIsolationTests \
+            -only-testing:BerryBlockBlastTests/BerryRescueUndoIsolationTests \
+            -only-testing:BerryBlockBlastTests/BerryCheatWalletRestoreTests \
+            -only-testing:BerryBlockBlastTests/BerryClockCountdownSecondTests \
+            -only-testing:BerryBlockBlastTests/BerryReadyBlueberryMoonberryArtTests \
+            -only-testing:BerryBlockBlastTests/BerryNoticeBannerTests
+
+      - name: Ensure no IPA existed before corrected private packaging
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find . -type f -name '*.ipa' -print -quit | grep -q .; then
+            echo 'Unexpected IPA: I7 is test-only' >&2
+            exit 1
+          fi
+          echo 'No IPA, signing, publication or player data export.'
+
+      - name: Compile native iPhoneOS RELEASE with private device QA diagnostics enabled
+        timeout-minutes: 30
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -project BerryBlockBlast.xcodeproj \
+            -scheme BerryBlockBlast \
+            -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath .build/I8B51-Version51-Polish-Unsigned \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" build
+          APP=".build/I8B51-Version51-Polish-Unsigned/Build/Products/Release-iphoneos/BerryBlockBlast.app"
+          test -f "$APP/Info.plist"
+          test -f "$APP/Assets.car"
+          test -f "$APP/BerryBlockBlast"
+          python3 Tools/verify_audio_build2.py --app "$APP"
+          # This is intentionally an internal Release QA build, not distribution.
+          # Verified by the native PIN long-press UI test in Release configuration.
+          grep -q 'SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BERRY_INTERNAL_QA"' project.yml
+          grep -q 'OPTIONAL CHEAT' BerryBlockBlast/BerryDeveloperGardenView.swift
+          echo "Private Build51 iPhoneOS Release compiled with native keypad dismissal, real themed dialogs and PIN Garden."
+
+      - name: Package and verify exactly one unsigned private-test IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP=".build/I8B51-Version51-Polish-Unsigned/Build/Products/Release-iphoneos/BerryBlockBlast.app"
+          mkdir -p dist/Payload
+          cp -R "$APP" dist/Payload/
+          IPA="dist/Berry-Berry-Blast-I8-v0.5.16-B51-POLISH-QA-UNSIGNED-PRIVATE-TEST.ipa"
+          # Create the normal Xcode artifact first, then normalize its ZIP
+          # container with the EXACT repack approach that installed on the
+          # owner's physical iPhone after the stock IPA failed extraction.
+          # Important: change archive metadata ONLY, never game resources.
+          (cd dist && zip -qry "$(basename "$IPA")" Payload)
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
+          import shutil, hashlib
+          ipa = Path("dist/Berry-Berry-Blast-I8-v0.5.16-B51-POLISH-QA-UNSIGNED-PRIVATE-TEST.ipa")
+          original = ipa.with_name("." + ipa.name + ".before-normalize")
+          ipa.rename(original)
+          # Rebuild the archive without extra fields or inherited ZIP metadata.
+          # Identical procedure to the owner-tested repacked diagnostic IPA.
+          with ZipFile(original, "r") as src, ZipFile(
+              ipa, "w", allowZip64=False,
+              compression=ZIP_DEFLATED, compresslevel=6
+          ) as dst:
+              for entry in src.infolist():
+                  fresh = ZipInfo(entry.filename, entry.date_time)
+                  fresh.create_system = 3
+                  fresh.external_attr = entry.external_attr
+                  fresh.internal_attr = entry.internal_attr
+                  fresh.compress_type = ZIP_STORED if entry.is_dir() else ZIP_DEFLATED
+                  fresh.flag_bits = 0
+                  fresh.extra = b""
+                  fresh.comment = b""
+                  with src.open(entry, "r") as reader, dst.open(
+                      fresh, "w", force_zip64=False
+                  ) as writer:
+                      shutil.copyfileobj(reader, writer, 1024 * 1024)
+          with ZipFile(original) as src, ZipFile(ipa) as dst:
+              old, new = src.infolist(), dst.infolist()
+              assert [x.filename for x in old] == [x.filename for x in new], "Changed IPA paths"
+              assert all(
+                  a.CRC == b.CRC and a.file_size == b.file_size and
+                  a.external_attr == b.external_attr
+                  for a, b in zip(old, new)
+              ), "Changed entry bytes or executable permissions"
+              assert all(not x.extra for x in new), "Unexpected ZIP extra fields"
+              assert dst.testzip() is None, "Repacked IPA failed CRC verification"
+              important = [x.filename for x in old if x.filename.endswith(
+                  ("BerryBlockBlast", "Info.plist", "Assets.car", "BerryTrack01.m4a")
+              )]
+              assert important, "Missing executable / plist verification targets"
+              assert all(
+                  hashlib.sha256(src.read(name)).digest() ==
+                  hashlib.sha256(dst.read(name)).digest()
+                  for name in important
+              ), "App payload changed during normalization"
+              print("AltStore-compatible repack verified:", len(new), "entries")
+          original.unlink()
+          PY
+          unzip -t "$IPA" | tail -2
+          python3 Tools/verify_audio_build2.py --ipa "$IPA"
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, plistlib, zipfile
+          ipa = Path("dist/Berry-Berry-Blast-I8-v0.5.16-B51-POLISH-QA-UNSIGNED-PRIVATE-TEST.ipa")
+          with zipfile.ZipFile(ipa) as z:
+              names = set(z.namelist())
+              prefix = "Payload/BerryBlockBlast.app/"
+              assert prefix + "Assets.car" in names, "Missing approved image catalog"
+              assert prefix + "BerryBlockBlast" in names, "Missing iPhone executable"
+              info = plistlib.loads(z.read(prefix + "Info.plist"))
+              assert info["CFBundleIdentifier"] == "com.valentinebsaa.berryblockblast", info
+              assert info["CFBundleShortVersionString"] == "0.5.16", info
+              assert info["CFBundleVersion"] == "51", info
+              assert info["MinimumOSVersion"] == "16.0", info
+              assert "iPhoneOS" in info.get("CFBundleSupportedPlatforms", []), info
+              assert 1 in info["UIDeviceFamily"], info
+          data = ipa.read_bytes()
+          digest = hashlib.sha256(data).hexdigest()
+          Path("dist/IPA-SHA256.txt").write_text(f"{digest}  {ipa.name}\n")
+          print("Verified unsigned iPhoneOS private-test IPA; bytes =", len(data), "SHA256 =", digest)
+          PY
+          cat > dist/START-HERE-BEFORE-INSTALL.txt <<'TXT'
+          BERRY BERRY BLAST I8 | BUILD 51 DEVICE FIX | PRIVATE QA IPA
+          UNSIGNED; sign through AltStore/NAS. v0.5.16 B51 I8 QA.
+          Same bundle com.valentinebsaa.berryblockblast / iOS16+.
+          Owner B50 physical tests found 2 defects addressed here:
+          (1) Done visible but no keyboard dismissal; now native
+              UITextField inputAccessoryView tied to first responder.
+          (2) Notifications appeared inside sheet rather than popup;
+              centered Strawberry dialog now appears above screen,
+              with real close/confirm/cancel actions and safe previews.
+          Cheat and exact restore confirmation also use this design.
+          iOS lock screen and Notification Center remain OS-controlled.
+          PRESERVED: PIN Garden, genuine cheat/restore, scores, saves,
+          cosmetics, original art + audio, real local second clock,
+          Moonberries gallery, visual-only night transitions.
+          The AltStore-compatible ZIP normalization is preserved.
+          Back up installed data and do not uninstall the working app.
+
+          THREE REAL iPHONE CHECKS:
+          [ ] 1. PIN and cheat Done really dismiss number pad.
+          [ ] 2. Notification preview opens full popup; close works.
+                 Cheat Cancel changes nothing; restore works.
+          [ ] 3. Home seconds/countdown, wallet, saves, music, menus.
+          Private unsigned test only, not approved for public release.
+          TXT
+
+      - name: Upload actual PIN-accessible private device QA IPA and short check sheet
+        uses: actions/upload-artifact@v4
+        with:
+          name: Berry-Berry-Blast-I8-v0.5.16-B51-POLISH-QA-PRIVATE-IPA
+          path: |
+            StrawberryShortcakeBlockBlast/dist/Berry-Berry-Blast-I8-v0.5.16-B51-POLISH-QA-UNSIGNED-PRIVATE-TEST.ipa
+            StrawberryShortcakeBlockBlast/dist/IPA-SHA256.txt
+            StrawberryShortcakeBlockBlast/dist/START-HERE-BEFORE-INSTALL.txt
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Preserve simulator evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: berry-i8-build51-native-evidence
+          path: |
+            StrawberryShortcakeBlockBlast/.build/I8B51/native-journeys.xcresult
+            StrawberryShortcakeBlockBlast/.build/I8B51/connected-regression.xcresult
+          retention-days: 14

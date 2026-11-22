@@ -13,23 +13,22 @@ struct BerryDeveloperGardenView: View {
     @State private var qaAmountText = ""
     @State private var qaBalance = 0
     @State private var qaPendingAmount = 0
-    @State private var qaGrantConfirmation = false
-    @State private var qaRestoreConfirmation = false
+    @State private var activePopup: GardenPopup?
     #if BERRY_INTERNAL_QA
     @State private var qaRestorePoint: BerryGameSession.StrawberryCheatRestorePoint?
     #endif
     @State private var qaError: String?
-    @State private var qaSuccessNotice: String?
-    @State private var noticePreview: BerryNoticeKind = .information
-    @FocusState private var focusedNumber: NumberEntry?
+ 
     @AppStorage("berryblockblast.touchDiagnostics") private var touchDiagnostics = false
     @ObservedObject private var economyLedger = BerryEconomyLedger.shared
 
     private let columns = [GridItem(.flexible(), spacing: 11), GridItem(.flexible(), spacing: 11)]
 
-    private enum NumberEntry: Hashable {
-        case pin
-        case strawberryAmount
+    private enum GardenPopup {
+        case preview(BerryNoticeKind)
+        case grant
+        case restore
+        case feedback(BerryNoticeKind, String)
     }
 
     private enum Tool: String, CaseIterable, Identifiable {
@@ -192,10 +191,10 @@ struct BerryDeveloperGardenView: View {
                         Text("Safe tools for development and physical iPhone testing.")
                             .font(.subheadline)
                             .multilineTextAlignment(.center)
-                        SecureField("Developer PIN", text: $pin)
-                            .keyboardType(.numberPad)
-                            .focused($focusedNumber, equals: .pin)
-                            .textContentType(.oneTimeCode)
+                        BerryNumericEntryField(text: $pin, placeholder: "Developer PIN",
+                                               accessibilityName: "Four digit developer PIN",
+                                               isSecret: true, maxDigits: 4)
+                            .frame(height: 28)
                             .multilineTextAlignment(.center)
                             .font(.title2.monospacedDigit())
                             .padding(14)
@@ -212,7 +211,6 @@ struct BerryDeveloperGardenView: View {
                         }
                         Button("Unlock") {
                             if pin == "1476" {
-                                focusedNumber = nil
                                 unlocked = true
                                 pin = ""
                             } else {
@@ -293,9 +291,8 @@ struct BerryDeveloperGardenView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { focusedNumber = nil; dismiss() }
+                    Button("Done") { dismiss() }
                 }
-                BerryNumericKeyboardDone { focusedNumber = nil }
             }
             .sheet(item: $selectedTool) { tool in
                 NavigationStack {
@@ -332,31 +329,13 @@ struct BerryDeveloperGardenView: View {
                         ToolbarItem(placement: .confirmationAction) {
                             Button("Done") {
                                 previewMilestone = nil
+                                activePopup = nil
                                 selectedTool = nil
                             }
                             .accessibilityIdentifier("berry.developer.tool.done")
                         }
-                        BerryNumericKeyboardDone { focusedNumber = nil }
                     }
-                    #if BERRY_INTERNAL_QA
-                    .alert("Add cheat strawberries?", isPresented: $qaGrantConfirmation) {
-                        Button("Add \(qaPendingAmount.formatted()) QA berries") {
-                            if let balance = BerryGameSession.grantQAStrawberries(qaPendingAmount) {
-                                qaBalance = balance
-                                qaRestorePoint = BerryGameSession.qaCheatRestorePoint()
-                                qaError = nil
-                                qaSuccessNotice = "Added \(qaPendingAmount.formatted()) strawberries. Your previous balance is saved for restoration."
-                                qaAmountText = ""
-                                focusedNumber = nil
-                            } else {
-                                qaError = "Unable to add this amount. Check the saved wallet and number size."
-                            }
-                        }
-                        Button("Cancel", role: .cancel) {}
-                    } message: {
-                        Text("This intentionally adds \(qaPendingAmount.formatted()) strawberries to YOUR SAVED WALLET. It is a cheat, not a natural gameplay reward. Your grant will be logged, and you can spend it in the shop. Cancel makes no change.")
-                    }
-                    #endif
+
                     .overlay(alignment: .center) {
                         if let milestone = previewMilestone {
                             BerryComboMilestoneBanner(milestone: milestone)
@@ -366,8 +345,87 @@ struct BerryDeveloperGardenView: View {
                                 .accessibilityLabel("Visual-only combo preview")
                         }
                     }
+                    .overlay {
+                        if let activePopup {
+                            popupView(activePopup)
+                                .transition(.opacity)
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func popupView(_ popup: GardenPopup) -> some View {
+        switch popup {
+        case .preview(let kind):
+            BerryNoticeModal(
+                title: kind == .success ? "Berry reward saved!"
+                    : kind == .caution ? "Garden needs attention"
+                    : "A sweet little update",
+                message: kind == .success ? "Your strawberry rewards are ready."
+                    : kind == .caution ? "Check your garden before you continue."
+                    : "Your next adventure is waiting in Berry Village.",
+                kind: kind,
+                primaryTitle: "Close preview",
+                primaryAction: { activePopup = nil },
+                preview: true
+            )
+            .accessibilityIdentifier("berry.developer.notice.preview")
+        case .grant:
+            BerryNoticeModal(
+                title: "Add cheat strawberries?",
+                message: "Add \(qaPendingAmount.formatted()) strawberries to your REAL saved wallet? This optional cheat is logged, and the previous balance is saved for exact restoration. Cancel changes nothing.",
+                kind: .caution,
+                primaryTitle: "Add \(qaPendingAmount.formatted()) QA berries",
+                primaryAction: {
+                    #if BERRY_INTERNAL_QA
+                    if let balance = BerryGameSession.grantQAStrawberries(qaPendingAmount) {
+                        qaBalance = balance
+                        qaRestorePoint = BerryGameSession.qaCheatRestorePoint()
+                        qaAmountText = ""
+                        activePopup = .feedback(.success, "Added \(qaPendingAmount.formatted()) strawberries. Your previous balance is saved for restoration.")
+                    } else {
+                        activePopup = .feedback(.caution, "Couldn't add this amount. Your saved wallet was left unchanged.")
+                    }
+                    #else
+                    activePopup = nil
+                    #endif
+                },
+                secondaryTitle: "Cancel",
+                secondaryAction: { activePopup = nil }
+            )
+        case .restore:
+            #if BERRY_INTERNAL_QA
+            if let point = qaRestorePoint {
+                BerryNoticeModal(
+                    title: "Restore original strawberries?",
+                    message: "Set the real wallet from 🍓 \(qaBalance.formatted()) back to 🍓 \(point.preCheatBalance.formatted())? Any strawberries earned or spent after cheats will also be overwritten. Other items and saves stay intact.",
+                    kind: .caution,
+                    primaryTitle: "Restore 🍓 \(point.preCheatBalance.formatted())",
+                    primaryAction: {
+                        if let balance = BerryGameSession.restorePreCheatStrawberries() {
+                            qaBalance = balance
+                            qaRestorePoint = BerryGameSession.qaCheatRestorePoint()
+                            activePopup = .feedback(.success, "Restored the exact previous strawberry balance: 🍓 \(balance.formatted()).")
+                        } else {
+                            activePopup = .feedback(.caution, "Restoration failed. Your saved balance was not changed.")
+                        }
+                    },
+                    secondaryTitle: "Keep current balance",
+                    secondaryAction: { activePopup = nil }
+                )
+            }
+            #endif
+        case .feedback(let kind, let message):
+            BerryNoticeModal(
+                title: kind == .success ? "Garden updated!" : "Please check",
+                message: message,
+                kind: kind,
+                primaryTitle: "Done",
+                primaryAction: { activePopup = nil }
+            )
         }
     }
 
@@ -395,13 +453,11 @@ struct BerryDeveloperGardenView: View {
                     .foregroundStyle(BerryStyle.strawberry)
                 Text("Current saved wallet: 🍓 \(qaBalance.formatted())")
                     .font(.headline)
-                TextField("Type amount, e.g. 1200", text: $qaAmountText)
-                    .keyboardType(.numberPad)
-                    .focused($focusedNumber, equals: .strawberryAmount)
-                    .accessibilityIdentifier("berry.developer.cheat.amount")
-                    .textContentType(.none)
-                    .font(.system(size: 22, weight: .semibold, design: .rounded).monospacedDigit())
-                    .multilineTextAlignment(.center)
+                BerryNumericEntryField(text: $qaAmountText,
+                                      placeholder: "Type amount, e.g. 1200",
+                                      accessibilityName: "Strawberry cheat amount",
+                                      maxDigits: 19)
+                    .frame(height: 30)
                     .padding(13)
                     .background(.white, in: RoundedRectangle(cornerRadius: 14))
                     .onChange(of: qaAmountText) { value in
@@ -417,21 +473,18 @@ struct BerryDeveloperGardenView: View {
                 Button("Review strawberry grant") {
                     guard let value = Int(qaAmountText), value > 0,
                           qaBalance >= 0, value <= Int.max - qaBalance else {
-                        qaError = "Enter a positive whole number within the wallet's safe numeric range."
+                        activePopup = .feedback(.caution,
+                            "Enter a positive whole number within the wallet's safe numeric range.")
                         return
                     }
                     qaPendingAmount = value
-                    focusedNumber = nil
-                    qaGrantConfirmation = true
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
+                                                    to: nil, from: nil, for: nil)
+                    activePopup = .grant
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(BerryStyle.strawberry)
-                if let qaError {
-                    BerryNoticeBanner(message: qaError, kind: .caution)
-                }
-                if let qaSuccessNotice {
-                    BerryNoticeBanner(message: qaSuccessNotice, kind: .success)
-                }
+
                 Text("Before the first cheat, Developer Garden records your exact strawberry balance. Additional cheats keep that original number until you restore. Viewing or canceling changes nothing.")
                     .font(.caption)
                     .multilineTextAlignment(.center)
@@ -453,30 +506,11 @@ struct BerryDeveloperGardenView: View {
                                 .foregroundStyle(BerryStyle.chocolate)
                         }
                         Button("Restore previous balance • 🍓 \(point.preCheatBalance.formatted())") {
-                            qaRestoreConfirmation = true
+                            activePopup = .restore
                         }
                         .buttonStyle(.bordered)
                         .tint(BerryStyle.strawberry)
                         .accessibilityIdentifier("berry.developer.cheat.restore-strawberries")
-                        .confirmationDialog(
-                            "Restore the exact strawberry balance?",
-                            isPresented: $qaRestoreConfirmation,
-                            titleVisibility: .visible
-                        ) {
-                            Button("Restore 🍓 \(point.preCheatBalance.formatted())") {
-                                if let balance = BerryGameSession.restorePreCheatStrawberries() {
-                                    qaBalance = balance
-                                    qaRestorePoint = BerryGameSession.qaCheatRestorePoint()
-                                    qaError = nil
-                                    qaSuccessNotice = "Restored your exact previous strawberry balance: \(balance.formatted())."
-                                } else {
-                                    qaError = "Could not restore the original amount. Your current saved balance was left unchanged."
-                                }
-                            }
-                            Button("Keep current balance", role: .cancel) {}
-                        } message: {
-                            Text("Your current balance is 🍓 \(qaBalance.formatted()). This changes only strawberries to the recorded pre-cheat amount of 🍓 \(point.preCheatBalance.formatted()). It can also overwrite strawberries earned or spent after the cheat. Purchases, tools and saved games remain as they are.")
-                        }
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity)
@@ -500,7 +534,6 @@ struct BerryDeveloperGardenView: View {
             .onAppear {
                 qaBalance = BerryGameSession.qaWalletBalance()
                 qaRestorePoint = BerryGameSession.qaCheatRestorePoint()
-                qaSuccessNotice = nil
             }
             #else
             Text("Test-currency grants are not present in distribution builds.")
@@ -570,29 +603,22 @@ struct BerryDeveloperGardenView: View {
             Text("STRAWBERRY NOTICE STUDIO • SAFE PREVIEW")
                 .font(.caption.bold())
                 .foregroundStyle(BerryStyle.strawberry)
-            Text("Tap a style to preview the actual in-game banner. Nothing changes in your saved game and no system notification is sent.")
+            Text("Tap any style to OPEN a centered, strawberry-themed game alert. Close it to return. Previews never change your save or send an iOS notification.")
                 .font(.caption)
                 .multilineTextAlignment(.center)
             LazyVGrid(columns: columns, spacing: 10) {
                 ForEach(BerryNoticeKind.allCases) { variant in
                     Button(variant.rawValue) {
-                        noticePreview = variant
+                        activePopup = .preview(variant)
                     }
                     .buttonStyle(.bordered)
                     .tint(BerryStyle.strawberry)
                     .accessibilityIdentifier("berry.developer.notice.\(variant.id.lowercased())")
                 }
             }
-            BerryNoticeBanner(
-                message: noticePreview == .success
-                    ? "Your berry reward has been saved!"
-                    : noticePreview == .caution
-                    ? "Check your garden before continuing."
-                    : "Your next sweet adventure is ready.",
-                kind: noticePreview
-            )
-            .accessibilityIdentifier("berry.developer.notice.preview")
-            Text("System permissions and irreversible purchase/cheat confirmations remain native iOS dialogs for clarity and accessibility.")
+            Text("Preview uses the same full in-game pop-up as real notices and cheat confirmations. iOS lock-screen and Notification Center banners remain Apple-controlled.")
+                .font(.caption)
+                .multilineTextAlignment(.center)
                 .font(.caption)
                 .multilineTextAlignment(.center)
         case .economy:

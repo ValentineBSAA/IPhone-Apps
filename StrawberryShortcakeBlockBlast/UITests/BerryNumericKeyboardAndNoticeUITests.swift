@@ -33,6 +33,8 @@ final class BerryNumericKeyboardAndNoticeUITests: XCTestCase {
         XCTAssertTrue(keyboardDone.waitForExistence(timeout: 10),
                       "Number pad for PIN must supply a custom Done button")
         keyboardDone.tap()
+        let pinClosed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.keyboards.firstMatch)
+        XCTAssertEqual(XCTWaiter.wait(for: [pinClosed], timeout: 5), .completed, "PIN keyboard must disappear when Done is tapped")
         XCTAssertTrue(app.buttons["Unlock"].isEnabled)
         app.buttons["Unlock"].tap()
 
@@ -46,9 +48,17 @@ final class BerryNumericKeyboardAndNoticeUITests: XCTestCase {
         XCTAssertTrue(keyboardDone.waitForExistence(timeout: 10),
                       "Number pad for Strawberry cheat must supply a custom Done button")
         keyboardDone.tap()
+        let cheatClosed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.keyboards.firstMatch)
+        XCTAssertEqual(XCTWaiter.wait(for: [cheatClosed], timeout: 5), .completed, "Cheat keyboard must disappear when Done is tapped")
         XCTAssertEqual(amount.value as? String, "200",
                        "Dismissing the keyboard must not submit or erase the amount")
         XCTAssertTrue(app.buttons["Review strawberry grant"].exists)
+        app.buttons["Review strawberry grant"].tap()
+        let cancelGrant = app.buttons["berry.notice.modal.cancel"]
+        XCTAssertTrue(cancelGrant.waitForExistence(timeout: 10), "The real cheat confirmation must appear as a themed dialog")
+        XCTAssertTrue(app.staticTexts["Add cheat strawberries?"].exists)
+        cancelGrant.tap()
+        XCTAssertFalse(cancelGrant.exists, "Cancel must close the dialog without changing the saved wallet")
         // Close without ever confirming the cheat or changing any real wallet.
         let close = app.buttons["berry.developer.tool.done"]
         XCTAssertTrue(close.waitForExistence(timeout: 10))
@@ -74,10 +84,18 @@ final class BerryNumericKeyboardAndNoticeUITests: XCTestCase {
         if !success.isHittable { app.scrollViews.firstMatch.swipeUp() }
         XCTAssertTrue(success.waitForExistence(timeout: 10))
         success.tap()
-        XCTAssertTrue(app.otherElements["berry.developer.notice.preview"]
-                      .waitForExistence(timeout: 5) ||
-                      app.staticTexts["berry.developer.notice.preview"].exists,
-                      "A real BerryNoticeBanner preview must be visible")
+        XCTAssertTrue(app.buttons["berry.notice.modal.primary"]
+                      .waitForExistence(timeout: 8),
+                      "Tapping Success must open a centered, interactive alert instead of inline text")
+        XCTAssertTrue(app.staticTexts["Berry reward saved!"].exists)
+        app.buttons["berry.notice.modal.primary"].tap()
+        XCTAssertFalse(app.buttons["berry.notice.modal.primary"].exists,
+                       "Closing the preview must dismiss the alert")
+        let caution = app.buttons["berry.developer.notice.caution"]
+        XCTAssertTrue(caution.waitForExistence(timeout: 6))
+        caution.tap()
+        XCTAssertTrue(app.staticTexts["Garden needs attention"].waitForExistence(timeout: 6))
+        app.buttons["berry.notice.modal.primary"].tap()
 
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         shot.name = "Build50: number pad Done and Strawberry in-app notice studio"
