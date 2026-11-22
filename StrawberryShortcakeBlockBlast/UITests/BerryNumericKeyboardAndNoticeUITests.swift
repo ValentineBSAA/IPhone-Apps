@@ -48,6 +48,8 @@ final class BerryNumericKeyboardAndNoticeUITests: XCTestCase {
         XCTAssertTrue(keyboardDone.waitForExistence(timeout: 10),
                       "Number pad for Strawberry cheat must supply a custom Done button")
         keyboardDone.tap()
+        let cheatClosed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.keyboards.firstMatch)
+        XCTAssertEqual(XCTWaiter.wait(for: [cheatClosed], timeout: 5), .completed, "Cheat keyboard must disappear when Done is tapped")
         XCTAssertEqual(amount.value as? String, "200",
                        "Dismissing the keyboard must not submit or erase the amount")
         XCTAssertTrue(app.buttons["Review strawberry grant"].exists)
