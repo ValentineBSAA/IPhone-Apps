@@ -28,16 +28,30 @@
 
 **Owner verified Build 49 on physical iPhone, with screenshot evidence**: v0.5.16 B49 I7 QA home, the local `h:mm:ss a` and `Moonlight in HH:MM:SS` countdown, saved Strawberry wallet 53, real Cheat Strawberries 53 → 253 and exact Restore Previous Balance 253 → 53, and the short checklist passed. Original B49 IPA hit `PackageExtractionFailed`; identical-app **ZIP-normalized diagnostic IPA installed**, so its compatible ZIP normalization belongs in all future unsigned IPA workflows.
 
-**Build 50 I8 source added, automated/native real-device status pending**, tracked at [Issue #98](https://github.com/ValentineBSAA/IPhone-Apps/issues/98). It preserves all confirmed behaviors and adds:
+**Build50 source and native CI green, but owner physical acceptance PARTIAL (2 PASS / 2 FAIL)**, tracked at [Issue #98](https://github.com/ValentineBSAA/IPhone-Apps/issues/98). It preserves all confirmed behaviors and adds:
 
 - [x] Actual **number-pad Done toolbar** for developer PIN and Cheat Strawberries amount. Native keyboard accessory dismisses without automatically confirming any cheat; focus stays outside wallet/persistent state. Reusable for future Moonberry quantity/price numeric fields.
 - [x] Actual **strawberry-themed in-app success / information / caution notice** using existing Strawberry_Currency art, accessible text and card styling. Reused by game reward toast, global progression celebration, and confirmed Developer Garden grant/restore. Native iOS confirmation dialogs remain native for destructive/financial/cheat operations.
 - [x] Permanent **Notification Test** is now a live read-only preview: three styles selectable in two-column developer grid, no system notification sent, no wallet/score/save mutation.
 - [x] Use the **only clock image currently committed** to the Xcode asset catalog, `Dev_Timers_Moon_Clock`, as an unobtrusive **nighttime Home clock ornament**. Preserve the existing B49 clock/countdown logic and 12-hour seconds. The **full approved standalone analog Home clock face assets for day/night are NOT present under those names in the current catalog**; obtain/approve them separately before claiming complete clock art integration.
 - [x] Build 50 source stamps same iOS16+ bundle, marketing v0.5.16 and internal Build50 I8 QA. New notice model and native keyboard/notification regression sources included.
-- [ ] **Release-mode Xcode compile, existing and new native simulator/UI tests, model tests, actual normalized iPhoneOS IPA, and real-iPhone owner acceptance**. Leave owner-working B49 installed until terminal green CI and backing up saved data.
+- [x] **Build50 Xcode Release, 10 native UI tests, 182 models and normalized IPA passed CI**, but this did NOT exercise real-world dismissal or modal presentation sufficiently.
+- [ ] **Build50 owner acceptance FAIL for keyboard Done and notification popup**, now targeted by Build51. Keep the installed working build and saves intact.
 
 The rest of the Night Edition, Build5 and Build6 feature roadmap remains intact, especially **Cheat Moonberries and separate exact balance restore after the real Moonberry economy exists**.
+
+## Actual Build50 iPhone findings and Build51 corrective gate (November 21, 2026)
+
+**Owner's Build50 hardware verdict: 2 PASS, 2 FAIL.** PASS: existing live seconds/day-night countdown, installed game/saves/previous working features; hidden Developer Garden opens, and the saved Strawberry cheat/restoration audit remains intact. FAIL: number-pad Done is **visible but does not dismiss**; Notification Test buttons are tappable but show a strawberry card **inside the sheet**, and actual Cheat Strawberries confirmation still uses a plain iOS alert instead of the preferred themed game dialog. Screenshots show the inline success notice behind the keyboard, native add-berries alert, and a safely recorded 🍓 53 → 153 cheat with original restore point 🍓 53. **Do not label these Build50 features owner-verified.**
+
+**Build51 I8 fix source** [PR #100](https://github.com/ValentineBSAA/IPhone-Apps/pull/100), branch `feature/berry-i8-build51-native-done-notice-preview`, internal **B51 / v0.5.16**:
+- [x] Replaced the unreliable nested SwiftUI keyboard ToolbarItem with a true UIKit `inputAccessoryView` on the **actual PIN / cheat amount UITextField**, with a direct `resignFirstResponder` action. Does not grant, erase, or change the stored amount.
+- [x] Added a centered, dimming, strawberry-themed **BerryNoticeModal** for Success/Information/Attention **real previews** with interactive Close. Real Cheat Strawberries and exact Restore confirmations use the same game-themed confirm/cancel dialog with explicit save-warning copy; only intentional confirmation changes owner data.
+- [x] Native UI tests explicitly require the numberpad to disappear on tapping Done, and require that the preview/cheat dialogs actually open, close, and cancel safely. This fixes the earlier test gap, which checked only a button's existence, not behavior.
+- [x] Same permanent PIN developer tools, clock, audio, scores, original artwork, iOS16 app bundle, saved balances and ZIP-normalized AltStore-compatible packaging. iOS Notification Center and lock-screen alerts **cannot be restyled by the game**; this work themes **app-owned in-game confirmations**.
+- [ ] Full B51 Release/10 UI/182 model CI success, compatible unsigned IPA, and **owner physical validation** of tap-and-dismiss and real modals. No prior Build50 pass implies these are verified. Do not merge/main/public release before those checks.
+
+**Retained roadmap:** full analog clock artwork still requires importing final assets; Build5 Village/Quest notices and Build6 Moonberries, separate cheats and exact restore remain future stages.
 
 ## One permanent testing system for the WHOLE game
 
