@@ -171,3 +171,11 @@ Research source: [LOCAL_ONLY_CONTROL_RESEARCH.md](LOCAL_ONLY_CONTROL_RESEARCH.md
 - [x] Unit tests and static CI safety check, owner QA, roadmap and handoff.
 - [ ] CI full Release build, XCTest, verified unsigned IPA.
 - [ ] Physical iPhone three-tap trial and aggregate report. No claim of decoded temperature, preset or local control based on mathematical signatures alone.
+
+## Passive BLE protocol research checkpoint, 2026-11-22 (docs only; no v0.1.7 IPA)
+- [x] Confirm actual v0.1.6 user report: 3/3 10-byte FFF1 notifications during 3 prompts, idle=0, changing byte positions 2 and 5, byte 2 +1 in both transitions and byte 2+5 constant modulo 256; no stable preset-specific offset.
+- [x] Investigate public COSORI BLE repositories, VeSync and Home Assistant cloud integrations, Bluetooth/firmware service identifiers, and FCC listing. See `RESEARCH/CRISP_COMPANION_BLE_PROTOCOL_2026-11-22.md`.
+- [x] **Lead, not proof:** Different COSORI kettle uses same FFF0/FFF1/FFF2 BLE identifiers and 6-byte frame header `A5, type, seq, lengthLo, lengthHi, checksum`; actual poll builder computes `byte5 = constant - byte2`, consistent with observed arithmetic. Kettle's 10-byte poll is *outgoing*, while its documented incoming status packets are 18/35 bytes, so do not label the fryer's 10-byte FFF1 as kettle status.
+- [x] Verify F000FFC0/FFC1/FFC2 correspond to TI firmware Over-the-Air Download; continue excluding entirely.
+- [ ] **Only if pursued:** Create a privacy-preserving passive FFF1 header checker (0xA5 magic, type, declared payload length) with zero characteristic writes; one minimal physical change, no new repeated 12-preset or 24-preset experiments. Do not ship a new IPA merely to recheck 2/5 arithmetic.
+- [ ] Establish a real status decoder with independent controlled verification before showing cooking temperature/time or attempting anything resembling VeSync control.
