@@ -152,7 +152,7 @@ final class BLEPresetMapper: NSObject, ObservableObject, CBCentralManagerDelegat
         let window = UUID()
         windowToken = window
         countdown = Int(FryerPresetMap.listeningWindow)
-        status = "NOW tap \(preset.title) on the physical fryer, without pressing Start."
+        status = "NOW tap \(preset.name) on the physical fryer, without pressing Start."
         endAt = Date().addingTimeInterval(FryerPresetMap.listeningWindow)
         startTimer()
         DispatchQueue.main.asyncAfter(deadline: .now() + FryerPresetMap.listeningWindow) { [weak self] in
@@ -181,7 +181,7 @@ final class BLEPresetMapper: NSObject, ObservableObject, CBCentralManagerDelegat
                 disconnectRetainingResults()
             }
         } else {
-            status = "Window recorded. Arm \(currentPreset?.title ?? "the next preset") when ready."
+            status = "Window recorded. Arm \(currentPreset?.name ?? "the next preset") when ready."
         }
     }
 
@@ -414,13 +414,13 @@ struct BLEPresetMappingView: View {
                         Text("Pass \(model.pass + 1) of 2 • Preset \(model.position + 1) of 12")
                             .font(.caption.weight(.semibold)).foregroundColor(CrispPalette.gold)
                         if let preset = model.currentPreset {
-                            Text(preset.title).font(.title2.bold()).foregroundColor(CrispPalette.cream)
+                            Text(preset.name).font(.title2.bold()).foregroundColor(CrispPalette.cream)
                             Text("Tap Arm, then immediately select this preset on the fryer's PHYSICAL panel within 5 seconds. Do not press Start.")
                                 .font(.footnote).foregroundColor(CrispPalette.muted)
                             Button {
                                 model.armNextPreset()
                             } label: {
-                                Label("Arm \(preset.title) for 5 seconds", systemImage: "hand.tap.fill")
+                                Label("Arm \(preset.name) for 5 seconds", systemImage: "hand.tap.fill")
                                     .frame(maxWidth: .infinity)
                             }
                             .buttonStyle(.borderedProminent)
@@ -455,7 +455,7 @@ struct BLEPresetMappingView: View {
                         .font(.caption).foregroundColor(CrispPalette.muted)
                     ForEach(Array(FryerPresetMap.order.enumerated()), id: \.offset) { i, preset in
                         HStack {
-                            Text("\(i + 1). \(preset.title)")
+                            Text("\(i + 1). \(preset.name)")
                                 .font(.subheadline).foregroundColor(CrispPalette.cream)
                             Spacer()
                             let item = model.results[i]
@@ -473,7 +473,7 @@ struct BLEPresetMappingView: View {
                             .font(.footnote).foregroundColor(CrispPalette.muted)
                         ForEach(model.results) { result in
                             HStack {
-                                Text(result.preset.title)
+                                Text(result.preset.name)
                                     .foregroundColor(CrispPalette.cream)
                                 Spacer()
                                 VStack(alignment: .trailing) {
