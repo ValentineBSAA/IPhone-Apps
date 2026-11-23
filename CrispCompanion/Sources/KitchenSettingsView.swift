@@ -26,14 +26,14 @@ struct KitchenSettingsView: View {
                     }
                 }
                 CrispCard {
-                    Label("Packet Families", systemImage: "square.stack.3d.up.fill")
+                    Label("Time Difference", systemImage: "clock.arrow.2.circlepath")
                         .font(.headline).foregroundColor(CrispPalette.gold)
-                    Text("Investigate anonymous Bluetooth message types across three physical taps. Automatic timing, private analysis, no cooking commands.")
+                    Text("Compare 10 and 11 minute physical settings using passive FFF1 notifications. No cooking commands.")
                         .font(.footnote).foregroundColor(CrispPalette.muted)
                     NavigationLink {
-                        BLEPacketFamilyView()
+                        BLETimeDifferenceView()
                     } label: {
-                        Label("Open Packet Families", systemImage: "waveform.path")
+                        Label("Open Time Difference", systemImage: "waveform.path")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
@@ -42,6 +42,12 @@ struct KitchenSettingsView: View {
                 }
                 DisclosureGroup(isExpanded: $showAdvancedBluetooth) {
                     VStack(spacing: 16) {
+                CrispCard {
+                    Label("Packet Families", systemImage: "square.stack.3d.up.fill")
+                        .font(.headline).foregroundColor(CrispPalette.gold)
+                    NavigationLink("Open Packet Families") { BLEPacketFamilyView() }
+                        .buttonStyle(.borderedProminent).tint(CrispPalette.gold)
+                }
                 CrispCard {
                     Label("Header Check", systemImage: "checkmark.shield.fill")
                         .font(.headline).foregroundColor(CrispPalette.gold)
@@ -198,7 +204,7 @@ struct KitchenSettingsView: View {
                         .font(.headline).foregroundColor(CrispPalette.gold)
                     Text("First-time Wi-Fi provisioning, firmware-specific controls, official recipe synchronization, and real appliance events require pairing research and physical testing. No heat-start control is provided.")
                         .font(.footnote).foregroundColor(CrispPalette.muted)
-                    Text("Unofficial independent companion · v0.1.8 · iOS 16+")
+                    Text("Unofficial independent companion · v0.1.9 · iOS 16+")
                         .font(.caption2).foregroundColor(CrispPalette.muted)
                 }
             }
