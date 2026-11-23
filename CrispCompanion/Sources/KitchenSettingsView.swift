@@ -26,6 +26,21 @@ struct KitchenSettingsView: View {
                     }
                 }
                 CrispCard {
+                    Label("Header Check", systemImage: "checkmark.shield.fill")
+                        .font(.headline).foregroundColor(CrispPalette.gold)
+                    Text("A focused follow-up to our protocol research: one physical preset change, automatic timing, and a private check for the kettle-style Bluetooth header. No cooking controls.")
+                        .font(.footnote).foregroundColor(CrispPalette.muted)
+                    NavigationLink {
+                        BLEHeaderCheckView()
+                    } label: {
+                        Label("Open Header Check", systemImage: "waveform.path")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(CrispPalette.gold)
+                    .foregroundColor(CrispPalette.background)
+                }
+                CrispCard {
                     Label("Signal Structure", systemImage: "waveform.path.ecg")
                         .font(.headline).foregroundColor(CrispPalette.gold)
                     Text("Our shortest signal experiment: three physical taps, automatic timing, and private analysis of bytes 2 and 5. It does not operate the fryer.")
@@ -168,7 +183,7 @@ struct KitchenSettingsView: View {
                         .font(.headline).foregroundColor(CrispPalette.gold)
                     Text("First-time Wi-Fi provisioning, firmware-specific controls, official recipe synchronization, and real appliance events require pairing research and physical testing. No heat-start control is provided.")
                         .font(.footnote).foregroundColor(CrispPalette.muted)
-                    Text("Unofficial independent companion · v0.1.6 · iOS 16+")
+                    Text("Unofficial independent companion · v0.1.7 · iOS 16+")
                         .font(.caption2).foregroundColor(CrispPalette.muted)
                 }
             }
