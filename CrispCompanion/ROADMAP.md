@@ -119,3 +119,14 @@ See [PROVISIONING_PROTOCOL_RESEARCH.md](PROVISIONING_PROTOCOL_RESEARCH.md). **No
 - [ ] If no observable offline control path appears, clearly acknowledge possible no-cloud infeasibility instead of endless superficial versions.
 
 Research source: [LOCAL_ONLY_CONTROL_RESEARCH.md](LOCAL_ONLY_CONTROL_RESEARCH.md).
+
+## Build 1.2: bounded BLE Event Observatory (2026-11-22)
+- [x] Added separate Settings > BLE Event Observatory: 45-second foreground-only user-triggered collection, full disconnect on Stop/background/navigation.
+- [x] Exact `CAF-P583S-KUS` name match; notify allowlist `FFF1` + `F000FFE2` only. No `readValue()`, `writeValue()`, firmware service, or heater commands. CCCD subscription is explicitly disclosed.
+- [x] Stores only elapsed seconds, notification channel UUID and byte length (first 60 rows); no payload bytes, tokens, SSIDs or peripheral identifiers in output.
+- [x] Added unit tests and CI static guard; fixed all 12 documented factory planner presets including Keep Warm and Air Fry 360°F/10min.
+- [ ] CI simulator XCTest, iPhone Release build and unsigned IPA success.
+- [ ] Real iPhone owner observation in idle mode, including Stop, 45s timeout, app-background disconnect, and whether manual preset changes cause notification metadata.
+- [ ] If event metadata appears, research privacy-safe offline protocol decoding, NOT command writes.
+- [ ] If zero events, investigate authentication/provisioning documentation before additional builds.
+- [ ] Do not claim local cooking control or temperature/status until actual device messages are decoded and independently verified.
