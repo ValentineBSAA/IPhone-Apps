@@ -140,3 +140,13 @@ Research source: [LOCAL_ONLY_CONTROL_RESEARCH.md](LOCAL_ONLY_CONTROL_RESEARCH.md
 - [ ] v0.1.3 CI green and verified unsigned IPA.
 - [ ] Owner physical two-phase test with idle baseline and marked physical changes; confirm whether new packet patterns appear.
 - [ ] If unique patterns emerge, research whether they reflect real cooking settings or merely generic changing counters/heartbeats, using repeatable controlled tests. No guesswork writes.
+
+## Build 1.4: Guided preset mapping (source staged 2026-11-22)
+- [x] Add opt-in physical 12-preset sequence, two passes, exact original control-panel traversal, five-second capture windows and a 10-second untouched baseline.
+- [x] Add in-memory HMAC-keyed matching across passes for same preset, with channel separation, idle-pattern exclusion counters, and no byte logging/export.
+- [x] Exact model-name BLE match, FFF1/F000FFE2 notification allowlist and no command writes/OAD/heat. CCCD notification subscription disclosed as descriptor configuration write.
+- [x] Automatic disconnect on Stop/leave/background and five-minute hard session cap. All data cleared on leaving.
+- [x] Add unit tests, static safety guard, new QA checklist, preserve bundle identifier and saved recipes.
+- [ ] v0.1.4 CI suite, device build and unsigned IPA success.
+- [ ] Owner physical 12-preset twice test; note if first/second window signatures match or baseline messages recur.
+- [ ] Distinguish genuine preset codes from heartbeat/counters with corroborated data before even considering decoding or sending commands.

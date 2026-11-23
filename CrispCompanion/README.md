@@ -91,3 +91,6 @@ Optional idle-only, explicitly started and automatically time-limited diagnostic
 
 ## Build 1.3: packet-comparison experiment
 Settings > Packet Comparison now contrasts an untouched 45-second idle baseline against a separate 45-second physical-adjustment run. HMAC-SHA256 fingerprints are keyed with a new random secret for the in-memory experiment and are cleared on leaving the screen; no raw BLE messages are saved or exported. The result is statistical only: a changed message does **not** mean we've decoded a preset, temperature, or controller protocol. No cooking commands, firmware activity, or cloud required. See [BUILD_1_3_QA.md](BUILD_1_3_QA.md).
+
+## Build 1.4: Guided preset mapping
+Settings > Preset Mapping provides two physical rounds of all twelve fryer presets while idle. Each button press is prompted by a five-second listening window, with ten seconds of untouched initial baseline. Session-only keyed HMAC signatures allow comparing repeated patterns without saving BLE payloads or IDs. No commands, OAD or cloud required; CCCD notification subscription is a Bluetooth descriptor configuration write. No cooking status or control has been decoded. See [BUILD_1_4_QA.md](BUILD_1_4_QA.md).
