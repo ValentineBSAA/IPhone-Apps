@@ -104,3 +104,18 @@ Reference: [PAIRING_RESEARCH.md](PAIRING_RESEARCH.md). Discovery is NOT pairing.
 - [ ] Only then implement offline parser fixtures and a controlled first-time setup flow.
 
 See [PROVISIONING_PROTOCOL_RESEARCH.md](PROVISIONING_PROTOCOL_RESEARCH.md). **No new IPA is justified by the present evidence.**
+
+## D4: Strictly local control feasibility (research completed 2026-11-22)
+- [x] User clarified **no VeSync cloud required or desired**. Real iPhone control of physical fryer, equivalent to manufacturer-safe app capabilities, is the goal; an offline recipe planner alone is insufficient.
+- [x] Inspected original **2021 FCC internal photo**: ESP32-WROOM-32U wireless board shown for original CAF-P583S. 2023 revision and owner's specific board still unknown.
+- [x] Compared observed GATT to stock Espressif BluFi. Stock service `FFFF` + `FF01`/`FF02` **not enumerated**; don't implement generic BluFi handshake.
+- [x] Verified pyvesync and HA integrate through VeSync cloud, not local. Similar older COSORI and other VeSync devices aren't exact-protocol proof.
+- [x] Distinguished possible direct BLE status, LAN Wi-Fi, private MQTT, and firmware-replacement paths by evidence and risk.
+- [x] Found actual documented 12 factory presets including Keep Warm; current v0.1.1 **11 suggested presets/temperatures differ** from the model manual. Log a compatibility correction, not a hardware status claim.
+- [ ] Write **opt-in idle-only BLE notification observatory** restricted to `FFF1` and `F000FFE2` (no OAD, no command writes, note CCCD descriptor change) with automatic disconnect and privacy-safe results. Don't ship until CI.
+- [ ] On real hardware, determine whether physical preset/temperature adjustments produce unsolicited BLE notifications. This is required for a read-only local-status milestone.
+- [ ] If and ONLY if a local operational protocol is evidenced, develop offline decoder/parser with unit tests; local control commands are a later independently gated feature.
+- [ ] Correct 12 documented presets/defaults and clear local-only UI; verify data-preserving migration.
+- [ ] If no observable offline control path appears, clearly acknowledge possible no-cloud infeasibility instead of endless superficial versions.
+
+Research source: [LOCAL_ONLY_CONTROL_RESEARCH.md](LOCAL_ONLY_CONTROL_RESEARCH.md).
