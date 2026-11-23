@@ -97,17 +97,17 @@ final class BLETimeDifferenceModel: NSObject, ObservableObject, CBCentralManager
     func confirmPhysicalStep() {
         guard running, subscribed, phase >= 0, phase < 4, deadline == nil else { return }
         phase += 1
-        status = "Recording physical " + String(Self.times[phase]) + "-minute selection for 7 seconds."
-        deadline = Date().addingTimeInterval(7)
+        status = "NOW change the fryer to " + String(Self.times[phase]) + " minutes. Recording for 10 seconds."
+        deadline = Date().addingTimeInterval(10)
         let token = session
-        DispatchQueue.main.asyncAfter(deadline: .now() + 7) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
             guard let self, self.session == token, self.running else { return }
             self.deadline = nil
             if self.phase == 4 {
                 self.report = self.stats.report()
                 self.stop("Comparison complete. Bluetooth disconnected.")
             } else {
-                self.status = "Set Air Fry to " + String(Self.times[self.phase + 1]) + " minutes, then tap Confirm."
+                self.status = "Keep the current setting. Tap Record next change BEFORE touching the fryer."
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
             }
         }
@@ -121,7 +121,7 @@ final class BLETimeDifferenceModel: NSObject, ObservableObject, CBCentralManager
         DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak self] in
             guard let self, self.session == token, self.running else { return }
             self.deadline = nil
-            self.status = "Set Air Fry to 11 minutes, then tap Confirm."
+            self.status = "Keep 10 minutes selected. Tap Record next change BEFORE touching the fryer."
         }
     }
     var waitingForConfirmation: Bool {
@@ -246,7 +246,7 @@ struct BLETimeDifferenceView: View {
                         Text("Step " + String(max(1, probe.phase + 1)) + " of 5")
                             .font(.headline).foregroundColor(CrispPalette.gold)
                         if probe.waitingForConfirmation {
-                            Button("Confirm physical time change") { probe.confirmPhysicalStep() }
+                            Button("Record next change") { probe.confirmPhysicalStep() }
                                 .buttonStyle(.borderedProminent).tint(CrispPalette.gold)
                         }
                         Button("Stop and disconnect", role: .destructive) { probe.stop() }
@@ -258,7 +258,7 @@ struct BLETimeDifferenceView: View {
                 CrispCard {
                     Label("Physical sequence", systemImage: "clock.arrow.2.circlepath")
                         .foregroundColor(CrispPalette.gold)
-                    Text("10 min untouched baseline → 11 → 10 → 11 → 10. After changing the physical display, tap Confirm. The app records seven seconds per change. Never start cooking.")
+                    Text("10 min untouched baseline → 11 → 10 → 11 → 10. Tap Record next change FIRST, then adjust the physical fryer during the 10-second recording window. Never start cooking.")
                         .font(.footnote).foregroundColor(CrispPalette.muted)
                 }
                 if let report = probe.report {
