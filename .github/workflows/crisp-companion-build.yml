@@ -1,0 +1,123 @@
+name: Crisp Companion | Build 1 · iOS 16 + bridge tests
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "CrispCompanion/**"
+      - ".github/workflows/crisp-companion-build.yml"
+
+concurrency:
+  group: crisp-companion-build-1-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  bridge-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python venv and read-only bridge tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv .crisp-py
+          .crisp-py/bin/pip install --quiet -r CrispCompanion/bridge/requirements.txt pytest
+          cd CrispCompanion/bridge
+          ../../.crisp-py/bin/python -m pytest -q test_server.py
+      - name: Assert no write endpoints or heater commands
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(grep -c '@app.get(' CrispCompanion/bridge/server.py)" -eq 1
+          if grep -Eq '@app\.(post|put|patch|delete)\(' CrispCompanion/bridge/server.py; then
+            echo "::error::Unexpected command route in Build 1 read-only bridge"
+            exit 1
+          fi
+
+  ios:
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen and artwork tooling
+        shell: bash
+        run: |
+          brew install xcodegen
+          python3 -m venv .crisp-icon-venv
+          .crisp-icon-venv/bin/pip install --quiet Pillow
+      - name: Create original temporary 1024x1024 artwork
+        run: .crisp-icon-venv/bin/python CrispCompanion/tools/generate_icon.py
+      - name: Generate native iOS project
+        working-directory: CrispCompanion
+        run: xcodegen generate --spec project.yml
+      - name: Build unsigned iOS Simulator app
+        working-directory: CrispCompanion
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -project CrispCompanion.xcodeproj -scheme CrispCompanion \
+            -configuration Debug -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath build-sim CODE_SIGNING_ALLOWED=NO \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" build
+      - name: Run XCTest on available iPhone Simulator
+        working-directory: CrispCompanion
+        shell: bash
+        run: |
+          set -euo pipefail
+          ID="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; a=[x["udid"] for group in d.values() for x in group if x.get("isAvailable", True) and "iPhone" in x.get("name", "")]; print(a[0] if a else "")')"
+          if [ -z "$ID" ]; then
+            echo "::error::No available iPhone simulator"
+            exit 1
+          fi
+          xcodebuild -project CrispCompanion.xcodeproj -scheme CrispCompanion \
+            -configuration Debug -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,id=$ID" \
+            -derivedDataPath build-sim CODE_SIGNING_ALLOWED=NO \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" test
+      - name: Build unsigned physical iPhone app
+        working-directory: CrispCompanion
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -project CrispCompanion.xcodeproj -scheme CrispCompanion \
+            -configuration Release -sdk iphoneos -destination "generic/platform=iOS" \
+            -derivedDataPath build-device CODE_SIGNING_ALLOWED=NO \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" build
+      - name: Verify identity, version and export AltStore-readable PNG
+        shell: bash
+        run: |
+          set -euo pipefail
+          INFO="CrispCompanion/build-device/Build/Products/Release-iphoneos/CrispCompanion.app/Info.plist"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$INFO")" = "com.valentinebsaa.crispcompanion"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$INFO")" = "0.1.0"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$INFO")" = "$GITHUB_RUN_NUMBER"
+          .crisp-icon-venv/bin/python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          source = Path("CrispCompanion/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png")
+          app = Path("CrispCompanion/build-device/Build/Products/Release-iphoneos/CrispCompanion.app")
+          with Image.open(source) as im:
+              im.convert("RGB").resize((120, 120), Image.Resampling.LANCZOS).save(app / "AppIcon60x60@2x.png")
+          assert (app / "AppIcon60x60@2x.png").is_file()
+          PY
+      - name: Package unsigned IPA
+        working-directory: CrispCompanion
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/Payload
+          cp -R build-device/Build/Products/Release-iphoneos/CrispCompanion.app dist/Payload/
+          (cd dist && zip -qr CrispCompanion-v0.1.0-unsigned.ipa Payload)
+          unzip -l dist/CrispCompanion-v0.1.0-unsigned.ipa | grep -q 'Payload/CrispCompanion.app/Info.plist'
+      - name: Upload unsigned IPA for owner's existing AltStore signing
+        uses: actions/upload-artifact@v4
+        with:
+          name: CrispCompanion-v0.1.0-iOS16-unsigned
+          path: CrispCompanion/dist/CrispCompanion-v0.1.0-unsigned.ipa
+          retention-days: 30
+          if-no-files-found: error
