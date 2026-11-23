@@ -97,3 +97,6 @@ Settings > Preset Mapping provides two physical rounds of all twelve fryer prese
 
 ## Build 1.5: One-start Quick Local Probe
 Designed to cut 24 manually armed buttons down to four physical taps, with no in-app per-step confirmation. Settings features this new card; old diagnostics are collapsed under Advanced Bluetooth diagnostics. It temporarily compares positions in FFF1 frames from Air Fry, Reheat, Air Fry, Reheat. Only counts, lengths and changed byte POSITION NUMBERS may be copied. Not a decoded local protocol or cooking controller. Never start heater remotely, touch TI firmware OAD, or send guessed command payloads. See [BUILD_1_5_QA.md](BUILD_1_5_QA.md).
+
+## Build 1.6: Signal Structure
+An optional foreground-only local BLE research tool. Select Reheat physically before starting, then the app conducts an untouched 10-second baseline followed by automatic prompts Air Fry → Reheat → Air Fry. It analyzes bounded received FFF1 frames and zero-based byte positions 2 and 5 for co-change, simple +1 and checksum-like patterns. Timing is relative to the prompt, NOT to exact physical contact. Only metadata and aggregate mathematical results can be copied, and raw payloads are discarded. No cooker commands, firmware updates, Wi-Fi provisioning or cloud registration. See [BUILD_1_6_QA.md](BUILD_1_6_QA.md).

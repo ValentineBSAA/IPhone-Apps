@@ -161,3 +161,13 @@ Research source: [LOCAL_ONLY_CONTROL_RESEARCH.md](LOCAL_ONLY_CONTROL_RESEARCH.md
 - [x] XCTest and no-characteristic-command static CI check, physical test checklist.
 - [ ] CI iPhone IPA and real owner physical four-tap test.
 - [ ] Any candidate byte positions must be verified across controlled further trials; **no local status interpretation or control before decoding**.
+
+## Build 1.6: structural BLE investigation / less manual effort (2026-11-22)
+- [x] Physical v0.1.5 follow-up: idle 0 notifications; **4/4** tap windows contained one **10-byte FFF1** packet; only zero-based offsets **2 and 5** varied across first A→B, Air Fry→Air Fry and Reheat→Reheat comparisons. No stable preset position found.
+- [x] Add v0.1.6 "Signal Structure" screen: one Start, 10-second untouched baseline, **three physical taps** Air Fry → Reheat → Air Fry after user preselects Reheat. Automatic 9-second prompts with haptic cue. Zero repeated Arm taps.
+- [x] Capture bounded in-memory FFF1 notification frames and **time from on-screen prompt**, not actual button press; compare changed byte indices, offset 2/5 joint transitions, +1 sequence hints, constant modulo-256 sum and constant XOR, plus first Air Fry/Reheat/repeat differentiation.
+- [x] Only local data comparisons and aggregate copyable summary; never export raw BLE values/device ID. Clear transient frame arrays upon completion/Stop/navigation/background.
+- [x] Restrict discovery and CCCD subscription to FFF0/FFF1; no FFE0 necessary in this test, no TI OAD or command writes, no heater or Wi-Fi operations.
+- [x] Unit tests and static CI safety check, owner QA, roadmap and handoff.
+- [ ] CI full Release build, XCTest, verified unsigned IPA.
+- [ ] Physical iPhone three-tap trial and aggregate report. No claim of decoded temperature, preset or local control based on mathematical signatures alone.
