@@ -16,7 +16,7 @@
 - [ ] Second pass repeats exactly the same order without opening/closing the page, preserving the same session-only HMAC key.
 - [ ] Results show per-preset packet counts, identical signatures across passes (if any), and patterns already seen during idle baseline.
 - [ ] Stopping, leaving page, backgrounding or five-minute session timeout disconnects immediately; leaving also clears results and ephemeral key.
-- [ ] No raw packet values, hashes, network SSIDs, tokens or peripheral identifiers are displayed/exported.
+- [ ] No raw packet values, hashes, network SSIDs, tokens or peripheral identifiers are displayed/exported. A user-initiated Copy safe counts button exports only preset names and aggregate counts.
 - [ ] Physical fryer remains safe and idle; if any unexpected operation or heat occurs, stop.
 
 ## Interpretation

@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreBluetooth
 import CryptoKit
+import UIKit
 
 // A guided, in-memory investigation, NOT a decoder or remote controller.
 enum FryerPresetMap {
@@ -29,6 +30,19 @@ struct PresetMappingResult: Identifiable, Equatable {
     var idlePatterns: Int = 0
 
     var id: String { preset.rawValue }
+}
+
+/// Only aggregate counts and preset labels leave the diagnostic view,
+/// and only after the user taps Copy safe summary.
+enum PresetMapSummary {
+    static func render(_ results: [PresetMappingResult]) -> String {
+        let header = "Crisp Companion v0.1.4 • Local preset mapping • Counts only, not decoded status"
+        let rows = results.map {
+            "\($0.preset.name): pass1=\($0.firstPackets), pass2=\($0.secondPackets), " +
+            "repeated=\($0.repeatedPatterns), idleOverlap=\($0.idlePatterns)"
+        }
+        return ([header] + rows).joined(separator: "\n")
+    }
 }
 
 /// All digests use one ephemeral key during a measurement session.
@@ -466,6 +480,17 @@ struct BLEPresetMappingView: View {
                     }
                 }
                 if model.complete {
+                    CrispCard {
+                        Button {
+                            UIPasteboard.general.string = PresetMapSummary.render(model.results)
+                        } label: {
+                            Label("Copy safe counts to share", systemImage: "doc.on.doc")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(CrispPalette.gold)
+                        .foregroundColor(CrispPalette.background)
+                    }
                     CrispCard {
                         Label("Repeatability summary", systemImage: "arrow.triangle.2.circlepath")
                             .font(.headline).foregroundColor(CrispPalette.gold)

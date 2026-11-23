@@ -48,6 +48,18 @@ final class BLEPresetMappingTests: XCTestCase {
         XCTAssertEqual(map.result(for: .bake).idlePatterns, 0)
     }
 
+    func testCopyableSummaryOnlyContainsPresetLabelsAndCounts() {
+        let rows = [PresetMappingResult(preset: .chicken,
+                                        firstPackets: 2, secondPackets: 3,
+                                        firstUnique: 2, secondUnique: 3,
+                                        repeatedPatterns: 1, idlePatterns: 0)]
+        let summary = PresetMapSummary.render(rows)
+        XCTAssertTrue(summary.contains("Chicken: pass1=2, pass2=3"))
+        XCTAssertTrue(summary.contains("repeated=1"))
+        XCTAssertFalse(summary.contains("FFF1"))
+        XCTAssertFalse(summary.contains("secretKey"))
+    }
+
     func testNoAutomaticConnectionAndHardGATTAllowlist() {
         let model = BLEPresetMapper()
         XCTAssertFalse(model.connected)
