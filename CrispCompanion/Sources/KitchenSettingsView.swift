@@ -26,6 +26,21 @@ struct KitchenSettingsView: View {
                     }
                 }
                 CrispCard {
+                    Label("Signal Structure", systemImage: "waveform.path.ecg")
+                        .font(.headline).foregroundColor(CrispPalette.gold)
+                    Text("Our shortest signal experiment: three physical taps, automatic timing, and private analysis of bytes 2 and 5. It does not operate the fryer.")
+                        .font(.footnote).foregroundColor(CrispPalette.muted)
+                    NavigationLink {
+                        BLEStructureProbeView()
+                    } label: {
+                        Label("Open Signal Structure", systemImage: "chart.xyaxis.line")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(CrispPalette.gold)
+                    .foregroundColor(CrispPalette.background)
+                }
+                CrispCard {
                     Label("Quick Local Probe", systemImage: "waveform.path.ecg")
                         .font(.headline).foregroundColor(CrispPalette.gold)
                     Text("One Start, four physical taps. Automatic timing and private byte-position comparison. No 24-preset routine.")
@@ -153,7 +168,7 @@ struct KitchenSettingsView: View {
                         .font(.headline).foregroundColor(CrispPalette.gold)
                     Text("First-time Wi-Fi provisioning, firmware-specific controls, official recipe synchronization, and real appliance events require pairing research and physical testing. No heat-start control is provided.")
                         .font(.footnote).foregroundColor(CrispPalette.muted)
-                    Text("Unofficial independent companion · v0.1.5 · iOS 16+")
+                    Text("Unofficial independent companion · v0.1.6 · iOS 16+")
                         .font(.caption2).foregroundColor(CrispPalette.muted)
                 }
             }
