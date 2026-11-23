@@ -82,3 +82,6 @@ Fields with uncertain sensor values **must remain null**. This service is intent
 The manufacturer manual states cooking cannot be started remotely; third-party code demonstrations are **not permission** to add that feature here.
 
 Continue from [ROADMAP.md](ROADMAP.md), [BUILD_1_QA.md](BUILD_1_QA.md), and [the active handoff](../PROJECT_HANDOFFS/CRISP_COMPANION_ACTIVE.md).
+
+## iPhone-only pairing research
+The owner cannot use Android, the App Store or a second Apple Account. [PAIRING_RESEARCH.md](PAIRING_RESEARCH.md) tracks a carefully scoped discovery-first native pairing investigation. The next diagnostic build adds **Settings → Find my fryer**, a permission-gated BLE scan only. This does not pair the device, send Wi-Fi passwords or access VeSync's cloud.

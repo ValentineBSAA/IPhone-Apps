@@ -29,3 +29,6 @@ Community support for COSORI Dual Blaze **CAF-P583S-KUS** exists in `RedsGT/hass
 4. Confirm read-only status with exact model/firmware.
 5. Implement ONLY verified safe control features with hardware testing.
 6. Update `ROADMAP.md`, `BUILD_1_QA.md`, and this handoff after every substantive change.
+
+## New owner constraint / discovery milestone (2026-11-22)
+Do not suggest Android phones, another Apple Account or third-party IPA hunting. Owner rejects all these routes. Work on native iPhone discovery through CoreBluetooth only, as a protocol-research prerequisite. Technical evidence: `WiFi+BTOnboarding+BTNotify` in webdjoe/pyvesync#477 for a reported CAF-P583S-KUS device. The new independent draft branch `feature/crisp-native-ble-discovery` adds a read-only, no-connect diagnostic page. This is **not real pairing**; hardware, services, authentication and VeSync account claim are unknown. See `CrispCompanion/PAIRING_RESEARCH.md`.
