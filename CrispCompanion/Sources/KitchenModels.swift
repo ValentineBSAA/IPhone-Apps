@@ -1,7 +1,7 @@
 import Foundation
 
 enum FryerPreset: String, CaseIterable, Identifiable, Codable {
-    case airFry, broil, roast, bake, reheat, frozen, fries, steak, chicken, seafood, vegetables
+    case airFry, broil, roast, bake, reheat, frozen, fries, steak, chicken, seafood, vegetables, keepWarm
 
     var id: String { rawValue }
     var name: String {
@@ -17,6 +17,7 @@ enum FryerPreset: String, CaseIterable, Identifiable, Codable {
         case .chicken: return "Chicken"
         case .seafood: return "Seafood"
         case .vegetables: return "Veggies"
+        case .keepWarm: return "Keep Warm"
         }
     }
     var symbol: String {
@@ -32,34 +33,41 @@ enum FryerPreset: String, CaseIterable, Identifiable, Codable {
         case .chicken: return "bird"
         case .seafood: return "fish"
         case .vegetables: return "leaf"
+        case .keepWarm: return "thermometer.medium"
         }
     }
-    // Planning suggestions only, NOT manufacturer defaults or device commands.
+    // Published CAF-P583S-KUS manual defaults, not live hardware values.
+    // Local recipe planning only; these never send commands to the appliance.
     var suggestedFahrenheit: Int {
         switch self {
-        case .airFry, .frozen, .fries: return 390
+        case .airFry: return 360
         case .broil: return 400
-        case .roast, .steak: return 385
-        case .bake: return 325
-        case .reheat: return 325
-        case .chicken: return 380
+        case .roast: return 400
+        case .bake: return 320
+        case .reheat: return 350
+        case .frozen: return 395
+        case .fries: return 385
+        case .steak: return 400
+        case .chicken: return 390
         case .seafood: return 375
-        case .vegetables: return 375
+        case .vegetables: return 385
+        case .keepWarm: return 175
         }
     }
     var suggestedMinutes: Int {
         switch self {
-        case .airFry: return 18
-        case .broil: return 8
-        case .roast: return 22
+        case .airFry: return 10
+        case .broil: return 10
+        case .roast: return 10
         case .bake: return 20
-        case .reheat: return 6
-        case .frozen: return 15
-        case .fries: return 17
-        case .steak: return 11
+        case .reheat: return 5
+        case .frozen: return 12
+        case .fries: return 20
+        case .steak: return 8
         case .chicken: return 20
-        case .seafood: return 10
-        case .vegetables: return 9
+        case .seafood: return 8
+        case .vegetables: return 6
+        case .keepWarm: return 30
         }
     }
 }

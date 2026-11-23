@@ -85,3 +85,6 @@ Continue from [ROADMAP.md](ROADMAP.md), [BUILD_1_QA.md](BUILD_1_QA.md), and [the
 
 ## iPhone-only pairing research
 The owner cannot use Android, the App Store or a second Apple Account. [PAIRING_RESEARCH.md](PAIRING_RESEARCH.md) tracks a carefully scoped discovery-first native pairing investigation. The next diagnostic build adds **Settings → Find my fryer**, a permission-gated BLE scan only. This does not pair the device, send Wi-Fi passwords or access VeSync's cloud.
+
+## Build 1.2: Local Bluetooth Event Observatory
+Optional idle-only, explicitly started and automatically time-limited diagnostic in **Settings > BLE Event Observatory**. Designed to help determine whether the real fryer emits metadata when you change physical presets. The app does not record payload bytes, send heater commands, provision Wi-Fi or register a VeSync account. Bluetooth notification subscriptions alter the CCCD descriptor; this is explained in-app. The local recipe planner now uses **12 documented factory presets** (not measured real-device settings). See [BUILD_1_2_QA.md](BUILD_1_2_QA.md).

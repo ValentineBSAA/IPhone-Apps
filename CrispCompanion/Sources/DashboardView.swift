@@ -3,8 +3,8 @@ import SwiftUI
 struct DashboardView: View {
     @EnvironmentObject private var kitchen: KitchenStore
     @State private var chosen: FryerPreset = .airFry
-    @State private var temperature = 390
-    @State private var minutes = 18
+    @State private var temperature = 360
+    @State private var minutes = 10
     @State private var saved = false
 
     private var live: Bool { !kitchen.previewMode && kitchen.status?.connected == true }
@@ -173,8 +173,8 @@ struct DashboardView: View {
 
     private var presetsCard: some View {
         CrispCard {
-            Text("Explore presets").font(.title3.bold()).foregroundColor(CrispPalette.cream)
-            Text("Suggested planning values, not verified manufacturer defaults.")
+            Text("Factory preset planner").font(.title3.bold()).foregroundColor(CrispPalette.cream)
+            Text("12 documented COSORI defaults. Planning only, not live fryer settings.")
                 .font(.caption).foregroundColor(CrispPalette.muted)
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(FryerPreset.allCases) { preset in

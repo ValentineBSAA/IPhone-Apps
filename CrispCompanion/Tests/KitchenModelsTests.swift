@@ -2,8 +2,13 @@ import XCTest
 @testable import CrispCompanion
 
 final class KitchenModelsTests: XCTestCase {
-    func testElevenPresetPlanningChoices() {
-        XCTAssertEqual(FryerPreset.allCases.count, 11)
+    func testTwelveDocumentedPresetChoices() {
+        XCTAssertEqual(FryerPreset.allCases.count, 12)
+        XCTAssertEqual(FryerPreset.airFry.suggestedFahrenheit, 360)
+        XCTAssertEqual(FryerPreset.airFry.suggestedMinutes, 10)
+        XCTAssertEqual(FryerPreset.keepWarm.suggestedFahrenheit, 175)
+        XCTAssertEqual(FryerPreset.keepWarm.suggestedMinutes, 30)
+        XCTAssertEqual(FryerPreset.steak.suggestedMinutes, 8)
         XCTAssertEqual(FryerPreset.airFry.name, "Air Fry")
         XCTAssertTrue(FryerPreset.allCases.allSatisfy { (175...400).contains($0.suggestedFahrenheit) })
         XCTAssertTrue(FryerPreset.allCases.allSatisfy { (1...60).contains($0.suggestedMinutes) })
