@@ -25,6 +25,21 @@ struct KitchenSettingsView: View {
                     }
                 }
                 CrispCard {
+                    Label("Find my fryer", systemImage: "antenna.radiowaves.left.and.right")
+                        .font(.headline).foregroundColor(CrispPalette.gold)
+                    Text("No App Store or Android required. Discover nearby Bluetooth advertisements to research first-time pairing. This cannot yet connect your fryer to Wi-Fi.")
+                        .font(.footnote).foregroundColor(CrispPalette.muted)
+                    NavigationLink {
+                        BluetoothDiscoveryView()
+                    } label: {
+                        Label("Open Bluetooth discovery", systemImage: "waveform.path")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(CrispPalette.gold)
+                    .foregroundColor(CrispPalette.background)
+                }
+                CrispCard {
                     Label("Private NAS bridge", systemImage: "lock.shield.fill")
                         .font(.headline).foregroundColor(CrispPalette.cream)
                     Text("Optional. Settings are stored on this device. Your VeSync password belongs ONLY on your own NAS, never in the app.")

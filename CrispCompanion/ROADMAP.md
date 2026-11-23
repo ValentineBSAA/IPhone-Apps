@@ -72,3 +72,14 @@ A premium, genuinely useful, no-subscription iPhone companion for the owner's CO
 - No shared source code may contain device credentials, tokens, cloud responses with IDs, or personal account history.
 - Own recipes and timer are genuinely usable offline even if real device integration remains blocked.
 - Keep every new milestone tied to measurable CI results, owner screenshots, and regression checkboxes.
+
+## Native-only pairing route (new owner direction, 2026-11-22)
+- [x] Owner **explicitly excludes** Android and a second Apple Account; do not reopen these routes.
+- [x] Research actual CAF-P583S-KUS metadata: `WiFi+BTOnboarding+BTNotify`, but **no verified BLE provisioning protocol**.
+- [x] Create an opt-in, foreground-only CoreBluetooth discovery lab in Settings. Source exists; real iPhone detection and iOS compilation are pending CI/owner test.
+- [ ] Confirm the fryer's actual sticker model before any onboarding implementation.
+- [ ] Discover genuine BLE advertisements on owner's iPhone; report candidate name and non-sensitive service types.
+- [ ] Determine protocol details and VeSync account claiming without relying on an official app; feasibility uncertain.
+- [ ] When the documented method is known, implement an explicit pairing wizard with secure credential handling and recovery.
+
+Reference: [PAIRING_RESEARCH.md](PAIRING_RESEARCH.md). Discovery is NOT pairing.
