@@ -189,3 +189,25 @@ Research source: [LOCAL_ONLY_CONTROL_RESEARCH.md](LOCAL_ONLY_CONTROL_RESEARCH.md
 - [x] Hard cap of 64 analyzed frames, 60-second session max; tests and CI static gate, regression roadmap and QA.
 - [ ] Verify GitHub iOS build, XCTest, unsigned IPA and actual owner iPhone test.
 - [ ] Treat any matches as structural hypotheses only, not proof of compatible kettle and air-fryer controls, temperature readings, or VeSync replacement.
+
+## Build 1.8: anonymous FFF1 packet families / low-touch follow-up
+- [x] Physical owner v0.1.7 result: idle 0 FFF1, Air Fry prompt 1 FFF1 10-byte packet; `byte0==A5` and declared 4-byte payload match, but byte1 **not** documented kettle type 12/22. No consecutive pairs captured; seq/sum 0/0 = not evaluated.
+- [x] New Settings > **Packet Families**, 10-second untouched baseline then automatically timed Air Fry → Reheat → Air Fry (one Start, three physical taps, no per-step Arm).
+- [x] Classify repeated unknown packet byte1 values into **session-only anonymous categories A/B/C**, with per-stage category distribution; never display or export the actual type value.
+- [x] Check each FFF1 frame for A5 magic, declared length, documented kettle types, and cross-frame byte2 sequence +1 / byte2+byte5 constant sum for equal-length adjacent pairs.
+- [x] Capture at most 64 frames of ephemeral metadata in memory; NO raw packet storage/export, device identifiers, hashes, Wi-Fi secrets, or network requests. Clear all ephemeral bytes on finish, Stop, leaving page or background.
+- [x] Exact CAF-P583S-KUS name, FFF0/FFF1 CCCD subscription only; **no GATT characteristic operations, no TI OAD, no heater/VeSync cloud controls**.
+- [x] Preserve saved recipes and other app features, reorganize old Bluetooth diagnostics into the collapsible Advanced section, update QA/tests/handoff.
+- [ ] Native CI and IPA artifact verification.
+- [ ] Physical owner three-tap Packet Families test. An anonymous type match is NOT confirmed cooking status or a protocol decoder.
+
+## v0.1.8 REAL iPhone report / decision checkpoint (2026-11-23)
+- [x] Physical owner supplied v0.1.8 anonymous Packet Families aggregate (idle Reheat, no Start; Air Fry → Reheat → Air Fry): idle 0 events, each prompt 1 FFF1 event, three 10-byte frames, 3/3 A5 and declared-length checks, 0 documented kettle-type/full matches.
+- [x] Byte-1 anonymous category was **A** in every prompted window (one distinct category); across two adjacent equal-length pairs, category stable 2/2, byte 2 +1 2/2, byte 2+byte 5 constant 2/2. This is NOT a decoded mode or control command.
+- [x] Owner observed **10 minutes default on Air Fry** and **5 minutes on Reheat** at the physical panel, with no heating. These are real UI observations, not decoded values from FFF1.
+- [x] Actions run **45129017719** reported simulator build, XCTest, device build, unsigned IPA packaging/upload, read-only bridge/static guard successful; unsigned artifact metadata exists. Binary ZIP/digest was NOT independently downloaded/inspected in this checkpoint.
+- [ ] Verify post-test Bluetooth disconnect/erase, saved-recipe upgrade persistence and full human UI accessibility behavior on physical device; do not retroactively claim those passed.
+- [ ] Find independent **exact-model** BLE status/local-control semantics, or candidly record local-control infeasibility. Repeated same-family A5/sequence/checksum probes are now **paused** because v0.1.5-v0.1.8 triangulate the same non-preset-specific family.
+- [ ] If independently supported, design a *single discriminating* idle-only experiment for a physical **time-only** edit (Air Fry 10 → 11 → 10 minutes) versus preset switch. Must compare excluding counter/checksum and keep sensitive data local; don't build a new IPA until this would answer a specific new question.
+
+Detailed safe evidence and no-churn decision: [FFF1 field verdict](../RESEARCH/CRISP_COMPANION_FFF1_FIELD_VERDICT_2026-11-23.md).
