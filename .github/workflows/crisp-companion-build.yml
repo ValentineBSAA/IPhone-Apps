@@ -1,4 +1,4 @@
-name: Crisp Companion | Build 1.6 · passive BLE structural signal research
+name: Crisp Companion | Build 1.7 · read-only FFF1 header check
 
 on:
   workflow_dispatch:
@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for SRC in CrispCompanion/Sources/BLEEventObservatory.swift CrispCompanion/Sources/BLEPacketComparison.swift CrispCompanion/Sources/BLEPresetMapping.swift CrispCompanion/Sources/QuickLocalProbe.swift CrispCompanion/Sources/BLEStructureProbe.swift; do
+          for SRC in CrispCompanion/Sources/BLEEventObservatory.swift CrispCompanion/Sources/BLEPacketComparison.swift CrispCompanion/Sources/BLEPresetMapping.swift CrispCompanion/Sources/QuickLocalProbe.swift CrispCompanion/Sources/BLEStructureProbe.swift CrispCompanion/Sources/BLEHeaderCheck.swift; do
           if grep -Eq '(^|[^[:alpha:]])(writeValue|readValue|discoverDescriptors)[[:space:]]*\\(' "$SRC"; then
             echo "::error::Forbidden BLE value access or command call in observer"
             exit 1
@@ -41,6 +41,9 @@ jobs:
           grep -q 'BLEObservationPolicy.serialNotify' CrispCompanion/Sources/BLEStructureProbe.swift
           grep -q 'constantMod256Sum' CrispCompanion/Sources/BLEStructureProbe.swift
           grep -q 'maxFramesPerPhase = 12' CrispCompanion/Sources/BLEStructureProbe.swift
+          grep -q 'BLEObservationPolicy.serialNotify' CrispCompanion/Sources/BLEHeaderCheck.swift
+          grep -q 'fullKettleHeaderMatches' CrispCompanion/Sources/BLEHeaderCheck.swift
+          grep -q 'maxFrames = 64' CrispCompanion/Sources/BLEHeaderCheck.swift
       - name: Python venv and read-only bridge tests
         shell: bash
         run: |
@@ -115,7 +118,7 @@ jobs:
           set -euo pipefail
           INFO="CrispCompanion/build-device/Build/Products/Release-iphoneos/CrispCompanion.app/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$INFO")" = "com.valentinebsaa.crispcompanion"
-          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$INFO")" = "0.1.6"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$INFO")" = "0.1.7"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$INFO")" = "$GITHUB_RUN_NUMBER"
           .crisp-icon-venv/bin/python - <<'PY'
           from PIL import Image
@@ -133,12 +136,12 @@ jobs:
           set -euo pipefail
           mkdir -p dist/Payload
           cp -R build-device/Build/Products/Release-iphoneos/CrispCompanion.app dist/Payload/
-          (cd dist && zip -qr CrispCompanion-v0.1.6-unsigned.ipa Payload)
-          unzip -l dist/CrispCompanion-v0.1.6-unsigned.ipa | grep -q 'Payload/CrispCompanion.app/Info.plist'
+          (cd dist && zip -qr CrispCompanion-v0.1.7-unsigned.ipa Payload)
+          unzip -l dist/CrispCompanion-v0.1.7-unsigned.ipa | grep -q 'Payload/CrispCompanion.app/Info.plist'
       - name: Upload unsigned IPA for owner's existing AltStore signing
         uses: actions/upload-artifact@v4
         with:
-          name: CrispCompanion-v0.1.6-iOS16-unsigned
-          path: CrispCompanion/dist/CrispCompanion-v0.1.6-unsigned.ipa
+          name: CrispCompanion-v0.1.7-iOS16-unsigned
+          path: CrispCompanion/dist/CrispCompanion-v0.1.7-unsigned.ipa
           retention-days: 30
           if-no-files-found: error

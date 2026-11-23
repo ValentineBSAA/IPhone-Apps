@@ -179,3 +179,13 @@ Research source: [LOCAL_ONLY_CONTROL_RESEARCH.md](LOCAL_ONLY_CONTROL_RESEARCH.md
 - [x] Verify F000FFC0/FFC1/FFC2 correspond to TI firmware Over-the-Air Download; continue excluding entirely.
 - [ ] **Only if pursued:** Create a privacy-preserving passive FFF1 header checker (0xA5 magic, type, declared payload length) with zero characteristic writes; one minimal physical change, no new repeated 12-preset or 24-preset experiments. Do not ship a new IPA merely to recheck 2/5 arithmetic.
 - [ ] Establish a real status decoder with independent controlled verification before showing cooking temperature/time or attempting anything resembling VeSync control.
+
+## Build 1.7: passive FFF1 kettle-style header compatibility check (owner-approved)
+- [x] Use published kettle protocol research `RESEARCH/CRISP_COMPANION_BLE_PROTOCOL_2026-11-22.md`; do **not** import kettle control packet commands.
+- [x] New one-Start, **one-physical-tap** Settings > Header Check tool; user preselects Reheat, watches 10-second hands-off baseline, then taps Air Fry once during 12-second window.
+- [x] BLE FFF0/FFF1 notification CCCD subscription only. Nothing sends GATT characteristic values, discovers TI OAD or starts heater.
+- [x] Header-shape classification: A5 magic, documented kettle type 12/22, declared length equals actual payload, full-match counts; counts of incrementing byte2 and stable byte2+byte5 sums.
+- [x] No raw frames, byte values, stable fingerprints or MAC/device ID saved or exported. Analyze in callback and retain only aggregates and ephemeral previous seq/sum, zero on stop/leave/background.
+- [x] Hard cap of 64 analyzed frames, 60-second session max; tests and CI static gate, regression roadmap and QA.
+- [ ] Verify GitHub iOS build, XCTest, unsigned IPA and actual owner iPhone test.
+- [ ] Treat any matches as structural hypotheses only, not proof of compatible kettle and air-fryer controls, temperature readings, or VeSync replacement.
