@@ -45,8 +45,8 @@ struct BLETimeDifferenceAccumulator {
         let ten = signatures[0].union(signatures[2]).union(signatures[4])
         let eleven = signatures[1].union(signatures[3])
         let common = !ten.isDisjoint(with: eleven)
-        // Each repeated time must have a nonempty common signature within its own steps.
-        let tenRepeated = !signatures[0].intersection(signatures[2]).intersection(signatures[4]).isEmpty
+        // Baseline may be silent; compare the two active transitions to each setting.
+        let tenRepeated = !signatures[2].intersection(signatures[4]).isEmpty
         let elevenRepeated = !signatures[1].intersection(signatures[3]).isEmpty
         let reversible = tenRepeated && elevenRepeated && !common
         return BLETimeDifferenceReport(
