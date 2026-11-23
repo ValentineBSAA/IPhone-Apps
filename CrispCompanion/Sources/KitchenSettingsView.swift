@@ -55,6 +55,21 @@ struct KitchenSettingsView: View {
                     .foregroundColor(CrispPalette.background)
                 }
                 CrispCard {
+                    Label("Packet Comparison", systemImage: "arrow.left.arrow.right")
+                        .font(.headline).foregroundColor(CrispPalette.gold)
+                    Text("Compare a 45-second untouched baseline with physical settings changes, without storing raw Bluetooth messages or sending commands.")
+                        .font(.footnote).foregroundColor(CrispPalette.muted)
+                    NavigationLink {
+                        BLEPacketComparisonView()
+                    } label: {
+                        Label("Open Packet Comparison", systemImage: "waveform.path")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(CrispPalette.gold)
+                    .foregroundColor(CrispPalette.background)
+                }
+                CrispCard {
                     Label("Private NAS bridge", systemImage: "lock.shield.fill")
                         .font(.headline).foregroundColor(CrispPalette.cream)
                     Text("Optional. Settings are stored on this device. Your VeSync password belongs ONLY on your own NAS, never in the app.")
@@ -96,7 +111,7 @@ struct KitchenSettingsView: View {
                         .font(.headline).foregroundColor(CrispPalette.gold)
                     Text("First-time Wi-Fi provisioning, firmware-specific controls, official recipe synchronization, and real appliance events require pairing research and physical testing. No heat-start control is provided.")
                         .font(.footnote).foregroundColor(CrispPalette.muted)
-                    Text("Unofficial independent companion · v0.1.2 · iOS 16+")
+                    Text("Unofficial independent companion · v0.1.3 · iOS 16+")
                         .font(.caption2).foregroundColor(CrispPalette.muted)
                 }
             }
