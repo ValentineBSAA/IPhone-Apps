@@ -94,3 +94,6 @@ Settings > Packet Comparison now contrasts an untouched 45-second idle baseline 
 
 ## Build 1.4: Guided preset mapping
 Settings > Preset Mapping provides two physical rounds of all twelve fryer presets while idle. Each button press is prompted by a five-second listening window, with ten seconds of untouched initial baseline. Session-only keyed HMAC signatures allow comparing repeated patterns without saving BLE payloads or IDs. No commands, OAD or cloud required; CCCD notification subscription is a Bluetooth descriptor configuration write. No cooking status or control has been decoded. See [BUILD_1_4_QA.md](BUILD_1_4_QA.md).
+
+## Build 1.5: One-start Quick Local Probe
+Designed to cut 24 manually armed buttons down to four physical taps, with no in-app per-step confirmation. Settings features this new card; old diagnostics are collapsed under Advanced Bluetooth diagnostics. It temporarily compares positions in FFF1 frames from Air Fry, Reheat, Air Fry, Reheat. Only counts, lengths and changed byte POSITION NUMBERS may be copied. Not a decoded local protocol or cooking controller. Never start heater remotely, touch TI firmware OAD, or send guessed command payloads. See [BUILD_1_5_QA.md](BUILD_1_5_QA.md).

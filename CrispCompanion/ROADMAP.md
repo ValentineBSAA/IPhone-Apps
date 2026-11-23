@@ -150,3 +150,14 @@ Research source: [LOCAL_ONLY_CONTROL_RESEARCH.md](LOCAL_ONLY_CONTROL_RESEARCH.md
 - [ ] v0.1.4 CI suite, device build and unsigned IPA success.
 - [ ] Owner physical 12-preset twice test; note if first/second window signatures match or baseline messages recur.
 - [ ] Distinguish genuine preset codes from heartbeat/counters with corroborated data before even considering decoding or sending commands.
+
+## Build 1.5: Quick Local Probe / reduced physical testing
+- [x] v0.1.4 owner real-device result: all twelve presets had one FFF1 notification in each of two five-second windows; **0 whole-frame repeats, 0 idle overlaps**. This does not prove packet semantics.
+- [x] Replace 24 manual arming steps with **one Start, one untouched 12-second baseline, four automatic 8-second prompts**: Air Fry → Reheat → Air Fry → Reheat. Only four physical taps, no on-screen Next/Arm taps.
+- [x] Transient byte-index analysis compares repeated-preset frame equality vs across-preset differences; only changed byte positions and counts appear in the safe copyable report.
+- [x] Simplify Settings: featured Quick Local Probe; older research screens tucked in collapsed Advanced diagnostics. Keep existing recipes/timer/install identifier.
+- [x] Exact-model Bluetooth name filter; FFF1/F000FFE2 notifications only, no firmware OAD characteristic, no cook commands, no cloud. CCCD subscription disclosed.
+- [x] Stop, background/leave, timeouts: disconnect and discard raw frames.
+- [x] XCTest and no-characteristic-command static CI check, physical test checklist.
+- [ ] CI iPhone IPA and real owner physical four-tap test.
+- [ ] Any candidate byte positions must be verified across controlled further trials; **no local status interpretation or control before decoding**.
