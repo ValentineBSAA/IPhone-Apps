@@ -78,7 +78,7 @@ A premium, genuinely useful, no-subscription iPhone companion for the owner's CO
 - [x] Research actual CAF-P583S-KUS metadata: `WiFi+BTOnboarding+BTNotify`, but **no verified BLE provisioning protocol**.
 - [x] Create an opt-in, foreground-only CoreBluetooth discovery lab in Settings. Source exists; real iPhone detection and iOS compilation are pending CI/owner test.
 - [ ] Confirm the fryer's actual sticker model before any onboarding implementation.
-- [ ] Discover genuine BLE advertisements on owner's iPhone; report candidate name and non-sensitive service types.
+- [x] Discover genuine BLE advertisements on owner's iPhone; model-name match `CAF-P583S-KUS`, physical scan verified.
 - [ ] Determine protocol details and VeSync account claiming without relying on an official app; feasibility uncertain.
 - [ ] When the documented method is known, implement an explicit pairing wizard with secure credential handling and recovery.
 
@@ -90,6 +90,17 @@ Reference: [PAIRING_RESEARCH.md](PAIRING_RESEARCH.md). Discovery is NOT pairing.
 - [x] Owner feedback: generic flat list of 20 devices is too technical and does not identify unrelated products; focus only on air fryer by default.
 - [x] Source improvement: separate highlighted COSORI card, collapsed unrelated devices, description based ONLY on advertised name, no guessed identities.
 - [x] Source improvement: explicit `Inspect Bluetooth services` action to temporarily connect and discover **GATT service and characteristic UUID metadata only**, then disconnect; no values read, no notify, no writes.
-- [ ] D1 simulator/device CI pass and physical owner verification of service UUIDs/characteristic properties.
-- [ ] Analyze whether the genuine services reveal a provisioning path. GATT discovery **does not** complete account registration, pairing or Wi-Fi setup.
-- [ ] Continue from captured metadata; DO NOT ask for network passwords, accounts or public device identifiers.
+- [x] D1 simulator/device CI pass and real iPhone GATT discovery verified: 3 services, 6 characteristics. Owner supplied screenshots.
+- [x] GATT metadata reviewed: OAD is firmware update, FFF0/FFE0 message formats unknown. No basis for actual provisioning from UUIDs alone.
+- [x] D2 physical configuration-mode comparison: 5-second hold -> blinking Wi-Fi icon; BLE name remains; GATT services unchanged; no obvious fryer hotspot in a single iPhone Wi-Fi scan. No passwords requested.
+
+## D3 protocol documentation investigation (2026-11-22)
+- [x] Search exact-model public integrations, cloud issue #477, VeSync BLE device provisioning work, Talos legacy COSORI reports, Levoit BLE study, TI UUID documentation and FCC index.
+- [x] Establish strongest analogous BLE architecture: encrypted session exchange + Wi-Fi credentials + cloud config has been observed in an **unrelated VeSync power socket**; cannot be reused on CAF-P583S-KUS without exact-model proof.
+- [x] Identify **separate VeSync cloud device-claim/config-key obstacle**; account.vesync.com portal exists, registration and device onboarding options unverified.
+- [x] Record a no-go for speculative writes, OAD, firmware operations, remote heating and pretending scans equal pairing.
+- [ ] Get **exact-model**, consented, fully redacted first-time pairing documentation/trace from community or vendor.
+- [ ] Verify whether iPhone-only onboarding and cloud claiming can occur without official VeSync app; may be technically unavailable without vendor support.
+- [ ] Only then implement offline parser fixtures and a controlled first-time setup flow.
+
+See [PROVISIONING_PROTOCOL_RESEARCH.md](PROVISIONING_PROTOCOL_RESEARCH.md). **No new IPA is justified by the present evidence.**

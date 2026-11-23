@@ -58,3 +58,6 @@ The model's [pyvesync #477](https://github.com/webdjoe/pyvesync/issues/477) repo
 
 ## Safety and release stop conditions
 Never auto-start cooking, alter firmware, supply speculative FFF0/FFE0 payloads, fake pairing success, leak SSIDs/passwords/tokens, or share device UUIDs/MACs publicly. **No new IPA for this D2 experiment**: iPhone Settings and installed v0.1.1 provide everything needed. The actual native first-time pairing protocol and cloud claim remain major unsolved blockers.
+
+## D2 test outcome and D3 follow-up (2026-11-22)
+User subsequently completed all observational comparison steps: blinking Wi-Fi indicator after 5-second hold, no clearly branded new SSID visible in an iPhone Wi-Fi scan, same BLE name (RSSI varied -57 to -50 dBm), same three GATT services/six characteristic metadata in configuration mode. D2 physical comparison **PASS** but pairing **NOT SOLVED**. The earlier step list above is historical, not a task to repeat. Continue with [D3 protocol research](../CrispCompanion/PROVISIONING_PROTOCOL_RESEARCH.md).
