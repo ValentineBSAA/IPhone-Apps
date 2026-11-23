@@ -189,3 +189,14 @@ Research source: [LOCAL_ONLY_CONTROL_RESEARCH.md](LOCAL_ONLY_CONTROL_RESEARCH.md
 - [x] Hard cap of 64 analyzed frames, 60-second session max; tests and CI static gate, regression roadmap and QA.
 - [ ] Verify GitHub iOS build, XCTest, unsigned IPA and actual owner iPhone test.
 - [ ] Treat any matches as structural hypotheses only, not proof of compatible kettle and air-fryer controls, temperature readings, or VeSync replacement.
+
+## Build 1.8: anonymous FFF1 packet families / low-touch follow-up
+- [x] Physical owner v0.1.7 result: idle 0 FFF1, Air Fry prompt 1 FFF1 10-byte packet; `byte0==A5` and declared 4-byte payload match, but byte1 **not** documented kettle type 12/22. No consecutive pairs captured; seq/sum 0/0 = not evaluated.
+- [x] New Settings > **Packet Families**, 10-second untouched baseline then automatically timed Air Fry → Reheat → Air Fry (one Start, three physical taps, no per-step Arm).
+- [x] Classify repeated unknown packet byte1 values into **session-only anonymous categories A/B/C**, with per-stage category distribution; never display or export the actual type value.
+- [x] Check each FFF1 frame for A5 magic, declared length, documented kettle types, and cross-frame byte2 sequence +1 / byte2+byte5 constant sum for equal-length adjacent pairs.
+- [x] Capture at most 64 frames of ephemeral metadata in memory; NO raw packet storage/export, device identifiers, hashes, Wi-Fi secrets, or network requests. Clear all ephemeral bytes on finish, Stop, leaving page or background.
+- [x] Exact CAF-P583S-KUS name, FFF0/FFF1 CCCD subscription only; **no GATT characteristic operations, no TI OAD, no heater/VeSync cloud controls**.
+- [x] Preserve saved recipes and other app features, reorganize old Bluetooth diagnostics into the collapsible Advanced section, update QA/tests/handoff.
+- [ ] Native CI and IPA artifact verification.
+- [ ] Physical owner three-tap Packet Families test. An anonymous type match is NOT confirmed cooking status or a protocol decoder.
