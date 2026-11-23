@@ -70,6 +70,21 @@ struct KitchenSettingsView: View {
                     .foregroundColor(CrispPalette.background)
                 }
                 CrispCard {
+                    Label("Preset Mapping", systemImage: "square.grid.3x3.fill")
+                        .font(.headline).foregroundColor(CrispPalette.gold)
+                    Text("Guide 12 physical presets through two repeatable five-second Bluetooth notification windows, without decoding or sending cooking commands.")
+                        .font(.footnote).foregroundColor(CrispPalette.muted)
+                    NavigationLink {
+                        BLEPresetMappingView()
+                    } label: {
+                        Label("Open Preset Mapping", systemImage: "waveform.path.ecg")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(CrispPalette.gold)
+                    .foregroundColor(CrispPalette.background)
+                }
+                CrispCard {
                     Label("Private NAS bridge", systemImage: "lock.shield.fill")
                         .font(.headline).foregroundColor(CrispPalette.cream)
                     Text("Optional. Settings are stored on this device. Your VeSync password belongs ONLY on your own NAS, never in the app.")
@@ -111,7 +126,7 @@ struct KitchenSettingsView: View {
                         .font(.headline).foregroundColor(CrispPalette.gold)
                     Text("First-time Wi-Fi provisioning, firmware-specific controls, official recipe synchronization, and real appliance events require pairing research and physical testing. No heat-start control is provided.")
                         .font(.footnote).foregroundColor(CrispPalette.muted)
-                    Text("Unofficial independent companion · v0.1.3 · iOS 16+")
+                    Text("Unofficial independent companion · v0.1.4 · iOS 16+")
                         .font(.caption2).foregroundColor(CrispPalette.muted)
                 }
             }
