@@ -35,3 +35,10 @@ Do not suggest Android phones, another Apple Account or third-party IPA hunting.
 
 ## Physical BLE scan PASS and D1 UI improvement (2026-11-22)
 Owner's seven screenshots confirm native iPhone BLE scan, 20 advertisements, candidate `CAF-P583S-KUS` at -57 dBm. Owner says general list does not identify devices. Do not lose this real-world validation. Latest draft stacked branch `feature/crisp-fryer-focus-gatt-d1` adds fryer-first category and collapses other devices, plus explicit temporary GATT UUID-only inspection with no characteristic reads/writes, no heat commands and no claiming Wi-Fi setup. App version bumped to 0.1.1. CI and real GATT results pending. Earlier D0 branch/pr #103 is still draft, Build1 base PR #101.
+
+## D2 + D3 final observed/technical checkpoint (2026-11-22)
+- Owner physically demonstrated flashing Wi-Fi icon after 5-sec control hold, no obvious branded SoftAP on iPhone Wi-Fi listing, BLE `CAF-P583S-KUS` signal -50 dBm while flashing, and identical three GATT services/six characteristic properties vs normal mode. These are hardware-verified, no Wi-Fi association yet.
+- D3 independent research is recorded in `CrispCompanion/PROVISIONING_PROTOCOL_RESEARCH.md`. **No exact-model complete first-time BLE protocol or VeSync cloud claim path found**. Other VeSync devices' encrypted BLE key exchange or older COSORI SoftAP setup cannot be copied without verification.
+- Official VeSync account portal exists but browser signup/device claims NOT verified. A VeSync account is separate from an Apple Account; do not suggest second Apple Account.
+- Next seek sanitized exact-model onboarding trace/spec from pyvesync #477 contributors or a supported SDK from VeSync; do not request repeated scans or build another IPA without new testable information.
+- Keep no remote heat start, no firmware OAD writes, no Wi-Fi/password leaks, and no claims of functional fryer control.
