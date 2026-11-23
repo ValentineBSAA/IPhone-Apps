@@ -27,7 +27,7 @@ struct KitchenSettingsView: View {
                 CrispCard {
                     Label("Find my fryer", systemImage: "antenna.radiowaves.left.and.right")
                         .font(.headline).foregroundColor(CrispPalette.gold)
-                    Text("No App Store or Android required. Discover nearby Bluetooth advertisements to research first-time pairing. This cannot yet connect your fryer to Wi-Fi.")
+                    Text("Your COSORI appears first. Inspect its Bluetooth service identifiers, without Wi-Fi setup, account registration or cooking commands.")
                         .font(.footnote).foregroundColor(CrispPalette.muted)
                     NavigationLink {
                         BluetoothDiscoveryView()
@@ -81,7 +81,7 @@ struct KitchenSettingsView: View {
                         .font(.headline).foregroundColor(CrispPalette.gold)
                     Text("First-time Wi-Fi provisioning, firmware-specific controls, official recipe synchronization, and real appliance events require pairing research and physical testing. No heat-start control is provided.")
                         .font(.footnote).foregroundColor(CrispPalette.muted)
-                    Text("Unofficial independent companion · v0.1.0 · iOS 16+")
+                    Text("Unofficial independent companion · v0.1.1 · iOS 16+")
                         .font(.caption2).foregroundColor(CrispPalette.muted)
                 }
             }

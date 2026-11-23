@@ -44,3 +44,15 @@ Updated 2026-11-22. **Not an implemented provisioning feature.**
 
 ## Stop rules
 No claims of "works with fryer" or "native pairing achieved" based only on BLE scan results. Never attempt commands that change heater state. Never ask the owner to post Wi-Fi passwords, account credentials, device MACs or tokens into GitHub.
+
+## Physical results — D0 BLE scan, Nov 22 2026
+User screenshots show `CAF-P583S-KUS` at **-57 dBm** and 19 other nearby advertisements. First real-device BLE detection PASSED. Advertised GATT services were not populated for the model in this scan, which is normal when the advertisement omits a service list. This does not imply the device has no services.
+
+### D1: focused iPhone service discovery (source committed, hardware QA pending)
+- Show exact name `CAF-P583S-KUS` as a model-name match, not confirmed paired state.
+- Put unrelated devices behind a collapsed disclosure. Identify TVs/JBL ONLY by self-advertised name; do not guess unknown hex names.
+- With explicit user action, connect temporarily using CoreBluetooth and call `discoverServices(nil)` then `discoverCharacteristics(nil,for:)` on each reported service.
+- DO NOT invoke `readValue`, `writeValue`, `setNotifyValue`, descriptor actions or temperature/heat commands.
+- Show service UUIDs and characteristic capability flags only, then disconnect.
+- This is reconnaissance, not native pairing. It MAY fail if firmware requires authentication. No reset or router password should be requested.
+- A real Bluetooth GATT connection is independent of Wi-Fi association and VeSync cloud claim.

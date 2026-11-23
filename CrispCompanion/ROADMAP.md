@@ -83,3 +83,13 @@ A premium, genuinely useful, no-subscription iPhone companion for the owner's CO
 - [ ] When the documented method is known, implement an explicit pairing wizard with secure credential handling and recovery.
 
 Reference: [PAIRING_RESEARCH.md](PAIRING_RESEARCH.md). Discovery is NOT pairing.
+
+## D1: REAL iPhone discovery result and next diagnostics (2026-11-22)
+- [x] Owner physically installed v0.1.0 native BLE discovery IPA and showed screenshots: 20 advertisements, with `CAF-P583S-KUS` at top and RSSI **-57 dBm**.
+- [x] Exact model name is an observed BLE advertisement; device identity is **strongly supported but NOT cryptographically verified**. No connection or Wi-Fi provisioning yet.
+- [x] Owner feedback: generic flat list of 20 devices is too technical and does not identify unrelated products; focus only on air fryer by default.
+- [x] Source improvement: separate highlighted COSORI card, collapsed unrelated devices, description based ONLY on advertised name, no guessed identities.
+- [x] Source improvement: explicit `Inspect Bluetooth services` action to temporarily connect and discover **GATT service and characteristic UUID metadata only**, then disconnect; no values read, no notify, no writes.
+- [ ] D1 simulator/device CI pass and physical owner verification of service UUIDs/characteristic properties.
+- [ ] Analyze whether the genuine services reveal a provisioning path. GATT discovery **does not** complete account registration, pairing or Wi-Fi setup.
+- [ ] Continue from captured metadata; DO NOT ask for network passwords, accounts or public device identifiers.
