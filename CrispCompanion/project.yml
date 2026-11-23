@@ -17,12 +17,12 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.crispcompanion
-        MARKETING_VERSION: "0.1.0"
+        MARKETING_VERSION: "0.1.1"
         CURRENT_PROJECT_VERSION: "1"
         PRODUCT_NAME: CrispCompanion
         GENERATE_INFOPLIST_FILE: "YES"
         INFOPLIST_KEY_CFBundleDisplayName: "Crisp Companion"
-        INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription: "Crisp Companion scans nearby Bluetooth devices when you choose Find My Fryer. Discovery data stays on this iPhone, and no connections or commands are sent."
+        INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription: "Crisp Companion scans nearby Bluetooth devices at your request and briefly connects only when you tap Inspect Bluetooth services. No Wi-Fi passwords or cooking commands are sent."
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: "YES"
         INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
