@@ -1,4 +1,4 @@
-name: Crisp Companion | Build 1.2 · local BLE event metadata QA
+name: Crisp Companion | Build 1.3 · safe local BLE packet comparison
 
 on:
   workflow_dispatch:
@@ -24,13 +24,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          SRC="CrispCompanion/Sources/BLEEventObservatory.swift"
+          for SRC in CrispCompanion/Sources/BLEEventObservatory.swift CrispCompanion/Sources/BLEPacketComparison.swift; do
           if grep -Eq '(^|[^[:alpha:]])(writeValue|readValue|discoverDescriptors)[[:space:]]*\\(' "$SRC"; then
             echo "::error::Forbidden BLE value access or command call in observer"
             exit 1
           fi
-          grep -q 'BLEObservationPolicy.allowsNotification' "$SRC"
-          grep -q 'duration: TimeInterval = 45' "$SRC"
+          done
+          grep -q 'BLEObservationPolicy.allowsNotification' CrispCompanion/Sources/BLEPacketComparison.swift
+          grep -q 'duration: TimeInterval = 45' CrispCompanion/Sources/BLEEventObservatory.swift
+          grep -q 'HMAC<SHA256>' CrispCompanion/Sources/BLEPacketComparison.swift
       - name: Python venv and read-only bridge tests
         shell: bash
         run: |
@@ -105,7 +107,7 @@ jobs:
           set -euo pipefail
           INFO="CrispCompanion/build-device/Build/Products/Release-iphoneos/CrispCompanion.app/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$INFO")" = "com.valentinebsaa.crispcompanion"
-          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$INFO")" = "0.1.2"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$INFO")" = "0.1.3"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$INFO")" = "$GITHUB_RUN_NUMBER"
           .crisp-icon-venv/bin/python - <<'PY'
           from PIL import Image
@@ -123,12 +125,12 @@ jobs:
           set -euo pipefail
           mkdir -p dist/Payload
           cp -R build-device/Build/Products/Release-iphoneos/CrispCompanion.app dist/Payload/
-          (cd dist && zip -qr CrispCompanion-v0.1.2-unsigned.ipa Payload)
-          unzip -l dist/CrispCompanion-v0.1.2-unsigned.ipa | grep -q 'Payload/CrispCompanion.app/Info.plist'
+          (cd dist && zip -qr CrispCompanion-v0.1.3-unsigned.ipa Payload)
+          unzip -l dist/CrispCompanion-v0.1.3-unsigned.ipa | grep -q 'Payload/CrispCompanion.app/Info.plist'
       - name: Upload unsigned IPA for owner's existing AltStore signing
         uses: actions/upload-artifact@v4
         with:
-          name: CrispCompanion-v0.1.2-iOS16-unsigned
-          path: CrispCompanion/dist/CrispCompanion-v0.1.2-unsigned.ipa
+          name: CrispCompanion-v0.1.3-iOS16-unsigned
+          path: CrispCompanion/dist/CrispCompanion-v0.1.3-unsigned.ipa
           retention-days: 30
           if-no-files-found: error

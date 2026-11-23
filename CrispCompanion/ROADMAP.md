@@ -130,3 +130,13 @@ Research source: [LOCAL_ONLY_CONTROL_RESEARCH.md](LOCAL_ONLY_CONTROL_RESEARCH.md
 - [ ] If event metadata appears, research privacy-safe offline protocol decoding, NOT command writes.
 - [ ] If zero events, investigate authentication/provisioning documentation before additional builds.
 - [ ] Do not claim local cooking control or temperature/status until actual device messages are decoded and independently verified.
+
+## Build 1.3: private packet comparison, guarded experiment
+- [x] Implement two-phase 45-second BLE observation: untouched baseline followed by explicit manual-adjustment run. Timer begins once approved notification subscription succeeds, not while scanning.
+- [x] Reuse exact-name CAF-P583S-KUS allowlist and FFF1/F000FFE2 notify-only GATT restrictions. CCCD configuration disclosed; no `readValue()` or `writeValue()`, cloud connection, heater start or firmware OAD use.
+- [x] Generate ephemeral CryptoKit HMAC key per comparison, compare only in-memory keyed packet signatures, never persist or export raw bytes or hashes. Clear on view exit/background/explicit action.
+- [x] UI displays baseline/adjustment packet counts, unique/shared/new signature counts, and a manual 'Mark adjustment' counter. New patterns are NOT decoded cooking settings.
+- [x] Test sources, static CI safety check, physical QA and master handoff drafted.
+- [ ] v0.1.3 CI green and verified unsigned IPA.
+- [ ] Owner physical two-phase test with idle baseline and marked physical changes; confirm whether new packet patterns appear.
+- [ ] If unique patterns emerge, research whether they reflect real cooking settings or merely generic changing counters/heartbeats, using repeatable controlled tests. No guesswork writes.

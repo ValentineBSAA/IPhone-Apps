@@ -88,3 +88,6 @@ The owner cannot use Android, the App Store or a second Apple Account. [PAIRING_
 
 ## Build 1.2: Local Bluetooth Event Observatory
 Optional idle-only, explicitly started and automatically time-limited diagnostic in **Settings > BLE Event Observatory**. Designed to help determine whether the real fryer emits metadata when you change physical presets. The app does not record payload bytes, send heater commands, provision Wi-Fi or register a VeSync account. Bluetooth notification subscriptions alter the CCCD descriptor; this is explained in-app. The local recipe planner now uses **12 documented factory presets** (not measured real-device settings). See [BUILD_1_2_QA.md](BUILD_1_2_QA.md).
+
+## Build 1.3: packet-comparison experiment
+Settings > Packet Comparison now contrasts an untouched 45-second idle baseline against a separate 45-second physical-adjustment run. HMAC-SHA256 fingerprints are keyed with a new random secret for the in-memory experiment and are cleared on leaving the screen; no raw BLE messages are saved or exported. The result is statistical only: a changed message does **not** mean we've decoded a preset, temperature, or controller protocol. No cooking commands, firmware activity, or cloud required. See [BUILD_1_3_QA.md](BUILD_1_3_QA.md).
