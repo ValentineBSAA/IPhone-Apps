@@ -207,7 +207,8 @@ final class BluetoothDiscoveryModel: NSObject, ObservableObject, CBCentralManage
                     error: Error?) {
         guard selected?.identifier == peripheral.identifier else { return }
         let id = service.uuid.uuidString
-        let characteristics: [BLECharacteristicInfo] = (error == nil ? service.characteristics : nil ?? []).map { item in
+        let discovered = (error == nil ? service.characteristics : nil) ?? []
+        let characteristics: [BLECharacteristicInfo] = discovered.map { item in
             var properties: [String] = []
             if item.properties.contains(.read) { properties.append("readable") }
             if item.properties.contains(.write) { properties.append("writable") }
