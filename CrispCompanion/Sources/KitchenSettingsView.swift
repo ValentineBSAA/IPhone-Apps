@@ -5,6 +5,7 @@ struct KitchenSettingsView: View {
     @State private var token = ""
     @State private var address = ""
     @State private var savedNotice = ""
+    @State private var showAdvancedBluetooth = false
 
     var body: some View {
         ScrollView {
@@ -24,6 +25,23 @@ struct KitchenSettingsView: View {
                             .font(.footnote).foregroundColor(CrispPalette.gold)
                     }
                 }
+                CrispCard {
+                    Label("Quick Local Probe", systemImage: "waveform.path.ecg")
+                        .font(.headline).foregroundColor(CrispPalette.gold)
+                    Text("One Start, four physical taps. Automatic timing and private byte-position comparison. No 24-preset routine.")
+                        .font(.footnote).foregroundColor(CrispPalette.muted)
+                    NavigationLink {
+                        QuickLocalProbeView()
+                    } label: {
+                        Label("Open Quick Local Probe", systemImage: "play.circle.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(CrispPalette.gold)
+                    .foregroundColor(CrispPalette.background)
+                }
+                DisclosureGroup(isExpanded: $showAdvancedBluetooth) {
+                    VStack(spacing: 16) {
                 CrispCard {
                     Label("Find my fryer", systemImage: "antenna.radiowaves.left.and.right")
                         .font(.headline).foregroundColor(CrispPalette.gold)
@@ -84,6 +102,15 @@ struct KitchenSettingsView: View {
                     .tint(CrispPalette.gold)
                     .foregroundColor(CrispPalette.background)
                 }
+                    }
+                    .padding(.top, 12)
+                } label: {
+                    Label("Advanced Bluetooth diagnostics", systemImage: "slider.horizontal.3")
+                        .font(.headline).foregroundColor(CrispPalette.cream)
+                }
+                .tint(CrispPalette.gold)
+                .padding(16)
+                .background(CrispPalette.panelRaised, in: RoundedRectangle(cornerRadius: 16))
                 CrispCard {
                     Label("Private NAS bridge", systemImage: "lock.shield.fill")
                         .font(.headline).foregroundColor(CrispPalette.cream)
@@ -126,7 +153,7 @@ struct KitchenSettingsView: View {
                         .font(.headline).foregroundColor(CrispPalette.gold)
                     Text("First-time Wi-Fi provisioning, firmware-specific controls, official recipe synchronization, and real appliance events require pairing research and physical testing. No heat-start control is provided.")
                         .font(.footnote).foregroundColor(CrispPalette.muted)
-                    Text("Unofficial independent companion · v0.1.4 · iOS 16+")
+                    Text("Unofficial independent companion · v0.1.5 · iOS 16+")
                         .font(.caption2).foregroundColor(CrispPalette.muted)
                 }
             }
