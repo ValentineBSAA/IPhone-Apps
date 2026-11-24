@@ -1,5 +1,8 @@
 # LAST SEEN v1.0.0 — Quality gates
 
+> **2026-11-24 direction change:** [OS-first roadmap](OS_FIRST_ROADMAP.md) governs all new development. Build and obtain owner approval of the fictional smartphone in story-disabled Phone Lab before final narrative work. The following describes legacy story-first work and regression fixtures, not the next implementation priority or verified hardware results.
+
+
 **Platform:** native iOS 16.0; primary real-world target: iPhone 14 Pro with Dynamic Island.
 **Release state:** Development build. CI validation required; signed installation and on-device verification not yet completed.
 
