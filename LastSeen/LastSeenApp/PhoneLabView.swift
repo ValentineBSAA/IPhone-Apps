@@ -1,5 +1,6 @@
 import SwiftUI
 import UserNotifications
+import LocalAuthentication
 
 /// Neutral, offline phone prototype. No GameStore or story routing is constructed here.
 struct PhoneLabView: View {
@@ -13,6 +14,9 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.lab.brightness") private var brightness = 0.9
     @AppStorage("lastseen.lab.wifi") private var wifi = true
     @AppStorage("lastseen.setup.device") private var device = "My phone"
+    @AppStorage("lastseen.lab.biometricUnlock") private var biometricUnlock = false
+    @State private var authContext: LAContext?
+    @State private var authNotice = ""
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -96,7 +100,7 @@ struct PhoneLabView: View {
     private var lockScreen: some View {
         VStack(spacing: 15) {
             Spacer()
-            Image(systemName: "lock.fill").font(.title3)
+            Image(systemName: biometricUnlock ? "faceid" : "lock.fill").font(.title3)
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 VStack(spacing: 5) {
                     Text(context.date, format: .dateTime.weekday(.wide).month(.wide).day())
@@ -107,7 +111,7 @@ struct PhoneLabView: View {
                 }
             }
             if unread > 0 {
-                Button { panel = .notifications } label: {
+                Button { if biometricUnlock { requestUnlock() } else { panel = .notifications } } label: {
                     HStack {
                         Image(systemName: "message.fill").font(.title2)
                         VStack(alignment: .leading) {
@@ -120,13 +124,19 @@ struct PhoneLabView: View {
             }
             Spacer()
             Button {
-                withAnimation(.easeInOut(duration: 0.25)) { locked = false }
+                requestUnlock()
             } label: {
                 VStack(spacing: 8) {
                     Image(systemName: "chevron.up").font(.title3)
-                    Text("Unlock").font(.headline)
+                    Text(biometricUnlock ? "Authenticate to unlock" : "Unlock").font(.headline)
                 }.frame(maxWidth: .infinity).padding(.vertical, 15)
-            }.buttonStyle(.plain)
+            }.buttonStyle(.plain).disabled(authContext != nil)
+            if !authNotice.isEmpty { Text(authNotice).font(.caption).multilineTextAlignment(.center) }
+            if biometricUnlock {
+                Button("Play without biometrics") {
+                    authContext?.invalidate(); authContext = nil; biometricUnlock = false; authNotice = ""; requestUnlock()
+                }.font(.caption).disabled(authContext != nil)
+            }
             Text("Fictional phone · Phone Lab").font(.caption2).foregroundColor(.white.opacity(0.6))
         }
         .padding(24)
@@ -136,6 +146,35 @@ struct PhoneLabView: View {
                 withAnimation(.easeInOut(duration: 0.25)) { locked = false }
             }
         })
+    }
+
+    private func requestUnlock() {
+        guard locked, authContext == nil else { return }
+        authNotice = ""
+        guard biometricUnlock else {
+            withAnimation(.easeInOut(duration: 0.25)) { locked = false }
+            return
+        }
+        let context = LAContext()
+        context.localizedCancelTitle = "Cancel"
+        context.localizedFallbackTitle = ""
+        var error: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+            authNotice = "Biometrics unavailable. Try again or play without biometrics."
+            return
+        }
+        authContext = context
+        context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Unlock your fictional Last Seen phone.") { success, _ in
+            DispatchQueue.main.async {
+                guard authContext === context else { return }
+                authContext = nil
+                if success {
+                    withAnimation(.easeInOut(duration: 0.25)) { locked = false }
+                } else {
+                    authNotice = "Unlock cancelled or unsuccessful. Try again or play without biometrics."
+                }
+            }
+        }
     }
 
     private var launcher: some View {
@@ -210,6 +249,8 @@ struct PhoneLabView: View {
         Form {
             Section("Fictional device controls") {
                 LabeledContent("Device name", value: device)
+                Toggle("Real Face ID / Touch ID", isOn: $biometricUnlock)
+                Text("Optional in-game unlock. iOS handles authentication; Last Seen receives only the result.").font(.caption).foregroundColor(.secondary)
                 Toggle("Simulated Wi-Fi", isOn: $wifi)
                 VStack(alignment: .leading) {
                     Text("Phone display brightness")
