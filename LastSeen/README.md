@@ -1,5 +1,8 @@
 # LAST SEEN — The Missing Floor
 
+> **2026-11-24 direction change:** [OS-first roadmap](OS_FIRST_ROADMAP.md) governs all new development. Build and obtain owner approval of the fictional smartphone in story-disabled Phone Lab before final narrative work. The following describes legacy story-first work and regression fixtures, not the next implementation priority or verified hardware results.
+
+
 **Native interactive iPhone horror game** | SwiftUI | iOS 16.0+ | Portrait | Offline
 
 Working internal title, pending public-name clearance. Built as a standalone game in the IPhone-Apps monorepo. It does not use Berry Block Blast code or assets.
