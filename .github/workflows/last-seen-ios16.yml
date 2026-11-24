@@ -9,6 +9,7 @@ on:
       - feature/last-seen-living-phone-v1-1
       - fix/last-seen-1-1-1-contact-identity
       - fix/last-seen-1-1-2-real-phone
+      - feature/last-seen-phone-lab
     paths:
       - 'LastSeen/**'
       - '.github/workflows/last-seen-ios16.yml'
@@ -125,14 +126,14 @@ jobs:
           BUILD_NUMBER="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")"
           BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")"
           echo "Actual app version: $MARKETING_VERSION ($BUILD_NUMBER)"
-          test "$MARKETING_VERSION" = "1.1.2"
-          test "$BUILD_NUMBER" = "8"
+          test "$MARKETING_VERSION" = "1.2.0"
+          test "$BUILD_NUMBER" = "9"
           test "$BUNDLE_ID" = "com.valentinebsaa.lastseen.horror"
           test -s "LastSeenApp/Assets.xcassets/Contact_Maya.imageset/photo.jpg"
           test -s "LastSeenApp/Assets.xcassets/Contact_Denise.imageset/photo.jpg"
           test "$(find LastSeenApp/Assets.xcassets -maxdepth 1 -type d -name 'Contact_*.imageset' | wc -l | tr -d ' ')" = "12"
 
-      - name: Run full story-engine tests on iPhone simulator
+      - name: Run story-engine and Phone Lab tests on iPhone simulator
         timeout-minutes: 20
         run: |
           set -euo pipefail
@@ -151,7 +152,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             test
 
-      - name: Capture actual simulator home screen
+      - name: Capture actual simulator lock screen
         run: |
           set -euo pipefail
           SIMULATOR_ID="$(xcrun simctl list devices available -j | python3 -c 'import json,sys;d=json.load(sys.stdin);print(next((x["udid"] for devices in d["devices"].values() for x in devices if x.get("isAvailable") and x.get("name","").startswith("iPhone")),""))')"
@@ -162,14 +163,14 @@ jobs:
           xcrun simctl launch "$SIMULATOR_ID" com.valentinebsaa.lastseen.horror
           sleep 4
           mkdir -p dist
-          xcrun simctl io "$SIMULATOR_ID" screenshot dist/last-seen-home-v1.1.2.png
-          test -s dist/last-seen-home-v1.1.2.png
+          xcrun simctl io "$SIMULATOR_ID" screenshot dist/last-seen-lock-v1.2.0.png
+          test -s dist/last-seen-lock-v1.2.0.png
 
       - name: Upload visual UI verification screenshot
         uses: actions/upload-artifact@v4
         with:
-          name: LAST-SEEN-v1.1.2-home-screen-simulator
-          path: LastSeen/dist/last-seen-home-v1.1.2.png
+          name: LAST-SEEN-v1.2.0-lock-screen-simulator
+          path: LastSeen/dist/last-seen-lock-v1.2.0.png
           if-no-files-found: error
           retention-days: 14
 
@@ -180,16 +181,16 @@ jobs:
           cp -R build/Build/Products/Release-iphoneos/LastSeen.app dist/Payload/
           (
             cd dist
-            zip -qr Last-Seen-v1.1.2-iOS16-unsigned.ipa Payload
+            zip -qr Last-Seen-v1.2.0-iOS16-unsigned.ipa Payload
           )
-          test -s dist/Last-Seen-v1.1.2-iOS16-unsigned.ipa
-          unzip -l dist/Last-Seen-v1.1.2-iOS16-unsigned.ipa | grep -q 'Payload/LastSeen.app/Info.plist'
+          test -s dist/Last-Seen-v1.2.0-iOS16-unsigned.ipa
+          unzip -l dist/Last-Seen-v1.2.0-iOS16-unsigned.ipa | grep -q 'Payload/LastSeen.app/Info.plist'
 
       - name: Publish unsigned IPA for user-side installation
         uses: actions/upload-artifact@v4
         with:
-          name: LAST-SEEN-v1.1.2-iOS16-unsigned
-          path: LastSeen/dist/Last-Seen-v1.1.2-iOS16-unsigned.ipa
+          name: LAST-SEEN-v1.2.0-iOS16-unsigned
+          path: LastSeen/dist/Last-Seen-v1.2.0-iOS16-unsigned.ipa
           if-no-files-found: error
           retention-days: 30
 
