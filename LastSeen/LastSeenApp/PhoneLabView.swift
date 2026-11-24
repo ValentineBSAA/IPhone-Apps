@@ -366,8 +366,6 @@ private struct LabPhotosView: View {
                         }.buttonStyle(.plain)
                     }
                 }
-                Text("")
-                    .font(.footnote).foregroundColor(.secondary)
             }.padding()
         }.navigationTitle("Photos")
         .sheet(item: $selection) { person in
