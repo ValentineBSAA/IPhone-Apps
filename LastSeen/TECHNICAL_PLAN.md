@@ -1,4 +1,7 @@
 # LAST SEEN — iOS 16 technical preflight & acceptance plan
+
+> **2026-11-24 direction change:** [OS-first roadmap](OS_FIRST_ROADMAP.md) governs all new development. Build and obtain owner approval of the fictional smartphone in story-disabled Phone Lab before final narrative work. The following describes legacy story-first work and regression fixtures, not the next implementation priority or verified hardware results.
+
 Research date 2026-11-17. No app binary or production implementation committed in this branch.
 
 ## Platform
