@@ -3,15 +3,16 @@ import UserNotifications
 
 /// Neutral, offline phone prototype. No GameStore or story routing is constructed here.
 struct PhoneLabView: View {
-    @StateObject private var world = PhoneWorldStore(storageURL: PhoneWorldStore.saveURL
-        .deletingLastPathComponent().appendingPathComponent("lastseen-phone-lab-v1.json"))
+    @StateObject private var world = PhoneWorldStore(storageURL: RestoredPhoneBackup.url)
     @State private var path = NavigationPath()
-    @State private var locked = true
+    @State private var locked: Bool
+    init(startUnlocked: Bool = false) { _locked = State(initialValue: !startUnlocked) }
     @State private var panel: LabPanel?
     @State private var recent: [LabApp] = []
     @AppStorage("lastseen.lab.wallpaper") private var wallpaper = 0
     @AppStorage("lastseen.lab.brightness") private var brightness = 0.9
     @AppStorage("lastseen.lab.wifi") private var wifi = true
+    @AppStorage("lastseen.setup.device") private var device = "My phone"
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -208,6 +209,7 @@ struct PhoneLabView: View {
     private var controls: some View {
         Form {
             Section("Fictional device controls") {
+                LabeledContent("Device name", value: device)
                 Toggle("Simulated Wi-Fi", isOn: $wifi)
                 VStack(alignment: .leading) {
                     Text("Phone display brightness")
@@ -339,7 +341,20 @@ private struct LabPhotosView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 15) {
                 Toggle("Favorites only", isOn: $onlyFavorites)
-                Text("Saved portraits").font(.headline)
+                Text("Camera roll").font(.headline)
+                if !onlyFavorites {
+                    NavigationLink {
+                        VStack(spacing: 20) {
+                            Image(RestoredPhoneBackup.ownerPortrait).resizable().scaledToFit()
+                            Text("Portrait · saved last week").font(.caption).foregroundColor(.secondary)
+                        }.padding().navigationTitle("Photo")
+                    } label: {
+                        VStack(alignment: .leading) {
+                            Image(RestoredPhoneBackup.ownerPortrait).resizable().scaledToFill().frame(height: 190).clipped()
+                            Text("Last week").font(.caption)
+                        }
+                    }.buttonStyle(.plain)
+                }
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                     ForEach(Neighbor.allCases.filter { !onlyFavorites || isFavorite($0) }) { person in
                         Button { selection = person } label: {
@@ -351,7 +366,7 @@ private struct LabPhotosView: View {
                         }.buttonStyle(.plain)
                     }
                 }
-                Text("Prototype album: ordinary photo and video assets will be added after the shell is approved.")
+                Text("")
                     .font(.footnote).foregroundColor(.secondary)
             }.padding()
         }.navigationTitle("Photos")
