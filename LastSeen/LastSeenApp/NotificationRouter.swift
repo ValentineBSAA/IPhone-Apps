@@ -65,7 +65,9 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
 final class LastSeenAppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        NotificationRouter.install()
+        if ProcessInfo.processInfo.arguments.contains("--legacy-story") {
+            NotificationRouter.install()
+        }
         return true
     }
 }
