@@ -1,0 +1,47 @@
+# LAST SEEN — OS-first roadmap (2026-11-24)
+**Current governing development direction. Supersedes story-first sequencing in older documents.** Preserve existing source, scripts, character portraits, save data and branch history. Do not rewrite or expand the horror narrative until the fictional phone is accepted by the owner on physical hardware. Existing stories are legacy development fixtures, not the mandated final plot.
+
+## Product pillars
+- The fictional smartphone is the game world, not a menu surrounding a chat game. A player should be able to explore a normal, coherent phone before anything frightening happens.
+- Original fictional handset/OS branding and visual language; modern familiar gestures, not a pixel-for-pixel Apple or SIMULACRA clone. The OS name, owner identity, visual concepts and final story require owner approval. SIMULACRA is a reference for immersion only (https://apps.apple.com/us/app/simulacra/id1252035454).
+- Free complete game, no ads, paywalls, required accounts, paid runtime AI/API, or network dependence. All media and narrative run locally. Native SwiftUI/iOS 16+, portrait, preserve application identity and existing install/save compatibility.
+- All contacts, network, media, calls, notifications and settings are fictional/in-app; no real contacts, camera roll, microphone, messages, location, calls, network settings or system impersonation. Actual local notifications opt-in and clearly branded LAST SEEN; fictional calls in-app only. Provide an accessible way to leave the simulation, content warning and intensity controls.
+
+## Existing baseline (source inspection, not device certification)
+The latest inspected fix/last-seen-1-1-2-real-phone branch (836738a9f74b761e19661423ab63213f3b0c6c32) has a launcher with Messages, Contacts, Photos, Notes, Calendar, Mail, Settings, and PhoneWorldStore with Maya/Denise, notes and events. LastSeenApp automatically calls game.beginOrResume() on launch/foreground; the photo library is derived only from delivered story photographs, and world updates can be driven by game clues. README still describes independent selectable stories. These are useful components, but not a coherent OS-first experience. Do not treat older QA claims as current device passes.
+
+## Phase 0 — design the phone before implementing
+- Present a fictional phone design bible and original visual concepts: lock screen, wallpaper, launcher/dock, status area, notification center, quick settings, app switcher, gestures, icon system, typography, spacing, light/dark behavior, animations, sound/haptic language, accessible back/home and safe areas.
+- Define an OS app registry, ownership model, phone timeline, persistent app state and cross-app links. Decide whether player owns or finds the phone only with owner approval; use a neutral fictional fixture until then.
+- Inventory existing SwiftUI components and preserve those that work. No new horror writing, branching expansion, paid media generation or new story-focused release in this phase.
+
+## Phase 1 — shell and ordinary apps (story-disabled Phone Lab)
+- Implement a dedicated Phone Lab launch configuration with no automatic horror progression, story notifications, timers, clue injection, or story-dependent media; existing story mode remains available separately for regression tests, not the default lab. Gate GameStore lifecycle and reconciliation, including foreground/background, without destructive resets.
+- Build original lock/unlock, home, status indicators using one fictional clock, app switcher/restore, notification center, quick controls, settings (simulated Wi-Fi, battery, brightness, volume and wallpaper; controls must have visible effects or be honestly marked unavailable). Respect actual iOS safe areas; never intercept system gestures or pretend to change actual device settings.
+- Implement functional everyday app behaviors with fictional records:
+  - Messages: thread history, search, composer/drafts, attachments, read receipts, typing, unread counts and believable authored replies. Unsupported replies remain drafts or receive deterministic contextual responses without fake AI claims.
+  - Contacts and Phone: linked identity, profile, favorites, recents, missed calls, voicemail, call screen with bundled audio, answer/decline/end; no real dialing.
+  - Photos: pre-populated everyday camera roll, albums, favorites, dates, detail, zoom, video playback, shared media linked by ID; no dependency on story flags.
+  - Notes: create/edit/search/pin/delete and persist; preserve protected authored evidence later without misleading deletion.
+  - Calendar: browse dates, event detail, edit/create local records; Mail: folders, read/unread, search, threads, attachments, drafts.
+  - Browser: fictional offline websites, history, bookmarks and safe local navigation. Files: browse/search/open bundled documents and fictional downloads.
+  - Clock, calculator, voice recorder/player (fictional files only), maps (fictional geography, no location), music player and optional simple in-world social app as subsequent polish. No dead icons.
+- One shared world model: stable person/media/thread/event IDs, relationships, coherent timestamps, unread badges, notification routing, deterministic fixture data, documented save schema/migration and seeded reset isolated from real saved stories.
+- Use ordinary interactions, animation and believable state restoration; don't fill launcher with story cards, obvious clue labels, progress bars, or horror UI.
+
+## Phase 2 — lived-in phone & media studio
+- Build a neutral believable history across weeks/months: mundane messages, photos, appointments, receipts, emails, documents, voicemails, social posts, browser history. Keep continuity across names, faces, dates, addresses (fictional), shared attachments. Suggested starting target (not final content approval): 6–10 contacts, 40+ routine messages, 20+ ordinary photos, 8+ emails, 5+ calendar events, 5+ notes, several voice/video clips. Prefer quality over count.
+- Media tooling is development-only, no generation on iPhone and no runtime costs. Evaluate local Wan2.1 T2V-1.3B (official upstream reports 8.19 GB VRAM at 480p), Wan2.2 TI2V-5B if hardware allows; optionally ComfyUI. Verify GPU, model/license and identity continuity before adopting. https://github.com/Wan-Video/Wan2.1 and https://github.com/Wan-Video/Wan2.2. No assumption of unlimited free hosted credits; no paid services without explicit approval.
+- Zero-service-cost fallback: original phone footage with consent, Blender rendered scenes, stills with motion/camera shake/lighting, FFmpeg editing/encoding, original audio and captions. Generate short clips offline; keep character reference sheets and consistent wardrobe/locations/voices. No real-person likeness without appropriate rights/consent, no copied competitor assets. Track provenance, license, prompt/version, character IDs, dates, captions, poster image and checksum in media manifest.
+- Bundle H.264/AAC MP4 with iOS 16 AVPlayer, thumbnails, scrub/pause/replay, subtitles, offline playback and missing-file diagnostics; test small-screen readability, asset size and performance. No mandatory video generation if hardware unsuitable.
+
+## Phase 3 — OS approval gate (mandatory before final story writing)
+- Deliver an installable unsigned iOS 16 IPA through existing isolated CI, with build/version and documented install limitations. No claims of build success until CI and artifact verified.
+- Hardware QA on iPhone 14 Pro/iOS 16, and secondary supported iPhone where available: launch in airplane mode; unlock, navigate all implemented apps and home/back, exercise every visible control, swipe/scroll, search, type, play media, interact with routine records; compare cross-app identity and timeline; change settings and persist across force quit/restart; verify no story auto-start or leak from existing save, no duplicate notification, clipping, missing portrait or broken links. Confirm actual iOS settings/data unaffected. Test accessibility, audio interruption, reduced motion and exit.
+- Owner plays Phone Lab and explicitly approves phone look, behavior, depth and coherence. Any failure remains open; do not proceed to final story work just because CI passes.
+
+## Phase 4 — story as content running on approved OS
+Only after phase 3 sign-off: decide original premise, player role, cast and continuity; review existing Missing Floor, Night Shift, Seventh Number as optional material, not forced parallel campaigns. Author a gradual normal-to-unsettling arc using existing apps and cross-app clues, consistent character interactions, phone history, audio/video, branching consequences and multiple endings. Separate deterministic narrative event engine from OS navigation, with data-driven versioned events and media. Support replay/migration without altering everyday preferences; prevent softlocks, inaccessible clues, duplicate events and false real-world alerts. Validate all paths and keep final experience free/offline.
+
+## Immediate Codex handoff
+Next work item is Phase 0 and Phase 1 Phone Lab foundations, not more horror messages or cinematics. First inspect the existing app entry, PhoneWorldStore, LivingPhoneViews, PhoneUtilityViews and save model. Propose original shell visual concepts and an implementation checklist; implement only the approved direction, preserve existing code and tests. Keep this roadmap updated with real test results, pending work and user approvals. No release number or deadline is mandated yet.
