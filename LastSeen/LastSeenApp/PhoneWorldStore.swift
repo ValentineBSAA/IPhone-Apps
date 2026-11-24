@@ -83,13 +83,13 @@ final class PhoneWorldStore: ObservableObject {
             .appendingPathComponent("lastseen-world-v1.json")
     }
 
-    init(initial: PhoneWorld? = nil, persistToDisk: Bool = true, now: Date = Date(), storageURL: URL = PhoneWorldStore.saveURL) {
+    init(initial: PhoneWorld? = nil, persistToDisk: Bool = true, now: Date = Date(), storageURL: URL? = nil) {
         self.persistToDisk = persistToDisk
-        self.storageURL = storageURL
+        self.storageURL = storageURL ?? Self.saveURL
         if let initial {
             state = initial
         } else if persistToDisk,
-            let data = try? Data(contentsOf: storageURL),
+            let data = try? Data(contentsOf: self.storageURL),
             let previous = try? JSONDecoder().decode(PhoneWorld.self, from: data),
             previous.version == 1 {
             state = previous
