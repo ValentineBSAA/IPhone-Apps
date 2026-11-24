@@ -375,11 +375,10 @@ struct NeighborConversationView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        Text("Today")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(Night.muted)
-                            .padding(.top, 16)
                         ForEach(world.messages(neighbor)) { message in
+                            if world.messages(neighbor).first?.id == message.id || world.messages(neighbor).last(where: { $0.at < message.at }).map({ !Calendar.current.isDate($0.at, inSameDayAs: message.at) }) == true {
+                                Text(message.at, style: .date).font(.caption).foregroundColor(Night.muted).padding(.top, 8)
+                            }
                             HStack {
                                 if message.fromPlayer { Spacer(minLength: 55) }
                                 VStack(alignment: message.fromPlayer ? .trailing : .leading, spacing: 4) {
