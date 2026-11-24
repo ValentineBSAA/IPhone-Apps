@@ -9,19 +9,27 @@ struct PhoneSetupRoot: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let restoreLabels = ["Preparing your phone", "Restoring contacts", "Restoring messages", "Restoring photos", "Preparing applications", "Finishing setup"]
+    @State private var didHandleReplay = false
+    @State private var justRestored = false
+    @State private var restoreFailed = false
     private let replay = ProcessInfo.processInfo.arguments.contains("--replay-setup")
 
     var body: some View {
         Group {
             if stage >= 5 {
-                PhoneLabView()
+                PhoneLabView(startUnlocked: justRestored)
             } else {
                 setup
             }
         }
         .preferredColorScheme(.dark)
+        .alert("Unable to finish restore", isPresented: $restoreFailed) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("The local backup could not be saved. Your existing data has not been erased. Try again.")
+        }
         .onAppear {
-            if replay { stage = 0; progress = 0 }
+            if replay && !didHandleReplay { didHandleReplay = true; stage = 0; progress = 0 }
         }
     }
 
@@ -51,7 +59,7 @@ struct PhoneSetupRoot: View {
                             option("Coastal", selected: wallpaper == 0) { wallpaper = 0 }
                             option("Dusk", selected: wallpaper == 1) { wallpaper = 1 }
                         case 3:
-                            hero("icloud", title: "Transfer your data", detail: "A saved device backup is available for this phone.")
+                            hero("cloud", title: "Transfer your data", detail: "A saved device backup is available for this phone.")
                             VStack(alignment: .leading, spacing: 9) {
                                 Label("Recommended backup", systemImage: "checkmark.seal")
                                     .font(.headline)
@@ -76,6 +84,10 @@ struct PhoneSetupRoot: View {
                 }.scrollIndicators(.hidden)
                 if stage < 4 || progress >= 100 {
                     Button {
+                        if stage == 4 {
+                            do { try RestoredPhoneBackup.restore(); justRestored = true }
+                            catch { restoreFailed = true; return }
+                        }
                         if stage == 3 { progress = 0 }
                         if reduceMotion { stage += 1 }
                         else { withAnimation(.easeInOut(duration: 0.22)) { stage += 1 } }
