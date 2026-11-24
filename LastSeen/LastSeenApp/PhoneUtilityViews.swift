@@ -319,9 +319,11 @@ private struct PhoneMailItem: Identifiable {
 struct PhoneMailView: View {
     @EnvironmentObject private var world: PhoneWorldStore
     @AppStorage private var readIDs: String
+    private let lab: Bool
 
     init(lab: Bool = false) {
-        _readIDs = AppStorage(wrappedValue: "", lab ? "lastseen.lab.mail.read" : "lastseen.mail.read")
+        self.lab = lab
+        _readIDs = AppStorage(wrappedValue: "", lab ? "lastseen.restored.mail.read" : "lastseen.mail.read")
     }
     @State private var selected: String?
 
@@ -334,7 +336,7 @@ struct PhoneMailView: View {
                 date: date.addingTimeInterval(-3600)),
             PhoneMailItem(id: "bookstore", from: "Maple Street Bookshop",
                 subject: "Your reservation is ready",
-                body: "Hi there,\n\nThe book you reserved is ready for pickup. We'll hold it through the end of the week.\n\nThanks for shopping locally,\nMaple Street Bookshop",
+                body: (lab ? "Hi Nora,\n\n" : "Hi there,\n\n") + "The book you reserved is ready for pickup. We'll hold it through the end of the week.\n\nThanks for shopping locally,\nMaple Street Bookshop",
                 date: date.addingTimeInterval(-10800)),
             PhoneMailItem(id: "building-bulletin", from: "Ash Street Neighbors",
                 subject: "Community notice",
