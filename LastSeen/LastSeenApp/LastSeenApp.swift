@@ -3,12 +3,23 @@ import SwiftUI
 @main
 struct LastSeenApp: App {
     @UIApplicationDelegateAdaptor(LastSeenAppDelegate.self) private var appDelegate
+    var body: some Scene {
+        WindowGroup {
+            if ProcessInfo.processInfo.arguments.contains("--legacy-story") {
+                LegacyStoryRoot()
+            } else {
+                PhoneLabView()
+            }
+        }
+    }
+}
+
+private struct LegacyStoryRoot: View {
     @StateObject private var game = GameStore()
     @StateObject private var world = PhoneWorldStore()
     @Environment(\.scenePhase) private var phase
 
-    var body: some Scene {
-        WindowGroup {
+    var body: some View {
             NavigationStack {
                 PhoneHomeView()
                     .navigationDestination(for: Contact.self) { contact in
@@ -55,7 +66,6 @@ struct LastSeenApp: App {
                     game.suspend()
                 }
             }
-        }
     }
 }
 

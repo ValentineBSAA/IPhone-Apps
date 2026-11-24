@@ -318,7 +318,11 @@ private struct PhoneMailItem: Identifiable {
 
 struct PhoneMailView: View {
     @EnvironmentObject private var world: PhoneWorldStore
-    @AppStorage("lastseen.mail.read") private var readIDs = ""
+    @AppStorage private var readIDs: String
+
+    init(lab: Bool = false) {
+        _readIDs = AppStorage(wrappedValue: "", lab ? "lastseen.lab.mail.read" : "lastseen.mail.read")
+    }
     @State private var selected: String?
 
     private var mails: [PhoneMailItem] {

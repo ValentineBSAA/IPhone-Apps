@@ -76,18 +76,21 @@ struct PhoneWorld: Codable {
 final class PhoneWorldStore: ObservableObject {
     @Published private(set) var state: PhoneWorld
     private let persistToDisk: Bool
+    private let storageURL: URL
 
     static var saveURL: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("lastseen-world-v1.json")
     }
 
-    init(initial: PhoneWorld? = nil, persistToDisk: Bool = true, now: Date = Date()) {
+    init(initial: PhoneWorld? = nil, persistToDisk: Bool = true, now: Date = Date(), storageURL: URL? = nil) {
         self.persistToDisk = persistToDisk
+        let resolvedURL = storageURL ?? Self.saveURL
+        self.storageURL = resolvedURL
         if let initial {
             state = initial
         } else if persistToDisk,
-            let data = try? Data(contentsOf: Self.saveURL),
+            let data = try? Data(contentsOf: resolvedURL),
             let previous = try? JSONDecoder().decode(PhoneWorld.self, from: data),
             previous.version == 1 {
             state = previous
@@ -260,9 +263,9 @@ final class PhoneWorldStore: ObservableObject {
     private func save() {
         guard persistToDisk else { return }
         do {
-            let dir = Self.saveURL.deletingLastPathComponent()
+            let dir = storageURL.deletingLastPathComponent()
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            try JSONEncoder().encode(state).write(to: Self.saveURL, options: .atomic)
+            try JSONEncoder().encode(state).write(to: storageURL, options: .atomic)
         } catch {
             #if DEBUG
             print("LAST SEEN fictional world save error: \(error)")
