@@ -85,11 +85,12 @@ final class PhoneWorldStore: ObservableObject {
 
     init(initial: PhoneWorld? = nil, persistToDisk: Bool = true, now: Date = Date(), storageURL: URL? = nil) {
         self.persistToDisk = persistToDisk
-        self.storageURL = storageURL ?? Self.saveURL
+        let resolvedURL = storageURL ?? Self.saveURL
+        self.storageURL = resolvedURL
         if let initial {
             state = initial
         } else if persistToDisk,
-            let data = try? Data(contentsOf: self.storageURL),
+            let data = try? Data(contentsOf: resolvedURL),
             let previous = try? JSONDecoder().decode(PhoneWorld.self, from: data),
             previous.version == 1 {
             state = previous
