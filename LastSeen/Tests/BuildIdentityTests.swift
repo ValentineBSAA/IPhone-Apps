@@ -5,15 +5,16 @@ import XCTest
 /// the correct version. Jailbreak package managers depend on these plist keys.
 @MainActor
 final class BuildIdentityTests: XCTestCase {
-    func testShippedAppVersionIsOneTwoOneBuildTen() throws {
+    func testShippedAppVersionIsOneTwoTwoBuildEleven() throws {
         let bundle = Bundle(for: GameStore.self)
         let marketing = try XCTUnwrap(bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)
         let build = try XCTUnwrap(bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String)
         let identifier = try XCTUnwrap(bundle.bundleIdentifier)
 
-        XCTAssertEqual(marketing, "1.2.1", "The actual installed app version must advance")
-        XCTAssertEqual(build, "10", "Every test build must use a strictly newer build number")
+        XCTAssertEqual(marketing, "1.2.2", "The actual installed app version must advance")
+        XCTAssertEqual(build, "11", "Every test build must use a strictly newer build number")
         XCTAssertEqual(identifier, "com.valentinebsaa.lastseen.horror")
+        XCTAssertFalse((bundle.object(forInfoDictionaryKey: "NSFaceIDUsageDescription") as? String ?? "").isEmpty)
     }
 
     func testSecondaryContactsUseTheirOwnArtFiles() throws {
