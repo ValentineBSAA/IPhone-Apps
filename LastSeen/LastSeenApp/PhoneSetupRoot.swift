@@ -6,6 +6,7 @@ struct PhoneSetupRoot: View {
     @AppStorage("lastseen.setup.progress") private var progress = 0
     @AppStorage("lastseen.setup.device") private var device = "My phone"
     @AppStorage("lastseen.lab.wallpaper") private var wallpaper = 0
+    @AppStorage("lastseen.lab.biometricUnlock") private var biometricUnlock = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let restoreLabels = ["Preparing your phone", "Restoring contacts", "Restoring messages", "Restoring photos", "Preparing applications", "Finishing setup"]
@@ -17,7 +18,7 @@ struct PhoneSetupRoot: View {
     var body: some View {
         Group {
             if stage >= 5 {
-                PhoneLabView(startUnlocked: justRestored)
+                PhoneLabView(startUnlocked: justRestored && !biometricUnlock)
             } else {
                 setup
             }
@@ -58,6 +59,10 @@ struct PhoneSetupRoot: View {
                             hero("paintpalette", title: "Your style", detail: "Choose your first wallpaper.")
                             option("Coastal", selected: wallpaper == 0) { wallpaper = 0 }
                             option("Dusk", selected: wallpaper == 1) { wallpaper = 1 }
+                            Toggle("Use real Face ID / Touch ID", isOn: $biometricUnlock)
+                                .tint(.teal)
+                            Text("Optional. Your iPhone handles authentication when you unlock the fictional phone. No facial data is collected. You can play without biometrics.")
+                                .font(.caption).foregroundColor(.secondary)
                         case 3:
                             hero("cloud", title: "Transfer your data", detail: "A saved device backup is available for this phone.")
                             VStack(alignment: .leading, spacing: 9) {
