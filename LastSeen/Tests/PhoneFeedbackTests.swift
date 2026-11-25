@@ -17,6 +17,19 @@ final class PhoneFeedbackTests: XCTestCase {
         XCTAssertNotEqual(PhoneCue.suspense.waveData(), PhoneCue.scare.waveData())
     }
 
+    func testAllElevenOriginalAssetsDecodeAndPlayOnce() throws {
+        XCTAssertEqual(PhoneCue.allCases.count, 11)
+        XCTAssertEqual(Set(PhoneCue.allCases.map(\.assetName)).count, 11)
+        XCTAssertEqual(PhoneCue.allCases.filter(\.isHorror).count, 5)
+        for cue in PhoneCue.allCases {
+            let url = try XCTUnwrap(cue.audioURL(in: Bundle(for: PhoneWorldStore.self)), cue.assetName)
+            let player = try AVAudioPlayer(contentsOf: url)
+            XCTAssertGreaterThan(player.duration, 0.3)
+            XCTAssertLessThan(player.duration, 16)
+            XCTAssertEqual(player.numberOfLoops, 0)
+        }
+    }
+
     func testIncomingDetectionDoesNotDependOnUnreadState() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let store = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(now: now), persistToDisk: false)
