@@ -86,10 +86,14 @@ struct RecoveryPrologue: View {
         .tint(accent)
         .onAppear {
             guard !initialized else { return }
-            if revision < 6 {
-                // One-time replay of the revised prologue, never reset the phone or earned access.
-                stage = 0; elapsed = 0; simulated = false; revision = 6
-                OpeningQA.record("Opening revision 6 initialized; existing phone records retained")
+            if revision < WelcomeRevision.current {
+                let next = WelcomeRevision.destination(previousRevision: revision, stage: stage)
+                if revision < 6 {
+                    elapsed = 0; simulated = false
+                }
+                stage = next
+                revision = WelcomeRevision.current
+                OpeningQA.record("Welcome revision 7 initialized; existing phone setup and records retained")
             }
             initialized = true
         }
@@ -111,6 +115,8 @@ struct RecoveryPrologue: View {
                     .transition(.opacity)
             } else if (1...3).contains(stage) {
                 terminalScreen
+            } else if stage == 5 {
+                WelcomeBriefingView(onContinue: { transition(6) })
             } else {
             background.ignoresSafeArea()
             RadialGradient(colors: [accent.opacity(0.14), .clear], center: .top, startRadius: 10, endRadius: 450).ignoresSafeArea()
@@ -127,7 +133,6 @@ struct RecoveryPrologue: View {
                         if stage == 0 { connectionStatus }
                         if stage == 1 || stage == 2 { progressCard }
                         if interrupted { interruptionCard }
-                        if stage == 5 { completionInfo }
                     }.padding(.horizontal, 23).padding(.vertical, stage == 1 || stage == 2 ? 8 : 24)
                 }.scrollIndicators(.hidden)
                 actions.padding(.horizontal, 23).padding(.bottom, 12)
@@ -280,14 +285,6 @@ struct RecoveryPrologue: View {
         .frame(maxWidth: 540, maxHeight: .infinity)
         .background(background.ignoresSafeArea())
     }
-    private var completionInfo: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Label("Custom environment installed", systemImage: "checkmark.seal.fill").foregroundColor(accent).font(.headline)
-            Text("Last Seen is an original fictional horror game. Patchline, Relay, the restored records and all system changes exist only inside the game. No real jailbreak, USB transfer or device modification has occurred.")
-            Text("Inspired by the creativity of the jailbreak community, from Installer and Cydia through redsn0w, evasi0n, checkra1n, unc0ver, Dopamine, palera1n, Sileo and Zebra. Independent projects; no affiliation or endorsement.")
-                .foregroundColor(.secondary)
-        }.font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).padding(17).background(.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 20))
-    }
     private func primary(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title).font(.headline).frame(maxWidth: .infinity).padding(.vertical, 14)
@@ -309,7 +306,7 @@ struct RecoveryPrologue: View {
             case 4:
                 Text("Starting the new environment").font(.caption).foregroundColor(.secondary)
             case 5:
-                primary("Continue to phone") { transition(6) }
+                primary("Enter phone") { transition(6) }
             default: EmptyView()
             }
             if duration > 0 && elapsed < duration && !interrupted {
