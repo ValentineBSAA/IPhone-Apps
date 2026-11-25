@@ -35,3 +35,7 @@ S1 covers A and save/statistics; S2 covers B plus [Relay](RELAY_MODERNIZATION_RO
 
 ## Messaging quality regression — creator physical feedback, November 25, 2026
 OPEN in S1 dialogue infrastructure and N authored narrative. Fix intent priority (statement of successful action vs request for access, negation, multi-intent, ambiguous questions, quoted words, context of prior exchanges and earned facts). Acknowledge reported progress without treating a player's claim as proof of an earned gate; respond to the separate concern using only that character's knowledge and permitted current evidence. Preserve custom text verbatim, delayed read/typing/replies, independent progression flags, persistence and offline authored behavior; do not present keyword routing as general AI. Add spoiler-neutral regression fixtures covering completion statements, mixed intents, negation, ordinary discussion, repeated follow-ups, unknown topics and no accidental clue or gate grants across all characters. Audit context-aware dialogue, consistency, no repeated irrelevant responses, safe keyboard layout (third-party and system keyboard), scroll-to-latest and dismissal. Verify on simulator and iPhone 16e in next consolidated milestone; not implemented in this documentation update.
+
+
+## N/S4 — World photo expansion 01
+See [asset intake](WORLD_PHOTOS_EXPANSION_01.md). 18 approved original PNG files, ZIP prepared and verified; upload, import, continuity and gated narrative placement OPEN. No automatic exposure or existing asset replacement.

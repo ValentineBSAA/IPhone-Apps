@@ -56,3 +56,7 @@ No disappearance explanation, twist, suspect answer, future clue solution or end
 
 ## Build 27 asset continuity checkpoint
 L1 contains the original Nora pack and all three approved new packs, with hashes in BUILD27_ACCEPTANCE.md. Source currently assigns five new portrait slots to established cast members, with remaining five reserved. Before any final publication, audit actual visual continuity against NB-001 and cast registry; do not infer that every generated portrait has been confirmed as a specific person. Anonymous sender intentionally has no canonical portrait. All 29 recovered images have neutral IDs; placement and chronology require private authoring review. Original images and manifests preserved. Do not expose future assignments, identities or gates in ordinary QA summaries.
+
+
+## World Photos Expansion 01
+See [asset intake](WORLD_PHOTOS_EXPANSION_01.md). Creator visual approval recorded; character and world continuity review remains OPEN before shipping. Preserve all originals; do not adopt incidental generated identifiers or lore as canon.
