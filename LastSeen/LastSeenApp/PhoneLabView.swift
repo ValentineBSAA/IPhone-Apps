@@ -512,7 +512,6 @@ struct PhoneLabView: View {
                     .tabViewStyle(.page(indexDisplayMode:.never))
                     .frame(height:layout.gridHeight)
                     .clipped()
-                    .accessibilityIdentifier("luma.launcher.pages")
                     HStack(spacing:0) {
                         ForEach(pages.indices,id:\.self) { index in
                             Button {
@@ -542,7 +541,6 @@ struct PhoneLabView: View {
                                     .overlay(RoundedRectangle(cornerRadius:27).strokeBorder(.white.opacity(0.12),lineWidth:1))
                             }
                         }
-                        .accessibilityIdentifier("luma.launcher.dock")
                 }
                 .padding(.horizontal,14).padding(.vertical,8)
                 .frame(maxWidth:.infinity,maxHeight:.infinity,alignment:.top)
@@ -703,8 +701,6 @@ struct PhoneLabView: View {
             .frame(width:min(340,max(220,width-32)))
             .background(.regularMaterial,in:RoundedRectangle(cornerRadius:30,style:.continuous))
             .overlay(RoundedRectangle(cornerRadius:30).strokeBorder(folder.tint.opacity(0.45),lineWidth:1))
-            .accessibilityIdentifier("luma.folder.open."+folder.id)
-            .accessibilityAddTraits(.isModal)
     }
 
     private func open(_ app: LabApp) {
