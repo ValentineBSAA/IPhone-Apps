@@ -6,7 +6,7 @@ final class RelayCatalogTests: XCTestCase {
         XCTAssertEqual(Set(RelayCatalog.packages.map(\.id)).count, RelayCatalog.packages.count)
         XCTAssertEqual(Set(RelayCatalog.sources.map(\.id)).count, RelayCatalog.sources.count)
         XCTAssertEqual(RelayCatalog.packages.filter(\.essential).count, 3)
-        XCTAssertEqual(RelayCatalog.packages.filter { !$0.essential }.count, 9)
+        XCTAssertEqual(RelayCatalog.packages.filter { !$0.essential }.count, 18)
         for p in RelayCatalog.packages {
             XCTAssertNotNil(RelayCatalog.source(p.source))
             XCTAssertFalse(p.version.isEmpty)

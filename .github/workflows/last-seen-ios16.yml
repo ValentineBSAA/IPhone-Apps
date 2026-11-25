@@ -26,6 +26,7 @@ on:
       - feature/last-seen-custom-phone-sounds
       - feature/last-seen-nora-photo-vault
       - feature/last-seen-foundation
+      - feature/last-seen-build27-noras-world
     paths:
       - 'LastSeen/**'
       - '.github/workflows/last-seen-ios16.yml'

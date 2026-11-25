@@ -65,6 +65,7 @@ struct FieldNotesView: View {
                         Text("Separate from restored phone records. Retained when loading a checkpoint.").font(.caption).foregroundColor(.secondary)
                     }
                 }
+                HStack { Label("\(book.entries.filter { $0.status != "Resolved" }.count) open", systemImage: "questionmark.circle"); Spacer(); Label("\(book.entries.filter { $0.pinned }.count) pinned", systemImage: "pin") }.font(.caption).foregroundColor(.secondary)
                 Picker("Status", selection: $filter) { ForEach(["All","Open","Follow up","Resolved"], id: \.self) { Text($0) } }.pickerStyle(.segmented)
             }
             if shown.isEmpty { Text("No entries yet").foregroundColor(.secondary) }

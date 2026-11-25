@@ -14,7 +14,7 @@ struct PatchlineControlView: View {
         List {
             Section {
                 HStack(spacing: 16) {
-                    OpeningArt(name: "Opening_Unlock", size: 70)
+                    OpeningArt(name: "Jailbreak_Patchline", size: 70)
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Patchline").font(.largeTitle.bold())
                         Label(safeMode ? "Safe Mode" : "Jailbroken", systemImage: safeMode ? "exclamationmark.shield" : "checkmark.seal.fill")
@@ -27,6 +27,7 @@ struct PatchlineControlView: View {
             }
             Section("Diagnostics") {
                 NavigationLink { RecoveryCircuitView() } label: { Label("Recovery Circuit", systemImage: "point.3.connected.trianglepath.dotted") }
+                NavigationLink { UtilityProgressView(openRelay: openRelay, onRestart: onRestart) } label: { Label("Local services", systemImage: "square.grid.2x2") }
             }
             Section("Maintenance") {
                 Button { openRelay() } label: { Label("Open Relay", systemImage: "shippingbox.fill") }

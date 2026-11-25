@@ -97,6 +97,8 @@ struct PhoneWorld: Codable {
     var callHistory: [LumaCallRecord]? = nil
     var favoriteContacts: [String]? = nil
     var everydayArchiveRevision: Int? = nil
+    var utilitySnippets: [LumaSnippet]? = nil
+    var pinnedSnippet: String? = nil
 }
 
 /// This is a separate *fictional world save* while compatibility with existing
@@ -451,6 +453,26 @@ final class PhoneWorldStore: ObservableObject {
         state.flags.insert(RecoveryCircuit.completion)
         save()
         return true
+    }
+
+    @discardableResult func earnUtility(_ tool: LumaUtility, answer: String) -> Bool {
+        guard LumaUtility.next(in: state.flags) == tool, tool.correct == answer else { return false }
+        state.flags.insert(tool.flag); save(); return true
+    }
+    func storeSnippet(_ snippet: LumaSnippet) {
+        guard LumaRecords.publicRecords(state).contains(snippet) else { return }
+        var values = state.utilitySnippets ?? []
+        values.removeAll { $0.id == snippet.id }
+        values.insert(snippet, at: 0)
+        state.utilitySnippets = Array(values.prefix(50)); save()
+    }
+    func removeSnippet(_ id: String) {
+        state.utilitySnippets?.removeAll { $0.id == id }
+        if state.pinnedSnippet == id { state.pinnedSnippet = nil }; save()
+    }
+    func pinSnippet(_ id: String?) {
+        guard id == nil || (state.utilitySnippets ?? []).contains(where: { $0.id == id }) else { return }
+        state.pinnedSnippet = id; save()
     }
 
     func recordCallAttempt(_ contact: Neighbor, now: Date = Date()) {

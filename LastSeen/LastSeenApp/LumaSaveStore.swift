@@ -18,7 +18,8 @@ final class LumaSaveStore: ObservableObject {
         "lastseen.lab.timerMinutes","lastseen.lab.history","lastseen.lab.bookmarks","lastseen.lab.browserSeeded",
         "lastseen.lab.calculatorHistory","lastseen.lab.browserPage","lastseen.lab.browserForward",
         "lastseen.restored.mail.read","lastseen.setup.device","lastseen.relay.installed","lastseen.relay.versions",
-        "lastseen.relay.sources","lastseen.relay.history","lastseen.relay.safeMode","lastseen.relay.compactIcons","lastseen.relay.tealTheme"
+        "lastseen.relay.sources","lastseen.relay.history","lastseen.relay.safeMode","lastseen.relay.compactIcons","lastseen.relay.tealTheme",
+        "lastseen.utility.small","lastseen.utility.five","lastseen.utility.labels","lastseen.utility.glass","lastseen.utility.theme","lastseen.utility.shortcuts"
     ]
     static let manual = (1...3).map { "manual-\($0)" }
     static let automatic = (1...3).map { "auto-\($0)" }

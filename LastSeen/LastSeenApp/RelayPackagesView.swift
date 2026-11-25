@@ -299,9 +299,11 @@ struct RelayPackagesView: View {
         }.buttonStyle(.plain)
     }
     @ViewBuilder private func packageIcon(_ p: RelayPackage) -> some View {
-        if p.id == "fieldnotes" { OpeningArt(name: "Jailbreak_FieldNotes", size: 43) }
+        if let tool = LumaUtility(rawValue: p.id) { OpeningArt(name: tool.art, size: 43) }
+        else if p.id == "fieldnotes" { OpeningArt(name: "Jailbreak_FieldNotes", size: 43) }
         else if p.id == "teal" { OpeningArt(name: "Theme_Messages", size: 43) }
-        else if p.id == "relay" { OpeningArt(name: "Opening_Install", size: 43) }
+        else if p.id == "relay" { OpeningArt(name: "Jailbreak_Relay", size: 43) }
+        else if p.id == "bootstrap" || p.id == "loader" { OpeningArt(name: "Jailbreak_Patchline", size: 43) }
         else {
             Image(systemName: p.icon).font(.title2).foregroundColor(.teal).frame(width: 43, height: 43)
                 .background(.teal.opacity(0.13), in: RoundedRectangle(cornerRadius: 10))
@@ -322,7 +324,7 @@ struct RelayPackagesView: View {
                 else if ids.contains(p.id) {
                     if updates.contains(p) { Button("Queue Upgrade") { enqueue(p, .upgrade); selected = nil } }
                     Button("Queue Removal", role: .destructive) { enqueue(p, .remove); selected = nil }
-                } else { Button("Queue Install") { enqueue(p, .install); selected = nil }.disabled(!sourceIDs.contains(p.source)) }
+                } else { Button("Queue Install") { enqueue(p, .install); selected = nil }.disabled(!sourceIDs.contains(p.source) || !RelayCatalog.available(p.id, flags: earnedFlags)) }
             }
             Section("Package information") {
                 LabeledContent("Version", value: p.version)

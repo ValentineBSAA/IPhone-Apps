@@ -10,6 +10,14 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.saves.interval") private var saveInterval = 5
     @State private var checkpointReboot = false
     @State private var circuitBanner = false
+    @State private var utilityNotice: LumaUtility?
+    @State private var observedUtilityFlags: Set<String> = []
+    @AppStorage("lastseen.utility.small") private var utilitySmall = false
+    @AppStorage("lastseen.utility.five") private var utilityFive = false
+    @AppStorage("lastseen.utility.labels") private var utilityLabels = true
+    @AppStorage("lastseen.utility.glass") private var utilityGlass = true
+    @AppStorage("lastseen.utility.theme") private var utilityTheme = false
+    @AppStorage("lastseen.utility.shortcuts") private var utilityShortcuts = true
     @State private var navigationGeneration = UUID()
     @AppStorage("lastseen.lab.lockWallpaper") private var lockWallpaper = -1
     @AppStorage("lastseen.lab.wallpaperBlur") private var wallpaperBlur = false
@@ -59,7 +67,9 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.relay.safeMode") private var safeMode = false
     private func tweak(_ id: String) -> Bool { !safeMode && RelayCatalog.ids(relayInstalled).contains(id) }
     private var fieldNotesAvailable: Bool { RecoveryCircuit.unlocked(world.state.flags) && tweak("fieldnotes") }
-    private var smallIcons: Bool { (!safeMode && compactIcons) || tweak("fivegrid") }
+    private func utilityActive(_ tool: LumaUtility) -> Bool { tweak(tool.rawValue) && RelayCatalog.available(tool.rawValue, flags: world.state.flags) }
+    private var fiveColumns: Bool { tweak("fivegrid") || (utilityActive(.lumaplus) && utilityFive) }
+    private var smallIcons: Bool { (!safeMode && compactIcons) || fiveColumns || (utilityActive(.lumaplus) && utilitySmall) }
     @AppStorage("lastseen.lab.brightness") private var brightness = 0.9
     @AppStorage("lastseen.lab.wifi") private var wifi = true
     @AppStorage("lastseen.setup.device") private var device = "My phone"
@@ -142,6 +152,35 @@ struct PhoneLabView: View {
                 Button { circuitBanner = false; open(.relay) } label: { CircuitNoticeCard() }
                     .buttonStyle(.plain).padding(.horizontal, 14).padding(.top, 4)
             }
+        }
+        .overlay(alignment: .top) {
+            if let tool = utilityNotice, !locked && !checkpointReboot && panel == nil {
+                Button { utilityNotice = nil; open(.relay) } label: { UtilityNoticeCard(tool: tool) }.buttonStyle(.plain).padding(.horizontal, 14).padding(.top, 4)
+            }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if utilityActive(.clipglass), !locked && !checkpointReboot && panel == nil,
+               let id = world.state.pinnedSnippet,
+               let snippet = LumaRecords.visibleSaved(world.state).first(where: { $0.id == id }) {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack { Text("ClipGlass").font(.caption.bold()); Spacer(); Button { world.pinSnippet(nil) } label: { Image(systemName: "xmark.circle.fill").accessibilityLabel("Close pinned clip") } }
+                    Text(snippet.title).font(.caption.weight(.semibold))
+                    Text(snippet.text).font(.caption).lineLimit(3)
+                }.padding(12).frame(maxWidth: 210).lumaSurface(radius: 16).padding(.trailing, 12).padding(.bottom, 58)
+            }
+        }
+        .onChange(of: world.state.flags) { flags in
+            if checkpointReboot { utilityNotice = nil; return }
+            let old = utilityNotice
+            if let tool = LumaUtility.allCases.last(where: { flags.contains($0.flag) && !observedUtilityFlags.contains($0.flag) }) { utilityNotice = tool }
+            observedUtilityFlags = flags
+            if let old, !flags.contains(old.flag) { utilityNotice = nil }
+        }
+        .onAppear { observedUtilityFlags = world.state.flags }
+        .task(id: utilityNotice) {
+            guard let tool = utilityNotice else { return }
+            do { try await Task.sleep(nanoseconds: 6_000_000_000) } catch { return }
+            if utilityNotice == tool { utilityNotice = nil }
         }
         .onChange(of: RecoveryCircuit.unlocked(world.state.flags)) { earned in
             if earned && !checkpointReboot { circuitBanner = true }
@@ -488,7 +527,7 @@ struct PhoneLabView: View {
                             }.frame(maxWidth: .infinity, alignment: .leading).padding(14).lumaSurface()
                         }
                     }
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: tweak("fivegrid") ? 5 : 4), spacing: 24) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: fiveColumns ? 5 : 4), spacing: 24) {
                     ForEach(LabApp.allCases.filter { !$0.inDock && ($0 != .fieldNotes || fieldNotesAvailable) }) { app in icon(app) }
                     }.padding(.top, 5).padding(.bottom, 12)
                 }
@@ -509,7 +548,7 @@ struct PhoneLabView: View {
             HStack(spacing: 7) {
                 ForEach(LabApp.allCases.filter(\.inDock)) { app in icon(app) }
             }.padding(12).background {
-                if !tweak("dockglass") { RoundedRectangle(cornerRadius: 27).fill(.ultraThinMaterial) }
+                if !tweak("dockglass") && (!utilityActive(.lumaplus) || utilityGlass) { RoundedRectangle(cornerRadius: 27).fill(.ultraThinMaterial) }
             }
         }
         .padding(.horizontal, 17).padding(.vertical, 12)
@@ -532,7 +571,7 @@ struct PhoneLabView: View {
                 ZStack(alignment: .topTrailing) {
                     if app == .patchline || app == .relay {
                         OpeningArt(name: app == .patchline ? "Jailbreak_Patchline" : "Jailbreak_Relay", size: smallIcons ? 43 : 55)
-                    } else if !safeMode, tealTheme, let asset = ApprovedArt.themeName(for: app.rawValue) {
+                    } else if !safeMode, (tealTheme || (utilityActive(.afterglowstudio) && utilityTheme)), let asset = ApprovedArt.themeName(for: app.rawValue) {
                         Image(asset).resizable().scaledToFit()
                             .frame(width: smallIcons ? 43 : 55, height: smallIcons ? 43 : 55)
                     } else if let art = app.foundationIcon {
@@ -550,7 +589,7 @@ struct PhoneLabView: View {
                             .background(.red, in: Capsule()).offset(x: 5, y: -5)
                     }
                 }
-                if !tweak("clearlabels") {
+                if !tweak("clearlabels") && (!utilityActive(.lumaplus) || utilityLabels) {
                     Text(app.rawValue).font(.system(size: 11, weight: .medium))
                         .lineLimit(1).minimumScaleFactor(0.8)
                 }
@@ -665,7 +704,7 @@ struct PhoneLabView: View {
         if saves.restore(slot, into: world) {
             observedIncoming = Set(incomingIDs)
             observedOutgoing = outgoingIDs
-            banner = nil; pendingThread = nil; circuitBanner = false
+            banner = nil; pendingThread = nil; circuitBanner = false; utilityNotice = nil; observedUtilityFlags = world.state.flags
             authContext?.invalidate(); authContext = nil
             showOwnerPasscode = false
             panel = nil
@@ -702,6 +741,7 @@ struct PhoneLabView: View {
             VStack(alignment: .leading, spacing: 12) {
                 LumaHeader(title: "Notification Center", detail: "Recent activity", symbol: "bell.badge")
                 if RecoveryCircuit.unlocked(world.state.flags) { CircuitNoticeCard() }
+                ForEach(LumaUtility.allCases.filter { world.state.flags.contains($0.flag) }) { tool in UtilityNoticeCard(tool: tool) }
                 Text("Recent messages").font(.subheadline).foregroundColor(.secondary)
                 ForEach(PhoneAlertCatalog.alerts(in: world.state, unreadOnly: false)) { alert in
                     PhoneNotificationCard(alert: alert) { openThread(alert.neighbor) }
@@ -739,6 +779,14 @@ struct PhoneLabView: View {
                     Label("Brightness", systemImage: "sun.max").font(.headline)
                     Slider(value: $brightness, in: 0.35...1)
                 }.padding(17).lumaSurface()
+                if utilityActive(.quickpulse) && utilityShortcuts {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("QuickPulse", systemImage: "bolt.fill").font(.headline)
+                        if fieldNotesAvailable { Button { panel = nil; open(.fieldNotes) } label: { Label("Field Notes", systemImage: "note.text") } }
+                        Button { panel = nil; open(.patchline) } label: { Label("Patchline utilities", systemImage: "cpu") }
+                        Button { panel = nil; open(.relay) } label: { Label("Relay", systemImage: "shippingbox") }
+                    }.frame(maxWidth: .infinity, alignment: .leading).padding(14).lumaSurface()
+                }
                 Button { panel = nil; open(.settings) } label: {
                     Label("Open Settings", systemImage: "gearshape.fill").frame(maxWidth: .infinity).padding(12)
                 }.buttonStyle(.bordered)
