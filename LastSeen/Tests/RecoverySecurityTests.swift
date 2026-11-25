@@ -4,11 +4,11 @@ import UIKit
 
 final class RecoverySecurityTests: XCTestCase {
     func testOpeningPacingAndPausePolicy() {
-        XCTAssertEqual(OpeningPace.total, 128)
+        XCTAssertEqual(OpeningPace.total, 60)
         XCTAssertEqual(OpeningPace.duration(3), 3)
         XCTAssertTrue(OpeningPace.canAdvance(stage: 3, connected: false, active: true))
-        XCTAssertEqual(OpeningPace.duration(1), 25)
-        XCTAssertEqual(OpeningPace.duration(2), 85)
+        XCTAssertEqual(OpeningPace.duration(1), 12)
+        XCTAssertEqual(OpeningPace.duration(2), 30)
         XCTAssertEqual(OpeningPace.duration(4), 15)
         XCTAssertFalse(OpeningPace.canAdvance(stage: 1, connected: false, active: true))
         XCTAssertFalse(OpeningPace.canAdvance(stage: 2, connected: false, active: true))
@@ -19,14 +19,20 @@ final class RecoverySecurityTests: XCTestCase {
 
     func testLiveTranscriptAndCinematicBoundaries() {
         XCTAssertTrue(JailbreakTranscript.lines(stage: 0, elapsed: 0).isEmpty)
-        XCTAssertEqual(JailbreakTranscript.lines(stage: 1, elapsed: 25).count, 18)
-        XCTAssertEqual(JailbreakTranscript.lines(stage: 2, elapsed: 85).count, 63)
-        XCTAssertEqual(JailbreakTranscript.lines(stage: 3, elapsed: 0).count, 63)
-        for t in 1...85 {
-            let previous = JailbreakTranscript.lines(stage: 2, elapsed: t - 1)
-            let current = JailbreakTranscript.lines(stage: 2, elapsed: t)
-            XCTAssertEqual(Array(current.prefix(previous.count)), previous)
+        XCTAssertEqual(JailbreakTranscript.lines(stage: 1, elapsed: OpeningPace.duration(1)).count, 38)
+        XCTAssertEqual(JailbreakTranscript.lines(stage: 2, elapsed: OpeningPace.duration(2)).count, 123)
+        XCTAssertEqual(JailbreakTranscript.lines(stage: 3, elapsed: 0).count, 123)
+        for stage in [1, 2] {
+            for tick in 1...(OpeningPace.duration(stage) * 4) {
+                let previous = JailbreakTranscript.lines(stage: stage, elapsed: (tick - 1) / 4, quarter: (tick - 1) % 4)
+                let current = JailbreakTranscript.lines(stage: stage, elapsed: tick / 4, quarter: tick % 4)
+                XCTAssertEqual(Array(current.prefix(previous.count)), previous)
+                XCTAssertLessThanOrEqual(current.count - previous.count, 2)
+            }
         }
+        XCTAssertGreaterThan(JailbreakTranscript.lines(stage: 1, elapsed: 0, quarter: 2).count, 0)
+        XCTAssertEqual(JailbreakTranscript.lines(stage: 1, elapsed: 12), JailbreakTranscript.lines(stage: 2, elapsed: 0))
+        XCTAssertEqual(JailbreakTranscript.lines(stage: 2, elapsed: 30), JailbreakTranscript.lines(stage: 3, elapsed: 0))
         XCTAssertEqual(RestartPhase.opening(at: 0), .black)
         XCTAssertEqual(RestartPhase.opening(at: 2), .userspace)
         XCTAssertEqual(RestartPhase.opening(at: 8), .black)
