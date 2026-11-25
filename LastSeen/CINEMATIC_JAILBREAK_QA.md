@@ -8,3 +8,6 @@ Primary hardware: iPhone 16e. Preserve all saves and existing permissions. Upgra
 - [ ] Existing original icons, Afterglow Glass optional theme, real charging proxy, haptics, security, navigation, data and QA export still work.
 References: https://github.com/opa334/Dopamine and https://dopamine.dhinak.net/ (terminology/community inspiration only; no code copied).
 Automated tests verify transcript progression and stage boundaries, not visual/audio quality. All functionality is simulated except public power detection, optional native authentication, haptics and permission APIs.
+
+## Build 17 CI correction
+Run 45533800649 compiled and passed release identity/assets verification, but RestartArtTests still asserted 125 seconds after the intended 128-second timing change. Removed duplicated total assertion from the art suite; RecoverySecurityTests owns the total timing contract. Added all four audio asset checks to the art suite and a fail-fast release contract preflight before compilation. No runtime changes, no tests skipped. Rebuild 1.3.4 (17) and verify the entire simulator suite before distribution.
