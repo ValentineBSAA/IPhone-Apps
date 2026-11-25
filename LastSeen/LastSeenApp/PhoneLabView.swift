@@ -10,6 +10,15 @@ struct PhoneLabView: View {
     init(startUnlocked: Bool = false) { _locked = State(initialValue: !startUnlocked) }
     @State private var panel: LabPanel?
     @State private var recent: [LabApp] = []
+    @State private var pendingThread: Neighbor?
+    @State private var banner: PhoneAlert?
+    @State private var observedIncoming: Set<String> = []
+    @State private var searchQuery = ""
+    @AppStorage("lastseen.lab.hideLockPreviews") private var hideLockPreviews = false
+    private var alerts: [PhoneAlert] { PhoneAlertCatalog.alerts(in: world.state, unreadOnly: true) }
+    private var incomingIDs: [String] {
+        Neighbor.allCases.flatMap { world.messages($0).filter { !$0.fromPlayer }.map(\.id) }
+    }
     @AppStorage("lastseen.lab.wallpaper") private var wallpaper = 0
     @AppStorage("lastseen.relay.compactIcons") private var compactIcons = false
     @AppStorage("lastseen.relay.tealTheme") private var tealTheme = false
@@ -56,6 +65,9 @@ struct PhoneLabView: View {
                         }
                     }
             }
+            .navigationDestination(for: PhoneFileRoute.self) { route in
+                PhoneDocumentView(title: route.title).safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
+            }
             .navigationDestination(for: AppPage.self) { page in
                 Group {
                     switch page {
@@ -75,11 +87,32 @@ struct PhoneLabView: View {
             Color.black.opacity(max(0, 1 - brightness) * 0.75)
                 .ignoresSafeArea().allowsHitTesting(false)
         }
+        .overlay(alignment: .top) {
+            if let alert = banner, !locked, panel == nil {
+                PhoneNotificationCard(alert: alert) {
+                    banner = nil; openThread(alert.neighbor)
+                }.padding(.horizontal, 14).padding(.top, 4)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .task(id: banner?.id) {
+            guard let id = banner?.id else { return }
+            do { try await Task.sleep(nanoseconds: 5_000_000_000) } catch { return }
+            if banner?.id == id { withAnimation { banner = nil } }
+        }
+        .onChange(of: incomingIDs) { ids in
+            let added = Set(ids).subtracting(observedIncoming)
+            observedIncoming = Set(ids)
+            if let newest = PhoneAlertCatalog.alerts(in: world.state, unreadOnly: true).first(where: { added.contains($0.id) }), !locked {
+                withAnimation(.easeOut(duration: 0.25)) { banner = newest }
+            }
+        }
         .sheet(item: $panel) { item in
             NavigationStack {
                 Group {
                     switch item {
-                    case .controls: controls
+                    case .controls: quickControls
+                    case .search: phoneSearch
                     case .notifications: notifications
                     case .recent:
                         List {
@@ -104,11 +137,14 @@ struct PhoneLabView: View {
         .sheet(isPresented: $showOwnerPasscode) {
             ScrollView {
                 OwnerPasscodeView(onSuccess: {
-                    ownerVerified = true; showOwnerPasscode = false; authNotice = ""; locked = false
-                }, onCancel: { showOwnerPasscode = false })
+                    ownerVerified = true; showOwnerPasscode = false; completeUnlock()
+                }, onCancel: { showOwnerPasscode = false; pendingThread = nil })
             }.preferredColorScheme(.dark).presentationDetents([.large])
         }
         .onAppear {
+            observedIncoming = Set(incomingIDs)
+            world.startPhoneTutorial()
+            observedIncoming = Set(incomingIDs)
             let center = UNUserNotificationCenter.current()
             center.removePendingNotificationRequests(withIdentifiers: [NotificationRouter.storyNotificationID])
             center.removeDeliveredNotifications(withIdentifiers: [NotificationRouter.storyNotificationID])
@@ -120,62 +156,77 @@ struct PhoneLabView: View {
     private var unread: Int { Neighbor.allCases.reduce(0) { $0 + world.countUnread($1) } }
 
     private var lockScreen: some View {
-        VStack(spacing: 15) {
-            Spacer()
-            Image(systemName: biometricUnlock ? "faceid" : "lock.fill").font(.title3)
+        VStack(spacing: 12) {
+            Image(systemName: biometricUnlock ? "faceid" : "lock.fill")
+                .font(.title3).padding(.top, 12)
             TimelineView(.periodic(from: .now, by: 1)) { context in
-                VStack(spacing: 5) {
-                    Text(context.date, format: .dateTime.weekday(.wide).month(.wide).day())
-                        .font(.headline)
+                VStack(spacing: 3) {
+                    Text(context.date, format: .dateTime.weekday(.wide).month(.wide).day()).font(.headline)
                     Group {
                         if tweak("seconds") { Text(context.date, format: .dateTime.hour().minute().second()) }
                         else { Text(context.date, style: .time) }
-                    }
-                        .font(.system(size: 68, weight: .thin, design: .rounded))
-                        .monospacedDigit().minimumScaleFactor(0.6).lineLimit(1)
-                }
+                    }.font(.system(size: 78, weight: .light, design: .rounded))
+                        .monospacedDigit().minimumScaleFactor(0.5).lineLimit(1)
+                }.frame(maxWidth: .infinity)
             }
-            if unread > 0 {
-                Button { if biometricUnlock { requestUnlock() } else { panel = .notifications } } label: {
-                    HStack {
-                        Image(systemName: "message.fill").font(.title2)
-                        VStack(alignment: .leading) {
-                            Text("Messages").font(.headline)
-                            Text("\(unread) unread messages").font(.subheadline)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    if !alerts.isEmpty {
+                        HStack {
+                            Text("Notifications").font(.headline)
+                            Spacer()
+                            Text("\(unread) unread").font(.caption).foregroundColor(.white.opacity(0.72))
+                        }.padding(.horizontal, 4)
+                        ForEach(alerts) { alert in
+                            PhoneNotificationCard(alert: alert, hidePreview: biometricUnlock || hideLockPreviews) {
+                                pendingThread = alert.neighbor
+                                requestUnlock()
+                            }
                         }
-                        Spacer()
-                    }.padding().background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 19))
-                }.buttonStyle(.plain)
-            }
-            Spacer()
-            Button {
-                requestUnlock()
-            } label: {
-                VStack(spacing: 8) {
-                    Image(systemName: "chevron.up").font(.title3)
-                    Text(biometricUnlock ? "Authenticate to unlock" : "Unlock").font(.headline)
-                }.frame(maxWidth: .infinity).padding(.vertical, 15)
-            }.buttonStyle(.plain).disabled(authContext != nil)
+                    } else {
+                        Label("No new notifications", systemImage: "bell.slash").font(.caption)
+                            .foregroundColor(.white.opacity(0.65)).frame(maxWidth: .infinity).padding(.top, 22)
+                    }
+                }.padding(.vertical, 4)
+            }.scrollIndicators(.hidden).frame(maxHeight: .infinity).layoutPriority(1)
             if !authNotice.isEmpty { Text(authNotice).font(.caption).multilineTextAlignment(.center) }
             if biometricUnlock {
                 Button("Use owner passcode") { showOwnerPasscode = true }.font(.subheadline).disabled(authContext != nil)
-                Button("Explore public apps") { authNotice = ""; locked = false }.font(.caption).disabled(authContext != nil)
+                Button("Explore public apps") { pendingThread = nil; authNotice = ""; locked = false }.font(.caption).disabled(authContext != nil)
             }
-            Text("Swipe up inside the screen to open").font(.caption2).foregroundColor(.white.opacity(0.6))
-        }
-        .padding(24)
-        .foregroundColor(.white)
-        .contentShape(Rectangle())
-        .gesture(DragGesture(minimumDistance: 40).onEnded { value in
-            if value.translation.height < -50 { requestUnlock() }
-        })
+            Button {
+                pendingThread = nil; requestUnlock()
+            } label: {
+                VStack(spacing: 7) {
+                    Image(systemName: "chevron.up").font(.headline)
+                    Text(biometricUnlock ? "Authenticate to unlock" : "Swipe up to open").font(.subheadline.weight(.medium))
+                    Capsule().fill(.white.opacity(0.8)).frame(width: 110, height: 5)
+                }.frame(maxWidth: .infinity).padding(.vertical, 12).contentShape(Rectangle())
+            }.buttonStyle(.plain).disabled(authContext != nil)
+                .gesture(DragGesture(minimumDistance: 16).onEnded { value in
+                    if value.translation.height < -20 { pendingThread = nil; requestUnlock() }
+                })
+        }.padding(.horizontal, 18).padding(.vertical, 10).foregroundColor(.white)
+    }
+
+    private func completeUnlock() {
+        authNotice = ""
+        withAnimation(.easeInOut(duration: 0.25)) { locked = false }
+        if let neighbor = pendingThread { pendingThread = nil; openThread(neighbor) }
+    }
+
+    private func openThread(_ neighbor: Neighbor) {
+        panel = nil
+        banner = nil
+        open(.messages)
+        path.append(AppPage.worldThread(neighbor))
     }
 
     private func requestUnlock() {
         guard locked, authContext == nil else { return }
         authNotice = ""
         guard biometricUnlock else {
-            withAnimation(.easeInOut(duration: 0.25)) { locked = false }
+            completeUnlock()
             return
         }
         let context = LAContext()
@@ -183,6 +234,7 @@ struct PhoneLabView: View {
         context.localizedFallbackTitle = ""
         var error: NSError?
         guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+            pendingThread = nil
             authNotice = "Biometrics unavailable. Use the fictional owner passcode or open public apps."
             return
         }
@@ -192,8 +244,9 @@ struct PhoneLabView: View {
                 guard authContext === context else { return }
                 authContext = nil
                 if success {
-                    withAnimation(.easeInOut(duration: 0.25)) { locked = false }
+                    completeUnlock()
                 } else {
+                    pendingThread = nil
                     authNotice = "Unlock cancelled or unsuccessful. Use the fictional owner passcode or open public apps."
                 }
             }
@@ -252,9 +305,21 @@ struct PhoneLabView: View {
                 }.simultaneousGesture(pullDown(.controls))
             }.padding(.horizontal, 7)
             ScrollView {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: tweak("fivegrid") ? 5 : 4), spacing: 24) {
+                VStack(spacing: 16) {
+                    Button {
+                        searchQuery = ""; panel = .search
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "magnifyingglass")
+                            Text("Search phone").font(.subheadline)
+                            Spacer()
+                        }.foregroundColor(.white.opacity(0.85)).padding(12)
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 15))
+                    }
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: tweak("fivegrid") ? 5 : 4), spacing: 24) {
                     ForEach(LabApp.allCases.filter { !$0.inDock }) { app in icon(app) }
-                }.padding(.top, 22).padding(.bottom, 12)
+                    }.padding(.top, 5).padding(.bottom, 12)
+                }
             }
             .scrollIndicators(.hidden)
             Spacer(minLength: 0)
@@ -343,6 +408,7 @@ struct PhoneLabView: View {
                 Text("Use the in-game gestures first. Repeat a system-edge swipe to access real iOS controls. Turn this off for standard iOS gesture priority.").font(.footnote).foregroundColor(.secondary)
             }
             Section("Notifications and privacy") {
+                Toggle("Hide lock-screen message previews", isOn: $hideLockPreviews)
                 LabeledContent("Native game alerts", value: nativeAlerts ? "Enabled in game" : "Off")
                 Button("Review optional permissions") { panel = nil; permissionsReviewed = false }
                 if nativeAlerts {
@@ -352,7 +418,7 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.3.7 (20)")
+                LabeledContent("Software", value: "1.3.8 (21)")
                 Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay phone setup") { confirmSetupReplay = true }
             }
@@ -387,21 +453,101 @@ struct PhoneLabView: View {
     }
 
     private var notifications: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Notification Center").font(.largeTitle.bold()).padding(.top, 5)
+                Text("Recent messages").font(.subheadline).foregroundColor(.secondary)
+                ForEach(PhoneAlertCatalog.alerts(in: world.state, unreadOnly: false)) { alert in
+                    PhoneNotificationCard(alert: alert) { openThread(alert.neighbor) }
+                }
+                if PhoneAlertCatalog.alerts(in: world.state, unreadOnly: false).isEmpty {
+                    Text("You're all caught up.").foregroundColor(.secondary)
+                }
+            }.padding(16)
+        }.background(Night.background.ignoresSafeArea())
+    }
+
+    private var quickControls: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 17) {
+                Text("Control Center").font(.largeTitle.bold())
+                HStack(spacing: 12) {
+                    Button { wifi.toggle() } label: {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Image(systemName: wifi ? "wifi" : "wifi.slash").font(.title)
+                            Text("Wi-Fi").font(.headline)
+                            Text(wifi ? "On" : "Off").font(.caption)
+                        }.frame(maxWidth: .infinity, alignment: .leading).padding(16)
+                            .background(wifi ? Color.blue.opacity(0.65) : Color.gray.opacity(0.18), in: RoundedRectangle(cornerRadius: 20))
+                    }.buttonStyle(.plain)
+                    Button { hideLockPreviews.toggle() } label: {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Image(systemName: hideLockPreviews ? "lock.fill" : "bell.fill").font(.title)
+                            Text("Previews").font(.headline)
+                            Text(hideLockPreviews ? "Hidden" : "Visible").font(.caption)
+                        }.frame(maxWidth: .infinity, alignment: .leading).padding(16)
+                            .background(Color.white.opacity(0.09), in: RoundedRectangle(cornerRadius: 20))
+                    }.buttonStyle(.plain)
+                }
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Brightness", systemImage: "sun.max").font(.headline)
+                    Slider(value: $brightness, in: 0.35...1)
+                }.padding(17).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
+                Button { panel = nil; open(.settings) } label: {
+                    Label("Open Settings", systemImage: "gearshape.fill").frame(maxWidth: .infinity).padding(12)
+                }.buttonStyle(.bordered)
+            }.padding(18)
+        }.background(Night.background.ignoresSafeArea())
+    }
+
+    private var phoneSearch: some View {
         List {
-            if unread == 0 { Text("You're all caught up.").foregroundColor(.secondary) }
-            ForEach(Neighbor.allCases) { person in
-                if world.countUnread(person) > 0 {
-                    Button {
-                        panel = nil
-                        open(.messages)
-                        path.append(AppPage.worldThread(person))
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(person.name).font(.headline)
-                            Text(world.messages(person).last?.text ?? "").font(.subheadline)
+            Section {
+                TextField("Search apps, messages, notes and files", text: $searchQuery)
+                    .autocorrectionDisabled()
+            }
+            let q = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+            if q.isEmpty {
+                Text("Search restored phone contents. Protected records are not indexed.").font(.subheadline).foregroundColor(.secondary)
+            } else {
+                let apps = LabApp.allCases.filter { $0.rawValue.localizedCaseInsensitiveContains(q) }
+                let results = PhonePublicSearch.results(query: q, world: world.state, documents: PhonePublicFiles.documents)
+                if apps.isEmpty && results.isEmpty { Text("No results").foregroundColor(.secondary) }
+                if !apps.isEmpty {
+                    Section("Applications") {
+                        ForEach(apps) { app in
+                            Button { panel = nil; open(app) } label: { Label(app.rawValue, systemImage: app.symbol) }
                         }
                     }
                 }
+                Section("Public records") {
+                    ForEach(results) { result in
+                        Button { openSearchResult(result) } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: result.symbol).foregroundColor(.teal).frame(width: 30)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(result.title).font(.headline)
+                                    Text(result.subtitle).font(.caption).foregroundColor(.secondary).lineLimit(2)
+                                }
+                            }.padding(.vertical, 4)
+                        }
+                    }
+                }
+            }
+        }.listStyle(.insetGrouped)
+    }
+
+    private func openSearchResult(_ result: PhoneSearchResult) {
+        guard let app = LabApp(rawValue: result.destination) else { return }
+        panel = nil
+        open(app)
+        if let detail = result.detail {
+            switch app {
+            case .messages: if let n = Neighbor(rawValue: detail) { path.append(AppPage.worldThread(n)) }
+            case .contacts: if let n = Neighbor(rawValue: detail) { path.append(AppPage.worldProfile(n)) }
+            case .notes: path.append(AppPage.note(detail))
+            case .files: path.append(PhoneFileRoute(title: detail))
+            default: break
             }
         }
     }
@@ -427,7 +573,7 @@ struct PhoneLabView: View {
 }
 
 private enum LabPanel: String, Identifiable {
-    case controls = "Quick settings", notifications = "Notifications", recent = "Recent apps"
+    case controls = "Quick settings", notifications = "Notifications", recent = "Recent apps", search = "Search"
     var id: String { rawValue }
 }
 
@@ -637,17 +783,24 @@ private struct LabCalculatorView: View {
     }
 }
 
+private struct PhoneFileRoute: Hashable { let title: String }
+
 private struct LabFilesView: View {
-    let documents = ["Building handbook": "Ash Street residents: please keep the entrance clear and contact Denise at the building office for maintenance requests.", "Book reservation": "Maple Street Bookshop — reservation held until the end of this week.\nReservation reference: 241607.", "Coffee plans": "Meet Maya at the cafe opposite the bookstore. Confirm the day by text.", "Desk reminder": "Private folders use the six-digit reference from my book reservation. — Nora"]
+    let documents = PhonePublicFiles.documents
     @State private var search = ""
     var body: some View {
         List {
             NavigationLink { ProtectedAreaView(area: .files) } label: { Label("Protected files", systemImage: "lock.doc") }
             ForEach(documents.keys.sorted().filter { search.isEmpty || $0.localizedCaseInsensitiveContains(search) }, id: \.self) { name in
-                NavigationLink {
-                    ScrollView { Text(documents[name] ?? "").frame(maxWidth: .infinity, alignment: .leading).padding() }
-                        .navigationTitle(name)
-                } label: { Label(name, systemImage: "doc.text") }
+                NavigationLink(value: PhoneFileRoute(title: name)) {
+                    HStack(spacing: 13) {
+                        Image(systemName: "doc.text.fill").font(.title2).foregroundColor(.blue)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(name).font(.headline)
+                            Text("Restored document • On this phone").font(.caption).foregroundColor(.secondary)
+                        }
+                    }.padding(.vertical, 6)
+                }
             }
         }.navigationTitle("Files").searchable(text: $search)
     }
