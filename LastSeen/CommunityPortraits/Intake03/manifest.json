@@ -1,0 +1,186 @@
+{
+  "assets": [
+    {
+      "path": "OlderAdult_1.webp",
+      "source": "appcove/open-test-data",
+      "revision": "d17fea2414ec9c1a89eb0a33248a2c40772e9c0a",
+      "original": "person/43fa9f2a0d7f3df3-1/profile/base.webp",
+      "sha": "cd49c10c5d96ffc08776584565677a4cd1b92cc0",
+      "license": "Apache-2.0",
+      "status": "reserve",
+      "source_url": "https://github.com/appcove/open-test-data/blob/d17fea2414ec9c1a89eb0a33248a2c40772e9c0a/person/43fa9f2a0d7f3df3-1/profile/base.webp"
+    },
+    {
+      "path": "OlderAdult_2.webp",
+      "source": "appcove/open-test-data",
+      "revision": "d17fea2414ec9c1a89eb0a33248a2c40772e9c0a",
+      "original": "person/66f6bd5b35da59d1-1/profile/base.webp",
+      "sha": "fb82f57f45b95c4b7f0d23a42f5edb47483dfb48",
+      "license": "Apache-2.0",
+      "status": "reserve",
+      "source_url": "https://github.com/appcove/open-test-data/blob/d17fea2414ec9c1a89eb0a33248a2c40772e9c0a/person/66f6bd5b35da59d1-1/profile/base.webp"
+    },
+    {
+      "path": "OlderAdult_3.webp",
+      "source": "appcove/open-test-data",
+      "revision": "d17fea2414ec9c1a89eb0a33248a2c40772e9c0a",
+      "original": "person/6bb4c7551df5ef6e-1/profile/base.webp",
+      "sha": "2515bdce61c0c326bea50b5a9b87760b2210288c",
+      "license": "Apache-2.0",
+      "status": "reserve",
+      "source_url": "https://github.com/appcove/open-test-data/blob/d17fea2414ec9c1a89eb0a33248a2c40772e9c0a/person/6bb4c7551df5ef6e-1/profile/base.webp"
+    },
+    {
+      "path": "OlderAdult_4.webp",
+      "source": "appcove/open-test-data",
+      "revision": "d17fea2414ec9c1a89eb0a33248a2c40772e9c0a",
+      "original": "person/7e9b0f0208aeb4fb-1/profile/base.webp",
+      "sha": "db7f699c1c3e0d54f8d923fc060f4aeee9068956",
+      "license": "Apache-2.0",
+      "status": "reserve",
+      "source_url": "https://github.com/appcove/open-test-data/blob/d17fea2414ec9c1a89eb0a33248a2c40772e9c0a/person/7e9b0f0208aeb4fb-1/profile/base.webp"
+    },
+    {
+      "path": "Avatar_Cat.png",
+      "source": "googlefonts/noto-emoji",
+      "revision": "99701e07d3d1fe1bdbcdb14964547f0fd592966f",
+      "original": "2D/png/128/emoji_u1f431.png",
+      "sha": "d1630c5738c25bd1c2ab398afefb2c2d1e582175",
+      "license": "Apache-2.0 per upstream image licensing statement",
+      "status": "illustrated avatar candidate; not an original brand logo",
+      "source_url": "https://github.com/googlefonts/noto-emoji/blob/99701e07d3d1fe1bdbcdb14964547f0fd592966f/2D/png/128/emoji_u1f431.png"
+    },
+    {
+      "path": "Avatar_Dog.png",
+      "source": "googlefonts/noto-emoji",
+      "revision": "99701e07d3d1fe1bdbcdb14964547f0fd592966f",
+      "original": "2D/png/128/emoji_u1f436.png",
+      "sha": "913a1ea55e5bffbfe784cc8869778d79bc89b350",
+      "license": "Apache-2.0 per upstream image licensing statement",
+      "status": "illustrated avatar candidate; not an original brand logo",
+      "source_url": "https://github.com/googlefonts/noto-emoji/blob/99701e07d3d1fe1bdbcdb14964547f0fd592966f/2D/png/128/emoji_u1f436.png"
+    },
+    {
+      "path": "Avatar_Mountain.png",
+      "source": "googlefonts/noto-emoji",
+      "revision": "99701e07d3d1fe1bdbcdb14964547f0fd592966f",
+      "original": "2D/png/128/emoji_u1f3d4.png",
+      "sha": "b9e707af53532530945917ca0a0c4b66ec9588d0",
+      "license": "Apache-2.0 per upstream image licensing statement",
+      "status": "illustrated avatar candidate; not an original brand logo",
+      "source_url": "https://github.com/googlefonts/noto-emoji/blob/99701e07d3d1fe1bdbcdb14964547f0fd592966f/2D/png/128/emoji_u1f3d4.png"
+    },
+    {
+      "path": "Avatar_Gardening.png",
+      "source": "googlefonts/noto-emoji",
+      "revision": "99701e07d3d1fe1bdbcdb14964547f0fd592966f",
+      "original": "2D/png/128/emoji_u1f331.png",
+      "sha": "88213e6c1b4cfe406f5db79aa89411ee54423bbf",
+      "license": "Apache-2.0 per upstream image licensing statement",
+      "status": "illustrated avatar candidate; not an original brand logo",
+      "source_url": "https://github.com/googlefonts/noto-emoji/blob/99701e07d3d1fe1bdbcdb14964547f0fd592966f/2D/png/128/emoji_u1f331.png"
+    },
+    {
+      "path": "Avatar_Studio.png",
+      "source": "googlefonts/noto-emoji",
+      "revision": "99701e07d3d1fe1bdbcdb14964547f0fd592966f",
+      "original": "2D/png/128/emoji_u1f3ae.png",
+      "sha": "f4fc1c14ca39b44be7d8ede8b41021fbc683d371",
+      "license": "Apache-2.0 per upstream image licensing statement",
+      "status": "illustrated avatar candidate; not an original brand logo",
+      "source_url": "https://github.com/googlefonts/noto-emoji/blob/99701e07d3d1fe1bdbcdb14964547f0fd592966f/2D/png/128/emoji_u1f3ae.png"
+    },
+    {
+      "path": "Avatar_Cafe.png",
+      "source": "googlefonts/noto-emoji",
+      "revision": "99701e07d3d1fe1bdbcdb14964547f0fd592966f",
+      "original": "2D/png/128/emoji_u2615.png",
+      "sha": "9cd6695c72ffbe4cc6e37da2a66b94a89caf5de2",
+      "license": "Apache-2.0 per upstream image licensing statement",
+      "status": "illustrated avatar candidate; not an original brand logo",
+      "source_url": "https://github.com/googlefonts/noto-emoji/blob/99701e07d3d1fe1bdbcdb14964547f0fd592966f/2D/png/128/emoji_u2615.png"
+    },
+    {
+      "path": "Avatar_Bookshop.png",
+      "source": "googlefonts/noto-emoji",
+      "revision": "99701e07d3d1fe1bdbcdb14964547f0fd592966f",
+      "original": "2D/png/128/emoji_u1f4da.png",
+      "sha": "55d0a6b4dfb9f05eda9ad9dc2c110889e341bd27",
+      "license": "Apache-2.0 per upstream image licensing statement",
+      "status": "illustrated avatar candidate; not an original brand logo",
+      "source_url": "https://github.com/googlefonts/noto-emoji/blob/99701e07d3d1fe1bdbcdb14964547f0fd592966f/2D/png/128/emoji_u1f4da.png"
+    },
+    {
+      "path": "Avatar_AudioCreator.png",
+      "source": "googlefonts/noto-emoji",
+      "revision": "99701e07d3d1fe1bdbcdb14964547f0fd592966f",
+      "original": "2D/png/128/emoji_u1f3a7.png",
+      "sha": "2b84b6ccc172c2a5bf1f9731a00d7df1d5ddbcb3",
+      "license": "Apache-2.0 per upstream image licensing statement",
+      "status": "illustrated avatar candidate; not an original brand logo",
+      "source_url": "https://github.com/googlefonts/noto-emoji/blob/99701e07d3d1fe1bdbcdb14964547f0fd592966f/2D/png/128/emoji_u1f3a7.png"
+    },
+    {
+      "path": "Avatar_PhotoCreator.png",
+      "source": "googlefonts/noto-emoji",
+      "revision": "99701e07d3d1fe1bdbcdb14964547f0fd592966f",
+      "original": "2D/png/128/emoji_u1f4f7.png",
+      "sha": "e9d93643ea73229b731c26dca9ff4d3dd9740537",
+      "license": "Apache-2.0 per upstream image licensing statement",
+      "status": "illustrated avatar candidate; not an original brand logo",
+      "source_url": "https://github.com/googlefonts/noto-emoji/blob/99701e07d3d1fe1bdbcdb14964547f0fd592966f/2D/png/128/emoji_u1f4f7.png"
+    },
+    {
+      "path": "Avatar_ReadingGroup.png",
+      "source": "googlefonts/noto-emoji",
+      "revision": "99701e07d3d1fe1bdbcdb14964547f0fd592966f",
+      "original": "2D/png/128/emoji_u1f4d6.png",
+      "sha": "f4ae78d4c6902a98ddb4ac4683a6c588da17cf77",
+      "license": "Apache-2.0 per upstream image licensing statement",
+      "status": "illustrated avatar candidate; not an original brand logo",
+      "source_url": "https://github.com/googlefonts/noto-emoji/blob/99701e07d3d1fe1bdbcdb14964547f0fd592966f/2D/png/128/emoji_u1f4d6.png"
+    }
+  ],
+  "conditional_casual_candidates": [
+    {
+      "source_url": "https://github.com/Prompt-Haus/OpenPeople/blob/231f73aa43b32a38001759944baa01d7d154ce26/openpeople/data/curated/P001/assets/amateur_selfie.jpg",
+      "status": "reviewed thumbnail; do not distribute or bundle until testing-only wording is clarified",
+      "license": "CC BY 4.0 stated; conflicting disclaimer"
+    },
+    {
+      "source_url": "https://github.com/Prompt-Haus/OpenPeople/blob/231f73aa43b32a38001759944baa01d7d154ce26/openpeople/data/curated/P002/assets/amateur_selfie.jpg",
+      "status": "reviewed thumbnail; do not distribute or bundle until testing-only wording is clarified",
+      "license": "CC BY 4.0 stated; conflicting disclaimer"
+    },
+    {
+      "source_url": "https://github.com/Prompt-Haus/OpenPeople/blob/231f73aa43b32a38001759944baa01d7d154ce26/openpeople/data/curated/P003/assets/amateur_selfie.jpg",
+      "status": "reviewed thumbnail; do not distribute or bundle until testing-only wording is clarified",
+      "license": "CC BY 4.0 stated; conflicting disclaimer"
+    },
+    {
+      "source_url": "https://github.com/Prompt-Haus/OpenPeople/blob/231f73aa43b32a38001759944baa01d7d154ce26/openpeople/data/curated/P004/assets/amateur_selfie.jpg",
+      "status": "reviewed thumbnail; do not distribute or bundle until testing-only wording is clarified",
+      "license": "CC BY 4.0 stated; conflicting disclaimer"
+    },
+    {
+      "source_url": "https://github.com/Prompt-Haus/OpenPeople/blob/231f73aa43b32a38001759944baa01d7d154ce26/openpeople/data/curated/P005/assets/amateur_selfie.jpg",
+      "status": "reviewed thumbnail; do not distribute or bundle until testing-only wording is clarified",
+      "license": "CC BY 4.0 stated; conflicting disclaimer"
+    },
+    {
+      "source_url": "https://github.com/Prompt-Haus/OpenPeople/blob/231f73aa43b32a38001759944baa01d7d154ce26/openpeople/data/curated/P006/assets/amateur_selfie.jpg",
+      "status": "reviewed thumbnail; do not distribute or bundle until testing-only wording is clarified",
+      "license": "CC BY 4.0 stated; conflicting disclaimer"
+    },
+    {
+      "source_url": "https://github.com/Prompt-Haus/OpenPeople/blob/231f73aa43b32a38001759944baa01d7d154ce26/openpeople/data/curated/P007/assets/amateur_selfie.jpg",
+      "status": "reviewed thumbnail; do not distribute or bundle until testing-only wording is clarified",
+      "license": "CC BY 4.0 stated; conflicting disclaimer"
+    },
+    {
+      "source_url": "https://github.com/Prompt-Haus/OpenPeople/blob/231f73aa43b32a38001759944baa01d7d154ce26/openpeople/data/curated/P008/assets/amateur_selfie.jpg",
+      "status": "reviewed thumbnail; do not distribute or bundle until testing-only wording is clarified",
+      "license": "CC BY 4.0 stated; conflicting disclaimer"
+    }
+  ]
+}

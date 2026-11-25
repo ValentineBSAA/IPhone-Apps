@@ -94,3 +94,7 @@ Offline fictional LumaOS, iOS 16 minimum, iPhone 16e primary. No real device cha
 ## Community portrait intake 02
 - [x] ACQUIRED: ten additional synthetic adult portraits, including older-looking adults; source WebP originals, provenance, Apache-2.0 license and upstream NOTICE retained. 28 portraits acquired overall, nine assigned in source. These ten are reserve artwork, not yet bundled or assigned.
 - [ ] Casual environmental selfies, pet/hobby avatars and organization artwork remain open. Do not imply 100 accounts completed.
+
+## Community artwork intake 03
+- [x] ACQUIRED: four more synthetic adult portraits, four illustrated pet/hobby avatars, six illustrated creator/business profile candidates, source hashes and license files retained. 42 assets acquired overall; 9 assigned in source, remaining reserves not integrated. Generic artwork is not a custom business logo.
+- [ ] Eight OpenPeople casual selfies reviewed and linked in manifest; conflicting license/disclaimer must be resolved before distribution. Original brand identities, asset bundling, assignment and CI remain open. See CommunityPortraits/Intake03.
