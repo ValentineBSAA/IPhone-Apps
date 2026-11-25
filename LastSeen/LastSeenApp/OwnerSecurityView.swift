@@ -1,5 +1,6 @@
 import SwiftUI
 import LocalAuthentication
+import UIKit
 
 /// Fictional puzzle only. Never compares against the actual device passcode.
 enum OwnerSecurityPolicy {
@@ -24,12 +25,14 @@ struct OwnerPasscodeView: View {
     @State private var attempts = 0
     @State private var cooldownUntil = Date.distantPast
     @State private var notice = ""
+    @State private var showHint = false
+    @AppStorage("lastseen.lab.messageHaptics") private var haptics = true
     private let keys = ["1","2","3","4","5","6","7","8","9","","0","delete"]
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let remaining = max(0, Int(ceil(cooldownUntil.timeIntervalSince(context.date))))
             VStack(spacing: 18) {
-                Image(systemName: "lock.shield").font(.system(size: 35, weight: .light)).foregroundColor(.teal)
+                Image("System_ProtectedStorage").resizable().scaledToFit().frame(width: 86, height: 86).clipShape(RoundedRectangle(cornerRadius: 22))
                 Text("Enter owner passcode").font(.title2.bold())
                 Text("Use the fictional six-digit code found in the restored phone. Never enter your real iPhone passcode.").font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
                 HStack(spacing: 13) {
@@ -48,7 +51,7 @@ struct OwnerPasscodeView: View {
                                     if key == "delete" { Image(systemName: "delete.left").font(.title2) }
                                     else { Text(key).font(.system(size: 27, weight: .light)) }
                                 }.frame(maxWidth: .infinity).frame(height: 56)
-                                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18))
+                                    .lumaSurface(radius: 18)
                             }.buttonStyle(.plain).accessibilityLabel(key == "delete" ? "Delete digit" : key)
                                 .disabled(remaining > 0)
                         }
@@ -56,7 +59,8 @@ struct OwnerPasscodeView: View {
                 }.frame(maxWidth: 310)
                 if remaining > 0 { Text("Try again in \(remaining)s").font(.caption).foregroundColor(.orange) }
                 else if !notice.isEmpty { Text(notice).font(.caption).foregroundColor(.orange) }
-                Text("Hint: check the restored Files and book reservation.").font(.caption).foregroundColor(.secondary)
+                Button(showHint ? "Hide hint" : "Need a hint?") { showHint.toggle() }.font(.subheadline).frame(minHeight: 44)
+                if showHint { Text("Hint: check the restored Files and book reservation.").font(.caption).foregroundColor(.secondary) }
                 if let onCancel { Button("Cancel", action: onCancel).font(.subheadline) }
             }.padding(20).frame(maxWidth: .infinity)
         }
@@ -68,11 +72,14 @@ struct OwnerPasscodeView: View {
             return
         }
         guard digits.count < 6 else { return }
+        if haptics { UIImpactFeedbackGenerator(style: .soft).impactOccurred() }
         digits += key
         guard digits.count == 6 else { return }
         if OwnerSecurityPolicy.accepts(digits) {
+            if haptics { UINotificationFeedbackGenerator().notificationOccurred(.success) }
             digits = ""; notice = ""; attempts = 0; onSuccess()
         } else {
+            if haptics { UINotificationFeedbackGenerator().notificationOccurred(.error) }
             digits = ""; attempts += 1; notice = "Incorrect owner passcode."
             if attempts % 3 == 0 { cooldownUntil = Date().addingTimeInterval(5) }
         }
@@ -151,7 +158,7 @@ struct ProtectedAreaView: View {
             }
             Text("Biometrics are optional. The discovered fictional passcode always works.").font(.footnote).foregroundColor(.secondary)
         case .photos:
-            Text("Private album").font(.title2.bold())
+            LumaHeader(title: "Private album", detail: "Owner access verified. Individual photographs still require recovery.", symbol: "lock.open")
             NoraPrivateAlbum()
         case .notes:
             Text("Personal journal").font(.title2.bold())
