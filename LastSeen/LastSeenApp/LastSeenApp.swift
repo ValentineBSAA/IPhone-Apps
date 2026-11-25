@@ -8,7 +8,7 @@ struct LastSeenApp: App {
             if ProcessInfo.processInfo.arguments.contains("--legacy-story") {
                 LegacyStoryRoot()
             } else {
-                PhoneSetupRoot()
+                PhonePermissionsGate()
             }
         }
     }
