@@ -244,18 +244,25 @@ final class PhoneWorldStore: ObservableObject {
         guard pending.filter({ $0.neighbor == neighbor }).count < 8 else { return false }
         let introductory = neighbor == .maya && tutorialStarted && !tutorialFinished
         let key = (introductory ? "phone-tutorial-custom-" : "custom-") + UUID().uuidString
-        let lastReply = pending.last(where: { $0.neighbor == neighbor })?.text
-            ?? state.threads[neighbor.id]?.last(where: { !$0.fromPlayer && $0.id.hasPrefix("custom-") })?.text
+        let thread = state.threads[neighbor.id] ?? []
+        let reactiveReplies = thread.filter { !$0.fromPlayer && ($0.id.hasPrefix("custom-") || $0.id.hasPrefix("phone-tutorial-custom-")) }
+        let waiting = pending.filter { $0.neighbor == neighbor }
+        let lastReply = waiting.last?.text ?? reactiveReplies.last?.text
+        let previousMessage = thread.last(where: { $0.fromPlayer && $0.receiptTracked == true })?.text
+        let recent = Array((reactiveReplies.map(\.text) + waiting.map(\.text)).suffix(6))
         let plan = PhoneReplyPolicy.plan(for: neighbor, text: text, flags: state.flags,
-                                         tutorialStarted: tutorialStarted, tutorialFinished: tutorialFinished, previousReply: lastReply)
+                                         tutorialStarted: tutorialStarted, tutorialFinished: tutorialFinished, previousReply: lastReply,
+                                         previousMessage: previousMessage, recentReplies: recent)
         let previous = pending.filter { $0.neighbor == neighbor }.map(\.dueAt).max() ?? now
         let base = max(now, previous)
-        let readAt = base.addingTimeInterval(0.8)
-        let due = base.addingTimeInterval(3.2 + min(2, Double(plan.text.count) / 130))
+        let timing = PhoneReplyTiming.window(neighbor: neighbor, text: plan.text, introductory: introductory)
+        let readAt = base.addingTimeInterval(timing.read)
+        let typingAt = base.addingTimeInterval(timing.typing)
+        let due = base.addingTimeInterval(timing.due)
         append(NeighborMessage(id: key, thread: neighbor.id, text: text, fromPlayer: true,
                                at: now, read: true, receiptTracked: true))
         state.pendingReplies = pending + [PhonePendingReply(id: key + "-response", outgoingID: key,
-            neighbor: neighbor, text: plan.text, readAt: readAt, dueAt: due, startsTutorial: plan.startsTutorial)]
+            neighbor: neighbor, text: plan.text, readAt: readAt, dueAt: due, startsTutorial: plan.startsTutorial, typingAt: typingAt)]
         save()
         return true
     }
@@ -265,7 +272,7 @@ final class PhoneWorldStore: ObservableObject {
     }
 
     func isTyping(_ neighbor: Neighbor, now: Date = Date()) -> Bool {
-        (state.pendingReplies ?? []).contains { $0.neighbor == neighbor && $0.readAt <= now && now < $0.dueAt }
+        (state.pendingReplies ?? []).contains { $0.neighbor == neighbor && ($0.typingAt ?? $0.readAt) <= now && now < $0.dueAt }
     }
 
     func advancePendingReplies(now: Date = Date()) {
@@ -283,7 +290,7 @@ final class PhoneWorldStore: ObservableObject {
                 changed = true
             }
         }
-        let due = pending.filter { $0.dueAt <= now }.sorted { $0.dueAt < $1.dueAt }
+        let due = pending.filter { $0.dueAt <= now }.sorted { ($0.dueAt, $0.id) < ($1.dueAt, $1.id) }
         for item in due {
             if item.startsTutorial && tutorialStarted && !state.flags.contains("phone-tutorial-replied") {
                 state.flags.insert("phone-tutorial-replied")
@@ -292,7 +299,7 @@ final class PhoneWorldStore: ObservableObject {
                 state.flags = NoraPhotoCatalog.discoveryFlags(from: state.flags)
             } else {
                 append(NeighborMessage(id: item.id, thread: item.neighbor.id, text: item.text,
-                                       fromPlayer: false, at: now, read: false))
+                                       fromPlayer: false, at: item.dueAt, read: false))
             }
             changed = true
         }
