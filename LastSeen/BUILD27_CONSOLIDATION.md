@@ -1,5 +1,7 @@
 # Build 27 — Nora's World (1.6.0)
 
+> **Historical implementation log:** [Master roadmap](OS_FIRST_ROADMAP.md) is authoritative for current priorities; [Build 27 acceptance](BUILD27_ACCEPTANCE.md) records current corrective QA. Any prior status, dates or ordering below are historical where superseded. No approved requirement is removed.
+
 
 > **Current authoritative acceptance checkpoint (November 25, 2026):** [BUILD27_ACCEPTANCE.md](BUILD27_ACCEPTANCE.md) governs the single consolidated Build 27 release. Historical build statuses, older story-deferral instructions, and asset upload notes below are historical only where superseded. Do not declare the full build complete merely because compilation succeeds. Creator-facing updates must remain spoiler-free.
 Complete consolidation target. Preserve Build 26 and forward-port any later fixes before packaging. No story solutions in creator-facing reports.

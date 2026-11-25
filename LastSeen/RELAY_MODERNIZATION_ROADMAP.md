@@ -1,4 +1,6 @@
 # Relay — modern package manager redesign
+
+> **Specialist specification:** [Master roadmap](OS_FIRST_ROADMAP.md) is authoritative for current priorities; [Build 27 acceptance](BUILD27_ACCEPTANCE.md) records current corrective QA. Any prior status, dates or ordering below are historical where superseded. No approved requirement is removed.
 Creator feedback, November 25, 2026: the existing jailbreak package manager feels outdated. Approved direction: replace the legacy list-heavy presentation with a polished original LumaOS-native package manager. Preserve the currently running Build 27 corrective CI; no runtime redesign in this documentation revision.
 ## Experience and visual direction
 - Retain Relay name, approved Relay artwork, fictional sources and original LumaOS terminology. Use a consistent contemporary visual system with readable hierarchy, rounded cards, restrained gradients, adaptive light/dark palette, original icons, responsive transitions and generous touch targets; no imitation of a specific real package manager or real network access. Fit iPhone 16e, iOS 16 minimum; respect safe areas, VoiceOver, Dynamic Type, reduced motion, and existing in-game home/exit controls.

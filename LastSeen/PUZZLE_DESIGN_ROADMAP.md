@@ -1,4 +1,6 @@
 # Last Seen — researched puzzle expansion
+
+> **Specialist specification:** [Master roadmap](OS_FIRST_ROADMAP.md) is authoritative for current priorities; [Build 27 acceptance](BUILD27_ACCEPTANCE.md) records current corrective QA. Any prior status, dates or ordering below are historical where superseded. No approved requirement is removed.
 Approved direction, November 25, 2026. Creator wants more puzzles of different types and research before additions. Planning only, no runtime changes or interruption of corrective Build 27.
 ## Existing implementation audit
 RecoveryCircuit.swift implements three dependency-order stages, using a fixed sequence and selection UI. LumaUtilityViews.swift implements nine sequential certifications as three-option multiple-choice questions. Retain earned flags and existing Recovery Circuit difficulty; first physical QA feedback suggests unclear instructions rather than necessarily excessive reasoning difficulty. Replace repetitive quiz interactions progressively with functional, varied challenges. Preserve old completed certifications, installed packages and save migration. Do not disclose solution sequences, authored clue placements, rewards or plot connections in creator reports.

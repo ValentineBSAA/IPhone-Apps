@@ -1,5 +1,7 @@
 # LAST SEEN — Nora Bennett and the living world
 
+> **Canon reference:** [Master roadmap](OS_FIRST_ROADMAP.md) is authoritative for current priorities; [Build 27 acceptance](BUILD27_ACCEPTANCE.md) records current corrective QA. Any prior status, dates or ordering below are historical where superseded. No approved requirement is removed.
+
 
 > **Current authoritative acceptance checkpoint (November 25, 2026):** [BUILD27_ACCEPTANCE.md](BUILD27_ACCEPTANCE.md) governs the single consolidated Build 27 release. Historical build statuses, older story-deferral instructions, and asset upload notes below are historical only where superseded. Do not declare the full build complete merely because compilation succeeds. Creator-facing updates must remain spoiler-free.
 Status: creator-approved identity and cast foundation, updated 2026-11-25. Canonical portrait approved; Build 23 physical feedback received; camera-roll implementation staged, not yet compiled. Spoiler-light. This supersedes the provisional owner biography for OS-first development, not the separate legacy campaign.

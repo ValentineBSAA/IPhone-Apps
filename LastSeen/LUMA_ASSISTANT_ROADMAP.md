@@ -1,4 +1,6 @@
 # LumaOS Assistant — approved feature direction (2026-11-25)
+
+> **Specialist specification:** [Master roadmap](OS_FIRST_ROADMAP.md) is authoritative for current priorities; [Build 27 acceptance](BUILD27_ACCEPTANCE.md) records current corrective QA. Any prior status, dates or ordering below are historical where superseded. No approved requirement is removed.
 ## Scope and delivery
 Creator requests a Siri-like original fictional OS assistant with spoken input through the real iPhone microphone and a consistent ElevenLabs-generated voice. Add to roadmap as an approved next implementation milestone; do not interrupt the currently running Build 27 packaging job or silently claim that the existing IPA contains it. Determine inclusion in the final consolidated test release after implementation, voice asset approval, and verification. Preserve existing OS-first, free, offline and spoiler-free requirements.
 ## Experience
