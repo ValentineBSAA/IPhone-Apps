@@ -45,6 +45,9 @@ jobs:
       - name: Checkout game source
         uses: actions/checkout@v4
 
+      - name: Verify release and timing contracts before compilation
+        run: python3 Tools/verify_release_contract.py
+
       - name: Show Xcode toolchain
         run: |
           xcodebuild -version
