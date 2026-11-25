@@ -6,6 +6,11 @@ import LocalAuthentication
 struct PhoneLabView: View {
     @StateObject private var world = PhoneWorldStore(storageURL: RestoredPhoneBackup.url)
     @State private var path = NavigationPath()
+    @StateObject private var saves = LumaSaveStore()
+    @AppStorage("lastseen.saves.interval") private var saveInterval = 3
+    @AppStorage("lastseen.lab.lockWallpaper") private var lockWallpaper = -1
+    @AppStorage("lastseen.lab.wallpaperBlur") private var wallpaperBlur = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var locked: Bool
     init(startUnlocked: Bool = false) { _locked = State(initialValue: !startUnlocked) }
     @State private var panel: LabPanel?
@@ -97,7 +102,7 @@ struct PhoneLabView: View {
         }
         .environmentObject(world)
         .defersSystemGestures(on: deferSystemEdges ? [.top, .bottom] : [])
-        .tint(Color(red: 0.36, green: 0.81, blue: 0.76))
+        .tint(LumaDesign.accent)
         .preferredColorScheme(.dark)
         .overlay {
             Color.black.opacity(max(0, 1 - brightness) * 0.75)
@@ -152,6 +157,20 @@ struct PhoneLabView: View {
         .task(id: phase) {
             guard phase == .active else { return }
             while !Task.isCancelled {
+                do { try await Task.sleep(nanoseconds: 1_000_000_000) } catch { return }
+                guard !Task.isCancelled else { return }
+                saves.tick(world: world.state, minutes: saveInterval)
+            }
+        }
+        .onChange(of: world.state.flags) { _ in
+            if didConfigureFeedback { saves.automatic(world: world.state) }
+        }
+        .onChange(of: world.state.threads.values.reduce(0) { $0 + $1.count }) { _ in
+            if didConfigureFeedback { saves.automatic(world: world.state) }
+        }
+        .task(id: phase) {
+            guard phase == .active else { return }
+            while !Task.isCancelled {
                 world.advancePendingReplies()
                 do { try await Task.sleep(nanoseconds: 250_000_000) } catch { return }
             }
@@ -163,6 +182,7 @@ struct PhoneLabView: View {
         .onChange(of: phase) { value in
             observedIncoming = Set(incomingIDs)
             observedOutgoing = outgoingIDs
+            if value == .background { saves.automatic(world: world.state, force: true) }
             if value != .active {
                 arrivalTask?.cancel(); arrivalTask = nil
                 PhoneSensoryEngine.stop()
@@ -190,13 +210,21 @@ struct PhoneLabView: View {
                     case .search: phoneSearch
                     case .notifications: notifications
                     case .recent:
-                        List {
-                            if recent.isEmpty { Text("No recent apps").foregroundColor(.secondary) }
-                            ForEach(recent) { app in
-                                Button { panel = nil; open(app) } label: {
-                                    Label(app.rawValue, systemImage: app.symbol)
+                        ScrollView {
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
+                                ForEach(recent) { app in
+                                    Button { panel = nil; open(app) } label: {
+                                        VStack(spacing: 18) {
+                                            if let art = app.foundationIcon {
+                                                Image(art).resizable().scaledToFit().frame(width: 72, height: 72).clipShape(RoundedRectangle(cornerRadius: 18))
+                                            } else { Image(systemName: app.symbol).font(.system(size: 44)).frame(height: 72) }
+                                            Text(app.rawValue).font(.headline)
+                                            Text("Open app").font(.caption).foregroundColor(.secondary)
+                                        }.frame(maxWidth: .infinity).padding(18).lumaSurface()
+                                    }.buttonStyle(.plain)
                                 }
-                            }
+                            }.padding(18)
+                            if recent.isEmpty { Text("No recent apps").foregroundColor(.secondary) }
                         }
                     }
                 }
@@ -233,7 +261,13 @@ struct PhoneLabView: View {
         }
     }
 
-    private var backdrop: some View { PhoneWallpaper(selection: safeMode && wallpaper == 2 ? 0 : wallpaper).ignoresSafeArea() }
+    private var backdrop: some View {
+        let chosen = locked && lockWallpaper >= 0 ? lockWallpaper : wallpaper
+        return PhoneWallpaper(selection: LumaDesign.resolvedWallpaper(chosen, midnight: tweak("midnight")))
+            .blur(radius: !locked && wallpaperBlur ? 18 : 0)
+            .overlay(Color.black.opacity(locked ? 0.18 : 0.23))
+            .ignoresSafeArea()
+    }
 
     private var unread: Int { Neighbor.allCases.reduce(0) { $0 + world.countUnread($1) } }
 
@@ -346,8 +380,8 @@ struct PhoneLabView: View {
         } label: {
             VStack(spacing: 5) {
                 Capsule().fill(Color.white.opacity(0.65)).frame(width: 100, height: 5)
-                Text("Home · swipe up").font(.system(size: 10)).foregroundColor(.secondary)
-            }.frame(maxWidth: .infinity).frame(height: 42).contentShape(Rectangle())
+
+            }.frame(maxWidth: .infinity).frame(height: 44).contentShape(Rectangle())
         }.buttonStyle(.plain)
             .background(.ultraThinMaterial)
             .accessibilityLabel("Return to in-game home")
@@ -361,7 +395,7 @@ struct PhoneLabView: View {
     }
 
     private func returnHome() {
-        withAnimation(.easeInOut(duration: 0.22)) { path = NavigationPath() }
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) { path = NavigationPath() }
         OpeningQA.record("Returned to in-game home")
     }
 
@@ -402,6 +436,20 @@ struct PhoneLabView: View {
                         }.foregroundColor(.white.opacity(0.85)).padding(12)
                             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 15))
                     }
+                    HStack(spacing: 10) {
+                        TimelineView(.periodic(from: .now, by: 60)) { context in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(context.date, style: .time).font(.title2.weight(.light)).monospacedDigit()
+                                Text(context.date, format: .dateTime.weekday(.wide).month(.abbreviated).day()).font(.caption)
+                            }.frame(maxWidth: .infinity, alignment: .leading).padding(14).lumaSurface()
+                        }
+                        Button { open(.calendar) } label: {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Label("Calendar", systemImage: "calendar").font(.caption.bold())
+                                Text(world.state.events.filter { $0.endsAt >= Date() }.sorted { $0.startsAt < $1.startsAt }.first?.title ?? "No upcoming events").font(.subheadline).lineLimit(2)
+                            }.frame(maxWidth: .infinity, alignment: .leading).padding(14).lumaSurface()
+                        }
+                    }
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: tweak("fivegrid") ? 5 : 4), spacing: 24) {
                     ForEach(LabApp.allCases.filter { !$0.inDock }) { app in icon(app) }
                     }.padding(.top, 5).padding(.bottom, 12)
@@ -413,6 +461,8 @@ struct PhoneLabView: View {
                 Button { withAnimation { locked = true } } label: {
                     Label("Lock", systemImage: "lock").font(.caption)
                 }
+                Spacer()
+                Button { open(.saves) } label: { Label("Saves", systemImage: "archivebox").font(.caption).frame(minHeight: 44) }
                 Spacer()
                 Button { panel = .recent } label: {
                     Label("Recent apps", systemImage: "square.on.square").font(.caption)
@@ -446,6 +496,10 @@ struct PhoneLabView: View {
                     } else if !safeMode, tealTheme, let asset = ApprovedArt.themeName(for: app.rawValue) {
                         Image(asset).resizable().scaledToFit()
                             .frame(width: smallIcons ? 43 : 55, height: smallIcons ? 43 : 55)
+                    } else if let art = app.foundationIcon {
+                        Image(art).resizable().scaledToFit()
+                            .frame(width: smallIcons ? 43 : 61, height: smallIcons ? 43 : 61)
+                            .clipShape(RoundedRectangle(cornerRadius: smallIcons ? 12 : 16))
                     } else {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(LinearGradient(colors: [app.color, app.color.opacity(0.55)], startPoint: .topLeading, endPoint: .bottomTrailing))
@@ -467,6 +521,21 @@ struct PhoneLabView: View {
 
     private var controls: some View {
         Form {
+            Section {
+                HStack(spacing: 14) {
+                    Image("Brand_LumaOS").resizable().scaledToFit().frame(width: 66, height: 66).clipShape(RoundedRectangle(cornerRadius: 17))
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("LumaOS").font(.title2.bold())
+                        Text(device).font(.subheadline).foregroundColor(.secondary)
+                    }
+                }.padding(.vertical, 8)
+                NavigationLink { LumaSaveView(store: saves, onLoad: loadCheckpoint) } label: {
+                    Label("Game Saves", systemImage: "archivebox")
+                }
+                NavigationLink { LumaWallpaperSettings(home: $wallpaper, lock: $lockWallpaper, blur: $wallpaperBlur, midnight: tweak("midnight")) } label: {
+                    Label("Wallpaper & appearance", systemImage: "photo.on.rectangle")
+                }
+            }
             Section("Device") {
                 LabeledContent("Device name", value: device)
                 NavigationLink { ProtectedAreaView(area: .security) } label: {
@@ -477,11 +546,6 @@ struct PhoneLabView: View {
                 VStack(alignment: .leading) {
                     Text("Display brightness")
                     Slider(value: $brightness, in: 0.35...1)
-                }
-                Picker("Wallpaper", selection: $wallpaper) {
-                    Text("Coastal").tag(0)
-                    Text("Dusk").tag(1)
-                    if relayInstalled.split(separator: "|").contains("midnight") { Text("Midnight Glass").tag(2) }
                 }
             }
             Section("Jailbreak") {
@@ -517,7 +581,7 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.4.1 (24)")
+                LabeledContent("Software", value: "1.5.0 (25)")
                 Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay message tutorial") { confirmTutorialReplay = true }
                 Button("Replay phone setup") { confirmSetupReplay = true }
@@ -547,6 +611,23 @@ struct PhoneLabView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Your restored phone records and story saves will not be erased.")
+        }
+    }
+
+    private func loadCheckpoint(_ slot: String) {
+        arrivalTask?.cancel(); arrivalTask = nil
+        PhoneSensoryEngine.stop()
+        if saves.restore(slot, into: world) {
+            observedIncoming = Set(incomingIDs)
+            observedOutgoing = outgoingIDs
+            banner = nil; pendingThread = nil
+            authContext?.invalidate(); authContext = nil
+            showOwnerPasscode = false
+            panel = nil
+            recent.removeAll()
+            returnHome()
+            locked = false
+            tutorialReplay += 1
         }
     }
 
@@ -672,6 +753,7 @@ struct PhoneLabView: View {
 
     @ViewBuilder private func destination(_ app: LabApp) -> some View {
         switch app {
+        case .saves: LumaSaveView(store: saves, onLoad: loadCheckpoint)
         case .messages: LabPeopleView(messages: true)
         case .contacts: LabPeopleView(messages: false)
         case .notes: PhoneNotesView(lab: true)
@@ -696,7 +778,11 @@ private enum LabPanel: String, Identifiable {
 }
 
 private enum LabApp: String, CaseIterable, Identifiable {
-    case messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline"
+    case messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves"
+    var foundationIcon: String? {
+        if self == .relay || self == .patchline { return nil }
+        return self == .saves ? "Icon_Save" : "Icon_" + rawValue
+    }
     var id: String { rawValue }
     var inDock: Bool { [.messages, .contacts, .browser, .settings].contains(self) }
     var symbol: String {
@@ -714,6 +800,7 @@ private enum LabApp: String, CaseIterable, Identifiable {
         case .browser: return "globe"
         case .relay: return "shippingbox.fill"
         case .patchline: return "lock.open.fill"
+        case .saves: return "archivebox"
         }
     }
     var color: Color {
@@ -731,6 +818,7 @@ private enum LabApp: String, CaseIterable, Identifiable {
         case .browser: return .mint
         case .relay: return .teal
         case .patchline: return .teal
+        case .saves: return .indigo
         }
     }
 }
@@ -837,6 +925,13 @@ private struct LabPhotosView: View {
                     Spacer()
                     Text("\(shown.filter { available($0) }.count) recovered").font(.caption).foregroundColor(.secondary)
                 }
+                if !onlyFavorites {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("Photo recovery", systemImage: "photo.stack").font(.headline)
+                        ProgressView(value: Double(photos.filter { available($0) }.count), total: Double(max(1, photos.count))).tint(LumaDesign.accent)
+                        Text("Unrecovered photos appear as you investigate. Private access is separate.").font(.caption).foregroundColor(.secondary)
+                    }.padding(14).lumaSurface()
+                }
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 3), spacing: 4) {
                     ForEach(shown) { photo in
                         Button {
@@ -859,11 +954,11 @@ private struct LabPhotosView: View {
                 Text("Albums").font(.title2.bold()).padding(.top, 10)
                 NavigationLink { ProtectedAreaView(area: .photos) } label: {
                     HStack(spacing: 14) {
-                        Image(systemName: "lock.rectangle.stack.fill").font(.title2).foregroundColor(.teal)
-                            .frame(width: 52, height: 52).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                        Image("System_ProtectedStorage").resizable().scaledToFit()
+                            .frame(width: 60, height: 60).clipShape(RoundedRectangle(cornerRadius: 14))
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Private album").font(.headline)
-                            Text("Authentication required").font(.caption).foregroundColor(.secondary)
+                            Text("Protected access · discoveries required").font(.caption).foregroundColor(.secondary)
                         }
                         Spacer()
                         Image(systemName: "chevron.right").font(.caption)
