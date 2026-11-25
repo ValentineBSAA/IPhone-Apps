@@ -13,6 +13,10 @@ struct PhoneLabView: View {
     @State private var pendingThread: Neighbor?
     @State private var banner: PhoneAlert?
     @State private var observedIncoming: Set<String> = []
+    @State private var observedOutgoing: Set<String> = []
+    @State private var arrivalTask: Task<Void, Never>?
+    private var outgoingIDs: Set<String> { PhoneMessageArrival.outgoingIDs(in: world.state) }
+    private var messageIDs: Set<String> { Set(incomingIDs).union(outgoingIDs) }
     @Environment(\.scenePhase) private var phase
     @AppStorage("lastseen.lab.messageSound") private var messageSound = true
     @AppStorage("lastseen.lab.messageHaptics") private var messageHaptics = true
@@ -112,19 +116,40 @@ struct PhoneLabView: View {
             do { try await Task.sleep(nanoseconds: 5_000_000_000) } catch { return }
             if banner?.id == id { withAnimation { banner = nil } }
         }
-        .onChange(of: incomingIDs) { ids in
+        .onChange(of: messageIDs) { _ in
             let previous = observedIncoming
-            observedIncoming = Set(ids)
-            guard didConfigureFeedback, phase == .active,
-                  let newest = PhoneMessageArrival.newest(in: world.state, previous: previous) else { return }
-            PhoneSensoryEngine.play(.message, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
-            if !locked {
-                withAnimation(.easeOut(duration: 0.25)) { banner = newest }
-            }
+            let sent = !outgoingIDs.subtracting(observedOutgoing).isEmpty
+            observedIncoming = Set(incomingIDs)
+            observedOutgoing = outgoingIDs
+            guard didConfigureFeedback, phase == .active else { return }
+            let newest = PhoneMessageArrival.newest(in: world.state, previous: previous)
+            guard sent || newest != nil else { return }
+            arrivalTask?.cancel()
+            let sendDuration = sent ? PhoneSensoryEngine.play(.outgoing, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects) : 0
+            if let newest {
+                // The authored conversation can commit send and reply together.
+                // Sequence the sounds instead of cutting off the outgoing clip.
+                arrivalTask = Task { @MainActor in
+                    if sent {
+                        do { try await Task.sleep(nanoseconds: UInt64(max(0.18, sendDuration) * 1_000_000_000)) }
+                        catch { return }
+                    }
+                    guard !Task.isCancelled, phase == .active else { return }
+                    PhoneSensoryEngine.play(.message, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
+                    if !locked { withAnimation(.easeOut(duration: 0.25)) { banner = newest } }
+                    arrivalTask = nil
+                }
+            } else { arrivalTask = nil }
+        }
+        .onChange(of: locked) { value in
+            guard didConfigureFeedback, phase == .active else { return }
+            PhoneSensoryEngine.play(value ? .lock : .unlock, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
         }
         .onChange(of: phase) { value in
             observedIncoming = Set(incomingIDs)
+            observedOutgoing = outgoingIDs
             if value != .active {
+                arrivalTask?.cancel(); arrivalTask = nil
                 PhoneSensoryEngine.stop()
                 banner = nil
             }
@@ -132,7 +157,10 @@ struct PhoneLabView: View {
         .onChange(of: messageSound) { if !$0 { PhoneSensoryEngine.stopSound() } }
         .onChange(of: messageHaptics) { if !$0 { PhoneSensoryEngine.stopHaptics() } }
         .onChange(of: horrorEffects) { if !$0 { PhoneSensoryEngine.stop() } }
-        .onDisappear { PhoneSensoryEngine.stop() }
+        .onDisappear {
+            arrivalTask?.cancel(); arrivalTask = nil
+            PhoneSensoryEngine.stop()
+        }
         .task(id: tutorialDeliveryID) {
             guard didConfigureFeedback, phase == .active, !world.tutorialStarted else { return }
             do { try await Task.sleep(nanoseconds: 1_500_000_000) } catch { return }
@@ -175,12 +203,13 @@ struct PhoneLabView: View {
         }
         .onAppear {
             if !didConfigureFeedback {
-                if feedbackRevision < 1 {
+                if feedbackRevision < 2 {
                     // One-time Build 21 migration so the owner can hear the new incoming alerts.
                     if world.tutorialStarted { world.resetPhoneTutorial() }
-                    feedbackRevision = 1
+                    feedbackRevision = 2
                 }
                 observedIncoming = Set(incomingIDs)
+                observedOutgoing = outgoingIDs
                 didConfigureFeedback = true
             }
             let center = UNUserNotificationCenter.current()
@@ -450,21 +479,16 @@ struct PhoneLabView: View {
                 Text("Use the in-game gestures first. Repeat a system-edge swipe to access real iOS controls. Turn this off for standard iOS gesture priority.").font(.footnote).foregroundColor(.secondary)
             }
             Section("Sounds & Haptics") {
-                Toggle("Message sounds", isOn: $messageSound)
-                Toggle("Message vibrations", isOn: $messageHaptics)
+                Toggle("Phone sounds", isOn: $messageSound)
+                Toggle("Phone vibrations", isOn: $messageHaptics)
                 Toggle("Horror sensory effects", isOn: $horrorEffects)
+                NavigationLink {
+                    PhoneSoundStudio(sound: $messageSound, haptics: $messageHaptics, horrorEnabled: $horrorEffects)
+                } label: { Label("Sound Library · 11 effects", systemImage: "waveform") }
                 Button {
                     PhoneSensoryEngine.play(.message, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
                 } label: { Label("Preview message alert", systemImage: "bell.badge") }
-                Button {
-                    PhoneSensoryEngine.play(.suspense, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
-                } label: { Label("Preview suspense cue", systemImage: "waveform.path") }
-                .disabled(!horrorEffects)
-                Button {
-                    PhoneSensoryEngine.play(.scare, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
-                } label: { Label("Preview scare cue", systemImage: "waveform.path.ecg") }
-                .disabled(!horrorEffects)
-                Text("In-game effects only. Sounds respect your iPhone's silent mode and volume. Haptics depend on device support and system settings. Horror cues are optional.")
+                Text("In-game effects only. Each recording plays once. Sounds respect your iPhone's silent mode and volume. Haptics depend on device support and system settings. Horror cues are optional.")
                     .font(.footnote).foregroundColor(.secondary)
             }
             Section("Notifications and privacy") {
@@ -478,7 +502,7 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.3.9 (22)")
+                LabeledContent("Software", value: "1.4.0 (23)")
                 Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay message tutorial") { confirmTutorialReplay = true }
                 Button("Replay phone setup") { confirmSetupReplay = true }
@@ -487,10 +511,12 @@ struct PhoneLabView: View {
         .sheet(isPresented: $showOpeningQA) { OpeningDiagnosticsView() }
         .confirmationDialog("Replay message tutorial?", isPresented: $confirmTutorialReplay) {
             Button("Replay tutorial") {
+                arrivalTask?.cancel(); arrivalTask = nil
                 PhoneSensoryEngine.stop()
                 banner = nil
                 world.resetPhoneTutorial()
                 observedIncoming = Set(incomingIDs)
+                observedOutgoing = outgoingIDs
                 panel = nil
                 returnHome()
                 locked = true
