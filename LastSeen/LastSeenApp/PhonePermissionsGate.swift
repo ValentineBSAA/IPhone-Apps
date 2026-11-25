@@ -123,8 +123,13 @@ struct PhoneWallpaper: View {
         GeometryReader { proxy in
             ZStack {
                 LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
-                Circle().fill(.white.opacity(0.05)).frame(width: proxy.size.width * 0.88).offset(x: proxy.size.width * 0.38, y: proxy.size.height * 0.23)
-                Circle().strokeBorder(.white.opacity(0.10), lineWidth: 1).frame(width: proxy.size.width * 0.77).offset(x: -proxy.size.width * 0.31, y: -proxy.size.height * 0.14)
+                if LumaDesign.wallpaperAssets.indices.contains(selection),
+                   !LumaDesign.wallpaperAssets[selection].isEmpty {
+                    Image(LumaDesign.wallpaperAssets[selection]).resizable().scaledToFill()
+                        .frame(width: proxy.size.width, height: proxy.size.height).clipped()
+                }
+                if selection == 2 { Circle().fill(.white.opacity(0.05)).frame(width: proxy.size.width * 0.88).offset(x: proxy.size.width * 0.38, y: proxy.size.height * 0.23)
+                Circle().strokeBorder(.white.opacity(0.10), lineWidth: 1).frame(width: proxy.size.width * 0.77).offset(x: -proxy.size.width * 0.31, y: -proxy.size.height * 0.14) }
             }.frame(width: proxy.size.width, height: proxy.size.height).clipped()
         }
     }
