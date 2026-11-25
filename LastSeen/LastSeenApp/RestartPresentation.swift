@@ -48,6 +48,7 @@ enum RestartPhase: Equatable {
 /// Original cinematic restart. No actual process or device is restarted.
 struct RestartArtwork: View {
     let phase: RestartPhase
+    var respringDuration: Double = 5
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var entered = Date()
     var body: some View {
@@ -90,7 +91,7 @@ struct RestartArtwork: View {
                             }.rotationEffect(.degrees(reduceMotion ? 0 : t * 300))
                         }.frame(width: 68, height: 68)
                             .scaleEffect(reduceMotion ? 1 : 0.78 + reveal * 0.22)
-                            .opacity(reveal)
+                            .opacity(reduceMotion ? 1 : min(reveal, max(0, (respringDuration - t) / 0.65)))
                     }
                 }.transition(.opacity)
             }
@@ -108,7 +109,7 @@ struct ThemeRespringView: View {
     @State private var seconds = 0
     @State private var finished = false
     var body: some View {
-        RestartArtwork(phase: seconds < 2 ? .black : .respring)
+        RestartArtwork(phase: seconds < 2 ? .black : .respring, respringDuration: 3)
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.65), value: seconds < 2)
             .statusBar(hidden: true)
             .interactiveDismissDisabled()
