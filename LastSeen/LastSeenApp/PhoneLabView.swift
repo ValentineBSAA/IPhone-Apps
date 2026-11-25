@@ -65,6 +65,9 @@ struct PhoneLabView: View {
                         }
                     }
             }
+            .navigationDestination(for: PhoneCalendarRoute.self) { route in
+                PhoneCalendarView(initialDay: route.day).safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
+            }
             .navigationDestination(for: PhoneFileRoute.self) { route in
                 PhoneDocumentView(title: route.title).safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
             }
@@ -553,6 +556,7 @@ struct PhoneLabView: View {
             case .contacts: if let n = Neighbor(rawValue: detail) { path.append(AppPage.worldProfile(n)) }
             case .notes: path.append(AppPage.note(detail))
             case .files: path.append(PhoneFileRoute(title: detail))
+            case .calendar: if let event = world.state.events.first(where: { $0.id == detail }) { path.append(PhoneCalendarRoute(day: event.startsAt)) }
             default: break
             }
         }
@@ -817,12 +821,12 @@ private struct LabCalculatorView: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 10) {
                 ForEach(keys, id: \.self) { key in
                     Button { press(key) } label: {
-                        Text(key).font(.title2).frame(maxWidth: .infinity).frame(height: 54)
-                            .background(["÷","×","−","+","="].contains(key) ? Color.teal : Color.gray.opacity(0.3), in: RoundedRectangle(cornerRadius: 15))
+                        Text(key).font(.system(size: 27, weight: .medium)).frame(maxWidth: .infinity).frame(height: 65)
+                            .background(["÷","×","−","+","="].contains(key) ? Color.orange : Color.gray.opacity(0.24), in: Capsule())
                     }.buttonStyle(.plain)
                 }
             }
-        }.padding().navigationTitle("Calculator")
+        }.padding().background(Color.black.ignoresSafeArea()).navigationTitle("Calculator")
     }
     private func press(_ key: String) {
         if key == "C" { display = "0"; first = nil; operation = nil; replace = true; return }
@@ -852,6 +856,8 @@ private struct LabCalculatorView: View {
         }
     }
 }
+
+private struct PhoneCalendarRoute: Hashable { let day: Date }
 
 private struct PhoneFileRoute: Hashable { let title: String }
 
