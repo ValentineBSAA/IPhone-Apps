@@ -6,7 +6,8 @@ on:
     branches:
       - feature/last-seen-ios16
       - feature/last-seen-story-photos-voice-prep
-      - feature/last-seen-living-phone-v1-1
+      - feature/last-seen-living-phone
+      - feature/last-seen-phone-feedback-v1-1
       - fix/last-seen-1-1-1-contact-identity
       - fix/last-seen-1-1-2-real-phone
       - feature/last-seen-phone-lab
@@ -153,8 +154,8 @@ jobs:
           BUILD_NUMBER="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")"
           BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")"
           echo "Actual app version: $MARKETING_VERSION ($BUILD_NUMBER)"
-          test "$MARKETING_VERSION" = "1.3.8"
-          test "$BUILD_NUMBER" = "21"
+          test "$MARKETING_VERSION" = "1.3.9"
+          test "$BUILD_NUMBER" = "22"
           test -n "$(/usr/libexec/PlistBuddy -c 'Print :NSFaceIDUsageDescription' "$APP/Info.plist")"
           test "$BUNDLE_ID" = "com.valentinebsaa.lastseen.horror"
           test -s "LastSeenApp/Assets.xcassets/Contact_Maya.imageset/photo.jpg"
@@ -191,14 +192,14 @@ jobs:
           xcrun simctl launch "$SIMULATOR_ID" com.valentinebsaa.lastseen.horror
           sleep 4
           mkdir -p dist
-          xcrun simctl io "$SIMULATOR_ID" screenshot dist/last-seen-permissions-v1.3.8.png
-          test -s dist/last-seen-permissions-v1.3.8.png
+          xcrun simctl io "$SIMULATOR_ID" screenshot dist/last-seen-permissions-v1.3.9.png
+          test -s dist/last-seen-permissions-v1.3.9.png
 
       - name: Upload visual UI verification screenshot
         uses: actions/upload-artifact@v4
         with:
-          name: LAST-SEEN-v1.3.8-permissions-screen-simulator
-          path: LastSeen/dist/last-seen-permissions-v1.3.8.png
+          name: LAST-SEEN-v1.3.9-permissions-screen-simulator
+          path: LastSeen/dist/last-seen-permissions-v1.3.9.png
           if-no-files-found: error
           retention-days: 14
 
@@ -209,16 +210,16 @@ jobs:
           cp -R build/Build/Products/Release-iphoneos/LastSeen.app dist/Payload/
           (
             cd dist
-            zip -qr Last-Seen-v1.3.8-iOS16-unsigned.ipa Payload
+            zip -qr Last-Seen-v1.3.9-iOS16-unsigned.ipa Payload
           )
-          test -s dist/Last-Seen-v1.3.8-iOS16-unsigned.ipa
-          unzip -l dist/Last-Seen-v1.3.8-iOS16-unsigned.ipa | grep -q 'Payload/LastSeen.app/Info.plist'
+          test -s dist/Last-Seen-v1.3.9-iOS16-unsigned.ipa
+          unzip -l dist/Last-Seen-v1.3.9-iOS16-unsigned.ipa | grep -q 'Payload/LastSeen.app/Info.plist'
 
       - name: Publish unsigned IPA for user-side installation
         uses: actions/upload-artifact@v4
         with:
-          name: LAST-SEEN-v1.3.8-iOS16-unsigned
-          path: LastSeen/dist/Last-Seen-v1.3.8-iOS16-unsigned.ipa
+          name: LAST-SEEN-v1.3.9-iOS16-unsigned
+          path: LastSeen/dist/Last-Seen-v1.3.9-iOS16-unsigned.ipa
           if-no-files-found: error
           retention-days: 30
 
