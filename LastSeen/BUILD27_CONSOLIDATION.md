@@ -24,3 +24,7 @@ Creator reports an Assets.car problem with Build 26; exact installer/device erro
 
 ## Build 27 compiler correction
 Run 45595727810 failed at PhoneLabView.swift:1184, expected expression. The old browser removal left a dangling `private` modifier at EOF; remove it. Retain all asset-integrity changes and rerun full CI. No completed-release claim until latest commit passes.
+
+
+## Original media packaging correction
+Run 45596340837 compiled successfully and passed iOS version and sound checks. The device resource hash gate rejected Contact_B27_01.png after Xcode ran copypng -compress -strip-PNG-text. Disable both PNG processing settings so original standalone resources remain byte-identical. Keep all original manifest, compiled catalog and final IPA integrity checks; rerun full CI. Physical installation remains unverified.

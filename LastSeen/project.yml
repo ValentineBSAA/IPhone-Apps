@@ -9,6 +9,8 @@ settings:
     IPHONEOS_DEPLOYMENT_TARGET: "16.0"
     TARGETED_DEVICE_FAMILY: "1"
     GENERATE_INFOPLIST_FILE: YES
+    COMPRESS_PNG_FILES: NO
+    STRIP_PNG_TEXT: NO
     INFOPLIST_KEY_CFBundleDisplayName: "Last Seen"
     INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
     INFOPLIST_KEY_UIRequiresFullScreen: YES
