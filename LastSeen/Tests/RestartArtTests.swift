@@ -14,12 +14,13 @@ final class RestartArtTests: XCTestCase {
         XCTAssertEqual(ApprovedArt.themeName(for: "Messages"), "Theme_Messages")
         XCTAssertNil(ApprovedArt.themeName(for: "Calculator"))
         XCTAssertNil(ApprovedArt.themeName(for: "Relay"))
-        for name in ["RespringDown","RespringUp"] {
+        for name in ["RespringDown","RespringUp","UserspaceDown","UserspaceUp"] {
             XCTAssertNotNil(bundle.url(forResource: name, withExtension: "wav"), name)
         }
     }
     func testOpeningRestartSequence() {
-        XCTAssertEqual(OpeningPace.total, 125)
+        // OpeningPace total is owned by RecoverySecurityTests; this suite tests restart art only.
+        XCTAssertEqual(OpeningPace.duration(4), OpeningPace.reboot)
         XCTAssertEqual(RestartPhase.opening(at: 0), .black)
         XCTAssertEqual(RestartPhase.opening(at: 2), .userspace)
         XCTAssertEqual(RestartPhase.opening(at: 7), .userspace)
