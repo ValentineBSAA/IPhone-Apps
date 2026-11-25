@@ -151,7 +151,62 @@ final class PhoneWorldStore: ObservableObject {
         save()
     }
 
+    /// Only Phone Lab starts this tutorial; the legacy campaign is unchanged.
+    static let tutorialNoteID = "nora-before-i-forget"
+    static let tutorialNoteTitle = "Before I forget"
+    static let tutorialNoteBody = "The book reservation receipt is in Files. I left myself a desk reminder about the private folders. Pick up the book before the weekend.\n\nIf Maya asks, tell her I haven't forgotten our coffee plans.\n— Nora"
+    var tutorialStarted: Bool { state.flags.contains("phone-tutorial-started") }
+    var tutorialFinished: Bool { state.flags.contains("phone-tutorial-finished") }
+
+    func startPhoneTutorial(now: Date = Date()) {
+        guard !tutorialStarted else { return }
+        state.flags.insert("phone-tutorial-started")
+        state.notes.insert(PhoneNote(id: Self.tutorialNoteID, title: Self.tutorialNoteTitle,
+                                     body: Self.tutorialNoteBody, modifiedAt: now.addingTimeInterval(-86400), pinned: true), at: 0)
+        tutorialMessage("contact", "Nora? Your phone's showing as available again. If someone else has it, could you let me know? I haven't heard from her since we made plans for coffee.", now: now)
+        save()
+    }
+
+    func recordTutorialVisit(_ id: String, now: Date = Date()) {
+        guard tutorialStarted, !tutorialFinished,
+              ["note", "desk", "reservation", "journal"].contains(id) else { return }
+        if state.flags.insert("phone-tutorial-visited-" + id).inserted {
+            advanceTutorial(now: now)
+            save()
+        }
+    }
+
+    private func tutorialMessage(_ id: String, _ text: String, now: Date) {
+        append(NeighborMessage(id: "phone-tutorial-" + id, thread: "maya", text: text,
+                               fromPlayer: false, at: now, read: false))
+    }
+
+    private func advanceTutorial(now: Date) {
+        guard state.flags.contains("phone-tutorial-replied") else { return }
+        if state.flags.contains("phone-tutorial-visited-note"),
+           state.flags.insert("phone-tutorial-note-guidance").inserted {
+            tutorialMessage("files", "She kept reminders everywhere. Try Files. There should be a desk reminder and a reservation receipt. Maybe those will help you work out what she was planning.", now: now)
+        }
+        if state.flags.contains("phone-tutorial-note-guidance"),
+           state.flags.contains("phone-tutorial-visited-desk"),
+           state.flags.contains("phone-tutorial-visited-reservation"),
+           state.flags.insert("phone-tutorial-file-guidance").inserted {
+            tutorialMessage("journal", "That sounds like Nora. She sometimes kept her personal notes locked. If you can work out how to open them, check whether she wrote anything about her plans. Don't worry about rushing.", now: now.addingTimeInterval(0.1))
+        }
+        if state.flags.contains("phone-tutorial-file-guidance"),
+           state.flags.contains("phone-tutorial-visited-journal"),
+           state.flags.insert("phone-tutorial-finished").inserted {
+            tutorialMessage("finish", "Thanks for looking. I wish I knew why she stopped answering. Keep the phone for now, and let me know if anything else turns up.", now: now.addingTimeInterval(0.2))
+        }
+    }
+
+    var tutorialChoices: [String] {
+        guard tutorialStarted, !state.flags.contains("phone-tutorial-replied") else { return [] }
+        return ["I got the phone working. Is everything okay?", "I'm not Nora. I was asked to repair this phone."]
+    }
+
     func choices(_ neighbor: Neighbor) -> [String] {
+        if neighbor == .maya && tutorialStarted { return tutorialChoices }
         let stage = state.progress[neighbor.id] ?? 0
         if stage == 0 {
             switch neighbor {
@@ -173,6 +228,16 @@ final class PhoneWorldStore: ObservableObject {
         let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let chosen = choices(neighbor).first(where: { normalize($0) == normalize(clean) }) else {
             return false
+        }
+        if neighbor == .maya && tutorialStarted {
+            guard !state.flags.contains("phone-tutorial-replied") else { return false }
+            append(NeighborMessage(id: "phone-tutorial-player-reply", thread: "maya", text: chosen,
+                                   fromPlayer: true, at: now, read: true))
+            state.flags.insert("phone-tutorial-replied")
+            tutorialMessage("notes", "Oh, thank you for telling me. I'm Maya, a friend of Nora's. I was expecting to hear from her. Could you look in Notes for something called Before I forget? She mentioned writing down her plans.", now: now.addingTimeInterval(0.1))
+            advanceTutorial(now: now.addingTimeInterval(0.2))
+            save()
+            return true
         }
         let stage = state.progress[neighbor.id] ?? 0
         let id = "\(neighbor.id)-choice-\(stage)"
@@ -218,7 +283,7 @@ final class PhoneWorldStore: ObservableObject {
     }
 
     func updateNote(_ id: String, title: String, body: String) {
-        guard let index = state.notes.firstIndex(where: { $0.id == id }) else { return }
+        guard id != Self.tutorialNoteID, let index = state.notes.firstIndex(where: { $0.id == id }) else { return }
         state.notes[index].title = title
         state.notes[index].body = body
         state.notes[index].modifiedAt = Date()
@@ -232,6 +297,7 @@ final class PhoneWorldStore: ObservableObject {
     }
 
     func removeNote(_ id: String) {
+        guard id != Self.tutorialNoteID else { return }
         state.notes.removeAll { $0.id == id }
         save()
     }
