@@ -6,7 +6,51 @@ import UIKit
 /// A small, original sensory palette. Future story events may select suspense or
 /// scare explicitly; ordinary messages never randomly use the horror profiles.
 enum PhoneCue: String, CaseIterable {
-    case message, suspense, scare
+    case message, outgoing, general, call, lock, unlock
+    case corrupted, unknownCaller, suspense, scare, phantom
+
+    var isHorror: Bool {
+        switch self {
+        case .corrupted, .unknownCaller, .suspense, .scare, .phantom: return true
+        default: return false
+        }
+    }
+
+    var assetName: String {
+        switch self {
+        case .message: return "PhoneIncomingText"
+        case .outgoing: return "PhoneOutgoingText"
+        case .general: return "PhoneGeneralNotification"
+        case .call: return "PhoneIncomingCall"
+        case .lock: return "PhoneLock"
+        case .unlock: return "PhoneUnlock"
+        case .corrupted: return "PhoneCorruptedNotification"
+        case .unknownCaller: return "PhoneUnknownCaller"
+        case .suspense: return "PhoneHeartbeat"
+        case .scare: return "PhoneAnomaly"
+        case .phantom: return "PhonePhantomVibration"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .message: return "Incoming text message"
+        case .outgoing: return "Outgoing text message"
+        case .general: return "General notification"
+        case .call: return "Incoming phone call"
+        case .lock: return "Phone lock"
+        case .unlock: return "Phone unlock"
+        case .corrupted: return "Corrupted notification"
+        case .unknownCaller: return "Unknown caller"
+        case .suspense: return "Electronic heartbeat"
+        case .scare: return "Sudden system anomaly"
+        case .phantom: return "Phantom vibration"
+        }
+    }
+
+    func audioURL(in bundle: Bundle = .main) -> URL? {
+        bundle.url(forResource: assetName, withExtension: "mp3")
+    }
 
     struct Pulse {
         let time: Double
@@ -21,6 +65,16 @@ enum PhoneCue: String, CaseIterable {
         case .message:
             return [Pulse(time: 0, frequency: 880, duration: 0.12, intensity: 0.55, sharpness: 0.65),
                     Pulse(time: 0.16, frequency: 1175, duration: 0.16, intensity: 0.45, sharpness: 0.55)]
+        case .outgoing, .lock, .unlock:
+            return [Pulse(time: 0, frequency: 700, duration: 0.08, intensity: 0.23, sharpness: 0.6)]
+        case .general:
+            return [Pulse(time: 0, frequency: 900, duration: 0.14, intensity: 0.5, sharpness: 0.5)]
+        case .call, .unknownCaller:
+            return [Pulse(time: 0, frequency: 440, duration: 0.26, intensity: 0.62, sharpness: 0.32),
+                    Pulse(time: 0.4, frequency: 330, duration: 0.25, intensity: 0.62, sharpness: 0.32)]
+        case .corrupted, .phantom:
+            return [Pulse(time: 0, frequency: 230, duration: 0.14, intensity: 0.6, sharpness: 0.65),
+                    Pulse(time: 0.23, frequency: 150, duration: 0.27, intensity: 0.74, sharpness: 0.32)]
         case .suspense:
             return [Pulse(time: 0, frequency: 170, duration: 0.23, intensity: 0.35, sharpness: 0.2),
                     Pulse(time: 0.32, frequency: 145, duration: 0.26, intensity: 0.5, sharpness: 0.25)]
@@ -73,6 +127,9 @@ enum PhoneMessageArrival {
     static func incomingIDs(in world: PhoneWorld) -> Set<String> {
         Set(world.threads.values.flatMap { $0 }.filter { !$0.fromPlayer }.map(\.id))
     }
+    static func outgoingIDs(in world: PhoneWorld) -> Set<String> {
+        Set(world.threads.values.flatMap { $0 }.filter { $0.fromPlayer }.map(\.id))
+    }
     static func newest(in world: PhoneWorld, previous: Set<String>) -> PhoneAlert? {
         let added = incomingIDs(in: world).subtracting(previous)
         return Neighbor.allCases.compactMap { neighbor -> PhoneAlert? in
@@ -90,14 +147,23 @@ enum PhoneSensoryEngine {
     private static var engine: CHHapticEngine?
     private static var hapticPlayer: CHHapticPatternPlayer?
 
-    static func play(_ cue: PhoneCue, sound: Bool, haptics: Bool, horrorEnabled: Bool) {
+    @discardableResult
+    static func play(_ cue: PhoneCue, sound: Bool, haptics: Bool, horrorEnabled: Bool) -> Double {
         guard UIApplication.shared.applicationState == .active,
-              cue == .message || horrorEnabled else { return }
+              !cue.isHorror || horrorEnabled else { return 0 }
+        var playbackDuration = 0.0
         if sound {
             do {
                 audio?.stop()
                 try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
-                audio = try AVAudioPlayer(data: cue.waveData())
+                if let url = cue.audioURL() {
+                    audio = try AVAudioPlayer(contentsOf: url)
+                } else {
+                    OpeningQA.record("Missing bundled phone sound: " + cue.assetName)
+                    audio = try AVAudioPlayer(data: cue.waveData())
+                }
+                audio?.numberOfLoops = 0
+                playbackDuration = audio?.duration ?? 0
                 audio?.volume = 0.8
                 if audio?.play() == true { OpeningQA.record("Phone audio requested: " + cue.rawValue) }
             } catch { OpeningQA.record("Phone audio unavailable") }
@@ -105,6 +171,7 @@ enum PhoneSensoryEngine {
         if haptics {
             playHaptics(cue)
         }
+        return playbackDuration
     }
 
     private static func playHaptics(_ cue: PhoneCue) {
@@ -119,11 +186,11 @@ enum PhoneSensoryEngine {
                 try engine.start()
                 try? hapticPlayer?.stop(atTime: CHHapticTimeImmediate)
                 let events = cue.pulses.map { pulse in
-                    CHHapticEvent(eventType: cue == .message ? .hapticTransient : .hapticContinuous,
+                    CHHapticEvent(eventType: cue == .message || cue == .outgoing || cue == .lock || cue == .unlock ? .hapticTransient : .hapticContinuous,
                                   parameters: [
                                     CHHapticEventParameter(parameterID: .hapticIntensity, value: pulse.intensity),
                                     CHHapticEventParameter(parameterID: .hapticSharpness, value: pulse.sharpness)
-                                  ], relativeTime: pulse.time, duration: cue == .message ? 0 : pulse.duration)
+                                  ], relativeTime: pulse.time, duration: cue == .message || cue == .outgoing || cue == .lock || cue == .unlock ? 0 : pulse.duration)
                 }
                 let pattern = try CHHapticPattern(events: events, parameters: [])
                 hapticPlayer = try engine.makePlayer(with: pattern)
@@ -137,7 +204,7 @@ enum PhoneSensoryEngine {
         }
         let fallback = UINotificationFeedbackGenerator()
         fallback.prepare()
-        fallback.notificationOccurred(cue == .message ? .success : .warning)
+        fallback.notificationOccurred(cue.isHorror ? .warning : .success)
         OpeningQA.record("UIKit haptic requested: " + cue.rawValue)
     }
 
