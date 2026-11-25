@@ -35,3 +35,7 @@ Run 45596340837 compiled successfully and passed iOS version and sound checks. T
 
 ## Roadmap audit checkpoint
 The authoritative checklist now resolves old scope drift and records each unverified or incomplete requirement explicitly. All three Build 27 asset archives are present on L1. The latest run at audit is 45597383815; compilation in progress. Follow BUILD27_ACCEPTANCE.md for release gating, not historical stage descriptions. Documentation only; no runtime changes in this commit.
+
+
+## Approved LumaOS assistant milestone — November 25, 2026
+See [LUMA_ASSISTANT_ROADMAP.md](LUMA_ASSISTANT_ROADMAP.md) for the original Siri-like in-game assistant, actual opt-in iPhone microphone, on-device speech recognition with typed fallback, pre-generated ElevenLabs voice, local actions, story-safe contextual hints, privacy and test gates. OPEN: voice approval, recording production, implementation and physical verification; do not claim it is part of the current running Build 27 IPA. Preserve single consolidated testing approach; no interruption of active packaging for documentation alone. No external runtime service or secret keys, no always-listening microphone, no real OS control, no plot disclosures.

@@ -45,3 +45,7 @@ Creator-approved archive Last-Seen-LumaOS-Foundation-Assets.zip is on L1 (39,594
 
 ## Current handoff — Build 27 consolidated release
 Build 26 v1.5.1 passed CI and packaging, but creator reports Assets.car issue; stop separate physical testing. Build 27 v1.6.0 is the only active physical QA target. Branch feature/last-seen-build27-noras-world; runtime checkpoint 991029ef7169c49194c7ce2d67bfa11a4f26215e. Run 45597383815 in progress at audit; recheck actual status. All approved new packs uploaded. Follow BUILD27_ACCEPTANCE.md first, BUILD27_CONSOLIDATION.md for implementation history, OS_FIRST_ROADMAP.md for older approvals, world bible and continuity for canon. Do not restart the build for documentation alone. Do not disclose plot or placements in reports. No final IPA verified yet.
+
+
+## Approved LumaOS assistant milestone — November 25, 2026
+See [LUMA_ASSISTANT_ROADMAP.md](LUMA_ASSISTANT_ROADMAP.md) for the original Siri-like in-game assistant, actual opt-in iPhone microphone, on-device speech recognition with typed fallback, pre-generated ElevenLabs voice, local actions, story-safe contextual hints, privacy and test gates. OPEN: voice approval, recording production, implementation and physical verification; do not claim it is part of the current running Build 27 IPA. Preserve single consolidated testing approach; no interruption of active packaging for documentation alone. No external runtime service or secret keys, no always-listening microphone, no real OS control, no plot disclosures.
