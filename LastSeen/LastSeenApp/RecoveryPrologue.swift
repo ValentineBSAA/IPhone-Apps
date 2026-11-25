@@ -115,10 +115,10 @@ struct RecoveryPrologue: View {
             VStack(spacing: 0) {
                 header
                 ScrollView {
-                    VStack(spacing: 20) {
+                    VStack(spacing: stage == 1 || stage == 2 ? 11 : 20) {
                         if stage == 0 { connectionArt }
                         else { stageArt }
-                        Text(phaseTitle).font(.system(size: 32, weight: .semibold, design: .rounded)).multilineTextAlignment(.center)
+                        Text(phaseTitle).font(.system(size: stage == 1 || stage == 2 ? 26 : 32, weight: .semibold, design: .rounded)).multilineTextAlignment(.center)
                             .accessibilityAddTraits(.isHeader)
                         Text(detail).font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
@@ -127,7 +127,7 @@ struct RecoveryPrologue: View {
                         if interrupted { interruptionCard }
                         if stage > 0 && stage < 4 { verbosePanel }
                         if stage == 5 { completionInfo }
-                    }.padding(.horizontal, 23).padding(.vertical, 24)
+                    }.padding(.horizontal, 23).padding(.vertical, stage == 1 || stage == 2 ? 8 : 24)
                 }.scrollIndicators(.hidden)
                 actions.padding(.horizontal, 23).padding(.bottom, 12)
                 Text("PATCHLINE  •  DEVICE UTILITY").font(.system(size: 10, weight: .medium, design: .monospaced)).tracking(1.8).foregroundColor(.secondary)
@@ -170,7 +170,7 @@ struct RecoveryPrologue: View {
     private var stageArt: some View {
         let name: String = stage == 1 ? (elapsed < OpeningPace.recognition ? "Opening_USB" : "Opening_Diagnostics")
             : stage == 2 ? "Opening_Install" : stage == 3 ? "Opening_Unlock" : "Opening_Respring"
-        return OpeningArt(name: name, size: stage == 1 || stage == 2 ? 86 : 148)
+        return OpeningArt(name: name, size: stage == 1 || stage == 2 ? 68 : 148)
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: name)
     }
     private var connectionStatus: some View {
