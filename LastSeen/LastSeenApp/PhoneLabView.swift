@@ -42,6 +42,7 @@ struct PhoneLabView: View {
     @State private var recent: [LabApp] = []
     @State private var pendingThread: Neighbor?
     @State private var banner: PhoneAlert?
+    @State private var activityBanner: LumaActivityNotice?
     @State private var observedIncoming: Set<String> = []
     @State private var observedOutgoing: Set<String> = []
     @State private var arrivalTask: Task<Void, Never>?
@@ -123,6 +124,9 @@ struct PhoneLabView: View {
             .navigationDestination(for: PhoneFileRoute.self) { route in
                 PhoneDocumentView(title: route.title).safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
             }
+            .navigationDestination(for: LumaActivityRoute.self) { route in
+                LumaActivityDetail(id: route.id)
+            }
             .navigationDestination(for: LumaCallRoute.self) { route in
                 LumaCallView(neighbor: route.neighbor)
                     .safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
@@ -153,6 +157,12 @@ struct PhoneLabView: View {
                     banner = nil; openThread(alert.neighbor)
                 }.padding(.horizontal, 14).padding(.top, 4)
                     .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .overlay(alignment: .top) {
+            if let notice = activityBanner, banner == nil, !locked, !checkpointReboot, panel == nil, notice.canPresent(in: world.state) {
+                LumaActivityCard(notice: notice, hidePreview: notice.hidePreview(in: world.state)) { openActivity(notice) }
+                    .padding(.horizontal, 14).padding(.top, 4)
             }
         }
         .overlay(alignment: .top) {
@@ -211,6 +221,11 @@ struct PhoneLabView: View {
             do { try await Task.sleep(nanoseconds: 5_000_000_000) } catch { return }
             if banner?.id == id { withAnimation { banner = nil } }
         }
+        .task(id: activityBanner?.id) {
+            guard let id = activityBanner?.id else { return }
+            do { try await Task.sleep(nanoseconds: 5_000_000_000) } catch { return }
+            if activityBanner?.id == id { activityBanner = nil }
+        }
         .onChange(of: messageIDs) { _ in
             let previous = observedIncoming
             let sent = !outgoingIDs.subtracting(observedOutgoing).isEmpty
@@ -250,14 +265,17 @@ struct PhoneLabView: View {
             guard phase == .active else { return }
             while !Task.isCancelled {
                 if !checkpointReboot {
-                    let before = PhoneMailArrival.inboxIDs(in: world.state)
+                    let before = LumaActivityCatalog.allIDs(world.state)
                     world.advancePendingReplies()
-                    if didConfigureFeedback && !PhoneMailArrival.added(in: world.state, previous: before).isEmpty {
-                        PhoneSensoryEngine.play(.general, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects, hapticProfile: .mail)
-                    }
                     if timerBaselineReady && feedbackTimerEnd > 0 && feedbackTimerEnd != feedbackTimerDelivered && feedbackTimerEnd <= Date().timeIntervalSince1970 {
                         feedbackTimerDelivered = feedbackTimerEnd
-                        PhoneSensoryEngine.play(.timerCompleted, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
+                        world.recordTimerActivity(end: feedbackTimerEnd)
+                    }
+                    if didConfigureFeedback {
+                        for notice in LumaActivityCatalog.newEntries(world.state, previous: before) {
+                            PhoneSensoryEngine.play(notice.cue, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects, hapticProfile: notice.profile)
+                            activityBanner = notice
+                        }
                     }
                 }
                 do { try await Task.sleep(nanoseconds: 250_000_000) } catch { return }
@@ -277,7 +295,7 @@ struct PhoneLabView: View {
                 arrivalTask?.cancel(); arrivalTask = nil
                 if value == .background { PhoneSensoryEngine.stop() }
                 else { PhoneSensoryEngine.stopSound(); PhoneSensoryEngine.stopHaptics() }
-                banner = nil
+                banner = nil; activityBanner = nil
             }
         }
         .onChange(of: messageSound) { if !$0 { PhoneSensoryEngine.stopSound() } }
@@ -390,7 +408,7 @@ struct PhoneLabView: View {
             }
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
-                    if !alerts.isEmpty {
+                    if !alerts.isEmpty || !LumaActivityCatalog.visible(world.state).isEmpty {
                         HStack {
                             Text("Notifications").font(.headline)
                             Spacer()
@@ -401,6 +419,9 @@ struct PhoneLabView: View {
                                 pendingThread = alert.neighbor
                                 requestUnlock()
                             }
+                        }
+                        ForEach(LumaActivityCatalog.visible(world.state)) { notice in
+                            LumaActivityCard(notice: notice, hidePreview: true) { pendingThread = nil; requestUnlock() }
                         }
                     } else {
                         Label("No new notifications", systemImage: "bell.slash").font(.caption)
@@ -434,6 +455,19 @@ struct PhoneLabView: View {
         PhoneSensoryEngine.authentication(.unlock, sound: messageSound, haptics: messageHaptics)
         withAnimation(.easeInOut(duration: 0.25)) { locked = false }
         if let neighbor = pendingThread { pendingThread = nil; openThread(neighbor) }
+    }
+
+    private func openActivity(_ notice: LumaActivityNotice) {
+        guard !locked, notice.canPresent(in: world.state) else { return }
+        panel = nil; activityBanner = nil
+        if notice.kind == .timer { open(.clock) }
+        else {
+            if let app = LabApp(rawValue: notice.appTitle) {
+                open(app)
+                path.append(LumaActivityRoute(id: notice.id))
+            }
+        }
+        world.dismissActivity(notice.id)
     }
 
     private func openThread(_ neighbor: Neighbor) {
@@ -887,7 +921,7 @@ struct PhoneLabView: View {
         if saves.restore(slot, into: world) {
             observedIncoming = Set(incomingIDs)
             observedOutgoing = outgoingIDs
-            banner = nil; pendingThread = nil; circuitBanner = false; utilityNotice = nil; observedUtilityFlags = world.state.flags
+            banner = nil; activityBanner = nil; pendingThread = nil; circuitBanner = false; utilityNotice = nil; observedUtilityFlags = world.state.flags
             authContext?.invalidate(); authContext = nil
             showOwnerPasscode = false
             panel = nil
@@ -926,11 +960,18 @@ struct PhoneLabView: View {
                 if RecoveryCircuit.unlocked(world.state.flags) { CircuitNoticeCard() }
                 ForEach(LumaUtility.allCases.filter { world.state.flags.contains($0.flag) }) { tool in UtilityNoticeCard(tool: tool) }
                 Button { panel = nil; open(.settings) } label: { Label("Investigation progress · " + InvestigationProgress.summary(world.state.flags), systemImage: "checklist").frame(maxWidth: .infinity, alignment: .leading).padding(12).lumaSurface() }.buttonStyle(.plain)
+                Text("Recent app activity").font(.subheadline).foregroundColor(.secondary)
+                ForEach(LumaActivityCatalog.visible(world.state)) { notice in
+                    VStack(alignment: .trailing, spacing: 4) {
+                        LumaActivityCard(notice: notice, hidePreview: notice.hidePreview(in: world.state)) { openActivity(notice) }
+                        Button("Dismiss") { world.dismissActivity(notice.id) }.font(.caption)
+                    }
+                }
                 Text("Recent messages").font(.subheadline).foregroundColor(.secondary)
                 ForEach(PhoneAlertCatalog.alerts(in: world.state, unreadOnly: false)) { alert in
                     PhoneNotificationCard(alert: alert) { openThread(alert.neighbor) }
                 }
-                if PhoneAlertCatalog.alerts(in: world.state, unreadOnly: false).isEmpty {
+                if PhoneAlertCatalog.alerts(in: world.state, unreadOnly: false).isEmpty && LumaActivityCatalog.visible(world.state).isEmpty {
                     Text("You're all caught up.").foregroundColor(.secondary)
                 }
             }.padding(16)

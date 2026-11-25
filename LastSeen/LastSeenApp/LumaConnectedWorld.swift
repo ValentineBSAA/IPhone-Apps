@@ -63,6 +63,8 @@ struct LumaConnectedState:Codable,Equatable {
     var comments:[LumaSocialComment]=[]
     var posts:[LumaSocialPost]=[]
     var socialPreferences: [String: LumaSocialPreferences]? = nil
+    var activityJournal: [LumaActivityNotice]? = nil
+    var pendingSocialReplies: [LumaPendingSocialReply]? = nil
     var workbenchConnected=false
     var workbenchSelections:[String:[String]]=[:]
     var workbenchVerified:Set<String>=[]

@@ -271,6 +271,7 @@ final class PhoneWorldStore: ObservableObject {
     func advancePendingReplies(now: Date = Date()) {
         advanceInvestigation(now: now)
         advanceConnectedMail(now: now)
+        advanceSocialReplies(now: now)
         let pending = state.pendingReplies ?? []
         guard !pending.isEmpty else { return }
         var changed = false
@@ -589,7 +590,10 @@ final class PhoneWorldStore: ObservableObject {
         var c=connected
         let due=c.pendingMail.filter{$0.dueAt<=now}
         guard !due.isEmpty else{return}
-        for entry in due where !c.mail.contains(where:{$0.id==entry.record.id}) { c.mail.append(entry.record) }
+        for entry in due where !c.mail.contains(where:{$0.id==entry.record.id}) {
+            c.mail.append(entry.record)
+            addActivity(.init(id: "mail-" + entry.record.id, kind: .mail, date: entry.dueAt, title: entry.record.sender, detail: entry.record.subject, targetID: entry.record.id, channel: nil, author: nil), to: &c)
+        }
         c.pendingMail.removeAll{$0.dueAt<=now}
         commitConnected(c)
     }
@@ -600,6 +604,43 @@ final class PhoneWorldStore: ObservableObject {
         if folder=="original" {c.mailFolders.removeValue(forKey:id)}
         else {c.mailFolders[id]=folder}
         commitConnected(c)
+    }
+    private func addActivity(_ notice: LumaActivityNotice, to value: inout LumaConnectedState) {
+        var journal = value.activityJournal ?? []
+        guard !journal.contains(where: { $0.id == notice.id }) else { return }
+        journal.append(notice)
+        value.activityJournal = Array(journal.suffix(200))
+    }
+    func dismissActivity(_ id: String) {
+        var value = connected
+        guard let index = value.activityJournal?.firstIndex(where: { $0.id == id }) else { return }
+        value.activityJournal?[index].dismissed = true
+        commitConnected(value)
+    }
+    func recordTimerActivity(end: Double) {
+        guard end.isFinite, end > 0 else { return }
+        var value = connected
+        addActivity(.init(id: "timer-" + String(end), kind: .timer, date: Date(timeIntervalSince1970: end), title: "Timer finished", detail: "Your timer has ended.", targetID: nil, channel: nil, author: nil), to: &value)
+        commitConnected(value)
+    }
+    func advanceSocialReplies(now: Date = Date()) {
+        var value = connected
+        let pending = value.pendingSocialReplies ?? []
+        let due = pending.filter { $0.dueAt <= now }.sorted { ($0.dueAt, $0.reply.id) < ($1.dueAt, $1.reply.id) }
+        guard !due.isEmpty else { return }
+        for event in due {
+            guard value.comments.count < 300,
+                  !value.comments.contains(where: { $0.id == event.reply.id }),
+                  LumaSocialCatalog.visible(event.channel, world: state).contains(where: { $0.id == event.reply.postID }) else { continue }
+            value.comments.append(event.reply)
+            let prefs = value.socialPreferences?[event.channel.rawValue] ?? LumaSocialPreferences()
+            if prefs.notificationsEnabled && !prefs.mutedAuthors.contains(event.reply.author) {
+                addActivity(.init(id: "social-" + event.reply.id, kind: .social, date: event.dueAt, title: event.reply.author + " replied", detail: event.reply.body, targetID: event.reply.postID, channel: event.channel, author: event.reply.author), to: &value)
+            }
+        }
+        let delivered = Set(due.map { $0.reply.id })
+        value.pendingSocialReplies = pending.filter { !delivered.contains($0.reply.id) }
+        commitConnected(value)
     }
     func socialPreferences(_ channel: LumaSocialChannel) -> LumaSocialPreferences {
         connected.socialPreferences?[channel.rawValue] ?? LumaSocialPreferences()
@@ -634,10 +675,18 @@ final class PhoneWorldStore: ObservableObject {
     @discardableResult
     func commentSocial(postID:String,channel:LumaSocialChannel,text:String,now:Date=Date())->Bool {
         let message=text.trimmingCharacters(in:.whitespacesAndNewlines)
-        guard !message.isEmpty,message.count<=600,LumaSocialCatalog.visible(channel,world:state).contains(where:{$0.id==postID}) else{return false}
+        guard !message.isEmpty,message.count<=600,let post = LumaSocialCatalog.visible(channel,world:state).first(where:{$0.id==postID}) else{return false}
         var c=connected
         guard c.comments.count<300 else{return false}
-        c.comments.append(LumaSocialComment(id:UUID().uuidString,postID:postID,author:"Repair desk",body:message,date:now))
+        let id = UUID().uuidString
+        let hasPriorLocalComment = c.comments.contains { $0.postID == postID && $0.author == "Repair desk" }
+        c.comments.append(LumaSocialComment(id:id,postID:postID,author:"Repair desk",body:message,date:now))
+        var pending = c.pendingSocialReplies ?? []
+        if !hasPriorLocalComment, pending.count < 12,
+           let reply = LumaActivityCatalog.communityReply(post: post, text: message, id: id, now: now) {
+            pending.append(reply)
+            c.pendingSocialReplies = pending
+        }
         commitConnected(c); return true
     }
     @discardableResult

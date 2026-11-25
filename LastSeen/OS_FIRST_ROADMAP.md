@@ -98,3 +98,7 @@ Offline fictional LumaOS, iOS 16 minimum, iPhone 16e primary. No real device cha
 ## Community artwork intake 03
 - [x] ACQUIRED: four more synthetic adult portraits, four illustrated pet/hobby avatars, six illustrated creator/business profile candidates, source hashes and license files retained. 42 assets acquired overall; 9 assigned in source, remaining reserves not integrated. Generic artwork is not a custom business logo.
 - [ ] Eight OpenPeople casual selfies reviewed and linked in manifest; conflicting license/disclaimer must be resolved before distribution. Original brand identities, asset bundling, assignment and CI remain open. See CommunityPortraits/Intake03.
+
+## B32 tranche 04 — persistent local activity
+- [x] SOURCE: mail and timer arrivals create persistent deduplicated activity records; limited authored replies to first supported community comments are delayed, saved, and honor app notification/mute preferences. Notification center, redacted locked-phone activity, foreground app banner, tap route and dismissal; uses shared tactile profiles, no real push/network. Existing Messages notifications preserved. New tests authored, not executed.
+- [ ] Remaining shared notification producers (calls, voicemail, broader social, Motionwell, Dayblink, HavenWatch), full per-app history/read/badges, private gate audit, narrative, asset intake and integrated testing remain OPEN. No workflow dispatch, no IPA. All prior Build 32 requirements remain mandatory.
