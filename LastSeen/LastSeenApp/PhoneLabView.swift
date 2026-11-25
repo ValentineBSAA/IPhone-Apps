@@ -783,27 +783,61 @@ private struct LabPhotosView: View {
 }
 
 private struct LabClockView: View {
-    @State private var started: Date?
-    @State private var elapsed: TimeInterval = 0
+    @State private var tab = 0
+    @AppStorage("lastseen.lab.stopwatchStart") private var started = 0.0
+    @AppStorage("lastseen.lab.stopwatchElapsed") private var elapsed = 0.0
+    @AppStorage("lastseen.lab.timerEnd") private var timerEnd = 0.0
+    @AppStorage("lastseen.lab.timerMinutes") private var minutes = 5
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.1)) { context in
-            VStack(spacing: 28) {
-                Text(context.date, style: .time).font(.system(size: 60, weight: .thin)).monospacedDigit()
-                Text(context.date, format: .dateTime.weekday(.wide).month().day())
-                Divider()
-                Text("Stopwatch").font(.headline)
-                Text(String(format: "%.1f s", elapsed + (started.map { context.date.timeIntervalSince($0) } ?? 0)))
-                    .font(.system(size: 48, weight: .light)).monospacedDigit()
-                HStack {
-                    Button(started == nil ? "Start" : "Stop") {
-                        if let start = started { elapsed += Date().timeIntervalSince(start); started = nil }
-                        else { started = Date() }
-                    }.buttonStyle(.borderedProminent)
-                    Button("Reset") { started = nil; elapsed = 0 }.buttonStyle(.bordered)
-                }
-                Spacer()
-            }.padding()
-        }.navigationTitle("Clock")
+        VStack(spacing: 18) {
+            Picker("Clock mode", selection: $tab) {
+                Text("Clock").tag(0)
+                Text("Stopwatch").tag(1)
+                Text("Timer").tag(2)
+            }.pickerStyle(.segmented)
+            TimelineView(.periodic(from: .now, by: tab == 1 ? 0.1 : 1)) { context in
+                let timestamp = context.date.timeIntervalSince1970
+                VStack(spacing: 22) {
+                    Spacer()
+                    if tab == 0 {
+                        Image(systemName: "clock").font(.system(size: 62, weight: .thin)).foregroundColor(.teal)
+                        Text(context.date, style: .time).font(.system(size: 60, weight: .thin)).monospacedDigit()
+                        Text(context.date, format: .dateTime.weekday(.wide).month(.wide).day())
+                    } else if tab == 1 {
+                        Text(String(format: "%.1f", elapsed + (started > 0 ? max(0, timestamp - started) : 0)))
+                            .font(.system(size: 56, weight: .thin)).monospacedDigit()
+                        Text("Seconds").font(.caption).foregroundColor(.secondary)
+                        HStack {
+                            Button("Reset") { started = 0; elapsed = 0 }.buttonStyle(.bordered)
+                            Spacer()
+                            Button(started > 0 ? "Stop" : "Start") {
+                                let now = Date().timeIntervalSince1970
+                                if started > 0 { elapsed += max(0, now - started); started = 0 }
+                                else { started = now }
+                            }.buttonStyle(.borderedProminent)
+                        }
+                    } else {
+                        let remaining = timerEnd > 0 ? max(0, Int(ceil(timerEnd - timestamp))) : minutes * 60
+                        ZStack {
+                            Circle().stroke(.white.opacity(0.12), lineWidth: 7)
+                            Circle().trim(from: 0, to: min(1, Double(remaining) / Double(max(1, minutes * 60))))
+                                .stroke(Color.teal, style: StrokeStyle(lineWidth: 7, lineCap: .round)).rotationEffect(.degrees(-90))
+                            Text(String(format: "%02d:%02d", remaining / 60, remaining % 60))
+                                .font(.system(size: 47, weight: .light)).monospacedDigit()
+                        }.frame(width: 210, height: 210)
+                        if timerEnd == 0 {
+                            Stepper("\(minutes) minutes", value: $minutes, in: 1...60)
+                            Button("Start timer") { timerEnd = Date().timeIntervalSince1970 + Double(minutes * 60) }.buttonStyle(.borderedProminent)
+                        } else {
+                            if remaining == 0 { Text("Timer finished").font(.headline).foregroundColor(.teal) }
+                            Button(remaining == 0 ? "Done" : "Cancel timer") { timerEnd = 0 }.buttonStyle(.bordered)
+                        }
+                        Text("In-phone timer • No real alarm is scheduled").font(.caption2).foregroundColor(.secondary)
+                    }
+                    Spacer()
+                }.frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }.padding(20).navigationTitle("Clock")
     }
 }
 
@@ -967,7 +1001,7 @@ private struct LabBrowserView: View {
                     Image(systemName: selected.map { entries(bookmarks).contains($0) } == true ? "bookmark.fill" : "bookmark")
                 }.disabled(selected == nil)
             }.font(.title3).padding(.horizontal, 25).padding(.vertical, 14)
-            Text(wifi ? "Saved sites • Wi-Fi enabled in game" : "Saved sites • Wi-Fi disabled in game").font(.caption2).foregroundColor(.secondary).padding(.bottom, 4)
+            Text(wifi ? "Saved pages • Offline browser" : "Saved pages • Wi-Fi off").font(.caption2).foregroundColor(.secondary).padding(.bottom, 4)
         }
         .navigationTitle("Browser").navigationBarTitleDisplayMode(.inline)
         .onAppear {
