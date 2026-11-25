@@ -777,7 +777,7 @@ struct PhoneLabView: View {
                 Image(app == .patchline ? "Jailbreak_Patchline" : "Jailbreak_Relay").resizable().scaledToFit()
             } else if !safeMode,(tealTheme || (utilityActive(.afterglowstudio) && utilityTheme)),let asset=ApprovedArt.themeName(for:app.rawValue) {
                 Image(asset).resizable().scaledToFit()
-            } else if let art=app.foundationIcon {
+            } else if let art=app.foundationIcon, UIImage(named: art) != nil {
                 Image(art).resizable().scaledToFit()
             } else {
                 RoundedRectangle(cornerRadius:size*0.26)
@@ -791,8 +791,9 @@ struct PhoneLabView: View {
             VStack(spacing:5) {
                 ZStack(alignment:.topTrailing) {
                     appArtwork(app,size:size)
-                    if app == .messages && unread>0 && !tweak("quietbadges") {
-                        Text("\(unread)").font(.caption2.bold()).padding(5)
+                    let count = app == .messages ? unread : LumaActivityCatalog.visible(world.state).filter { $0.appTitle == app.rawValue }.count
+                    if count > 0 && !tweak("quietbadges") {
+                        Text("\(count)").font(.caption2.bold()).padding(5)
                             .background(.red,in:Capsule()).offset(x:5,y:-5)
                     }
                 }
@@ -1088,6 +1089,7 @@ struct PhoneLabView: View {
         case .connective: LumaSocialView(channel:.connective)
         case .commonGround: LumaSocialView(channel:.commonGround)
         case .havenWatch: HavenWatchView()
+        case .dayblink: DayblinkView()
         case .workstation: LumaWorkbenchView(openRelay:{open(.relay)},openFiles:{open(.files)})
         case .photos: LabPhotosView()
         case .clock: LabClockView()
@@ -1108,7 +1110,7 @@ private enum LabPanel: String, Identifiable {
 }
 
 enum LabApp: String, CaseIterable, Identifiable {
-    case fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves", afterframe = "Afterframe", connective = "Connective", commonGround = "CommonGround", workstation = "Workstation", havenWatch = "HavenWatch"
+    case fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves", afterframe = "Afterframe", connective = "Connective", commonGround = "CommonGround", workstation = "Workstation", havenWatch = "HavenWatch", dayblink = "Dayblink"
     var foundationIcon: String? {
         if self == .fieldNotes { return "Jailbreak_FieldNotes" }
         if self == .relay || self == .patchline || self == .workstation { return nil }
@@ -1139,6 +1141,7 @@ enum LabApp: String, CaseIterable, Identifiable {
         case .commonGround: return "bubble.left.and.bubble.right.fill"
         case .workstation: return "desktopcomputer"
         case .havenWatch: return "video.fill"
+        case .dayblink: return "camera.fill"
         }
     }
     var color: Color {
@@ -1164,6 +1167,7 @@ enum LabApp: String, CaseIterable, Identifiable {
         case .commonGround: return .teal
         case .workstation: return .gray
         case .havenWatch: return .cyan
+        case .dayblink: return .yellow
         }
     }
 }

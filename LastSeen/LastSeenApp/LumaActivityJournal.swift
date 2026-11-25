@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Fictional local activity. No real push messages, network or OS notification access.
 struct LumaActivityNotice: Codable, Equatable, Identifiable {
-    enum Kind: String, Codable { case mail, social, timer }
+    enum Kind: String, Codable { case mail, social, timer, dayblink }
     let id: String
     let kind: Kind
     let date: Date
@@ -17,6 +17,7 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
         case .mail: return "Mail"
         case .social: return channel?.rawValue ?? "Social"
         case .timer: return "Clock"
+        case .dayblink: return "Dayblink"
         }
     }
     var symbol: String {
@@ -24,13 +25,14 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
         case .mail: return "envelope.fill"
         case .social: return "bubble.left.and.bubble.right.fill"
         case .timer: return "timer"
+        case .dayblink: return "camera.fill"
         }
     }
     var cue: PhoneCue { kind == .timer ? .timerCompleted : .general }
     var profile: PhoneHapticProfile {
         switch kind {
         case .mail: return .mail
-        case .social: return .social
+        case .social, .dayblink: return .social
         case .timer: return .cue(.timerCompleted)
         }
     }
@@ -46,9 +48,16 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
             return prefs.notificationsEnabled && !(author.map { prefs.mutedAuthors.contains($0) } ?? false)
                 && LumaSocialCatalog.visible(channel, world: state).contains { $0.id == targetID }
         case .timer: return true
+        case .dayblink:
+            guard state.everydayArchiveRevision != nil, let targetID, let d = state.connectedWorld?.dayblink,
+                  d.notificationsEnabled,
+                  let record = d.messages.first(where: { $0.id == targetID }),
+                  !d.muted.contains(record.friend) else { return false }
+            return DayblinkArchive.image(for: record, state: d) != nil
         }
     }
     func hidePreview(in state: PhoneWorld) -> Bool {
+        if kind == .dayblink { return !(state.connectedWorld?.dayblink?.previewsEnabled ?? false) }
         guard let channel else { return false }
         return !(state.connectedWorld?.socialPreferences?[channel.rawValue]?.showPreviews ?? true)
     }
@@ -126,6 +135,10 @@ struct LumaActivityDetail: View {
                 else { Text("Discussion unavailable") }
             case .timer:
                 Text("Your timer has finished.").padding().navigationTitle("Clock")
+            case .dayblink:
+                if let author = notice.author, let friend = DayblinkFriend(rawValue: author) {
+                    DayblinkThread(friend: friend)
+                } else { Text("Conversation unavailable") }
             }
         } else { Text("Activity unavailable").padding() }
     }

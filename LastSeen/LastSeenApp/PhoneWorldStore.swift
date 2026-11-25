@@ -272,6 +272,7 @@ final class PhoneWorldStore: ObservableObject {
         advanceInvestigation(now: now)
         advanceConnectedMail(now: now)
         advanceSocialReplies(now: now)
+        advanceDayblink(now: now)
         let pending = state.pendingReplies ?? []
         guard !pending.isEmpty else { return }
         var changed = false
@@ -641,6 +642,61 @@ final class PhoneWorldStore: ObservableObject {
         let delivered = Set(due.map { $0.reply.id })
         value.pendingSocialReplies = pending.filter { !delivered.contains($0.reply.id) }
         commitConnected(value)
+    }
+    func setDayblinkNotificationSettings(enabled: Bool, previews: Bool) {
+        guard state.everydayArchiveRevision != nil else { return }
+        var c = connected
+        var d = c.dayblink ?? DayblinkState()
+        d.notificationsEnabled = enabled; d.previewsEnabled = previews
+        c.dayblink = d; commitConnected(c)
+    }
+    func setDayblinkMuted(_ friend: DayblinkFriend, muted: Bool) {
+        guard state.everydayArchiveRevision != nil else { return }
+        var c = connected
+        var d = c.dayblink ?? DayblinkState()
+        if muted { d.muted.insert(friend) } else { d.muted.remove(friend) }
+        c.dayblink = d; commitConnected(c)
+    }
+    @discardableResult
+    func openDayblink(_ id: String, friend: DayblinkFriend) -> Bool {
+        var c = connected
+        var d = c.dayblink ?? DayblinkState()
+        guard let record = DayblinkArchive.records(state, friend: friend).first(where: { $0.id == id }),
+              record.temporary, DayblinkArchive.image(for: record, state: d) != nil else { return false }
+        d.opened.insert(id)
+        c.dayblink = d
+        if let index = c.activityJournal?.firstIndex(where: { $0.id == "dayblink-" + id }) { c.activityJournal?[index].dismissed = true }
+        commitConnected(c)
+        return true
+    }
+    @discardableResult
+    func sendDayblink(friend: DayblinkFriend, text: String, now: Date = Date()) -> Bool {
+        let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard state.everydayArchiveRevision != nil, !clean.isEmpty, clean.count <= 500 else { return false }
+        var c = connected
+        var d = c.dayblink ?? DayblinkState()
+        guard d.messages.count + d.pending.count < 200 else { return false }
+        let id = UUID().uuidString
+        let responded = d.messages.contains { $0.friend == friend && $0.id.hasPrefix("dayblink-reply-") } || d.pending.contains { $0.record.friend == friend }
+        d.messages.append(.init(id: id, friend: friend, sender: "Repair desk", text: clean, date: now))
+        if !responded, let pending = DayblinkArchive.pendingReply(friend: friend, text: clean, id: id, now: now) { d.pending.append(pending) }
+        c.dayblink = d; commitConnected(c)
+        return true
+    }
+    func advanceDayblink(now: Date = Date()) {
+        guard state.everydayArchiveRevision != nil, var d = connected.dayblink else { return }
+        let due = d.pending.filter { $0.due <= now }.sorted { ($0.due, $0.record.id) < ($1.due, $1.record.id) }
+        guard !due.isEmpty else { return }
+        var c = connected
+        for event in due where !d.messages.contains(where: { $0.id == event.record.id }) {
+            d.messages.append(event.record)
+            if d.notificationsEnabled && !d.muted.contains(event.record.friend) {
+                addActivity(.init(id: "dayblink-" + event.record.id, kind: .dayblink, date: event.due, title: event.record.friend.name, detail: "Sent a visual message", targetID: event.record.id, channel: nil, author: event.record.friend.id), to: &c)
+            }
+        }
+        let delivered = Set(due.map { $0.record.id })
+        d.pending.removeAll { delivered.contains($0.record.id) }
+        c.dayblink = d; commitConnected(c)
     }
     func setHavenWatch(_ preferences: HavenWatchPreferences) {
         guard state.everydayArchiveRevision != nil else { return }
