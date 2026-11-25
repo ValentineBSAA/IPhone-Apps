@@ -6,7 +6,8 @@ struct PhoneSetupRoot: View {
     @AppStorage("lastseen.setup.progress") private var progress = 0
     @AppStorage("lastseen.setup.device") private var device = "My phone"
     @AppStorage("lastseen.lab.wallpaper") private var wallpaper = 0
-    @AppStorage("lastseen.lab.biometricUnlock") private var biometricUnlock = false
+    @AppStorage("lastseen.security.ownerVerified") private var ownerVerified = false
+    @AppStorage("lastseen.security.appearanceEnrolled") private var appearanceEnrolled = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let restoreLabels = ["Preparing your phone", "Restoring contacts", "Restoring messages", "Restoring photos", "Preparing applications", "Finishing setup"]
@@ -18,7 +19,7 @@ struct PhoneSetupRoot: View {
     var body: some View {
         Group {
             if stage >= 5 {
-                PhoneLabView(startUnlocked: justRestored && !biometricUnlock)
+                PhoneLabView(startUnlocked: justRestored && !OwnerSecurityPolicy.canUseBiometrics(ownerVerified: ownerVerified, appearanceEnrolled: appearanceEnrolled))
             } else {
                 setup
             }

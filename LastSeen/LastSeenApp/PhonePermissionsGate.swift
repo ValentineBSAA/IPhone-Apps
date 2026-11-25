@@ -5,13 +5,13 @@ import UserNotifications
 /// Out-of-fiction consent before the welcome screen; never requests unrelated permissions.
 struct PhonePermissionsGate: View {
     @AppStorage("lastseen.permissions.reviewed.v1") private var reviewed = false
-    @AppStorage("lastseen.lab.biometricUnlock") private var biometrics = false
+    @AppStorage("lastseen.permissions.biometricPrepared") private var biometrics = false
     @AppStorage("lastseen.lab.nativeAlerts") private var alerts = false
     @State private var busy = false
     @State private var feedback = ""
     var body: some View {
         if reviewed {
-            PhoneSetupRoot()
+            RecoveryPrologue()
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
@@ -19,8 +19,8 @@ struct PhonePermissionsGate: View {
                     Text("Before you begin").font(.largeTitle.bold())
                     Text("Last Seen is a fictional horror game. The phone, backup, messages and media are created for the game. Your real contacts, photos, messages and cloud account are never accessed.")
                         .foregroundColor(.secondary)
-                    permission("faceid", "Biometric unlock", "Optional. Authenticate with your enrolled Face ID or Touch ID to unlock the in-game phone.", biometrics)
-                    Button(biometrics ? "Turn off biometric unlock" : "Enable biometric unlock") {
+                    permission("faceid", "Biometric unlock", "Optional. Prepare Face ID or Touch ID for later use. The previous owner’s protected records still require their fictional passcode.", biometrics)
+                    Button(biometrics ? "Turn off biometric preparation" : "Prepare biometric access") {
                         if biometrics { biometrics = false; feedback = "" } else { authenticate() }
                     }.buttonStyle(.bordered).disabled(busy)
                     Divider()
@@ -35,7 +35,7 @@ struct PhonePermissionsGate: View {
                     Button {
                         reviewed = true
                     } label: {
-                        Text("Continue to phone setup").font(.headline).frame(maxWidth: .infinity).padding(12)
+                        Text("Continue to service workstation").font(.headline).frame(maxWidth: .infinity).padding(12)
                     }.buttonStyle(.borderedProminent).tint(.teal).disabled(busy)
                     Text("Both features are optional. You can change your choices later. No real biometrics are stored by the game.").font(.footnote).foregroundColor(.secondary)
                 }.padding(25)
@@ -63,11 +63,11 @@ struct PhonePermissionsGate: View {
         }
         context.localizedFallbackTitle = ""
         busy = true
-        context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Enable biometric unlock for your fictional Last Seen phone.") { success, _ in
+        context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Prepare optional biometric authentication for Last Seen.") { success, _ in
             DispatchQueue.main.async {
                 biometrics = success
                 busy = false
-                feedback = success ? "Biometric unlock enabled." : "Authentication was not completed. You can continue."
+                feedback = success ? "Biometrics prepared for later use." : "Authentication was not completed. You can continue."
             }
         }
     }
@@ -85,7 +85,9 @@ struct PhonePermissionsGate: View {
 struct PhoneWallpaper: View {
     let selection: Int
     var body: some View {
-        let colors: [Color] = selection == 1
+        let colors: [Color] = selection == 2
+            ? [Color(red: 0.10, green: 0.23, blue: 0.45), Color(red: 0.035, green: 0.055, blue: 0.15)]
+            : selection == 1
             ? [Color(red: 0.34, green: 0.18, blue: 0.32), Color(red: 0.12, green: 0.12, blue: 0.22)]
             : [Color(red: 0.14, green: 0.34, blue: 0.41), Color(red: 0.07, green: 0.12, blue: 0.24)]
         GeometryReader { proxy in
