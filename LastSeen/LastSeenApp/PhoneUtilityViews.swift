@@ -257,7 +257,8 @@ struct PhoneNoteEditorView: View {
 
 struct PhoneCalendarView: View {
     @EnvironmentObject private var world: PhoneWorldStore
-    @State private var selectedDay = Date()
+    @State private var selectedDay: Date
+    init(initialDay: Date = Date()) { _selectedDay = State(initialValue: initialDay) }
 
     private var matching: [PhoneEvent] {
         world.state.events
@@ -276,6 +277,7 @@ struct PhoneCalendarView: View {
                     .padding(10)
                     .background(Night.surface, in: RoundedRectangle(cornerRadius: 18))
 
+                Button("Today") { selectedDay = Date() }.buttonStyle(.bordered)
                 Text("Scheduled")
                     .font(.system(size: 19, weight: .semibold))
                 if matching.isEmpty {
@@ -303,6 +305,20 @@ struct PhoneCalendarView: View {
                     }
                 }
 
+                Text("Upcoming events").font(.headline).padding(.top, 6)
+                ForEach(world.state.events.filter { $0.endsAt >= Date() }.sorted { $0.startsAt < $1.startsAt }) { event in
+                    Button { selectedDay = event.startsAt } label: {
+                        HStack {
+                            Image(systemName: "calendar").foregroundColor(Night.accent)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(event.title).font(.subheadline.bold())
+                                Text(event.startsAt, format: .dateTime.month().day().hour().minute()).font(.caption).foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.caption)
+                        }.padding(12).background(Night.surface, in: RoundedRectangle(cornerRadius: 12))
+                    }.buttonStyle(.plain)
+                }
             }
             .padding(18)
         }
@@ -330,6 +346,13 @@ struct PhoneMailView: View {
         _readIDs = AppStorage(wrappedValue: "", lab ? "lastseen.restored.mail.read" : "lastseen.mail.read")
     }
     @State private var selected: String?
+    @State private var search = ""
+    @State private var unreadOnly = false
+    private var filteredMail: [PhoneMailItem] {
+        mails.filter { mail in
+            (!unreadOnly || !isRead(mail)) && (search.isEmpty || [mail.from, mail.subject, mail.body].contains { $0.localizedCaseInsensitiveContains(search) })
+        }
+    }
 
     private var mails: [PhoneMailItem] {
         let date = world.state.createdAt
@@ -351,7 +374,14 @@ struct PhoneMailView: View {
 
     var body: some View {
         List {
-            ForEach(mails) { mail in
+            Section {
+                Picker("Mailbox", selection: $unreadOnly) {
+                    Text("All mail").tag(false)
+                    Text("Unread").tag(true)
+                }.pickerStyle(.segmented)
+            }
+            if filteredMail.isEmpty { Text("No matching mail").foregroundColor(.secondary) }
+            ForEach(filteredMail) { mail in
                 Button {
                     selected = mail.id
                     if !readIDs.split(separator: "|").contains(Substring(mail.id)) {
@@ -360,6 +390,7 @@ struct PhoneMailView: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
+                            if !isRead(mail) { Circle().fill(Color.blue).frame(width: 8, height: 8) }
                             Text(mail.from)
                                 .font(.system(size: 16, weight: isRead(mail) ? .regular : .bold))
                             Spacer()
@@ -384,6 +415,7 @@ struct PhoneMailView: View {
         .scrollContentBackground(.hidden)
         .background(Night.background.ignoresSafeArea())
         .navigationTitle("Mail")
+        .searchable(text: $search, prompt: "Search mail")
         .sheet(item: Binding<MailSelection?>(
             get: { selected.map(MailSelection.init(id:)) },
             set: { selected = $0?.id }
