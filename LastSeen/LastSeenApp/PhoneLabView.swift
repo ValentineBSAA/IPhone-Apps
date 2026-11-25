@@ -21,7 +21,7 @@ struct PhoneLabView: View {
     @State private var didConfigureFeedback = false
     @State private var tutorialReplay = 0
     @State private var confirmTutorialReplay = false
-    private var tutorialDeliveryID: String { "\(phase == .active)-\(tutorialReplay)" }
+    private var tutorialDeliveryID: String { "\(didConfigureFeedback)-\(phase == .active)-\(tutorialReplay)" }
     @State private var searchQuery = ""
     @AppStorage("lastseen.lab.hideLockPreviews") private var hideLockPreviews = false
     private var alerts: [PhoneAlert] { PhoneAlertCatalog.alerts(in: world.state, unreadOnly: true) }
@@ -134,7 +134,7 @@ struct PhoneLabView: View {
         .onChange(of: horrorEffects) { if !$0 { PhoneSensoryEngine.stop() } }
         .onDisappear { PhoneSensoryEngine.stop() }
         .task(id: tutorialDeliveryID) {
-            guard phase == .active, !world.tutorialStarted else { return }
+            guard didConfigureFeedback, phase == .active, !world.tutorialStarted else { return }
             do { try await Task.sleep(nanoseconds: 1_500_000_000) } catch { return }
             guard !Task.isCancelled, phase == .active, !world.tutorialStarted else { return }
             world.startPhoneTutorial()
