@@ -45,50 +45,57 @@ enum RestartPhase: Equatable {
     }
 }
 
-/// A minimal full-screen restart cutscene with no real system operations.
+/// Original cinematic restart. No actual process or device is restarted.
 struct RestartArtwork: View {
     let phase: RestartPhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var entered = Date()
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            if phase == .userspace {
-                VStack(spacing: 26) {
-                    TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { context in
-                        let t = context.date.timeIntervalSinceReferenceDate
-                        let pulse = reduceMotion ? 0.0 : (sin(t * 2.4) + 1) / 2
-                        OpeningArt(name: "Opening_Reboot", size: 128)
-                            .scaleEffect(1 + pulse * 0.035)
-                            .shadow(color: .cyan.opacity(0.08 + pulse * 0.20), radius: 22)
-                    }
-                    Text("PATCHLINE").font(.system(size: 12, weight: .medium, design: .monospaced))
-                        .tracking(5).foregroundColor(.white.opacity(0.75))
-                    TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { context in
-                        let t = context.date.timeIntervalSinceReferenceDate
-                        let travel = reduceMotion ? 0.5 : (sin(t * 2) + 1) / 2
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(.white.opacity(0.12)).frame(width: 110, height: 3)
-                            Capsule().fill(.white.opacity(0.9)).frame(width: 30, height: 3).offset(x: 80 * travel)
-                        }
-                    }.accessibilityHidden(true)
-                }.transition(.opacity)
-            } else if phase == .respring {
-                VStack(spacing: 16) {
-                    TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { context in
-                        let step = reduceMotion ? 0 : Int(context.date.timeIntervalSinceReferenceDate * 12) % 12
+            if phase != .black {
+                TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: reduceMotion)) { context in
+                    let t = max(0, context.date.timeIntervalSince(entered))
+                    let reveal = reduceMotion ? 1.0 : min(1, t / 0.65)
+                    let spin = reduceMotion ? 0.0 : t * 165
+                    if phase == .userspace {
+                        VStack(spacing: 23) {
+                            ZStack {
+                                Circle().stroke(Color.white.opacity(0.08), lineWidth: 1).frame(width: 148, height: 148)
+                                Circle().trim(from: 0, to: 0.22)
+                                    .stroke(AngularGradient(colors: [.clear, .teal, .white], center: .center), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                                    .frame(width: 148, height: 148).rotationEffect(.degrees(spin))
+                                OpeningArt(name: "Opening_Reboot", size: 104)
+                                    .scaleEffect(reduceMotion ? 1 : 0.96 + reveal * 0.04)
+                                    .shadow(color: .teal.opacity(0.22), radius: 22)
+                            }
+                            Text("PATCHLINE").font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .tracking(5).foregroundColor(.white.opacity(0.74))
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(.white.opacity(0.12)).frame(width: 112, height: 3)
+                                Capsule().fill(.white.opacity(0.88)).frame(width: 112 * (reduceMotion ? 0.6 : min(1, t / 5.5)), height: 3)
+                            }.accessibilityHidden(true)
+                        }.opacity(reveal)
+                    } else {
                         ZStack {
+                            Circle().stroke(.white.opacity(0.06), lineWidth: 1).frame(width: 66, height: 66)
+                            ZStack {
                             ForEach(0..<12, id: \.self) { index in
-                                Capsule().fill(Color.white.opacity(Double((index - step + 12) % 12 + 1) / 12))
-                                    .frame(width: 3, height: 10)
-                                    .offset(y: -15)
+                                Capsule()
+                                    .fill(Color.white.opacity(Double(index + 1) / 12))
+                                    .frame(width: 4, height: 13)
+                                    .offset(y: -22)
                                     .rotationEffect(.degrees(Double(index) * 30))
                             }
-                        }.frame(width: 44, height: 44)
+                            }.rotationEffect(.degrees(reduceMotion ? 0 : t * 300))
+                        }.frame(width: 68, height: 68)
+                            .scaleEffect(reduceMotion ? 1 : 0.78 + reveal * 0.22)
+                            .opacity(reveal)
                     }
-                    Text("Respring").font(.caption2).foregroundColor(.white.opacity(0.45))
                 }.transition(.opacity)
             }
-        }
+        }.onAppear { entered = Date() }
+            .onChange(of: phase) { _ in entered = Date() }
     }
 }
 
@@ -118,6 +125,40 @@ struct ThemeRespringView: View {
                 guard !Task.isCancelled, !finished else { return }
                 finished = true
                 OpeningQA.record("Theme respring completed")
+                onComplete()
+            }
+            .onChange(of: scenePhase) { value in if value == .background { RestartAudio.stop() } }
+            .onDisappear { RestartAudio.stop() }
+    }
+}
+
+
+/// Same cinematic userspace sequence, available from Relay after installation.
+struct RelayUserspaceView: View {
+    let onComplete: () -> Void
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("lastseen.recovery.effects") private var effects = true
+    @State private var seconds = 0
+    var body: some View {
+        RestartArtwork(phase: RestartPhase.opening(at: seconds))
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.65), value: RestartPhase.opening(at: seconds))
+            .statusBar(hidden: true)
+            .interactiveDismissDisabled()
+            .accessibilityLabel("Userspace reboot")
+            .task {
+                OpeningQA.record("Relay userspace restart started")
+                RestartAudio.play("UserspaceDown", enabled: effects)
+                while seconds < 15 && !Task.isCancelled {
+                    do { try await Task.sleep(nanoseconds: 1_000_000_000) } catch { return }
+                    guard scenePhase == .active else { continue }
+                    seconds += 1
+                    if seconds == 2 { RestartAudio.play("UserspaceUp", enabled: effects) }
+                    if seconds == 8 { RestartAudio.play("RespringDown", enabled: effects) }
+                    if seconds == 10 { RestartAudio.play("RespringUp", enabled: effects) }
+                }
+                guard !Task.isCancelled else { return }
+                OpeningQA.record("Relay userspace restart completed")
                 onComplete()
             }
             .onChange(of: scenePhase) { value in if value == .background { RestartAudio.stop() } }
