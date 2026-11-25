@@ -9,10 +9,10 @@ enum RecoveryPower {
 }
 
 enum OpeningPace {
-    static let recognition = 10
-    static let diagnostics = 15
-    static let preparation = 20
-    static let installation = 65
+    static let recognition = 5
+    static let diagnostics = 7
+    static let preparation = 6
+    static let installation = 24
     static let reboot = 15
     static let completionHold = 3
     static let total = recognition + diagnostics + preparation + installation + completionHold + reboot
@@ -35,7 +35,7 @@ struct RecoveryPrologue: View {
     @Environment(\.scenePhase) private var phase
     @State private var powered = false
     @State private var previousMonitoring: Bool?
-    @State private var verbose = true
+    @State private var logQuarter = 0
     @State private var followLogs = true
     @State private var showQA = false
     @State private var initialized = false
@@ -65,7 +65,7 @@ struct RecoveryPrologue: View {
         default: return "A new environment. An unfamiliar backup. Your story begins here."
         }
     }
-    private var transcript: [String] { JailbreakTranscript.lines(stage: stage, elapsed: elapsed) }
+    private var transcript: [String] { JailbreakTranscript.lines(stage: stage, elapsed: elapsed, quarter: logQuarter) }
 
     var body: some View {
         Group {
@@ -86,10 +86,10 @@ struct RecoveryPrologue: View {
         .tint(accent)
         .onAppear {
             guard !initialized else { return }
-            if revision < 4 {
+            if revision < 5 {
                 // One-time replay of the revised prologue, never reset the phone or earned access.
-                stage = 0; elapsed = 0; simulated = false; revision = 4
-                OpeningQA.record("Opening revision 4 initialized; existing phone records retained")
+                stage = 0; elapsed = 0; simulated = false; revision = 5
+                OpeningQA.record("Opening revision 5 initialized; existing phone records retained")
             }
             initialized = true
         }
@@ -109,6 +109,8 @@ struct RecoveryPrologue: View {
                     .accessibilityLabel(RestartPhase.opening(at: elapsed) == .respring ? "Simulated respring" : "Simulated userspace restart")
                     .accessibilityAction(named: Text("Skip restart animation")) { elapsed = duration; finishTimedStage() }
                     .transition(.opacity)
+            } else if (1...3).contains(stage) {
+                terminalScreen
             } else {
             background.ignoresSafeArea()
             RadialGradient(colors: [accent.opacity(0.14), .clear], center: .top, startRadius: 10, endRadius: 450).ignoresSafeArea()
@@ -125,7 +127,6 @@ struct RecoveryPrologue: View {
                         if stage == 0 { connectionStatus }
                         if stage == 1 || stage == 2 { progressCard }
                         if interrupted { interruptionCard }
-                        if stage > 0 && stage < 4 { verbosePanel }
                         if stage == 5 { completionInfo }
                     }.padding(.horizontal, 23).padding(.vertical, stage == 1 || stage == 2 ? 8 : 24)
                 }.scrollIndicators(.hidden)
@@ -212,50 +213,72 @@ struct RecoveryPrologue: View {
             Button("Continue without cable") { chooseVirtual() }.buttonStyle(.bordered)
         }.frame(maxWidth: .infinity, alignment: .leading).padding(14).background(.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 15))
     }
-    private var verbosePanel: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Button {
-                verbose.toggle()
-            } label: {
-                HStack(spacing: 8) {
-                    OpeningArt(name: "Opening_Terminal", size: 30)
-                    Text("Verbose log").font(.subheadline.weight(.semibold))
-                    Spacer()
-                    Text("\(transcript.count) entries").font(.caption.monospacedDigit()).foregroundColor(.secondary)
-                    Image(systemName: verbose ? "chevron.up" : "chevron.down")
-                }
-            }.buttonStyle(.plain)
-            if verbose {
-                HStack {
+    /// Single scrolling surface, with its latest line above the fixed controls.
+    private var terminalScreen: some View {
+        VStack(spacing: 9) {
+            HStack(spacing: 10) {
+                OpeningArt(name: stage == 1 ? "Opening_Diagnostics" : stage == 2 ? "Opening_Install" : "Opening_Unlock", size: 38)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(phaseTitle).font(.headline).accessibilityAddTraits(.isHeader)
                     Text("PATCHLINE • SIMULATED CONSOLE").font(.system(size: 9, weight: .medium, design: .monospaced)).foregroundColor(.secondary)
-                    Spacer()
-                    Button(followLogs ? "Pause scroll" : "Follow live") { followLogs.toggle() }
-                        .font(.caption2)
                 }
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 7) {
-                            Text("[SESSION] Virtual transport ready").foregroundColor(accent)
-                            ForEach(Array(transcript.enumerated()), id: \.offset) { entry in
-                                Text(String(format: "[%03d] ", entry.offset + 1) + entry.element)
-                                    .foregroundColor(entry.element.contains("PASS") || entry.element.contains("complete") ? .white : accent)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            Color.clear.frame(height: 1).id("console-end")
-                        }.font(.system(.caption2, design: .monospaced))
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(12)
-                    }.frame(height: 232)
-                        .background(.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 13))
-                        .onAppear { if followLogs { proxy.scrollTo("console-end", anchor: .bottom) } }
-                        .onChange(of: transcript.count) { _ in
-                            if followLogs { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { proxy.scrollTo("console-end", anchor: .bottom) } }
+                Spacer(minLength: 4)
+                Button { effects.toggle(); if !effects { RestartAudio.stop() } } label: {
+                    Image(systemName: effects ? "speaker.wave.2" : "speaker.slash")
+                        .frame(width: 44, height: 44)
+                }.accessibilityLabel(effects ? "Mute effects" : "Enable effects")
+                Button { showQA = true } label: {
+                    OpeningArt(name: "Opening_Diagnostics", size: 28).frame(width: 44, height: 44)
+                }.accessibilityLabel("Developer Diagnostics")
+            }
+            HStack {
+                Label(interrupted ? "Paused" : stage == 3 || elapsed >= duration ? "Complete" : "Running", systemImage: interrupted ? "pause.circle" : "circle.fill")
+                    .foregroundColor(interrupted ? .orange : accent)
+                Spacer()
+                Text("\(Int(fraction * 100))% • \(max(0, duration - elapsed))s").monospacedDigit()
+            }.font(.caption)
+            ProgressView(value: stage == 3 ? 1 : fraction).tint(interrupted ? .orange : accent)
+            HStack {
+                HStack(spacing: 6) {
+                    OpeningArt(name: "Opening_Terminal", size: 22)
+                    Text("Verbose log").font(.caption.weight(.semibold))
+                }
+                Spacer()
+                Text("\(transcript.count) entries").font(.caption.monospacedDigit()).foregroundColor(.secondary)
+                Button(followLogs ? "Pause scroll" : "Follow live") { followLogs.toggle() }.font(.caption)
+            }.padding(.vertical, 2)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("[SESSION] Virtual transport ready").foregroundColor(accent)
+                        ForEach(Array(transcript.enumerated()), id: \.offset) { entry in
+                            Text(String(format: "[%03d] ", entry.offset + 1) + entry.element)
+                                .foregroundColor(entry.element.contains("PASS") || entry.element.contains("complete") ? .white : accent)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
-                        .onChange(of: followLogs) { enabled in
-                            if enabled { proxy.scrollTo("console-end", anchor: .bottom) }
-                        }
+                        Color.clear.frame(height: 8).id("console-end")
+                    }.font(.system(.footnote, design: .monospaced))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(10)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.black.opacity(0.82), in: RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .layoutPriority(1)
+                .onAppear { if followLogs { proxy.scrollTo("console-end", anchor: .bottom) } }
+                .onChange(of: transcript.count) { _ in
+                    if followLogs { proxy.scrollTo("console-end", anchor: .bottom) }
+                }
+                .onChange(of: followLogs) { enabled in
+                    if enabled { proxy.scrollTo("console-end", anchor: .bottom) }
                 }
             }
-        }.padding(12).background(.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 15))
+            if interrupted { interruptionCard }
+            actions
+        }
+        .padding(.horizontal, 14).padding(.vertical, 5)
+        .frame(maxWidth: 540, maxHeight: .infinity)
+        .background(background.ignoresSafeArea())
     }
     private var completionInfo: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -291,6 +314,7 @@ struct RecoveryPrologue: View {
             }
             if duration > 0 && elapsed < duration && !interrupted {
                 Button("Skip animation") {
+                    logQuarter = 0
                     elapsed = duration
                     OpeningQA.record("Animation explicitly skipped at stage \(stage)")
                     if stage != 1 { finishTimedStage() }
@@ -300,7 +324,8 @@ struct RecoveryPrologue: View {
     }
     private func transition(_ next: Int) {
         OpeningQA.record("Stage \(stage) completed at \(elapsed)s; entering \(next)")
-        elapsed = 0; stage = next
+        elapsed = 0; logQuarter = 0; stage = next
+        if next == 2 { followLogs = true }
         if next == 4 { OpeningQA.record("Userspace reboot started"); RestartAudio.play("UserspaceDown", enabled: effects) }
         if next == 5 { RestartAudio.stop(); OpeningQA.record("Userspace reboot and respring completed; welcome displayed") }
     }
@@ -365,9 +390,15 @@ struct RecoveryPrologue: View {
         let seconds = OpeningPace.duration(activeStage)
         guard seconds > 0 else { return }
         while elapsed < seconds && stage == activeStage && !Task.isCancelled {
-            do { try await Task.sleep(nanoseconds: 1_000_000_000) } catch { return }
+            let fastLogs = activeStage == 1 || activeStage == 2
+            do { try await Task.sleep(nanoseconds: fastLogs ? 250_000_000 : 1_000_000_000) } catch { return }
             guard !Task.isCancelled, stage == activeStage else { return }
             guard OpeningPace.canAdvance(stage: activeStage, connected: connected, active: phase == .active && !showQA) else { continue }
+            if fastLogs {
+                logQuarter += 1
+                guard logQuarter >= 4 else { continue }
+                logQuarter = 0
+            }
             elapsed = min(seconds, elapsed + 1)
             if stage == 4 && elapsed == 2 { RestartAudio.play("UserspaceUp", enabled: effects) }
             if stage == 4 && elapsed == 8 {
