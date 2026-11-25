@@ -9,6 +9,7 @@ struct PatchlineControlView: View {
     @AppStorage("lastseen.recovery.effects") private var effects = true
     @State private var restart: RelayRestart?
     @State private var confirm: RelayRestart?
+    @State private var showGuide = false
     var body: some View {
         List {
             Section {
@@ -31,6 +32,9 @@ struct PatchlineControlView: View {
                 Button { confirm = safeMode ? .normal : .safeMode } label: { Label(safeMode ? "Exit Safe Mode" : "Enter Safe Mode", systemImage: "exclamationmark.shield") }
                 Toggle("Restart sounds", isOn: $effects)
             }
+            Section("Player guide") {
+                Button { showGuide = true } label: { Label("Welcome to Last Seen", systemImage: "book.closed") }
+            }
             Section("About") {
                 Text("Patchline is part of the fictional Last Seen phone. Maintenance actions never restart or modify your real iPhone.").font(.footnote).foregroundColor(.secondary)
             }
@@ -39,6 +43,9 @@ struct PatchlineControlView: View {
                 Button("Continue") { restart = action; confirm = nil }
                 Button("Cancel", role: .cancel) { confirm = nil }
             } message: { _ in Text("Your records and installed packages will be retained.") }
+            .sheet(isPresented: $showGuide) {
+                WelcomeBriefingView(revisiting: true, onContinue: { showGuide = false })
+            }
             .fullScreenCover(item: $restart) { kind in
                 if kind == .userspace {
                     RelayUserspaceView { restart = nil; onRestart() }
