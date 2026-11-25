@@ -23,3 +23,6 @@ See [World Documents 01](WORLD_DOCUMENTS_01.md). Ten real DOCX originals with a 
 
 ## Consolidated scope linkage
 See [CONSOLIDATED_NEXT_BUILD.md](CONSOLIDATED_NEXT_BUILD.md) W05–W13. Three approved social app names and icons: Afterframe, Connective, CommonGround. Add functional Voice Memos with approved icon, authored local recordings and transcripts, gate-aware playback; see W12. New assets uploaded, implementation remains OPEN. No new build triggered by organization.
+
+## November 25 — approved media and notification expansion
+Retain the three existing social apps. Creator approved Motionwell (combined short/long video platform) and Dayblink (private temporary visual messaging), including original standalone icon concepts. See [PSYCHOLOGICAL_HORROR_AND_LIVING_NOTIFICATIONS.md](PSYCHOLOGICAL_HORROR_AND_LIVING_NOTIFICATIONS.md) for functional boundaries, private media, shared notification timeline, asset intake and acceptance criteria. Expand existing W09 rather than create redundant apps; no actual networking or surveillance. Implementation and asset integration remain OPEN; preserve Build 31 scope and story confidentiality.
