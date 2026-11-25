@@ -86,3 +86,7 @@ Offline fictional LumaOS, iOS 16 minimum, iPhone 16e primary. No real device cha
 ## B32 community portrait intake 01
 - [x] SOURCE: 18 existing CC0 synthetic 256px portraits visually reviewed and imported unchanged into the asset catalog; 9 assigned to existing independent social accounts and 9 reserved. Per-image source revision/blob hash, license and assignment manifest in CommunityPortraits. Compiled catalog verifier and XCTest coverage added. No image generation, external runtime dependency or changes to established character art.
 - [ ] More varied casual portraits, older adults and non-face avatars; 100-account target not yet fulfilled. CI and physical review remain OPEN.
+
+## Community media intake 02
+- [x] SOURCE: six CC0 non-face photographs acquired, individually reviewed and bundled as unassigned candidates, with provenance. 18 prior synthetic portraits retained. See CommunityPortraits/MEDIA_INTAKE_02.md.
+- [ ] Larger synthetic portrait collection downloads, older adults, casual portraits, original business identities and actual use in feeds remain open. CI/device QA pending.

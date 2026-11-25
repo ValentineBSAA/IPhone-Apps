@@ -1,0 +1,90 @@
+{
+  "source_mirror": "https://github.com/gudoshnikovn/libphash-site-corpus/tree/8969aa7af09b3e400395669ae35d3936fb446a90",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "assets": [
+    {
+      "asset": "CommunityMedia_Tabby",
+      "title": "Young tabby cat keeping watch.jpg",
+      "author": "W.carter",
+      "license": "CC0-1.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Young_tabby_cat_keeping_watch.jpg",
+      "mirror_revision": "8969aa7af09b3e400395669ae35d3936fb446a90",
+      "mirror_path": "photos/0bc038e1ba03a25c8d3de227ec1c1950310d4fb14c6bdc57b0903ba7c69f7959.jpg",
+      "sha256_reported_by_mirror": "0bc038e1ba03a25c8d3de227ec1c1950310d4fb14c6bdc57b0903ba7c69f7959",
+      "git_blob_sha": "fe07c00ce58da0de31092c568a8dedabc8b548f7",
+      "width": 1280,
+      "height": 853,
+      "status": "bundled candidate; not assigned to story or account"
+    },
+    {
+      "asset": "CommunityMedia_Coffee",
+      "title": "Espresso Coffee 01.jpg",
+      "author": "Jubair1985",
+      "license": "CC0-1.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Espresso_Coffee_01.jpg",
+      "mirror_revision": "8969aa7af09b3e400395669ae35d3936fb446a90",
+      "mirror_path": "photos/4996f857534e248e4c91e14b18c32376b1f2df9b3025c3d3cb4ccefa9198255c.jpg",
+      "sha256_reported_by_mirror": "4996f857534e248e4c91e14b18c32376b1f2df9b3025c3d3cb4ccefa9198255c",
+      "git_blob_sha": "59fc2240ddc8c0b140af9c11a1dd7ee0516e3622",
+      "width": 1280,
+      "height": 853,
+      "status": "bundled candidate; not assigned to story or account"
+    },
+    {
+      "asset": "CommunityMedia_Forest",
+      "title": "Beech and ferns in Gullmarsskogen.jpg",
+      "author": "W.carter",
+      "license": "CC0-1.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Beech_and_ferns_in_Gullmarsskogen.jpg",
+      "mirror_revision": "8969aa7af09b3e400395669ae35d3936fb446a90",
+      "mirror_path": "photos/2cf72ef254195465bd0682366b8a7c901104f283e9dac088192b481976a3454d.jpg",
+      "sha256_reported_by_mirror": "2cf72ef254195465bd0682366b8a7c901104f283e9dac088192b481976a3454d",
+      "git_blob_sha": "90e178e2a5fc3c6866ebf85161564209ad827060",
+      "width": 1280,
+      "height": 853,
+      "status": "bundled candidate; not assigned to story or account"
+    },
+    {
+      "asset": "CommunityMedia_Fox",
+      "title": "Rotfuchs (Mai 2025) 1.jpg",
+      "author": "Romzig",
+      "license": "CC0-1.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Rotfuchs_(Mai_2025)_1.jpg",
+      "mirror_revision": "8969aa7af09b3e400395669ae35d3936fb446a90",
+      "mirror_path": "photos/e1685ef47c8f02d00f414e6344630742f99b4ea106b0805a8328e984ea3a548e.jpg",
+      "sha256_reported_by_mirror": "e1685ef47c8f02d00f414e6344630742f99b4ea106b0805a8328e984ea3a548e",
+      "git_blob_sha": "9d011284146a5c531e5476ae98d53048c679af10",
+      "width": 1280,
+      "height": 853,
+      "status": "bundled candidate; not assigned to story or account"
+    },
+    {
+      "asset": "CommunityMedia_Udon",
+      "title": "Yoshida udon 001.jpg",
+      "author": "Ocdp",
+      "license": "CC0-1.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Yoshida_udon_001.jpg",
+      "mirror_revision": "8969aa7af09b3e400395669ae35d3936fb446a90",
+      "mirror_path": "photos/0127255482c7b4e15bc40f86e0c8a810af8b71cb80f076df144298c57c1504c1.jpg",
+      "sha256_reported_by_mirror": "0127255482c7b4e15bc40f86e0c8a810af8b71cb80f076df144298c57c1504c1",
+      "git_blob_sha": "4bf21f2d2fc8f9941fe8a6519145722c1f41055f",
+      "width": 1280,
+      "height": 960,
+      "status": "bundled candidate; not assigned to story or account"
+    },
+    {
+      "asset": "CommunityMedia_Mountains",
+      "title": "Main Range Track, Kosciuszko National Park 35.jpg",
+      "author": "Dhx1",
+      "license": "CC0-1.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Main_Range_Track,_Kosciuszko_National_Park_35.jpg",
+      "mirror_revision": "8969aa7af09b3e400395669ae35d3936fb446a90",
+      "mirror_path": "photos/88de29b54af092f496d15a09d51bb07f26cbea47979f4f61f87e3382762f7dfa.jpg",
+      "sha256_reported_by_mirror": "88de29b54af092f496d15a09d51bb07f26cbea47979f4f61f87e3382762f7dfa",
+      "git_blob_sha": "bfedfd2ebcf250a3d075bec3edfd7b01f4fcd64d",
+      "width": 1280,
+      "height": 853,
+      "status": "bundled candidate; not assigned to story or account"
+    }
+  ]
+}
