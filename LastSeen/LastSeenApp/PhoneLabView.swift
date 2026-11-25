@@ -13,6 +13,15 @@ struct PhoneLabView: View {
     @State private var pendingThread: Neighbor?
     @State private var banner: PhoneAlert?
     @State private var observedIncoming: Set<String> = []
+    @Environment(\.scenePhase) private var phase
+    @AppStorage("lastseen.lab.messageSound") private var messageSound = true
+    @AppStorage("lastseen.lab.messageHaptics") private var messageHaptics = true
+    @AppStorage("lastseen.lab.horrorEffects") private var horrorEffects = true
+    @AppStorage("lastseen.lab.feedbackRevision") private var feedbackRevision = 0
+    @State private var didConfigureFeedback = false
+    @State private var tutorialReplay = 0
+    @State private var confirmTutorialReplay = false
+    private var tutorialDeliveryID: String { "\(phase == .active)-\(tutorialReplay)" }
     @State private var searchQuery = ""
     @AppStorage("lastseen.lab.hideLockPreviews") private var hideLockPreviews = false
     private var alerts: [PhoneAlert] { PhoneAlertCatalog.alerts(in: world.state, unreadOnly: true) }
@@ -104,11 +113,31 @@ struct PhoneLabView: View {
             if banner?.id == id { withAnimation { banner = nil } }
         }
         .onChange(of: incomingIDs) { ids in
-            let added = Set(ids).subtracting(observedIncoming)
+            let previous = observedIncoming
             observedIncoming = Set(ids)
-            if let newest = PhoneAlertCatalog.alerts(in: world.state, unreadOnly: true).first(where: { added.contains($0.id) }), !locked {
+            guard didConfigureFeedback, phase == .active,
+                  let newest = PhoneMessageArrival.newest(in: world.state, previous: previous) else { return }
+            PhoneSensoryEngine.play(.message, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
+            if !locked {
                 withAnimation(.easeOut(duration: 0.25)) { banner = newest }
             }
+        }
+        .onChange(of: phase) { value in
+            observedIncoming = Set(incomingIDs)
+            if value != .active {
+                PhoneSensoryEngine.stop()
+                banner = nil
+            }
+        }
+        .onChange(of: messageSound) { if !$0 { PhoneSensoryEngine.stopSound() } }
+        .onChange(of: messageHaptics) { if !$0 { PhoneSensoryEngine.stopHaptics() } }
+        .onChange(of: horrorEffects) { if !$0 { PhoneSensoryEngine.stop() } }
+        .onDisappear { PhoneSensoryEngine.stop() }
+        .task(id: tutorialDeliveryID) {
+            guard phase == .active, !world.tutorialStarted else { return }
+            do { try await Task.sleep(nanoseconds: 1_500_000_000) } catch { return }
+            guard !Task.isCancelled, phase == .active, !world.tutorialStarted else { return }
+            world.startPhoneTutorial()
         }
         .sheet(item: $panel) { item in
             NavigationStack {
@@ -145,11 +174,15 @@ struct PhoneLabView: View {
             }.preferredColorScheme(.dark).presentationDetents([.large])
         }
         .onAppear {
-            observedIncoming = Set(incomingIDs)
-            let firstTutorial = !world.tutorialStarted
-            world.startPhoneTutorial()
-            observedIncoming = Set(incomingIDs)
-            if firstTutorial && !locked { banner = alerts.first }
+            if !didConfigureFeedback {
+                if feedbackRevision < 1 {
+                    // One-time Build 21 migration so the owner can hear the new incoming alerts.
+                    if world.tutorialStarted { world.resetPhoneTutorial() }
+                    feedbackRevision = 1
+                }
+                observedIncoming = Set(incomingIDs)
+                didConfigureFeedback = true
+            }
             let center = UNUserNotificationCenter.current()
             center.removePendingNotificationRequests(withIdentifiers: [NotificationRouter.storyNotificationID])
             center.removeDeliveredNotifications(withIdentifiers: [NotificationRouter.storyNotificationID])
@@ -416,6 +449,24 @@ struct PhoneLabView: View {
                 Toggle("Immersive screen-edge gestures", isOn: $deferSystemEdges)
                 Text("Use the in-game gestures first. Repeat a system-edge swipe to access real iOS controls. Turn this off for standard iOS gesture priority.").font(.footnote).foregroundColor(.secondary)
             }
+            Section("Sounds & Haptics") {
+                Toggle("Message sounds", isOn: $messageSound)
+                Toggle("Message vibrations", isOn: $messageHaptics)
+                Toggle("Horror sensory effects", isOn: $horrorEffects)
+                Button {
+                    PhoneSensoryEngine.play(.message, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
+                } label: { Label("Preview message alert", systemImage: "bell.badge") }
+                Button {
+                    PhoneSensoryEngine.play(.suspense, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
+                } label: { Label("Preview suspense cue", systemImage: "waveform.path") }
+                .disabled(!horrorEffects)
+                Button {
+                    PhoneSensoryEngine.play(.scare, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
+                } label: { Label("Preview scare cue", systemImage: "waveform.path.ecg") }
+                .disabled(!horrorEffects)
+                Text("In-game effects only. Sounds respect your iPhone's silent mode and volume. Haptics depend on device support and system settings. Horror cues are optional.")
+                    .font(.footnote).foregroundColor(.secondary)
+            }
             Section("Notifications and privacy") {
                 Toggle("Hide lock-screen message previews", isOn: $hideLockPreviews)
                 LabeledContent("Native game alerts", value: nativeAlerts ? "Enabled in game" : "Off")
@@ -427,12 +478,28 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.3.8 (21)")
+                LabeledContent("Software", value: "1.3.9 (22)")
                 Button("Developer Diagnostics") { showOpeningQA = true }
+                Button("Replay message tutorial") { confirmTutorialReplay = true }
                 Button("Replay phone setup") { confirmSetupReplay = true }
             }
         }
         .sheet(isPresented: $showOpeningQA) { OpeningDiagnosticsView() }
+        .confirmationDialog("Replay message tutorial?", isPresented: $confirmTutorialReplay) {
+            Button("Replay tutorial") {
+                PhoneSensoryEngine.stop()
+                banner = nil
+                world.resetPhoneTutorial()
+                observedIncoming = Set(incomingIDs)
+                panel = nil
+                returnHome()
+                locked = true
+                tutorialReplay += 1
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Only the introductory messages and their tutorial progress restart. Packages, other conversations, settings, notes and owner security stay intact.")
+        }
         .confirmationDialog("Replay phone setup?", isPresented: $confirmSetupReplay) {
             Button("Replay setup") { OpeningQA.record("Phone setup replay requested"); panel = nil; setupProgress = 0; setupStage = 0 }
             Button("Replay entire introduction") { OpeningQA.record("Introduction replay requested"); panel = nil; setupProgress = 0; setupStage = 0; recoveryProgress = 0; recoverySimulated = false; recoveryStage = 0 }
