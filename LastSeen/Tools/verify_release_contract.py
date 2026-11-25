@@ -33,6 +33,9 @@ require(version == capture(r'test "\$MARKETING_VERSION" = "([^"]+)"', workflow, 
 require(build == capture(r'test "\$BUILD_NUMBER" = "([^"]+)"', workflow, "CI build gate"), "CI build gate disagrees with project")
 require(f'LabeledContent("Software", value: "{version} ({build})")' in read("LastSeenApp/PhoneLabView.swift"), "Settings version disagrees with project")
 require(f'Last-Seen-v{version}-iOS16-unsigned.ipa' in workflow, "IPA name disagrees with project")
+device_verifier = read("Tools/verify_device_assets.py")
+require(build == capture(r'info\["CFBundleVersion"\]\s*==\s*"([^"]+)"', device_verifier, "IPA verifier build gate"), "IPA verifier build disagrees with project")
+require(version == capture(r'info\["CFBundleShortVersionString"\]\s*==\s*"([^"]+)"', device_verifier, "IPA verifier version gate"), "IPA verifier version disagrees with project")
 
 source = read("LastSeenApp/RecoveryPrologue.swift")
 pace = source.split("enum OpeningPace {", 1)[1].split("    static func duration", 1)[0]

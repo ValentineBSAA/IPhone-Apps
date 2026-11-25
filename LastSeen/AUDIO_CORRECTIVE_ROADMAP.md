@@ -1,4 +1,7 @@
 # LAST SEEN — Build 31 audio and authentication corrective roadmap
+
+**CURRENT GATE — Build 32: Living Phone / cohesive upgrade (November 25, 2026).** Creator explicitly authorized consolidated development and confidential story expansion. Build 31 is failed/superseded and will not be separately delivered or installed. Carry every outstanding B31 audio, lifecycle, packaging and hardware acceptance item into B32 alongside W01–W14 and the living-world scope. Target identity 1.9.0 (32); one player-facing verified IPA only after complete integrated acceptance, no intermediate install requests. Internal CI runs are allowed as necessary after implementation; no premature release. This commit prepares roadmap and version contracts only; runtime feature and narrative implementation remain open. No spoilers in creator-facing status. See [BUILD32_EXECUTION_PLAN.md](BUILD32_EXECUTION_PLAN.md).
+
 November 25, 2026 | current release gate: packaging FAILED / corrective CI required
 ## CURRENT GATE — audio corrective release (November 25, 2026)
 **Historical HOLD lifted: creator uploaded the four-sound ZIP on November 25. See current intake entry below.** This supersedes earlier planning/implementation gates. Once that ZIP arrives, creator has authorized the next single corrective release: inspect and validate assets, implement audio fixes, run mandatory CI and extract/verify the actual IPA. No additional confirmation needed unless the ZIP is incomplete or materially ambiguous. No runtime changes, version bump, or workflow run for this roadmap-only commit. Provisional next identity 1.8.2 (31), confirm latest branch and delivered identity before editing. 
@@ -52,4 +55,4 @@ Creator attachment and GitHub release L1 asset Extra.phone.sounds.V1.zip match e
 ## Current Build 31 CI evidence
 - [x] Runtime source committed ed33ea265d4b5c45309e0be9da93efcefa9aecba; native release compilation and simulator test steps succeeded in [run 45708950139](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/45708950139).
 - [ ] Packaging failed: job 139538074455 log, Tools/verify_device_assets.py line 43 asserts CFBundleVersion 30 and CFBundleShortVersionString 1.8.1. Correct to intended 31/1.8.2, audit all version contracts, retain exact asset assertions and rerun all mandatory checks. Publish step skipped. No verified deliverable IPA or physical success.
-- [ ] All remaining lifecycle and physical checks unchanged. Next milestone after stabilization: [LIVING_PHONE_AUTHENTICITY_ROADMAP.md](LIVING_PHONE_AUTHENTICITY_ROADMAP.md).
+- [ ] All remaining lifecycle and physical checks unchanged. All outstanding items are now incorporated in B32; see also: [LIVING_PHONE_AUTHENTICITY_ROADMAP.md](LIVING_PHONE_AUTHENTICITY_ROADMAP.md).

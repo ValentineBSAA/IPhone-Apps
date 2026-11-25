@@ -1,9 +1,13 @@
 # LAST SEEN — master roadmap / spoiler-free status
-Updated November 25, 2026. Start here. Current priorities supersede old planning gates; all earlier approved requirements are retained in specialist documents, the consolidated W01–W14 checklist, and [prior master snapshot](ROADMAP_HISTORY_2026-11-25.md). This is a documentation-only update, not authorization to silently change runtime or cut scope.
+Updated November 25, 2026. Start here. All previous requirements and specialist documents remain active; historical gates are superseded by the following current release contract.
 
 ## 1. Release gate and next milestone
-- [ ] Finish 1.8.2 (31) corrective release first. Runtime ed33ea265d4b5c45309e0be9da93efcefa9aecba; [run 45708950139](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/45708950139) FAILED at packaging, after native build and simulator tests succeeded. Job 139538074455 logs identify Tools/verify_device_assets.py line 43 still asserting 1.8.1 (30). Correct the version contract without weakening verification, audit other stale constants, rerun mandatory CI, independently extract/verify unsigned IPA, then focused iPhone 16e audio/Face ID QA. See [audio corrective spec](AUDIO_CORRECTIVE_ROADMAP.md). No Build 31 IPA published by failed run.
-- [ ] **Next creative/engineering priority: Living Phone Authenticity.** Make all existing conversations and apps feel like the owner has a real ongoing everyday digital life. Creator's impression from approved photos is that the phone looks actively used; preserve this impression/uncertainty as a design goal, not a plot fact. See [LIVING_PHONE_AUTHENTICITY_ROADMAP.md](LIVING_PHONE_AUTHENTICITY_ROADMAP.md). Plan and author confidential content while stabilizing the corrective build; integrate in the next cohesive release after the gate. No new runtime build triggered by this roadmap edit.
+**CURRENT GATE — Build 32: Living Phone / cohesive upgrade (November 25, 2026).** Creator explicitly authorized consolidated development and confidential story expansion. Build 31 is failed/superseded and will not be separately delivered or installed. Carry every outstanding B31 audio, lifecycle, packaging and hardware acceptance item into B32 alongside W01–W14 and the living-world scope. Target identity 1.9.0 (32); one player-facing verified IPA only after complete integrated acceptance, no intermediate install requests. Internal CI runs are allowed as necessary after implementation; no premature release. This commit prepares roadmap and version contracts only; runtime feature and narrative implementation remain open. No spoilers in creator-facing status. See [BUILD32_EXECUTION_PLAN.md](BUILD32_EXECUTION_PLAN.md).
+
+- [x] Build 31 native compilation and simulator tests passed; [run 45708950139](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/45708950139) failed at IPA packaging (stale 30/1.8.1 assertion in Tools/verify_device_assets.py). No IPA was published. Build 31 retired as standalone delivery, not as a source baseline.
+- [x] Creator approved Build 32 consolidated scope, including full story authoring and all-app authenticity. No plot facts inferred from photographs.
+- [x] B32 version contract and packaging verifier corrected in source; execution/CI verification still OPEN.
+- [ ] Complete integrated B32 implementation and private narrative, mandatory CI, independent IPA verification and focused iPhone 16e QA.
 
 ## 2. Verified completion ledger
 Checkboxes denote only the exact bounded item stated, not whole feature acceptance. SOURCE = initial implementation; CI PASS = exact step or run; DEVICE PASS/PARTIAL = creator report; APPROVED = artwork/direction; UPLOADED = release asset metadata; OPEN/BLOCKED = unfinished. Never infer physical success from CI or asset integration from upload.
@@ -16,7 +20,7 @@ Checkboxes denote only the exact bounded item stated, not whole feature acceptan
 - [x] B30 1.8.1 CI passed, run 45700584903, artifact 15064780181; delivered. Creator confirmed Face ID reaches home but unlock sound missing. Horizontal launcher pages, folders, dock and layout correction in source; full physical regression open.
 - [x] Initial W04 save statistics, W07 document reader, W06 local Mail, W09 three social feeds, W10 workstation diagnostics, W11 optional source indexes/tweaks implemented in B29 tranche source and B29/B30 CI baseline. Not full-scope acceptance.
 - [x] B31 four new original audio assets received, decoded and matched to release L1; corrective source committed, native compile and simulator-test steps succeeded.
-- [ ] B31 package verification / publication / independent IPA verification / physical QA and outstanding cue lifecycle coverage.
+- [ ] B31 corrective acceptance carried into B32: package verification / publication / independent IPA verification / physical QA and outstanding cue lifecycle coverage.
 - [ ] Full OS polish, unified security/persistence, complete utility coverage and accessibility.
 
 ### Artwork and media
@@ -39,7 +43,7 @@ Checkboxes denote only the exact bounded item stated, not whole feature acceptan
 ## 3. Workstream priorities
 | Workstream | Status | Current next action |
 |---|---|---|
-| W01 foundation/security/persistence | partial SOURCE | B31 gate; unified records and safe restore |
+| W01 foundation/security/persistence | partial SOURCE | B32 corrective carryover; unified records and safe restore |
 | W02 artwork/records | partial SOURCE; uploads verified | canonical intake, continuity, actual bundle checks |
 | W03 OS and utilities | partial SOURCE | preserve shell, finish cross-app consistency |
 | W04 saves/statistics | initial SOURCE | transactional restore, timing and migration QA |
@@ -55,6 +59,7 @@ Checkboxes denote only the exact bounded item stated, not whole feature acceptan
 | W14 release | OPEN | mandatory tests, exact IPA, iPhone 16e QA |
 
 ## 4. Source of truth
+- [Build 32 execution plan](BUILD32_EXECUTION_PLAN.md): sole current release contract and ordered acceptance checklist.
 - [Consolidated W01–W14 checklist and asset lock](CONSOLIDATED_NEXT_BUILD.md): detailed requirements; historical logs are not current gates.
 - [Living Phone Authenticity](LIVING_PHONE_AUTHENTICITY_ROADMAP.md): next priority, acceptance criteria and HavenWatch integration.
 - [Connected World](CONNECTED_WORLD_ROADMAP.md), [Psychological Horror and Living Notifications](PSYCHOLOGICAL_HORROR_AND_LIVING_NOTIFICATIONS.md): approved feature requirements.
