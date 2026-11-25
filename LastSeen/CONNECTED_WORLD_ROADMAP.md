@@ -1,4 +1,6 @@
 # Last Seen — connected world / next consolidated release
+
+**Current priority and status:** See [master roadmap](OS_FIRST_ROADMAP.md) and [LIVING_PHONE_AUTHENTICITY_ROADMAP.md](LIVING_PHONE_AUTHENTICITY_ROADMAP.md); historical planning holds below are superseded by current release gate and creator approval. All previously approved requirements retained. HavenWatch V1/V2 upload verified; functional integration and continuity QA open.
 Creator approved direction November 25, 2026. OPEN planning and implementation; do not begin new runtime work or trigger another build until creator explicitly authorizes the full consolidated scope. Existing browser-focused Build 28 CI remains separate, already triggered before planning hold. This spec links S1, S2 and N milestones rather than replacing earlier requirements. Story secrets remain private.
 
 ## Personal and professional world

@@ -1,12 +1,7 @@
 # LAST SEEN — consolidated next-build execution contract
 
-## CURRENT GATE — audio corrective release (November 25, 2026)
-**Historical HOLD lifted: creator supplied the ZIP; Build 31 corrective candidate committed. See audio roadmap for current release gates.** This supersedes earlier planning/implementation gates. Once that ZIP arrives, creator has authorized the next single corrective release: inspect and validate assets, implement audio fixes, run mandatory CI and extract/verify the actual IPA. No additional confirmation needed unless the ZIP is incomplete or materially ambiguous. No runtime changes, version bump, or workflow run for this roadmap-only commit. Provisional next identity 1.8.2 (31), confirm latest branch and delivered identity before editing. 
-- B29 1.8.0 runtime f8bed6d94ca370b6c666fa50a2be01b7a41f7cf2, run 45692871585 SUCCESS, artifact 15060049448. Creator installed and reported no game-breaking issue but vertical launcher clipping.
-- B30 1.8.1 runtime 531f36ff7475b9d7b60de7722fedb9d4b07b1db7, run 45700584903 SUCCESS, artifact 15064780181, artifact ZIP SHA256 287726a3469b58cbc1bbd9c088b2646db014b6e2e882c0d3660e25e82a00ac57. Delivered IPA, creator reaches home normally after Face ID but hears no unlock sound. All other physical QA remains unconfirmed unless explicitly reported. Preserve new horizontal pages, page dots, fixed dock, Friends & feeds / Blue Hour / Little things folders, app visibility and save formats.
-- Next active detailed specification: [AUDIO_CORRECTIVE_ROADMAP.md](AUDIO_CORRECTIVE_ROADMAP.md). All earlier W01–W14 backlog retained, not implied complete. This corrective release is audio/security feedback focused; do not expand unrelated features or retest entire game physically. No story spoilers, no real device modifications. iPhone 16e primary; iOS 16 minimum. Direct GitHub work, no Codex handoff.
-
-November 25, 2026. This is the active engineering checklist for the next cohesive player-facing IPA. Read before changing runtime. All prior approved scope is retained; specialist specifications remain authoritative for details. Planning/organization is approved; no new runtime or CI is triggered by this documentation commit. Begin implementation on explicit go-ahead under the existing planning hold. Do not assign a final version until implementation baseline is selected; provisional next build is 29, strictly newer than 1.7.0 (28). One delivered IPA, not one physical test per workstream. Internal CI iterations are allowed once authorized; never skip mandatory tests. This document is spoiler-free.
+## CURRENT GATE — November 25, 2026
+See [master roadmap](OS_FIRST_ROADMAP.md) for authoritative status. Build 31 source compiled and simulator tests passed; run 45708950139 FAILED packaging because verify_device_assets.py line 43 expects 1.8.1 (30). Fix version assertion, rerun mandatory CI, verify exact IPA and focused physical QA. Next priority after corrective gate: [Living Phone Authenticity](LIVING_PHONE_AUTHENTICITY_ROADMAP.md). All W01–W14 detailed acceptance remains intact. This documentation update does not trigger runtime work.
 
 ## 0. Verified baseline
 - Branch feature/last-seen-build27-noras-world, most recent runtime 8e6592efc2c7e3431df1ca7f964eee02b4c663b4, 1.7.0 (28). [Run 45687303359](https://github.com/ValentineBSAA/IPhone-Apps/actions/runs/45687303359) SUCCESS; native release, simulator tests and packaging passed. Artifact 15058695450, outer ZIP 159559233 bytes SHA256 061019f6eddc61034f324c23a4bcf49cae99a9ff1300574003d7715acb25ce78, unexpired at audit; independent extraction and hardware test not performed in this documentation change.
@@ -21,12 +16,12 @@ Each row is a work package with explicit acceptance and traceability, NOT a sepa
 | W01 | Baseline regression and unified persistence/security | partial SOURCE; device OPEN | BUILD27_ACCEPTANCE, FEATURE_REQUIREMENTS A/E |
 | W02 | Asset verification and canonical record catalog | partial SOURCE; intake uploaded | WORLD_PHOTOS_EXPANSION_01, WORLD_DOCUMENTS_01, CONNECTED_WORLD_ICONS_01, NORA_WORLD_BIBLE, CHARACTER_CONTINUITY |
 | W03 | Premium OS shell and all built-in apps | partial SOURCE | W01; FEATURE_REQUIREMENTS A |
-| W04 | Live statistics and transactional save restoration | OPEN | W01; GAMEPLAY_STATISTICS_ROADMAP |
+| W04 | Live statistics and transactional save restoration | initial SOURCE; full restore OPEN | W01; GAMEPLAY_STATISTICS_ROADMAP |
 | W05 | Authored personal/professional world and complete narrative | partial SOURCE | W02; NORA_WORLD_BIBLE, CHARACTER_CONTINUITY, FEATURE_REQUIREMENTS C, CONNECTED_WORLD_ROADMAP |
 | W06 | Context-aware Messages/Phone/Contacts and functional Mail | partial SOURCE | W01/W02/W05; CONNECTED_WORLD_ROADMAP |
-| W07 | Native document reader and cross-app records | OPEN | W02/W05; WORLD_DOCUMENTS_01 |
+| W07 | Native document reader and cross-app records | initial SOURCE; full QA OPEN | W02/W05; WORLD_DOCUMENTS_01 |
 | W08 | Browser and restricted website ecosystem | B28 CI PASS for initial slice; expansion OPEN | W01/W02/W05; BROWSER_CHAPTER_ROADMAP |
-| W09 | Afterframe, Connective, CommonGround | OPEN, artwork approved | W02/W05/W06; CONNECTED_WORLD_ROADMAP |
+| W09 | Afterframe, Connective, CommonGround | initial SOURCE; deeper features OPEN | W02/W05/W06; CONNECTED_WORLD_ROADMAP |
 | W10 | Repair workstation and varied puzzles | partial SOURCE; expansion OPEN | W01/W05; PUZZLE_DESIGN_ROADMAP, CONNECTED_WORLD_ROADMAP |
 | W11 | Relay redesign, discoverable repos and functional tweaks | partial SOURCE | W01/W03/W10; RELAY_MODERNIZATION_ROADMAP, FEATURE_REQUIREMENTS B |
 | W12 | Voice Memos and Luma Assistant | OPEN, memo icon approved | W01/W02/W05/W06/W07; LUMA_ASSISTANT_ROADMAP |
@@ -75,7 +70,7 @@ Each row is a work package with explicit acceptance and traceability, NOT a sepa
 - [ ] Verify full app catalog, exact standalone media hashes, ZIP CRC, bundle/executable/version/minOS and correct artifact. One extracted unsigned IPA verified in actual runtime; no guessed links. One comprehensive spoiler-free iPhone 16e device checklist; label CI vs device status. Any incomplete scope requires explicit creator decision; no fake completion, no hidden features marketed as finished. Update active ledger and master with actual evidence.
 
 ## 3. Asset lock
-All ten exact L1 assets observed 2026-11-25. Check hashes again before importing. GitHub digest metadata is upload confirmation, not independent extraction or validation of each new asset. B28 CI verified photo intake and inherited assets; new icon/document integration is pending.
+Original ten exact L1 assets observed 2026-11-25; three additional verified uploads listed below. Check hashes again before importing. GitHub digest metadata is upload confirmation, not independent extraction or validation of each new asset. B28 CI verified photo intake and inherited assets; new icon/document integration is pending.
 
 | Archive | Bytes | SHA-256 |
 |---|---:|---|
@@ -89,6 +84,10 @@ All ten exact L1 assets observed 2026-11-25. Check hashes again before importing
 | Last-Seen-World-Documents-01.zip | 366335 | 944149baab8f01d831d13c1e4003dcc4b636080cafb413bccb37d553c5d3bced |
 | Last-Seen-World-Photos-Expansion-01.zip | 46400998 | 0d7b45bc6bc2ec65d77c2fb47c41ed9879fb79da0e610bfd5a07fa9d30ab0e10 |
 | Last.Seen.Sounds.zip | 1188466 | bbb41062ce6dbbfc4d7073110feb59dacda975f63f5d151cf2aff12094678981 |
+
+| Extra.phone.sounds.V1.zip | 170621 | 2b35b10f8325e189739c35435fec8c350ce385c0fe087bda23d7697c60c32dd0 |
+| LAST_SEEN_HavenWatch_Asset_Pack_v1.zip | 5537162 | bd8c6c2fb6d267073eed67af79e365cb6cdd0ec8e5aba7e1b6f447cb621d4eaa |
+| LAST_SEEN_HavenWatch_Version_Two_Approved.zip | 23355006 | d9b44afe162641f0a7884e7fa4cf7516f2b4c5adaf026457ab6839f67d013881 |
 
 ## 4. Delivery discipline
 Work from this checklist and specialist links, not historical instructions. Use coherent internal commits with unit tests; integrate once against a shared catalog. Review source diff for removed features and stale version references; run complete CI before delivery. Record blockers/decisions and reconcile approvals, then deliver one IPA. Do not trigger runtime development from this docs-only commit.
@@ -108,3 +107,6 @@ Creator physically installed B29; no game-breaking problems reported, but screen
 
 ## November 25 — creator-approved psychological horror and living phone expansion
 See [PSYCHOLOGICAL_HORROR_AND_LIVING_NOTIFICATIONS.md](PSYCHOLOGICAL_HORROR_AND_LIVING_NOTIFICATIONS.md) for the additive approved requirements spanning W01–W03, W05–W06, W09 and W12–W13: psychological unease and privacy/agency, Nora's ordinary and romantic late-night life, uncertain media provenance, shared persistent notification timeline, and Motionwell/Dayblink. Preserve all existing W01–W14 items and canon. No story answers in creator-facing reports. Asset intake and implementation remain open; do not expand the active Build 31 corrective release. No new build triggered by this documentation commit.
+
+## Current bounded completion reconciliation (supersedes historical pending statuses)
+See master checkboxes for CI/device evidence and [LIVING_PHONE_AUTHENTICITY_ROADMAP.md](LIVING_PHONE_AUTHENTICITY_ROADMAP.md) for the next work. The original checklist above contains compound full-scope requirements: leave them unchecked until each constituent criterion passes. B29/B30 source and CI establish initial W02/W04/W06/W07/W08/W09/W10/W11 work; not final acceptance. B31 packaging failure remains blocking. HavenWatch V1/V2 upload and local CRC/hash checks complete; runtime integration open. Preserve all prior requirements.

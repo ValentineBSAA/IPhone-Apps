@@ -1,4 +1,6 @@
 # LAST SEEN — approved psychological horror, living notifications and media expansion
+
+**Current priority and status:** See [master roadmap](OS_FIRST_ROADMAP.md) and [LIVING_PHONE_AUTHENTICITY_ROADMAP.md](LIVING_PHONE_AUTHENTICITY_ROADMAP.md); historical planning holds below are superseded by current release gate and creator approval. All previously approved requirements retained. HavenWatch V1/V2 upload verified; functional integration and continuity QA open.
 Creator approval: November 25, 2026. Status: APPROVED DIRECTION / implementation and asset intake OPEN. This is an additive specification, not a replacement for W01–W14, existing canon, or the Build 31 audio corrective gate. No runtime changes or new build authorized by this documentation update. All material is fictional; all phone behavior is local to the game.
 
 ## 1. Psychological direction and spoiler discipline (W05/W13)
