@@ -32,6 +32,7 @@ struct PhoneLabView: View {
     @State private var testNotice = ""
     @State private var confirmSetupReplay = false
     @State private var showOpeningQA = false
+    @AppStorage("lastseen.lab.deferSystemEdges") private var deferSystemEdges = true
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -63,6 +64,7 @@ struct PhoneLabView: View {
             }
         }
         .environmentObject(world)
+        .defersSystemGestures(on: deferSystemEdges ? [.top, .bottom] : [])
         .tint(Color(red: 0.36, green: 0.81, blue: 0.76))
         .preferredColorScheme(.dark)
         .overlay {
@@ -310,6 +312,10 @@ struct PhoneLabView: View {
                     if relayInstalled.split(separator: "|").contains("midnight") { Text("Midnight Glass").tag(2) }
                 }
             }
+            Section("Gestures") {
+                Toggle("Immersive screen-edge gestures", isOn: $deferSystemEdges)
+                Text("Use the in-game gestures first. Repeat a system-edge swipe to access real iOS controls. Turn this off for standard iOS gesture priority.").font(.footnote).foregroundColor(.secondary)
+            }
             Section("Notifications and privacy") {
                 LabeledContent("Native game alerts", value: nativeAlerts ? "Enabled in game" : "Off")
                 Button("Review optional permissions") { panel = nil; permissionsReviewed = false }
@@ -320,7 +326,7 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.3.1 (14)")
+                LabeledContent("Software", value: "1.3.2 (15)")
                 Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay phone setup") { confirmSetupReplay = true }
             }
