@@ -29,6 +29,7 @@ if a.catalog:
     required={"Jailbreak_"+n for n in ["FieldNotes","ClipGlass","LumaPlus","AfterglowStudio","PulseTerminal","RootExplorer","PocketClipboard","QuickPulse","PowerDeck","Relay","Patchline","TweakHub"]}
     required.update(["Contact_Maya","Contact_Denise","Nora_Profile","Icon_Messages","Icon_Save","Photo_Locked_Texture"])
     required.update(["Icon_Afterframe","Icon_Connective","Icon_CommonGround","Icon_VoiceMemos"])
+    required.update(f"CommunityPortrait_{i:02d}" for i in range(1,19))
     missing=required-names
     assert not missing, f"Device catalog missing required renditions: {sorted(missing)}"
     print("Required device catalog renditions verified")

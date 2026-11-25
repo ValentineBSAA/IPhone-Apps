@@ -26,10 +26,21 @@ enum LumaSocialCommunity {
         .init(name: "Leo Mercer", handle: "leo.mercer", bio: "Cycling • neighborhood gardening", channel: .commonGround, first: "The community planter could use a little attention this weekend. I'll bring spare gloves.", second: "Found a nice quiet route for my evening ride. Glad the weather held."),
         .init(name: "Sam Rivera", handle: "sam.rivera", bio: "Board games • cooking • local events", channel: .commonGround, first: "Thinking of organizing a relaxed board game evening. Beginners absolutely welcome.", second: "Does anyone have a reliable recipe for cinnamon rolls? Mine are more like cinnamon bricks.")
     ]
+    static let portraits: [String: String] = [
+        "iris.vale": "CommunityPortrait_11",
+        "miles.frames": "CommunityPortrait_17",
+        "sofia.hart": "CommunityPortrait_13",
+        "evan.codes": "CommunityPortrait_02",
+        "amara.finch": "CommunityPortrait_09",
+        "rowan.audio": "CommunityPortrait_08",
+        "june.reads": "CommunityPortrait_04",
+        "leo.mercer": "CommunityPortrait_07",
+        "sam.rivera": "CommunityPortrait_15"
+    ]
     static func posts(anchor: Date) -> [LumaSocialPost] {
         people.enumerated().flatMap { index, person in
             [person.first, person.second].enumerated().map { number, body in
-                LumaSocialPost(id: "b32-community-" + person.handle + "-" + String(number), channel: person.channel, author: person.name, handle: person.handle, body: body, date: anchor.addingTimeInterval(-Double(3 + index + number * 11) * 86400 - 7200), portrait: nil, photo: nil, gate: nil)
+                LumaSocialPost(id: "b32-community-" + person.handle + "-" + String(number), channel: person.channel, author: person.name, handle: person.handle, body: body, date: anchor.addingTimeInterval(-Double(3 + index + number * 11) * 86400 - 7200), portrait: portraits[person.handle], photo: nil, gate: nil)
             }
         }
     }

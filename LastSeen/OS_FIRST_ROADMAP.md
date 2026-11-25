@@ -82,3 +82,7 @@ Offline fictional LumaOS, iOS 16 minimum, iPhone 16e primary. No real device cha
 ## B32 tranche 03 — researched app authenticity
 - [x] SOURCE: nine independent community profiles/18 posts, account settings entry, Nora and studio profile access, saved per-app mute and notification preferences; Relay repository browsing, wishlist/refresh time, Patchline environment/package activity. Tests added; no CI/device claim.
 - [ ] Complete remaining research-backed scope in [BUILD32_AUTHENTICITY_RESEARCH.md](BUILD32_AUTHENTICITY_RESEARCH.md), including scheduler integration and original assets. No separate install.
+
+## B32 community portrait intake 01
+- [x] SOURCE: 18 existing CC0 synthetic 256px portraits visually reviewed and imported unchanged into the asset catalog; 9 assigned to existing independent social accounts and 9 reserved. Per-image source revision/blob hash, license and assignment manifest in CommunityPortraits. Compiled catalog verifier and XCTest coverage added. No image generation, external runtime dependency or changes to established character art.
+- [ ] More varied casual portraits, older adults and non-face avatars; 100-account target not yet fulfilled. CI and physical review remain OPEN.

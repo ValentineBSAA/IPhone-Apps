@@ -1,0 +1,189 @@
+{
+  "source": "visualizevalue/headshots",
+  "revision": "21f916173b6c844c52ccb3ac76e7d7b44de87c3e",
+  "license": "CC0-1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "notes": "Synthetic people per upstream; 18 256px source JPEGs visually inspected. Exact bytes preserved. Nine assigned, nine unassigned reserves.",
+  "assets": [
+    {
+      "asset": "CommunityPortrait_01",
+      "source_path": "256/01.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/01.jpg",
+      "git_blob_sha": "c7e45f935c014d65d57e533a77e92c1580076491",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": null
+    },
+    {
+      "asset": "CommunityPortrait_02",
+      "source_path": "256/02.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/02.jpg",
+      "git_blob_sha": "71d51b973e5527ef8cb1d4820f4207a54b0839fb",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": "evan.codes"
+    },
+    {
+      "asset": "CommunityPortrait_03",
+      "source_path": "256/03.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/03.jpg",
+      "git_blob_sha": "5822ddfb531767c49a5257be71df10ba4146279b",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": null
+    },
+    {
+      "asset": "CommunityPortrait_04",
+      "source_path": "256/04.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/04.jpg",
+      "git_blob_sha": "2ea15a916bfa880f9f02c3fc4b48107a5bc4adc4",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": "june.reads"
+    },
+    {
+      "asset": "CommunityPortrait_05",
+      "source_path": "256/05.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/05.jpg",
+      "git_blob_sha": "c69577d00dd9269d50e5a700a8a8b699a12dd764",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": null
+    },
+    {
+      "asset": "CommunityPortrait_06",
+      "source_path": "256/06.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/06.jpg",
+      "git_blob_sha": "a703789e6efb1d8abac7f63cb3878796e150fdb9",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": null
+    },
+    {
+      "asset": "CommunityPortrait_07",
+      "source_path": "256/07.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/07.jpg",
+      "git_blob_sha": "36a7708a5e86b90c875c964899c363a8fa76293f",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": "leo.mercer"
+    },
+    {
+      "asset": "CommunityPortrait_08",
+      "source_path": "256/08.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/08.jpg",
+      "git_blob_sha": "21fcfc439c4ec7fc2d6c9b3bc1215ae4649a3c75",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": "rowan.audio"
+    },
+    {
+      "asset": "CommunityPortrait_09",
+      "source_path": "256/09.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/09.jpg",
+      "git_blob_sha": "357ff1ebbd9c037ad55c8f82e285c713988c39ed",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": "amara.finch"
+    },
+    {
+      "asset": "CommunityPortrait_10",
+      "source_path": "256/10.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/10.jpg",
+      "git_blob_sha": "8b531fc66be948485200220766ece9f306b459e8",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": null
+    },
+    {
+      "asset": "CommunityPortrait_11",
+      "source_path": "256/11.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/11.jpg",
+      "git_blob_sha": "9905c48e91c69896efb2285402a4e19b053afa88",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": "iris.vale"
+    },
+    {
+      "asset": "CommunityPortrait_12",
+      "source_path": "256/12.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/12.jpg",
+      "git_blob_sha": "75c66abe18a45621602283f8ae6c3470b09ae669",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": null
+    },
+    {
+      "asset": "CommunityPortrait_13",
+      "source_path": "256/13.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/13.jpg",
+      "git_blob_sha": "7705b98b5dca24d06fc468b0cae2fd990061c6ad",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": "sofia.hart"
+    },
+    {
+      "asset": "CommunityPortrait_14",
+      "source_path": "256/14.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/14.jpg",
+      "git_blob_sha": "7aa7aa020f3d1219111ac2b72a62ad0a7327413c",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": null
+    },
+    {
+      "asset": "CommunityPortrait_15",
+      "source_path": "256/15.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/15.jpg",
+      "git_blob_sha": "9e516ee1b56a8a23f3b6189d1dbd25115054f68f",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": "sam.rivera"
+    },
+    {
+      "asset": "CommunityPortrait_16",
+      "source_path": "256/16.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/16.jpg",
+      "git_blob_sha": "74f343045367be2b3b6bd9b777c7cfd07560cff2",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": null
+    },
+    {
+      "asset": "CommunityPortrait_17",
+      "source_path": "256/17.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/17.jpg",
+      "git_blob_sha": "cb5ff399f644253da08d65fa37e3b33967afe7f8",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": "miles.frames"
+    },
+    {
+      "asset": "CommunityPortrait_18",
+      "source_path": "256/18.jpg",
+      "source_url": "https://github.com/visualizevalue/headshots/blob/21f916173b6c844c52ccb3ac76e7d7b44de87c3e/256/18.jpg",
+      "git_blob_sha": "a3eadf8cf91a1a66d0c15411c32e9f4fd7ae5858",
+      "license": "CC0-1.0",
+      "width": 256,
+      "height": 256,
+      "assigned_handle": null
+    }
+  ]
+}
