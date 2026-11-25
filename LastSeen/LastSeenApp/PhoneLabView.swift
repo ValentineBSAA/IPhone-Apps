@@ -17,6 +17,12 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.lab.biometricUnlock") private var biometricUnlock = false
     @State private var authContext: LAContext?
     @State private var authNotice = ""
+    @AppStorage("lastseen.permissions.reviewed.v1") private var permissionsReviewed = true
+    @AppStorage("lastseen.lab.nativeAlerts") private var nativeAlerts = false
+    @AppStorage("lastseen.setup.stage") private var setupStage = 5
+    @AppStorage("lastseen.setup.progress") private var setupProgress = 100
+    @State private var testNotice = ""
+    @State private var confirmSetupReplay = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -84,16 +90,7 @@ struct PhoneLabView: View {
         }
     }
 
-    private var backdrop: some View {
-        let colors: [Color] = wallpaper == 1
-            ? [Color(red: 0.34, green: 0.18, blue: 0.32), Color(red: 0.12, green: 0.12, blue: 0.22)]
-            : [Color(red: 0.14, green: 0.34, blue: 0.41), Color(red: 0.07, green: 0.12, blue: 0.24)]
-        return ZStack {
-            LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
-            Circle().fill(.white.opacity(0.05)).frame(width: 340, height: 340).offset(x: 150, y: 170)
-            Circle().strokeBorder(.white.opacity(0.10), lineWidth: 1).frame(width: 300, height: 300).offset(x: -120, y: -100)
-        }.ignoresSafeArea()
-    }
+    private var backdrop: some View { PhoneWallpaper(selection: wallpaper).ignoresSafeArea() }
 
     private var unread: Int { Neighbor.allCases.reduce(0) { $0 + world.countUnread($1) } }
 
@@ -137,14 +134,12 @@ struct PhoneLabView: View {
                     authContext?.invalidate(); authContext = nil; biometricUnlock = false; authNotice = ""; requestUnlock()
                 }.font(.caption).disabled(authContext != nil)
             }
-            Text("Fictional phone · Phone Lab").font(.caption2).foregroundColor(.white.opacity(0.6))
+            Text("Swipe up to open").font(.caption2).foregroundColor(.white.opacity(0.6))
         }
         .padding(24)
         .foregroundColor(.white)
         .gesture(DragGesture(minimumDistance: 40).onEnded { value in
-            if value.translation.height < -50 {
-                withAnimation(.easeInOut(duration: 0.25)) { locked = false }
-            }
+            if value.translation.height < -50 { requestUnlock() }
         })
     }
 
@@ -183,10 +178,6 @@ struct PhoneLabView: View {
                 Button { panel = .notifications } label: {
                     Label("Notifications", systemImage: "bell")
                         .labelStyle(.iconOnly).font(.title3)
-                }
-                Spacer()
-                TimelineView(.periodic(from: .now, by: 60)) { context in
-                    Text(context.date, style: .time).font(.subheadline).monospacedDigit()
                 }
                 Spacer()
                 Button { panel = .controls } label: {
@@ -247,13 +238,13 @@ struct PhoneLabView: View {
 
     private var controls: some View {
         Form {
-            Section("Fictional device controls") {
+            Section("Device") {
                 LabeledContent("Device name", value: device)
                 Toggle("Real Face ID / Touch ID", isOn: $biometricUnlock)
                 Text("Optional in-game unlock. iOS handles authentication; Last Seen receives only the result.").font(.caption).foregroundColor(.secondary)
-                Toggle("Simulated Wi-Fi", isOn: $wifi)
+                Toggle("Wi-Fi (in-game)", isOn: $wifi)
                 VStack(alignment: .leading) {
-                    Text("Phone display brightness")
+                    Text("Display brightness")
                     Slider(value: $brightness, in: 0.35...1)
                 }
                 Picker("Wallpaper", selection: $wallpaper) {
@@ -261,8 +252,43 @@ struct PhoneLabView: View {
                     Text("Dusk").tag(1)
                 }
             }
-            Section {
-                Text("These controls change only the in-game phone, never your real iPhone settings.").font(.footnote)
+            Section("Notifications and privacy") {
+                LabeledContent("Native game alerts", value: nativeAlerts ? "Enabled in game" : "Off")
+                Button("Review optional permissions") { panel = nil; permissionsReviewed = false }
+                if nativeAlerts {
+                    Button("Schedule test notification (7 seconds)") { scheduleTestAlert() }
+                    if !testNotice.isEmpty { Text(testNotice).font(.caption).foregroundColor(.secondary) }
+                }
+                Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
+            }
+            Section("About") {
+                LabeledContent("Software", value: "1.2.3 (12)")
+                Button("Replay phone setup") { confirmSetupReplay = true }
+            }
+        }
+        .confirmationDialog("Replay phone setup?", isPresented: $confirmSetupReplay) {
+            Button("Replay setup") { panel = nil; setupProgress = 0; setupStage = 0 }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Your restored phone records and story saves will not be erased.")
+        }
+    }
+
+    private func scheduleTestAlert() {
+        guard nativeAlerts else { return }
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
+                DispatchQueue.main.async { testNotice = "Notifications are disabled in iOS Settings." }
+                return
+            }
+            let content = UNMutableNotificationContent()
+            content.title = "Last Seen"
+            content.body = "Game notification test. No story event has been triggered."
+            content.sound = .default
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 7, repeats: false)
+            center.add(UNNotificationRequest(identifier: "lastseen-lab-test", content: content, trigger: trigger)) { error in
+                DispatchQueue.main.async { testNotice = error == nil ? "Test scheduled. Leave the app to see the iOS alert." : "Unable to schedule the test." }
             }
         }
     }
@@ -363,6 +389,9 @@ private struct LabPeopleView: View {
                                 .font(.subheadline).foregroundColor(.secondary).lineLimit(2)
                         }
                         Spacer()
+                        if messages, let latest = world.messages(person).last {
+                            Text(latest.at, style: .time).font(.caption2).foregroundColor(.secondary)
+                        }
                         if messages && world.countUnread(person) > 0 {
                             Text("\(world.countUnread(person))").font(.caption.bold())
                                 .padding(6).background(.teal, in: Capsule())
@@ -521,44 +550,131 @@ private struct LabFilesView: View {
 private struct LabBrowserView: View {
     let wifi: Bool
     @State private var search = ""
+    @State private var selected: String?
+    @State private var forwardPage: String?
     @AppStorage("lastseen.lab.history") private var history = ""
     @AppStorage("lastseen.lab.bookmarks") private var bookmarks = ""
-    let pages = ["Maple Street Bookshop": "Open 10–6. Reserved books are held for seven days.", "Ash Street Residents": "Building office notices, elevator inspections and community events.", "Maple Cafe": "Coffee, pastries and sandwiches. Across from the bookshop."]
+    @AppStorage("lastseen.lab.browserSeeded") private var seeded = false
+    private let pages = ["Maple Street Bookshop": "Open 10–6. Reserved books are held for seven days.", "Ash Street Residents": "Building office notices, elevator inspections and community events.", "Maple Cafe": "Coffee, pastries and sandwiches. Across from the bookshop."]
+    private let addresses = ["Maple Street Bookshop": "maplebooks.test", "Ash Street Residents": "ashstreet.test", "Maple Cafe": "maplecafe.test"]
+
     var body: some View {
-        List {
-            Section("Offline local pages") {
-                ForEach(pages.keys.sorted().filter { search.isEmpty || $0.localizedCaseInsensitiveContains(search) }, id: \.self) { name in
-                    NavigationLink {
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 20) {
-                                Text(name).font(.largeTitle.bold())
-                                Text(pages[name] ?? "")
-                                Button(bookmarks.contains(name) ? "Remove bookmark" : "Bookmark") {
-                                    var entries = Set(bookmarks.split(separator: "|").map(String.init))
-                                    if entries.contains(name) { entries.remove(name) } else { entries.insert(name) }
-                                    bookmarks = entries.sorted().joined(separator: "|")
-                                }.buttonStyle(.bordered)
-                            }.frame(maxWidth: .infinity, alignment: .leading).padding()
-                        }.navigationTitle("Local page").onAppear {
-                            if !history.split(separator: "|").contains(Substring(name)) { history += (history.isEmpty ? "" : "|") + name }
+        VStack(spacing: 0) {
+            HStack {
+                Image(systemName: "magnifyingglass").foregroundColor(.secondary)
+                TextField("Search or enter address", text: $search)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled().submitLabel(.go)
+                    .onSubmit { if let name = matching.first { visit(name) } }
+                if !search.isEmpty {
+                    Button { search = "" } label: { Image(systemName: "xmark.circle.fill").foregroundColor(.secondary) }
+                }
+            }.padding(12).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16)).padding(.horizontal).padding(.vertical, 8)
+            if let name = selected {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        HStack {
+                            Image(systemName: name == "Maple Cafe" ? "cup.and.saucer.fill" : name == "Maple Street Bookshop" ? "books.vertical.fill" : "building.2.fill")
+                                .font(.largeTitle)
+                            Spacer()
+                            Text("LOCAL").font(.caption2.weight(.semibold))
+                        }.foregroundColor(.white)
+                        Text(name).font(.largeTitle.bold()).foregroundColor(.white)
+                        Divider()
+                        Text(pages[name] ?? "").font(.title3)
+                        if name == "Maple Street Bookshop" {
+                            Text("Your reserved books").font(.headline)
+                            Text("Pick up in store before the end of the week.")
+                        } else if name == "Ash Street Residents" {
+                            Text("Resident noticeboard").font(.headline)
+                            Text("Please contact the building office for maintenance updates.")
+                        } else {
+                            Text("Today's menu").font(.headline)
+                            Text("Espresso · Cappuccino · Pastries · Sandwiches")
                         }
-                    } label: { Label(name, systemImage: "globe") }
+                        Label("Saved page · available offline", systemImage: "checkmark.circle").font(.caption).foregroundColor(.secondary)
+                    }.frame(maxWidth: .infinity, alignment: .leading).padding(24)
+                    .background(Color.teal.opacity(0.15), in: RoundedRectangle(cornerRadius: 24)).padding()
+                }
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        Text(search.isEmpty ? "Start page" : "Search results").font(.title2.bold())
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                            ForEach(matching, id: \.self) { name in
+                                Button { visit(name) } label: {
+                                    VStack(alignment: .leading, spacing: 7) {
+                                        Image(systemName: "globe").font(.title).foregroundColor(.teal)
+                                        Text(name).font(.subheadline.bold())
+                                        Text(addresses[name] ?? "").font(.caption2).foregroundColor(.secondary)
+                                    }.frame(maxWidth: .infinity, alignment: .leading).padding(13)
+                                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                                }.buttonStyle(.plain)
+                            }
+                        }
+                        if matching.isEmpty { Text("No saved sites match this search.").foregroundColor(.secondary) }
+                        if search.isEmpty {
+                            siteSection("Bookmarks", names: entries(bookmarks))
+                            siteSection("History", names: entries(history).reversed())
+                            if !history.isEmpty { Button("Clear history", role: .destructive) { history = "" }.font(.caption) }
+                        }
+                    }.padding()
                 }
             }
-            Section("Bookmarks") {
-                if bookmarks.isEmpty { Text("No bookmarks").foregroundColor(.secondary) }
-                ForEach(bookmarks.split(separator: "|").map(String.init), id: \.self) { name in
-                    NavigationLink(name) { Text(pages[name] ?? "").padding().navigationTitle(name) }
-                }
+            Divider()
+            HStack {
+                Button { forwardPage = selected; selected = nil; search = "" } label: { Image(systemName: "chevron.backward") }.disabled(selected == nil)
+                Spacer()
+                Button { if let name = forwardPage { visit(name) } } label: { Image(systemName: "chevron.forward") }.disabled(forwardPage == nil || selected != nil)
+                Spacer()
+                Button { selected = nil; search = ""; forwardPage = nil } label: { Image(systemName: "house") }
+                Spacer()
+                Button { if let name = selected { toggleBookmark(name) } } label: {
+                    Image(systemName: selected.map { entries(bookmarks).contains($0) } == true ? "bookmark.fill" : "bookmark")
+                }.disabled(selected == nil)
+            }.font(.title3).padding(.horizontal, 25).padding(.vertical, 14)
+            Text(wifi ? "Saved sites • Wi-Fi enabled in game" : "Saved sites • Wi-Fi disabled in game").font(.caption2).foregroundColor(.secondary).padding(.bottom, 4)
+        }
+        .navigationTitle("Browser").navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if !seeded {
+                if history.isEmpty { history = "Maple Cafe|Maple Street Bookshop" }
+                if bookmarks.isEmpty { bookmarks = "Maple Street Bookshop" }
+                seeded = true
             }
-            Section("History") {
-                if history.isEmpty { Text("No history").foregroundColor(.secondary) }
-                ForEach(history.split(separator: "|").map(String.init), id: \.self) { name in
-                    NavigationLink(name) { Text(pages[name] ?? "").padding().navigationTitle(name) }
-                }
-                if !history.isEmpty { Button("Clear history", role: .destructive) { history = "" } }
+        }
+    }
+    private var matching: [String] {
+        let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
+        return pages.keys.sorted().filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) || (addresses[$0]?.localizedCaseInsensitiveContains(query) ?? false) }
+    }
+    private func entries(_ value: String) -> [String] {
+        value.split(separator: "|").map(String.init).filter { pages[$0] != nil }
+    }
+    private func siteSection<S: Sequence>(_ title: String, names: S) -> some View where S.Element == String {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(.headline)
+            ForEach(Array(names), id: \.self) { name in
+                Button { visit(name) } label: {
+                    HStack {
+                        Image(systemName: title == "History" ? "clock" : "bookmark").foregroundColor(.teal)
+                        Text(name)
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.caption).foregroundColor(.secondary)
+                    }.padding(10)
+                }.buttonStyle(.plain)
             }
-            Section { Text(wifi ? "Simulated Wi-Fi on. Pages are bundled offline." : "Simulated Wi-Fi off. Saved pages remain available.").font(.footnote) }
-        }.navigationTitle("Browser").searchable(text: $search, prompt: "Search local sites")
+        }
+    }
+    private func visit(_ name: String) {
+        guard pages[name] != nil else { return }
+        selected = name
+        search = addresses[name] ?? ""
+        forwardPage = nil
+        history = (entries(history).filter { $0 != name } + [name]).joined(separator: "|")
+    }
+    private func toggleBookmark(_ name: String) {
+        var values = entries(bookmarks)
+        if values.contains(name) { values.removeAll { $0 == name } } else { values.append(name) }
+        bookmarks = values.joined(separator: "|")
     }
 }

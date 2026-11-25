@@ -36,8 +36,7 @@ struct PhoneSetupRoot: View {
 
     private var setup: some View {
         ZStack {
-            LinearGradient(colors: [Color(red: 0.13, green: 0.29, blue: 0.35), Color(red: 0.07, green: 0.10, blue: 0.17)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                .ignoresSafeArea()
+            PhoneWallpaper(selection: wallpaper).ignoresSafeArea()
             VStack(spacing: 20) {
                 HStack {
                     Text("PHONE SETUP").font(.caption.weight(.semibold)).tracking(3)
@@ -52,17 +51,17 @@ struct PhoneSetupRoot: View {
                             Text("Set up your device in a few simple steps.").foregroundColor(.secondary)
                         case 1:
                             hero("iphone", title: "Make it yours", detail: "Choose a name for your new device.")
-                            ForEach(["My phone", "Personal phone", "Everyday phone"], id: \.self) { name in
-                                option(name, selected: device == name) { device = name }
-                            }
+                            TextField("Device name", text: $device)
+                                .textInputAutocapitalization(.words).autocorrectionDisabled()
+                                .padding().background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                                .onChange(of: device) { if $0.count > 30 { device = String($0.prefix(30)) } }
+                            Text("Use a nickname or fictional name. No personal details required.").font(.caption).foregroundColor(.secondary)
                         case 2:
                             hero("paintpalette", title: "Your style", detail: "Choose your first wallpaper.")
-                            option("Coastal", selected: wallpaper == 0) { wallpaper = 0 }
-                            option("Dusk", selected: wallpaper == 1) { wallpaper = 1 }
-                            Toggle("Use real Face ID / Touch ID", isOn: $biometricUnlock)
-                                .tint(.teal)
-                            Text("Optional. Your iPhone handles authentication when you unlock the fictional phone. No facial data is collected. You can play without biometrics.")
-                                .font(.caption).foregroundColor(.secondary)
+                            HStack(spacing: 16) {
+                                wallpaperCard("Coastal", index: 0)
+                                wallpaperCard("Dusk", index: 1)
+                            }
                         case 3:
                             hero("cloud", title: "Transfer your data", detail: "A saved device backup is available for this phone.")
                             VStack(alignment: .leading, spacing: 9) {
@@ -72,7 +71,7 @@ struct PhoneSetupRoot: View {
                                 Text("Ready to restore").font(.caption).foregroundColor(.secondary)
                             }.frame(maxWidth: .infinity, alignment: .leading).padding()
                                 .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18))
-                            Text("No account sign-in is required. This is a simulated transfer inside the game.").font(.caption).foregroundColor(.secondary)
+                            Text("No account sign-in required.").font(.caption).foregroundColor(.secondary)
                         default:
                             hero("arrow.down.circle", title: "Restoring your phone", detail: "Getting everything ready for you.")
                             ProgressView(value: Double(progress), total: 100)
@@ -93,6 +92,7 @@ struct PhoneSetupRoot: View {
                             do { try RestoredPhoneBackup.restore(); justRestored = true }
                             catch { restoreFailed = true; return }
                         }
+                        if stage == 1 && device.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { device = "My phone" }
                         if stage == 3 { progress = 0 }
                         if reduceMotion { stage += 1 }
                         else { withAnimation(.easeInOut(duration: 0.22)) { stage += 1 } }
@@ -104,14 +104,14 @@ struct PhoneSetupRoot: View {
                 if stage > 0 && stage < 4 {
                     Button("Back") { stage -= 1 }.font(.subheadline)
                 }
-                Text("LAST SEEN · Fictional device setup").font(.caption2).foregroundColor(.white.opacity(0.5))
+                Text("Device setup").font(.caption2).foregroundColor(.white.opacity(0.5))
             }.padding(24)
         }
         .task(id: stage) {
             guard stage == 4 else { return }
             if reduceMotion { progress = 100; return }
             while progress < 100 && !Task.isCancelled {
-                do { try await Task.sleep(nanoseconds: 75_000_000) } catch { return }
+                do { try await Task.sleep(nanoseconds: 200_000_000) } catch { return }
                 guard !Task.isCancelled else { return }
                 progress = min(100, progress + 2)
             }
@@ -126,6 +126,22 @@ struct PhoneSetupRoot: View {
                 .multilineTextAlignment(.center)
             Text(detail).font(.body).foregroundColor(.secondary).multilineTextAlignment(.center)
         }.padding(.vertical, 14)
+    }
+
+    private func wallpaperCard(_ title: String, index: Int) -> some View {
+        Button {
+            wallpaper = index
+        } label: {
+            VStack(spacing: 9) {
+                PhoneWallpaper(selection: index)
+                    .frame(height: 170).clipShape(RoundedRectangle(cornerRadius: 19))
+                    .overlay(RoundedRectangle(cornerRadius: 19).strokeBorder(wallpaper == index ? Color.teal : Color.white.opacity(0.18), lineWidth: wallpaper == index ? 3 : 1))
+                    .overlay(alignment: .bottomTrailing) {
+                        if wallpaper == index { Image(systemName: "checkmark.circle.fill").foregroundColor(.white).padding(10) }
+                    }
+                Text(title).font(.subheadline.weight(.medium))
+            }
+        }.buttonStyle(.plain).accessibilityAddTraits(wallpaper == index ? [.isSelected] : [])
     }
 
     private func option(_ name: String, selected: Bool, action: @escaping () -> Void) -> some View {
