@@ -49,7 +49,7 @@ struct RecoveryPrologue: View {
         switch stage {
         case 0: return connected ? "Device connected" : "Connect your device"
         case 1: return elapsed < OpeningPace.recognition ? "Recognizing device" : elapsed < duration ? "Running diagnostics" : "Device ready"
-        case 2: return elapsed < OpeningPace.preparation ? "Preparing environment" : "Installing jailbreak"
+        case 2: return elapsed < OpeningPace.preparation ? "Preparing bootstrap" : "Installing jailbreak"
         case 3: return "Installation complete"
         case 4: return "Starting Patchline"
         default: return "Welcome to Last Seen"
@@ -58,7 +58,7 @@ struct RecoveryPrologue: View {
     private var detail: String {
         switch stage {
         case 0: return connected ? "Your service session is ready." : "Connect your phone to power using a charging cable."
-        case 1: return elapsed < OpeningPace.recognition ? "Establishing a virtual device session." : elapsed < duration ? "Checking the recovery environment and preserving archived records." : "Diagnostics passed. The custom environment is ready to install."
+        case 1: return elapsed < OpeningPace.recognition ? "Establishing device session." : elapsed < duration ? "Checking the recovery environment and preserving archived records." : "Diagnostics passed. The custom environment is ready to install."
         case 2: return elapsed < OpeningPace.preparation ? "Preparing the local bootstrap and package environment." : "Keep the connection active while the custom environment is installed."
         case 3: return "Patchline and Relay are ready. Userspace reboot will begin automatically."
         case 4: return "Finalizing services and refreshing the icon cache."
@@ -86,10 +86,10 @@ struct RecoveryPrologue: View {
         .tint(accent)
         .onAppear {
             guard !initialized else { return }
-            if revision < 5 {
+            if revision < 6 {
                 // One-time replay of the revised prologue, never reset the phone or earned access.
-                stage = 0; elapsed = 0; simulated = false; revision = 5
-                OpeningQA.record("Opening revision 5 initialized; existing phone records retained")
+                stage = 0; elapsed = 0; simulated = false; revision = 6
+                OpeningQA.record("Opening revision 6 initialized; existing phone records retained")
             }
             initialized = true
         }
@@ -161,7 +161,7 @@ struct RecoveryPrologue: View {
                 .opacity(connected ? 1 : 0.82)
             HStack(spacing: 10) {
                 OpeningArt(name: "Opening_USB", size: 42)
-                Text(connected ? "Virtual connection established" : "Connect your charging cable")
+                Text(connected ? "Connection established" : "Connect your charging cable")
                     .font(.caption.weight(.medium)).foregroundColor(.secondary)
             }
         }.frame(maxWidth: .infinity)
@@ -220,7 +220,7 @@ struct RecoveryPrologue: View {
                 OpeningArt(name: stage == 1 ? "Opening_Diagnostics" : stage == 2 ? "Opening_Install" : "Opening_Unlock", size: 38)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(phaseTitle).font(.headline).accessibilityAddTraits(.isHeader)
-                    Text("PATCHLINE • SIMULATED CONSOLE").font(.system(size: 9, weight: .medium, design: .monospaced)).foregroundColor(.secondary)
+                    Text("PATCHLINE • DEVICE CONSOLE").font(.system(size: 9, weight: .medium, design: .monospaced)).foregroundColor(.secondary)
                 }
                 Spacer(minLength: 4)
                 Button { effects.toggle(); if !effects { RestartAudio.stop() } } label: {
@@ -250,7 +250,7 @@ struct RecoveryPrologue: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 5) {
-                        Text("[SESSION] Virtual transport ready").foregroundColor(accent)
+                        Text("[SESSION] Transport ready").foregroundColor(accent)
                         ForEach(Array(transcript.enumerated()), id: \.offset) { entry in
                             Text(String(format: "[%03d] ", entry.offset + 1) + entry.element)
                                 .foregroundColor(entry.element.contains("PASS") || entry.element.contains("complete") ? .white : accent)
