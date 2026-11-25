@@ -11,8 +11,8 @@ final class BuildIdentityTests: XCTestCase {
         let build = try XCTUnwrap(bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String)
         let identifier = try XCTUnwrap(bundle.bundleIdentifier)
 
-        XCTAssertEqual(marketing, "1.8.1", "The actual installed app version must advance")
-        XCTAssertEqual(build, "30", "Every test build must use a strictly newer build number")
+        XCTAssertEqual(marketing, "1.8.2", "The actual installed app version must advance")
+        XCTAssertEqual(build, "31", "Every test build must use a strictly newer build number")
         XCTAssertEqual(identifier, "com.valentinebsaa.lastseen.horror")
         XCTAssertFalse((bundle.object(forInfoDictionaryKey: "NSFaceIDUsageDescription") as? String ?? "").isEmpty)
     }

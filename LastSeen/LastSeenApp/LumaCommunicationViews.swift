@@ -111,6 +111,9 @@ private struct LumaContactRow: View {
 
 struct LumaPhoneDirectory: View {
     @EnvironmentObject private var world: PhoneWorldStore
+    @AppStorage("lastseen.lab.messageSound") private var sound = true
+    @AppStorage("lastseen.lab.messageHaptics") private var haptics = true
+    @State private var dialDigits = ""
     @State private var tab = 0
     @State private var search = ""
     private var people: [Neighbor] {
@@ -121,6 +124,7 @@ struct LumaPhoneDirectory: View {
     }
     var body: some View {
         VStack(spacing: 0) {
+            if tab == 3 { keypad } else {
             List {
                 if tab == 1 {
                     if (world.state.callHistory ?? []).isEmpty { Text("No recent calls").foregroundColor(.secondary) }
@@ -142,14 +146,37 @@ struct LumaPhoneDirectory: View {
                     }
                 }
             }.listStyle(.plain).scrollContentBackground(.hidden)
+            }
             Divider()
             HStack {
                 tabButton(0, "Favorites", "star.fill")
                 tabButton(1, "Recents", "clock")
                 tabButton(2, "Contacts", "person.crop.circle")
+                tabButton(3, "Keypad", "circle.grid.3x3.fill")
             }.padding(.vertical, 8).background(LumaDesign.surface)
         }.background(LumaDesign.background.ignoresSafeArea())
             .navigationTitle("Phone").searchable(text: $search, prompt: "Search phone")
+    }
+    private var keypad: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                Text(dialDigits.isEmpty ? "Enter number" : dialDigits)
+                    .font(.title.monospacedDigit()).lineLimit(1).minimumScaleFactor(0.5)
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
+                    ForEach(["1","2","3","4","5","6","7","8","9","*","0","#"], id: \.self) { key in
+                        Button {
+                            guard dialDigits.count < 24 else { return }
+                            dialDigits += key
+                            PhoneSensoryEngine.play(.dialerKeypress, sound: sound, haptics: haptics, horrorEnabled: false)
+                        } label: {
+                            Text(key).font(.title2).frame(maxWidth: .infinity, minHeight: 48).lumaSurface(radius: 18)
+                        }.buttonStyle(.plain)
+                    }
+                }.frame(maxWidth: 310)
+                Button("Delete digit") { if !dialDigits.isEmpty { dialDigits.removeLast() } }.disabled(dialDigits.isEmpty)
+                Text("Fictional keypad only. No real number is dialed.").font(.caption).foregroundColor(.secondary)
+            }.padding()
+        }.frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     private func tabButton(_ index: Int, _ name: String, _ icon: String) -> some View {
         Button { tab = index } label: {

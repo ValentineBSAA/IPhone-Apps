@@ -131,6 +131,8 @@ jobs:
           set -euo pipefail
           gh release download L1 --repo ValentineBSAA/IPhone-Apps --pattern 'Last.Seen.Sounds.zip' --dir . --clobber
           python3 Tools/import_phone_sounds.py --zip Last.Seen.Sounds.zip
+          gh release download L1 --repo ValentineBSAA/IPhone-Apps --pattern 'Extra.phone.sounds.V1.zip' --dir . --clobber
+          python3 Tools/import_extra_phone_sounds.py --zip Extra.phone.sounds.V1.zip
 
       - name: Import and verify all sixteen approved Nora assets
         env:
@@ -204,12 +206,13 @@ jobs:
           test -s "$APP/UserspaceDown.wav"
           test -s "$APP/UserspaceUp.wav"
           python3 Tools/import_phone_sounds.py --verify-bundle "$APP"
+          python3 Tools/import_extra_phone_sounds.py --verify-bundle "$APP"
           MARKETING_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist")"
           BUILD_NUMBER="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")"
           BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")"
           echo "Actual app version: $MARKETING_VERSION ($BUILD_NUMBER)"
-          test "$MARKETING_VERSION" = "1.8.1"
-          test "$BUILD_NUMBER" = "30"
+          test "$MARKETING_VERSION" = "1.8.2"
+          test "$BUILD_NUMBER" = "31"
           test -n "$(/usr/libexec/PlistBuddy -c 'Print :NSFaceIDUsageDescription' "$APP/Info.plist")"
           test "$BUNDLE_ID" = "com.valentinebsaa.lastseen.horror"
           test -s "LastSeenApp/Assets.xcassets/Contact_Maya.imageset/photo.jpg"
@@ -249,14 +252,14 @@ jobs:
           xcrun simctl launch "$SIMULATOR_ID" com.valentinebsaa.lastseen.horror
           sleep 4
           mkdir -p dist
-          xcrun simctl io "$SIMULATOR_ID" screenshot dist/last-seen-permissions-v1.8.1.png
-          test -s dist/last-seen-permissions-v1.8.1.png
+          xcrun simctl io "$SIMULATOR_ID" screenshot dist/last-seen-permissions-v1.8.2.png
+          test -s dist/last-seen-permissions-v1.8.2.png
 
       - name: Upload visual UI verification screenshot
         uses: actions/upload-artifact@v4
         with:
-          name: LAST-SEEN-v1.8.1-permissions-screen-simulator
-          path: LastSeen/dist/last-seen-permissions-v1.8.1.png
+          name: LAST-SEEN-v1.8.2-permissions-screen-simulator
+          path: LastSeen/dist/last-seen-permissions-v1.8.2.png
           if-no-files-found: error
           retention-days: 14
 
@@ -267,16 +270,16 @@ jobs:
           cp -R build/Build/Products/Release-iphoneos/LastSeen.app dist/Payload/
           (
             cd dist
-            zip -qr Last-Seen-v1.8.1-iOS16-unsigned.ipa Payload
+            zip -qr Last-Seen-v1.8.2-iOS16-unsigned.ipa Payload
           )
-          test -s dist/Last-Seen-v1.8.1-iOS16-unsigned.ipa
-          python3 Tools/verify_device_assets.py --ipa dist/Last-Seen-v1.8.1-iOS16-unsigned.ipa --app build/Build/Products/Release-iphoneos/LastSeen.app
+          test -s dist/Last-Seen-v1.8.2-iOS16-unsigned.ipa
+          python3 Tools/verify_device_assets.py --ipa dist/Last-Seen-v1.8.2-iOS16-unsigned.ipa --app build/Build/Products/Release-iphoneos/LastSeen.app
 
       - name: Publish unsigned IPA for user-side installation
         uses: actions/upload-artifact@v4
         with:
-          name: LAST-SEEN-v1.8.1-iOS16-unsigned
-          path: LastSeen/dist/Last-Seen-v1.8.1-iOS16-unsigned.ipa
+          name: LAST-SEEN-v1.8.2-iOS16-unsigned
+          path: LastSeen/dist/Last-Seen-v1.8.2-iOS16-unsigned.ipa
           if-no-files-found: error
           retention-days: 30
 

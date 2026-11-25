@@ -17,9 +17,9 @@ final class PhoneFeedbackTests: XCTestCase {
         XCTAssertNotEqual(PhoneCue.suspense.waveData(), PhoneCue.scare.waveData())
     }
 
-    func testAllElevenOriginalAssetsDecodeAndPlayOnce() throws {
-        XCTAssertEqual(PhoneCue.allCases.count, 11)
-        XCTAssertEqual(Set(PhoneCue.allCases.map(\.assetName)).count, 11)
+    func testAllFifteenOriginalAssetsDecodeAndPlayOnce() throws {
+        XCTAssertEqual(PhoneCue.allCases.count, 15)
+        XCTAssertEqual(Set(PhoneCue.allCases.map(\.assetName)).count, 15)
         XCTAssertEqual(PhoneCue.allCases.filter(\.isHorror).count, 5)
         for cue in PhoneCue.allCases {
             let url = try XCTUnwrap(cue.audioURL(in: Bundle(for: PhoneWorldStore.self)), cue.assetName)
@@ -28,6 +28,15 @@ final class PhoneFeedbackTests: XCTestCase {
             XCTAssertLessThan(player.duration, 16)
             XCTAssertEqual(player.numberOfLoops, 0)
         }
+    }
+
+    func testCorrectiveCueClassification() {
+        XCTAssertTrue(PhoneCue.unlock.isAuthentication)
+        XCTAssertTrue(PhoneCue.authenticationFailed.isAuthentication)
+        XCTAssertTrue(PhoneCue.passcodeKeypress.isKeypress)
+        XCTAssertTrue(PhoneCue.dialerKeypress.isKeypress)
+        XCTAssertFalse(PhoneCue.timerCompleted.isHorror)
+        XCTAssertFalse(PhoneCue.message.isAuthentication)
     }
 
     func testIncomingDetectionDoesNotDependOnUnreadState() {

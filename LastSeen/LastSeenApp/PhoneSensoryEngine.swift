@@ -8,6 +8,7 @@ import UIKit
 enum PhoneCue: String, CaseIterable {
     case message, outgoing, general, call, lock, unlock
     case corrupted, unknownCaller, suspense, scare, phantom
+    case authenticationFailed, passcodeKeypress, timerCompleted, dialerKeypress
 
     var isHorror: Bool {
         switch self {
@@ -29,6 +30,10 @@ enum PhoneCue: String, CaseIterable {
         case .suspense: return "PhoneHeartbeat"
         case .scare: return "PhoneAnomaly"
         case .phantom: return "PhonePhantomVibration"
+        case .authenticationFailed: return "PhoneAuthenticationFailed"
+        case .passcodeKeypress: return "PhonePasscodeKeypress"
+        case .timerCompleted: return "PhoneTimerCompleted"
+        case .dialerKeypress: return "PhoneDialerKeypress"
         }
     }
 
@@ -45,6 +50,10 @@ enum PhoneCue: String, CaseIterable {
         case .suspense: return "Electronic heartbeat"
         case .scare: return "Sudden system anomaly"
         case .phantom: return "Phantom vibration"
+        case .authenticationFailed: return "Authentication failed"
+        case .passcodeKeypress: return "Passcode keypress"
+        case .timerCompleted: return "Timer completed"
+        case .dialerKeypress: return "Phone dialer keypress"
         }
     }
 
@@ -65,14 +74,14 @@ enum PhoneCue: String, CaseIterable {
         case .message:
             return [Pulse(time: 0, frequency: 880, duration: 0.12, intensity: 0.55, sharpness: 0.65),
                     Pulse(time: 0.16, frequency: 1175, duration: 0.16, intensity: 0.45, sharpness: 0.55)]
-        case .outgoing, .lock, .unlock:
+        case .outgoing, .lock, .unlock, .passcodeKeypress, .dialerKeypress:
             return [Pulse(time: 0, frequency: 700, duration: 0.08, intensity: 0.23, sharpness: 0.6)]
-        case .general:
+        case .general, .timerCompleted:
             return [Pulse(time: 0, frequency: 900, duration: 0.14, intensity: 0.5, sharpness: 0.5)]
         case .call, .unknownCaller:
             return [Pulse(time: 0, frequency: 440, duration: 0.26, intensity: 0.62, sharpness: 0.32),
                     Pulse(time: 0.4, frequency: 330, duration: 0.25, intensity: 0.62, sharpness: 0.32)]
-        case .corrupted, .phantom:
+        case .corrupted, .phantom, .authenticationFailed:
             return [Pulse(time: 0, frequency: 230, duration: 0.14, intensity: 0.6, sharpness: 0.65),
                     Pulse(time: 0.23, frequency: 150, duration: 0.27, intensity: 0.74, sharpness: 0.32)]
         case .suspense:
@@ -84,6 +93,8 @@ enum PhoneCue: String, CaseIterable {
         }
     }
 
+    var isKeypress: Bool { self == .passcodeKeypress || self == .dialerKeypress }
+    var isAuthentication: Bool { self == .unlock || self == .authenticationFailed }
     var duration: Double { (pulses.map { $0.time + $0.duration }.max() ?? 0) + 0.04 }
 
     /// Generate a bounded, click-free mono PCM WAV; no external resources or
@@ -146,11 +157,64 @@ enum PhoneSensoryEngine {
     private static var audio: AVAudioPlayer?
     private static var engine: CHHapticEngine?
     private static var hapticPlayer: CHHapticPatternPlayer?
+    private static var currentCue: PhoneCue?
+    private static var deferredAuthentication: Task<Void, Never>?
+    private static var queued: [(PhoneCue, Bool, Bool, Bool)] = []
+    private static var drainTask: Task<Void, Never>?
+
+    // Face ID may return while UIKit is inactive. Retain a single explicit outcome
+    // until foreground activation, never replay after background or a new request.
+    static func authentication(_ cue: PhoneCue, sound: Bool, haptics: Bool) {
+        guard cue.isAuthentication else { return }
+        cancelAuthentication()
+        deferredAuthentication = Task { @MainActor in
+            for _ in 0..<50 {
+                guard !Task.isCancelled else { return }
+                let state = UIApplication.shared.applicationState
+                if state == .background { return }
+                if state == .active {
+                    deferredAuthentication = nil
+                    let defaults = UserDefaults.standard
+                    let soundEnabled = defaults.object(forKey: "lastseen.lab.messageSound") == nil || defaults.bool(forKey: "lastseen.lab.messageSound")
+                    let hapticsEnabled = defaults.object(forKey: "lastseen.lab.messageHaptics") == nil || defaults.bool(forKey: "lastseen.lab.messageHaptics")
+                    play(cue, sound: sound && soundEnabled, haptics: haptics && hapticsEnabled, horrorEnabled: false)
+                    return
+                }
+                do { try await Task.sleep(nanoseconds: 100_000_000) } catch { return }
+            }
+            OpeningQA.record("Authentication audio expired while inactive")
+        }
+    }
+    static func cancelAuthentication() {
+        deferredAuthentication?.cancel(); deferredAuthentication = nil
+    }
+    private static func scheduleDrain() {
+        guard drainTask == nil else { return }
+        drainTask = Task { @MainActor in
+            while !Task.isCancelled {
+                do { try await Task.sleep(nanoseconds: 50_000_000) } catch { return }
+                guard UIApplication.shared.applicationState == .active else { queued.removeAll(); break }
+                if audio?.isPlaying == true { continue }
+                guard !queued.isEmpty else { break }
+                let next = queued.removeFirst()
+                play(next.0, sound: next.1, haptics: next.2, horrorEnabled: next.3)
+            }
+            drainTask = nil
+        }
+    }
 
     @discardableResult
     static func play(_ cue: PhoneCue, sound: Bool, haptics: Bool, horrorEnabled: Bool) -> Double {
         guard UIApplication.shared.applicationState == .active,
               !cue.isHorror || horrorEnabled else { return 0 }
+        if audio?.isPlaying == true, let currentCue {
+            if cue.isKeypress && !currentCue.isKeypress { return 0 }
+            if !cue.isKeypress && !currentCue.isKeypress && !cue.isAuthentication {
+                if queued.count < 12 { queued.append((cue, sound, haptics, horrorEnabled)); scheduleDrain() }
+                OpeningQA.record("Phone audio queued: " + cue.rawValue)
+                return 0
+            }
+        }
         var playbackDuration = 0.0
         if sound {
             do {
@@ -164,8 +228,11 @@ enum PhoneSensoryEngine {
                 }
                 audio?.numberOfLoops = 0
                 playbackDuration = audio?.duration ?? 0
-                audio?.volume = 0.8
-                if audio?.play() == true { OpeningQA.record("Phone audio requested: " + cue.rawValue) }
+                audio?.volume = cue == .passcodeKeypress || cue == .authenticationFailed || cue == .timerCompleted ? 1.0 : 0.8
+                audio?.prepareToPlay()
+                currentCue = cue
+                if audio?.play() == true { OpeningQA.record("Phone audio started: " + cue.rawValue) }
+                else { OpeningQA.record("Phone audio start failed: " + cue.rawValue) }
             } catch { OpeningQA.record("Phone audio unavailable") }
         }
         if haptics {
@@ -204,12 +271,13 @@ enum PhoneSensoryEngine {
         }
         let fallback = UINotificationFeedbackGenerator()
         fallback.prepare()
-        fallback.notificationOccurred(cue.isHorror ? .warning : .success)
+        fallback.notificationOccurred(cue == .authenticationFailed ? .error : (cue.isHorror ? .warning : .success))
         OpeningQA.record("UIKit haptic requested: " + cue.rawValue)
     }
 
     static func stopSound() {
-        audio?.stop(); audio = nil
+        audio?.stop(); audio = nil; currentCue = nil
+        drainTask?.cancel(); drainTask = nil; queued.removeAll()
     }
     static func stopHaptics() {
         try? hapticPlayer?.stop(atTime: CHHapticTimeImmediate)
@@ -218,6 +286,6 @@ enum PhoneSensoryEngine {
         engine = nil
     }
     static func stop() {
-        stopSound(); stopHaptics()
+        cancelAuthentication(); stopSound(); stopHaptics()
     }
 }

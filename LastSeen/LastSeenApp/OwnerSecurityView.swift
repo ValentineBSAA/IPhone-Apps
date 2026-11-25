@@ -26,6 +26,7 @@ struct OwnerPasscodeView: View {
     @State private var cooldownUntil = Date.distantPast
     @State private var notice = ""
     @State private var showHint = false
+    @AppStorage("lastseen.lab.messageSound") private var sound = true
     @AppStorage("lastseen.lab.messageHaptics") private var haptics = true
     private let keys = ["1","2","3","4","5","6","7","8","9","","0","delete"]
     var body: some View {
@@ -37,7 +38,7 @@ struct OwnerPasscodeView: View {
                 Text("Use the fictional six-digit code found in the restored phone. Never enter your actual device passcode.").font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
                 HStack(spacing: 13) {
                     ForEach(0..<6, id: \.self) { i in
-                        Circle().strokeBorder(.white.opacity(0.65), lineWidth: 1.4)
+                        Circle().strokeBorder(notice.isEmpty ? Color.white.opacity(0.65) : Color.red, lineWidth: 1.4)
                             .background(Circle().fill(i < digits.count ? Color.white : .clear))
                             .frame(width: 13, height: 13)
                     }
@@ -72,6 +73,8 @@ struct OwnerPasscodeView: View {
             return
         }
         guard digits.count < 6 else { return }
+        notice = ""
+        PhoneSensoryEngine.play(.passcodeKeypress, sound: sound, haptics: false, horrorEnabled: false)
         if haptics { UIImpactFeedbackGenerator(style: .soft).impactOccurred() }
         digits += key
         guard digits.count == 6 else { return }
@@ -79,7 +82,7 @@ struct OwnerPasscodeView: View {
             if haptics { UINotificationFeedbackGenerator().notificationOccurred(.success) }
             digits = ""; notice = ""; attempts = 0; onSuccess()
         } else {
-            if haptics { UINotificationFeedbackGenerator().notificationOccurred(.error) }
+            PhoneSensoryEngine.authentication(.authenticationFailed, sound: sound, haptics: haptics)
             digits = ""; attempts += 1; notice = "Incorrect owner passcode."
             if attempts % 3 == 0 { cooldownUntil = Date().addingTimeInterval(5) }
         }
@@ -98,6 +101,8 @@ struct ProtectedAreaView: View {
     @State private var context: LAContext?
     @State private var notice = ""
     @State private var enrollment = false
+    @AppStorage("lastseen.lab.messageSound") private var sound = true
+    @AppStorage("lastseen.lab.messageHaptics") private var haptics = true
     private var canUseBiometrics: Bool {
         OwnerSecurityPolicy.canUseBiometrics(ownerVerified: ownerVerified, appearanceEnrolled: appearanceEnrolled)
     }
@@ -117,6 +122,7 @@ struct ProtectedAreaView: View {
                     }
                     OwnerPasscodeView(onSuccess: {
                         ownerVerified = true; session = true; passcodeSession = true
+                        PhoneSensoryEngine.authentication(.unlock, sound: sound, haptics: haptics)
                     }).disabled(context != nil)
                 }
                 if !notice.isEmpty { Text(notice).font(.footnote).foregroundColor(.secondary) }
@@ -184,17 +190,25 @@ struct ProtectedAreaView: View {
             return
         }
         context = candidate
-        candidate.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: forEnrollment ? "Register your appearance in Last Seen." : "Unlock protected fictional records in Last Seen.") { success, _ in
+        candidate.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: forEnrollment ? "Register your appearance in Last Seen." : "Unlock protected fictional records in Last Seen.") { success, error in
             DispatchQueue.main.async {
                 guard context === candidate else { return }
                 context = nil
-                guard success else { notice = "Authentication cancelled or unsuccessful. The owner passcode still works."; return }
+                guard success else {
+                    if (error as? LAError)?.code == .authenticationFailed {
+                        notice = "Authentication failed. The owner passcode still works."
+                        PhoneSensoryEngine.authentication(.authenticationFailed, sound: sound, haptics: haptics)
+                    } else { notice = "Authentication cancelled or unavailable. The owner passcode still works." }
+                    return
+                }
                 if forEnrollment {
                     guard ownerVerified && session && passcodeSession && enrollment else { return }
                     appearanceEnrolled = true; enrollment = false
                     notice = "Appearance registered."
+                    PhoneSensoryEngine.authentication(.unlock, sound: sound, haptics: haptics)
                 } else if canUseBiometrics {
                     session = true; passcodeSession = false; notice = ""
+                    PhoneSensoryEngine.authentication(.unlock, sound: sound, haptics: haptics)
                 }
             }
         }

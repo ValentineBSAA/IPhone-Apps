@@ -53,6 +53,9 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.lab.horrorEffects") private var horrorEffects = true
     @AppStorage("lastseen.lab.feedbackRevision") private var feedbackRevision = 0
     @State private var didConfigureFeedback = false
+    @AppStorage("lastseen.lab.timerEnd") private var feedbackTimerEnd = 0.0
+    @AppStorage("lastseen.lab.timerFeedbackDelivered") private var feedbackTimerDelivered = 0.0
+    @State private var timerBaselineReady = false
     @State private var tutorialReplay = 0
     @State private var confirmTutorialReplay = false
     private var tutorialDeliveryID: String { "\(didConfigureFeedback)-\(phase == .active)-\(tutorialReplay)-\(checkpointReboot)" }
@@ -181,7 +184,13 @@ struct PhoneLabView: View {
             observedUtilityFlags = flags
             if let old, !flags.contains(old.flag) { utilityNotice = nil }
         }
-        .onAppear { observedUtilityFlags = world.state.flags }
+        .onAppear {
+            observedUtilityFlags = world.state.flags
+            if !timerBaselineReady {
+                timerBaselineReady = true
+                if feedbackTimerEnd > 0 && feedbackTimerEnd <= Date().timeIntervalSince1970 { feedbackTimerDelivered = feedbackTimerEnd }
+            }
+        }
         .task(id: utilityNotice) {
             guard let tool = utilityNotice else { return }
             do { try await Task.sleep(nanoseconds: 6_000_000_000) } catch { return }
@@ -190,6 +199,7 @@ struct PhoneLabView: View {
         .onChange(of: RecoveryCircuit.unlocked(world.state.flags)) { earned in
             if earned && !checkpointReboot { circuitBanner = true }
             else { circuitBanner = false }
+            if earned && !checkpointReboot && didConfigureFeedback && phase == .active { PhoneSensoryEngine.play(.general, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects) }
         }
         .task(id: circuitBanner) {
             guard circuitBanner else { return }
@@ -245,13 +255,26 @@ struct PhoneLabView: View {
         .task(id: phase) {
             guard phase == .active else { return }
             while !Task.isCancelled {
-                if !checkpointReboot { world.advancePendingReplies() }
+                if !checkpointReboot {
+                    let before = Set(world.connected.mail.filter { $0.kind == "inbox" }.map(\.id))
+                    world.advancePendingReplies()
+                    let after = Set(world.connected.mail.filter { $0.kind == "inbox" }.map(\.id))
+                    if didConfigureFeedback && !after.subtracting(before).isEmpty {
+                        PhoneSensoryEngine.play(.general, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
+                    }
+                    if timerBaselineReady && feedbackTimerEnd > 0 && feedbackTimerEnd != feedbackTimerDelivered && feedbackTimerEnd <= Date().timeIntervalSince1970 {
+                        feedbackTimerDelivered = feedbackTimerEnd
+                        PhoneSensoryEngine.play(.timerCompleted, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
+                    }
+                }
                 do { try await Task.sleep(nanoseconds: 250_000_000) } catch { return }
             }
         }
         .onChange(of: locked) { value in
+            guard value else { return }
+            PhoneSensoryEngine.cancelAuthentication()
             guard didConfigureFeedback, phase == .active, !checkpointReboot else { return }
-            PhoneSensoryEngine.play(value ? .lock : .unlock, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
+            PhoneSensoryEngine.play(.lock, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
         }
         .onChange(of: phase) { value in
             observedIncoming = Set(incomingIDs)
@@ -259,7 +282,8 @@ struct PhoneLabView: View {
             if value != .active { saves.persistPlayTime() }
             if value != .active {
                 arrivalTask?.cancel(); arrivalTask = nil
-                PhoneSensoryEngine.stop()
+                if value == .background { PhoneSensoryEngine.stop() }
+                else { PhoneSensoryEngine.stopSound(); PhoneSensoryEngine.stopHaptics() }
                 banner = nil
             }
         }
@@ -412,7 +436,9 @@ struct PhoneLabView: View {
     }
 
     private func completeUnlock() {
+        guard locked else { return }
         authNotice = ""
+        PhoneSensoryEngine.authentication(.unlock, sound: messageSound, haptics: messageHaptics)
         withAnimation(.easeInOut(duration: 0.25)) { locked = false }
         if let neighbor = pendingThread { pendingThread = nil; openThread(neighbor) }
     }
@@ -426,6 +452,7 @@ struct PhoneLabView: View {
 
     private func requestUnlock() {
         guard locked, authContext == nil else { return }
+        PhoneSensoryEngine.cancelAuthentication()
         authNotice = ""
         guard biometricUnlock else {
             completeUnlock()
@@ -441,7 +468,7 @@ struct PhoneLabView: View {
             return
         }
         authContext = context
-        context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Unlock your fictional Last Seen phone.") { success, _ in
+        context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Unlock your fictional Last Seen phone.") { success, error in
             DispatchQueue.main.async {
                 guard authContext === context else { return }
                 authContext = nil
@@ -449,7 +476,10 @@ struct PhoneLabView: View {
                     completeUnlock()
                 } else {
                     pendingThread = nil
-                    authNotice = "Unlock cancelled or unsuccessful. Use the fictional owner passcode or open public apps."
+                    if (error as? LAError)?.code == .authenticationFailed {
+                        authNotice = "Authentication failed. Use the fictional owner passcode or open public apps."
+                        PhoneSensoryEngine.authentication(.authenticationFailed, sound: messageSound, haptics: messageHaptics)
+                    } else { authNotice = "Unlock cancelled or unavailable. Use the fictional owner passcode or open public apps." }
                 }
             }
         }
@@ -796,7 +826,7 @@ struct PhoneLabView: View {
                 Toggle("Horror sensory effects", isOn: $horrorEffects)
                 NavigationLink {
                     PhoneSoundStudio(sound: $messageSound, haptics: $messageHaptics, horrorEnabled: $horrorEffects)
-                } label: { Label("Sound Library · 11 effects", systemImage: "waveform") }
+                } label: { Label("Sound Library · 15 effects", systemImage: "waveform") }
                 Button {
                     PhoneSensoryEngine.play(.message, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
                 } label: { Label("Preview message alert", systemImage: "bell.badge") }
@@ -814,7 +844,7 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.8.1 (30)")
+                LabeledContent("Software", value: "1.8.2 (31)")
                 Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay message tutorial") { confirmTutorialReplay = true }
                 Button("Replay phone setup") { confirmSetupReplay = true }
