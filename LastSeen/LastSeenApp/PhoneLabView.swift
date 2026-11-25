@@ -11,6 +11,8 @@ struct PhoneLabView: View {
     @State private var panel: LabPanel?
     @State private var recent: [LabApp] = []
     @AppStorage("lastseen.lab.wallpaper") private var wallpaper = 0
+    @AppStorage("lastseen.relay.compactIcons") private var compactIcons = false
+    @AppStorage("lastseen.relay.installed") private var relayInstalled = ""
     @AppStorage("lastseen.lab.brightness") private var brightness = 0.9
     @AppStorage("lastseen.lab.wifi") private var wifi = true
     @AppStorage("lastseen.setup.device") private var device = "My phone"
@@ -235,7 +237,7 @@ struct PhoneLabView: View {
                 ZStack(alignment: .topTrailing) {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(LinearGradient(colors: [app.color, app.color.opacity(0.55)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .frame(width: 55, height: 55)
+                        .frame(width: compactIcons ? 47 : 55, height: compactIcons ? 47 : 55)
                         .overlay { Image(systemName: app.symbol).font(.system(size: 24, weight: .medium)) }
                     if app == .messages && unread > 0 {
                         Text("\(unread)").font(.caption2.bold()).padding(5)
@@ -264,6 +266,7 @@ struct PhoneLabView: View {
                 Picker("Wallpaper", selection: $wallpaper) {
                     Text("Coastal").tag(0)
                     Text("Dusk").tag(1)
+                    if relayInstalled.split(separator: "|").contains("midnight") { Text("Midnight Glass").tag(2) }
                 }
             }
             Section("Notifications and privacy") {
@@ -342,6 +345,7 @@ struct PhoneLabView: View {
             controls.navigationTitle("Settings")
         case .files: LabFilesView()
         case .browser: LabBrowserView(wifi: wifi)
+        case .relay: RelayPackagesView()
         }
     }
 }
@@ -352,7 +356,7 @@ private enum LabPanel: String, Identifiable {
 }
 
 private enum LabApp: String, CaseIterable, Identifiable {
-    case messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser"
+    case messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay"
     var id: String { rawValue }
     var inDock: Bool { [.messages, .contacts, .browser, .settings].contains(self) }
     var symbol: String {
@@ -368,6 +372,7 @@ private enum LabApp: String, CaseIterable, Identifiable {
         case .settings: return "gearshape.fill"
         case .files: return "folder.fill"
         case .browser: return "globe"
+        case .relay: return "shippingbox.fill"
         }
     }
     var color: Color {
@@ -383,6 +388,7 @@ private enum LabApp: String, CaseIterable, Identifiable {
         case .settings: return .gray
         case .files: return .cyan
         case .browser: return .mint
+        case .relay: return .teal
         }
     }
 }
