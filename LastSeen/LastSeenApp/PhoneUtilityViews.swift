@@ -164,6 +164,7 @@ struct PhoneNotesView: View {
     var body: some View {
         List {
             if lab {
+                LumaHeader(title: "Your notes", detail: "\(notes.count) notes on this phone", symbol: "note.text").listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
                 NavigationLink { ProtectedAreaView(area: .notes, onOpened: { world.recordTutorialVisit("journal") }) } label: { Label("Locked notes", systemImage: "lock.fill") }
             }
             Section {
@@ -176,7 +177,7 @@ struct PhoneNotesView: View {
                                         .font(.system(size: 11))
                                 }
                                 Text(note.title.isEmpty ? "Untitled" : note.title)
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.headline)
                                 Spacer()
                                 Text(note.modifiedAt, style: .date)
                                     .font(.system(size: 11))
@@ -184,7 +185,7 @@ struct PhoneNotesView: View {
                             }
                             Text(note.body.isEmpty ? "No additional text" : note.body.replacingOccurrences(of: "\n", with: " "))
                                 .lineLimit(2)
-                                .font(.system(size: 12))
+                                .font(.subheadline)
                                 .foregroundColor(Night.muted)
                         }
                         .padding(.vertical, 5)
@@ -284,13 +285,12 @@ struct PhoneCalendarView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 19) {
-                Text(selectedDay, format: .dateTime.weekday(.wide).month(.wide).day())
-                    .font(.system(size: 27, weight: .semibold))
+                LumaHeader(title: selectedDay.formatted(.dateTime.weekday(.wide).month(.wide).day()), detail: "\(matching.count) scheduled events", symbol: "calendar")
                 DatePicker("Selected day", selection: $selectedDay, displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .tint(Night.accent)
                     .padding(10)
-                    .background(Night.surface, in: RoundedRectangle(cornerRadius: 18))
+                    .lumaSurface()
 
                 Button("Today") { selectedDay = Date() }.buttonStyle(.bordered)
                 Text("Scheduled")
@@ -301,7 +301,7 @@ struct PhoneCalendarView: View {
                         .foregroundColor(Night.muted)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(18)
-                        .background(Night.surface, in: RoundedRectangle(cornerRadius: 14))
+                        .lumaSurface(radius: 16)
                 } else {
                     ForEach(matching) { event in
                         VStack(alignment: .leading, spacing: 9) {
@@ -389,6 +389,7 @@ struct PhoneMailView: View {
 
     var body: some View {
         List {
+            if lab { LumaHeader(title: "Inbox", detail: "\(mails.filter { !isRead($0) }.count) unread messages", symbol: "envelope.fill").listRowInsets(EdgeInsets()).listRowBackground(Color.clear) }
             Section {
                 Picker("Mailbox", selection: $unreadOnly) {
                     Text("All mail").tag(false)
@@ -414,7 +415,7 @@ struct PhoneMailView: View {
                                 .foregroundColor(Night.muted)
                         }
                         Text(mail.subject)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.subheadline.weight(.semibold))
                         Text(mail.body.replacingOccurrences(of: "\n", with: " "))
                             .lineLimit(2)
                             .font(.system(size: 12))
