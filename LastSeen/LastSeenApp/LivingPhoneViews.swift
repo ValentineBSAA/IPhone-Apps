@@ -371,7 +371,7 @@ struct NeighborConversationView: View {
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var draft = ""
     @State private var showHelp = false
-    @State private var showSuggestions = true
+    @State private var showSuggestions = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -457,7 +457,7 @@ struct NeighborConversationView: View {
                                   systemImage: showSuggestions ? "chevron.down" : "chevron.up").font(.caption)
                         }
                     }
-                    ForEach(showSuggestions ? world.choices(neighbor) : [], id: \.self) { choice in
+                    ForEach((!reactive || showSuggestions) ? world.choices(neighbor) : [], id: \.self) { choice in
                         Button {
                             draft = ""
                             if reactive { _ = world.sendReactive(to: neighbor, text: choice) }
@@ -476,7 +476,7 @@ struct NeighborConversationView: View {
                         .buttonStyle(.plain)
                     }
                     HStack {
-                        TextField("Write a reply…", text: $draft, axis: .vertical)
+                        TextField("Message", text: $draft, axis: .vertical)
                             .font(.system(size: 14))
                             .lineLimit(1...3)
                             .submitLabel(.send)
@@ -532,6 +532,7 @@ struct NeighborConversationView: View {
 
 struct NeighborProfileView: View {
     let neighbor: Neighbor
+    var phoneLab = false
     @EnvironmentObject private var world: PhoneWorldStore
 
     var body: some View {
@@ -551,6 +552,20 @@ struct NeighborProfileView: View {
                         .frame(maxWidth: .infinity)
                         .padding(14)
                         .background(Night.raised, in: RoundedRectangle(cornerRadius: 14))
+                }
+                if phoneLab {
+                    HStack(spacing: 12) {
+                        NavigationLink(value: LumaCallRoute(neighbor: neighbor)) {
+                            Label("Call", systemImage: "phone.fill").frame(maxWidth: .infinity, minHeight: 44)
+                        }.buttonStyle(.bordered)
+                        Button {
+                            world.toggleFavoriteContact(neighbor)
+                        } label: {
+                            Label((world.state.favoriteContacts ?? []).contains(neighbor.id) ? "Favorited" : "Favorite",
+                                  systemImage: (world.state.favoriteContacts ?? []).contains(neighbor.id) ? "star.fill" : "star")
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                        }.buttonStyle(.bordered)
+                    }
                 }
                 Text(neighbor == .maya
                      ? (world.tutorialStarted ? "Maya is a friend of Nora, the original owner of this phone." : "You met Maya through friends in the neighborhood. She sends ordinary updates and makes plans.")

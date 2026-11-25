@@ -29,6 +29,19 @@ final class LumaSaveStore: ObservableObject {
     @Published private(set) var playSeconds = 0
     private var lastAutomatic: Date = .distantPast
     private var sinceAutomatic = 0
+    private var previousInterval: Int?
+    static let manualCooldown: TimeInterval = 60
+    private var lastManual: Date { defaults.object(forKey: "lastseen.saves.lastManual") as? Date ?? .distantPast }
+    func canSaveManually(now: Date = Date()) -> Bool { now.timeIntervalSince(lastManual) >= Self.manualCooldown }
+    func manualRemaining(now: Date = Date()) -> Int { max(0, min(Int(Self.manualCooldown), Int(ceil(Self.manualCooldown - now.timeIntervalSince(lastManual))))) }
+    func persistPlayTime() { defaults.set(playSeconds, forKey: "lastseen.saves.playSeconds") }
+    @discardableResult
+    func writeManual(_ slot: String, world: PhoneWorld, now: Date = Date()) -> Bool {
+        guard Self.manual.contains(slot), canSaveManually(now: now) else { notice = "Manual save is cooling down."; return false }
+        guard write(slot, world: world, now: now) else { return false }
+        defaults.set(now, forKey: "lastseen.saves.lastManual")
+        return true
+    }
     init(root: URL? = nil, defaults: UserDefaults = .standard) {
         self.root = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("LastSeenCheckpoints", isDirectory: true)
         self.defaults = defaults
@@ -81,8 +94,11 @@ final class LumaSaveStore: ObservableObject {
         }
     }
     func tick(world: PhoneWorld, minutes: Int) {
-        playSeconds += 1; sinceAutomatic += 1
-        if [1,3,5,10].contains(minutes), sinceAutomatic >= minutes * 60 { automatic(world: world) }
+        playSeconds += 1
+        if previousInterval != minutes { sinceAutomatic = 0; previousInterval = minutes }
+        guard [1,3,5,10].contains(minutes) else { return }
+        sinceAutomatic += 1
+        if sinceAutomatic >= minutes * 60 { automatic(world: world) }
     }
     func restore(_ slot: String, into world: PhoneWorldStore, now: Date = Date()) -> Bool {
         do {
@@ -121,7 +137,7 @@ final class LumaSaveStore: ObservableObject {
 struct LumaSaveView: View {
     @ObservedObject var store: LumaSaveStore
     @EnvironmentObject private var world: PhoneWorldStore
-    @AppStorage("lastseen.saves.interval") private var interval = 3
+    @AppStorage("lastseen.saves.interval") private var interval = 5
     let onLoad: (String) -> Void
     @State private var action: String?
     @State private var slot = ""
@@ -137,12 +153,13 @@ struct LumaSaveView: View {
                     }
                 }
                 Text("Manual checkpoints").font(.title2.bold())
+                if !store.canSaveManually() { Text("Next manual save in \(store.manualRemaining()) seconds").font(.caption).foregroundColor(.secondary).monospacedDigit() }
                 ForEach(LumaSaveStore.manual, id: \.self) { row($0, manual: true) }
                 Text("Automatic checkpoints").font(.title2.bold())
                 Picker("Autosave interval", selection: $interval) {
                     Text("Off").tag(0); Text("1 min").tag(1); Text("3 min").tag(3); Text("5 min").tag(5); Text("10 min").tag(10)
                 }.pickerStyle(.segmented)
-                Text("Automatic checkpoints rotate separately. Your live game still saves as you play.").font(.caption).foregroundColor(.secondary)
+                Text("Automatic checkpoints are created only at the chosen active-play interval. Off creates none. Your live progress is still preserved. Manual saves share a one-minute cooldown.").font(.caption).foregroundColor(.secondary)
                 ForEach(LumaSaveStore.automatic, id: \.self) { row($0, manual: false) }
                 if !store.notice.isEmpty { Text(store.notice).font(.subheadline).foregroundColor(LumaDesign.accent).accessibilityAddTraits(.updatesFrequently) }
             }.padding(18)
@@ -150,7 +167,7 @@ struct LumaSaveView: View {
         .confirmationDialog("Confirm \(action ?? "action")", isPresented: $confirm, titleVisibility: .visible) {
             Button(action ?? "Continue", role: action == "Delete" ? .destructive : nil) {
                 switch action {
-                case "Save": _ = store.write(slot, world: world.state)
+                case "Save": _ = store.writeManual(slot, world: world.state)
                 case "Load": onLoad(slot)
                 case "Delete": store.remove(slot)
                 default: break
@@ -178,8 +195,9 @@ struct LumaSaveView: View {
                 if manual {
                     Button("Save Now") {
                         if store.slots[id] != nil || store.invalid.contains(id) { choose("Save", id) }
-                        else { _ = store.write(id, world: world.state) }
+                        else { _ = store.writeManual(id, world: world.state) }
                     }.buttonStyle(.borderedProminent).frame(minHeight: 44)
+                    .disabled(!store.canSaveManually())
                 }
                 if store.slots[id] != nil { Button("Load") { choose("Load", id) }.buttonStyle(.bordered).frame(minHeight: 44) }
                 Spacer()

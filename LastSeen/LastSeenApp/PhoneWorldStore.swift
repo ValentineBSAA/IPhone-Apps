@@ -61,6 +61,12 @@ struct PhoneEvent: Codable, Identifiable, Equatable {
     var endsAt: Date
 }
 
+struct LumaCallRecord: Codable, Identifiable, Equatable {
+    let id: UUID
+    let contact: Neighbor
+    let date: Date
+}
+
 struct PhoneWorld: Codable {
     var version: Int = 1
     var createdAt: Date
@@ -71,6 +77,8 @@ struct PhoneWorld: Codable {
     var events: [PhoneEvent]
     var soundEnabled: Bool = true
     var pendingReplies: [PhonePendingReply]? = nil
+    var callHistory: [LumaCallRecord]? = nil
+    var favoriteContacts: [String]? = nil
 }
 
 /// This is a separate *fictional world save* while compatibility with existing
@@ -413,6 +421,21 @@ final class PhoneWorldStore: ObservableObject {
 
     private func normalize(_ input: String) -> String {
         input.lowercased().filter { $0.isLetter || $0.isNumber }
+    }
+
+    func recordCallAttempt(_ contact: Neighbor, now: Date = Date()) {
+        var calls = state.callHistory ?? []
+        calls.insert(LumaCallRecord(id: UUID(), contact: contact, date: now), at: 0)
+        state.callHistory = Array(calls.prefix(100))
+        save()
+    }
+
+    func toggleFavoriteContact(_ contact: Neighbor) {
+        var ids = state.favoriteContacts ?? []
+        if ids.contains(contact.id) { ids.removeAll { $0 == contact.id } }
+        else { ids.append(contact.id) }
+        state.favoriteContacts = ids
+        save()
     }
 
     func restoreCheckpoint(_ replacement: PhoneWorld) throws {

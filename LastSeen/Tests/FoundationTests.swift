@@ -47,6 +47,33 @@ final class FoundationTests: XCTestCase {
         XCTAssertFalse(store.restore("manual-2", into: world))
         XCTAssertEqual(world.state.threads, original.threads)
     }
+    func testManualCooldownAcrossSlotsAndStoreRecreation() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite = "manual-cooldown-" + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: root) }
+        let world = RestoredPhoneBackup.snapshot()
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let store = LumaSaveStore(root: root, defaults: defaults)
+        XCTAssertTrue(store.writeManual("manual-1", world: world, now: now))
+        XCTAssertFalse(store.writeManual("manual-2", world: world, now: now.addingTimeInterval(59)))
+        let reopened = LumaSaveStore(root: root, defaults: defaults)
+        XCTAssertFalse(reopened.writeManual("manual-3", world: world, now: now.addingTimeInterval(59)))
+        XCTAssertTrue(reopened.writeManual("manual-2", world: world, now: now.addingTimeInterval(60)))
+        XCTAssertFalse(reopened.writeManual("auto-1", world: world, now: now.addingTimeInterval(120)))
+    }
+    func testFictionalPhoneHistoryAndFavoritesRoundTrip() throws {
+        let store = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(), persistToDisk: false)
+        store.toggleFavoriteContact(.maya)
+        store.recordCallAttempt(.maya)
+        XCTAssertEqual(store.state.favoriteContacts, ["maya"])
+        let decoded = try JSONDecoder().decode(PhoneWorld.self, from: JSONEncoder().encode(store.state))
+        XCTAssertEqual(decoded.callHistory?.first?.contact, .maya)
+        XCTAssertEqual(decoded.favoriteContacts, ["maya"])
+        try store.restoreCheckpoint(decoded)
+        store.toggleFavoriteContact(.maya)
+        XCTAssertEqual(store.state.favoriteContacts, [])
+    }
     func testPeriodicCheckpointAndOff() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let suite = "foundation-interval-" + UUID().uuidString
@@ -56,7 +83,11 @@ final class FoundationTests: XCTestCase {
         let world = RestoredPhoneBackup.snapshot()
         for _ in 0..<60 { store.tick(world: world, minutes: 0) }
         XCTAssertTrue(store.slots.isEmpty)
+        for _ in 0..<59 { store.tick(world: world, minutes: 1) }
+        XCTAssertTrue(store.slots.isEmpty)
         store.tick(world: world, minutes: 1)
+        XCTAssertEqual(store.slots.count, 1)
+        for _ in 0..<300 { store.tick(world: world, minutes: 0) }
         XCTAssertEqual(store.slots.count, 1)
     }
 }

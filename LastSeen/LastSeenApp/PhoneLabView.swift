@@ -7,7 +7,9 @@ struct PhoneLabView: View {
     @StateObject private var world = PhoneWorldStore(storageURL: RestoredPhoneBackup.url)
     @State private var path = NavigationPath()
     @StateObject private var saves = LumaSaveStore()
-    @AppStorage("lastseen.saves.interval") private var saveInterval = 3
+    @AppStorage("lastseen.saves.interval") private var saveInterval = 5
+    @State private var checkpointReboot = false
+    @State private var navigationGeneration = UUID()
     @AppStorage("lastseen.lab.lockWallpaper") private var lockWallpaper = -1
     @AppStorage("lastseen.lab.wallpaperBlur") private var wallpaperBlur = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -30,7 +32,7 @@ struct PhoneLabView: View {
     @State private var didConfigureFeedback = false
     @State private var tutorialReplay = 0
     @State private var confirmTutorialReplay = false
-    private var tutorialDeliveryID: String { "\(didConfigureFeedback)-\(phase == .active)-\(tutorialReplay)" }
+    private var tutorialDeliveryID: String { "\(didConfigureFeedback)-\(phase == .active)-\(tutorialReplay)-\(checkpointReboot)" }
     @State private var searchQuery = ""
     @AppStorage("lastseen.lab.hideLockPreviews") private var hideLockPreviews = false
     private var alerts: [PhoneAlert] { PhoneAlertCatalog.alerts(in: world.state, unreadOnly: true) }
@@ -89,17 +91,22 @@ struct PhoneLabView: View {
             .navigationDestination(for: PhoneFileRoute.self) { route in
                 PhoneDocumentView(title: route.title).safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
             }
+            .navigationDestination(for: LumaCallRoute.self) { route in
+                LumaCallView(neighbor: route.neighbor)
+                    .safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
+            }
             .navigationDestination(for: AppPage.self) { page in
                 Group {
                     switch page {
                     case .worldThread(let neighbor): NeighborConversationView(neighbor: neighbor, reactive: true)
-                    case .worldProfile(let neighbor): NeighborProfileView(neighbor: neighbor)
+                    case .worldProfile(let neighbor): NeighborProfileView(neighbor: neighbor, phoneLab: true)
                     case .note(let id): PhoneNoteEditorView(noteID: id)
                     default: Text("Not available in Phone Lab")
                     }
                 }.safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
             }
         }
+        .id(navigationGeneration)
         .environmentObject(world)
         .defersSystemGestures(on: deferSystemEdges ? [.top, .bottom] : [])
         .tint(LumaDesign.accent)
@@ -126,7 +133,7 @@ struct PhoneLabView: View {
             let sent = !outgoingIDs.subtracting(observedOutgoing).isEmpty
             observedIncoming = Set(incomingIDs)
             observedOutgoing = outgoingIDs
-            guard didConfigureFeedback, phase == .active else { return }
+            guard didConfigureFeedback, phase == .active, !checkpointReboot else { return }
             let newest = PhoneMessageArrival.newest(in: world.state, previous: previous)
             guard sent || newest != nil else { return }
             arrivalTask?.cancel()
@@ -159,19 +166,13 @@ struct PhoneLabView: View {
             while !Task.isCancelled {
                 do { try await Task.sleep(nanoseconds: 1_000_000_000) } catch { return }
                 guard !Task.isCancelled else { return }
-                saves.tick(world: world.state, minutes: saveInterval)
+                if !checkpointReboot { saves.tick(world: world.state, minutes: saveInterval) }
             }
-        }
-        .onChange(of: world.state.flags) { _ in
-            if didConfigureFeedback { saves.automatic(world: world.state) }
-        }
-        .onChange(of: world.state.threads.values.reduce(0) { $0 + $1.count }) { _ in
-            if didConfigureFeedback { saves.automatic(world: world.state) }
         }
         .task(id: phase) {
             guard phase == .active else { return }
             while !Task.isCancelled {
-                world.advancePendingReplies()
+                if !checkpointReboot { world.advancePendingReplies() }
                 do { try await Task.sleep(nanoseconds: 250_000_000) } catch { return }
             }
         }
@@ -182,7 +183,7 @@ struct PhoneLabView: View {
         .onChange(of: phase) { value in
             observedIncoming = Set(incomingIDs)
             observedOutgoing = outgoingIDs
-            if value == .background { saves.automatic(world: world.state, force: true) }
+            if value == .background { saves.persistPlayTime() }
             if value != .active {
                 arrivalTask?.cancel(); arrivalTask = nil
                 PhoneSensoryEngine.stop()
@@ -197,10 +198,18 @@ struct PhoneLabView: View {
             PhoneSensoryEngine.stop()
         }
         .task(id: tutorialDeliveryID) {
-            guard didConfigureFeedback, phase == .active, !world.tutorialStarted else { return }
+            guard didConfigureFeedback, phase == .active, !checkpointReboot, !world.tutorialStarted else { return }
             do { try await Task.sleep(nanoseconds: 1_500_000_000) } catch { return }
-            guard !Task.isCancelled, phase == .active, !world.tutorialStarted else { return }
+            guard !Task.isCancelled, phase == .active, !checkpointReboot, !world.tutorialStarted else { return }
             world.startPhoneTutorial()
+        }
+        .fullScreenCover(isPresented: $checkpointReboot) {
+            RelayUserspaceView {
+                observedIncoming = Set(incomingIDs)
+                observedOutgoing = outgoingIDs
+                checkpointReboot = false
+                tutorialReplay += 1
+            }
         }
         .sheet(item: $panel) { item in
             NavigationStack {
@@ -536,17 +545,19 @@ struct PhoneLabView: View {
                     Label("Wallpaper & appearance", systemImage: "photo.on.rectangle")
                 }
             }
-            Section("Device") {
+            Section("Display & connectivity") {
                 LabeledContent("Device name", value: device)
-                NavigationLink { ProtectedAreaView(area: .security) } label: {
-                    Label("Face ID & Passcode", systemImage: "lock.shield")
-                }
-                LabeledContent("Appearance", value: biometricUnlock ? "Registered" : "Locked")
-                Toggle("Wi-Fi (in-game)", isOn: $wifi)
+                Toggle(isOn: $wifi) { Label("Wi-Fi (in-game)", systemImage: "wifi") }
                 VStack(alignment: .leading) {
                     Text("Display brightness")
                     Slider(value: $brightness, in: 0.35...1)
                 }
+            }
+            Section("Security & privacy") {
+                NavigationLink { ProtectedAreaView(area: .security) } label: {
+                    Label("Face ID & Passcode", systemImage: "lock.shield")
+                }
+                LabeledContent("Appearance", value: biometricUnlock ? "Registered" : "Locked")
             }
             Section("Jailbreak") {
                 LabeledContent("Environment", value: safeMode ? "Safe Mode" : "Rootless")
@@ -558,8 +569,8 @@ struct PhoneLabView: View {
                 Text("Use the in-game gestures first. Repeat a system-edge swipe to access real iOS controls. Turn this off for standard iOS gesture priority.").font(.footnote).foregroundColor(.secondary)
             }
             Section("Sounds & Haptics") {
-                Toggle("Phone sounds", isOn: $messageSound)
-                Toggle("Phone vibrations", isOn: $messageHaptics)
+                Toggle(isOn: $messageSound) { Label("Phone sounds", systemImage: "speaker.wave.2") }
+                Toggle(isOn: $messageHaptics) { Label("Phone vibrations", systemImage: "waveform.path") }
                 Toggle("Horror sensory effects", isOn: $horrorEffects)
                 NavigationLink {
                     PhoneSoundStudio(sound: $messageSound, haptics: $messageHaptics, horrorEnabled: $horrorEffects)
@@ -581,12 +592,14 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.5.0 (25)")
+                LabeledContent("Software", value: "1.5.1 (26)")
                 Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay message tutorial") { confirmTutorialReplay = true }
                 Button("Replay phone setup") { confirmSetupReplay = true }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(LumaDesign.background.ignoresSafeArea())
         .sheet(isPresented: $showOpeningQA) { OpeningDiagnosticsView() }
         .confirmationDialog("Replay message tutorial?", isPresented: $confirmTutorialReplay) {
             Button("Replay tutorial") {
@@ -617,6 +630,8 @@ struct PhoneLabView: View {
     private func loadCheckpoint(_ slot: String) {
         arrivalTask?.cancel(); arrivalTask = nil
         PhoneSensoryEngine.stop()
+        guard !checkpointReboot else { return }
+        checkpointReboot = true
         if saves.restore(slot, into: world) {
             observedIncoming = Set(incomingIDs)
             observedOutgoing = outgoingIDs
@@ -626,8 +641,10 @@ struct PhoneLabView: View {
             panel = nil
             recent.removeAll()
             returnHome()
-            locked = false
-            tutorialReplay += 1
+            locked = true
+            navigationGeneration = UUID()
+        } else {
+            checkpointReboot = false
         }
     }
 
@@ -754,8 +771,9 @@ struct PhoneLabView: View {
     @ViewBuilder private func destination(_ app: LabApp) -> some View {
         switch app {
         case .saves: LumaSaveView(store: saves, onLoad: loadCheckpoint)
-        case .messages: LabPeopleView(messages: true)
-        case .contacts: LabPeopleView(messages: false)
+        case .messages: LumaMessagesDirectory()
+        case .contacts: LumaContactsDirectory()
+        case .phone: LumaPhoneDirectory()
         case .notes: PhoneNotesView(lab: true)
         case .calendar: PhoneCalendarView()
         case .mail: PhoneMailView(lab: true)
@@ -778,15 +796,16 @@ private enum LabPanel: String, Identifiable {
 }
 
 private enum LabApp: String, CaseIterable, Identifiable {
-    case messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves"
+    case phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves"
     var foundationIcon: String? {
         if self == .relay || self == .patchline { return nil }
         return self == .saves ? "Icon_Save" : "Icon_" + rawValue
     }
     var id: String { rawValue }
-    var inDock: Bool { [.messages, .contacts, .browser, .settings].contains(self) }
+    var inDock: Bool { [.phone, .messages, .browser, .settings].contains(self) }
     var symbol: String {
         switch self {
+        case .phone: return "phone.fill"
         case .messages: return "message.fill"
         case .contacts: return "person.crop.circle.fill"
         case .photos: return "photo.on.rectangle"
@@ -805,6 +824,7 @@ private enum LabApp: String, CaseIterable, Identifiable {
     }
     var color: Color {
         switch self {
+        case .phone: return .green
         case .messages: return .teal
         case .contacts: return .indigo
         case .photos: return .pink
@@ -820,73 +840,6 @@ private enum LabApp: String, CaseIterable, Identifiable {
         case .patchline: return .teal
         case .saves: return .indigo
         }
-    }
-}
-
-private struct LabPeopleView: View {
-    @EnvironmentObject private var world: PhoneWorldStore
-    let messages: Bool
-    @State private var search = ""
-    @State private var unreadOnly = false
-    private var people: [Neighbor] {
-        let result = Neighbor.allCases.filter { n in
-            (!messages || !unreadOnly || world.countUnread(n) > 0) &&
-            (search.isEmpty || n.name.localizedCaseInsensitiveContains(search) ||
-             (messages && world.messages(n).contains { $0.text.localizedCaseInsensitiveContains(search) }))
-        }
-        return messages ? result.sorted { (world.messages($0).last?.at ?? .distantPast) > (world.messages($1).last?.at ?? .distantPast) }
-            : result.sorted { $0.name < $1.name }
-    }
-    var body: some View {
-        List {
-            if messages {
-                Section {
-                    Picker("Conversations", selection: $unreadOnly) {
-                        Text("All messages").tag(false)
-                        Text("Unread").tag(true)
-                    }.pickerStyle(.segmented)
-                }
-            } else {
-                Section("Owner card") {
-                    HStack(spacing: 13) {
-                        Image(RestoredPhoneBackup.ownerPortrait).resizable().scaledToFill().frame(width: 80, height: 80).clipShape(Circle())
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(RestoredPhoneBackup.ownerName).font(.title3.bold())
-                            Text("My Card · Blue Hour Interactive").font(.caption).foregroundColor(.secondary)
-                        }
-                    }.padding(.vertical, 7)
-                }
-            }
-            Section(messages ? "Conversations" : "Contacts") {
-                if people.isEmpty { Text(messages && unreadOnly ? "No unread messages" : "No matches").foregroundColor(.secondary) }
-                ForEach(people) { person in
-                    NavigationLink(value: messages ? AppPage.worldThread(person) : AppPage.worldProfile(person)) {
-                        HStack(spacing: 12) {
-                            NeighborAvatar(neighbor: person, size: 52)
-                            VStack(alignment: .leading, spacing: 5) {
-                                HStack(alignment: .firstTextBaseline) {
-                                    Text(person.name).font(.headline)
-                                    Spacer(minLength: 3)
-                                    if messages, let latest = world.messages(person).last {
-                                        Text(latest.at, style: .relative).font(.caption2).foregroundColor(.secondary)
-                                    }
-                                }
-                                HStack {
-                                    Text(messages ? (world.messages(person).last?.text ?? "") : person.subtitle)
-                                        .font(.subheadline).foregroundColor(.secondary).lineLimit(2)
-                                    Spacer(minLength: 3)
-                                    if messages && world.countUnread(person) > 0 {
-                                        Text("\(world.countUnread(person))").font(.caption.bold())
-                                            .padding(6).background(Color.blue, in: Capsule()).foregroundColor(.white)
-                                    }
-                                }
-                            }
-                        }.padding(.vertical, 6)
-                    }
-                }
-            }
-        }.scrollContentBackground(.hidden).background(Night.background.ignoresSafeArea()).navigationTitle(messages ? "Messages" : "Contacts")
-            .searchable(text: $search, prompt: messages ? "Search conversations" : "Search contacts")
     }
 }
 
