@@ -30,6 +30,8 @@ if a.catalog:
     required.update(["Contact_Maya","Contact_Denise","Nora_Profile","Icon_Messages","Icon_Save","Photo_Locked_Texture"])
     required.update(["Icon_Afterframe","Icon_Connective","Icon_CommonGround","Icon_VoiceMemos"])
     required.update(f"CommunityPortrait_{i:02d}" for i in range(1,19))
+    required.add("Icon_HavenWatch")
+    required.update(f"HavenWatch_CAM{i:02d}_{suffix}" for i in range(1,6) for suffix in ("empty","occupied"))
     missing=required-names
     assert not missing, f"Device catalog missing required renditions: {sorted(missing)}"
     print("Required device catalog renditions verified")

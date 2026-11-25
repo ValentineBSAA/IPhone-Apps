@@ -175,6 +175,14 @@ jobs:
           gh release download L1 --repo ValentineBSAA/IPhone-Apps --pattern 'Last-Seen-World-Documents-01.zip' --dir . --clobber
           python3 Tools/import_connected_world.py
 
+      - name: Import approved HavenWatch V2 artwork
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download L1 --repo ValentineBSAA/IPhone-Apps --pattern 'LAST_SEEN_HavenWatch_Version_Two_Approved.zip' --dir . --clobber
+          python3 Tools/import_havenwatch.py --zip LAST_SEEN_HavenWatch_Version_Two_Approved.zip
+
       - name: Generate iOS 16 Xcode project
         run: |
           set -euo pipefail

@@ -642,6 +642,14 @@ final class PhoneWorldStore: ObservableObject {
         value.pendingSocialReplies = pending.filter { !delivered.contains($0.reply.id) }
         commitConnected(value)
     }
+    func setHavenWatch(_ preferences: HavenWatchPreferences) {
+        guard state.everydayArchiveRevision != nil else { return }
+        var value = connected
+        var next = preferences
+        next.favorites.formIntersection(Set(HavenWatchArchive.frames(in: state).map(\.id)))
+        value.havenWatch = next
+        commitConnected(value)
+    }
     func socialPreferences(_ channel: LumaSocialChannel) -> LumaSocialPreferences {
         connected.socialPreferences?[channel.rawValue] ?? LumaSocialPreferences()
     }

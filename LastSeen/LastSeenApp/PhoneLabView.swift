@@ -1087,6 +1087,7 @@ struct PhoneLabView: View {
         case .afterframe: LumaSocialView(channel:.afterframe)
         case .connective: LumaSocialView(channel:.connective)
         case .commonGround: LumaSocialView(channel:.commonGround)
+        case .havenWatch: HavenWatchView()
         case .workstation: LumaWorkbenchView(openRelay:{open(.relay)},openFiles:{open(.files)})
         case .photos: LabPhotosView()
         case .clock: LabClockView()
@@ -1107,7 +1108,7 @@ private enum LabPanel: String, Identifiable {
 }
 
 enum LabApp: String, CaseIterable, Identifiable {
-    case fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves", afterframe = "Afterframe", connective = "Connective", commonGround = "CommonGround", workstation = "Workstation"
+    case fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves", afterframe = "Afterframe", connective = "Connective", commonGround = "CommonGround", workstation = "Workstation", havenWatch = "HavenWatch"
     var foundationIcon: String? {
         if self == .fieldNotes { return "Jailbreak_FieldNotes" }
         if self == .relay || self == .patchline || self == .workstation { return nil }
@@ -1137,6 +1138,7 @@ enum LabApp: String, CaseIterable, Identifiable {
         case .connective: return "person.2.fill"
         case .commonGround: return "bubble.left.and.bubble.right.fill"
         case .workstation: return "desktopcomputer"
+        case .havenWatch: return "video.fill"
         }
     }
     var color: Color {
@@ -1161,6 +1163,7 @@ enum LabApp: String, CaseIterable, Identifiable {
         case .connective: return .blue
         case .commonGround: return .teal
         case .workstation: return .gray
+        case .havenWatch: return .cyan
         }
     }
 }
