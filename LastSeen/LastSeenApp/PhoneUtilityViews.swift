@@ -146,6 +146,7 @@ struct PhonePhotoDetailView: View {
 }
 
 struct PhoneNotesView: View {
+    var lab = false
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var search = ""
 
@@ -162,6 +163,9 @@ struct PhoneNotesView: View {
 
     var body: some View {
         List {
+            if lab {
+                NavigationLink { ProtectedAreaView(area: .notes) } label: { Label("Locked notes", systemImage: "lock.fill") }
+            }
             Section {
                 ForEach(notes) { note in
                     NavigationLink(value: AppPage.note(note.id)) {
