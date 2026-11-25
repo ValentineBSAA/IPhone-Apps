@@ -15,3 +15,7 @@ Revisit the simulated shop computer throughout gameplay. Connection/disconnectio
 
 ## Consolidated acceptance and scope review
 Before implementation: creator reviews overall scope; identify dependencies, bounded first playable slice, authored private causal timeline, cross-app record index and consistent fictional dates. Preserve all already-approved features; explicit approval for any deferral. Integrate these systems cohesively rather than release individual micro-builds. Unit tests for state, permission/gating, migration, timelines, conversation intent, mail/social delivery, attachment access, workstation transactions, persistence, rollback and offline behavior; end-to-end UI tests and iPhone 16e physical QA. No unnecessary intermediate IPA, no new CI until authorization. Keep exact clues, identities, plot and answers out of ordinary reports. No claim that the full story or features already exist.
+
+
+## World document authoring intake
+See [World Documents 01](WORLD_DOCUMENTS_01.md). Ten real DOCX originals with a verified manifest and fictional authorship have been created. Upload and playable integration remain OPEN. Use original document text and structure, not screenshots. Respect current planning hold and spoiler confidentiality.

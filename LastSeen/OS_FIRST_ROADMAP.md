@@ -40,6 +40,7 @@ Dependency order: S0 before expanding runtime scope; S1 establishes reliable pre
 | [PUZZLE_DESIGN_ROADMAP.md](PUZZLE_DESIGN_ROADMAP.md) | Original puzzle families, hints, research references, progress and acceptance. |
 | [GAMEPLAY_STATISTICS_ROADMAP.md](GAMEPLAY_STATISTICS_ROADMAP.md) | Live playtime, session, autosave and earned milestone counters. |
 | [LUMA_ASSISTANT_ROADMAP.md](LUMA_ASSISTANT_ROADMAP.md) | Voice, mic, offline assistant and acceptance. |
+| [WORLD_DOCUMENTS_01.md](WORLD_DOCUMENTS_01.md) | Ten authored Word documents prepared; upload and gated integration pending. |
 | [CONNECTED_WORLD_ROADMAP.md](CONNECTED_WORLD_ROADMAP.md) | Approved connected personal/professional world, interactive mail, social apps and repair workstation; consolidated scope, implementation on hold. |
 | [WORLD_PHOTOS_EXPANSION_01.md](WORLD_PHOTOS_EXPANSION_01.md) | Approved photo intake, integrity and continuity review; L1 upload verified; continuity hold. |
 | [NORA_WORLD_BIBLE.md](NORA_WORLD_BIBLE.md) / [CHARACTER_CONTINUITY.md](CHARACTER_CONTINUITY.md) | Canon and asset identity; not a plot walkthrough. |
