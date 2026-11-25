@@ -59,7 +59,7 @@ struct RelayPackagesView: View {
                 Button { showQueue = true } label: {
                     Label("Queue (\(queue.count))", systemImage: "tray.full")
                         .font(.subheadline.weight(.semibold))
-                }.buttonStyle(.bordered)
+                }.buttonStyle(.bordered).accessibilityIdentifier("relay.queue")
             }.padding(.horizontal, 16).padding(.vertical, 9)
             if !notice.isEmpty {
                 Text(notice).font(.caption).foregroundColor(.secondary)
@@ -91,7 +91,7 @@ struct RelayPackagesView: View {
                             Text(item.rawValue).font(.system(size: 10, weight: .medium))
                         }.frame(maxWidth: .infinity).frame(minHeight: 49)
                             .foregroundColor(tab == item ? .teal : .secondary)
-                    }.buttonStyle(.plain).accessibilityAddTraits(tab == item ? .isSelected : [])
+                    }.buttonStyle(.plain).accessibilityAddTraits(tab == item ? .isSelected : []).accessibilityIdentifier("relay.tab." + item.rawValue)
                 }
             }.padding(.horizontal, 5).background(.ultraThinMaterial)
         }
@@ -140,9 +140,9 @@ struct RelayPackagesView: View {
                             Button("Confirm \(queue.count) changes") {
                                 guard RelayPlan.valid(queue, sources: sourceIDs, installed: ids, flags: earnedFlags) else { notice = "Queue no longer valid"; return }
                                 confirmed = queue; showQueue = false
-                            }.disabled(!RelayPlan.valid(queue, sources: sourceIDs, installed: ids, flags: earnedFlags))
+                            }.disabled(!RelayPlan.valid(queue, sources: sourceIDs, installed: ids, flags: earnedFlags)).accessibilityIdentifier("relay.queue.confirm")
                             Button("Clear queue", role: .destructive) { queue.removeAll() }
-                        } footer: { Text("Changes apply together after SpringBoard restarts.") }
+                        } footer: { Text("Changes apply together after LumaShell restarts.") }
                     }
                 }.navigationTitle("Queue").toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { showQueue = false } } }
             }
@@ -151,9 +151,9 @@ struct RelayPackagesView: View {
             RelayTransactionView(changes: confirmed, onCancel: {
                 confirmed = []; showTransaction = false
             }, onComplete: {
-                applyConfirmed()
+                let committed = applyConfirmed()
                 showTransaction = false
-                onRestart()
+                if committed { onRestart() }
             })
         }
         .fullScreenCover(item: $restart) { kind in
@@ -187,7 +187,7 @@ struct RelayPackagesView: View {
                 ForEach(visiblePackages.filter { !$0.essential && $0.id != "teal" }) { packageRow($0) }
             }
             Section("System tools") {
-                Button { restart = .respring } label: { Label("Restart SpringBoard", systemImage: "arrow.clockwise") }
+                Button { restart = .respring } label: { Label("Restart LumaShell", systemImage: "arrow.clockwise") }
                 Button { restart = .userspace } label: { Label("Reboot Userspace", systemImage: "power") }
                 Button { restart = safeMode ? .normal : .safeMode } label: { Label(safeMode ? "Exit Safe Mode" : "Enter Safe Mode", systemImage: "exclamationmark.shield") }
                 if safeMode { Text("Tweaks are disabled until Safe Mode is exited. Installed packages are kept.").font(.caption).foregroundColor(.secondary) }
@@ -296,7 +296,7 @@ struct RelayPackagesView: View {
                 else if RelayCatalog.installed(p.id, userIDs: ids) { Image(systemName: "checkmark.circle.fill").foregroundColor(.teal) }
                 Image(systemName: "chevron.right").font(.caption2).foregroundColor(.secondary)
             }.padding(.vertical, 4)
-        }.buttonStyle(.plain)
+        }.buttonStyle(.plain).accessibilityIdentifier("relay.package." + p.id)
     }
     @ViewBuilder private func packageIcon(_ p: RelayPackage) -> some View {
         if let tool = LumaUtility(rawValue: p.id) { OpeningArt(name: tool.art, size: 43) }
@@ -350,9 +350,9 @@ struct RelayPackagesView: View {
         queue = RelayPlan.queue(RelayChange(package: p, action: action), into: queue)
         notice = "\(p.title) queued for \(action.rawValue.lowercased())"
     }
-    private func applyConfirmed() {
+    @discardableResult private func applyConfirmed() -> Bool {
         guard RelayPlan.valid(confirmed, sources: sourceIDs, installed: ids, flags: earnedFlags) else {
-            confirmed = []; notice = "Transaction cancelled: package state changed"; return
+            confirmed = []; notice = "Transaction cancelled: package state changed"; return false
         }
         let previous = ids
         let (next, nextVersions) = RelayPlan.applying(confirmed, to: ids, versions: versionMap)
@@ -367,6 +367,7 @@ struct RelayPackagesView: View {
         OpeningQA.record("Relay transaction committed: \(confirmed.count) changes")
         notice = "\(confirmed.count) changes completed"
         queue.removeAll(); confirmed = []
+        return true
     }
 }
 

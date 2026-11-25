@@ -66,3 +66,30 @@ final class RelayCatalogTests: XCTestCase {
         XCTAssertFalse(lines.contains { $0.localizedCaseInsensitiveContains("virtual") || $0.localizedCaseInsensitiveContains("fictional") || $0.localizedCaseInsensitiveContains("simulat") })
     }
 }
+
+// Exercise every gated package's plan, install and removal independently.
+extension RelayCatalogTests {
+    func testAllEarnedUtilitiesInstallAndRemoveWithoutLosingOtherPackages() throws {
+        let flags = Set(LumaUtility.allCases.map(\.flag)).union([RecoveryCircuit.completion])
+        let packageIDs = ["fieldnotes"] + LumaUtility.allCases.map(\.rawValue)
+        let sources = RelayCatalog.requiredSourceIDs
+        var installed: Set<String> = ["seconds"]
+        var versions = ["seconds": "1.0.0"]
+        for id in packageIDs {
+            let p = try XCTUnwrap(RelayCatalog.package(id))
+            let install = RelayChange(package:p,action:.install)
+            XCTAssertFalse(RelayPlan.valid([install],sources:sources,installed:installed,flags:[]))
+            XCTAssertTrue(RelayPlan.valid([install],sources:sources,installed:installed,flags:flags))
+            (installed,versions) = RelayPlan.applying([install],to:installed,versions:versions)
+            XCTAssertTrue(installed.contains(id)); XCTAssertEqual(versions[id],p.version)
+        }
+        for id in packageIDs {
+            let p = try XCTUnwrap(RelayCatalog.package(id))
+            let remove = RelayChange(package:p,action:.remove)
+            XCTAssertTrue(RelayPlan.valid([remove],sources:sources,installed:installed,flags:flags))
+            (installed,versions) = RelayPlan.applying([remove],to:installed,versions:versions)
+            XCTAssertFalse(installed.contains(id)); XCTAssertNil(versions[id])
+        }
+        XCTAssertEqual(installed,["seconds"]); XCTAssertEqual(versions,["seconds":"1.0.0"])
+    }
+}

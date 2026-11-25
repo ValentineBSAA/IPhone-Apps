@@ -3,6 +3,15 @@ import SwiftUI
 @main
 struct LastSeenApp: App {
     @UIApplicationDelegateAdaptor(LastSeenAppDelegate.self) private var appDelegate
+    init() {
+        #if DEBUG && targetEnvironment(simulator)
+        if ProcessInfo.processInfo.arguments.contains("--luma-relay-clean-test") {
+            for key in ["installed","versions","history","safeMode","sources","compactIcons","tealTheme"] {
+                UserDefaults.standard.removeObject(forKey: "lastseen.relay." + key)
+            }
+        }
+        #endif
+    }
     var body: some Scene {
         WindowGroup {
             root

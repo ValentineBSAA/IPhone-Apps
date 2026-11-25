@@ -1,4 +1,6 @@
 import SwiftUI
+import UIKit
+import Combine
 
 /// Confirmation and staged, cancellable in-game package transaction.
 /// Persistent changes are applied by the parent only after the respring completes.
@@ -6,28 +8,34 @@ struct RelayTransactionView: View {
     let changes: [RelayChange]
     let onCancel: () -> Void
     let onComplete: () -> Void
-    @Environment(\.scenePhase) private var scenePhase
+    // Common-mode timer survives scrolling and foreground transitions.
+    private let clock = Timer.publish(every: 0.15, on: .main, in: .common).autoconnect()
     @State private var tick = 0
     @State private var restarting = false
+    @State private var completed = false
     private var messages: [String] {
         ["Reading package lists…", "Building dependency tree…", "Checking package state…", "Preparing transaction…"] +
         changes.flatMap { change in [
             "\(change.action.rawValue): \(change.package.title)",
             "Processing \(change.package.id)",
             "Package metadata verified"
-        ] } + ["Refreshing package database…", "Processing SpringBoard changes…", "Transaction complete"]
+        ] } + ["Refreshing package database…", "Processing LumaShell changes…", "Transaction complete"]
     }
     var body: some View {
         Group {
             if restarting {
-                ThemeRespringView(onComplete: onComplete)
+                ThemeRespringView {
+                    guard !completed else { return }
+                    completed = true
+                    onComplete()
+                }
             } else {
                 VStack(alignment: .leading, spacing: 16) {
                     HStack(spacing: 12) {
                         OpeningArt(name: "Opening_Install", size: 58)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(tick >= messages.count ? "Complete" : "Processing changes").font(.title2.bold())
-                            Text("\(changes.count) packages").font(.caption).foregroundColor(.secondary)
+                            Text("\(changes.count) " + (changes.count == 1 ? "package" : "packages")).font(.caption).foregroundColor(.secondary)
                         }
                         Spacer()
                     }
@@ -45,20 +53,22 @@ struct RelayTransactionView: View {
                     }
                     if tick >= messages.count {
                         Button { restarting = true } label: {
-                            Label("Restart SpringBoard", systemImage: "arrow.clockwise").frame(maxWidth: .infinity).padding(.vertical, 8)
-                        }.buttonStyle(.borderedProminent).tint(.teal)
+                            Label("Restart LumaShell", systemImage: "arrow.clockwise").frame(maxWidth: .infinity).padding(.vertical, 8)
+                        }.buttonStyle(.borderedProminent).tint(.teal).accessibilityIdentifier("relay.transaction.restart")
+                    } else {
+                        // Presentation only. Validation and commit still occur in the parent after respring.
+                        Button("Skip processing animation") { tick = messages.count }
+                            .font(.caption).frame(maxWidth: .infinity).accessibilityIdentifier("relay.transaction.skip")
                     }
-                    Button("Cancel", role: .cancel, action: onCancel).frame(maxWidth: .infinity)
+                    Button("Cancel", role: .cancel, action: onCancel).frame(maxWidth: .infinity).accessibilityIdentifier("relay.transaction.cancel")
                     Text("Changes remain pending until the restart finishes.").font(.caption2).foregroundColor(.secondary)
                 }.padding(20)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(red: 0.035, green: 0.06, blue: 0.10).ignoresSafeArea())
-                    .task {
-                        while tick < messages.count && !Task.isCancelled {
-                            do { try await Task.sleep(nanoseconds: 150_000_000) } catch { return }
-                            guard scenePhase == .active else { continue }
-                            tick += 1
-                        }
+                    .onReceive(clock) { _ in
+                        guard UIApplication.shared.applicationState == .active,
+                              tick < messages.count, !restarting else { return }
+                        tick += 1
                     }
             }
         }.preferredColorScheme(.dark).interactiveDismissDisabled()

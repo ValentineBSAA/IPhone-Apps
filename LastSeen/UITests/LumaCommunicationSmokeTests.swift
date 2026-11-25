@@ -7,10 +7,10 @@ final class LumaCommunicationSmokeTests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
     }
-    func testRecoveryCircuitEarnsPackage() {
+    func testRecoveryCircuitEarnsPackageAndInstallsFieldNotes() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["--luma-ui-test"]
+        app.launchArguments = ["--luma-ui-test", "--luma-relay-clean-test"]
         app.launch()
         let icon = app.buttons["luma.app.Patchline"]
         XCTAssertTrue(icon.waitForExistence(timeout: 12))
@@ -33,6 +33,62 @@ final class LumaCommunicationSmokeTests: XCTestCase {
         }
         XCTAssertTrue(app.staticTexts["Service verified"].firstMatch.waitForExistence(timeout: 10))
         screenshot("Recovery Circuit completion")
+        func waitHittable(_ element: XCUIElement, timeout: TimeInterval = 20) {
+            let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: element)
+            XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: timeout), .completed)
+        }
+        func openRelay() {
+            let relay = app.buttons["luma.app.Relay"]
+            XCTAssertTrue(relay.waitForExistence(timeout: 12))
+            if !relay.isHittable { app.swipeUp() }
+            waitHittable(relay); relay.tap()
+            XCTAssertTrue(app.navigationBars["Relay"].waitForExistence(timeout: 8))
+        }
+        func findFieldNotes() {
+            let searchTab = app.buttons["relay.tab.Search"]
+            waitHittable(searchTab); searchTab.tap()
+            let row = app.buttons["relay.package.fieldnotes"]
+            let search = app.textFields.firstMatch
+            if search.waitForExistence(timeout: 3) {
+                search.tap(); search.typeText("Field Notes")
+                if app.keyboards.buttons["Search"].exists { app.keyboards.buttons["Search"].tap() }
+            }
+            for _ in 0..<6 where !row.isHittable { app.swipeUp() }
+            waitHittable(row); row.tap()
+        }
+        func confirmQueue() {
+            let queue = app.buttons["relay.queue"]
+            waitHittable(queue); queue.tap()
+            let confirm = app.buttons["relay.queue.confirm"]
+            waitHittable(confirm); confirm.tap()
+        }
+        func finishRestart() {
+            let restart = app.buttons["relay.transaction.restart"]
+            // Do not use the skip button: verify automatic log completion.
+            waitHittable(restart, timeout: 20); restart.tap()
+            let unlock = app.buttons["luma.lock.unlock"]
+            waitHittable(unlock, timeout: 30); unlock.tap()
+        }
+        let home = app.buttons["luma.home"].firstMatch
+        waitHittable(home); home.tap()
+        openRelay(); findFieldNotes()
+        app.buttons["Queue Install"].tap()
+        confirmQueue(); finishRestart()
+        let notes = app.buttons["luma.app.Field Notes"]
+        XCTAssertTrue(notes.waitForExistence(timeout: 12))
+        screenshot("Field Notes installed after respring")
+        openRelay(); findFieldNotes()
+        app.buttons["Queue Removal"].tap()
+        confirmQueue()
+        let cancel = app.buttons["relay.transaction.cancel"]
+        waitHittable(cancel); cancel.tap()
+        // A cancelled removal remains uncommitted, and the package stays installed.
+        findFieldNotes()
+        XCTAssertTrue(app.buttons["Queue Removal"].waitForExistence(timeout: 8))
+        app.buttons["Done"].tap()
+        confirmQueue(); finishRestart()
+        XCTAssertFalse(app.buttons["luma.app.Field Notes"].exists)
+        screenshot("Field Notes removed after respring")
     }
     func testCommunicationAndCheckpointNavigation() {
         continueAfterFailure = false
