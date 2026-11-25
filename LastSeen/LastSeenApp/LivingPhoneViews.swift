@@ -387,10 +387,10 @@ struct NeighborConversationView: View {
                                 else { NeighborAvatar(neighbor: neighbor, size: 28) }
                                 VStack(alignment: message.fromPlayer ? .trailing : .leading, spacing: 4) {
                                     Text(message.text)
-                                        .font(.system(size: 15))
+                                        .font(.body)
                                         .padding(12)
                                         .background(message.fromPlayer ? Night.outgoing : Night.incoming,
-                                                    in: RoundedRectangle(cornerRadius: 19))
+                                                    in: BubbleShape(outgoing: message.fromPlayer))
                                         .foregroundColor(.white)
                                     Text(message.at, style: .time)
                                         .font(.system(size: 10))
@@ -416,9 +416,7 @@ struct NeighborConversationView: View {
                                 if world.isTyping(neighbor, now: context.date) {
                                     HStack {
                                         NeighborAvatar(neighbor: neighbor, size: 28)
-                                        Text("•••").font(.title2).foregroundColor(Night.muted)
-                                            .padding(.horizontal, 15).padding(.vertical, 7)
-                                            .background(Night.incoming, in: Capsule())
+                                        TypingDots()
                                         Text("Typing").font(.caption).foregroundColor(Night.muted)
                                         Spacer()
                                     }.accessibilityLabel(neighbor.name + " is typing")
@@ -473,7 +471,7 @@ struct NeighborConversationView: View {
                             }
                             .foregroundColor(.white)
                             .padding(11)
-                            .background(Night.raised, in: RoundedRectangle(cornerRadius: 12))
+                            .lumaSurface(radius: 14)
                         }
                         .buttonStyle(.plain)
                     }
@@ -485,12 +483,12 @@ struct NeighborConversationView: View {
                             .onSubmit(send)
                         Button(action: send) {
                             Image(systemName: "arrow.up.circle.fill")
-                                .font(.system(size: 25))
+                                .font(.system(size: 30)).frame(width: 44, height: 44)
                         }
                         .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
                     .padding(10)
-                    .background(Night.surface, in: Capsule())
+                    .lumaSurface(radius: 24)
                 }
                 .padding(12)
             }
@@ -539,7 +537,8 @@ struct NeighborProfileView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 22) {
-                NeighborAvatar(neighbor: neighbor, size: 106)
+                NeighborAvatar(neighbor: neighbor, size: 132)
+                    .padding(12).background(LumaDesign.accent.opacity(0.12), in: Circle())
                 VStack(spacing: 5) {
                     Text(neighbor.name)
                         .font(.system(size: 29, weight: .semibold))
@@ -556,11 +555,11 @@ struct NeighborProfileView: View {
                 Text(neighbor == .maya
                      ? (world.tutorialStarted ? "Maya is a friend of Nora, the original owner of this phone." : "You met Maya through friends in the neighborhood. She sends ordinary updates and makes plans.")
                      : "Denise manages notices and maintenance for Ash Street residents.")
-                    .font(.system(size: 14))
+                    .font(.body)
                     .foregroundColor(Night.muted)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(17)
-                    .background(Night.surface, in: RoundedRectangle(cornerRadius: 15))
+                    .lumaSurface()
             }
             .padding(22)
         }
