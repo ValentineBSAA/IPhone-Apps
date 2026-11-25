@@ -14,7 +14,13 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.lab.brightness") private var brightness = 0.9
     @AppStorage("lastseen.lab.wifi") private var wifi = true
     @AppStorage("lastseen.setup.device") private var device = "My phone"
-    @AppStorage("lastseen.lab.biometricUnlock") private var biometricUnlock = false
+    @AppStorage("lastseen.security.ownerVerified") private var ownerVerified = false
+    @AppStorage("lastseen.security.appearanceEnrolled") private var appearanceEnrolled = false
+    @State private var showOwnerPasscode = false
+    @AppStorage("lastseen.recovery.stage") private var recoveryStage = 5
+    @AppStorage("lastseen.recovery.progress") private var recoveryProgress = 100
+    @AppStorage("lastseen.recovery.simulated") private var recoverySimulated = false
+    private var biometricUnlock: Bool { OwnerSecurityPolicy.canUseBiometrics(ownerVerified: ownerVerified, appearanceEnrolled: appearanceEnrolled) }
     @State private var authContext: LAContext?
     @State private var authNotice = ""
     @AppStorage("lastseen.permissions.reviewed.v1") private var permissionsReviewed = true
@@ -83,6 +89,13 @@ struct PhoneLabView: View {
             .preferredColorScheme(.dark)
             .presentationDetents([.medium, .large])
         }
+        .sheet(isPresented: $showOwnerPasscode) {
+            ScrollView {
+                OwnerPasscodeView(onSuccess: {
+                    ownerVerified = true; showOwnerPasscode = false; authNotice = ""; locked = false
+                }, onCancel: { showOwnerPasscode = false })
+            }.preferredColorScheme(.dark).presentationDetents([.large])
+        }
         .onAppear {
             let center = UNUserNotificationCenter.current()
             center.removePendingNotificationRequests(withIdentifiers: [NotificationRouter.storyNotificationID])
@@ -130,9 +143,8 @@ struct PhoneLabView: View {
             }.buttonStyle(.plain).disabled(authContext != nil)
             if !authNotice.isEmpty { Text(authNotice).font(.caption).multilineTextAlignment(.center) }
             if biometricUnlock {
-                Button("Play without biometrics") {
-                    authContext?.invalidate(); authContext = nil; biometricUnlock = false; authNotice = ""; requestUnlock()
-                }.font(.caption).disabled(authContext != nil)
+                Button("Use owner passcode") { showOwnerPasscode = true }.font(.subheadline).disabled(authContext != nil)
+                Button("Explore public apps") { authNotice = ""; locked = false }.font(.caption).disabled(authContext != nil)
             }
             Text("Swipe up to open").font(.caption2).foregroundColor(.white.opacity(0.6))
         }
@@ -155,7 +167,7 @@ struct PhoneLabView: View {
         context.localizedFallbackTitle = ""
         var error: NSError?
         guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
-            authNotice = "Biometrics unavailable. Try again or play without biometrics."
+            authNotice = "Biometrics unavailable. Use the fictional owner passcode or open public apps."
             return
         }
         authContext = context
@@ -166,7 +178,7 @@ struct PhoneLabView: View {
                 if success {
                     withAnimation(.easeInOut(duration: 0.25)) { locked = false }
                 } else {
-                    authNotice = "Unlock cancelled or unsuccessful. Try again or play without biometrics."
+                    authNotice = "Unlock cancelled or unsuccessful. Use the fictional owner passcode or open public apps."
                 }
             }
         }
@@ -240,8 +252,10 @@ struct PhoneLabView: View {
         Form {
             Section("Device") {
                 LabeledContent("Device name", value: device)
-                Toggle("Real Face ID / Touch ID", isOn: $biometricUnlock)
-                Text("Optional in-game unlock. iOS handles authentication; Last Seen receives only the result.").font(.caption).foregroundColor(.secondary)
+                NavigationLink { ProtectedAreaView(area: .security) } label: {
+                    Label("Face ID & Passcode", systemImage: "lock.shield")
+                }
+                LabeledContent("Appearance", value: biometricUnlock ? "Registered" : "Locked")
                 Toggle("Wi-Fi (in-game)", isOn: $wifi)
                 VStack(alignment: .leading) {
                     Text("Display brightness")
@@ -262,12 +276,13 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.2.3 (12)")
+                LabeledContent("Software", value: "1.3.0 (13)")
                 Button("Replay phone setup") { confirmSetupReplay = true }
             }
         }
         .confirmationDialog("Replay phone setup?", isPresented: $confirmSetupReplay) {
             Button("Replay setup") { panel = nil; setupProgress = 0; setupStage = 0 }
+            Button("Replay entire introduction") { panel = nil; setupProgress = 0; setupStage = 0; recoveryProgress = 0; recoverySimulated = false; recoveryStage = 0 }
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Your restored phone records and story saves will not be erased.")
@@ -317,7 +332,7 @@ struct PhoneLabView: View {
         switch app {
         case .messages: LabPeopleView(messages: true)
         case .contacts: LabPeopleView(messages: false)
-        case .notes: PhoneNotesView()
+        case .notes: PhoneNotesView(lab: true)
         case .calendar: PhoneCalendarView()
         case .mail: PhoneMailView(lab: true)
         case .photos: LabPhotosView()
@@ -411,6 +426,10 @@ private struct LabPhotosView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 15) {
                 Toggle("Favorites only", isOn: $onlyFavorites)
+                NavigationLink { ProtectedAreaView(area: .photos) } label: {
+                    Label("Private album", systemImage: "lock.fill").padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                }
                 Text("Camera roll").font(.headline)
                 if !onlyFavorites {
                     NavigationLink {
@@ -535,14 +554,17 @@ private struct LabCalculatorView: View {
 }
 
 private struct LabFilesView: View {
-    let documents = ["Building handbook": "Ash Street residents: please keep the entrance clear and contact Denise at the building office for maintenance requests.", "Book reservation": "Maple Street Bookshop — reservation held until the end of this week.", "Coffee plans": "Meet Maya at the cafe opposite the bookstore. Confirm the day by text."]
+    let documents = ["Building handbook": "Ash Street residents: please keep the entrance clear and contact Denise at the building office for maintenance requests.", "Book reservation": "Maple Street Bookshop — reservation held until the end of this week.\nReservation reference: 241607.", "Coffee plans": "Meet Maya at the cafe opposite the bookstore. Confirm the day by text.", "Desk reminder": "Private folders use the six-digit reference from my book reservation. — Nora"]
     @State private var search = ""
     var body: some View {
-        List(documents.keys.sorted().filter { search.isEmpty || $0.localizedCaseInsensitiveContains(search) }, id: \.self) { name in
-            NavigationLink {
-                ScrollView { Text(documents[name] ?? "").frame(maxWidth: .infinity, alignment: .leading).padding() }
-                    .navigationTitle(name)
-            } label: { Label(name, systemImage: "doc.text") }
+        List {
+            NavigationLink { ProtectedAreaView(area: .files) } label: { Label("Protected files", systemImage: "lock.doc") }
+            ForEach(documents.keys.sorted().filter { search.isEmpty || $0.localizedCaseInsensitiveContains(search) }, id: \.self) { name in
+                NavigationLink {
+                    ScrollView { Text(documents[name] ?? "").frame(maxWidth: .infinity, alignment: .leading).padding() }
+                        .navigationTitle(name)
+                } label: { Label(name, systemImage: "doc.text") }
+            }
         }.navigationTitle("Files").searchable(text: $search)
     }
 }
