@@ -12,3 +12,7 @@ Scope: section-by-section approval. This pass covers permission review, connecti
 - [ ] Existing 12 app destinations, Relay packages, owner passcode puzzle and biometric gates still functional. Do not claim approval until hardware review.
 ## Next section
 After user approval, polish welcome/personalization, then backup, shell, jailbreak lifestyle (themes, widgets, package repositories, simulated respring/safe mode, file browser and logs), security, owner history and finally horror. These later features are not in this build.
+
+## Staged follow-up (not in running Build 14)
+- [ ] Physical plug/reconnect: crisp impact haptic and connection sound; unplug: soft haptic while waiting, warning haptic during diagnostics/install. No repeated feedback for unchanged power state; no feedback from later boot/credits stages. Master connection-effects toggle mutes both sound and haptics. Check virtual connection alternative, background behavior and hardware settings. QA records feedback requests, not proof of felt vibration. External power is only a connection proxy.
+- [ ] Native top/bottom system gesture deferral with optional Settings opt-out; verify repeated swipe exits on hardware.
