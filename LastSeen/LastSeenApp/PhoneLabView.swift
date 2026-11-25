@@ -219,27 +219,21 @@ struct PhoneLabView: View {
             guard didConfigureFeedback, phase == .active, !checkpointReboot else { return }
             let newest = PhoneMessageArrival.newest(in: world.state, previous: previous)
             guard sent || newest != nil else { return }
-            arrivalTask?.cancel()
-            let sendDuration = sent ? PhoneSensoryEngine.play(.outgoing, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects) : 0
+            arrivalTask?.cancel(); arrivalTask = nil
+            // Commit incoming feedback immediately. The audio engine sequences
+            // sounds; an outgoing tick must not suppress an arrival vibration.
+            if sent {
+                PhoneSensoryEngine.play(.outgoing, sound: messageSound, haptics: messageHaptics && newest == nil, horrorEnabled: horrorEffects)
+            }
             if let newest {
-                // The authored conversation can commit send and reply together.
-                // Sequence the sounds instead of cutting off the outgoing clip.
-                arrivalTask = Task { @MainActor in
-                    if sent {
-                        do { try await Task.sleep(nanoseconds: UInt64(max(0.18, sendDuration) * 1_000_000_000)) }
-                        catch { return }
-                    }
-                    guard !Task.isCancelled, phase == .active else { return }
-                    PhoneSensoryEngine.play(.message, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
-                    if PhoneConversationPresentation.shouldShowBanner(for: newest.neighbor, visible: world.visibleThread, locked: locked, covered: panel != nil || showOwnerPasscode) {
-                        withAnimation(.easeOut(duration: 0.25)) { banner = newest }
-                    } else if !locked && panel == nil && world.visibleThread == newest.neighbor {
-                        world.markRead(newest.neighbor)
-                        banner = nil
-                    }
-                    arrivalTask = nil
+                PhoneSensoryEngine.play(.message, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
+                if PhoneConversationPresentation.shouldShowBanner(for: newest.neighbor, visible: world.visibleThread, locked: locked, covered: panel != nil || showOwnerPasscode) {
+                    withAnimation(.easeOut(duration: 0.25)) { banner = newest }
+                } else if !locked && panel == nil && world.visibleThread == newest.neighbor {
+                    world.markRead(newest.neighbor)
+                    banner = nil
                 }
-            } else { arrivalTask = nil }
+            }
         }
         .onChange(of: world.visibleThread) { visible in
             if banner?.neighbor == visible { banner = nil }
@@ -256,11 +250,10 @@ struct PhoneLabView: View {
             guard phase == .active else { return }
             while !Task.isCancelled {
                 if !checkpointReboot {
-                    let before = Set(world.connected.mail.filter { $0.kind == "inbox" }.map(\.id))
+                    let before = PhoneMailArrival.inboxIDs(in: world.state)
                     world.advancePendingReplies()
-                    let after = Set(world.connected.mail.filter { $0.kind == "inbox" }.map(\.id))
-                    if didConfigureFeedback && !after.subtracting(before).isEmpty {
-                        PhoneSensoryEngine.play(.general, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
+                    if didConfigureFeedback && !PhoneMailArrival.added(in: world.state, previous: before).isEmpty {
+                        PhoneSensoryEngine.play(.general, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects, hapticProfile: .mail)
                     }
                     if timerBaselineReady && feedbackTimerEnd > 0 && feedbackTimerEnd != feedbackTimerDelivered && feedbackTimerEnd <= Date().timeIntervalSince1970 {
                         feedbackTimerDelivered = feedbackTimerEnd
@@ -830,6 +823,13 @@ struct PhoneLabView: View {
                 Button {
                     PhoneSensoryEngine.play(.message, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
                 } label: { Label("Preview message alert", systemImage: "bell.badge") }
+                Button {
+                    PhoneSensoryEngine.play(.general, sound: messageSound, haptics: messageHaptics, horrorEnabled: false, hapticProfile: .mail)
+                } label: { Label("Preview mail alert", systemImage: "envelope.badge") }
+                Button {
+                    PhoneSensoryEngine.play(.message, sound: false, haptics: messageHaptics, horrorEnabled: false)
+                } label: { Label("Test vibration only", systemImage: "waveform.path") }
+                .disabled(!messageHaptics)
                 Text("In-game effects only. Each recording plays once. Sounds respect your device's silent mode and volume. Haptics depend on device support and system settings. Horror cues are optional.")
                     .font(.footnote).foregroundColor(.secondary)
             }

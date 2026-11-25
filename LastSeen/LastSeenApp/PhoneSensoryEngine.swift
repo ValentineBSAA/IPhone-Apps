@@ -152,6 +152,62 @@ enum PhoneMessageArrival {
     }
 }
 
+/// A tactile profile is independent of its audio file. Mail uses the existing
+/// general notification recording but has a different physical pulse pattern.
+enum PhoneHapticProfile: Equatable {
+    case cue(PhoneCue), mail, social, security
+    struct Pulse: Equatable {
+        let time: Double
+        let duration: Double
+        let intensity: Float
+        let sharpness: Float
+    }
+    var pulses: [Pulse] {
+        switch self {
+        case .mail:
+            return [.init(time: 0, duration: 0.18, intensity: 0.75, sharpness: 0.40)]
+        case .social:
+            return [.init(time: 0, duration: 0.09, intensity: 0.54, sharpness: 0.65)]
+        case .security:
+            return [.init(time: 0, duration: 0.15, intensity: 0.78, sharpness: 0.45),
+                    .init(time: 0.25, duration: 0.18, intensity: 0.72, sharpness: 0.40)]
+        case .cue(.message):
+            return [.init(time: 0, duration: 0.10, intensity: 0.78, sharpness: 0.65),
+                    .init(time: 0.17, duration: 0.13, intensity: 0.68, sharpness: 0.55)]
+        case .cue(.unlock):
+            return [.init(time: 0, duration: 0.09, intensity: 0.55, sharpness: 0.48)]
+        case .cue(let cue):
+            return cue.pulses.map { .init(time: $0.time, duration: $0.duration, intensity: $0.intensity, sharpness: $0.sharpness) }
+        }
+    }
+    var duration: Double { pulses.map { $0.time + $0.duration }.max() ?? 0 }
+    var isInteraction: Bool {
+        switch self {
+        case .cue(.outgoing), .cue(.passcodeKeypress), .cue(.dialerKeypress), .cue(.lock): return true
+        default: return false
+        }
+    }
+    var name: String {
+        switch self {
+        case .cue(let cue): return cue.rawValue
+        case .mail: return "mail"
+        case .social: return "social"
+        case .security: return "security"
+        }
+    }
+}
+
+/// Only newly committed local inbox records count; static history, sent mail,
+/// drafts, read changes and folder changes do not create arrival feedback.
+enum PhoneMailArrival {
+    static func inboxIDs(in world: PhoneWorld) -> Set<String> {
+        Set((world.connectedWorld?.mail ?? []).filter { $0.kind == "inbox" }.map(\.id))
+    }
+    static func added(in world: PhoneWorld, previous: Set<String>) -> Set<String> {
+        inboxIDs(in: world).subtracting(previous)
+    }
+}
+
 @MainActor
 enum PhoneSensoryEngine {
     private static var audio: AVAudioPlayer?
@@ -161,6 +217,14 @@ enum PhoneSensoryEngine {
     private static var deferredAuthentication: Task<Void, Never>?
     private static var queued: [(PhoneCue, Bool, Bool, Bool)] = []
     private static var drainTask: Task<Void, Never>?
+    private static var hapticQueue: [PhoneHapticProfile] = []
+    private static var hapticDrain: Task<Void, Never>?
+    private static var hapticUntil: TimeInterval = 0
+
+    private static func preference(_ key: String) -> Bool {
+        let defaults = UserDefaults.standard
+        return defaults.object(forKey: key) == nil || defaults.bool(forKey: key)
+    }
 
     // Face ID may return while UIKit is inactive. Retain a single explicit outcome
     // until foreground activation, never replay after background or a new request.
@@ -204,13 +268,18 @@ enum PhoneSensoryEngine {
     }
 
     @discardableResult
-    static func play(_ cue: PhoneCue, sound: Bool, haptics: Bool, horrorEnabled: Bool) -> Double {
+    static func play(_ cue: PhoneCue, sound: Bool, haptics: Bool, horrorEnabled: Bool, hapticProfile: PhoneHapticProfile? = nil) -> Double {
         guard UIApplication.shared.applicationState == .active,
               !cue.isHorror || horrorEnabled else { return 0 }
+        // Dispatch tactile feedback on arrival, not after the audio queue.
+        if haptics && preference("lastseen.lab.messageHaptics") {
+            requestHaptics(hapticProfile ?? .cue(cue))
+        }
+        guard sound && preference("lastseen.lab.messageSound") else { return 0 }
         if audio?.isPlaying == true, let currentCue {
             if cue.isKeypress && !currentCue.isKeypress { return 0 }
             if !cue.isKeypress && !currentCue.isKeypress && !cue.isAuthentication {
-                if queued.count < 12 { queued.append((cue, sound, haptics, horrorEnabled)); scheduleDrain() }
+                if queued.count < 12 { queued.append((cue, sound, false, horrorEnabled)); scheduleDrain() }
                 OpeningQA.record("Phone audio queued: " + cue.rawValue)
                 return 0
             }
@@ -235,44 +304,91 @@ enum PhoneSensoryEngine {
                 else { OpeningQA.record("Phone audio start failed: " + cue.rawValue) }
             } catch { OpeningQA.record("Phone audio unavailable") }
         }
-        if haptics {
-            playHaptics(cue)
-        }
         return playbackDuration
     }
 
-    private static func playHaptics(_ cue: PhoneCue) {
+    private static func requestHaptics(_ profile: PhoneHapticProfile) {
+        let now = ProcessInfo.processInfo.systemUptime
+        if now < hapticUntil || !hapticQueue.isEmpty {
+            // Keypresses never interrupt an incoming alert. Alert bursts retain
+            // a short FIFO, independent of the length of any sound recording.
+            if profile.isInteraction { return }
+            if hapticQueue.count < 12 { hapticQueue.append(profile) }
+            if hapticDrain == nil {
+                hapticDrain = Task { @MainActor in
+                    while !Task.isCancelled {
+                        do { try await Task.sleep(nanoseconds: 30_000_000) } catch { return }
+                        guard UIApplication.shared.applicationState == .active,
+                              preference("lastseen.lab.messageHaptics") else { hapticQueue.removeAll(); break }
+                        guard ProcessInfo.processInfo.systemUptime >= hapticUntil else { continue }
+                        guard !hapticQueue.isEmpty else { break }
+                        let next = hapticQueue.removeFirst()
+                        if case .cue(let cue) = next, cue.isHorror && !preference("lastseen.lab.horrorEffects") { continue }
+                        playHaptics(next)
+                    }
+                    hapticDrain = nil
+                }
+            }
+            return
+        }
+        playHaptics(profile)
+    }
+
+    private static func playHaptics(_ profile: PhoneHapticProfile) {
+        hapticUntil = ProcessInfo.processInfo.systemUptime + profile.duration + 0.035
         if CHHapticEngine.capabilitiesForHardware().supportsHaptics {
             do {
                 if engine == nil {
                     let fresh = try CHHapticEngine()
                     fresh.playsHapticsOnly = true
+                    fresh.isAutoShutdownEnabled = true
+                    fresh.resetHandler = { [weak fresh] in
+                        Task { @MainActor in
+                            guard let fresh, engine === fresh else { return }
+                            hapticPlayer = nil
+                            // A subsequent event recreates the engine after reset.
+                            engine = nil
+                        }
+                    }
                     engine = fresh
                 }
-                guard let engine else { return }
+                guard let engine else { throw CocoaError(.featureUnsupported) }
                 try engine.start()
                 try? hapticPlayer?.stop(atTime: CHHapticTimeImmediate)
-                let events = cue.pulses.map { pulse in
-                    CHHapticEvent(eventType: cue == .message || cue == .outgoing || cue == .lock || cue == .unlock ? .hapticTransient : .hapticContinuous,
+                let events = profile.pulses.map { pulse in
+                    CHHapticEvent(eventType: profile.isInteraction ? .hapticTransient : .hapticContinuous,
                                   parameters: [
                                     CHHapticEventParameter(parameterID: .hapticIntensity, value: pulse.intensity),
                                     CHHapticEventParameter(parameterID: .hapticSharpness, value: pulse.sharpness)
-                                  ], relativeTime: pulse.time, duration: cue == .message || cue == .outgoing || cue == .lock || cue == .unlock ? 0 : pulse.duration)
+                                  ], relativeTime: pulse.time, duration: profile.isInteraction ? 0 : pulse.duration)
                 }
                 let pattern = try CHHapticPattern(events: events, parameters: [])
-                hapticPlayer = try engine.makePlayer(with: pattern)
-                try hapticPlayer?.start(atTime: CHHapticTimeImmediate)
-                OpeningQA.record("Core Haptics requested: " + cue.rawValue)
+                let player = try engine.makePlayer(with: pattern)
+                try player.start(atTime: CHHapticTimeImmediate)
+                hapticPlayer = player
+                OpeningQA.record("Core Haptics requested: " + profile.name)
                 return
             } catch {
-                stopHaptics()
+                try? hapticPlayer?.stop(atTime: CHHapticTimeImmediate)
+                hapticPlayer = nil
+                engine?.stop(completionHandler: nil); engine = nil
                 OpeningQA.record("Core Haptics unavailable; using UIKit fallback")
             }
         }
-        let fallback = UINotificationFeedbackGenerator()
-        fallback.prepare()
-        fallback.notificationOccurred(cue == .authenticationFailed ? .error : (cue.isHorror ? .warning : .success))
-        OpeningQA.record("UIKit haptic requested: " + cue.rawValue)
+        if profile.isInteraction {
+            let fallback = UIImpactFeedbackGenerator(style: .light)
+            fallback.prepare(); fallback.impactOccurred()
+        } else {
+            let fallback = UINotificationFeedbackGenerator()
+            fallback.prepare()
+            switch profile {
+            case .cue(.authenticationFailed): fallback.notificationOccurred(.error)
+            case .security: fallback.notificationOccurred(.warning)
+            case .cue(let cue) where cue.isHorror: fallback.notificationOccurred(.warning)
+            default: fallback.notificationOccurred(.success)
+            }
+        }
+        OpeningQA.record("UIKit haptic requested: " + profile.name)
     }
 
     static func stopSound() {
@@ -280,6 +396,7 @@ enum PhoneSensoryEngine {
         drainTask?.cancel(); drainTask = nil; queued.removeAll()
     }
     static func stopHaptics() {
+        hapticDrain?.cancel(); hapticDrain = nil; hapticQueue.removeAll(); hapticUntil = 0
         try? hapticPlayer?.stop(atTime: CHHapticTimeImmediate)
         hapticPlayer = nil
         engine?.stop(completionHandler: nil)

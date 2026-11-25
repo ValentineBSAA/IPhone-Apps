@@ -74,12 +74,10 @@ struct OwnerPasscodeView: View {
         }
         guard digits.count < 6 else { return }
         notice = ""
-        PhoneSensoryEngine.play(.passcodeKeypress, sound: sound, haptics: false, horrorEnabled: false)
-        if haptics { UIImpactFeedbackGenerator(style: .soft).impactOccurred() }
+        PhoneSensoryEngine.play(.passcodeKeypress, sound: sound, haptics: haptics, horrorEnabled: false)
         digits += key
         guard digits.count == 6 else { return }
         if OwnerSecurityPolicy.accepts(digits) {
-            if haptics { UINotificationFeedbackGenerator().notificationOccurred(.success) }
             digits = ""; notice = ""; attempts = 0; onSuccess()
         } else {
             PhoneSensoryEngine.authentication(.authenticationFailed, sound: sound, haptics: haptics)
