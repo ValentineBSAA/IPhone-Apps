@@ -40,12 +40,25 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.lastseen.horror.tests
+  LastSeenUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: LastSeen
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.valentinebsaa.lastseen.horror.uitests
 schemes:
   LastSeen:
     build:
       targets:
         LastSeen: all
         LastSeenTests: [test]
+        LastSeenUITests: [test]
     test:
       targets:
         - LastSeenTests
+        - LastSeenUITests

@@ -158,7 +158,7 @@ struct LumaPhoneDirectory: View {
                 Text(name).font(.caption)
             }.frame(maxWidth: .infinity, minHeight: 48)
                 .foregroundColor(tab == index ? LumaDesign.accent : .secondary)
-        }.buttonStyle(.plain).accessibilityAddTraits(tab == index ? .isSelected : [])
+        }.buttonStyle(.plain).accessibilityAddTraits(tab == index ? .isSelected : []).accessibilityIdentifier("luma.phone.tab." + name)
     }
 }
 
@@ -187,7 +187,7 @@ struct LumaCallView: View {
                         .frame(width: 68, height: 68)
                         .background(calling ? Color.red : Color.green, in: Circle()).foregroundColor(.white)
                         .accessibilityLabel(calling ? "End fictional call" : "Start fictional call")
-                }.buttonStyle(.plain)
+                }.buttonStyle(.plain).accessibilityIdentifier("luma.phone.call")
             }
             Text("Fictional calls only. No real dialing or connected voice call.").font(.caption)
                 .foregroundColor(.secondary).multilineTextAlignment(.center)

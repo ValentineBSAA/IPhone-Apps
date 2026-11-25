@@ -197,9 +197,9 @@ struct LumaSaveView: View {
                         if store.slots[id] != nil || store.invalid.contains(id) { choose("Save", id) }
                         else { _ = store.writeManual(id, world: world.state) }
                     }.buttonStyle(.borderedProminent).frame(minHeight: 44)
-                    .disabled(!store.canSaveManually())
+                    .disabled(!store.canSaveManually()).accessibilityIdentifier("luma.save." + id)
                 }
-                if store.slots[id] != nil { Button("Load") { choose("Load", id) }.buttonStyle(.bordered).frame(minHeight: 44) }
+                if store.slots[id] != nil { Button("Load") { choose("Load", id) }.buttonStyle(.bordered).frame(minHeight: 44).accessibilityIdentifier("luma.load." + id) }
                 Spacer()
                 if store.slots[id] != nil || store.invalid.contains(id) {
                     Button(role: .destructive) { choose("Delete", id) } label: { Image(systemName: "trash").frame(width: 44, height: 44) }.accessibilityLabel("Delete checkpoint")

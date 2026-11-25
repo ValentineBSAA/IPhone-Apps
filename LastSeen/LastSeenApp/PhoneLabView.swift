@@ -4,9 +4,9 @@ import LocalAuthentication
 
 /// Neutral, offline phone prototype. No GameStore or story routing is constructed here.
 struct PhoneLabView: View {
-    @StateObject private var world = PhoneWorldStore(storageURL: RestoredPhoneBackup.url)
+    @StateObject private var world: PhoneWorldStore
     @State private var path = NavigationPath()
-    @StateObject private var saves = LumaSaveStore()
+    @StateObject private var saves: LumaSaveStore
     @AppStorage("lastseen.saves.interval") private var saveInterval = 5
     @State private var checkpointReboot = false
     @State private var navigationGeneration = UUID()
@@ -14,7 +14,19 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.lab.wallpaperBlur") private var wallpaperBlur = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var locked: Bool
-    init(startUnlocked: Bool = false) { _locked = State(initialValue: !startUnlocked) }
+    init(startUnlocked: Bool = false, uiFixture: Bool = false) {
+        _locked = State(initialValue: !startUnlocked)
+        #if DEBUG && targetEnvironment(simulator)
+        if uiFixture {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent("LumaUISmoke-" + UUID().uuidString)
+            _world = StateObject(wrappedValue: PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(), persistToDisk: false))
+            _saves = StateObject(wrappedValue: LumaSaveStore(root: root, defaults: UserDefaults(suiteName: "LumaUISmoke-" + UUID().uuidString) ?? .standard))
+            return
+        }
+        #endif
+        _world = StateObject(wrappedValue: PhoneWorldStore(storageURL: RestoredPhoneBackup.url))
+        _saves = StateObject(wrappedValue: LumaSaveStore())
+    }
     @State private var panel: LabPanel?
     @State private var recent: [LabApp] = []
     @State private var pendingThread: Neighbor?
@@ -177,7 +189,7 @@ struct PhoneLabView: View {
             }
         }
         .onChange(of: locked) { value in
-            guard didConfigureFeedback, phase == .active else { return }
+            guard didConfigureFeedback, phase == .active, !checkpointReboot else { return }
             PhoneSensoryEngine.play(value ? .lock : .unlock, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
         }
         .onChange(of: phase) { value in
@@ -331,7 +343,7 @@ struct PhoneLabView: View {
                     Text(biometricUnlock ? "Authenticate to unlock" : "Swipe up to open").font(.subheadline.weight(.medium))
                     Capsule().fill(.white.opacity(0.8)).frame(width: 110, height: 5)
                 }.frame(maxWidth: .infinity).padding(.vertical, 12).contentShape(Rectangle())
-            }.buttonStyle(.plain).disabled(authContext != nil)
+            }.buttonStyle(.plain).disabled(authContext != nil).accessibilityIdentifier("luma.lock.unlock")
                 .gesture(DragGesture(minimumDistance: 16).onEnded { value in
                     if value.translation.height < -20 { pendingThread = nil; requestUnlock() }
                 })
@@ -393,7 +405,7 @@ struct PhoneLabView: View {
             }.frame(maxWidth: .infinity).frame(height: 44).contentShape(Rectangle())
         }.buttonStyle(.plain)
             .background(.ultraThinMaterial)
-            .accessibilityLabel("Return to in-game home")
+            .accessibilityLabel("Return to in-game home").accessibilityIdentifier("luma.home")
             .gesture(DragGesture(minimumDistance: 16).onEnded { value in
                 if value.translation.height < -20 { returnHome() }
                 else if abs(value.translation.width) > 50 && abs(value.translation.height) < 35 {
@@ -525,7 +537,7 @@ struct PhoneLabView: View {
                         .lineLimit(1).minimumScaleFactor(0.8)
                 }
             }.frame(maxWidth: .infinity)
-        }.buttonStyle(.plain).accessibilityLabel(app.rawValue)
+        }.buttonStyle(.plain).accessibilityLabel(app.rawValue).accessibilityIdentifier("luma.app." + app.rawValue)
     }
 
     private var controls: some View {
