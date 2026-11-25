@@ -601,6 +601,24 @@ final class PhoneWorldStore: ObservableObject {
         else {c.mailFolders[id]=folder}
         commitConnected(c)
     }
+    func socialPreferences(_ channel: LumaSocialChannel) -> LumaSocialPreferences {
+        connected.socialPreferences?[channel.rawValue] ?? LumaSocialPreferences()
+    }
+    func setSocialPreferences(_ value: LumaSocialPreferences, channel: LumaSocialChannel) {
+        guard state.everydayArchiveRevision != nil else { return }
+        var c = connected
+        var values = c.socialPreferences ?? [:]
+        values[channel.rawValue] = value
+        c.socialPreferences = values
+        commitConnected(c)
+    }
+    func toggleSocialMute(_ author: String, channel: LumaSocialChannel) {
+        guard author != "Nora Bennett", author != "Repair desk",
+              LumaSocialCatalog.visible(channel, world: state).contains(where: { $0.author == author }) else { return }
+        var value = socialPreferences(channel)
+        if !value.mutedAuthors.insert(author).inserted { value.mutedAuthors.remove(author) }
+        setSocialPreferences(value, channel: channel)
+    }
     func toggleSocial(_ action:LumaSocialAction,postID:String,channel:LumaSocialChannel) {
         guard let post=LumaSocialCatalog.visible(channel,world:state).first(where:{$0.id==postID}) else{return}
         var c=connected

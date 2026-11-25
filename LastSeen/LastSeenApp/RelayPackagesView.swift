@@ -6,6 +6,8 @@ struct RelayPackagesView: View {
     @AppStorage("lastseen.relay.versions") private var versions = ""
     @AppStorage("lastseen.relay.sources") private var sources = RelayCatalog.defaultSources
     @AppStorage("lastseen.relay.history") private var history = ""
+    @AppStorage("lastseen.relay.wishlist") private var wishlist = ""
+    @AppStorage("lastseen.relay.lastRefresh") private var lastRefresh = 0.0
     @AppStorage("lastseen.relay.safeMode") private var safeMode = false
     @AppStorage("lastseen.lab.wallpaper") private var wallpaper = 0
     @AppStorage("lastseen.relay.compactIcons") private var compactIcons = false
@@ -191,6 +193,11 @@ struct RelayPackagesView: View {
                 }.padding(.vertical, 8)
                 if let p = RelayCatalog.package("teal"), visiblePackages.contains(p) { packageRow(p) }
             }
+            Section("Saved packages") {
+                let saved = visiblePackages.filter { RelayCatalog.ids(wishlist).contains($0.id) }
+                if saved.isEmpty { Text("Save packages from their details to find them here.").font(.caption).foregroundColor(.secondary) }
+                ForEach(saved) { packageRow($0) }
+            }
             Section("Browse packages") {
                 Picker("Category",selection:$category) { ForEach(["All"]+Array(Set(visiblePackages.filter{!$0.essential}.map(\.category))).sorted(),id:\.self){Text($0).tag($0)} }
                 ForEach(visiblePackages.filter { !$0.essential && $0.id != "teal" && (category=="All" || $0.category==category) }) { packageRow($0) }
@@ -213,6 +220,7 @@ struct RelayPackagesView: View {
                 Button {
                     recoverSources()
                     refresh = true
+                    lastRefresh = Date().timeIntervalSince1970
                     notice = "All local package indexes are up to date"
                     OpeningQA.record("Relay source refresh")
                 } label: { Label("Refresh Sources", systemImage: "arrow.clockwise") }
@@ -223,14 +231,21 @@ struct RelayPackagesView: View {
             Section("Sources") {
                 ForEach(RelayCatalog.sources.filter { sourceIDs.contains($0.id) }) { source in
                     VStack(alignment: .leading, spacing: 7) {
-                        sourceRow(source)
+                        NavigationLink {
+                            List {
+                                Section { sourceRow(source) }
+                                Section("Available packages") {
+                                    ForEach(visiblePackages.filter { $0.source == source.id }) { packageRow($0) }
+                                }
+                            }.navigationTitle(source.name)
+                        } label: { sourceRow(source) }
                         Text("\(visiblePackages.filter { $0.source == source.id }.count) packages").font(.caption).foregroundColor(.secondary)
                         if RelayCatalog.requiredSourceIDs.contains(source.id) { Label("Baseline source",systemImage:"lock.shield").font(.caption).foregroundColor(.secondary) }
                         else { Button("Remove source",role:.destructive){sources=RelayCatalog.encoded(sourceIDs.subtracting([source.id]));notice="Repository removed. Installed packages kept."}.font(.caption) }
                     }.padding(.vertical, 4)
                 }
             }
-            if refresh { Section { Label("Indexes refreshed", systemImage: "checkmark.circle").foregroundColor(.teal) } }
+            if lastRefresh > 0 { Section { LabeledContent("Last local refresh") { Text(Date(timeIntervalSince1970: lastRefresh), style: .relative) } } }
         }.listStyle(.insetGrouped)
     }
     private var changesPage: some View {
@@ -327,6 +342,13 @@ struct RelayPackagesView: View {
                     VStack(alignment: .leading, spacing: 4) { Text(p.title).font(.title3.bold()); Text(p.summary).font(.subheadline).foregroundColor(.secondary) }
                 }
                 Text(p.detail)
+                if !p.essential {
+                    Button {
+                        var saved = RelayCatalog.ids(wishlist)
+                        if !saved.insert(p.id).inserted { saved.remove(p.id) }
+                        wishlist = RelayCatalog.encoded(saved)
+                    } label: { Label(RelayCatalog.ids(wishlist).contains(p.id) ? "Remove from saved" : "Save package", systemImage: RelayCatalog.ids(wishlist).contains(p.id) ? "bookmark.fill" : "bookmark") }
+                }
                 if p.id == "teal" {
                     HStack(spacing: 8) { ForEach(Array(ApprovedArt.theme.prefix(5)), id: \.self) { OpeningArt(name: $0, size: 36) } }
                 }

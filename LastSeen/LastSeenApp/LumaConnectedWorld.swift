@@ -62,6 +62,7 @@ struct LumaConnectedState:Codable,Equatable {
     var follows:Set<String>=[]
     var comments:[LumaSocialComment]=[]
     var posts:[LumaSocialPost]=[]
+    var socialPreferences: [String: LumaSocialPreferences]? = nil
     var workbenchConnected=false
     var workbenchSelections:[String:[String]]=[:]
     var workbenchVerified:Set<String>=[]
@@ -138,7 +139,7 @@ enum LumaSocialCatalog {
             post("cg-03",.commonGround,"Maple Cafe","maplecafe","Fresh cinnamon pastries at the counter today. The window seats are open.",82000),
             post("cg-04",.commonGround,"Adrian Cole","adrian.c","Anyone else keeping a separate note for original capture dates and imported copies? It saves a surprising amount of confusion.",190000,"Contact_B27_06")
         ]
-        return (base+LivingPhoneHistory.posts(anchor: d)+(world.connectedWorld?.posts ?? [])).filter{$0.channel==channel && ($0.gate.map{world.flags.contains($0)} ?? true)}.sorted{$0.date>$1.date}
+        return (base+LivingPhoneHistory.posts(anchor: d)+LumaSocialCommunity.posts(anchor: d)+(world.connectedWorld?.posts ?? [])).filter{$0.channel==channel && ($0.gate.map{world.flags.contains($0)} ?? true)}.sorted{$0.date>$1.date}
     }
     static func comments(_ postID: String, channel: LumaSocialChannel, world: PhoneWorld) -> [LumaSocialComment] {
         guard let post = visible(channel, world: world).first(where: { $0.id == postID }) else { return [] }
@@ -301,6 +302,7 @@ struct LumaSocialView:View {
     @State private var feedback=""
     private var posts:[LumaSocialPost]{
         LumaSocialCatalog.visible(channel,world:world.state).filter{p in
+            (filter == "Saved" || !world.socialPreferences(channel).mutedAuthors.contains(p.author)) &&
             (filter != "Saved" || world.connected.savedPosts.contains(p.id)) &&
             (filter != "Following" || world.connected.follows.contains(channel.rawValue+"|"+p.author)) &&
             (query.isEmpty || [p.author,p.handle,p.body].contains{$0.localizedCaseInsensitiveContains(query)})
@@ -344,7 +346,12 @@ struct LumaSocialView:View {
                 }
             }.padding(16)
         }.navigationTitle(channel.rawValue).navigationBarTitleDisplayMode(.inline).searchable(text:$query)
-            .toolbar{ToolbarItem(placement:.navigationBarTrailing){Button{compose=true}label:{Image(systemName:"square.and.pencil").accessibilityLabel("Compose post")}}}
+            .toolbar{
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink { LumaSocialAccountView(channel: channel) } label: { Image(systemName: "person.crop.circle").accessibilityLabel("Account and settings") }
+                }
+                ToolbarItem(placement:.navigationBarTrailing){Button{compose=true}label:{Image(systemName:"square.and.pencil").accessibilityLabel("Compose post")}}
+            }
             .sheet(isPresented:$compose){
                 NavigationStack{
                     Form{
@@ -365,7 +372,18 @@ struct LumaSocialProfile:View{
     var body:some View{
         List{
             if let first=posts.first{
-                LumaHeader(title:author,detail:"@"+first.handle,symbol:"person.crop.circle")
+                Section {
+                    HStack(spacing: 14) {
+                        if let portrait = first.portrait { Image(portrait).resizable().scaledToFill().frame(width: 64, height: 64).clipShape(Circle()) }
+                        else { Image(systemName: "person.crop.circle.fill").font(.system(size: 54)).foregroundColor(channel.accent) }
+                        VStack(alignment: .leading, spacing: 4) { Text(author).font(.title2.bold()); Text("@" + first.handle).foregroundColor(.secondary) }
+                    }
+                    if let bio = LumaSocialCommunity.bio(author: author, channel: channel) { Text(bio) }
+                    LabeledContent("Restored posts", value: String(posts.count))
+                }
+                if author != "Nora Bennett" && author != "Repair desk" {
+                    Button(world.socialPreferences(channel).mutedAuthors.contains(author) ? "Unmute profile" : "Mute profile") { world.toggleSocialMute(author, channel: channel) }
+                }
                 Button(world.connected.follows.contains(channel.rawValue+"|"+author) ? "Unfollow":"Follow"){world.toggleSocial(.follow,postID:first.id,channel:channel)}
                 Section("Posts"){ForEach(posts){post in NavigationLink{LumaSocialDiscussion(channel:channel,postID:post.id)}label:{VStack(alignment:.leading){Text(post.body);Text(post.date,style:.date).font(.caption).foregroundColor(.secondary)}}}}
             }else{Text("Profile unavailable")}

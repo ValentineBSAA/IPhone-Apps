@@ -1,0 +1,21 @@
+# Build 32 — researched authenticity requirements (spoiler-free)
+Research checked November 25, 2026. Interaction references only, original designs and fictional offline data. No real jailbreak, network, account access or copied brand assets.
+
+## References and implications
+- Sileo: https://github.com/Sileo/Sileo ; https://ios.cfw.guide/installing-nathanlr/using-sileo.html — source browsing, search, package info and install workflow.
+- Zebra: https://github.com/zbrateam/Zebra/releases — queue, compatibility, respring/reboot outcomes, settings.
+- LinkedIn: https://www.linkedin.com/help/linkedin/answer/a550647 ; https://www.linkedin.com/help/linkedin/answer/a570067 — separate personal and company identities, admin roles, activity and post analytics.
+- Reddit: https://support.reddithelp.com/hc/en-us/articles/360043471231-How-do-I-update-my-profile-settings ; https://support.reddithelp.com/hc/en-us/articles/205243605-How-do-I-save-a-post-and-where-does-it-get-saved — profile controls, saved posts, community identity.
+- Snapchat: https://help.snapchat.com/hc/en-us/articles/7012343074580-How-do-I-change-my-privacy-settings-on-Snapchat ; https://help.snapchat.com/hc/en-us/articles/7012292808596-About-Profiles-on-Snapchat — profile, friendship and privacy controls.
+- YouTube: https://support.google.com/youtube/answer/3382248?co=GENIE.Platform%3DiOS — channel subscription notification preferences, history and feed distinctions.
+- Afterframe: original photo-first account, grid, saved media, archive, social graph and privacy affordances; further direct photo-platform reference research open.
+
+## Acceptance checklist
+- [x] SOURCE: independent community of nine fictional people with 18 original posts; profile descriptions, distinct interests, restored Nora and studio profile links, per-app persisted mute and notification preferences, local saved/follow counts. No false live activity. Tests added, not run.
+- [x] SOURCE: Relay per-repository browsing, saved packages, last refresh date; Patchline derived environment and package activity views. Save preference keys added; CI open.
+- [ ] Relay: richer original package depictions, author, version history, compatible environment and dependencies, conflicts and protected essentials, searchable categories and local repository identity, honest transaction sizes/progress, failure/cancel/retry, upgrade/downgrade where supported, source failures, settings and accessibility. All changes validated against local catalog, never executable or remote. Preserve existing required repos and gated sources.
+- [ ] Patchline: distinct maintenance utility, simulated bootstrap/loader and environment health, tweak injection controls, diagnostic history, safe mode recovery, restart lifecycle, understandable warnings/confirmation and consistent state shared with Relay. No destructive device action.
+- [ ] All social apps: independent personal/professional/creator/business accounts; original biographies, avatar assets, appropriate privacy and public/private content, realistic interaction graph, following/followers, saved/liked activity, drafts, account settings, notifications and search. Nora's own restored account not silently editable by repairer; authenticated story-gated views as authored. Do not inflate statistics or fabricate live events. More independent people and businesses as needed, not every conversation about Nora.
+- [ ] Connective: believable studio profile, public company updates, roles and permissions, staff directory, historical engagement and derived analytics from authored records; no real ads or payment. Afterframe: photo grids, meaningful media, captions, personal history. CommonGround: joined communities, threads, replies, moderation controls appropriate to access. Motionwell: local playable clips, creator profiles, subscriptions and watch history. Dayblink: friendships, visual messages, privacy, expiry and story state. Separate layouts and functional controls; no fake media.
+- [ ] Connect saved notification/preview prefs to shared scheduler and app-specific actual iPhone haptic routing; preserve history, respect mute and privacy, no surprise on reopen or restore.
+- [ ] Test save migration/restore, local-only boundaries, profile and media gates, queue validity, no dead buttons, no plot leakage. No intermediate release.

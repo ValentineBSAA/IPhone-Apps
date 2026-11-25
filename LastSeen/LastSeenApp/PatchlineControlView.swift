@@ -6,6 +6,9 @@ struct PatchlineControlView: View {
     let onRestart: () -> Void
     @AppStorage("lastseen.relay.safeMode") private var safeMode = false
     @AppStorage("lastseen.relay.installed") private var installed = ""
+    @AppStorage("lastseen.relay.versions") private var versions = ""
+    @AppStorage("lastseen.relay.sources") private var sources = RelayCatalog.defaultSources
+    @AppStorage("lastseen.relay.history") private var history = ""
     @AppStorage("lastseen.recovery.effects") private var effects = true
     @State private var restart: RelayRestart?
     @State private var confirm: RelayRestart?
@@ -24,6 +27,27 @@ struct PatchlineControlView: View {
                 }.padding(.vertical, 12)
                 LabeledContent("Tweak loader", value: safeMode ? "Disabled" : "Active")
                 LabeledContent("Installed tweaks", value: String(RelayCatalog.ids(installed).count))
+            }
+            Section("Environment") {
+                LabeledContent("Bootstrap", value: RelayCatalog.package("bootstrap")?.version ?? "Unavailable")
+                LabeledContent("Loader", value: RelayCatalog.package("loader")?.version ?? "Unavailable")
+                LabeledContent("Package manager", value: RelayCatalog.package("relay")?.version ?? "Unavailable")
+                LabeledContent("Registered repositories", value: String(RelayCatalog.ids(sources).count))
+                LabeledContent("Essential packages", value: String(RelayCatalog.packages.filter(\.essential).count))
+                NavigationLink("Package activity") {
+                    List {
+                        Section("Local transactions") {
+                            let entries = history.split(separator: "\n").map(String.init)
+                            if entries.isEmpty { Text("No completed transactions").foregroundColor(.secondary) }
+                            ForEach(Array(entries.enumerated()), id: \.offset) { entry in Text(entry.element).font(.caption.monospaced()) }
+                        }
+                        Section("Installed packages") {
+                            ForEach(RelayCatalog.packages.filter { RelayCatalog.installed($0.id, userIDs: RelayCatalog.ids(installed)) }) { package in
+                                LabeledContent(package.title, value: RelayCatalog.installedVersion(package, versions: RelayCatalog.versions(versions)))
+                            }
+                        }
+                    }.navigationTitle("Package activity")
+                }
             }
             Section("Diagnostics") {
                 NavigationLink { RecoveryCircuitView() } label: { Label("Recovery Circuit", systemImage: "point.3.connected.trianglepath.dotted") }
