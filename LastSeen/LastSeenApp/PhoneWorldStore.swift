@@ -161,9 +161,21 @@ final class PhoneWorldStore: ObservableObject {
     func startPhoneTutorial(now: Date = Date()) {
         guard !tutorialStarted else { return }
         state.flags.insert("phone-tutorial-started")
-        state.notes.insert(PhoneNote(id: Self.tutorialNoteID, title: Self.tutorialNoteTitle,
-                                     body: Self.tutorialNoteBody, modifiedAt: now.addingTimeInterval(-86400), pinned: true), at: 0)
+        if !state.notes.contains(where: { $0.id == Self.tutorialNoteID }) {
+            state.notes.insert(PhoneNote(id: Self.tutorialNoteID, title: Self.tutorialNoteTitle,
+                                         body: Self.tutorialNoteBody, modifiedAt: now.addingTimeInterval(-86400), pinned: true), at: 0)
+        }
         tutorialMessage("contact", "Nora? Your phone's showing as available again. If someone else has it, could you let me know? I haven't heard from her since we made plans for coffee.", now: now)
+        save()
+    }
+
+    /// Replay only the introductory authored messages and flags. Do not touch
+    /// restored documents, other messages, notes, app settings or owner security.
+    func resetPhoneTutorial() {
+        state.flags = Set(state.flags.filter { !$0.hasPrefix("phone-tutorial-") })
+        for key in Array(state.threads.keys) {
+            state.threads[key]?.removeAll { $0.id.hasPrefix("phone-tutorial-") }
+        }
         save()
     }
 
