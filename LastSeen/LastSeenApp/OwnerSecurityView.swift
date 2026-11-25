@@ -107,9 +107,9 @@ struct ProtectedAreaView: View {
                         }.buttonStyle(.borderedProminent).disabled(context != nil)
                         Text("Or use the owner passcode").font(.caption).foregroundColor(.secondary)
                     }
-                    OwnerPasscodeView {
+                    OwnerPasscodeView(onSuccess: {
                         ownerVerified = true; session = true; passcodeSession = true
-                    }.disabled(context != nil)
+                    }).disabled(context != nil)
                 }
                 if !notice.isEmpty { Text(notice).font(.footnote).foregroundColor(.secondary) }
             }.padding()
