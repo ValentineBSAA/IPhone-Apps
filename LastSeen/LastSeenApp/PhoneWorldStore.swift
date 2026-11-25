@@ -41,6 +41,8 @@ struct NeighborMessage: Codable, Identifiable, Equatable {
     var fromPlayer: Bool
     var at: Date
     var read: Bool = false
+    var recipientReadAt: Date? = nil
+    var receiptTracked: Bool? = nil
 }
 
 struct PhoneNote: Codable, Identifiable, Equatable {
@@ -68,6 +70,7 @@ struct PhoneWorld: Codable {
     var notes: [PhoneNote]
     var events: [PhoneEvent]
     var soundEnabled: Bool = true
+    var pendingReplies: [PhonePendingReply]? = nil
 }
 
 /// This is a separate *fictional world save* while compatibility with existing
@@ -75,6 +78,7 @@ struct PhoneWorld: Codable {
 @MainActor
 final class PhoneWorldStore: ObservableObject {
     @Published private(set) var state: PhoneWorld
+    @Published var visibleThread: Neighbor? = nil
     private let persistToDisk: Bool
     private let storageURL: URL
 
@@ -146,7 +150,8 @@ final class PhoneWorldStore: ObservableObject {
 
     func markRead(_ neighbor: Neighbor) {
         guard var messages = state.threads[neighbor.id] else { return }
-        for i in messages.indices { messages[i].read = true }
+        guard messages.contains(where: { !$0.fromPlayer && !$0.read }) else { return }
+        for i in messages.indices where !messages[i].fromPlayer { messages[i].read = true }
         state.threads[neighbor.id] = messages
         save()
     }
@@ -179,6 +184,7 @@ final class PhoneWorldStore: ObservableObject {
     func resetPhoneTutorial() {
         state.flags = NoraPhotoCatalog.discoveryFlags(from: state.flags)
         state.flags = Set(state.flags.filter { !$0.hasPrefix("phone-tutorial-") })
+        state.pendingReplies = state.pendingReplies?.filter { !$0.outgoingID.hasPrefix("phone-tutorial-") }
         for key in Array(state.threads.keys) {
             state.threads[key]?.removeAll { $0.id.hasPrefix("phone-tutorial-") }
         }
@@ -193,6 +199,69 @@ final class PhoneWorldStore: ObservableObject {
             state.flags = NoraPhotoCatalog.discoveryFlags(from: state.flags)
             save()
         }
+    }
+
+    /// Free text is saved verbatim. Only the local authored reply plan can
+    /// advance the introductory conversation; evidence gates remain independent.
+    @discardableResult
+    func sendReactive(to neighbor: Neighbor, text: String, now: Date = Date()) -> Bool {
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              text.count <= 2000 else { return false }
+        let pending = state.pendingReplies ?? []
+        guard pending.filter({ $0.neighbor == neighbor }).count < 8 else { return false }
+        let introductory = neighbor == .maya && tutorialStarted && !tutorialFinished
+        let key = (introductory ? "phone-tutorial-custom-" : "custom-") + UUID().uuidString
+        let plan = PhoneReplyPolicy.plan(for: neighbor, text: text, flags: state.flags,
+                                         tutorialStarted: tutorialStarted, tutorialFinished: tutorialFinished)
+        let previous = pending.filter { $0.neighbor == neighbor }.map(\.dueAt).max() ?? now
+        let base = max(now, previous)
+        let readAt = base.addingTimeInterval(0.8)
+        let due = base.addingTimeInterval(3.2 + min(2, Double(plan.text.count) / 130))
+        append(NeighborMessage(id: key, thread: neighbor.id, text: text, fromPlayer: true,
+                               at: now, read: true, receiptTracked: true))
+        state.pendingReplies = pending + [PhonePendingReply(id: key + "-response", outgoingID: key,
+            neighbor: neighbor, text: plan.text, readAt: readAt, dueAt: due, startsTutorial: plan.startsTutorial)]
+        save()
+        return true
+    }
+
+    func hasPendingReply(_ neighbor: Neighbor) -> Bool {
+        (state.pendingReplies ?? []).contains { $0.neighbor == neighbor }
+    }
+
+    func isTyping(_ neighbor: Neighbor, now: Date = Date()) -> Bool {
+        (state.pendingReplies ?? []).contains { $0.neighbor == neighbor && $0.readAt <= now && now < $0.dueAt }
+    }
+
+    func advancePendingReplies(now: Date = Date()) {
+        let pending = state.pendingReplies ?? []
+        guard !pending.isEmpty else { return }
+        var changed = false
+        for item in pending where item.readAt <= now {
+            if let index = state.threads[item.neighbor.id]?.firstIndex(where: { $0.id == item.outgoingID }),
+               state.threads[item.neighbor.id]?[index].recipientReadAt == nil {
+                state.threads[item.neighbor.id]?[index].recipientReadAt = item.readAt
+                changed = true
+            }
+        }
+        let due = pending.filter { $0.dueAt <= now }.sorted { $0.dueAt < $1.dueAt }
+        for item in due {
+            if item.startsTutorial && tutorialStarted && !state.flags.contains("phone-tutorial-replied") {
+                state.flags.insert("phone-tutorial-replied")
+                tutorialMessage("notes", item.text, now: now)
+                advanceTutorial(now: now.addingTimeInterval(0.1))
+                state.flags = NoraPhotoCatalog.discoveryFlags(from: state.flags)
+            } else {
+                append(NeighborMessage(id: item.id, thread: item.neighbor.id, text: item.text,
+                                       fromPlayer: false, at: now, read: false))
+            }
+            changed = true
+        }
+        if !due.isEmpty {
+            let ids = Set(due.map(\.id))
+            state.pendingReplies = pending.filter { !ids.contains($0.id) }
+        }
+        if changed { save() }
     }
 
     private func tutorialMessage(_ id: String, _ text: String, now: Date) {
