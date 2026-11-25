@@ -1180,5 +1180,3 @@ private struct LabFilesView: View {
         }.scrollContentBackground(.hidden).background(Night.background.ignoresSafeArea()).navigationTitle("Files").searchable(text: $search)
     }
 }
-
-private 
