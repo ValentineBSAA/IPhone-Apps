@@ -3,7 +3,7 @@
   "revision": "21f916173b6c844c52ccb3ac76e7d7b44de87c3e",
   "license": "CC0-1.0",
   "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
-  "notes": "Synthetic people per upstream; 18 256px source JPEGs visually inspected. Exact bytes preserved. Nine assigned, nine unassigned reserves.",
+  "notes": "18 synthetic portraits inspected; exact source bytes retained; all 18 assigned to independent fictional community accounts. No changes to existing character art.",
   "assets": [
     {
       "asset": "CommunityPortrait_01",
@@ -13,7 +13,7 @@
       "license": "CC0-1.0",
       "width": 256,
       "height": 256,
-      "assigned_handle": null
+      "assigned_handle": "devon.trails"
     },
     {
       "asset": "CommunityPortrait_02",
@@ -33,7 +33,7 @@
       "license": "CC0-1.0",
       "width": 256,
       "height": 256,
-      "assigned_handle": null
+      "assigned_handle": "ellis.mugs"
     },
     {
       "asset": "CommunityPortrait_04",
@@ -53,7 +53,7 @@
       "license": "CC0-1.0",
       "width": 256,
       "height": 256,
-      "assigned_handle": null
+      "assigned_handle": "jasper.tools"
     },
     {
       "asset": "CommunityPortrait_06",
@@ -63,7 +63,7 @@
       "license": "CC0-1.0",
       "width": 256,
       "height": 256,
-      "assigned_handle": null
+      "assigned_handle": "noah.access"
     },
     {
       "asset": "CommunityPortrait_07",
@@ -103,7 +103,7 @@
       "license": "CC0-1.0",
       "width": 256,
       "height": 256,
-      "assigned_handle": null
+      "assigned_handle": "mina.paws"
     },
     {
       "asset": "CommunityPortrait_11",
@@ -123,7 +123,7 @@
       "license": "CC0-1.0",
       "width": 256,
       "height": 256,
-      "assigned_handle": null
+      "assigned_handle": "clara.prints"
     },
     {
       "asset": "CommunityPortrait_13",
@@ -143,7 +143,7 @@
       "license": "CC0-1.0",
       "width": 256,
       "height": 256,
-      "assigned_handle": null
+      "assigned_handle": "owen.noodles"
     },
     {
       "asset": "CommunityPortrait_15",
@@ -163,7 +163,7 @@
       "license": "CC0-1.0",
       "width": 256,
       "height": 256,
-      "assigned_handle": null
+      "assigned_handle": "nina.wild"
     },
     {
       "asset": "CommunityPortrait_17",
@@ -183,7 +183,7 @@
       "license": "CC0-1.0",
       "width": 256,
       "height": 256,
-      "assigned_handle": null
+      "assigned_handle": "avery.green"
     }
   ]
 }

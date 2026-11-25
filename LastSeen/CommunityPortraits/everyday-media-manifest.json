@@ -14,7 +14,8 @@
       "git_blob_sha": "fe07c00ce58da0de31092c568a8dedabc8b548f7",
       "width": 1280,
       "height": 853,
-      "status": "bundled candidate; not assigned to story or account"
+      "status": "assigned public community illustration, not story evidence or local place",
+      "assigned_post_id": "b32-community-mina.paws-0"
     },
     {
       "asset": "CommunityMedia_Coffee",
@@ -28,7 +29,8 @@
       "git_blob_sha": "59fc2240ddc8c0b140af9c11a1dd7ee0516e3622",
       "width": 1280,
       "height": 853,
-      "status": "bundled candidate; not assigned to story or account"
+      "status": "assigned public community illustration, not story evidence or local place",
+      "assigned_post_id": "b32-community-ellis.mugs-0"
     },
     {
       "asset": "CommunityMedia_Forest",
@@ -42,7 +44,8 @@
       "git_blob_sha": "90e178e2a5fc3c6866ebf85161564209ad827060",
       "width": 1280,
       "height": 853,
-      "status": "bundled candidate; not assigned to story or account"
+      "status": "assigned public community illustration, not story evidence or local place",
+      "assigned_post_id": "b32-community-avery.green-0"
     },
     {
       "asset": "CommunityMedia_Fox",
@@ -56,7 +59,8 @@
       "git_blob_sha": "9d011284146a5c531e5476ae98d53048c679af10",
       "width": 1280,
       "height": 853,
-      "status": "bundled candidate; not assigned to story or account"
+      "status": "assigned public community illustration, not story evidence or local place",
+      "assigned_post_id": "b32-community-nina.wild-0"
     },
     {
       "asset": "CommunityMedia_Udon",
@@ -70,7 +74,8 @@
       "git_blob_sha": "4bf21f2d2fc8f9941fe8a6519145722c1f41055f",
       "width": 1280,
       "height": 960,
-      "status": "bundled candidate; not assigned to story or account"
+      "status": "assigned public community illustration, not story evidence or local place",
+      "assigned_post_id": "b32-community-owen.noodles-0"
     },
     {
       "asset": "CommunityMedia_Mountains",
@@ -84,7 +89,8 @@
       "git_blob_sha": "bfedfd2ebcf250a3d075bec3edfd7b01f4fcd64d",
       "width": 1280,
       "height": 853,
-      "status": "bundled candidate; not assigned to story or account"
+      "status": "assigned public community illustration, not story evidence or local place",
+      "assigned_post_id": "b32-community-devon.trails-0"
     }
   ]
 }

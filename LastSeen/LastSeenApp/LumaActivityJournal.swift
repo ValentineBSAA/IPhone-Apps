@@ -39,6 +39,7 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
         case .mail:
             guard let targetID else { return false }
             return (state.connectedWorld?.mail ?? []).contains { $0.id == targetID && $0.kind == "inbox" }
+                && (state.connectedWorld?.mailFolders[targetID] == nil || state.connectedWorld?.mailFolders[targetID] == "original")
         case .social:
             guard let channel, let targetID else { return false }
             let prefs = state.connectedWorld?.socialPreferences?[channel.rawValue] ?? LumaSocialPreferences()
@@ -69,7 +70,7 @@ enum LumaActivityCatalog {
             .sorted { ($0.date, $0.id) > ($1.date, $1.id) }
     }
     static func newEntries(_ state: PhoneWorld, previous: Set<String>) -> [LumaActivityNotice] {
-        visible(state).filter { !previous.contains($0.id) }.reversed()
+        Array(visible(state).filter { !previous.contains($0.id) }.reversed())
     }
     static func allIDs(_ state: PhoneWorld) -> Set<String> {
         Set((state.connectedWorld?.activityJournal ?? []).map(\.id))

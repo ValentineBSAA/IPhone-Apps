@@ -148,6 +148,8 @@ enum LumaSocialCatalog {
         return (LivingPhoneHistory.comments(for: post) + (world.connectedWorld?.comments ?? []).filter { $0.postID == postID }).sorted { $0.date < $1.date }
     }
     static func visiblePhoto(_ post:LumaSocialPost,world:PhoneWorld)->String? {
+        guard world.everydayArchiveRevision != nil, post.gate.map({ world.flags.contains($0) }) ?? true else { return nil }
+        if let media = LumaSocialCommunity.publicPhoto(post) { return media }
         guard let id=post.photo,let record=NoraPhotoCatalog.photos.first(where:{$0.id==id}),!record.privateAlbum,
               record.available(flags:NoraPhotoCatalog.discoveryFlags(from:world.flags)) else{return nil}
         return id
@@ -323,8 +325,7 @@ struct LumaSocialView:View {
                 ForEach(posts){post in
                     VStack(alignment:.leading,spacing:12){
                         HStack(spacing:9){
-                            if let image=post.portrait {Image(image).resizable().scaledToFill().frame(width:42,height:42).clipShape(Circle())}
-                            else {Image(systemName:"person.crop.circle.fill").font(.system(size:40)).foregroundColor(channel.accent)}
+                            LumaSocialAvatar(post: post, size: 42)
                             NavigationLink{LumaSocialProfile(channel:channel,author:post.author)}label:{
                                 VStack(alignment:.leading,spacing:3){Text(post.author).font(.headline);Text("@"+post.handle).font(.caption).foregroundColor(.secondary)}
                             }.buttonStyle(.plain)
@@ -376,8 +377,7 @@ struct LumaSocialProfile:View{
             if let first=posts.first{
                 Section {
                     HStack(spacing: 14) {
-                        if let portrait = first.portrait { Image(portrait).resizable().scaledToFill().frame(width: 64, height: 64).clipShape(Circle()) }
-                        else { Image(systemName: "person.crop.circle.fill").font(.system(size: 54)).foregroundColor(channel.accent) }
+                        LumaSocialAvatar(post: first, size: 64)
                         VStack(alignment: .leading, spacing: 4) { Text(author).font(.title2.bold()); Text("@" + first.handle).foregroundColor(.secondary) }
                     }
                     if let bio = LumaSocialCommunity.bio(author: author, channel: channel) { Text(bio) }
@@ -387,6 +387,23 @@ struct LumaSocialProfile:View{
                     Button(world.socialPreferences(channel).mutedAuthors.contains(author) ? "Unmute profile" : "Mute profile") { world.toggleSocialMute(author, channel: channel) }
                 }
                 Button(world.connected.follows.contains(channel.rawValue+"|"+author) ? "Unfollow":"Follow"){world.toggleSocial(.follow,postID:first.id,channel:channel)}
+                let media = posts.filter { LumaSocialCatalog.visiblePhoto($0, world: world.state) != nil }
+                if !media.isEmpty {
+                    Section("Photos") {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 3), spacing: 4) {
+                            ForEach(media) { post in
+                                if let asset = LumaSocialCatalog.visiblePhoto(post, world: world.state) {
+                                    NavigationLink { LumaSocialDiscussion(channel: channel, postID: post.id) } label: {
+                                        GeometryReader { geometry in
+                                            Image(asset).resizable().scaledToFill()
+                                                .frame(width: geometry.size.width, height: geometry.size.height).clipped()
+                                        }.aspectRatio(1, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 5))
+                                    }.buttonStyle(.plain).accessibilityLabel("Open photo post: " + post.body)
+                                }
+                            }
+                        }
+                    }
+                }
                 Section("Posts"){ForEach(posts){post in NavigationLink{LumaSocialDiscussion(channel:channel,postID:post.id)}label:{VStack(alignment:.leading){Text(post.body);Text(post.date,style:.date).font(.caption).foregroundColor(.secondary)}}}}
             }else{Text("Profile unavailable")}
         }.navigationTitle("Profile")
@@ -401,7 +418,13 @@ struct LumaSocialDiscussion:View{
     var body:some View{
         List{
             if let post=LumaSocialCatalog.visible(channel,world:world.state).first(where:{$0.id==postID}){
-                Section{Text(post.author).font(.headline);Text(post.body)}
+                Section {
+                    HStack(spacing: 10) { LumaSocialAvatar(post: post, size: 42); Text(post.author).font(.headline) }
+                    Text(post.body)
+                    if let photo = LumaSocialCatalog.visiblePhoto(post, world: world.state) {
+                        Image(photo).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                }
                 Section("Comments"){
                     let comments=LumaSocialCatalog.comments(postID,channel:channel,world:world.state)
                     if comments.isEmpty{Text("No restored comments").foregroundColor(.secondary)}

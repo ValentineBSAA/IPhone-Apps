@@ -11,8 +11,8 @@ import UIKit
             XCTAssertGreaterThanOrEqual(art.size.height, 128)
         }
         let posts = LumaSocialCommunity.posts(anchor: Date(timeIntervalSince1970: 1_800_000_000))
-        XCTAssertEqual(Set(posts.compactMap(\.portrait)).count, 9)
+        XCTAssertEqual(Set(posts.compactMap(\.portrait)).count, 18)
         XCTAssertTrue(posts.allSatisfy { $0.portrait != nil })
-        XCTAssertEqual(LumaSocialCommunity.portraits.count, 9)
+        XCTAssertEqual(LumaSocialCommunity.portraits.count, 18)
     }
 }
