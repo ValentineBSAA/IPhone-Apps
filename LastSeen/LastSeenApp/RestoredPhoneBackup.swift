@@ -1,9 +1,9 @@
 import Foundation
 
-/// Development snapshot. Nora's identity and portrait are provisional, not final narrative canon.
+/// Development snapshot. Nora's owner identity and approved contact portrait are canonical.
 enum RestoredPhoneBackup {
     static let ownerName = "Nora Bennett"
-    static let ownerPortrait = "Contact_Nora_01"
+    static let ownerPortrait = "Nora_Profile"
     static var url: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("lastseen-restored-phone-v1.json")

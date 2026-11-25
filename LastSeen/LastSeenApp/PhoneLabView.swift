@@ -87,7 +87,7 @@ struct PhoneLabView: View {
             .navigationDestination(for: AppPage.self) { page in
                 Group {
                     switch page {
-                    case .worldThread(let neighbor): NeighborConversationView(neighbor: neighbor)
+                    case .worldThread(let neighbor): NeighborConversationView(neighbor: neighbor, reactive: true)
                     case .worldProfile(let neighbor): NeighborProfileView(neighbor: neighbor)
                     case .note(let id): PhoneNoteEditorView(noteID: id)
                     default: Text("Not available in Phone Lab")
@@ -104,7 +104,7 @@ struct PhoneLabView: View {
                 .ignoresSafeArea().allowsHitTesting(false)
         }
         .overlay(alignment: .top) {
-            if let alert = banner, !locked, panel == nil {
+            if let alert = banner, !locked, panel == nil, world.visibleThread != alert.neighbor {
                 PhoneNotificationCard(alert: alert) {
                     banner = nil; openThread(alert.neighbor)
                 }.padding(.horizontal, 14).padding(.top, 4)
@@ -136,10 +136,25 @@ struct PhoneLabView: View {
                     }
                     guard !Task.isCancelled, phase == .active else { return }
                     PhoneSensoryEngine.play(.message, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
-                    if !locked { withAnimation(.easeOut(duration: 0.25)) { banner = newest } }
+                    if PhoneConversationPresentation.shouldShowBanner(for: newest.neighbor, visible: world.visibleThread, locked: locked, covered: panel != nil || showOwnerPasscode) {
+                        withAnimation(.easeOut(duration: 0.25)) { banner = newest }
+                    } else if !locked && panel == nil && world.visibleThread == newest.neighbor {
+                        world.markRead(newest.neighbor)
+                        banner = nil
+                    }
                     arrivalTask = nil
                 }
             } else { arrivalTask = nil }
+        }
+        .onChange(of: world.visibleThread) { visible in
+            if banner?.neighbor == visible { banner = nil }
+        }
+        .task(id: phase) {
+            guard phase == .active else { return }
+            while !Task.isCancelled {
+                world.advancePendingReplies()
+                do { try await Task.sleep(nanoseconds: 250_000_000) } catch { return }
+            }
         }
         .onChange(of: locked) { value in
             guard didConfigureFeedback, phase == .active else { return }
@@ -203,10 +218,10 @@ struct PhoneLabView: View {
         }
         .onAppear {
             if !didConfigureFeedback {
-                if feedbackRevision < 2 {
+                if feedbackRevision < 3 {
                     // One-time Build 21 migration so the owner can hear the new incoming alerts.
                     if world.tutorialStarted { world.resetPhoneTutorial() }
-                    feedbackRevision = 2
+                    feedbackRevision = 3
                 }
                 observedIncoming = Set(incomingIDs)
                 observedOutgoing = outgoingIDs
@@ -502,7 +517,7 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.4.0 (23)")
+                LabeledContent("Software", value: "1.4.1 (24)")
                 Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay message tutorial") { confirmTutorialReplay = true }
                 Button("Replay phone setup") { confirmSetupReplay = true }
@@ -792,19 +807,24 @@ private struct LabPhoto: Identifiable {
     let title: String
     let asset: String
     let caption: String
+    var record: NoraPhoto? = nil
 }
 
 private struct LabPhotosView: View {
+    @EnvironmentObject private var world: PhoneWorldStore
     @State private var selection: LabPhoto?
     @AppStorage("lastseen.lab.favoritePhotos") private var favorites = ""
     @State private var onlyFavorites = false
     @State private var scale: CGFloat = 1
-    private let photos = [
-        LabPhoto(id: "owner", title: "Nora", asset: RestoredPhoneBackup.ownerPortrait, caption: "Portrait · saved last week"),
-        LabPhoto(id: "maya", title: "Maya", asset: Neighbor.maya.portraitAssetName, caption: "Saved contact photograph"),
-        LabPhoto(id: "denise", title: "Denise", asset: Neighbor.denise.portraitAssetName, caption: "Saved contact photograph")
-    ]
-    private var shown: [LabPhoto] { photos.filter { !onlyFavorites || isFavorite($0.id) } }
+    private var photos: [LabPhoto] {
+        NoraPhotoCatalog.photos.filter { !$0.privateAlbum }.map {
+            LabPhoto(id: $0.id, title: $0.title, asset: $0.id, caption: "Recovered photograph", record: $0)
+        }
+    }
+    private func available(_ photo: LabPhoto) -> Bool {
+        photo.record?.available(flags: NoraPhotoCatalog.discoveryFlags(from: world.state.flags)) ?? true
+    }
+    private var shown: [LabPhoto] { photos.filter { !onlyFavorites || (available($0) && isFavorite($0.id)) } }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -815,7 +835,7 @@ private struct LabPhotosView: View {
                 HStack {
                     Text(onlyFavorites ? "Favorites" : "Camera roll").font(.title2.bold())
                     Spacer()
-                    Text("\(shown.count) photos").font(.caption).foregroundColor(.secondary)
+                    Text("\(shown.filter { available($0) }.count) recovered").font(.caption).foregroundColor(.secondary)
                 }
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 3), spacing: 4) {
                     ForEach(shown) { photo in
@@ -823,14 +843,16 @@ private struct LabPhotosView: View {
                             scale = 1; selection = photo
                         } label: {
                             GeometryReader { geo in
-                                Image(photo.asset).resizable().scaledToFill()
-                                    .frame(width: geo.size.width, height: geo.size.height).clipped()
+                                Group {
+                                    if available(photo) { Image(photo.asset).resizable().scaledToFill() }
+                                    else { LockedPhotoSurface() }
+                                }.frame(width: geo.size.width, height: geo.size.height).clipped()
                                     .overlay(alignment: .bottomTrailing) {
-                                        if isFavorite(photo.id) { Image(systemName: "heart.fill").font(.caption).padding(6).foregroundColor(.white).shadow(radius: 3) }
+                                        if available(photo) && isFavorite(photo.id) { Image(systemName: "heart.fill").font(.caption).padding(6).foregroundColor(.white).shadow(radius: 3) }
                                     }
                             }.aspectRatio(1, contentMode: .fit)
                                 .clipShape(RoundedRectangle(cornerRadius: 5))
-                        }.buttonStyle(.plain).accessibilityLabel(photo.title)
+                        }.buttonStyle(.plain).accessibilityLabel(available(photo) ? photo.title : "Locked photograph")
                     }
                 }
                 if shown.isEmpty { Text("Favorite a photo to see it here.").foregroundColor(.secondary).padding(.vertical, 25) }
@@ -849,10 +871,12 @@ private struct LabPhotosView: View {
                 }.buttonStyle(.plain)
             }.padding()
         }.navigationTitle("Photos")
+        .onAppear { world.recoverPhotoDiscovery() }
         .sheet(item: $selection) { photo in
             NavigationStack {
                 VStack(spacing: 16) {
                     Spacer()
+                    if available(photo) {
                     Image(photo.asset).resizable().scaledToFit()
                         .scaleEffect(scale).gesture(MagnificationGesture().onChanged { scale = min(3, max(1, $0)) })
                         .clipped().onTapGesture(count: 2) { withAnimation { scale = scale > 1 ? 1 : 2 } }
@@ -862,7 +886,12 @@ private struct LabPhotosView: View {
                         Label(isFavorite(photo.id) ? "Remove favorite" : "Favorite", systemImage: isFavorite(photo.id) ? "heart.fill" : "heart")
                             .frame(maxWidth: .infinity).padding(12)
                     }.buttonStyle(.bordered)
-                }.padding().navigationTitle(photo.title).navigationBarTitleDisplayMode(.inline)
+                    } else {
+                        LockedPhotoSurface(compact: false).aspectRatio(1, contentMode: .fit)
+                        Text(photo.record?.lockedHint ?? "Discovery required").font(.subheadline).foregroundColor(.secondary)
+                        Spacer()
+                    }
+                }.padding().navigationTitle(available(photo) ? photo.title : "Locked photograph").navigationBarTitleDisplayMode(.inline)
                     .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { selection = nil } } }
             }.preferredColorScheme(.dark)
         }
