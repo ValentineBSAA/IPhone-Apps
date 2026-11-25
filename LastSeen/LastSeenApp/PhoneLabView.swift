@@ -290,7 +290,9 @@ struct PhoneLabView: View {
         Button { open(app) } label: {
             VStack(spacing: 6) {
                 ZStack(alignment: .topTrailing) {
-                    if !safeMode, tealTheme, let asset = ApprovedArt.themeName(for: app.rawValue) {
+                    if app == .patchline || app == .relay {
+                        OpeningArt(name: app == .patchline ? "Opening_Unlock" : "Opening_Install", size: smallIcons ? 43 : 55)
+                    } else if !safeMode, tealTheme, let asset = ApprovedArt.themeName(for: app.rawValue) {
                         Image(asset).resizable().scaledToFit()
                             .frame(width: smallIcons ? 43 : 55, height: smallIcons ? 43 : 55)
                     } else {
@@ -419,6 +421,7 @@ struct PhoneLabView: View {
         case .files: LabFilesView()
         case .browser: LabBrowserView(wifi: wifi)
         case .relay: RelayPackagesView(onRestart: { returnHome(); recent.removeAll(); locked = true })
+        case .patchline: PatchlineControlView(openRelay: { open(.relay) }, onRestart: { returnHome(); recent.removeAll(); locked = true })
         }
     }
 }
@@ -429,7 +432,7 @@ private enum LabPanel: String, Identifiable {
 }
 
 private enum LabApp: String, CaseIterable, Identifiable {
-    case messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay"
+    case messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline"
     var id: String { rawValue }
     var inDock: Bool { [.messages, .contacts, .browser, .settings].contains(self) }
     var symbol: String {
@@ -446,6 +449,7 @@ private enum LabApp: String, CaseIterable, Identifiable {
         case .files: return "folder.fill"
         case .browser: return "globe"
         case .relay: return "shippingbox.fill"
+        case .patchline: return "lock.open.fill"
         }
     }
     var color: Color {
@@ -462,6 +466,7 @@ private enum LabApp: String, CaseIterable, Identifiable {
         case .files: return .cyan
         case .browser: return .mint
         case .relay: return .teal
+        case .patchline: return .teal
         }
     }
 }
