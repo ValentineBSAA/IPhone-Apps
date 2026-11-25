@@ -65,3 +65,7 @@ See [RELAY_MODERNIZATION_ROADMAP.md](RELAY_MODERNIZATION_ROADMAP.md). OPEN: prem
 
 ## Approved discoverable Relay sources — November 25, 2026
 Extend [Relay modernization](RELAY_MODERNIZATION_ROADMAP.md) with a genuine optional repository discovery/add workflow: find fictional addresses in-world, manually add or copy from earned records, inspect source packages, refresh and manage optional sources offline. Preserve existing three baseline sources for migration; separate required, discovered and enabled repositories so recovery never exposes every optional source. No story spoilers or real networking. OPEN implementation and regression testing; do not interrupt the active corrective Build 27 run for documentation alone.
+
+
+## Approved researched puzzle variety — November 25, 2026
+See [PUZZLE_DESIGN_ROADMAP.md](PUZZLE_DESIGN_ROADMAP.md) for reviewed developer interviews, escape-room research, current puzzle audit, original proposed puzzle families, meaningful progression, clearer instructions, graduated hints, accessibility, persistence and tests. OPEN implementation; preserve existing completions and story confidentiality. No runtime changes or interruption of Build 27 corrective CI in this documentation revision.
