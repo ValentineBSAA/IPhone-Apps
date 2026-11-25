@@ -59,9 +59,10 @@ struct PhoneSetupRoot: View {
                             Text("Use a nickname or fictional name. No personal details required.").font(.caption).foregroundColor(.secondary)
                         case 2:
                             hero("paintpalette", title: "Your style", detail: "Choose your first wallpaper.")
-                            HStack(spacing: 16) {
-                                wallpaperCard("Coastal", index: 0)
-                                wallpaperCard("Dusk", index: 1)
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                                ForEach(LumaDesign.wallpaperChoices(midnight: false), id: \.self) { index in
+                                    wallpaperCard(LumaDesign.wallpaperNames[index], index: index)
+                                }
                             }
                         case 3:
                             hero("cloud", title: "Transfer your data", detail: "A saved device backup is available for this phone.")
