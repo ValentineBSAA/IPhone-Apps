@@ -38,7 +38,7 @@ struct RelayPackagesView: View {
         }
     }
     private var ids: Set<String> { RelayCatalog.ids(installed) }
-    private var sourceIDs: Set<String> { RelayCatalog.ids(sources).union(["core"]) }
+    private var sourceIDs: Set<String> { RelayCatalog.ids(RelayCatalog.recoveredSources(sources)) }
     private var versionMap: [String: String] { RelayCatalog.versions(versions) }
     private var visiblePackages: [RelayPackage] { RelayCatalog.packages.filter { RelayCatalog.visible($0, sources: sourceIDs, installed: ids) } }
     private var updates: [RelayPackage] { visiblePackages.filter { !$0.essential && ids.contains($0.id) && sourceIDs.contains($0.source) && RelayCatalog.installedVersion($0, versions: versionMap) != $0.version } }
@@ -95,6 +95,8 @@ struct RelayPackagesView: View {
             }.padding(.horizontal, 5).background(.ultraThinMaterial)
         }
         .navigationTitle("Relay").navigationBarTitleDisplayMode(.inline)
+        .onAppear { recoverSources() }
+        .onChange(of: sources) { _ in recoverSources() }
         .sheet(item: $selected) { p in
             NavigationStack { detail(p).navigationTitle(p.title).navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { selected = nil } } } }
         }
@@ -199,23 +201,21 @@ struct RelayPackagesView: View {
             Section {
                 Button { showSources = true } label: { Label("Add Source", systemImage: "plus.circle") }
                 Button {
+                    recoverSources()
                     refresh = true
                     notice = "All local package indexes are up to date"
                     OpeningQA.record("Relay source refresh")
                 } label: { Label("Refresh Sources", systemImage: "arrow.clockwise") }
+                Button {
+                    recoverSources(); notice = "All bundled sources restored"
+                } label: { Label("Restore All Sources", systemImage: "arrow.counterclockwise.circle") }
             }
             Section("Sources") {
                 ForEach(RelayCatalog.sources.filter { sourceIDs.contains($0.id) }) { source in
                     VStack(alignment: .leading, spacing: 7) {
                         sourceRow(source)
                         Text("\(RelayCatalog.packages.filter { $0.source == source.id }.count) packages").font(.caption).foregroundColor(.secondary)
-                        if !source.essential {
-                            Button("Remove Source", role: .destructive) {
-                                sources = RelayCatalog.encoded(sourceIDs.subtracting([source.id]))
-                                queue.removeAll { $0.package.source == source.id && $0.action != .remove }
-                                notice = "\(source.name) removed; installed packages retained"
-                            }.font(.caption)
-                        }
+                        Label("Protected source", systemImage: "lock.shield").font(.caption).foregroundColor(.secondary)
                     }.padding(.vertical, 4)
                 }
             }
@@ -332,6 +332,14 @@ struct RelayPackagesView: View {
                 LabeledContent("Environment", value: "Rootless")
                 LabeledContent("Restart required", value: p.essential ? "No" : "Respring")
             }
+        }
+    }
+    private func recoverSources() {
+        let restored = RelayCatalog.recoveredSources(sources)
+        if sources != restored {
+            sources = restored
+            notice = "Missing bundled sources restored"
+            OpeningQA.record("Relay bundled sources restored")
         }
     }
     private func enqueue(_ p: RelayPackage, _ action: RelayAction) {
