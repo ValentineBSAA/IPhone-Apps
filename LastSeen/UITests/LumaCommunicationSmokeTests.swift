@@ -7,6 +7,33 @@ final class LumaCommunicationSmokeTests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
     }
+    func testRecoveryCircuitEarnsPackage() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["--luma-ui-test"]
+        app.launch()
+        let icon = app.buttons["luma.app.Patchline"]
+        XCTAssertTrue(icon.waitForExistence(timeout: 12))
+        if !icon.isHittable { app.swipeUp() }
+        icon.tap()
+        let challenge = app.buttons.containing(.staticText, identifier: "Recovery Circuit").firstMatch
+        XCTAssertTrue(challenge.waitForExistence(timeout: 10))
+        challenge.tap()
+        let verify = app.buttons["Verify sequence"]
+        for stage in [["Index","Verify","Mount"],["Scan","Repair","Reload"],["Prepare","Link","Activate"]] {
+            for name in stage {
+                let choice = app.buttons["circuit.choice." + name]
+                XCTAssertTrue(choice.waitForExistence(timeout: 8))
+                if !choice.isHittable { app.swipeUp() }
+                choice.tap()
+            }
+            if !verify.isHittable { app.swipeUp() }
+            XCTAssertTrue(verify.isEnabled)
+            verify.tap()
+        }
+        XCTAssertTrue(app.staticTexts["Service verified"].firstMatch.waitForExistence(timeout: 10))
+        screenshot("Recovery Circuit completion")
+    }
     func testCommunicationAndCheckpointNavigation() {
         continueAfterFailure = false
         let app = XCUIApplication()

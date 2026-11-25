@@ -30,7 +30,7 @@ struct PatchlineControlView: View {
             }
             Section("Maintenance") {
                 Button { openRelay() } label: { Label("Open Relay", systemImage: "shippingbox.fill") }
-                Button { confirm = .respring } label: { Label("Restart SpringBoard", systemImage: "arrow.clockwise") }
+                Button { confirm = .respring } label: { Label("Restart LumaShell", systemImage: "arrow.clockwise") }
                 Button { confirm = .userspace } label: { Label("Reboot Userspace", systemImage: "power") }
                 Button { confirm = safeMode ? .normal : .safeMode } label: { Label(safeMode ? "Exit Safe Mode" : "Enter Safe Mode", systemImage: "exclamationmark.shield") }
                 Toggle("Restart sounds", isOn: $effects)

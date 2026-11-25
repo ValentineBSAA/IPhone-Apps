@@ -87,8 +87,8 @@ enum JailbreakTranscript {
         "Registering userspace services",
         "Preparing tweak loader",
         "Tweak loader registered",
-        "Preparing SpringBoard services",
-        "SpringBoard services ready",
+        "Preparing LumaShell services",
+        "LumaShell services ready",
         "Installing Relay",
         "Loading Relay package index",
         "Local sources registered",
@@ -118,7 +118,7 @@ enum JailbreakTranscript {
         "Tweak preferences initialized",
         "Theme manifest registered",
         "Stock icon set retained",
-        "SpringBoard configuration loaded",
+        "LumaShell configuration loaded",
         "Launcher resources verified",
         "Services ready",
         "Service queue drained",
@@ -132,7 +132,7 @@ enum JailbreakTranscript {
         "Rootless environment ready",
         "Jailbreak complete",
         "Userspace reboot queued",
-        "SpringBoard respring queued"
+        "LumaShell respring queued"
     ]
 
     static func prefix(_ lines: [String], seconds: Int, quarter: Int = 0, duration: Int) -> [String] {

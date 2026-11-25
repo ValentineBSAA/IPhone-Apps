@@ -149,6 +149,8 @@ struct PhoneNotesView: View {
     var lab = false
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var search = ""
+    @State private var newNoteID: String?
+    @State private var showingNewNote = false
 
     private var notes: [PhoneNote] {
         world.state.notes.filter {
@@ -214,12 +216,16 @@ struct PhoneNotesView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    _ = world.addNote()
+                    newNoteID = world.addNote(title: "")
+                    showingNewNote = true
                 } label: {
                     Image(systemName: "square.and.pencil")
                 }
                 .accessibilityLabel("Create note")
             }
+        }
+        .navigationDestination(isPresented: $showingNewNote) {
+            if let id = newNoteID { PhoneNoteEditorView(noteID: id) }
         }
     }
 }
@@ -229,6 +235,7 @@ struct PhoneNoteEditorView: View {
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var title = ""
     @State private var bodyText = ""
+    @State private var loaded = false
 
     var body: some View {
         Group {
@@ -264,10 +271,16 @@ struct PhoneNoteEditorView: View {
                 title = n.title
                 bodyText = n.body
             }
+            loaded = true
         }
-        .onDisappear {
-            world.updateNote(noteID, title: title, body: bodyText)
-        }
+        .onChange(of: title) { _ in persistChanges() }
+        .onChange(of: bodyText) { _ in persistChanges() }
+    }
+    private func persistChanges() {
+        guard loaded, noteID != PhoneWorldStore.tutorialNoteID,
+              let note = world.state.notes.first(where: { $0.id == noteID }),
+              note.title != title || note.body != bodyText else { return }
+        world.updateNote(noteID, title: title, body: bodyText)
     }
 }
 

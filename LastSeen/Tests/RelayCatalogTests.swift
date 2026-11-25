@@ -62,7 +62,7 @@ final class RelayCatalogTests: XCTestCase {
         let lines = JailbreakTranscript.lines(stage: 3, elapsed: 0)
         XCTAssertEqual(lines.count, 123)
         XCTAssertTrue(lines.contains("Installing Relay"))
-        XCTAssertEqual(lines.last, "SpringBoard respring queued")
+        XCTAssertEqual(lines.last, "LumaShell respring queued")
         XCTAssertFalse(lines.contains { $0.localizedCaseInsensitiveContains("virtual") || $0.localizedCaseInsensitiveContains("fictional") || $0.localizedCaseInsensitiveContains("simulat") })
     }
 }

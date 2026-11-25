@@ -40,7 +40,7 @@ struct SettingsView: View {
                 )) {
                     Label("Longer dramatic pauses", systemImage: "hourglass")
                 }
-                Text("Reduce Motion follows your iPhone accessibility settings. Dialogue can always be revealed instantly.")
+                Text("Reduce Motion follows your device accessibility settings. Dialogue can always be revealed instantly.")
                     .font(.system(size: 12))
                     .foregroundColor(Night.muted)
             }
@@ -74,7 +74,7 @@ struct SettingsView: View {
                         Label("Enable optional reminders", systemImage: "bell.badge")
                     }
                 }
-                Text("Real iOS notifications show a contact name and a short message. Lock-screen quick replies accept an offered story response; other text is kept as a draft. Notification delivery depends on iOS and Focus settings.")
+                Text("Device notifications show a contact name and a short message. Lock-screen quick replies accept an offered story response; other text is kept as a draft. Notification delivery depends on iOS and Focus settings.")
                     .font(.system(size: 12))
                     .foregroundColor(Night.muted)
             }
@@ -84,7 +84,7 @@ struct SettingsView: View {
                     .foregroundColor(Night.muted)
                 Label("Microphone transcription: off", systemImage: "mic.slash")
                     .foregroundColor(Night.muted)
-                Text("Planned for a later update with real recorded character dialogue. The iPhone microphone is not activated, and no microphone or speech permission is requested by this version. When introduced, iOS will show the microphone indicator, even if spoken words are not displayed as text.")
+                Text("Planned for a later update with real recorded character dialogue. The device microphone is not activated, and no microphone or speech permission is requested by this version. When introduced, iOS will show the microphone indicator, even if spoken words are not displayed as text.")
                     .font(.system(size: 12))
                     .foregroundColor(Night.muted)
             }

@@ -57,7 +57,7 @@ enum WelcomeBriefing {
             "Use it to:"
         ], bullets: [
             "Review your jailbreak environment.",
-            "Restart SpringBoard.",
+            "Restart LumaShell.",
             "Reboot userspace.",
             "Enter or exit Safe Mode.",
             "Manage restart sounds.",
@@ -70,7 +70,7 @@ enum WelcomeBriefing {
             "Make the phone your own.",
             "Relay provides repositories containing themes, tweaks and customization tools.",
             "Browse sources, search for packages, manage installed software, review updates and queue multiple changes.",
-            "Confirm your changes and restart SpringBoard when required.",
+            "Confirm your changes and restart LumaShell when required.",
             "All available packages are free."
         ]),
         Section(7, "Protected information", [
@@ -139,7 +139,7 @@ struct WelcomeBriefingView: View {
                             .accessibilityAddTraits(.isHeader)
                             .fixedSize(horizontal: false, vertical: true)
                         if !compact {
-                            Text("Bootstrap installed • Relay ready • SpringBoard reloaded")
+                            Text("Bootstrap installed • Relay ready • LumaShell reloaded")
                                 .font(.caption).foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }

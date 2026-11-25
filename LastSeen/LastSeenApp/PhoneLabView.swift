@@ -596,7 +596,7 @@ struct PhoneLabView: View {
             }
             Section("Gestures") {
                 Toggle("Immersive screen-edge gestures", isOn: $deferSystemEdges)
-                Text("Use the in-game gestures first. Repeat a system-edge swipe to access real iOS controls. Turn this off for standard iOS gesture priority.").font(.footnote).foregroundColor(.secondary)
+                Text("Use the in-game gestures first. Repeat a system-edge swipe to access actual device controls. Turn this off for standard device gesture priority.").font(.footnote).foregroundColor(.secondary)
             }
             Section("Sounds & Haptics") {
                 Toggle(isOn: $messageSound) { Label("Phone sounds", systemImage: "speaker.wave.2") }
@@ -692,7 +692,7 @@ struct PhoneLabView: View {
             content.sound = .default
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 7, repeats: false)
             center.add(UNNotificationRequest(identifier: "lastseen-lab-test", content: content, trigger: trigger)) { error in
-                DispatchQueue.main.async { testNotice = error == nil ? "Test scheduled. Leave the app to see the iOS alert." : "Unable to schedule the test." }
+                DispatchQueue.main.async { testNotice = error == nil ? "Test scheduled. Leave the app to see the device alert." : "Unable to schedule the test." }
             }
         }
     }
@@ -1052,7 +1052,8 @@ private struct LabCalculatorView: View {
     @State private var operation: String?
     @State private var replace = true
     let keys = ["C","±","%","÷","7","8","9","×","4","5","6","−","1","2","3","+","0",".","="]
-    @State private var history: [String] = []
+    @AppStorage("lastseen.lab.calculatorHistory") private var storedHistory = ""
+    private var history: [String] { storedHistory.split(separator: "\n").map(String.init) }
     @State private var showHistory = false
     var body: some View {
         VStack(spacing: 12) {
@@ -1085,8 +1086,8 @@ private struct LabCalculatorView: View {
                 default: result = right == 0 ? .nan : left / right
                 }
                 display = result.isFinite ? String(format: "%.10g", result) : "Error"
-                history.insert("\(String(format: "%.10g", left)) \(op) \(String(format: "%.10g", right)) = \(display)", at: 0)
-                if history.count > 30 { history.removeLast() }
+                let record = "\(String(format: "%.10g", left)) \(op) \(String(format: "%.10g", right)) = \(display)"
+                storedHistory = ([record] + history).prefix(30).joined(separator: "\n")
             }
             first = key == "=" ? nil : Double(display)
             operation = key == "=" ? nil : key
@@ -1132,6 +1133,8 @@ private struct LabFilesView: View {
 private struct LabBrowserView: View {
     let wifi: Bool
     @State private var search = ""
+    @AppStorage("lastseen.lab.browserPage") private var savedPage = ""
+    @AppStorage("lastseen.lab.browserForward") private var savedForward = ""
     @State private var selected: String?
     @State private var forwardPage: String?
     @AppStorage("lastseen.lab.history") private var history = ""
@@ -1217,7 +1220,11 @@ private struct LabBrowserView: View {
             Text(wifi ? "Saved pages • Offline browser" : "Saved pages • Wi-Fi off").font(.caption2).foregroundColor(.secondary).padding(.bottom, 4)
         }
         .navigationTitle("Browser").navigationBarTitleDisplayMode(.inline)
+        .onChange(of: selected) { savedPage = $0 ?? "" }
+        .onChange(of: forwardPage) { savedForward = $0 ?? "" }
         .onAppear {
+            selected = pages[savedPage] != nil ? savedPage : nil
+            forwardPage = pages[savedForward] != nil ? savedForward : nil
             if !seeded {
                 if history.isEmpty { history = "Maple Cafe|Maple Street Bookshop" }
                 if bookmarks.isEmpty { bookmarks = "Maple Street Bookshop" }
