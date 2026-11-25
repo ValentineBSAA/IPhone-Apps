@@ -12,6 +12,7 @@ struct PhoneLabView: View {
     @State private var recent: [LabApp] = []
     @AppStorage("lastseen.lab.wallpaper") private var wallpaper = 0
     @AppStorage("lastseen.relay.compactIcons") private var compactIcons = false
+    @AppStorage("lastseen.relay.tealTheme") private var tealTheme = false
     @AppStorage("lastseen.relay.installed") private var relayInstalled = ""
     @AppStorage("lastseen.lab.brightness") private var brightness = 0.9
     @AppStorage("lastseen.lab.wifi") private var wifi = true
@@ -278,10 +279,15 @@ struct PhoneLabView: View {
         Button { open(app) } label: {
             VStack(spacing: 6) {
                 ZStack(alignment: .topTrailing) {
+                    if tealTheme, let asset = ApprovedArt.themeName(for: app.rawValue) {
+                        Image(asset).resizable().scaledToFit()
+                            .frame(width: compactIcons ? 47 : 55, height: compactIcons ? 47 : 55)
+                    } else {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(LinearGradient(colors: [app.color, app.color.opacity(0.55)], startPoint: .topLeading, endPoint: .bottomTrailing))
                         .frame(width: compactIcons ? 47 : 55, height: compactIcons ? 47 : 55)
                         .overlay { Image(systemName: app.symbol).font(.system(size: 24, weight: .medium)) }
+                    }
                     if app == .messages && unread > 0 {
                         Text("\(unread)").font(.caption2.bold()).padding(5)
                             .background(.red, in: Capsule()).offset(x: 5, y: -5)
@@ -326,7 +332,7 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.3.2 (15)")
+                LabeledContent("Software", value: "1.3.3 (16)")
                 Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay phone setup") { confirmSetupReplay = true }
             }

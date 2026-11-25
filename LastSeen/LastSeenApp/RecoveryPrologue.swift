@@ -87,13 +87,14 @@ struct RecoveryPrologue: View {
             }
         }
         .preferredColorScheme(.dark)
+        .statusBar(hidden: initialized && stage == 4)
         .tint(accent)
         .onAppear {
             guard !initialized else { return }
-            if revision < 2 {
+            if revision < 3 {
                 // One-time replay of the revised prologue, never reset the phone or earned access.
-                stage = 0; elapsed = 0; simulated = false; revision = 2
-                OpeningQA.record("Opening revision 2 initialized; existing phone records retained")
+                stage = 0; elapsed = 0; simulated = false; revision = 3
+                OpeningQA.record("Opening revision 3 initialized; existing phone records retained")
             }
             initialized = true
         }
@@ -107,6 +108,15 @@ struct RecoveryPrologue: View {
 
     private var interface: some View {
         ZStack {
+            if stage == 4 {
+                RestartArtwork(phase: RestartPhase.opening(at: elapsed))
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.65), value: RestartPhase.opening(at: elapsed))
+                    .overlay(alignment: .bottom) {
+                        if RestartPhase.opening(at: elapsed) != .black {
+                            Button("Skip animation") { elapsed = duration; finishTimedStage() }.font(.caption).foregroundColor(.white.opacity(0.6)).padding(.bottom, 24)
+                        }
+                    }.transition(.opacity)
+            } else {
             background.ignoresSafeArea()
             RadialGradient(colors: [accent.opacity(0.14), .clear], center: .top, startRadius: 10, endRadius: 450).ignoresSafeArea()
             VStack(spacing: 0) {
@@ -131,12 +141,13 @@ struct RecoveryPrologue: View {
                 Text("PATCHLINE  •  DEVICE UTILITY").font(.system(size: 10, weight: .medium, design: .monospaced)).tracking(1.8).foregroundColor(.secondary)
                     .padding(.bottom, 8)
             }.frame(maxWidth: 540)
-        }
+            }
+        }.animation(reduceMotion ? nil : .easeInOut(duration: 0.7), value: stage == 4)
     }
     private var header: some View {
         HStack {
             HStack(spacing: 9) {
-                Image(systemName: "square.stack.3d.up.fill").font(.title2).foregroundColor(accent)
+                OpeningArt(name: "Opening_Computer", size: 39)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Patchline").font(.headline)
                     Text("Device utility").font(.caption2).foregroundColor(.secondary)
@@ -147,71 +158,30 @@ struct RecoveryPrologue: View {
                 Image(systemName: effects ? "speaker.wave.2" : "speaker.slash").frame(width: 36, height: 44)
             }.accessibilityLabel(effects ? "Mute connection effects" : "Enable connection effects")
             Button { showQA = true } label: {
-                Image(systemName: "waveform.path.ecg").frame(width: 36, height: 44)
+                OpeningArt(name: "Opening_Diagnostics", size: 32).frame(width: 36, height: 44)
             }.accessibilityLabel("Developer Diagnostics")
         }.padding(.horizontal, 22).padding(.top, 6)
     }
     private var connectionArt: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 30).fill(.white.opacity(0.035))
-            RoundedRectangle(cornerRadius: 30).strokeBorder(.white.opacity(0.10))
-            Canvas { context, size in
-                let w = size.width, h = size.height
-                let monitor = CGRect(x: w * 0.08, y: h * 0.18, width: w * 0.44, height: h * 0.44)
-                let phone = CGRect(x: w * 0.68, y: h * 0.11, width: w * 0.23, height: h * 0.64)
-                func box(_ rect: CGRect, _ r: CGFloat, _ fill: Color, _ stroke: Color) {
-                    let p = Path(roundedRect: rect, cornerRadius: r)
-                    context.fill(p, with: .color(fill)); context.stroke(p, with: .color(stroke), lineWidth: 1.5)
-                }
-                box(monitor, 8, Color(red: 0.17, green: 0.21, blue: 0.28), .white.opacity(0.4))
-                box(monitor.insetBy(dx: 6, dy: 6), 4, background, .white.opacity(0.12))
-                let stand = Path { p in
-                    p.move(to: CGPoint(x: monitor.midX, y: monitor.maxY)); p.addLine(to: CGPoint(x: monitor.midX, y: monitor.maxY + 20))
-                    p.move(to: CGPoint(x: monitor.midX - 25, y: monitor.maxY + 20)); p.addLine(to: CGPoint(x: monitor.midX + 25, y: monitor.maxY + 20))
-                }
-                context.stroke(stand, with: .color(.gray), style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                box(phone, 14, Color(red: 0.18, green: 0.22, blue: 0.29), .white.opacity(0.5))
-                box(phone.insetBy(dx: 4, dy: 4), 11, background, .white.opacity(0.10))
-                box(CGRect(x: phone.midX - 12, y: phone.minY + 8, width: 24, height: 5), 3, .gray.opacity(0.7), .clear)
-                let cable = Path { p in
-                    p.move(to: CGPoint(x: monitor.maxX, y: monitor.midY))
-                    p.addLine(to: CGPoint(x: w * 0.57, y: monitor.midY))
-                    p.addQuadCurve(to: CGPoint(x: w * 0.60, y: monitor.midY + 12), control: CGPoint(x: w * 0.60, y: monitor.midY))
-                    p.addLine(to: CGPoint(x: w * 0.60, y: h * 0.85))
-                    p.addQuadCurve(to: CGPoint(x: w * 0.65, y: h * 0.90), control: CGPoint(x: w * 0.60, y: h * 0.90))
-                    p.addLine(to: CGPoint(x: phone.midX - 12, y: h * 0.90))
-                    p.addQuadCurve(to: CGPoint(x: phone.midX, y: h * 0.83), control: CGPoint(x: phone.midX, y: h * 0.90))
-                    p.addLine(to: CGPoint(x: phone.midX, y: phone.maxY + (connected ? 2 : 12)))
-                }
-                context.stroke(cable, with: .color(connected ? accent : .gray), style: StrokeStyle(lineWidth: 3.5, lineCap: .round, dash: connected ? [] : [5, 6]))
-                let plug = CGRect(x: phone.midX - 7, y: phone.maxY + (connected ? 0 : 12), width: 14, height: 10)
-                box(plug, 3, connected ? accent : .gray, .white.opacity(0.25))
-                context.draw(Text(Image(systemName: "terminal")).font(.system(size: 25)).foregroundColor(accent.opacity(0.8)), at: CGPoint(x: monitor.midX, y: monitor.midY))
-                context.draw(Text(Image(systemName: connected ? "bolt.fill" : "cable.connector")).font(.system(size: 25)).foregroundColor(connected ? accent : .gray), at: CGPoint(x: phone.midX, y: phone.midY))
-            }.padding(10)
-        }.frame(height: 205)
-            .accessibilityLabel(connected ? "Illustration of connected virtual phone" : "Illustration showing where to connect a charging cable")
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: connected)
+        VStack(spacing: 10) {
+            OpeningArt(name: connected ? "Opening_Computer" : "Opening_Phone", size: 176)
+                .opacity(connected ? 1 : 0.82)
+            HStack(spacing: 10) {
+                OpeningArt(name: "Opening_USB", size: 42)
+                Text(connected ? "Virtual connection established" : "Connect your charging cable")
+                    .font(.caption.weight(.medium)).foregroundColor(.secondary)
+            }
+        }.frame(maxWidth: .infinity)
+            .accessibilityLabel(connected ? "Connected virtual device" : "Connect to external power")
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: connected)
     }
     private var stageArt: some View {
-        ZStack {
-            Circle().fill(accent.opacity(0.055)).frame(width: 145, height: 145)
-            Circle().strokeBorder(accent.opacity(0.18), lineWidth: 1).frame(width: 145, height: 145)
-            Circle().strokeBorder(.white.opacity(0.08), lineWidth: 1).frame(width: 117, height: 117)
-            if stage == 1 || stage == 2 {
-                Circle().trim(from: 0, to: CGFloat(fraction)).stroke(accent, style: StrokeStyle(lineWidth: 3, lineCap: .round)).frame(width: 145, height: 145).rotationEffect(.degrees(-90))
-            }
-            Image(systemName: stage == 1 ? "waveform.path.ecg" : stage == 2 ? "square.stack.3d.up.fill" : stage == 3 ? "checkmark.seal.fill" : "lock.open.fill")
-                .font(.system(size: 48, weight: .light)).foregroundColor(accent)
-        }.frame(height: 155).accessibilityHidden(true)
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: elapsed)
+        let name: String = stage == 1 ? (elapsed < OpeningPace.recognition ? "Opening_USB" : "Opening_Diagnostics")
+            : stage == 2 ? "Opening_Install" : stage == 3 ? "Opening_Unlock" : "Opening_Respring"
+        return OpeningArt(name: name, size: 176)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: name)
     }
-    private var bootArt: some View {
-        VStack(spacing: 15) {
-            Image(systemName: "square.stack.3d.up.fill").font(.system(size: 80, weight: .ultraLight)).foregroundColor(accent)
-            Text("P A T C H L I N E").font(.caption.weight(.semibold)).foregroundColor(.secondary)
-        }.frame(height: 160).accessibilityHidden(true)
-    }
+    private var bootArt: some View { OpeningArt(name: "Opening_Reboot", size: 176) }
     private var connectionStatus: some View {
         HStack(spacing: 12) {
             Circle().fill(connected ? accent : .orange).frame(width: 9, height: 9)
@@ -252,7 +222,7 @@ struct RecoveryPrologue: View {
         }.frame(maxWidth: .infinity, alignment: .leading).padding(14).background(.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 15))
     }
     private var verbosePanel: some View {
-        DisclosureGroup("Verbose mode", isExpanded: $verbose) {
+        DisclosureGroup(isExpanded: $verbose) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("> Service session ready")
                 ForEach(diagnosticLines, id: \.self) { Text("> " + $0) }
@@ -261,6 +231,8 @@ struct RecoveryPrologue: View {
             }.font(.system(.caption, design: .monospaced)).foregroundColor(accent)
                 .frame(maxWidth: .infinity, alignment: .leading).padding(12)
                 .background(.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 12)).padding(.top, 10)
+        } label: {
+            HStack(spacing: 8) { OpeningArt(name: "Opening_Terminal", size: 32); Text("Verbose mode") }
         }.font(.subheadline).padding(14).background(.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 15))
     }
     private var completionInfo: some View {
@@ -288,7 +260,7 @@ struct RecoveryPrologue: View {
             case 2:
                 Text(interrupted ? "Installation paused" : "Keep this screen open").font(.caption).foregroundColor(.secondary)
             case 3:
-                primary("Reboot device") { transition(4) }
+                primary("Userspace reboot") { transition(4) }
             case 4:
                 Text("Starting the new environment").font(.caption).foregroundColor(.secondary)
             case 5:
@@ -307,6 +279,8 @@ struct RecoveryPrologue: View {
     private func transition(_ next: Int) {
         OpeningQA.record("Stage \(stage) completed at \(elapsed)s; entering \(next)")
         elapsed = 0; stage = next
+        if next == 4 { OpeningQA.record("Userspace reboot started") }
+        if next == 5 { RestartAudio.stop(); OpeningQA.record("Userspace reboot and respring completed; welcome displayed") }
     }
     private func finishTimedStage() {
         if stage == 2 { transition(3) }
@@ -371,6 +345,11 @@ struct RecoveryPrologue: View {
             guard !Task.isCancelled, stage == activeStage else { return }
             guard OpeningPace.canAdvance(stage: activeStage, connected: connected, active: phase == .active && !showQA) else { continue }
             elapsed = min(seconds, elapsed + 1)
+            if stage == 4 && elapsed == 8 {
+                OpeningQA.record("Respring started")
+                RestartAudio.play("RespringDown", enabled: effects)
+            }
+            if stage == 4 && elapsed == 10 { RestartAudio.play("RespringUp", enabled: effects) }
             if elapsed == OpeningPace.recognition && stage == 1 { OpeningQA.record("Device recognition completed") }
             if elapsed == OpeningPace.preparation && stage == 2 { OpeningQA.record("Environment preparation completed") }
         }
