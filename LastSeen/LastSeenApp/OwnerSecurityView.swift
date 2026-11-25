@@ -152,8 +152,7 @@ struct ProtectedAreaView: View {
             Text("Biometrics are optional. The discovered fictional passcode always works.").font(.footnote).foregroundColor(.secondary)
         case .photos:
             Text("Private album").font(.title2.bold())
-            Image("Contact_Nora_02").resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius: 15))
-            Text("Saved portrait · private").font(.caption).foregroundColor(.secondary)
+            NoraPrivateAlbum()
         case .notes:
             Text("Personal journal").font(.title2.bold())
             Text("I should make more time for myself. Finish the book, call Mum, and put the good photographs somewhere safe.\n\nMaya was right. I need to stop cancelling our plans. Coffee after the bookshop, if everything goes well.").frame(maxWidth: .infinity, alignment: .leading)
