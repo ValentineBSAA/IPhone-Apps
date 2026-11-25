@@ -415,6 +415,16 @@ final class PhoneWorldStore: ObservableObject {
         input.lowercased().filter { $0.isLetter || $0.isNumber }
     }
 
+    func restoreCheckpoint(_ replacement: PhoneWorld) throws {
+        guard replacement.version == 1 else { throw CocoaError(.fileReadCorruptFile) }
+        if persistToDisk {
+            try FileManager.default.createDirectory(at: storageURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try JSONEncoder().encode(replacement).write(to: storageURL, options: .atomic)
+        }
+        visibleThread = nil
+        state = replacement
+    }
+
     private func save() {
         guard persistToDisk else { return }
         do {
