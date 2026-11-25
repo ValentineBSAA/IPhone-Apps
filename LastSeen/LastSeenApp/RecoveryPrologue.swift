@@ -337,14 +337,30 @@ struct RecoveryPrologue: View {
             if !simulated && (stage == 1 || stage == 2) && elapsed < duration {
                 OpeningQA.record(next ? "Timed stage resumed after connection" : "Timed stage paused after disconnection")
             }
-            if next && !simulated { connectionFeedback() }
+            if !simulated && stage <= 2 && phase == .active {
+                if next {
+                    connectionFeedback()
+                } else {
+                    disconnectionFeedback()
+                }
+            }
         }
         powered = next
     }
     private func connectionFeedback() {
         guard effects else { return }
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
         AudioServicesPlaySystemSound(1104)
+        OpeningQA.record("Connection haptic and sound requested")
+    }
+    private func disconnectionFeedback() {
+        guard effects else { return }
+        if stage == 1 || stage == 2 {
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        } else {
+            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+        }
+        OpeningQA.record("Disconnection haptic requested")
     }
     @MainActor private func runClock() async {
         let activeStage = stage
