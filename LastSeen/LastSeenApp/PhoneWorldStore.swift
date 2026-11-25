@@ -4,7 +4,7 @@ import SwiftUI
 /// Fictional everyday life surrounding the horror. It does not access real
 /// Contacts, Messages, Calendar, Mail, Photos, or device communication data.
 enum Neighbor: String, CaseIterable, Identifiable, Codable {
-    case maya, denise, helen, lily, daniel, adrian, tessa
+    case maya, denise, helen, lily, daniel, adrian, tessa, unknown
     static let original: [Neighbor] = [.maya, .denise]
     static func visible(in world: PhoneWorld) -> [Neighbor] { allCases.filter { original.contains($0) || world.threads[$0.id] != nil } }
 
@@ -18,6 +18,7 @@ enum Neighbor: String, CaseIterable, Identifiable, Codable {
         case .daniel: return "Daniel Bennett"
         case .adrian: return "Adrian Cole"
         case .tessa: return "Tessa Reed"
+        case .unknown: return "Unknown number"
         }
     }
     var subtitle: String {
@@ -29,6 +30,7 @@ enum Neighbor: String, CaseIterable, Identifiable, Codable {
         case .daniel: return "Brother"
         case .adrian: return "Technical lead · Blue Hour Interactive"
         case .tessa: return "Artist / producer · Blue Hour Interactive"
+        case .unknown: return "Unverified sender"
         }
     }
     var initials: String { name.split(separator: " ").prefix(2).compactMap(\.first).map { String($0) }.joined() }
@@ -45,6 +47,7 @@ enum Neighbor: String, CaseIterable, Identifiable, Codable {
         case .daniel: return "Contact_B27_04"
         case .adrian: return "Contact_B27_06"
         case .tessa: return "Contact_B27_07"
+        case .unknown: return ""
         }
     }
 
@@ -263,6 +266,7 @@ final class PhoneWorldStore: ObservableObject {
     }
 
     func advancePendingReplies(now: Date = Date()) {
+        advanceInvestigation(now: now)
         let pending = state.pendingReplies ?? []
         guard !pending.isEmpty else { return }
         var changed = false
@@ -458,6 +462,29 @@ final class PhoneWorldStore: ObservableObject {
     @discardableResult func earnUtility(_ tool: LumaUtility, answer: String) -> Bool {
         guard LumaUtility.next(in: state.flags) == tool, tool.correct == answer else { return false }
         state.flags.insert(tool.flag); save(); return true
+    }
+    func visitWebRecord(_ id: String, now: Date = Date()) {
+        guard let page = LumaWebCatalog.page(id), page.available(state.flags) else { return }
+        guard state.flags.insert("web.visited." + id).inserted else { return }
+        advanceInvestigation(now: now)
+        save()
+    }
+    func inspectWebAttachment(_ id: String, now: Date = Date()) {
+        guard LumaWebCatalog.attachments(in: state.flags).contains(id) else { return }
+        if state.flags.insert("web.inspected." + id).inserted {
+            advanceInvestigation(now: now); save()
+        }
+    }
+    func advanceInvestigation(now: Date = Date()) {
+        guard state.everydayArchiveRevision != nil,
+              state.flags.contains("phone-tutorial-finished"),
+              state.flags.contains("web.visited.studio") else { return }
+        if state.flags.insert("investigation.contact.received").inserted {
+            append(NeighborMessage(id: "unknown-intro-v1", thread: Neighbor.unknown.id,
+                text: "Is this number working again? Before you trust anything on that phone, look at the studio's saved pages. Some of the records are not what they seem.",
+                fromPlayer: false, at: now, read: false))
+            save()
+        }
     }
     func storeSnippet(_ snippet: LumaSnippet) {
         guard LumaRecords.publicRecords(state).contains(snippet) else { return }

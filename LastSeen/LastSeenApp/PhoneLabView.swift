@@ -607,6 +607,7 @@ struct PhoneLabView: View {
                         Text(device).font(.subheadline).foregroundColor(.secondary)
                     }
                 }.padding(.vertical, 8)
+                NavigationLink { InvestigationProgressView(openBrowser: { open(.browser) }, openMessages: { open(.messages) }, openNotes: { open(.notes) }, openFiles: { open(.files) }) } label: { Label("Investigation progress", systemImage: "checklist") }
                 NavigationLink { LumaSaveView(store: saves, onLoad: loadCheckpoint) } label: {
                     Label("Game Saves", systemImage: "archivebox")
                 }
@@ -742,6 +743,7 @@ struct PhoneLabView: View {
                 LumaHeader(title: "Notification Center", detail: "Recent activity", symbol: "bell.badge")
                 if RecoveryCircuit.unlocked(world.state.flags) { CircuitNoticeCard() }
                 ForEach(LumaUtility.allCases.filter { world.state.flags.contains($0.flag) }) { tool in UtilityNoticeCard(tool: tool) }
+                Button { panel = nil; open(.settings) } label: { Label("Investigation progress · " + InvestigationProgress.summary(world.state.flags), systemImage: "checklist").frame(maxWidth: .infinity, alignment: .leading).padding(12).lumaSurface() }.buttonStyle(.plain)
                 Text("Recent messages").font(.subheadline).foregroundColor(.secondary)
                 ForEach(PhoneAlertCatalog.alerts(in: world.state, unreadOnly: false)) { alert in
                     PhoneNotificationCard(alert: alert) { openThread(alert.neighbor) }
@@ -863,7 +865,7 @@ struct PhoneLabView: View {
         case .settings:
             controls.navigationTitle("Settings")
         case .files: LabFilesView()
-        case .browser: LabBrowserView(wifi: wifi)
+        case .browser: LumaWebBrowser(wifi: wifi)
         case .relay: RelayPackagesView(earnedFlags: world.state.flags, onRestart: { returnHome(); recent.removeAll(); locked = true })
         case .patchline: PatchlineControlView(openRelay: { open(.relay) }, onRestart: { returnHome(); recent.removeAll(); locked = true })
         }
@@ -1179,140 +1181,4 @@ private struct LabFilesView: View {
     }
 }
 
-private struct LabBrowserView: View {
-    let wifi: Bool
-    @State private var search = ""
-    @AppStorage("lastseen.lab.browserPage") private var savedPage = ""
-    @AppStorage("lastseen.lab.browserForward") private var savedForward = ""
-    @State private var selected: String?
-    @State private var forwardPage: String?
-    @AppStorage("lastseen.lab.history") private var history = ""
-    @AppStorage("lastseen.lab.bookmarks") private var bookmarks = ""
-    @AppStorage("lastseen.lab.browserSeeded") private var seeded = false
-    private let pages = ["Maple Street Bookshop": "Open 10–6. Reserved books are held for seven days.", "Ash Street Residents": "Building office notices, elevator inspections and community events.", "Maple Cafe": "Coffee, pastries and sandwiches. Across from the bookshop."]
-    private let addresses = ["Maple Street Bookshop": "maplebooks.test", "Ash Street Residents": "ashstreet.test", "Maple Cafe": "maplecafe.test"]
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Image(systemName: "magnifyingglass").foregroundColor(.secondary)
-                TextField("Search or enter address", text: $search)
-                    .textInputAutocapitalization(.never).autocorrectionDisabled().submitLabel(.go)
-                    .onSubmit { if let name = matching.first { visit(name) } }
-                if !search.isEmpty {
-                    Button { search = "" } label: { Image(systemName: "xmark.circle.fill").foregroundColor(.secondary) }
-                }
-            }.padding(12).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16)).padding(.horizontal).padding(.vertical, 8)
-            if let name = selected {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        HStack {
-                            Image(systemName: name == "Maple Cafe" ? "cup.and.saucer.fill" : name == "Maple Street Bookshop" ? "books.vertical.fill" : "building.2.fill")
-                                .font(.largeTitle)
-                            Spacer()
-                            Text("LOCAL").font(.caption2.weight(.semibold))
-                        }.foregroundColor(.white)
-                        Text(name).font(.largeTitle.bold()).foregroundColor(.white)
-                        Divider()
-                        Text(pages[name] ?? "").font(.title3)
-                        if name == "Maple Street Bookshop" {
-                            Text("Your reserved books").font(.headline)
-                            Text("Pick up in store before the end of the week.")
-                        } else if name == "Ash Street Residents" {
-                            Text("Resident noticeboard").font(.headline)
-                            Text("Please contact the building office for maintenance updates.")
-                        } else {
-                            Text("Today's menu").font(.headline)
-                            Text("Espresso · Cappuccino · Pastries · Sandwiches")
-                        }
-                        Label("Saved page · available offline", systemImage: "checkmark.circle").font(.caption).foregroundColor(.secondary)
-                    }.frame(maxWidth: .infinity, alignment: .leading).padding(24)
-                    .background(Color.teal.opacity(0.15), in: RoundedRectangle(cornerRadius: 24)).padding()
-                }
-            } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        LumaHeader(title: search.isEmpty ? "Start page" : "Search results", detail: "Saved sites and bookmarks", symbol: "globe")
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                            ForEach(matching, id: \.self) { name in
-                                Button { visit(name) } label: {
-                                    VStack(alignment: .leading, spacing: 7) {
-                                        Image(systemName: "globe").font(.title).foregroundColor(.teal)
-                                        Text(name).font(.subheadline.bold())
-                                        Text(addresses[name] ?? "").font(.caption2).foregroundColor(.secondary)
-                                    }.frame(maxWidth: .infinity, alignment: .leading).padding(13)
-                                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
-                                }.buttonStyle(.plain)
-                            }
-                        }
-                        if matching.isEmpty { Text("No saved sites match this search.").foregroundColor(.secondary) }
-                        if search.isEmpty {
-                            siteSection("Bookmarks", names: entries(bookmarks))
-                            siteSection("History", names: entries(history).reversed())
-                            if !history.isEmpty { Button("Clear history", role: .destructive) { history = "" }.font(.caption) }
-                        }
-                    }.padding()
-                }
-            }
-            Divider()
-            HStack {
-                Button { forwardPage = selected; selected = nil; search = "" } label: { Image(systemName: "chevron.backward") }.disabled(selected == nil)
-                Spacer()
-                Button { if let name = forwardPage { visit(name) } } label: { Image(systemName: "chevron.forward") }.disabled(forwardPage == nil || selected != nil)
-                Spacer()
-                Button { selected = nil; search = ""; forwardPage = nil } label: { Image(systemName: "house") }
-                Spacer()
-                Button { if let name = selected { toggleBookmark(name) } } label: {
-                    Image(systemName: selected.map { entries(bookmarks).contains($0) } == true ? "bookmark.fill" : "bookmark")
-                }.disabled(selected == nil)
-            }.font(.title3).padding(.horizontal, 25).padding(.vertical, 14)
-            Text(wifi ? "Saved pages • Offline browser" : "Saved pages • Wi-Fi off").font(.caption2).foregroundColor(.secondary).padding(.bottom, 4)
-        }
-        .navigationTitle("Browser").navigationBarTitleDisplayMode(.inline)
-        .onChange(of: selected) { savedPage = $0 ?? "" }
-        .onChange(of: forwardPage) { savedForward = $0 ?? "" }
-        .onAppear {
-            selected = pages[savedPage] != nil ? savedPage : nil
-            forwardPage = pages[savedForward] != nil ? savedForward : nil
-            if !seeded {
-                if history.isEmpty { history = "Maple Cafe|Maple Street Bookshop" }
-                if bookmarks.isEmpty { bookmarks = "Maple Street Bookshop" }
-                seeded = true
-            }
-        }
-    }
-    private var matching: [String] {
-        let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
-        return pages.keys.sorted().filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) || (addresses[$0]?.localizedCaseInsensitiveContains(query) ?? false) }
-    }
-    private func entries(_ value: String) -> [String] {
-        value.split(separator: "|").map(String.init).filter { pages[$0] != nil }
-    }
-    private func siteSection<S: Sequence>(_ title: String, names: S) -> some View where S.Element == String {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.headline)
-            ForEach(Array(names), id: \.self) { name in
-                Button { visit(name) } label: {
-                    HStack {
-                        Image(systemName: title == "History" ? "clock" : "bookmark").foregroundColor(.teal)
-                        Text(name)
-                        Spacer()
-                        Image(systemName: "chevron.right").font(.caption).foregroundColor(.secondary)
-                    }.padding(10)
-                }.buttonStyle(.plain)
-            }
-        }
-    }
-    private func visit(_ name: String) {
-        guard pages[name] != nil else { return }
-        selected = name
-        search = addresses[name] ?? ""
-        forwardPage = nil
-        history = (entries(history).filter { $0 != name } + [name]).joined(separator: "|")
-    }
-    private func toggleBookmark(_ name: String) {
-        var values = entries(bookmarks)
-        if values.contains(name) { values.removeAll { $0 == name } } else { values.append(name) }
-        bookmarks = values.joined(separator: "|")
-    }
-}
+private 

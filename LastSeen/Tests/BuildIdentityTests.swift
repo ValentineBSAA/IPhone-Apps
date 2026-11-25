@@ -18,7 +18,7 @@ final class BuildIdentityTests: XCTestCase {
     }
 
     func testSecondaryContactsUseTheirOwnArtFiles() throws {
-        for contact in Neighbor.allCases {
+        for contact in Neighbor.allCases where contact != .unknown {
             let name = contact.portraitAssetName
             XCTAssertTrue(name == "Contact_Maya" || name == "Contact_Denise" || name.hasPrefix("Contact_B27_"))
             let photo = try XCTUnwrap(PortraitImages.load(name),

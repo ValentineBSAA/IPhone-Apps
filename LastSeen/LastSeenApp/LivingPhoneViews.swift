@@ -6,7 +6,10 @@ struct NeighborAvatar: View {
 
     var body: some View {
         ZStack {
-            if let photograph = PortraitImages.load(neighbor.portraitAssetName) {
+            if neighbor == .unknown {
+                Circle().fill(Color.gray.opacity(0.25))
+                Image(systemName: "person.fill.questionmark").font(.system(size: size * 0.42)).foregroundColor(.secondary)
+            } else if let photograph = PortraitImages.load(neighbor.portraitAssetName) {
                 Image(uiImage: photograph)
                     .resizable()
                     .scaledToFill()
@@ -27,7 +30,7 @@ struct NeighborAvatar: View {
         .frame(width: size, height: size)
         .clipShape(Circle())
         .overlay(Circle().strokeBorder(.white.opacity(0.16), lineWidth: 1))
-        .accessibilityLabel("\(neighbor.name) contact photograph")
+        .accessibilityLabel(neighbor == .unknown ? "Unverified sender" : "\(neighbor.name) contact photograph")
     }
 }
 
@@ -553,7 +556,7 @@ struct NeighborProfileView: View {
                         .padding(14)
                         .background(Night.raised, in: RoundedRectangle(cornerRadius: 14))
                 }
-                if phoneLab {
+                if phoneLab && neighbor != .unknown {
                     HStack(spacing: 12) {
                         NavigationLink(value: LumaCallRoute(neighbor: neighbor)) {
                             Label("Call", systemImage: "phone.fill").frame(maxWidth: .infinity, minHeight: 44)

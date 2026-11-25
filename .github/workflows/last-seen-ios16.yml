@@ -165,6 +165,8 @@ jobs:
           gh release download L1 --repo ValentineBSAA/IPhone-Apps --pattern 'Last-Seen-Build27-Jailbreak-Icons.zip' --dir . --clobber
           gh release download L1 --repo ValentineBSAA/IPhone-Apps --pattern 'Last-Seen-Build27-Contact-Photos.zip' --dir . --clobber
           python3 Tools/import_build27_art.py
+          gh release download L1 --repo ValentineBSAA/IPhone-Apps --pattern 'Last-Seen-Build27-Recovered-Images.zip' --dir . --clobber
+          python3 Tools/import_recovered_art.py
 
       - name: Generate iOS 16 Xcode project
         run: |
@@ -207,7 +209,8 @@ jobs:
           test "$BUNDLE_ID" = "com.valentinebsaa.lastseen.horror"
           test -s "LastSeenApp/Assets.xcassets/Contact_Maya.imageset/photo.jpg"
           test -s "LastSeenApp/Assets.xcassets/Contact_Denise.imageset/photo.jpg"
-          test "$(find LastSeenApp/Assets.xcassets -maxdepth 1 -type d -name 'Contact_*.imageset' | wc -l | tr -d ' ')" = "12"
+          test "$(find LastSeenApp/Assets.xcassets -maxdepth 1 -type d -name 'Contact_*.imageset' | wc -l | tr -d ' ')" = "22"
+          test "$(find LastSeenApp/Assets.xcassets -maxdepth 1 -type d -name 'Recovered_B27_*.imageset' | wc -l | tr -d ' ')" = "29"
 
       - name: Run story-engine, Phone Lab, restore, security and opening tests on iPhone simulator
         timeout-minutes: 20

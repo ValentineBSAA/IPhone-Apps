@@ -22,6 +22,7 @@ enum PhoneReplyPolicy {
         let normalized = text.lowercased()
         let words = Set(normalized.split { !$0.isLetter && !$0.isNumber }.map(String.init))
         func mentions(_ terms: String...) -> Bool { terms.contains { words.contains($0) } }
+        if neighbor == .unknown { return PhoneReplyPlan(text: InvestigationProgress.unknownReply(words: words, flags: flags)) }
         if !Neighbor.original.contains(neighbor) { return PhoneReplyPlan(text: NoraEverydayArchive.response(neighbor, words: words)) }
         let intro = neighbor == .maya && tutorialStarted && !flags.contains("phone-tutorial-replied")
         if mentions("jailbreak", "jailbroken", "patchline", "relay", "rootless") {

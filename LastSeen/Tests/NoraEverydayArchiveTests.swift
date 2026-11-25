@@ -6,7 +6,7 @@ import XCTest
         XCTAssertEqual(Neighbor.visible(in:w).count,7)
         XCTAssertEqual(w.everydayArchiveRevision,1)
         XCTAssertTrue(w.flags.isEmpty)
-        for n in Neighbor.allCases where !Neighbor.original.contains(n) {
+        for n in Neighbor.allCases where !Neighbor.original.contains(n) && n != .unknown {
             XCTAssertEqual(w.threads[n.id]?.count,5)
             XCTAssertTrue(w.threads[n.id]?.allSatisfy(\.read) == true)
         }
