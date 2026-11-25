@@ -15,13 +15,22 @@ for name in packs:
             expected[record["filename"]]=record["sha256"]
 assert len(expected)==53
 expected["ConnectedWorldDocuments.json"]=digest(pathlib.Path("LastSeenApp/ConnectedWorldDocuments.json").read_bytes())
+motion_root=pathlib.Path("LastSeenApp/MotionwellMedia")
+motion_manifest=motion_root/"MotionwellMediaManifest.json"
+motion_records=json.loads(motion_manifest.read_text())["assets"]
+assert {r["filename"] for r in motion_records}=={"Motionwell_coffee.mp4","Motionwell_woodland.mp4","Motionwell_animals.mp4","Motionwell_studio.mp4"}
+assert len(motion_records)==4
+for record in motion_records:
+    assert digest((motion_root/record["filename"]).read_bytes())==record["sha256"]
+    expected[record["filename"]]=record["sha256"]
+expected[motion_manifest.name]=digest(motion_manifest.read_bytes())
 if a.app:
     car=(a.app/"Assets.car").read_bytes()
     assert car.startswith(b"BOMStore") and len(car)>1024, "Malformed compiled asset catalog"
     print("Device Assets.car:",len(car),"bytes SHA-256",digest(car))
     for name,sha in expected.items():
         assert digest((a.app/name).read_bytes())==sha, name
-    print("All 53 standalone originals and native document text verified")
+    print("All",len(expected),"standalone originals, documents and local media verified")
 if a.catalog:
     records=json.loads(a.catalog.read_text())
     assert isinstance(records,list) and len(records)>20, "Empty/unreadable CoreUI catalog"
@@ -49,4 +58,4 @@ if a.ipa:
             assert digest(z.read(prefix+name))==digest((a.app/name).read_bytes()), name
         for name,sha in expected.items():
             assert digest(z.read(prefix+name))==sha, name
-        print("Final IPA CRC, identity, compiled catalog, executable and 54 resource hashes verified")
+        print("Final IPA CRC, identity, compiled catalog, executable and",len(expected),"resource hashes verified")

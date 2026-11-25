@@ -698,6 +698,55 @@ final class PhoneWorldStore: ObservableObject {
         d.pending.removeAll { delivered.contains($0.record.id) }
         c.dayblink = d; commitConnected(c)
     }
+    func toggleMotionwellSubscription(_ handle: String) {
+        guard MotionwellArchive.visible(state).contains(where: { $0.handle == handle }) else { return }
+        var c = connected
+        var m = c.motionwell ?? MotionwellState()
+        if !m.subscriptions.insert(handle).inserted { m.subscriptions.remove(handle) }
+        c.motionwell = m; commitConnected(c)
+    }
+    func toggleMotionwellItem(_ id: String, saved: Bool) {
+        guard MotionwellArchive.visible(state).contains(where: { $0.id == id }) else { return }
+        var c = connected
+        var m = c.motionwell ?? MotionwellState()
+        if saved {
+            if !m.saved.insert(id).inserted { m.saved.remove(id) }
+        } else {
+            if !m.likes.insert(id).inserted { m.likes.remove(id) }
+        }
+        c.motionwell = m; commitConnected(c)
+    }
+    func recordMotionwellWatch(_ id: String, seconds: Double, now: Date = Date()) {
+        guard let clip = MotionwellArchive.visible(state).first(where: { $0.id == id }), seconds.isFinite, seconds >= 0 else { return }
+        var c = connected
+        var m = c.motionwell ?? MotionwellState()
+        m.watch[id] = .init(seconds: min(Double(clip.seconds), seconds), lastWatched: now)
+        c.motionwell = m; commitConnected(c)
+    }
+    func clearMotionwellHistory() {
+        guard state.everydayArchiveRevision != nil else { return }
+        var c = connected
+        var m = c.motionwell ?? MotionwellState()
+        m.watch.removeAll()
+        c.motionwell = m; commitConnected(c)
+    }
+    @discardableResult
+    func addMotionwellComment(_ id: String, text: String, now: Date = Date()) -> Bool {
+        let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard MotionwellArchive.visible(state).contains(where: { $0.id == id }), !clean.isEmpty, clean.count <= 500 else { return false }
+        var c = connected
+        var m = c.motionwell ?? MotionwellState()
+        guard m.comments.count < 200 else { return false }
+        m.comments.append(.init(id: UUID().uuidString, clipID: id, body: clean, date: now))
+        c.motionwell = m; commitConnected(c); return true
+    }
+    func setMotionwellNotifications(enabled: Bool, previews: Bool) {
+        guard state.everydayArchiveRevision != nil else { return }
+        var c = connected
+        var m = c.motionwell ?? MotionwellState()
+        m.notificationsEnabled = enabled; m.previewsEnabled = previews
+        c.motionwell = m; commitConnected(c)
+    }
     func setHavenWatch(_ preferences: HavenWatchPreferences) {
         guard state.everydayArchiveRevision != nil else { return }
         var value = connected

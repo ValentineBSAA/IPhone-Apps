@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "clips": [
+    {
+      "id": "coffee",
+      "seconds": 12,
+      "photos": [
+        "CommunityMedia_Coffee"
+      ],
+      "kind": "silent animated photo essay",
+      "creator": "Maple Cafe",
+      "title": "A quiet coffee break",
+      "source": "CommunityPortraits/everyday-media-manifest.json"
+    },
+    {
+      "id": "woodland",
+      "seconds": 12,
+      "photos": [
+        "CommunityMedia_Forest"
+      ],
+      "kind": "silent animated photo essay",
+      "creator": "Avery Quinn",
+      "title": "A little woodland inspiration",
+      "source": "CommunityPortraits/everyday-media-manifest.json"
+    },
+    {
+      "id": "animals",
+      "seconds": 30,
+      "photos": [
+        "CommunityMedia_Fox",
+        "CommunityMedia_Tabby"
+      ],
+      "kind": "silent animated photo essay",
+      "creator": "Nina Wells",
+      "title": "Two very different animals",
+      "source": "CommunityPortraits/everyday-media-manifest.json"
+    },
+    {
+      "id": "studio",
+      "seconds": 60,
+      "photos": [
+        "CommunityMedia_Mountains",
+        "CommunityMedia_Forest",
+        "CommunityMedia_Coffee",
+        "CommunityMedia_Udon"
+      ],
+      "kind": "silent animated photo essay",
+      "creator": "Blue Hour Interactive",
+      "title": "A moment to reset",
+      "source": "CommunityPortraits/everyday-media-manifest.json"
+    }
+  ]
+}

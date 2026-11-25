@@ -750,9 +750,8 @@ struct PhoneLabView: View {
                         .frame(width:44,height:44).contentShape(Rectangle())
                 }.accessibilityLabel("Close folder").accessibilityIdentifier("luma.folder.close")
             }
-            HStack(alignment:.top,spacing:8) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: folder.apps.count > 3 ? 2 : 3), alignment: .leading, spacing: 16) {
                 ForEach(folder.apps) { app in icon(app,size:min(61,max(38,(width-92)/3-10))) }
-                if folder.apps.count<3 { Spacer(minLength:0) }
             }.padding(.vertical,8)
         }.padding(20)
             .frame(width:min(340,max(220,width-32)))
@@ -1090,6 +1089,7 @@ struct PhoneLabView: View {
         case .commonGround: LumaSocialView(channel:.commonGround)
         case .havenWatch: HavenWatchView()
         case .dayblink: DayblinkView()
+        case .motionwell: MotionwellView()
         case .workstation: LumaWorkbenchView(openRelay:{open(.relay)},openFiles:{open(.files)})
         case .photos: LabPhotosView()
         case .clock: LabClockView()
@@ -1110,7 +1110,7 @@ private enum LabPanel: String, Identifiable {
 }
 
 enum LabApp: String, CaseIterable, Identifiable {
-    case fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves", afterframe = "Afterframe", connective = "Connective", commonGround = "CommonGround", workstation = "Workstation", havenWatch = "HavenWatch", dayblink = "Dayblink"
+    case fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves", afterframe = "Afterframe", connective = "Connective", commonGround = "CommonGround", workstation = "Workstation", havenWatch = "HavenWatch", dayblink = "Dayblink", motionwell = "Motionwell"
     var foundationIcon: String? {
         if self == .fieldNotes { return "Jailbreak_FieldNotes" }
         if self == .relay || self == .patchline || self == .workstation { return nil }
@@ -1142,6 +1142,7 @@ enum LabApp: String, CaseIterable, Identifiable {
         case .workstation: return "desktopcomputer"
         case .havenWatch: return "video.fill"
         case .dayblink: return "camera.fill"
+        case .motionwell: return "play.rectangle.fill"
         }
     }
     var color: Color {
@@ -1168,6 +1169,7 @@ enum LabApp: String, CaseIterable, Identifiable {
         case .workstation: return .gray
         case .havenWatch: return .cyan
         case .dayblink: return .yellow
+        case .motionwell: return .red
         }
     }
 }

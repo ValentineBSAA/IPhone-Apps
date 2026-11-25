@@ -8,7 +8,7 @@ enum LumaHomeFolder:String,CaseIterable,Identifiable {
         switch self {case .social:return "social";case .studio:return "studio";case .everyday:return "everyday"}
     }
     var apps:[LabApp] {
-        switch self {case .social:return [.afterframe,.commonGround,.dayblink];case .studio:return [.files,.connective];case .everyday:return [.clock,.calculator,.havenWatch]}
+        switch self {case .social:return [.afterframe,.commonGround,.dayblink,.motionwell];case .studio:return [.files,.connective];case .everyday:return [.clock,.calculator,.havenWatch]}
     }
     var subtitle:String {
         switch self {case .social:return "Personal life";case .studio:return "Work and studio";case .everyday:return "Everyday essentials"}
