@@ -1,0 +1,55 @@
+import SwiftUI
+
+/// In-game control utility; no access to the real system or real jailbreak state.
+struct PatchlineControlView: View {
+    let openRelay: () -> Void
+    let onRestart: () -> Void
+    @AppStorage("lastseen.relay.safeMode") private var safeMode = false
+    @AppStorage("lastseen.relay.installed") private var installed = ""
+    @AppStorage("lastseen.recovery.effects") private var effects = true
+    @State private var restart: RelayRestart?
+    @State private var confirm: RelayRestart?
+    var body: some View {
+        List {
+            Section {
+                HStack(spacing: 16) {
+                    OpeningArt(name: "Opening_Unlock", size: 70)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Patchline").font(.largeTitle.bold())
+                        Label(safeMode ? "Safe Mode" : "Jailbroken", systemImage: safeMode ? "exclamationmark.shield" : "checkmark.seal.fill")
+                            .foregroundColor(safeMode ? .orange : .teal)
+                        Text("Rootless • Environment 2.0").font(.caption).foregroundColor(.secondary)
+                    }
+                }.padding(.vertical, 12)
+                LabeledContent("Tweak loader", value: safeMode ? "Disabled" : "Active")
+                LabeledContent("Installed tweaks", value: String(RelayCatalog.ids(installed).count))
+            }
+            Section("Maintenance") {
+                Button { openRelay() } label: { Label("Open Relay", systemImage: "shippingbox.fill") }
+                Button { confirm = .respring } label: { Label("Restart SpringBoard", systemImage: "arrow.clockwise") }
+                Button { confirm = .userspace } label: { Label("Reboot Userspace", systemImage: "power") }
+                Button { confirm = safeMode ? .normal : .safeMode } label: { Label(safeMode ? "Exit Safe Mode" : "Enter Safe Mode", systemImage: "exclamationmark.shield") }
+                Toggle("Restart sounds", isOn: $effects)
+            }
+            Section("About") {
+                Text("Patchline is part of the fictional Last Seen phone. Maintenance actions never restart or modify your real iPhone.").font(.footnote).foregroundColor(.secondary)
+            }
+        }.navigationTitle("Patchline").navigationBarTitleDisplayMode(.inline)
+            .confirmationDialog("Restart the phone environment?", isPresented: Binding(get: { confirm != nil }, set: { if !$0 { confirm = nil } }), titleVisibility: .visible, presenting: confirm) { action in
+                Button("Continue") { restart = action; confirm = nil }
+                Button("Cancel", role: .cancel) { confirm = nil }
+            } message: { _ in Text("Your records and installed packages will be retained.") }
+            .fullScreenCover(item: $restart) { kind in
+                if kind == .userspace {
+                    RelayUserspaceView { restart = nil; onRestart() }
+                } else {
+                    ThemeRespringView {
+                        if kind == .safeMode { safeMode = true }
+                        if kind == .normal { safeMode = false }
+                        OpeningQA.record("Patchline restart completed: " + kind.rawValue)
+                        restart = nil; onRestart()
+                    }
+                }
+            }
+    }
+}
