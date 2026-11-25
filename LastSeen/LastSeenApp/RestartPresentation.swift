@@ -120,6 +120,7 @@ struct ThemeRespringView: View {
                 OpeningQA.record("Theme respring completed")
                 onComplete()
             }
+            .onChange(of: scenePhase) { value in if value == .background { RestartAudio.stop() } }
             .onDisappear { RestartAudio.stop() }
     }
 }
