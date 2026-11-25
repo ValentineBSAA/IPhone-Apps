@@ -1,0 +1,52 @@
+{
+  "status": "draft scripts only; no audio generated or voice selected",
+  "format": "m4a",
+  "memos": [
+    {
+      "file": "LumaMemo_personal.m4a",
+      "speaker": "Nora Bennett",
+      "text": "Remember the book, the jacket, and an evening without work. I don't need to fill every hour with something."
+    },
+    {
+      "file": "LumaMemo_qa.m4a",
+      "speaker": "Nora Bennett",
+      "text": "For Friday, check large text, interruptions and save persistence. Compare the palettes on the phone itself. Make a note of anything that feels awkward."
+    },
+    {
+      "file": "LumaMemo_lunch.m4a",
+      "speaker": "Nora Bennett",
+      "text": "Check whether Mum needs dessert. Ask about a lift if necessary. Leave the laptop at home."
+    },
+    {
+      "file": "LumaMemo_palette.m4a",
+      "speaker": "Tessa Reed",
+      "text": "For the visual review, compare lilac, pearl and midnight at the same brightness. Read the labels before deciding which palette is best."
+    }
+  ],
+  "assistant": [
+    {
+      "file": "LumaAssistant_help.m4a",
+      "text": "I can open apps, check unread messages, tell you the time, or explain the phone's current settings."
+    },
+    {
+      "file": "LumaAssistant_denied.m4a",
+      "text": "I can help with visible records and ordinary phone controls, but I can't do that."
+    },
+    {
+      "file": "LumaAssistant_unavailable.m4a",
+      "text": "That application isn't available in the current phone environment."
+    },
+    {
+      "file": "LumaAssistant_hint.m4a",
+      "text": "Review the records you already have access to, and keep track of what you've actually verified."
+    },
+    {
+      "file": "LumaAssistant_progress.m4a",
+      "text": "You can review your completed steps in Settings. I won't reveal undiscovered records or answers."
+    },
+    {
+      "file": "LumaAssistant_clarify.m4a",
+      "text": "I'm not sure what you mean. Try asking me to open an app or check unread messages."
+    }
+  ]
+}

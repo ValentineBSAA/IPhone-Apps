@@ -1,0 +1,141 @@
+import SwiftUI
+import AVFoundation
+import Combine
+
+struct LumaMemo: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let speaker: String
+    let date: Date
+    let transcript: String
+    var file: String { "LumaMemo_" + id }
+    var url: URL? { Bundle.main.url(forResource: file, withExtension: "m4a") }
+}
+enum LumaMemoCatalog {
+    static func visible(_ world: PhoneWorld) -> [LumaMemo] {
+        guard world.everydayArchiveRevision != nil else { return [] }
+        let anchor = world.createdAt
+        return [
+            .init(id: "personal", title: "Weekend reminder", speaker: "Nora Bennett", date: anchor.addingTimeInterval(-192000), transcript: "Remember the book, the jacket, and an evening without work. I don't need to fill every hour with something."),
+            .init(id: "qa", title: "Friday review checklist", speaker: "Nora Bennett", date: anchor.addingTimeInterval(-148000), transcript: "For Friday, check large text, interruptions and save persistence. Compare the palettes on the phone itself. Make a note of anything that feels awkward."),
+            .init(id: "lunch", title: "Sunday lunch", speaker: "Nora Bennett", date: anchor.addingTimeInterval(-110000), transcript: "Check whether Mum needs dessert. Ask about a lift if necessary. Leave the laptop at home."),
+            .init(id: "palette", title: "Palette review", speaker: "Tessa Reed", date: anchor.addingTimeInterval(-92000), transcript: "For the visual review, compare lilac, pearl and midnight at the same brightness. Read the labels before deciding which palette is best.")
+        ].sorted { $0.date > $1.date }
+    }
+}
+struct LumaVoiceMemos: View {
+    @EnvironmentObject private var world: PhoneWorldStore
+    @State private var query = ""
+    private var memos: [LumaMemo] {
+        LumaMemoCatalog.visible(world.state).filter {
+            query.isEmpty || [$0.title, $0.speaker, $0.transcript].contains { $0.localizedCaseInsensitiveContains(query) }
+        }
+    }
+    var body: some View {
+        List {
+            Section {
+                LumaHeader(title: "Voice Memos", detail: "Restored local recordings", symbol: "waveform")
+            }
+            if memos.isEmpty {
+                Text("No matching recordings.").foregroundColor(.secondary)
+            }
+            ForEach(memos) { memo in
+                NavigationLink { LumaMemoDetail(id: memo.id) } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "waveform").font(.title2).foregroundColor(.red)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(memo.title).font(.headline)
+                            Text(memo.speaker).font(.caption).foregroundColor(.secondary)
+                            Text(memo.date, style: .date).font(.caption2).foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Text(memo.url == nil ? "Transcript" : "Audio").font(.caption).foregroundColor(.secondary)
+                    }.padding(.vertical, 4)
+                }
+            }
+            Section {
+                Text("Only the fictional restored archive is shown. No real recordings or microphone access.").font(.caption).foregroundColor(.secondary)
+            }
+        }.navigationTitle("Voice Memos").searchable(text: $query)
+    }
+}
+struct LumaMemoDetail: View {
+    let id: String
+    @EnvironmentObject private var world: PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
+    @State private var player: AVAudioPlayer?
+    @State private var elapsed = 0.0
+    @State private var duration = 0.0
+    @State private var playing = false
+    @State private var error = ""
+    private let timer = Timer.publish(every: 0.2, on: .main, in: .common).autoconnect()
+    private var memo: LumaMemo? { LumaMemoCatalog.visible(world.state).first { $0.id == id } }
+    private func stop() {
+        player?.pause()
+        playing = false
+        elapsed = player?.currentTime ?? elapsed
+    }
+    private func load() {
+        guard let url = memo?.url, player == nil else { return }
+        do {
+            let audio = try AVAudioPlayer(contentsOf: url)
+            guard audio.duration.isFinite, audio.duration > 0 else { return }
+            audio.prepareToPlay()
+            player = audio; duration = audio.duration
+        } catch { self.error = "Recording could not be decoded." }
+    }
+    private func clock(_ seconds: Double) -> String {
+        let total = Int(max(0, seconds.isFinite ? seconds : 0))
+        return String(format: "%d:%02d", total / 60, total % 60)
+    }
+    var body: some View {
+        ScrollView {
+            if let memo {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text(memo.title).font(.title2.bold())
+                    Text(memo.speaker).font(.headline)
+                    Text(memo.date, format: .dateTime.month().day().hour().minute()).font(.caption).foregroundColor(.secondary)
+                    if let player {
+                        VStack(spacing: 12) {
+                            Image(systemName: playing ? "waveform.circle.fill" : "waveform.circle").font(.system(size: 72)).foregroundColor(.red)
+                            Slider(value: Binding(get: { min(elapsed, duration) }, set: { value in player.currentTime = value; elapsed = value }), in: 0...max(0.01, duration))
+                                .accessibilityLabel("Playback position")
+                            HStack { Text(clock(elapsed)); Spacer(); Text(clock(duration)) }.font(.caption.monospacedDigit())
+                            HStack(spacing: 30) {
+                                Button { player.currentTime = max(0, player.currentTime - 10); elapsed = player.currentTime } label: { Image(systemName: "gobackward.10") }.accessibilityLabel("Back ten seconds")
+                                Button {
+                                    if playing { stop() }
+                                    else {
+                                        if player.currentTime >= duration - 0.1 { player.currentTime = 0 }
+                                        PhoneSensoryEngine.stopSound()
+                                        try? AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
+                                        playing = player.play()
+                                        if !playing { error = "Playback unavailable." }
+                                    }
+                                } label: { Image(systemName: playing ? "pause.circle.fill" : "play.circle.fill").font(.system(size: 50)) }
+                                    .accessibilityLabel(playing ? "Pause" : "Play")
+                                Button { player.currentTime = min(duration, player.currentTime + 10); elapsed = player.currentTime } label: { Image(systemName: "goforward.10") }.accessibilityLabel("Forward ten seconds")
+                            }.font(.title2).buttonStyle(.plain)
+                        }.padding(16).lumaSurface()
+                    } else {
+                        Label("Audio unavailable · transcript retained", systemImage: "waveform.slash")
+                            .font(.subheadline).foregroundColor(.secondary)
+                    }
+                    if !error.isEmpty { Text(error).font(.caption).foregroundColor(.secondary) }
+                    Text("Transcript").font(.headline)
+                    Text(memo.transcript).textSelection(.enabled)
+                    Text("Restored local record").font(.caption).foregroundColor(.secondary)
+                }.frame(maxWidth: .infinity, alignment: .leading).padding(20)
+            } else { Text("Recording unavailable").padding() }
+        }.navigationTitle("Recording").navigationBarTitleDisplayMode(.inline)
+            .onAppear { load() }
+            .onReceive(timer) { _ in
+                guard let player else { return }
+                if playing && !player.isPlaying { elapsed = duration; playing = false; player.currentTime = 0 }
+                else if playing { elapsed = player.currentTime }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { _ in stop() }
+            .onChange(of: phase) { if $0 != .active { stop() } }
+            .onDisappear { stop(); player = nil }
+    }
+}

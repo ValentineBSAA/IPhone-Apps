@@ -1004,6 +1004,7 @@ struct PhoneLabView: View {
                     Label("Brightness", systemImage: "sun.max").font(.headline)
                     Slider(value: $brightness, in: 0.35...1)
                 }.padding(17).lumaSurface()
+                Button { panel = nil; open(.assistant) } label: { Label("Luma Assistant", systemImage: "waveform.circle.fill").frame(maxWidth: .infinity, alignment: .leading).padding(14).lumaSurface() }.buttonStyle(.plain)
                 if utilityActive(.quickpulse) && utilityShortcuts {
                     VStack(alignment: .leading, spacing: 12) {
                         Label("QuickPulse", systemImage: "bolt.fill").font(.headline)
@@ -1090,6 +1091,8 @@ struct PhoneLabView: View {
         case .havenWatch: HavenWatchView()
         case .dayblink: DayblinkView()
         case .motionwell: MotionwellView()
+        case .voiceMemos: LumaVoiceMemos()
+        case .assistant: LumaAssistantView(context: { LumaAssistantContext(world: world.state, availableApps: Set(LabApp.allCases.filter { $0 != .fieldNotes || fieldNotesAvailable }), wifi: wifi, sound: messageSound, haptics: messageHaptics, safeMode: safeMode, installedCount: RelayCatalog.ids(relayInstalled).count, timerEnd: feedbackTimerEnd, now: Date()) }, openApp: { open($0) })
         case .workstation: LumaWorkbenchView(openRelay:{open(.relay)},openFiles:{open(.files)})
         case .photos: LabPhotosView()
         case .clock: LabClockView()
@@ -1110,9 +1113,11 @@ private enum LabPanel: String, Identifiable {
 }
 
 enum LabApp: String, CaseIterable, Identifiable {
-    case fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves", afterframe = "Afterframe", connective = "Connective", commonGround = "CommonGround", workstation = "Workstation", havenWatch = "HavenWatch", dayblink = "Dayblink", motionwell = "Motionwell"
+    case fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves", afterframe = "Afterframe", connective = "Connective", commonGround = "CommonGround", workstation = "Workstation", havenWatch = "HavenWatch", dayblink = "Dayblink", motionwell = "Motionwell", voiceMemos = "Voice Memos", assistant = "Luma Assistant"
     var foundationIcon: String? {
         if self == .fieldNotes { return "Jailbreak_FieldNotes" }
+        if self == .voiceMemos { return "Icon_VoiceMemos" }
+        if self == .assistant { return nil }
         if self == .relay || self == .patchline || self == .workstation { return nil }
         return self == .saves ? "Icon_Save" : "Icon_" + rawValue
     }
@@ -1143,6 +1148,8 @@ enum LabApp: String, CaseIterable, Identifiable {
         case .havenWatch: return "video.fill"
         case .dayblink: return "camera.fill"
         case .motionwell: return "play.rectangle.fill"
+        case .voiceMemos: return "waveform"
+        case .assistant: return "waveform.circle.fill"
         }
     }
     var color: Color {
@@ -1170,6 +1177,8 @@ enum LabApp: String, CaseIterable, Identifiable {
         case .havenWatch: return .cyan
         case .dayblink: return .yellow
         case .motionwell: return .red
+        case .voiceMemos: return .red
+        case .assistant: return .indigo
         }
     }
 }
