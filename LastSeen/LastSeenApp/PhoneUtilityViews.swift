@@ -403,6 +403,9 @@ struct PhoneMailView: View {
     }
 
     var body: some View {
+        if lab { LumaConnectedMailView() } else { legacyMailbox }
+    }
+    private var legacyMailbox: some View {
         List {
             if lab { LumaHeader(title: "Inbox", detail: "\(mails.filter { !isRead($0) }.count) unread messages", symbol: "envelope.fill").listRowInsets(EdgeInsets()).listRowBackground(Color.clear) }
             Section {

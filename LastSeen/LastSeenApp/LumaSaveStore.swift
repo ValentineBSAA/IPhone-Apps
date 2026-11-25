@@ -141,6 +141,14 @@ final class LumaSaveStore: ObservableObject {
                 PhonePendingReply(id: $0.id, outgoingID: $0.outgoingID, neighbor: $0.neighbor, text: $0.text,
                     readAt: $0.readAt.addingTimeInterval(delta), dueAt: $0.dueAt.addingTimeInterval(delta), startsTutorial: $0.startsTutorial)
             }
+            if var connected=value.world.connectedWorld {
+                connected.pendingMail=connected.pendingMail.map { pending in
+                    let r=pending.record
+                    let date=pending.dueAt.addingTimeInterval(delta)
+                    return LumaPendingMail(record:LumaMailRecord(id:r.id,peer:r.peer,sender:r.sender,subject:r.subject,body:r.body,date:date,kind:r.kind,attachments:r.attachments),dueAt:date)
+                }
+                value.world.connectedWorld=connected
+            }
             for key in ["lastseen.lab.timerEnd","lastseen.lab.stopwatchStart"] {
                 if let old = prefs[key] as? NSNumber, old.doubleValue > 0 { prefs[key] = old.doubleValue + delta }
             }

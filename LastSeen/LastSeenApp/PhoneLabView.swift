@@ -867,6 +867,10 @@ struct PhoneLabView: View {
         case .notes: PhoneNotesView(lab: true)
         case .calendar: PhoneCalendarView()
         case .mail: PhoneMailView(lab: true)
+        case .afterframe: LumaSocialView(channel:.afterframe)
+        case .connective: LumaSocialView(channel:.connective)
+        case .commonGround: LumaSocialView(channel:.commonGround)
+        case .workstation: LumaWorkbenchView(openRelay:{open(.relay)},openFiles:{open(.files)})
         case .photos: LabPhotosView()
         case .clock: LabClockView()
         case .calculator: LabCalculatorView()
@@ -886,10 +890,10 @@ private enum LabPanel: String, Identifiable {
 }
 
 private enum LabApp: String, CaseIterable, Identifiable {
-    case fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves"
+    case fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves", afterframe = "Afterframe", connective = "Connective", commonGround = "CommonGround", workstation = "Workstation"
     var foundationIcon: String? {
         if self == .fieldNotes { return "Jailbreak_FieldNotes" }
-        if self == .relay || self == .patchline { return nil }
+        if self == .relay || self == .patchline || self == .workstation { return nil }
         return self == .saves ? "Icon_Save" : "Icon_" + rawValue
     }
     var id: String { rawValue }
@@ -912,6 +916,10 @@ private enum LabApp: String, CaseIterable, Identifiable {
         case .relay: return "shippingbox.fill"
         case .patchline: return "lock.open.fill"
         case .saves: return "archivebox"
+        case .afterframe: return "photo.on.rectangle"
+        case .connective: return "person.2.fill"
+        case .commonGround: return "bubble.left.and.bubble.right.fill"
+        case .workstation: return "desktopcomputer"
         }
     }
     var color: Color {
@@ -932,6 +940,10 @@ private enum LabApp: String, CaseIterable, Identifiable {
         case .relay: return .teal
         case .patchline: return .teal
         case .saves: return .indigo
+        case .afterframe: return .purple
+        case .connective: return .blue
+        case .commonGround: return .teal
+        case .workstation: return .gray
         }
     }
 }

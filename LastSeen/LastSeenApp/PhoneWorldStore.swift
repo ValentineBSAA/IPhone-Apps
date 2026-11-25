@@ -102,6 +102,7 @@ struct PhoneWorld: Codable {
     var everydayArchiveRevision: Int? = nil
     var utilitySnippets: [LumaSnippet]? = nil
     var pinnedSnippet: String? = nil
+    var connectedWorld: LumaConnectedState? = nil
 }
 
 /// This is a separate *fictional world save* while compatibility with existing
@@ -267,6 +268,7 @@ final class PhoneWorldStore: ObservableObject {
 
     func advancePendingReplies(now: Date = Date()) {
         advanceInvestigation(now: now)
+        advanceConnectedMail(now: now)
         let pending = state.pendingReplies ?? []
         guard !pending.isEmpty else { return }
         var changed = false
@@ -544,6 +546,103 @@ final class PhoneWorldStore: ObservableObject {
         }
         visibleThread = nil
         state = replacement
+    }
+
+    // All connected-app changes use the same world persistence and checkpoint path.
+    var connected: LumaConnectedState { state.connectedWorld ?? LumaConnectedState() }
+    private func commitConnected(_ value:LumaConnectedState) {
+        state.connectedWorld=value; save()
+    }
+    @discardableResult
+    func saveMailDraft(id:String?, peer:Neighbor, subject:String, body:String, now:Date=Date()) -> String? {
+        guard state.everydayArchiveRevision != nil, LumaMailCatalog.recipients(state).contains(peer),
+              subject.count <= 200, body.count <= 4000 else { return nil }
+        var c=connected
+        let key=id ?? UUID().uuidString
+        if let old=c.mail.first(where:{$0.id==key}), old.kind != "draft" { return nil }
+        guard c.mail.count < 250 || c.mail.contains(where:{$0.id==key}) else { return nil }
+        c.mail.removeAll{$0.id==key}
+        c.mail.append(LumaMailRecord(id:key,peer:peer.id,sender:"Repair desk",subject:subject,body:body,date:now,kind:"draft"))
+        commitConnected(c); return key
+    }
+    @discardableResult
+    func sendConnectedMail(draftID:String?, peer:Neighbor, subject:String, body:String, now:Date=Date()) -> Bool {
+        let subject=subject.trimmingCharacters(in:.whitespacesAndNewlines)
+        let body=body.trimmingCharacters(in:.whitespacesAndNewlines)
+        guard state.everydayArchiveRevision != nil,LumaMailCatalog.recipients(state).contains(peer),
+              !subject.isEmpty,!body.isEmpty,subject.count<=200,body.count<=4000 else { return false }
+        var c=connected
+        guard c.mail.count+c.pendingMail.count<248,c.pendingMail.count<12 else { return false }
+        if let draftID { guard c.mail.contains(where:{$0.id==draftID && $0.kind=="draft"}) else{return false}; c.mail.removeAll{$0.id==draftID} }
+        let id=UUID().uuidString
+        c.mail.append(LumaMailRecord(id:id,peer:peer.id,sender:"Repair desk",subject:subject,body:body,date:now,kind:"sent"))
+        let due=now.addingTimeInterval(peer == .denise ? 45 : 30)
+        let answer=LumaMailCatalog.response(to:peer,subject:subject,body:body)
+        let reply=LumaMailRecord(id:"reply-"+id,peer:peer.id,sender:peer.name,subject:subject.hasPrefix("Re:") ? subject : "Re: "+subject,body:answer,date:due,kind:"inbox")
+        c.pendingMail.append(LumaPendingMail(record:reply,dueAt:due))
+        commitConnected(c); return true
+    }
+    func advanceConnectedMail(now:Date=Date()) {
+        guard state.connectedWorld != nil else {return}
+        var c=connected
+        let due=c.pendingMail.filter{$0.dueAt<=now}
+        guard !due.isEmpty else{return}
+        for entry in due where !c.mail.contains(where:{$0.id==entry.record.id}) { c.mail.append(entry.record) }
+        c.pendingMail.removeAll{$0.dueAt<=now}
+        commitConnected(c)
+    }
+    func moveConnectedMail(_ id:String,folder:String) {
+        guard ["archive","trash","original"].contains(folder),
+              LumaMailCatalog.visible(state).contains(where:{$0.id==id}) else{return}
+        var c=connected
+        if folder=="original" {c.mailFolders.removeValue(forKey:id)}
+        else {c.mailFolders[id]=folder}
+        commitConnected(c)
+    }
+    func toggleSocial(_ action:LumaSocialAction,postID:String,channel:LumaSocialChannel) {
+        guard let post=LumaSocialCatalog.visible(channel,world:state).first(where:{$0.id==postID}) else{return}
+        var c=connected
+        switch action {
+        case .like: if !c.likes.insert(postID).inserted {c.likes.remove(postID)}
+        case .save: if !c.savedPosts.insert(postID).inserted {c.savedPosts.remove(postID)}
+        case .follow:
+            let key=channel.rawValue+"|"+post.author
+            if !c.follows.insert(key).inserted {c.follows.remove(key)}
+        }
+        commitConnected(c)
+    }
+    @discardableResult
+    func commentSocial(postID:String,channel:LumaSocialChannel,text:String,now:Date=Date())->Bool {
+        let message=text.trimmingCharacters(in:.whitespacesAndNewlines)
+        guard !message.isEmpty,message.count<=600,LumaSocialCatalog.visible(channel,world:state).contains(where:{$0.id==postID}) else{return false}
+        var c=connected
+        guard c.comments.count<300 else{return false}
+        c.comments.append(LumaSocialComment(id:UUID().uuidString,postID:postID,author:"Repair desk",body:message,date:now))
+        commitConnected(c); return true
+    }
+    @discardableResult
+    func publishSocial(channel:LumaSocialChannel,text:String,now:Date=Date())->Bool {
+        let message=text.trimmingCharacters(in:.whitespacesAndNewlines)
+        guard state.everydayArchiveRevision != nil,!message.isEmpty,message.count<=1000 else{return false}
+        var c=connected
+        guard c.posts.count<60 else{return false}
+        c.posts.append(LumaSocialPost(id:UUID().uuidString,channel:channel,author:"Repair desk",handle:"repair-desk",body:message,date:now,portrait:nil,photo:nil,gate:nil))
+        commitConnected(c);return true
+    }
+    func setWorkbenchConnection(_ connected:Bool) {
+        guard state.everydayArchiveRevision != nil else{return}
+        var c=self.connected;c.workbenchConnected=connected;commitConnected(c)
+    }
+    func setWorkbenchSelection(_ selection:[String],for challenge:WorkbenchChallenge) {
+        guard connected.workbenchConnected else{return}
+        var c=connected
+        c.workbenchSelections[challenge.rawValue]=Array(selection.filter{challenge.options.contains($0)}.prefix(challenge.required))
+        commitConnected(c)
+    }
+    @discardableResult
+    func verifyWorkbench(_ challenge:WorkbenchChallenge)->Bool {
+        guard connected.workbenchConnected,challenge.valid(connected.workbenchSelections[challenge.rawValue] ?? []) else{return false}
+        var c=connected;c.workbenchVerified.insert(challenge.rawValue);commitConnected(c);return true
     }
 
     private func save() {
