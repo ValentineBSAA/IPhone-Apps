@@ -29,7 +29,7 @@ struct OpeningArt: View {
         do {
             try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
             player = try AVAudioPlayer(contentsOf: url)
-            player?.volume = 0.65
+            player?.volume = 0.82
             player?.play()
             OpeningQA.record("Restart audio requested: " + name)
         } catch { OpeningQA.record("Restart audio unavailable") }
@@ -45,16 +45,47 @@ enum RestartPhase: Equatable {
     }
 }
 
+/// A minimal full-screen restart cutscene with no real system operations.
 struct RestartArtwork: View {
     let phase: RestartPhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            if phase != .black {
-                VStack(spacing: 22) {
-                    OpeningArt(name: phase == .userspace ? "Opening_Reboot" : "Opening_Respring", size: 142)
-                    ProgressView().tint(.white.opacity(0.85))
-                    Text(phase == .userspace ? "Userspace reboot" : "Respring").font(.footnote.weight(.medium)).foregroundColor(.white.opacity(0.72))
+            if phase == .userspace {
+                VStack(spacing: 26) {
+                    TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { context in
+                        let t = context.date.timeIntervalSinceReferenceDate
+                        let pulse = reduceMotion ? 0.0 : (sin(t * 2.4) + 1) / 2
+                        OpeningArt(name: "Opening_Reboot", size: 128)
+                            .scaleEffect(1 + pulse * 0.035)
+                            .shadow(color: .cyan.opacity(0.08 + pulse * 0.20), radius: 22)
+                    }
+                    Text("PATCHLINE").font(.system(size: 12, weight: .medium, design: .monospaced))
+                        .tracking(5).foregroundColor(.white.opacity(0.75))
+                    TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { context in
+                        let t = context.date.timeIntervalSinceReferenceDate
+                        let travel = reduceMotion ? 0.5 : (sin(t * 2) + 1) / 2
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(.white.opacity(0.12)).frame(width: 110, height: 3)
+                            Capsule().fill(.white.opacity(0.9)).frame(width: 30, height: 3).offset(x: 80 * travel)
+                        }
+                    }.accessibilityHidden(true)
+                }.transition(.opacity)
+            } else if phase == .respring {
+                VStack(spacing: 16) {
+                    TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { context in
+                        let step = reduceMotion ? 0 : Int(context.date.timeIntervalSinceReferenceDate * 12) % 12
+                        ZStack {
+                            ForEach(0..<12, id: \.self) { index in
+                                Capsule().fill(Color.white.opacity(Double((index - step + 12) % 12 + 1) / 12))
+                                    .frame(width: 3, height: 10)
+                                    .offset(y: -15)
+                                    .rotationEffect(.degrees(Double(index) * 30))
+                            }
+                        }.frame(width: 44, height: 44)
+                    }
+                    Text("Respring").font(.caption2).foregroundColor(.white.opacity(0.45))
                 }.transition(.opacity)
             }
         }
