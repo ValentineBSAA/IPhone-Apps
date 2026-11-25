@@ -12,7 +12,13 @@ final class RelayCatalogTests: XCTestCase {
             XCTAssertFalse(p.version.isEmpty)
         }
         XCTAssertTrue(RelayCatalog.source("core")?.essential == true)
-        XCTAssertEqual(RelayCatalog.ids(RelayCatalog.defaultSources), Set(["core", "studio"]))
+        XCTAssertEqual(RelayCatalog.ids(RelayCatalog.defaultSources), Set(["core", "studio", "utilities"]))
+    }
+
+    func testSourceRecovery() {
+        for raw in ["", "core", "studio", "core|utilities", "unknown", "core|studio|utilities"] {
+            XCTAssertEqual(RelayCatalog.ids(RelayCatalog.recoveredSources(raw)), RelayCatalog.requiredSourceIDs)
+        }
     }
 
     func testQueueAndProtectedCore() throws {
