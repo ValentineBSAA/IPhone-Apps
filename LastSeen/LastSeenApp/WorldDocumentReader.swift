@@ -49,6 +49,10 @@ enum WorldDocumentCatalog {
 struct WorldDocumentReader: View {
     let id: String
     @EnvironmentObject private var world: PhoneWorldStore
+    @AppStorage("lastseen.relay.installed") private var installed=""
+    @AppStorage("lastseen.relay.safeMode") private var safeMode=false
+    @State private var largeText=false
+    private var zoomAvailable:Bool {RelayCatalog.tweakActive("documentzoom",installed:installed,safeMode:safeMode,flags:world.state.flags)}
     var body: some View {
         ScrollView {
             if let doc = WorldDocumentCatalog.document(id,world:world.state) {
@@ -57,6 +61,7 @@ struct WorldDocumentReader: View {
                     Text(doc.title).font(.largeTitle.bold()).fixedSize(horizontal:false,vertical:true)
                     Text(doc.author + " · " + doc.role).font(.headline)
                     Text(doc.relativeDate + "\nRevision " + doc.revision + " · " + doc.classification).font(.caption).foregroundColor(.secondary)
+                    if zoomAvailable {Toggle("Larger reading text",isOn:$largeText)}
                     Divider()
                     ForEach(Array(doc.blocks.enumerated()),id:\.offset) { _,block in
                         if let rows = block.rows {
@@ -67,7 +72,7 @@ struct WorldDocumentReader: View {
                                             ForEach(Array(row.enumerated()),id:\.offset) { _,cell in
                                                 Text(cell).font(index == 0 ? .subheadline.bold() : .subheadline)
                                                     .fixedSize(horizontal:false,vertical:true)
-                                                    .frame(width:126,alignment:.leading).padding(9)
+                                                    .frame(width:zoomAvailable && largeText ? 180 : 126,alignment:.leading).padding(9)
                                                     .background(index == 0 ? Color.accentColor.opacity(0.18) : Color.secondary.opacity(0.08))
                                             }
                                         }
@@ -75,7 +80,7 @@ struct WorldDocumentReader: View {
                                 }.textSelection(.enabled)
                             }
                         } else if let text = block.text {
-                            Text(text).font(block.kind == "heading" ? .headline : .body)
+                            Text(text).font(zoomAvailable && largeText ? .title3 : (block.kind == "heading" ? .headline : .body))
                                 .fixedSize(horizontal:false,vertical:true).textSelection(.enabled)
                         }
                     }

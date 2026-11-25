@@ -16,6 +16,9 @@ struct RelayPackagesView: View {
     @State private var selected: RelayPackage?
     @State private var showQueue = false
     @State private var showSources = false
+    @State private var sourceAddress = ""
+    @State private var sourceFeedback = ""
+    @State private var category = "All"
     @State private var showTransaction = false
     @State private var confirmed: [RelayChange] = []
     @State private var restart: RelayRestart?
@@ -39,7 +42,7 @@ struct RelayPackagesView: View {
         }
     }
     private var ids: Set<String> { RelayCatalog.ids(installed) }
-    private var sourceIDs: Set<String> { RelayCatalog.ids(RelayCatalog.recoveredSources(sources)) }
+    private var sourceIDs: Set<String> { RelayCatalog.ids(RelayCatalog.recoveredSources(sources,flags:earnedFlags)) }
     private var versionMap: [String: String] { RelayCatalog.versions(versions) }
     private var visiblePackages: [RelayPackage] { RelayCatalog.packages.filter { RelayCatalog.visible($0, sources: sourceIDs, installed: ids, flags: earnedFlags) } }
     private var updates: [RelayPackage] { visiblePackages.filter { !$0.essential && ids.contains($0.id) && sourceIDs.contains($0.source) && RelayCatalog.installedVersion($0, versions: versionMap) != $0.version } }
@@ -88,7 +91,7 @@ struct RelayPackagesView: View {
                                     Text("\(updates.count)").font(.system(size: 9, weight: .bold)).padding(3).background(.red, in: Capsule()).foregroundColor(.white).offset(x: 6, y: -3)
                                 }
                             }
-                            Text(item.rawValue).font(.system(size: 10, weight: .medium))
+                            Text(item == .featured ? "Discover" : item.rawValue).font(.system(size: 10, weight: .medium))
                         }.frame(maxWidth: .infinity).frame(minHeight: 49)
                             .foregroundColor(tab == item ? .teal : .secondary)
                     }.buttonStyle(.plain).accessibilityAddTraits(tab == item ? .isSelected : []).accessibilityIdentifier("relay.tab." + item.rawValue)
@@ -103,20 +106,24 @@ struct RelayPackagesView: View {
         }
         .sheet(isPresented: $showSources) {
             NavigationStack {
-                List {
-                    Section("Available local repositories") {
-                        ForEach(RelayCatalog.sources.filter { !sourceIDs.contains($0.id) }) { source in
-                            Button {
-                                sources = RelayCatalog.encoded(sourceIDs.union([source.id]))
-                                notice = "\(source.name) added"
-                                showSources = false
-                                OpeningQA.record("Relay source added: " + source.id)
-                            } label: { sourceRow(source) }
+                Form {
+                    Section("Repository address") {
+                        TextField("Enter a discovered address",text:$sourceAddress).textInputAutocapitalization(.never).autocorrectionDisabled()
+                        if let source=RelayCatalog.sourceForAddress(sourceAddress,flags:earnedFlags),!sourceIDs.contains(source.id) {
+                            sourceRow(source)
+                            Button("Add repository") {
+                                sources=RelayCatalog.encoded(sourceIDs.union([source.id]))
+                                notice="Repository added"; sourceAddress=""; sourceFeedback=""; showSources=false
+                            }
+                        } else {
+                            Button("Check address") {
+                                sourceFeedback = RelayCatalog.sourceForAddress(sourceAddress,flags:earnedFlags).map { sourceIDs.contains($0.id) ? "Already added." : "Ready to add." } ?? "This local repository is not available. Check the address and your discoveries."
+                            }.disabled(sourceAddress.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty)
                         }
-                        if RelayCatalog.sources.allSatisfy({ sourceIDs.contains($0.id) }) { Text("All repositories are enabled.").foregroundColor(.secondary) }
+                        if !sourceFeedback.isEmpty {Text(sourceFeedback).font(.caption).foregroundColor(.secondary)}
                     }
-                    Section { Text("These are bundled repositories; addresses are display-only. Relay never contacts a server.").font(.footnote).foregroundColor(.secondary) }
-                }.navigationTitle("Add Source").toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showSources = false } } }
+                    Section {Text("Use an address you have found in LumaOS. Relay reads bundled indexes and never contacts an external server.").font(.footnote).foregroundColor(.secondary)}
+                }.navigationTitle("Add Source").toolbar{ToolbarItem(placement:.cancellationAction){Button("Cancel"){showSources=false}}}
             }
         }
         .sheet(isPresented: $showQueue, onDismiss: {
@@ -175,16 +182,18 @@ struct RelayPackagesView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Make it yours.").font(.title2.bold())
-                    Text("Discover themes, tweaks and tools for your phone.").font(.subheadline).foregroundColor(.secondary)
+                    Text("Discover").font(.largeTitle.bold())
+                    Text("Make LumaOS yours.").font(.title3.weight(.semibold))
+                    Text("\(visiblePackages.filter { !$0.essential }.count) available · \(ids.count) installed").font(.subheadline).foregroundColor(.secondary)
                     HStack(spacing: 9) {
                         ForEach(Array(ApprovedArt.theme.prefix(5)), id: \.self) { name in OpeningArt(name: name, size: 42) }
                     }
                 }.padding(.vertical, 8)
                 if let p = RelayCatalog.package("teal"), visiblePackages.contains(p) { packageRow(p) }
             }
-            Section("Featured tweaks") {
-                ForEach(visiblePackages.filter { !$0.essential && $0.id != "teal" }) { packageRow($0) }
+            Section("Browse packages") {
+                Picker("Category",selection:$category) { ForEach(["All"]+Array(Set(visiblePackages.filter{!$0.essential}.map(\.category))).sorted(),id:\.self){Text($0).tag($0)} }
+                ForEach(visiblePackages.filter { !$0.essential && $0.id != "teal" && (category=="All" || $0.category==category) }) { packageRow($0) }
             }
             Section("System tools") {
                 Button { restart = .respring } label: { Label("Restart LumaShell", systemImage: "arrow.clockwise") }
@@ -208,7 +217,7 @@ struct RelayPackagesView: View {
                     OpeningQA.record("Relay source refresh")
                 } label: { Label("Refresh Sources", systemImage: "arrow.clockwise") }
                 Button {
-                    recoverSources(); notice = "All bundled sources restored"
+                    recoverSources(); notice = "Baseline sources restored"
                 } label: { Label("Restore All Sources", systemImage: "arrow.counterclockwise.circle") }
             }
             Section("Sources") {
@@ -216,7 +225,8 @@ struct RelayPackagesView: View {
                     VStack(alignment: .leading, spacing: 7) {
                         sourceRow(source)
                         Text("\(visiblePackages.filter { $0.source == source.id }.count) packages").font(.caption).foregroundColor(.secondary)
-                        Label("Protected source", systemImage: "lock.shield").font(.caption).foregroundColor(.secondary)
+                        if RelayCatalog.requiredSourceIDs.contains(source.id) { Label("Baseline source",systemImage:"lock.shield").font(.caption).foregroundColor(.secondary) }
+                        else { Button("Remove source",role:.destructive){sources=RelayCatalog.encoded(sourceIDs.subtracting([source.id]));notice="Repository removed. Installed packages kept."}.font(.caption) }
                     }.padding(.vertical, 4)
                 }
             }
@@ -339,7 +349,7 @@ struct RelayPackagesView: View {
         }
     }
     private func recoverSources() {
-        let restored = RelayCatalog.recoveredSources(sources)
+        let restored = RelayCatalog.recoveredSources(sources,flags:earnedFlags)
         if sources != restored {
             sources = restored
             notice = "Missing bundled sources restored"

@@ -6,7 +6,7 @@ final class RelayCatalogTests: XCTestCase {
         XCTAssertEqual(Set(RelayCatalog.packages.map(\.id)).count, RelayCatalog.packages.count)
         XCTAssertEqual(Set(RelayCatalog.sources.map(\.id)).count, RelayCatalog.sources.count)
         XCTAssertEqual(RelayCatalog.packages.filter(\.essential).count, 3)
-        XCTAssertEqual(RelayCatalog.packages.filter { !$0.essential }.count, 18)
+        XCTAssertEqual(RelayCatalog.packages.filter { !$0.essential }.count, 23)
         for p in RelayCatalog.packages {
             XCTAssertNotNil(RelayCatalog.source(p.source))
             XCTAssertFalse(p.version.isEmpty)
@@ -18,6 +18,27 @@ final class RelayCatalogTests: XCTestCase {
     func testSourceRecovery() {
         for raw in ["", "core", "studio", "core|utilities", "unknown", "core|studio|utilities"] {
             XCTAssertEqual(RelayCatalog.ids(RelayCatalog.recoveredSources(raw)), RelayCatalog.requiredSourceIDs)
+        }
+    }
+
+    func testOptionalSourcesRequireDiscoveryAndExplicitAdd() throws {
+        let optional=RelayCatalog.sources.filter{!RelayCatalog.requiredSourceIDs.contains($0.id)}
+        XCTAssertEqual(optional.count,5)
+        for source in optional {
+            let gate=try XCTUnwrap(source.gate)
+            let flags:Set<String>=[gate]
+            let pkg=try XCTUnwrap(RelayCatalog.packages.first{$0.source==source.id})
+            let add=RelayChange(package:pkg,action:.install)
+            XCTAssertNil(RelayCatalog.sourceForAddress(source.address,flags:[]))
+            XCTAssertNotNil(RelayCatalog.sourceForAddress(source.address,flags:flags))
+            XCTAssertFalse(RelayPlan.valid([add],sources:[source.id],installed:[],flags:[]))
+            XCTAssertFalse(RelayPlan.valid([add],sources:RelayCatalog.requiredSourceIDs,installed:[],flags:flags))
+            XCTAssertTrue(RelayPlan.valid([add],sources:[source.id],installed:[],flags:flags))
+            XCTAssertFalse(RelayCatalog.ids(RelayCatalog.recoveredSources("",flags:flags)).contains(source.id))
+            XCTAssertTrue(RelayCatalog.ids(RelayCatalog.recoveredSources(source.id,flags:flags)).contains(source.id))
+            XCTAssertFalse(RelayCatalog.ids(RelayCatalog.recoveredSources(source.id,flags:[])).contains(source.id))
+            XCTAssertTrue(RelayPlan.valid([RelayChange(package:pkg,action:.remove)],sources:[],installed:[pkg.id],flags:[]))
+            XCTAssertFalse(RelayCatalog.tweakActive(pkg.id,installed:pkg.id,safeMode:true,flags:flags))
         }
     }
 

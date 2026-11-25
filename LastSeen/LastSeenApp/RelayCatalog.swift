@@ -24,6 +24,7 @@ struct RelaySource: Identifiable, Equatable {
     let icon: String
     let description: String
     let essential: Bool
+    var gate: String? = nil
 }
 
 enum RelayCatalog {
@@ -31,11 +32,29 @@ enum RelayCatalog {
         RelaySource(id: "core", name: "Patchline Core", address: "https://core.patchline.example/", icon: "cpu", description: "Bootstrap and essential system components", essential: true),
         RelaySource(id: "studio", name: "Afterglow Studio", address: "https://studio.patchline.example/", icon: "paintpalette.fill", description: "Themes and LumaShell customization", essential: false),
         RelaySource(id: "utilities", name: "Nightshift Utilities", address: "https://utilities.patchline.example/", icon: "wrench.and.screwdriver.fill", description: "Lock screen and everyday tweaks", essential: false)
+,
+        RelaySource(id: "folio", name: "Folio Works", address: "https://folio-tools.example/", icon: "book", description: "Readable local web pages", essential: false, gate: "web.visited.repo-folio"),
+        RelaySource(id: "postbox", name: "Postbox Labs", address: "https://postbox-tools.example/", icon: "paperclip", description: "Local correspondence utilities", essential: false, gate: "web.visited.repo-postbox"),
+        RelaySource(id: "leaf", name: "Leaf Paper", address: "https://leaf-paper.example/", icon: "doc.richtext", description: "Document readability tools", essential: false, gate: "web.visited.repo-leaf"),
+        RelaySource(id: "chronicle", name: "Chronicle Works", address: "https://chronicle-tools.example/", icon: "clock", description: "Local timeline and activity display", essential: false, gate: "web.visited.repo-chronicle"),
+        RelaySource(id: "bench", name: "Benchcraft", address: "https://benchcraft-tools.example/", icon: "desktopcomputer", description: "Repair console extensions", essential: false, gate: "web.visited.repo-bench")
     ]
     static let defaultSources = "core|studio|utilities"
-    static var requiredSourceIDs: Set<String> { Set(sources.map(\.id)) }
-    static func recoveredSources(_ raw: String) -> String {
-        encoded(ids(raw).intersection(requiredSourceIDs).union(requiredSourceIDs))
+    static var requiredSourceIDs: Set<String> { ["core","studio","utilities"] }
+    static func sourceAuthorized(_ id:String,flags:Set<String>)->Bool {
+        guard let source=source(id) else{return false}
+        return source.gate.map { flags.contains($0) } ?? true
+    }
+    static func recoveredSources(_ raw: String,flags:Set<String> = []) -> String {
+        encoded(Set(ids(raw).filter { sourceAuthorized($0,flags:flags) }).union(requiredSourceIDs))
+    }
+    static func sourceForAddress(_ raw:String,flags:Set<String>)->RelaySource? {
+        let q=raw.trimmingCharacters(in:.whitespacesAndNewlines).lowercased()
+        let normalized=q.hasSuffix("/") ? q : q+"/"
+        return sources.first { $0.address.lowercased()==normalized && sourceAuthorized($0.id,flags:flags) }
+    }
+    static func tweakActive(_ id:String,installed:String,safeMode:Bool,flags:Set<String>)->Bool {
+        !safeMode && ids(installed).contains(id) && available(id,flags:flags)
     }
     static let packages = [
         RelayPackage("bootstrap", "Patchline Bootstrap", "2.0.0", "core", "System", "shippingbox.fill", "Essential rootless environment", "Core package catalog and services for this phone.", essential: true),
@@ -59,6 +78,12 @@ enum RelayCatalog {
         RelayPackage("powerdeck", "PowerDeck", "1.0.0", "utilities", "Utilities", "wrench.and.screwdriver", "Access safe restart and maintenance controls.", "Access safe restart and maintenance controls."),
         RelayPackage("tweakhub", "TweakHub", "1.0.0", "utilities", "Utilities", "wrench.and.screwdriver", "Review installed packages and service certifications.", "Review installed packages and service certifications."),
         RelayPackage("fivegrid", "Five Across", "1.0.0", "utilities", "Tweaks", "square.grid.3x3", "Five-column home screen", "Displays five icons across the launcher, with smaller icon sizing.")
+,
+        RelayPackage("readerfocus", "Reader Focus", "1.0.0", "folio", "Accessibility", "book", "Larger text in the browser", "Adds larger, more comfortable text to local website articles."),
+        RelayPackage("mailattach", "Attachment Lens", "1.0.0", "postbox", "Utilities", "paperclip", "Find mail with readable attachments", "Adds an Attachments mailbox for currently accessible documents."),
+        RelayPackage("documentzoom", "Document Zoom", "1.0.0", "leaf", "Accessibility", "doc.richtext", "Larger document text and table cells", "Adds a reading-size control to the native document reader."),
+        RelayPackage("socialtime", "Post Timestamp", "1.0.0", "chronicle", "Utilities", "clock", "Show detailed social post timestamps", "Shows time as well as date on the three local social feeds."),
+        RelayPackage("workbenchmetrics", "Diagnostics Strip", "1.0.0", "bench", "Utilities", "desktopcomputer", "Additional repair console status", "Shows available document count and installed optional package count at the connected repair workstation.")
     ]
     static func package(_ id: String) -> RelayPackage? { packages.first { $0.id == id } }
     static func source(_ id: String) -> RelaySource? { sources.first { $0.id == id } }
@@ -68,6 +93,7 @@ enum RelayCatalog {
         package(id)?.essential == true || userIDs.contains(id)
     }
     static func available(_ id: String, flags: Set<String>) -> Bool {
+        guard let p=package(id),sourceAuthorized(p.source,flags:flags) else{return false}
         if id == "fieldnotes" { return RecoveryCircuit.unlocked(flags) }
         if let tool = LumaUtility(rawValue: id) { return flags.contains(tool.flag) }
         return true

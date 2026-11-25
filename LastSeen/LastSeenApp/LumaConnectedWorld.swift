@@ -170,11 +170,14 @@ struct LumaConnectedMailView:View {
     @State private var folder="inbox"
     @State private var query=""
     @State private var compose=false
-    private let folders=["inbox","sent","draft","archive","trash"]
+    @AppStorage("lastseen.relay.installed") private var relayInstalled=""
+    @AppStorage("lastseen.relay.safeMode") private var safeMode=false
+    private var attachmentsAvailable:Bool {RelayCatalog.tweakActive("mailattach",installed:relayInstalled,safeMode:safeMode,flags:world.state.flags)}
+    private var folders:[String] {["inbox","sent","draft","archive","trash"]+(attachmentsAvailable ? ["attachments"]:[])}
     private var read:Set<String>{Set(readRaw.split(separator:"|").map(String.init))}
     private var items:[LumaMailRecord]{
         LumaMailCatalog.visible(world.state).filter {
-            (world.connected.mailFolders[$0.id] ?? $0.kind)==folder &&
+            (folder=="attachments" ? attachmentsAvailable && world.connected.mailFolders[$0.id] != "trash" && $0.attachments.contains{WorldDocumentCatalog.available($0,world:world.state)} : (world.connected.mailFolders[$0.id] ?? $0.kind)==folder) &&
             (query.isEmpty || [$0.subject,$0.sender,$0.body].contains{$0.localizedCaseInsensitiveContains(query)})
         }
     }
@@ -266,7 +269,7 @@ struct LumaMailComposer:View {
     var body:some View {
         Form{
             Section("From"){Text("Repair desk · Local correspondence").font(.subheadline)}
-            Section("To"){Picker("Recipient",selection:$peer){Text("Choose contact").tag(Neighbor?.none);ForEach(LumaMailCatalog.recipients(world.state)){contact in Text(contact.name).tag(Optional(contact))}}}
+            Section("To"){Picker("Recipient",selection:$peer){Text("Choose contact").tag(Optional<Neighbor>.none);ForEach(LumaMailCatalog.recipients(world.state)){contact in Text(contact.name).tag(Optional(contact))}}}
             Section("Subject"){TextField("Subject",text:$subject)}
             Section("Message"){TextEditor(text:$message).frame(minHeight:180)}
             Section{
@@ -284,6 +287,9 @@ struct LumaMailComposer:View {
 struct LumaSocialView:View {
     let channel:LumaSocialChannel
     @EnvironmentObject private var world:PhoneWorldStore
+    @AppStorage("lastseen.relay.installed") private var relayInstalled=""
+    @AppStorage("lastseen.relay.safeMode") private var safeMode=false
+    private var timestamps:Bool {RelayCatalog.tweakActive("socialtime",installed:relayInstalled,safeMode:safeMode,flags:world.state.flags)}
     @State private var query=""
     @State private var filter="Feed"
     @State private var compose=false
@@ -315,7 +321,8 @@ struct LumaSocialView:View {
                                 VStack(alignment:.leading,spacing:3){Text(post.author).font(.headline);Text("@"+post.handle).font(.caption).foregroundColor(.secondary)}
                             }.buttonStyle(.plain)
                             Spacer()
-                            Text(post.date,style:.date).font(.caption2).foregroundColor(.secondary)
+                            if timestamps {Text(post.date,format:.dateTime.month().day().hour().minute()).font(.caption2).foregroundColor(.secondary)}
+                            else {Text(post.date,style:.date).font(.caption2).foregroundColor(.secondary)}
                         }
                         Text(post.body).font(.body).textSelection(.enabled)
                         if let photo=LumaSocialCatalog.visiblePhoto(post,world:world.state){
@@ -390,6 +397,9 @@ struct LumaWorkbenchView:View{
     @EnvironmentObject private var world:PhoneWorldStore
     let openRelay:()->Void
     let openFiles:()->Void
+    @AppStorage("lastseen.relay.installed") private var relayInstalled=""
+    @AppStorage("lastseen.relay.safeMode") private var safeMode=false
+    private var metrics:Bool {RelayCatalog.tweakActive("workbenchmetrics",installed:relayInstalled,safeMode:safeMode,flags:world.state.flags)}
     var body:some View{
         ScrollView{
             VStack(alignment:.leading,spacing:16){
@@ -401,6 +411,10 @@ struct LumaWorkbenchView:View{
                 }.frame(maxWidth:.infinity,alignment:.leading).padding(16).lumaSurface()
                 if world.connected.workbenchConnected{
                     LabeledContent("Restore index",value:"Available")
+                    if metrics {
+                        LabeledContent("Readable records",value:String(WorldDocumentCatalog.visible(world.state).count+PhonePublicFiles.available(in:world.state).count))
+                        LabeledContent("Installed optional packages",value:String(RelayCatalog.ids(relayInstalled).count))
+                    }
                     LabeledContent("Completed diagnostics",value:String(world.connected.workbenchVerified.count))
                     Button(action:openFiles){Label("Inspect restored files",systemImage:"folder")}.buttonStyle(.bordered)
                     ForEach(WorkbenchChallenge.allCases){challenge in
