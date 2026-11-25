@@ -1,3 +1,7 @@
+# LAST SEEN — current engineering entry point
+November 25, 2026. Read [CONSOLIDATED_NEXT_BUILD.md](CONSOLIDATED_NEXT_BUILD.md) first for next-release checklist, dependencies, assets and acceptance. [OS_FIRST_ROADMAP.md](OS_FIRST_ROADMAP.md) governs product priorities; specialist documents provide details. Planning hold remains; no new runtime until explicit go-ahead. B28 1.7.0 (28), runtime 8e6592efc2c7e3431df1ca7f964eee02b4c663b4, CI run 45687303359 SUCCESS, artifact 15058695450; device verification OPEN. Preserve B27 corrective behavior and carry physical QA into one consolidated next IPA. No unnecessary intermediate installs. All ten L1 assets observed uploaded, but icon and document integration remains OPEN. Verify exact branch, release files and actual build before changing or delivering. Keep story secrets out of ordinary reports; do not claim GitHub notes are private merely because spoiler-marked.
+
+## Previous handoff (historical)
 # LAST SEEN — current development handoff
 Updated November 25, 2026. Read [OS_FIRST_ROADMAP.md](OS_FIRST_ROADMAP.md) first. It is the only authority for active priority. [BUILD27_ACCEPTANCE.md](BUILD27_ACCEPTANCE.md) is the active physical QA ledger; [FEATURE_REQUIREMENTS.md](FEATURE_REQUIREMENTS.md) preserves detailed scope. The pre-reorganization handoff is archived in [DEVELOPMENT_HANDOFF_HISTORY.md](DEVELOPMENT_HANDOFF_HISTORY.md), not current work instructions.
 

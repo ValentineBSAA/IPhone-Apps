@@ -6,3 +6,7 @@ Creator-approved November 25, 2026. Preserve all Build 27 functions and saves, k
 - SOURCE: photo intake archive verified and held outside runtime pending correction. Do not treat artwork incidental details as canon or publish unsafe identifiers. Existing artwork preserved.
 - VERIFY: exact native CI, new unit tests, simulator smoke tests, device IPA integrity, iPhone 16e upgrade and browser UX, history persistence after relaunch/checkpoint restore, locked routes, search, full chapter progress and no leakage. No full-game ending claim.
 - OPEN: broader browser tabs, deeper site-specific interaction and realistic layouts, authenticated fictional services, expanded cross-app evidence, additional authored chapter content, all pending modernization and narrative scope. Do not present this initial slice as full browser or story completion.
+
+
+## CI evidence
+B28 run 45687303359 SUCCESS, artifact 15058695450, native release and simulator tests passed. Device verification OPEN; future browser expansion remains tracked in W08 of [consolidated plan](CONSOLIDATED_NEXT_BUILD.md).

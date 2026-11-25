@@ -40,8 +40,10 @@ Dependency order: S0 before expanding runtime scope; S1 establishes reliable pre
 | [PUZZLE_DESIGN_ROADMAP.md](PUZZLE_DESIGN_ROADMAP.md) | Original puzzle families, hints, research references, progress and acceptance. |
 | [GAMEPLAY_STATISTICS_ROADMAP.md](GAMEPLAY_STATISTICS_ROADMAP.md) | Live playtime, session, autosave and earned milestone counters. |
 | [LUMA_ASSISTANT_ROADMAP.md](LUMA_ASSISTANT_ROADMAP.md) | Voice, mic, offline assistant and acceptance. |
-| [WORLD_DOCUMENTS_01.md](WORLD_DOCUMENTS_01.md) | Ten authored Word documents prepared; upload and gated integration pending. |
+| [WORLD_DOCUMENTS_01.md](WORLD_DOCUMENTS_01.md) | Ten authored Word documents uploaded; gated integration pending. |
+| [CONSOLIDATED_NEXT_BUILD.md](CONSOLIDATED_NEXT_BUILD.md) | Active next-release execution checklist, dependencies and asset lock; read first for engineering. |
 | [CONNECTED_WORLD_ROADMAP.md](CONNECTED_WORLD_ROADMAP.md) | Approved connected personal/professional world, interactive mail, social apps and repair workstation; consolidated scope, implementation on hold. |
+| [CONNECTED_WORLD_ICONS_01.md](CONNECTED_WORLD_ICONS_01.md) | Four approved social and memo icons uploaded; integration pending. |
 | [WORLD_PHOTOS_EXPANSION_01.md](WORLD_PHOTOS_EXPANSION_01.md) | Approved photo intake, integrity and continuity review; L1 upload verified; continuity hold. |
 | [NORA_WORLD_BIBLE.md](NORA_WORLD_BIBLE.md) / [CHARACTER_CONTINUITY.md](CHARACTER_CONTINUITY.md) | Canon and asset identity; not a plot walkthrough. |
 | [DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md) | Brief restart instructions for engineering. |
@@ -57,3 +59,6 @@ Creator approved next chapter and richer browser. Runtime work begins after the 
 
 ## Consolidated next release planning hold
 Creator approved the connected-world direction, including functional fictional social media. See [CONNECTED_WORLD_ROADMAP.md](CONNECTED_WORLD_ROADMAP.md). All new runtime work and additional builds are on hold until explicit go-ahead after consolidated scope review. Existing browser-focused Build 28 run 45687303359 was triggered before the hold; do not mistake it for implementation of the connected-world scope. Preserve all prior requirements and QA gates; this change is documentation only.
+
+## Consolidated next-build execution checklist
+[CONSOLIDATED_NEXT_BUILD.md](CONSOLIDATED_NEXT_BUILD.md) is the active implementation order and acceptance ledger for one cohesive next IPA. B28 run 45687303359 completed SUCCESS, artifact 15058695450; device acceptance OPEN. All ten L1 uploads confirmed. Preserve all specialist scope, including the three social apps and functional Voice Memos. This is organization only; no additional runtime changes or CI. Existing explicit development hold remains until creator directs implementation.

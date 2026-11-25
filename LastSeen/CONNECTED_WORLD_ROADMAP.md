@@ -19,3 +19,7 @@ Before implementation: creator reviews overall scope; identify dependencies, bou
 
 ## World document authoring intake
 See [World Documents 01](WORLD_DOCUMENTS_01.md). Ten real DOCX originals with a verified manifest and fictional authorship have been created. Upload and playable integration remain OPEN. Use original document text and structure, not screenshots. Respect current planning hold and spoiler confidentiality.
+
+
+## Consolidated scope linkage
+See [CONSOLIDATED_NEXT_BUILD.md](CONSOLIDATED_NEXT_BUILD.md) W05–W13. Three approved social app names and icons: Afterframe, Connective, CommonGround. Add functional Voice Memos with approved icon, authored local recordings and transcripts, gate-aware playback; see W12. New assets uploaded, implementation remains OPEN. No new build triggered by organization.
