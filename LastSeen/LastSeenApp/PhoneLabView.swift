@@ -170,6 +170,10 @@ struct PhoneLabView: View {
                     }.font(.system(size: 78, weight: .light, design: .rounded))
                         .monospacedDigit().minimumScaleFactor(0.5).lineLimit(1)
                 }.frame(maxWidth: .infinity)
+                    .contentShape(Rectangle())
+                    .gesture(DragGesture(minimumDistance: 30).onEnded { value in
+                        if value.translation.height < -40 { pendingThread = nil; requestUnlock() }
+                    })
             }
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
@@ -623,90 +627,154 @@ private struct LabPeopleView: View {
     @EnvironmentObject private var world: PhoneWorldStore
     let messages: Bool
     @State private var search = ""
+    @State private var unreadOnly = false
+    private var people: [Neighbor] {
+        let result = Neighbor.allCases.filter { n in
+            (!messages || !unreadOnly || world.countUnread(n) > 0) &&
+            (search.isEmpty || n.name.localizedCaseInsensitiveContains(search) ||
+             (messages && world.messages(n).contains { $0.text.localizedCaseInsensitiveContains(search) }))
+        }
+        return messages ? result.sorted { (world.messages($0).last?.at ?? .distantPast) > (world.messages($1).last?.at ?? .distantPast) }
+            : result.sorted { $0.name < $1.name }
+    }
     var body: some View {
         List {
-            ForEach(Neighbor.allCases.filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) ||
-                (messages && world.messages($0).contains { $0.text.localizedCaseInsensitiveContains(search) }) }) { person in
-                NavigationLink(value: messages ? AppPage.worldThread(person) : AppPage.worldProfile(person)) {
-                    HStack(spacing: 12) {
-                        NeighborAvatar(neighbor: person, size: 49)
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(person.name).font(.headline)
-                            Text(messages ? (world.messages(person).last?.text ?? "") : person.subtitle)
-                                .font(.subheadline).foregroundColor(.secondary).lineLimit(2)
+            if messages {
+                Section {
+                    Picker("Conversations", selection: $unreadOnly) {
+                        Text("All messages").tag(false)
+                        Text("Unread").tag(true)
+                    }.pickerStyle(.segmented)
+                }
+            } else {
+                Section("Owner card") {
+                    HStack(spacing: 13) {
+                        Image(RestoredPhoneBackup.ownerPortrait).resizable().scaledToFill().frame(width: 58, height: 58).clipShape(Circle())
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(RestoredPhoneBackup.ownerName).font(.title3.bold())
+                            Text("Restored contact card").font(.caption).foregroundColor(.secondary)
                         }
-                        Spacer()
-                        if messages, let latest = world.messages(person).last {
-                            Text(latest.at, style: .time).font(.caption2).foregroundColor(.secondary)
-                        }
-                        if messages && world.countUnread(person) > 0 {
-                            Text("\(world.countUnread(person))").font(.caption.bold())
-                                .padding(6).background(.teal, in: Capsule())
-                        }
-                    }.padding(.vertical, 5)
+                    }.padding(.vertical, 7)
                 }
             }
-        }.navigationTitle(messages ? "Messages" : "Contacts").searchable(text: $search)
+            Section(messages ? "Conversations" : "Contacts") {
+                if people.isEmpty { Text(messages && unreadOnly ? "No unread messages" : "No matches").foregroundColor(.secondary) }
+                ForEach(people) { person in
+                    NavigationLink(value: messages ? AppPage.worldThread(person) : AppPage.worldProfile(person)) {
+                        HStack(spacing: 12) {
+                            NeighborAvatar(neighbor: person, size: 52)
+                            VStack(alignment: .leading, spacing: 5) {
+                                HStack(alignment: .firstTextBaseline) {
+                                    Text(person.name).font(.headline)
+                                    Spacer(minLength: 3)
+                                    if messages, let latest = world.messages(person).last {
+                                        Text(latest.at, style: .relative).font(.caption2).foregroundColor(.secondary)
+                                    }
+                                }
+                                HStack {
+                                    Text(messages ? (world.messages(person).last?.text ?? "") : person.subtitle)
+                                        .font(.subheadline).foregroundColor(.secondary).lineLimit(2)
+                                    Spacer(minLength: 3)
+                                    if messages && world.countUnread(person) > 0 {
+                                        Text("\(world.countUnread(person))").font(.caption.bold())
+                                            .padding(6).background(Color.blue, in: Capsule()).foregroundColor(.white)
+                                    }
+                                }
+                            }
+                        }.padding(.vertical, 6)
+                    }
+                }
+            }
+        }.navigationTitle(messages ? "Messages" : "Contacts")
+            .searchable(text: $search, prompt: messages ? "Search conversations" : "Search contacts")
     }
 }
 
+private struct LabPhoto: Identifiable {
+    let id: String
+    let title: String
+    let asset: String
+    let caption: String
+}
+
 private struct LabPhotosView: View {
-    @State private var selection: Neighbor?
+    @State private var selection: LabPhoto?
     @AppStorage("lastseen.lab.favoritePhotos") private var favorites = ""
     @State private var onlyFavorites = false
+    @State private var scale: CGFloat = 1
+    private let photos = [
+        LabPhoto(id: "owner", title: "Nora", asset: RestoredPhoneBackup.ownerPortrait, caption: "Portrait · saved last week"),
+        LabPhoto(id: "maya", title: "Maya", asset: Neighbor.maya.portraitAssetName, caption: "Saved contact photograph"),
+        LabPhoto(id: "denise", title: "Denise", asset: Neighbor.denise.portraitAssetName, caption: "Saved contact photograph")
+    ]
+    private var shown: [LabPhoto] { photos.filter { !onlyFavorites || isFavorite($0.id) } }
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 15) {
-                Toggle("Favorites only", isOn: $onlyFavorites)
-                NavigationLink { ProtectedAreaView(area: .photos) } label: {
-                    Label("Private album", systemImage: "lock.fill").padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            VStack(alignment: .leading, spacing: 16) {
+                Picker("Library", selection: $onlyFavorites) {
+                    Text("Library").tag(false)
+                    Text("Favorites").tag(true)
+                }.pickerStyle(.segmented)
+                HStack {
+                    Text(onlyFavorites ? "Favorites" : "Camera roll").font(.title2.bold())
+                    Spacer()
+                    Text("\(shown.count) photos").font(.caption).foregroundColor(.secondary)
                 }
-                Text("Camera roll").font(.headline)
-                if !onlyFavorites {
-                    NavigationLink {
-                        VStack(spacing: 20) {
-                            Image(RestoredPhoneBackup.ownerPortrait).resizable().scaledToFit()
-                            Text("Portrait · saved last week").font(.caption).foregroundColor(.secondary)
-                        }.padding().navigationTitle("Photo")
-                    } label: {
-                        VStack(alignment: .leading) {
-                            Image(RestoredPhoneBackup.ownerPortrait).resizable().scaledToFill().frame(height: 190).clipped()
-                            Text("Last week").font(.caption)
-                        }
-                    }.buttonStyle(.plain)
-                }
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                    ForEach(Neighbor.allCases.filter { !onlyFavorites || isFavorite($0) }) { person in
-                        Button { selection = person } label: {
-                            VStack {
-                                NeighborAvatar(neighbor: person, size: 115)
-                                Text(person.name).font(.caption)
-                            }.frame(maxWidth: .infinity).padding(.vertical, 15)
-                                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14))
-                        }.buttonStyle(.plain)
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 3), spacing: 4) {
+                    ForEach(shown) { photo in
+                        Button {
+                            scale = 1; selection = photo
+                        } label: {
+                            GeometryReader { geo in
+                                Image(photo.asset).resizable().scaledToFill()
+                                    .frame(width: geo.size.width, height: geo.size.height).clipped()
+                                    .overlay(alignment: .bottomTrailing) {
+                                        if isFavorite(photo.id) { Image(systemName: "heart.fill").font(.caption).padding(6).foregroundColor(.white).shadow(radius: 3) }
+                                    }
+                            }.aspectRatio(1, contentMode: .fit)
+                                .clipShape(RoundedRectangle(cornerRadius: 5))
+                        }.buttonStyle(.plain).accessibilityLabel(photo.title)
                     }
                 }
+                if shown.isEmpty { Text("Favorite a photo to see it here.").foregroundColor(.secondary).padding(.vertical, 25) }
+                Text("Albums").font(.title2.bold()).padding(.top, 10)
+                NavigationLink { ProtectedAreaView(area: .photos) } label: {
+                    HStack(spacing: 14) {
+                        Image(systemName: "lock.rectangle.stack.fill").font(.title2).foregroundColor(.teal)
+                            .frame(width: 52, height: 52).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Private album").font(.headline)
+                            Text("Authentication required").font(.caption).foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.caption)
+                    }.padding(13).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                }.buttonStyle(.plain)
             }.padding()
         }.navigationTitle("Photos")
-        .sheet(item: $selection) { person in
-            VStack(spacing: 24) {
-                Spacer()
-                NeighborAvatar(neighbor: person, size: 230)
-                Text(person.name).font(.title2)
-                Button { toggle(person) } label: {
-                    Label(isFavorite(person) ? "Remove favorite" : "Favorite", systemImage: isFavorite(person) ? "heart.fill" : "heart")
-                }
-                Spacer()
-                Button("Done") { selection = nil }.padding()
-            }.padding().presentationDetents([.large])
+        .sheet(item: $selection) { photo in
+            NavigationStack {
+                VStack(spacing: 16) {
+                    Spacer()
+                    Image(photo.asset).resizable().scaledToFit()
+                        .scaleEffect(scale).gesture(MagnificationGesture().onChanged { scale = min(3, max(1, $0)) })
+                        .clipped().onTapGesture(count: 2) { withAnimation { scale = scale > 1 ? 1 : 2 } }
+                    Spacer()
+                    Text(photo.caption).font(.caption).foregroundColor(.secondary)
+                    Button { toggle(photo.id) } label: {
+                        Label(isFavorite(photo.id) ? "Remove favorite" : "Favorite", systemImage: isFavorite(photo.id) ? "heart.fill" : "heart")
+                            .frame(maxWidth: .infinity).padding(12)
+                    }.buttonStyle(.bordered)
+                }.padding().navigationTitle(photo.title).navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { selection = nil } } }
+            }.preferredColorScheme(.dark)
         }
     }
-    private func isFavorite(_ p: Neighbor) -> Bool { favorites.split(separator: "|").contains(Substring(p.id)) }
-    private func toggle(_ p: Neighbor) {
-        var ids = Set(favorites.split(separator: "|").map(String.init))
-        if ids.contains(p.id) { ids.remove(p.id) } else { ids.insert(p.id) }
-        favorites = ids.sorted().joined(separator: "|")
+    private func isFavorite(_ id: String) -> Bool { favorites.split(separator: "|").contains(Substring(id)) }
+    private func toggle(_ id: String) {
+        var ids = RelayCatalog.ids(favorites)
+        if ids.contains(id) { ids.remove(id) } else { ids.insert(id) }
+        favorites = RelayCatalog.encoded(ids)
     }
 }
 
