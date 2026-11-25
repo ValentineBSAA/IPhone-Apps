@@ -50,7 +50,13 @@ final class LumaCommunicationSmokeTests: XCTestCase {
             let row = app.buttons["relay.package.fieldnotes"]
             let search = app.textFields.firstMatch
             if search.waitForExistence(timeout: 3) {
-                search.tap(); search.typeText("Field Notes")
+                if (search.value as? String) != "Field Notes" {
+                    search.tap()
+                    if let existing = search.value as? String, !existing.isEmpty, existing != search.placeholderValue {
+                        search.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: existing.count))
+                    }
+                    search.typeText("Field Notes")
+                }
                 if app.keyboards.buttons["Search"].exists { app.keyboards.buttons["Search"].tap() }
             }
             for _ in 0..<6 where !row.isHittable { app.swipeUp() }
@@ -69,9 +75,14 @@ final class LumaCommunicationSmokeTests: XCTestCase {
             let unlock = app.buttons["luma.lock.unlock"]
             waitHittable(unlock, timeout: 30); unlock.tap()
         }
-        let home = app.buttons["luma.home"].firstMatch
-        waitHittable(home); home.tap()
-        openRelay(); findFieldNotes()
+        // Recovery Circuit is a nested NavigationLink, not a top-level app.
+        let back = app.navigationBars["Recovery Circuit"].buttons.firstMatch
+        waitHittable(back); back.tap()
+        let relayLink = app.buttons.containing(.staticText, identifier: "Open Relay").firstMatch
+        for _ in 0..<4 where !relayLink.isHittable { app.swipeUp() }
+        waitHittable(relayLink); relayLink.tap()
+        XCTAssertTrue(app.navigationBars["Relay"].waitForExistence(timeout: 8))
+        findFieldNotes()
         app.buttons["Queue Install"].tap()
         confirmQueue(); finishRestart()
         let notes = app.buttons["luma.app.Field Notes"]
