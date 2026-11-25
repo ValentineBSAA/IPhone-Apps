@@ -25,7 +25,7 @@ struct PhonePermissionsGate: View {
                     VStack(spacing: 0) {
                         ScrollView {
                             VStack(spacing: 22) {
-                                Image(systemName: "hand.raised.circle.fill").font(.system(size: 62, weight: .light)).foregroundColor(accent)
+                                OpeningArt(name: "Opening_Permissions", size: 108)
                                 Text("Before you begin").font(.system(size: 32, weight: .semibold, design: .rounded)).multilineTextAlignment(.center)
                                 Text("Last Seen is a fictional horror game. Choose the optional features you want to use.").font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
                                 VStack(spacing: 16) {
@@ -35,7 +35,7 @@ struct PhonePermissionsGate: View {
                                 }.padding(18).background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 23))
                                 Label("No real personal records or system modifications", systemImage: "lock.shield")
                                     .font(.caption).foregroundColor(.secondary).multilineTextAlignment(.center)
-                                Text("iOS may show separate permission dialogs. Both choices are optional; you can change them later.").font(.caption).foregroundColor(.secondary).multilineTextAlignment(.center)
+                                Text("iOS may show separate permission dialogs. Both choices are optional; camera, microphone and location are not requested.").font(.caption).foregroundColor(.secondary).multilineTextAlignment(.center)
                             }.padding(24)
                         }.scrollIndicators(.hidden)
                         if busy {
