@@ -9,6 +9,7 @@ struct PhoneLabView: View {
     @StateObject private var saves: LumaSaveStore
     @AppStorage("lastseen.saves.interval") private var saveInterval = 5
     @State private var checkpointReboot = false
+    @State private var circuitBanner = false
     @State private var navigationGeneration = UUID()
     @AppStorage("lastseen.lab.lockWallpaper") private var lockWallpaper = -1
     @AppStorage("lastseen.lab.wallpaperBlur") private var wallpaperBlur = false
@@ -57,6 +58,7 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.relay.installed") private var relayInstalled = ""
     @AppStorage("lastseen.relay.safeMode") private var safeMode = false
     private func tweak(_ id: String) -> Bool { !safeMode && RelayCatalog.ids(relayInstalled).contains(id) }
+    private var fieldNotesAvailable: Bool { RecoveryCircuit.unlocked(world.state.flags) && tweak("fieldnotes") }
     private var smallIcons: Bool { (!safeMode && compactIcons) || tweak("fivegrid") }
     @AppStorage("lastseen.lab.brightness") private var brightness = 0.9
     @AppStorage("lastseen.lab.wifi") private var wifi = true
@@ -134,6 +136,21 @@ struct PhoneLabView: View {
                 }.padding(.horizontal, 14).padding(.top, 4)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
+        }
+        .overlay(alignment: .top) {
+            if circuitBanner && !locked && !checkpointReboot && panel == nil {
+                Button { circuitBanner = false; open(.relay) } label: { CircuitNoticeCard() }
+                    .buttonStyle(.plain).padding(.horizontal, 14).padding(.top, 4)
+            }
+        }
+        .onChange(of: RecoveryCircuit.unlocked(world.state.flags)) { earned in
+            if earned && !checkpointReboot { circuitBanner = true }
+            else { circuitBanner = false }
+        }
+        .task(id: circuitBanner) {
+            guard circuitBanner else { return }
+            do { try await Task.sleep(nanoseconds: 6_000_000_000) } catch { return }
+            circuitBanner = false
         }
         .task(id: banner?.id) {
             guard let id = banner?.id else { return }
@@ -233,7 +250,7 @@ struct PhoneLabView: View {
                     case .recent:
                         ScrollView {
                             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
-                                ForEach(recent) { app in
+                                ForEach(recent.filter { $0 != .fieldNotes || fieldNotesAvailable }) { app in
                                     Button { panel = nil; open(app) } label: {
                                         VStack(spacing: 18) {
                                             if let art = app.foundationIcon {
@@ -472,7 +489,7 @@ struct PhoneLabView: View {
                         }
                     }
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: tweak("fivegrid") ? 5 : 4), spacing: 24) {
-                    ForEach(LabApp.allCases.filter { !$0.inDock }) { app in icon(app) }
+                    ForEach(LabApp.allCases.filter { !$0.inDock && ($0 != .fieldNotes || fieldNotesAvailable) }) { app in icon(app) }
                     }.padding(.top, 5).padding(.bottom, 12)
                 }
             }
@@ -500,6 +517,7 @@ struct PhoneLabView: View {
     }
 
     private func open(_ app: LabApp) {
+        guard app != .fieldNotes || fieldNotesAvailable else { return }
         OpeningQA.record("Opened in-game app: \(app.rawValue)")
         locked = false
         recent.removeAll { $0 == app }
@@ -567,14 +585,14 @@ struct PhoneLabView: View {
             }
             Section("Security & privacy") {
                 NavigationLink { ProtectedAreaView(area: .security) } label: {
-                    Label("Face ID & Passcode", systemImage: "lock.shield")
+                    Label("Biometrics & Passcode", systemImage: "lock.shield")
                 }
                 LabeledContent("Appearance", value: biometricUnlock ? "Registered" : "Locked")
             }
             Section("Jailbreak") {
                 LabeledContent("Environment", value: safeMode ? "Safe Mode" : "Rootless")
                 LabeledContent("Installed tweaks", value: String(RelayCatalog.ids(relayInstalled).count))
-                NavigationLink { RelayPackagesView(onRestart: { panel = nil; returnHome(); locked = true }) } label: { Label("Manage packages in Relay", systemImage: "shippingbox.fill") }
+                NavigationLink { RelayPackagesView(earnedFlags: world.state.flags, onRestart: { panel = nil; returnHome(); locked = true }) } label: { Label("Manage packages in Relay", systemImage: "shippingbox.fill") }
             }
             Section("Gestures") {
                 Toggle("Immersive screen-edge gestures", isOn: $deferSystemEdges)
@@ -590,7 +608,7 @@ struct PhoneLabView: View {
                 Button {
                     PhoneSensoryEngine.play(.message, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
                 } label: { Label("Preview message alert", systemImage: "bell.badge") }
-                Text("In-game effects only. Each recording plays once. Sounds respect your iPhone's silent mode and volume. Haptics depend on device support and system settings. Horror cues are optional.")
+                Text("In-game effects only. Each recording plays once. Sounds respect your device's silent mode and volume. Haptics depend on device support and system settings. Horror cues are optional.")
                     .font(.footnote).foregroundColor(.secondary)
             }
             Section("Notifications and privacy") {
@@ -635,7 +653,7 @@ struct PhoneLabView: View {
             Button("Replay entire introduction") { OpeningQA.record("Introduction replay requested"); panel = nil; setupProgress = 0; setupStage = 0; recoveryProgress = 0; recoverySimulated = false; recoveryStage = 0 }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Your restored phone records and story saves will not be erased.")
+            Text("Your restored phone records, Field Notes and story saves will not be erased.")
         }
     }
 
@@ -647,7 +665,7 @@ struct PhoneLabView: View {
         if saves.restore(slot, into: world) {
             observedIncoming = Set(incomingIDs)
             observedOutgoing = outgoingIDs
-            banner = nil; pendingThread = nil
+            banner = nil; pendingThread = nil; circuitBanner = false
             authContext?.invalidate(); authContext = nil
             showOwnerPasscode = false
             panel = nil
@@ -665,7 +683,7 @@ struct PhoneLabView: View {
         let center = UNUserNotificationCenter.current()
         center.getNotificationSettings { settings in
             guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
-                DispatchQueue.main.async { testNotice = "Notifications are disabled in iOS Settings." }
+                DispatchQueue.main.async { testNotice = "Notifications are disabled in device settings." }
                 return
             }
             let content = UNMutableNotificationContent()
@@ -683,6 +701,7 @@ struct PhoneLabView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 LumaHeader(title: "Notification Center", detail: "Recent activity", symbol: "bell.badge")
+                if RecoveryCircuit.unlocked(world.state.flags) { CircuitNoticeCard() }
                 Text("Recent messages").font(.subheadline).foregroundColor(.secondary)
                 ForEach(PhoneAlertCatalog.alerts(in: world.state, unreadOnly: false)) { alert in
                     PhoneNotificationCard(alert: alert) { openThread(alert.neighbor) }
@@ -782,6 +801,7 @@ struct PhoneLabView: View {
 
     @ViewBuilder private func destination(_ app: LabApp) -> some View {
         switch app {
+        case .fieldNotes: if fieldNotesAvailable { FieldNotesView() } else { Text("Package unavailable") }
         case .saves: LumaSaveView(store: saves, onLoad: loadCheckpoint)
         case .messages: LumaMessagesDirectory()
         case .contacts: LumaContactsDirectory()
@@ -796,7 +816,7 @@ struct PhoneLabView: View {
             controls.navigationTitle("Settings")
         case .files: LabFilesView()
         case .browser: LabBrowserView(wifi: wifi)
-        case .relay: RelayPackagesView(onRestart: { returnHome(); recent.removeAll(); locked = true })
+        case .relay: RelayPackagesView(earnedFlags: world.state.flags, onRestart: { returnHome(); recent.removeAll(); locked = true })
         case .patchline: PatchlineControlView(openRelay: { open(.relay) }, onRestart: { returnHome(); recent.removeAll(); locked = true })
         }
     }
@@ -808,8 +828,9 @@ private enum LabPanel: String, Identifiable {
 }
 
 private enum LabApp: String, CaseIterable, Identifiable {
-    case phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves"
+    case fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves"
     var foundationIcon: String? {
+        if self == .fieldNotes { return "Jailbreak_FieldNotes" }
         if self == .relay || self == .patchline { return nil }
         return self == .saves ? "Icon_Save" : "Icon_" + rawValue
     }
@@ -817,6 +838,7 @@ private enum LabApp: String, CaseIterable, Identifiable {
     var inDock: Bool { [.phone, .messages, .browser, .settings].contains(self) }
     var symbol: String {
         switch self {
+        case .fieldNotes: return "note.text"
         case .phone: return "phone.fill"
         case .messages: return "message.fill"
         case .contacts: return "person.crop.circle.fill"
@@ -836,6 +858,7 @@ private enum LabApp: String, CaseIterable, Identifiable {
     }
     var color: Color {
         switch self {
+        case .fieldNotes: return .teal
         case .phone: return .green
         case .messages: return .teal
         case .contacts: return .indigo

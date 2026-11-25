@@ -12,7 +12,7 @@ enum OwnerSecurityPolicy {
 }
 
 enum ProtectedArea: String {
-    case security = "Face ID & Passcode"
+    case security = "Biometrics & Passcode"
     case photos = "Private album"
     case notes = "Locked notes"
     case files = "Protected files"
@@ -34,7 +34,7 @@ struct OwnerPasscodeView: View {
             VStack(spacing: 18) {
                 Image("System_ProtectedStorage").resizable().scaledToFit().frame(width: 86, height: 86).clipShape(RoundedRectangle(cornerRadius: 22))
                 Text("Enter owner passcode").font(.title2.bold())
-                Text("Use the fictional six-digit code found in the restored phone. Never enter your real iPhone passcode.").font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
+                Text("Use the fictional six-digit code found in the restored phone. Never enter your actual device passcode.").font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
                 HStack(spacing: 13) {
                     ForEach(0..<6, id: \.self) { i in
                         Circle().strokeBorder(.white.opacity(0.65), lineWidth: 1.4)
@@ -111,7 +111,7 @@ struct ProtectedAreaView: View {
                 } else {
                     if canUseBiometrics {
                         Button { authenticate(forEnrollment: false) } label: {
-                            Label("Authenticate with Face ID / Touch ID", systemImage: "faceid").frame(maxWidth: .infinity)
+                            Label("Authenticate with Device biometrics", systemImage: "faceid").frame(maxWidth: .infinity)
                         }.buttonStyle(.borderedProminent).disabled(context != nil)
                         Text("Or use the owner passcode").font(.caption).foregroundColor(.secondary)
                     }
@@ -130,7 +130,7 @@ struct ProtectedAreaView: View {
             VStack(spacing: 20) {
                 Image(systemName: "faceid").font(.system(size: 75, weight: .light)).foregroundColor(.teal)
                 Text("Add your appearance").font(.title2.bold())
-                Text("Register an appearance for this fictional phone. Your iPhone will authenticate its already enrolled owner; no face is recorded or added to iOS.").multilineTextAlignment(.center).foregroundColor(.secondary)
+                Text("Register an appearance for this fictional phone. Your device will authenticate its already enrolled owner; no face is recorded or added to iOS.").multilineTextAlignment(.center).foregroundColor(.secondary)
                 Button("Authenticate and register") { authenticate(forEnrollment: true) }
                     .buttonStyle(.borderedProminent).disabled(context != nil)
                 if !notice.isEmpty { Text(notice).font(.footnote) }

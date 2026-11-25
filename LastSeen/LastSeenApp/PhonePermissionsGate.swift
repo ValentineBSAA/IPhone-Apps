@@ -29,7 +29,7 @@ struct PhonePermissionsGate: View {
                                 Text("Before you begin").font(.system(size: 32, weight: .semibold, design: .rounded)).multilineTextAlignment(.center)
                                 Text("Last Seen is a fictional horror game. Choose the optional features you want to use.").font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
                                 VStack(spacing: 16) {
-                                    permission("faceid", "Face ID / Touch ID", "Prepare authentication for later. Protected records still require the fictional owner passcode.", $wantsBiometrics)
+                                    permission("faceid", "Device biometrics", "Prepare authentication for later. Protected records still require the fictional owner passcode.", $wantsBiometrics)
                                     Divider()
                                     permission("bell.badge", "Game notifications", "Allow optional native alerts from Last Seen.", $wantsAlerts)
                                 }.padding(18).background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 23))

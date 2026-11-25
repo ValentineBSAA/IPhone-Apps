@@ -41,7 +41,7 @@ enum WelcomeBriefing {
             "Swipe down from the upper-left notification control to review notifications.",
             "Swipe down from the upper-right control to access quick settings.",
             "Swipe up on the lock screen to unlock.",
-            "Repeat a system-edge swipe when necessary to access your real iPhone controls."
+            "Repeat a system-edge swipe when necessary to access your actual device controls."
         ], ending: [
             "You can also customize your experience through Settings, Patchline and Relay."
         ]),
@@ -98,7 +98,7 @@ enum WelcomeBriefing {
             "Last Seen is an original fictional horror game.",
             "Its characters, conversations, applications, restored records and jailbreak environment exist entirely within the game.",
             "No real jailbreak, kernel exploitation, USB data transfer or device modification has occurred.",
-            "Optional native iPhone features remain under your control."
+            "Optional native device features remain under your control."
         ])
     ]
     static let closing = [

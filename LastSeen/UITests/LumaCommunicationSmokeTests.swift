@@ -60,7 +60,8 @@ final class LumaCommunicationSmokeTests: XCTestCase {
         confirm.tap()
         let unlock = app.buttons["luma.lock.unlock"]
         XCTAssertTrue(unlock.waitForExistence(timeout: 30))
-        XCTAssertTrue(unlock.isHittable)
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: unlock)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 35), .completed)
         screenshot("Restored lock screen")
     }
 }

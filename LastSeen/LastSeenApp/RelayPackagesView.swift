@@ -23,7 +23,8 @@ struct RelayPackagesView: View {
     @State private var refresh = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let onRestart: () -> Void
-    init(onRestart: @escaping () -> Void = {}) { self.onRestart = onRestart }
+    let earnedFlags: Set<String>
+    init(earnedFlags: Set<String> = [], onRestart: @escaping () -> Void = {}) { self.earnedFlags = earnedFlags; self.onRestart = onRestart }
 
     private enum Tab: String, CaseIterable {
         case featured = "Relay", sources = "Sources", changes = "Changes", installed = "Installed", search = "Search"
@@ -40,7 +41,7 @@ struct RelayPackagesView: View {
     private var ids: Set<String> { RelayCatalog.ids(installed) }
     private var sourceIDs: Set<String> { RelayCatalog.ids(RelayCatalog.recoveredSources(sources)) }
     private var versionMap: [String: String] { RelayCatalog.versions(versions) }
-    private var visiblePackages: [RelayPackage] { RelayCatalog.packages.filter { RelayCatalog.visible($0, sources: sourceIDs, installed: ids) } }
+    private var visiblePackages: [RelayPackage] { RelayCatalog.packages.filter { RelayCatalog.visible($0, sources: sourceIDs, installed: ids, flags: earnedFlags) } }
     private var updates: [RelayPackage] { visiblePackages.filter { !$0.essential && ids.contains($0.id) && sourceIDs.contains($0.source) && RelayCatalog.installedVersion($0, versions: versionMap) != $0.version } }
 
     var body: some View {
@@ -137,9 +138,9 @@ struct RelayPackagesView: View {
                     if !queue.isEmpty {
                         Section {
                             Button("Confirm \(queue.count) changes") {
-                                guard RelayPlan.valid(queue, sources: sourceIDs, installed: ids) else { notice = "Queue no longer valid"; return }
+                                guard RelayPlan.valid(queue, sources: sourceIDs, installed: ids, flags: earnedFlags) else { notice = "Queue no longer valid"; return }
                                 confirmed = queue; showQueue = false
-                            }.disabled(!RelayPlan.valid(queue, sources: sourceIDs, installed: ids))
+                            }.disabled(!RelayPlan.valid(queue, sources: sourceIDs, installed: ids, flags: earnedFlags))
                             Button("Clear queue", role: .destructive) { queue.removeAll() }
                         } footer: { Text("Changes apply together after SpringBoard restarts.") }
                     }
@@ -214,7 +215,7 @@ struct RelayPackagesView: View {
                 ForEach(RelayCatalog.sources.filter { sourceIDs.contains($0.id) }) { source in
                     VStack(alignment: .leading, spacing: 7) {
                         sourceRow(source)
-                        Text("\(RelayCatalog.packages.filter { $0.source == source.id }.count) packages").font(.caption).foregroundColor(.secondary)
+                        Text("\(visiblePackages.filter { $0.source == source.id }.count) packages").font(.caption).foregroundColor(.secondary)
                         Label("Protected source", systemImage: "lock.shield").font(.caption).foregroundColor(.secondary)
                     }.padding(.vertical, 4)
                 }
@@ -298,7 +299,8 @@ struct RelayPackagesView: View {
         }.buttonStyle(.plain)
     }
     @ViewBuilder private func packageIcon(_ p: RelayPackage) -> some View {
-        if p.id == "teal" { OpeningArt(name: "Theme_Messages", size: 43) }
+        if p.id == "fieldnotes" { OpeningArt(name: "Jailbreak_FieldNotes", size: 43) }
+        else if p.id == "teal" { OpeningArt(name: "Theme_Messages", size: 43) }
         else if p.id == "relay" { OpeningArt(name: "Opening_Install", size: 43) }
         else {
             Image(systemName: p.icon).font(.title2).foregroundColor(.teal).frame(width: 43, height: 43)
@@ -347,7 +349,7 @@ struct RelayPackagesView: View {
         notice = "\(p.title) queued for \(action.rawValue.lowercased())"
     }
     private func applyConfirmed() {
-        guard RelayPlan.valid(confirmed, sources: sourceIDs, installed: ids) else {
+        guard RelayPlan.valid(confirmed, sources: sourceIDs, installed: ids, flags: earnedFlags) else {
             confirmed = []; notice = "Transaction cancelled: package state changed"; return
         }
         let previous = ids

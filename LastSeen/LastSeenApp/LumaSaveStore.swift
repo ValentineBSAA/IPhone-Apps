@@ -175,7 +175,7 @@ struct LumaSaveView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text(action == "Load" ? "Return to this checkpoint? Later discoveries may be lost from the active game. Manual saves are kept." : "Only the selected checkpoint is affected.")
+            Text(action == "Load" ? "Return to this checkpoint? Later discoveries may be lost from the active game. Manual saves and personal Field Notes are kept." : "Only the selected checkpoint is affected.")
         }
         .onAppear { store.refresh() }
     }

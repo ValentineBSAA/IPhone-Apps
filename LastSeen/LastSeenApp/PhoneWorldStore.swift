@@ -423,6 +423,13 @@ final class PhoneWorldStore: ObservableObject {
         input.lowercased().filter { $0.isLetter || $0.isNumber }
     }
 
+    @discardableResult func completeRecoveryCircuit(verified: [[String]]) -> Bool {
+        guard verified == RecoveryCircuit.stages, !state.flags.contains(RecoveryCircuit.completion) else { return false }
+        state.flags.insert(RecoveryCircuit.completion)
+        save()
+        return true
+    }
+
     func recordCallAttempt(_ contact: Neighbor, now: Date = Date()) {
         var calls = state.callHistory ?? []
         calls.insert(LumaCallRecord(id: UUID(), contact: contact, date: now), at: 0)
