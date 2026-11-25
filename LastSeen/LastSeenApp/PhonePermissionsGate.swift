@@ -85,7 +85,9 @@ struct PhonePermissionsGate: View {
 struct PhoneWallpaper: View {
     let selection: Int
     var body: some View {
-        let colors: [Color] = selection == 1
+        let colors: [Color] = selection == 2
+            ? [Color(red: 0.10, green: 0.23, blue: 0.45), Color(red: 0.035, green: 0.055, blue: 0.15)]
+            : selection == 1
             ? [Color(red: 0.34, green: 0.18, blue: 0.32), Color(red: 0.12, green: 0.12, blue: 0.22)]
             : [Color(red: 0.14, green: 0.34, blue: 0.41), Color(red: 0.07, green: 0.12, blue: 0.24)]
         GeometryReader { proxy in
