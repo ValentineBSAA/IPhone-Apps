@@ -74,6 +74,51 @@ final class FoundationTests: XCTestCase {
         store.toggleFavoriteContact(.maya)
         XCTAssertEqual(store.state.favoriteContacts, [])
     }
+    func testLiveStatsPreserveLifetimeAcrossCheckpoint() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite="live-statistics-"+UUID().uuidString
+        let defaults=try XCTUnwrap(UserDefaults(suiteName:suite))
+        defer { defaults.removePersistentDomain(forName:suite); try? FileManager.default.removeItem(at:root) }
+        defaults.set(80,forKey:"lastseen.saves.playSeconds")
+        let store=LumaSaveStore(root:root,defaults:defaults)
+        let world=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
+        let date=Date(timeIntervalSince1970:1_800_000_000)
+        XCTAssertEqual(store.lifetimeSeconds,80)
+        XCTAssertEqual(store.sessionSeconds,0)
+        XCTAssertNil(store.nextAutomaticSeconds(interval:0))
+        XCTAssertTrue(store.writeManual("manual-1",world:world.state,now:date))
+        for i in 1...60 { store.tick(world:world.state,minutes:1,now:date.addingTimeInterval(Double(i))) }
+        XCTAssertEqual(store.lifetimeSeconds,140)
+        XCTAssertEqual(store.sessionSeconds,60)
+        XCTAssertEqual(store.lastSuccessfulAutomatic,date.addingTimeInterval(60))
+        XCTAssertEqual(store.nextAutomaticSeconds(interval:1),60)
+        XCTAssertTrue(store.restore("manual-1",into:world,now:date.addingTimeInterval(90)))
+        XCTAssertEqual(store.playSeconds,80)
+        XCTAssertEqual(store.lifetimeSeconds,140)
+        XCTAssertEqual(store.sessionSeconds,60)
+        let reopened=LumaSaveStore(root:root,defaults:defaults)
+        XCTAssertEqual(reopened.lifetimeSeconds,140)
+        XCTAssertEqual(reopened.sessionSeconds,0)
+        XCTAssertEqual(reopened.lastSuccessfulAutomatic,date.addingTimeInterval(60))
+    }
+    func testWorldDocumentResourcesAndGate() throws {
+        var world=RestoredPhoneBackup.snapshot()
+        XCTAssertEqual(WorldDocumentCatalog.visible(world).count,8)
+        XCTAssertNil(WorldDocumentCatalog.document("WorldDoc_01_04",world:world))
+        XCTAssertNil(WorldDocumentCatalog.document("WorldDoc_01_05",world:world))
+        world.flags.insert("web.visited.archive")
+        XCTAssertEqual(WorldDocumentCatalog.visible(world).count,9)
+        world.flags.insert("investigation.chapter2.reviewed")
+        XCTAssertEqual(WorldDocumentCatalog.visible(world).count,10)
+        for doc in WorldDocumentCatalog.visible(world) {
+            XCTAssertGreaterThan(doc.fullText.count,150)
+            XCTAssertNotNil(Bundle.main.url(forResource:doc.id,withExtension:"docx"))
+        }
+        for name in ["Icon_Afterframe","Icon_Connective","Icon_CommonGround","Icon_VoiceMemos"] {
+            XCTAssertNotNil(PortraitImages.load(name))
+        }
+        XCTAssertFalse(WorldDocumentCatalog.search("Friday",world:world).isEmpty)
+    }
     func testPeriodicCheckpointAndOff() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let suite = "foundation-interval-" + UUID().uuidString

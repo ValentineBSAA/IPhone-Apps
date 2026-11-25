@@ -169,6 +169,9 @@ jobs:
           python3 Tools/import_recovered_art.py
           gh release download L1 --repo ValentineBSAA/IPhone-Apps --pattern 'Last-Seen-World-Photos-Expansion-01.zip' --dir . --clobber
           python3 Tools/verify_world_photo_intake.py
+          gh release download L1 --repo ValentineBSAA/IPhone-Apps --pattern 'Last-Seen-Connected-World-Icons-01.zip' --dir . --clobber
+          gh release download L1 --repo ValentineBSAA/IPhone-Apps --pattern 'Last-Seen-World-Documents-01.zip' --dir . --clobber
+          python3 Tools/import_connected_world.py
 
       - name: Generate iOS 16 Xcode project
         run: |

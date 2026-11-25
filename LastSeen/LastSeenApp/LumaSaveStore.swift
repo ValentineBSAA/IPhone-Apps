@@ -29,14 +29,30 @@ final class LumaSaveStore: ObservableObject {
     @Published private(set) var invalid: Set<String> = []
     @Published private(set) var notice = ""
     @Published private(set) var playSeconds = 0
+    @Published private(set) var lifetimeSeconds = 0
+    @Published private(set) var sessionSeconds = 0
+    @Published private(set) var lastSuccessfulAutomatic: Date?
+    @Published private(set) var automaticFailed = false
     private var lastAutomatic: Date = .distantPast
+    private var lastAutoAttempt: Date = .distantPast
     private var sinceAutomatic = 0
     private var previousInterval: Int?
     static let manualCooldown: TimeInterval = 60
     private var lastManual: Date { defaults.object(forKey: "lastseen.saves.lastManual") as? Date ?? .distantPast }
     func canSaveManually(now: Date = Date()) -> Bool { now.timeIntervalSince(lastManual) >= Self.manualCooldown }
     func manualRemaining(now: Date = Date()) -> Int { max(0, min(Int(Self.manualCooldown), Int(ceil(Self.manualCooldown - now.timeIntervalSince(lastManual))))) }
-    func persistPlayTime() { defaults.set(playSeconds, forKey: "lastseen.saves.playSeconds") }
+    func persistPlayTime() {
+        defaults.set(playSeconds, forKey: "lastseen.saves.playSeconds")
+        defaults.set(lifetimeSeconds, forKey: "lastseen.saves.lifetimeSeconds")
+    }
+    func nextAutomaticSeconds(interval: Int) -> Int? {
+        guard [1,3,5,10].contains(interval) else { return nil }
+        return max(0, interval * 60 - (previousInterval == interval ? sinceAutomatic : 0))
+    }
+    static func duration(_ seconds: Int) -> String {
+        let s = max(0,seconds)
+        return String(format:"%02d:%02d:%02d",s/3600,(s/60)%60,s%60)
+    }
     @discardableResult
     func writeManual(_ slot: String, world: PhoneWorld, now: Date = Date()) -> Bool {
         guard Self.manual.contains(slot), canSaveManually(now: now) else { notice = "Manual save is cooling down."; return false }
@@ -48,7 +64,13 @@ final class LumaSaveStore: ObservableObject {
         self.root = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("LastSeenCheckpoints", isDirectory: true)
         self.defaults = defaults
         playSeconds = max(0, defaults.integer(forKey: "lastseen.saves.playSeconds"))
+        lifetimeSeconds = max(playSeconds, defaults.integer(forKey:"lastseen.saves.lifetimeSeconds"))
         refresh()
+        lastSuccessfulAutomatic = defaults.object(forKey:"lastseen.saves.lastSuccessfulAutomatic") as? Date
+        if let latest = Self.automatic.compactMap({ slots[$0]?.date }).max(),
+           lastSuccessfulAutomatic == nil || latest > lastSuccessfulAutomatic! { lastSuccessfulAutomatic = latest }
+        if let last = lastSuccessfulAutomatic { lastAutomatic = last }
+        persistPlayTime()
     }
     private func url(_ slot: String) -> URL { root.appendingPathComponent(slot + ".json") }
     private func validSlot(_ slot: String) -> Bool { (Self.manual + Self.automatic).contains(slot) }
@@ -82,25 +104,32 @@ final class LumaSaveStore: ObservableObject {
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
             try JSONEncoder().encode(value).write(to: url(slot), options: .atomic)
             refresh()
-            defaults.set(playSeconds, forKey: "lastseen.saves.playSeconds")
+            persistPlayTime()
             if !quiet { notice = "Game saved." }
             return true
         } catch { notice = "Could not save. Existing checkpoints were preserved."; return false }
     }
     func automatic(world: PhoneWorld, now: Date = Date(), force: Bool = false) {
-        guard force || now.timeIntervalSince(lastAutomatic) >= 30 else { return }
+        guard force || (now.timeIntervalSince(lastAutomatic) >= 30 && now.timeIntervalSince(lastAutoAttempt) >= 5) else { return }
+        lastAutoAttempt = now
         let slot = Self.automatic.first(where: { slots[$0] == nil }) ??
             Self.automatic.min(by: { (slots[$0]?.date ?? .distantPast) < (slots[$1]?.date ?? .distantPast) })!
         if write(slot, world: world, now: now, quiet: true) {
             lastAutomatic = now; sinceAutomatic = 0
-        }
+            lastSuccessfulAutomatic = now
+            defaults.set(now,forKey:"lastseen.saves.lastSuccessfulAutomatic")
+            automaticFailed = false
+        } else { automaticFailed = true }
     }
-    func tick(world: PhoneWorld, minutes: Int) {
+    func tick(world: PhoneWorld, minutes: Int, now: Date = Date()) {
         playSeconds += 1
-        if previousInterval != minutes { sinceAutomatic = 0; previousInterval = minutes }
+        lifetimeSeconds += 1
+        sessionSeconds += 1
+        persistPlayTime()
+        if previousInterval != minutes { sinceAutomatic = 0; previousInterval = minutes; automaticFailed = false }
         guard [1,3,5,10].contains(minutes) else { return }
         sinceAutomatic += 1
-        if sinceAutomatic >= minutes * 60 { automatic(world: world) }
+        if sinceAutomatic >= minutes * 60 { automatic(world: world, now:now) }
     }
     func restore(_ slot: String, into world: PhoneWorldStore, now: Date = Date()) -> Bool {
         do {
@@ -123,7 +152,8 @@ final class LumaSaveStore: ObservableObject {
             defaults.set(false, forKey: "lastseen.security.ownerVerified")
             defaults.set(false, forKey: "lastseen.security.appearanceEnrolled")
             playSeconds = value.playSeconds; sinceAutomatic = 0
-            defaults.set(playSeconds, forKey: "lastseen.saves.playSeconds")
+            persistPlayTime()
+            automaticFailed = false
             lastAutomatic = now
             notice = "Checkpoint restored."
             return true
@@ -154,6 +184,9 @@ struct LumaSaveView: View {
                         Text("Your investigation, preserved.").font(.subheadline).foregroundColor(.secondary)
                     }
                 }
+                NavigationLink { LumaGameplayStatisticsView(store:store) } label: {
+                    LumaHeader(title:"Gameplay Statistics",detail:"Live playtime and checkpoints",symbol:"chart.bar.xaxis")
+                }.buttonStyle(.plain)
                 Text("Manual checkpoints").font(.title2.bold())
                 if !store.canSaveManually() { Text("Next manual save in \(store.manualRemaining()) seconds").font(.caption).foregroundColor(.secondary).monospacedDigit() }
                 ForEach(LumaSaveStore.manual, id: \.self) { row($0, manual: true) }

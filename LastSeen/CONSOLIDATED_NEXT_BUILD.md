@@ -85,3 +85,7 @@ All ten exact L1 assets observed 2026-11-25. Check hashes again before importing
 
 ## 4. Delivery discipline
 Work from this checklist and specialist links, not historical instructions. Use coherent internal commits with unit tests; integrate once against a shared catalog. Review source diff for removed features and stale version references; run complete CI before delivery. Record blockers/decisions and reconcile approvals, then deliver one IPA. Do not trigger runtime development from this docs-only commit.
+
+
+## Implementation authorization and internal tranche 1
+Creator gave go-ahead November 25, 2026. Planning hold lifted; use internal integration commits and mandatory CI; no intermediate player-facing IPA. Initial source tranche: W02 verified importer for 4 icons and 10 original DOCX files, structured reader input; W04 lifetime/session/countdown and save metadata; W07 native gated document reader and Files/global search integration. All are SOURCE only until CI, no device pass. Existing photo expansion remains held for continuity review. W01 transactional crash-safe restore, W03 full OS redesign, W05–W06 deeper authored world and Mail, W08–W13 and full release acceptance remain OPEN. Do not distribute this partial revision as the consolidated build.

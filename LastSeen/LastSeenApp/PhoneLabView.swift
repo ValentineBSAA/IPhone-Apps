@@ -112,6 +112,9 @@ struct PhoneLabView: View {
             .navigationDestination(for: PhoneCalendarRoute.self) { route in
                 PhoneCalendarView(initialDay: route.day).safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
             }
+            .navigationDestination(for: WorldDocumentRoute.self) { route in
+                WorldDocumentReader(id:route.id).safeAreaInset(edge:.bottom,spacing:0) { gameHomeHandle }
+            }
             .navigationDestination(for: PhoneFileRoute.self) { route in
                 PhoneDocumentView(title: route.title).safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
             }
@@ -251,7 +254,7 @@ struct PhoneLabView: View {
         .onChange(of: phase) { value in
             observedIncoming = Set(incomingIDs)
             observedOutgoing = outgoingIDs
-            if value == .background { saves.persistPlayTime() }
+            if value != .active { saves.persistPlayTime() }
             if value != .active {
                 arrivalTask?.cancel(); arrivalTask = nil
                 PhoneSensoryEngine.stop()
@@ -608,6 +611,9 @@ struct PhoneLabView: View {
                     }
                 }.padding(.vertical, 8)
                 NavigationLink { InvestigationProgressView(openBrowser: { open(.browser) }, openMessages: { open(.messages) }, openNotes: { open(.notes) }, openFiles: { open(.files) }) } label: { Label("Investigation progress", systemImage: "checklist") }
+                NavigationLink { LumaGameplayStatisticsView(store:saves) } label: {
+                    Label("Gameplay Statistics",systemImage:"chart.bar.xaxis")
+                }
                 NavigationLink { LumaSaveView(store: saves, onLoad: loadCheckpoint) } label: {
                     Label("Game Saves", systemImage: "archivebox")
                 }
@@ -842,7 +848,9 @@ struct PhoneLabView: View {
             case .messages: if let n = Neighbor(rawValue: detail) { path.append(AppPage.worldThread(n)) }
             case .contacts: if let n = Neighbor(rawValue: detail) { path.append(AppPage.worldProfile(n)) }
             case .notes: path.append(AppPage.note(detail))
-            case .files: path.append(PhoneFileRoute(title: detail))
+            case .files:
+                if detail.hasPrefix("WorldDoc_") { path.append(WorldDocumentRoute(id:detail)) }
+                else { path.append(PhoneFileRoute(title: detail)) }
             case .calendar: if let event = world.state.events.first(where: { $0.id == detail }) { path.append(PhoneCalendarRoute(day: event.startsAt)) }
             default: break
             }
@@ -1164,8 +1172,21 @@ private struct LabFilesView: View {
     @State private var search = ""
     var body: some View {
         List {
-            LumaHeader(title: "On this phone", detail: "\(documents.count) restored documents", symbol: "folder.fill").listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
+            LumaHeader(title: "On this phone", detail: "\(documents.count + WorldDocumentCatalog.visible(world.state).count) restored documents", symbol: "folder.fill").listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
             NavigationLink { ProtectedAreaView(area: .files) } label: { Label("Protected files", systemImage: "lock.doc") }
+            let records = WorldDocumentCatalog.search(search,world:world.state)
+            if !records.isEmpty {
+                Section("Restored records") {
+                    ForEach(records) { document in
+                        NavigationLink(value:WorldDocumentRoute(id:document.id)) {
+                            VStack(alignment:.leading,spacing:5) {
+                                Label(document.title,systemImage:"doc.richtext").font(.headline)
+                                Text(document.author + " · " + document.revision).font(.caption).foregroundColor(.secondary)
+                            }.padding(.vertical,5)
+                        }
+                    }
+                }
+            }
             ForEach(documents.keys.sorted().filter { search.isEmpty || $0.localizedCaseInsensitiveContains(search) }, id: \.self) { name in
                 NavigationLink(value: PhoneFileRoute(title: name)) {
                     HStack(spacing: 13) {

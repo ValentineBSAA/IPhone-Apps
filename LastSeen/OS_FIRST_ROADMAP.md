@@ -62,3 +62,6 @@ Creator approved the connected-world direction, including functional fictional s
 
 ## Consolidated next-build execution checklist
 [CONSOLIDATED_NEXT_BUILD.md](CONSOLIDATED_NEXT_BUILD.md) is the active implementation order and acceptance ledger for one cohesive next IPA. B28 run 45687303359 completed SUCCESS, artifact 15058695450; device acceptance OPEN. All ten L1 uploads confirmed. Preserve all specialist scope, including the three social apps and functional Voice Memos. This is organization only; no additional runtime changes or CI. Existing explicit development hold remains until creator directs implementation.
+
+## Build 29 development authorized
+Creator approved beginning the consolidated development plan. Planning hold lifted. See [CONSOLIDATED_NEXT_BUILD.md](CONSOLIDATED_NEXT_BUILD.md) for actual tranche status. Internal verification commits are not deliverable releases; final one-IPA acceptance remains mandatory.

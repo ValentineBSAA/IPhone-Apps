@@ -88,6 +88,9 @@ enum PhonePublicSearch {
         for name in documents.keys.sorted() where matches(name) {
             results.append(PhoneSearchResult("file-" + name, name, "Files • On this phone", "doc.text", "Files", detail: name))
         }
+        for document in WorldDocumentCatalog.search(q,world:world) {
+            results.append(PhoneSearchResult("document-"+document.id,document.title,"Files · Restored record","doc.richtext","Files",detail:document.id))
+        }
         for event in world.events where matches(event.title, event.detail) {
             results.append(PhoneSearchResult("event-" + event.id, event.title, "Calendar", "calendar", "Calendar", detail: event.id))
         }
