@@ -19,7 +19,7 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.security.ownerVerified") private var ownerVerified = false
     @AppStorage("lastseen.security.appearanceEnrolled") private var appearanceEnrolled = false
     @State private var showOwnerPasscode = false
-    @AppStorage("lastseen.recovery.stage") private var recoveryStage = 5
+    @AppStorage("lastseen.recovery.stage") private var recoveryStage = 6
     @AppStorage("lastseen.recovery.progress") private var recoveryProgress = 100
     @AppStorage("lastseen.recovery.simulated") private var recoverySimulated = false
     private var biometricUnlock: Bool { OwnerSecurityPolicy.canUseBiometrics(ownerVerified: ownerVerified, appearanceEnrolled: appearanceEnrolled) }
@@ -31,6 +31,7 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.setup.progress") private var setupProgress = 100
     @State private var testNotice = ""
     @State private var confirmSetupReplay = false
+    @State private var showOpeningQA = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -224,6 +225,7 @@ struct PhoneLabView: View {
     }
 
     private func open(_ app: LabApp) {
+        OpeningQA.record("Opened in-game app: \(app.rawValue)")
         locked = false
         recent.removeAll { $0 == app }
         recent.insert(app, at: 0)
@@ -279,13 +281,15 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.3.0 (13)")
+                LabeledContent("Software", value: "1.3.1 (14)")
+                Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay phone setup") { confirmSetupReplay = true }
             }
         }
+        .sheet(isPresented: $showOpeningQA) { OpeningDiagnosticsView() }
         .confirmationDialog("Replay phone setup?", isPresented: $confirmSetupReplay) {
-            Button("Replay setup") { panel = nil; setupProgress = 0; setupStage = 0 }
-            Button("Replay entire introduction") { panel = nil; setupProgress = 0; setupStage = 0; recoveryProgress = 0; recoverySimulated = false; recoveryStage = 0 }
+            Button("Replay setup") { OpeningQA.record("Phone setup replay requested"); panel = nil; setupProgress = 0; setupStage = 0 }
+            Button("Replay entire introduction") { OpeningQA.record("Introduction replay requested"); panel = nil; setupProgress = 0; setupStage = 0; recoveryProgress = 0; recoverySimulated = false; recoveryStage = 0 }
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Your restored phone records and story saves will not be erased.")
