@@ -143,8 +143,10 @@ struct PhoneLabView: View {
         }
         .onAppear {
             observedIncoming = Set(incomingIDs)
+            let firstTutorial = !world.tutorialStarted
             world.startPhoneTutorial()
             observedIncoming = Set(incomingIDs)
+            if firstTutorial && !locked { banner = alerts.first }
             let center = UNUserNotificationCenter.current()
             center.removePendingNotificationRequests(withIdentifiers: [NotificationRouter.storyNotificationID])
             center.removeDeliveredNotifications(withIdentifiers: [NotificationRouter.storyNotificationID])
