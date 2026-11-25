@@ -37,6 +37,8 @@ struct PhoneLabView: View {
         _saves = StateObject(wrappedValue: LumaSaveStore())
     }
     @State private var panel: LabPanel?
+    @State private var homePage = 0
+    @State private var homeFolder: LumaHomeFolder?
     @State private var recent: [LabApp] = []
     @State private var pendingThread: Neighbor?
     @State private var banner: PhoneAlert?
@@ -475,6 +477,7 @@ struct PhoneLabView: View {
     }
 
     private func returnHome() {
+        homeFolder = nil
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) { path = NavigationPath() }
         OpeningQA.record("Returned to in-game home")
     }
@@ -488,78 +491,225 @@ struct PhoneLabView: View {
         }
     }
 
+    // The launcher is a fixed safe-area composition. Only the page grid changes
+    // horizontally; the dock and system controls never cover its contents.
     private var launcher: some View {
-        VStack(spacing: 16) {
+        GeometryReader { geometry in
+            let layout = LumaHomeLayout(width:geometry.size.width,height:geometry.size.height,
+                                        fiveColumns:fiveColumns,smallIcons:smallIcons)
+            let pages = LumaHomeLayout.pages(columns:layout.columns,rows:layout.rows,fieldNotes:fieldNotesAvailable)
+            let selected = min(max(0,homePage),pages.count-1)
+            ZStack {
+                VStack(spacing:layout.spacing) {
+                    homeTopBar.frame(height:44)
+                    homeSearch.frame(height:42)
+                    if layout.showWidgets { homeWidgets.frame(height:74) }
+                    TabView(selection:Binding(get:{min(max(0,homePage),pages.count-1)},set:{homePage=$0})) {
+                        ForEach(pages.indices,id:\.self) { index in
+                            homeGrid(pages[index],layout:layout).tag(index)
+                        }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode:.never))
+                    .frame(height:layout.gridHeight)
+                    .clipped()
+                    .accessibilityIdentifier("luma.launcher.pages")
+                    HStack(spacing:0) {
+                        ForEach(pages.indices,id:\.self) { index in
+                            Button {
+                                withAnimation(reduceMotion ? nil : .easeInOut(duration:0.22)) { homePage=index }
+                            } label:{
+                                Circle().fill(.white.opacity(selected==index ? 0.98 : 0.36))
+                                    .frame(width:selected==index ? 8 : 6,height:selected==index ? 8 : 6)
+                                    .frame(width:38,height:32).contentShape(Rectangle())
+                            }.buttonStyle(.plain)
+                                .accessibilityLabel("Home page \(index+1) of \(pages.count)")
+                                .accessibilityIdentifier("luma.home.page.\(index)")
+                                .accessibilityAddTraits(selected==index ? .isSelected : [])
+                        }
+                    }.frame(height:32)
+                    homeActions.frame(height:44)
+                    HStack(spacing:6) {
+                        ForEach(LumaHomeLayout.dock) { app in
+                            icon(app,size:layout.dockIconSize)
+                                .frame(height:layout.dockHeight-12)
+                        }
+                    }.padding(.horizontal,9).padding(.vertical,6)
+                        .frame(height:layout.dockHeight)
+                        .background {
+                            if !tweak("dockglass") && (!utilityActive(.lumaplus) || utilityGlass) {
+                                RoundedRectangle(cornerRadius:27,style:.continuous)
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(RoundedRectangle(cornerRadius:27).strokeBorder(.white.opacity(0.12),lineWidth:1))
+                            }
+                        }
+                        .accessibilityIdentifier("luma.launcher.dock")
+                }
+                .padding(.horizontal,14).padding(.vertical,8)
+                .frame(maxWidth:.infinity,maxHeight:.infinity,alignment:.top)
+                .accessibilityHidden(homeFolder != nil)
+                .allowsHitTesting(homeFolder == nil)
+                if let folder=homeFolder {
+                    Color.black.opacity(0.34).ignoresSafeArea().onTapGesture { closeHomeFolder() }
+                        .accessibilityHidden(true)
+                    homeFolderView(folder,width:geometry.size.width)
+                        .transition(reduceMotion ? .opacity : .scale(scale:0.94).combined(with:.opacity))
+                }
+            }.onChange(of:pages.count) { count in
+                homePage=min(homePage,max(0,count-1))
+            }
+        }.buttonStyle(.plain).foregroundColor(.white)
+    }
+
+    private var homeTopBar: some View {
+        HStack(spacing:8) {
+            Button { panel = .notifications } label: {
+                Image(systemName:"bell").font(.title3).frame(width:44,height:44).contentShape(Rectangle())
+            }.accessibilityLabel("Notifications").simultaneousGesture(pullDown(.notifications))
+            Spacer(minLength:0)
             if safeMode {
-                Button { open(.relay) } label: { Label("Safe Mode • open Relay to exit", systemImage: "exclamationmark.shield").font(.caption).foregroundColor(.orange) }
+                Button { open(.relay) } label:{
+                    Label("Safe Mode",systemImage:"exclamationmark.shield").font(.caption.weight(.medium)).foregroundColor(.orange)
+                }.accessibilityLabel("Safe Mode, open Relay to exit")
+            } else {
+                Text("Nora’s phone").font(.caption.weight(.medium)).foregroundColor(.white.opacity(0.77))
+                    .lineLimit(1)
             }
-            HStack {
-                Button { panel = .notifications } label: {
-                    Label("Notifications", systemImage: "bell")
-                        .labelStyle(.iconOnly).font(.title3).frame(width: 64, height: 44).contentShape(Rectangle())
-                }.simultaneousGesture(pullDown(.notifications))
-                Spacer()
-                Button { panel = .controls } label: {
-                    Image(systemName: wifi ? "slider.horizontal.3" : "wifi.slash")
-                        .font(.title3).frame(width: 64, height: 44).contentShape(Rectangle()).accessibilityLabel("Quick settings")
-                }.simultaneousGesture(pullDown(.controls))
-            }.padding(.horizontal, 7)
-            ScrollView {
-                VStack(spacing: 16) {
-                    Button {
-                        searchQuery = ""; panel = .search
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "magnifyingglass")
-                            Text("Search phone").font(.subheadline)
-                            Spacer()
-                        }.foregroundColor(.white.opacity(0.85)).padding(12)
-                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 15))
-                    }
-                    HStack(spacing: 10) {
-                        TimelineView(.periodic(from: .now, by: 60)) { context in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(context.date, style: .time).font(.title2.weight(.light)).monospacedDigit()
-                                Text(context.date, format: .dateTime.weekday(.wide).month(.abbreviated).day()).font(.caption)
-                            }.frame(maxWidth: .infinity, alignment: .leading).padding(14).lumaSurface()
-                        }
-                        Button { open(.calendar) } label: {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Label("Calendar", systemImage: "calendar").font(.caption.bold())
-                                Text(world.state.events.filter { $0.endsAt >= Date() }.sorted { $0.startsAt < $1.startsAt }.first?.title ?? "No upcoming events").font(.subheadline).lineLimit(2)
-                            }.frame(maxWidth: .infinity, alignment: .leading).padding(14).lumaSurface()
-                        }
-                    }
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: fiveColumns ? 5 : 4), spacing: 24) {
-                    ForEach(LabApp.allCases.filter { !$0.inDock && ($0 != .fieldNotes || fieldNotesAvailable) }) { app in icon(app) }
-                    }.padding(.top, 5).padding(.bottom, 12)
-                }
-            }
-            .scrollIndicators(.hidden)
-            Spacer(minLength: 0)
-            HStack {
-                Button { withAnimation { locked = true } } label: {
-                    Label("Lock", systemImage: "lock").font(.caption)
-                }
-                Spacer()
-                Button { open(.saves) } label: { Label("Saves", systemImage: "archivebox").font(.caption).frame(minHeight: 44) }
-                Spacer()
-                Button { panel = .recent } label: {
-                    Label("Recent apps", systemImage: "square.on.square").font(.caption)
-                }
-            }.padding(.horizontal, 12)
-            HStack(spacing: 7) {
-                ForEach(LabApp.allCases.filter(\.inDock)) { app in icon(app) }
-            }.padding(12).background {
-                if !tweak("dockglass") && (!utilityActive(.lumaplus) || utilityGlass) { RoundedRectangle(cornerRadius: 27).fill(.ultraThinMaterial) }
-            }
+            Spacer(minLength:0)
+            Button { panel = .controls } label:{
+                Image(systemName:wifi ? "slider.horizontal.3" : "wifi.slash").font(.title3)
+                    .frame(width:44,height:44).contentShape(Rectangle())
+            }.accessibilityLabel("Quick settings").simultaneousGesture(pullDown(.controls))
         }
-        .padding(.horizontal, 17).padding(.vertical, 12)
-        .buttonStyle(.plain).foregroundColor(.white)
+    }
+    private var homeSearch: some View {
+        Button { searchQuery=""; panel = .search } label:{
+            HStack(spacing:10) {
+                Image(systemName:"magnifyingglass")
+                Text("Search phone").font(.subheadline)
+                Spacer()
+            }.foregroundColor(.white.opacity(0.88)).padding(.horizontal,13)
+                .frame(maxWidth:.infinity,maxHeight:.infinity)
+                .background(.ultraThinMaterial,in:RoundedRectangle(cornerRadius:16))
+        }.accessibilityIdentifier("luma.launcher.search")
+    }
+    private var homeWidgets: some View {
+        HStack(spacing:10) {
+            TimelineView(.periodic(from:.now,by:60)) { context in
+                VStack(alignment:.leading,spacing:4) {
+                    Text(context.date,style:.time).font(.title2.weight(.light)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.75)
+                    Text(context.date,format:.dateTime.weekday(.wide).month(.abbreviated).day())
+                        .font(.caption).lineLimit(1).minimumScaleFactor(0.75)
+                }.frame(maxWidth:.infinity,maxHeight:.infinity,alignment:.leading)
+                    .padding(.horizontal,13)
+                    .background(.ultraThinMaterial,in:RoundedRectangle(cornerRadius:21))
+            }
+            Button { open(.calendar) } label:{
+                VStack(alignment:.leading,spacing:5) {
+                    Label("Calendar",systemImage:"calendar").font(.caption.bold()).foregroundColor(.white.opacity(0.8))
+                    Text(world.state.events.filter{$0.endsAt>=Date()}.sorted{$0.startsAt<$1.startsAt}.first?.title ?? "No upcoming events")
+                        .font(.subheadline.weight(.medium)).lineLimit(2).minimumScaleFactor(0.8)
+                }.frame(maxWidth:.infinity,maxHeight:.infinity,alignment:.leading)
+                    .padding(.horizontal,13)
+                    .background(.ultraThinMaterial,in:RoundedRectangle(cornerRadius:21))
+            }.accessibilityLabel("Upcoming calendar event, open Calendar")
+        }
+    }
+    private var homeActions: some View {
+        HStack(spacing:4) {
+            Button { closeHomeFolder(); withAnimation(reduceMotion ? nil : .easeInOut(duration:0.2)) { locked=true } } label:{
+                Label("Lock",systemImage:"lock").font(.caption).frame(maxWidth:.infinity,minHeight:44)
+            }
+            Button { open(.saves) } label:{
+                Label("Saves",systemImage:"archivebox").font(.caption).frame(maxWidth:.infinity,minHeight:44)
+            }
+            Button { panel = .recent } label:{
+                Label("Recent apps",systemImage:"square.on.square").font(.caption).lineLimit(1).minimumScaleFactor(0.7)
+                    .frame(maxWidth:.infinity,minHeight:44)
+            }
+        }.padding(.horizontal,3)
+    }
+    private func homeGrid(_ entries:[LumaHomeEntry],layout:LumaHomeLayout)->some View {
+        VStack(spacing:0) {
+            ForEach(0..<layout.rows,id:\.self) { row in
+                HStack(spacing:4) {
+                    ForEach(0..<layout.columns,id:\.self) { column in
+                        let index=row*layout.columns+column
+                        Group {
+                            if entries.indices.contains(index) {
+                                switch entries[index] {
+                                case .app(let app):icon(app,size:layout.iconSize)
+                                case .folder(let folder):folderIcon(folder,size:layout.iconSize)
+                                }
+                            } else { Color.clear.accessibilityHidden(true) }
+                        }.frame(maxWidth:.infinity).frame(height:layout.rowHeight)
+                    }
+                }
+            }
+            Spacer(minLength:0)
+        }.frame(maxWidth:.infinity,maxHeight:.infinity,alignment:.top)
+    }
+    private func folderIcon(_ folder:LumaHomeFolder,size:CGFloat)->some View {
+        Button {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration:0.18)) { homeFolder=folder }
+        } label:{
+            VStack(spacing:5) {
+                ZStack {
+                    RoundedRectangle(cornerRadius:size*0.27,style:.continuous)
+                        .fill(.ultraThinMaterial)
+                    RoundedRectangle(cornerRadius:size*0.27).fill(folder.tint.opacity(0.20))
+                    RoundedRectangle(cornerRadius:size*0.27).strokeBorder(.white.opacity(0.22),lineWidth:1)
+                    VStack(spacing:3) {
+                        ForEach(0..<2,id:\.self) { row in
+                            HStack(spacing:3) {
+                                ForEach(0..<2,id:\.self) { column in
+                                    let index=row*2+column
+                                    if folder.apps.indices.contains(index) {
+                                        appArtwork(folder.apps[index],size:size*0.32)
+                                    } else { Color.clear.frame(width:size*0.32,height:size*0.32) }
+                                }
+                            }
+                        }
+                    }
+                }.frame(width:size,height:size)
+                if labelsVisible {
+                    Text(folder.rawValue).font(.system(size:11,weight:.medium)).lineLimit(1).minimumScaleFactor(0.72)
+                }
+            }.frame(maxWidth:.infinity).contentShape(Rectangle())
+        }.accessibilityLabel(folder.rawValue+" folder")
+            .accessibilityIdentifier("luma.folder."+folder.id)
+    }
+    private var labelsVisible:Bool { !tweak("clearlabels") && (!utilityActive(.lumaplus) || utilityLabels) }
+    private func closeHomeFolder() {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration:0.18)) { homeFolder=nil }
+    }
+    private func homeFolderView(_ folder:LumaHomeFolder,width:CGFloat)->some View {
+        VStack(alignment:.leading,spacing:20) {
+            HStack {
+                VStack(alignment:.leading,spacing:4) {
+                    Text(folder.rawValue).font(.title.bold())
+                    Text(folder.subtitle).font(.caption).foregroundColor(.secondary)
+                }
+                Spacer()
+                Button { closeHomeFolder() } label:{
+                    Image(systemName:"xmark.circle.fill").font(.title2).foregroundColor(.secondary)
+                        .frame(width:44,height:44).contentShape(Rectangle())
+                }.accessibilityLabel("Close folder").accessibilityIdentifier("luma.folder.close")
+            }
+            HStack(alignment:.top,spacing:8) {
+                ForEach(folder.apps) { app in icon(app,size:min(61,max(38,(width-92)/3-10))) }
+                if folder.apps.count<3 { Spacer(minLength:0) }
+            }.padding(.vertical,8)
+        }.padding(20)
+            .frame(width:min(340,max(220,width-32)))
+            .background(.regularMaterial,in:RoundedRectangle(cornerRadius:30,style:.continuous))
+            .overlay(RoundedRectangle(cornerRadius:30).strokeBorder(folder.tint.opacity(0.45),lineWidth:1))
+            .accessibilityIdentifier("luma.folder.open."+folder.id)
+            .accessibilityAddTraits(.isModal)
     }
 
     private func open(_ app: LabApp) {
         guard app != .fieldNotes || fieldNotesAvailable else { return }
+        homeFolder = nil
         OpeningQA.record("Opened in-game app: \(app.rawValue)")
         locked = false
         recent.removeAll { $0 == app }
@@ -568,36 +718,36 @@ struct PhoneLabView: View {
         path.append(app)
     }
 
-    private func icon(_ app: LabApp) -> some View {
-        Button { open(app) } label: {
-            VStack(spacing: 6) {
-                ZStack(alignment: .topTrailing) {
-                    if app == .patchline || app == .relay {
-                        OpeningArt(name: app == .patchline ? "Jailbreak_Patchline" : "Jailbreak_Relay", size: smallIcons ? 43 : 55)
-                    } else if !safeMode, (tealTheme || (utilityActive(.afterglowstudio) && utilityTheme)), let asset = ApprovedArt.themeName(for: app.rawValue) {
-                        Image(asset).resizable().scaledToFit()
-                            .frame(width: smallIcons ? 43 : 55, height: smallIcons ? 43 : 55)
-                    } else if let art = app.foundationIcon {
-                        Image(art).resizable().scaledToFit()
-                            .frame(width: smallIcons ? 43 : 61, height: smallIcons ? 43 : 61)
-                            .clipShape(RoundedRectangle(cornerRadius: smallIcons ? 12 : 16))
-                    } else {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(LinearGradient(colors: [app.color, app.color.opacity(0.55)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .frame(width: smallIcons ? 43 : 55, height: smallIcons ? 43 : 55)
-                        .overlay { Image(systemName: app.symbol).font(.system(size: 24, weight: .medium)) }
-                    }
-                    if app == .messages && unread > 0 && !tweak("quietbadges") {
+    @ViewBuilder private func appArtwork(_ app:LabApp,size:CGFloat)->some View {
+        Group {
+            if app == .patchline || app == .relay {
+                Image(app == .patchline ? "Jailbreak_Patchline" : "Jailbreak_Relay").resizable().scaledToFit()
+            } else if !safeMode,(tealTheme || (utilityActive(.afterglowstudio) && utilityTheme)),let asset=ApprovedArt.themeName(for:app.rawValue) {
+                Image(asset).resizable().scaledToFit()
+            } else if let art=app.foundationIcon {
+                Image(art).resizable().scaledToFit()
+            } else {
+                RoundedRectangle(cornerRadius:size*0.26)
+                    .fill(LinearGradient(colors:[app.color,app.color.opacity(0.55)],startPoint:.topLeading,endPoint:.bottomTrailing))
+                    .overlay { Image(systemName:app.symbol).font(.system(size:size*0.43,weight:.medium)) }
+            }
+        }.frame(width:size,height:size).clipShape(RoundedRectangle(cornerRadius:size*0.26,style:.continuous))
+    }
+    private func icon(_ app:LabApp,size:CGFloat)->some View {
+        Button { open(app) } label:{
+            VStack(spacing:5) {
+                ZStack(alignment:.topTrailing) {
+                    appArtwork(app,size:size)
+                    if app == .messages && unread>0 && !tweak("quietbadges") {
                         Text("\(unread)").font(.caption2.bold()).padding(5)
-                            .background(.red, in: Capsule()).offset(x: 5, y: -5)
+                            .background(.red,in:Capsule()).offset(x:5,y:-5)
                     }
                 }
-                if !tweak("clearlabels") && (!utilityActive(.lumaplus) || utilityLabels) {
-                    Text(app.rawValue).font(.system(size: 11, weight: .medium))
-                        .lineLimit(1).minimumScaleFactor(0.8)
+                if labelsVisible {
+                    Text(app.rawValue).font(.system(size:11,weight:.medium)).lineLimit(1).minimumScaleFactor(0.7)
                 }
-            }.frame(maxWidth: .infinity)
-        }.buttonStyle(.plain).accessibilityLabel(app.rawValue).accessibilityIdentifier("luma.app." + app.rawValue)
+            }.frame(maxWidth:.infinity).contentShape(Rectangle())
+        }.buttonStyle(.plain).accessibilityLabel(app.rawValue).accessibilityIdentifier("luma.app."+app.rawValue)
     }
 
     private var controls: some View {
@@ -668,7 +818,7 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.8.0 (29)")
+                LabeledContent("Software", value: "1.8.1 (30)")
                 Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay message tutorial") { confirmTutorialReplay = true }
                 Button("Replay phone setup") { confirmSetupReplay = true }
@@ -889,7 +1039,7 @@ private enum LabPanel: String, Identifiable {
     var id: String { rawValue }
 }
 
-private enum LabApp: String, CaseIterable, Identifiable {
+enum LabApp: String, CaseIterable, Identifiable {
     case fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves", afterframe = "Afterframe", connective = "Connective", commonGround = "CommonGround", workstation = "Workstation"
     var foundationIcon: String? {
         if self == .fieldNotes { return "Jailbreak_FieldNotes" }

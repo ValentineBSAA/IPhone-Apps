@@ -65,3 +65,6 @@ Creator approved the connected-world direction, including functional fictional s
 
 ## Build 29 development authorized
 Creator approved beginning the consolidated development plan. Planning hold lifted. See [CONSOLIDATED_NEXT_BUILD.md](CONSOLIDATED_NEXT_BUILD.md) for actual tranche status. Internal verification commits are not deliverable releases; final one-IPA acceptance remains mandatory.
+
+## Build 30 corrective release
+B29 CI passed and creator installed it. Corrective 1.8.1 (30) addresses observed home-screen clipping with fixed swipe pages, dots and personal/work folders. Preserve all Build 29 content and prior gates. See consolidated ledger for remaining scope and exact CI/device status.

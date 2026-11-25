@@ -7,15 +7,71 @@ final class LumaCommunicationSmokeTests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
     }
+    // Locate actual home icons through the new page dots, never a vertical list.
+    private func homeIcon(_ name:String,in app:XCUIApplication)->XCUIElement {
+        let icon=app.buttons["luma.app."+name]
+        if icon.isHittable{return icon}
+        for index in 0..<8 {
+            let dot=app.buttons["luma.home.page.\(index)"]
+            guard dot.exists else{break}
+            dot.tap()
+            let ready=XCTNSPredicateExpectation(predicate:NSPredicate(format:"hittable == true"),object:icon)
+            if XCTWaiter.wait(for:[ready],timeout:2) == .completed{return icon}
+        }
+        XCTAssertTrue(icon.isHittable,"Home icon not reachable: "+name)
+        return icon
+    }
+    func testPagedLauncherFoldersAndFixedDock() {
+        continueAfterFailure=false
+        let app=XCUIApplication()
+        app.launchArguments=["--luma-ui-test","--luma-relay-clean-test"]
+        app.launch()
+        let page0=app.buttons["luma.home.page.0"]
+        XCTAssertTrue(page0.waitForExistence(timeout:12))
+        page0.tap()
+        let photos=app.buttons["luma.app.Photos"]
+        let dockPhone=app.buttons["luma.app.Phone"]
+        XCTAssertTrue(photos.isHittable)
+        XCTAssertTrue(dockPhone.isHittable)
+        let photoFrame=photos.frame
+        let dockFrame=dockPhone.frame
+        let from=app.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.63))
+        let to=app.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.39))
+        from.press(forDuration:0.08,thenDragTo:to)
+        XCTAssertTrue(photos.isHittable)
+        XCTAssertEqual(photos.frame.minY,photoFrame.minY,accuracy:3)
+        XCTAssertEqual(dockPhone.frame.minY,dockFrame.minY,accuracy:3)
+        screenshot("Home page one, fixed grid")
+        let folder=app.buttons["luma.folder.studio"]
+        XCTAssertTrue(folder.isHittable)
+        folder.tap()
+        let files=app.buttons["luma.app.Files"]
+        XCTAssertTrue(files.waitForExistence(timeout:8))
+        XCTAssertTrue(files.isHittable)
+        XCTAssertTrue(app.buttons["luma.app.Connective"].isHittable)
+        screenshot("Blue Hour folder")
+        files.tap()
+        XCTAssertTrue(app.navigationBars["Files"].waitForExistence(timeout:8))
+        app.buttons["luma.home"].firstMatch.tap()
+        XCTAssertTrue(page0.waitForExistence(timeout:8))
+        page0.tap()
+        let page1=app.buttons["luma.home.page.1"]
+        XCTAssertTrue(page1.exists)
+        app.coordinate(withNormalizedOffset:CGVector(dx:0.83,dy:0.48)).press(forDuration:0.08,thenDragTo:app.coordinate(withNormalizedOffset:CGVector(dx:0.17,dy:0.48)))
+        let relay=app.buttons["luma.app.Relay"]
+        let ready=XCTNSPredicateExpectation(predicate:NSPredicate(format:"hittable == true"),object:relay)
+        XCTAssertEqual(XCTWaiter.wait(for:[ready],timeout:8),.completed)
+        XCTAssertTrue(dockPhone.isHittable)
+        XCTAssertEqual(dockPhone.frame.minY,dockFrame.minY,accuracy:3)
+        screenshot("Home page two, persistent dock")
+    }
     func testRecoveryCircuitEarnsPackageAndInstallsFieldNotes() {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--luma-ui-test", "--luma-relay-clean-test"]
         app.launch()
-        let icon = app.buttons["luma.app.Patchline"]
-        XCTAssertTrue(icon.waitForExistence(timeout: 12))
-        if !icon.isHittable { app.swipeUp() }
-        icon.tap()
+        XCTAssertTrue(app.buttons["luma.home.page.0"].waitForExistence(timeout:12))
+        homeIcon("Patchline",in:app).tap()
         let challenge = app.buttons.containing(.staticText, identifier: "Recovery Circuit").firstMatch
         XCTAssertTrue(challenge.waitForExistence(timeout: 10))
         challenge.tap()
@@ -38,9 +94,7 @@ final class LumaCommunicationSmokeTests: XCTestCase {
             XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: timeout), .completed)
         }
         func openRelay() {
-            let relay = app.buttons["luma.app.Relay"]
-            XCTAssertTrue(relay.waitForExistence(timeout: 12))
-            if !relay.isHittable { app.swipeUp() }
+            let relay = homeIcon("Relay",in:app)
             waitHittable(relay); relay.tap()
             XCTAssertTrue(app.navigationBars["Relay"].waitForExistence(timeout: 8))
         }
@@ -85,8 +139,8 @@ final class LumaCommunicationSmokeTests: XCTestCase {
         findFieldNotes()
         app.buttons["Queue Install"].tap()
         confirmQueue(); finishRestart()
-        let notes = app.buttons["luma.app.Field Notes"]
-        XCTAssertTrue(notes.waitForExistence(timeout: 12))
+        let notes = homeIcon("Field Notes",in:app)
+        XCTAssertTrue(notes.isHittable)
         screenshot("Field Notes installed after respring")
         openRelay(); findFieldNotes()
         app.buttons["Queue Removal"].tap()
@@ -98,6 +152,7 @@ final class LumaCommunicationSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["Queue Removal"].waitForExistence(timeout: 8))
         app.buttons["Done"].tap()
         confirmQueue(); finishRestart()
+        _ = homeIcon("Relay",in:app)
         XCTAssertFalse(app.buttons["luma.app.Field Notes"].exists)
         screenshot("Field Notes removed after respring")
     }
@@ -107,10 +162,8 @@ final class LumaCommunicationSmokeTests: XCTestCase {
         app.launchArguments = ["--luma-ui-test"]
         app.launch()
         func open(_ name: String) {
-            let icon = app.buttons["luma.app." + name]
-            XCTAssertTrue(icon.waitForExistence(timeout: 12), name)
-            if !icon.isHittable { app.swipeUp() }
-            icon.tap()
+            XCTAssertTrue(app.buttons["luma.home.page.0"].waitForExistence(timeout:12),name)
+            homeIcon(name,in:app).tap()
             XCTAssertTrue(app.navigationBars[name].waitForExistence(timeout: 8), name)
             screenshot(name)
         }
