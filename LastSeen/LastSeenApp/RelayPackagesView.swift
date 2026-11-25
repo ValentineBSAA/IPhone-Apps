@@ -258,7 +258,7 @@ struct RelayPackagesView: View {
     private var searchPage: some View {
         List {
             Section {
-                TextField("Search packages, authors or categories", text: $query).autocorrectionDisabled()
+                TextField("Search packages, sources or categories", text: $query).autocorrectionDisabled()
             }
             Section("Packages") {
                 let results = visiblePackages.filter { p in
