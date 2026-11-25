@@ -17,6 +17,12 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.lab.biometricUnlock") private var biometricUnlock = false
     @State private var authContext: LAContext?
     @State private var authNotice = ""
+    @AppStorage("lastseen.permissions.reviewed.v1") private var permissionsReviewed = true
+    @AppStorage("lastseen.lab.nativeAlerts") private var nativeAlerts = false
+    @AppStorage("lastseen.setup.stage") private var setupStage = 5
+    @AppStorage("lastseen.setup.progress") private var setupProgress = 100
+    @State private var testNotice = ""
+    @State private var confirmSetupReplay = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -84,16 +90,7 @@ struct PhoneLabView: View {
         }
     }
 
-    private var backdrop: some View {
-        let colors: [Color] = wallpaper == 1
-            ? [Color(red: 0.34, green: 0.18, blue: 0.32), Color(red: 0.12, green: 0.12, blue: 0.22)]
-            : [Color(red: 0.14, green: 0.34, blue: 0.41), Color(red: 0.07, green: 0.12, blue: 0.24)]
-        return ZStack {
-            LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
-            Circle().fill(.white.opacity(0.05)).frame(width: 340, height: 340).offset(x: 150, y: 170)
-            Circle().strokeBorder(.white.opacity(0.10), lineWidth: 1).frame(width: 300, height: 300).offset(x: -120, y: -100)
-        }.ignoresSafeArea()
-    }
+    private var backdrop: some View { PhoneWallpaper(selection: wallpaper).ignoresSafeArea() }
 
     private var unread: Int { Neighbor.allCases.reduce(0) { $0 + world.countUnread($1) } }
 
@@ -137,14 +134,12 @@ struct PhoneLabView: View {
                     authContext?.invalidate(); authContext = nil; biometricUnlock = false; authNotice = ""; requestUnlock()
                 }.font(.caption).disabled(authContext != nil)
             }
-            Text("Fictional phone · Phone Lab").font(.caption2).foregroundColor(.white.opacity(0.6))
+            Text("Swipe up to open").font(.caption2).foregroundColor(.white.opacity(0.6))
         }
         .padding(24)
         .foregroundColor(.white)
         .gesture(DragGesture(minimumDistance: 40).onEnded { value in
-            if value.translation.height < -50 {
-                withAnimation(.easeInOut(duration: 0.25)) { locked = false }
-            }
+            if value.translation.height < -50 { requestUnlock() }
         })
     }
 
@@ -183,10 +178,6 @@ struct PhoneLabView: View {
                 Button { panel = .notifications } label: {
                     Label("Notifications", systemImage: "bell")
                         .labelStyle(.iconOnly).font(.title3)
-                }
-                Spacer()
-                TimelineView(.periodic(from: .now, by: 60)) { context in
-                    Text(context.date, style: .time).font(.subheadline).monospacedDigit()
                 }
                 Spacer()
                 Button { panel = .controls } label: {
@@ -247,13 +238,13 @@ struct PhoneLabView: View {
 
     private var controls: some View {
         Form {
-            Section("Fictional device controls") {
+            Section("Device") {
                 LabeledContent("Device name", value: device)
                 Toggle("Real Face ID / Touch ID", isOn: $biometricUnlock)
                 Text("Optional in-game unlock. iOS handles authentication; Last Seen receives only the result.").font(.caption).foregroundColor(.secondary)
-                Toggle("Simulated Wi-Fi", isOn: $wifi)
+                Toggle("Wi-Fi (in-game)", isOn: $wifi)
                 VStack(alignment: .leading) {
-                    Text("Phone display brightness")
+                    Text("Display brightness")
                     Slider(value: $brightness, in: 0.35...1)
                 }
                 Picker("Wallpaper", selection: $wallpaper) {
@@ -261,8 +252,43 @@ struct PhoneLabView: View {
                     Text("Dusk").tag(1)
                 }
             }
-            Section {
-                Text("These controls change only the in-game phone, never your real iPhone settings.").font(.footnote)
+            Section("Notifications and privacy") {
+                LabeledContent("Native game alerts", value: nativeAlerts ? "Enabled in game" : "Off")
+                Button("Review optional permissions") { panel = nil; permissionsReviewed = false }
+                if nativeAlerts {
+                    Button("Schedule test notification (7 seconds)") { scheduleTestAlert() }
+                    if !testNotice.isEmpty { Text(testNotice).font(.caption).foregroundColor(.secondary) }
+                }
+                Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
+            }
+            Section("About") {
+                LabeledContent("Software", value: "1.2.3 (12)")
+                Button("Replay phone setup") { confirmSetupReplay = true }
+            }
+        }
+        .confirmationDialog("Replay phone setup?", isPresented: $confirmSetupReplay) {
+            Button("Replay setup") { panel = nil; setupProgress = 0; setupStage = 0 }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Your restored phone records and story saves will not be erased.")
+        }
+    }
+
+    private func scheduleTestAlert() {
+        guard nativeAlerts else { return }
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
+                DispatchQueue.main.async { testNotice = "Notifications are disabled in iOS Settings." }
+                return
+            }
+            let content = UNMutableNotificationContent()
+            content.title = "Last Seen"
+            content.body = "Game notification test. No story event has been triggered."
+            content.sound = .default
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 7, repeats: false)
+            center.add(UNNotificationRequest(identifier: "lastseen-lab-test", content: content, trigger: trigger)) { error in
+                DispatchQueue.main.async { testNotice = error == nil ? "Test scheduled. Leave the app to see the iOS alert." : "Unable to schedule the test." }
             }
         }
     }
