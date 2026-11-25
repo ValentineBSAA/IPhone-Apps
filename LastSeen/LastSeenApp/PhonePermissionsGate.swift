@@ -2,86 +2,116 @@ import SwiftUI
 import LocalAuthentication
 import UserNotifications
 
-/// Out-of-fiction consent before the welcome screen; never requests unrelated permissions.
+/// One consent review; Apple may still display separate native dialogs.
 struct PhonePermissionsGate: View {
     @AppStorage("lastseen.permissions.reviewed.v1") private var reviewed = false
+    @AppStorage("lastseen.permissions.reviewRevision") private var revision = 0
     @AppStorage("lastseen.permissions.biometricPrepared") private var biometrics = false
     @AppStorage("lastseen.lab.nativeAlerts") private var alerts = false
+    @State private var wantsBiometrics = false
+    @State private var wantsAlerts = false
     @State private var busy = false
-    @State private var feedback = ""
+    @State private var showQA = false
+    @State private var status = ""
+    private let accent = Color(red: 0.35, green: 0.86, blue: 0.77)
+
     var body: some View {
-        if reviewed {
-            RecoveryPrologue()
-        } else {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    Image(systemName: "hand.raised.circle").font(.system(size: 52)).foregroundColor(.teal)
-                    Text("Before you begin").font(.largeTitle.bold())
-                    Text("Last Seen is a fictional horror game. The phone, backup, messages and media are created for the game. Your real contacts, photos, messages and cloud account are never accessed.")
-                        .foregroundColor(.secondary)
-                    permission("faceid", "Biometric unlock", "Optional. Prepare Face ID or Touch ID for later use. The previous owner’s protected records still require their fictional passcode.", biometrics)
-                    Button(biometrics ? "Turn off biometric preparation" : "Prepare biometric access") {
-                        if biometrics { biometrics = false; feedback = "" } else { authenticate() }
-                    }.buttonStyle(.bordered).disabled(busy)
-                    Divider()
-                    permission("bell.badge", "Game notifications", "Optional. Allow Last Seen to display real iOS alerts for game events. Test alerts are available in Settings.", alerts)
-                    Button(alerts ? "Turn off game alerts" : "Allow game notifications") {
-                        if alerts {
-                            alerts = false; feedback = ""
-                            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["lastseen-lab-test"])
-                        } else { authorizeAlerts() }
-                    }.buttonStyle(.bordered).disabled(busy)
-                    if !feedback.isEmpty { Text(feedback).font(.footnote).foregroundColor(.secondary) }
-                    Button {
-                        reviewed = true
-                    } label: {
-                        Text("Continue to service workstation").font(.headline).frame(maxWidth: .infinity).padding(12)
-                    }.buttonStyle(.borderedProminent).tint(.teal).disabled(busy)
-                    Text("Both features are optional. You can change your choices later. No real biometrics are stored by the game.").font(.footnote).foregroundColor(.secondary)
-                }.padding(25)
-            }
-            .background(Color(red: 0.07, green: 0.12, blue: 0.18).ignoresSafeArea())
-            .preferredColorScheme(.dark)
-        }
-    }
-    private func permission(_ icon: String, _ title: String, _ detail: String, _ enabled: Bool) -> some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: icon).font(.title2).foregroundColor(.teal).frame(width: 34)
-            VStack(alignment: .leading, spacing: 5) {
-                Text(title).font(.headline)
-                Text(detail).font(.subheadline).foregroundColor(.secondary)
-                Text(enabled ? "Enabled in game" : "Optional").font(.caption).foregroundColor(.teal)
+        Group {
+            if reviewed && revision >= 2 {
+                RecoveryPrologue()
+            } else {
+                ZStack {
+                    Color(red: 0.035, green: 0.06, blue: 0.10).ignoresSafeArea()
+                    VStack(spacing: 0) {
+                        ScrollView {
+                            VStack(spacing: 22) {
+                                Image(systemName: "hand.raised.circle.fill").font(.system(size: 62, weight: .light)).foregroundColor(accent)
+                                Text("Before you begin").font(.system(size: 32, weight: .semibold, design: .rounded)).multilineTextAlignment(.center)
+                                Text("Last Seen is a fictional horror game. Choose the optional features you want to use.").font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
+                                VStack(spacing: 16) {
+                                    permission("faceid", "Face ID / Touch ID", "Prepare authentication for later. Protected records still require the fictional owner passcode.", $wantsBiometrics)
+                                    Divider()
+                                    permission("bell.badge", "Game notifications", "Allow optional native alerts from Last Seen.", $wantsAlerts)
+                                }.padding(18).background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 23))
+                                Label("No real personal records or system modifications", systemImage: "lock.shield")
+                                    .font(.caption).foregroundColor(.secondary).multilineTextAlignment(.center)
+                                Text("iOS may show separate permission dialogs. Both choices are optional; you can change them later.").font(.caption).foregroundColor(.secondary).multilineTextAlignment(.center)
+                            }.padding(24)
+                        }.scrollIndicators(.hidden)
+                        if busy {
+                            ProgressView(status).font(.caption).padding(8)
+                        }
+                        Button {
+                            continueReview()
+                        } label: {
+                            Text("Continue with selected permissions").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 14)
+                        }.buttonStyle(.borderedProminent).tint(accent).foregroundColor(.black).disabled(busy)
+                        Button("Continue without permissions") {
+                            wantsBiometrics = false; wantsAlerts = false; continueReview()
+                        }.font(.subheadline).padding(.vertical, 13).disabled(busy)
+                        Button("Developer Diagnostics") { showQA = true }.font(.caption).foregroundColor(.secondary).disabled(busy)
+                    }.padding(.horizontal, 22).padding(.bottom, 14).frame(maxWidth: 540)
+                }.onAppear { wantsBiometrics = biometrics; wantsAlerts = alerts }
             }
         }
+        .preferredColorScheme(.dark)
+        .sheet(isPresented: $showQA) { OpeningDiagnosticsView() }
     }
-    private func authenticate() {
+
+    private func permission(_ icon: String, _ title: String, _ detail: String, _ binding: Binding<Bool>) -> some View {
+        Toggle(isOn: binding) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: icon).font(.title2).foregroundColor(accent).frame(width: 30)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(title).font(.headline)
+                    Text(detail).font(.caption).foregroundColor(.secondary)
+                }
+            }
+        }.tint(accent).disabled(busy)
+    }
+    private func continueReview() {
+        guard !busy else { return }
+        busy = true
+        OpeningQA.record("Permission review submitted; biometric selected: \(wantsBiometrics), alerts selected: \(wantsAlerts)")
+        guard wantsBiometrics else { biometrics = false; requestAlerts(); return }
+        status = "Preparing biometrics"
         let context = LAContext()
         var error: NSError?
         guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
-            feedback = "Biometrics unavailable. You can continue without them."
-            return
+            biometrics = false
+            OpeningQA.record("Biometric preparation unavailable")
+            requestAlerts(); return
         }
         context.localizedFallbackTitle = ""
-        busy = true
         context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Prepare optional biometric authentication for Last Seen.") { success, _ in
             DispatchQueue.main.async {
                 biometrics = success
-                busy = false
-                feedback = success ? "Biometrics prepared for later use." : "Authentication was not completed. You can continue."
+                OpeningQA.record(success ? "Biometric preparation succeeded" : "Biometric preparation not completed")
+                requestAlerts()
             }
         }
     }
-    private func authorizeAlerts() {
-        busy = true
+    private func requestAlerts() {
+        guard wantsAlerts else {
+            alerts = false
+            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["lastseen-lab-test"])
+            finishReview(); return
+        }
+        status = "Reviewing notifications"
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
             DispatchQueue.main.async {
                 alerts = granted
-                busy = false
-                feedback = granted ? "Game alerts enabled." : "Game alerts are off. You can continue."
+                OpeningQA.record(granted ? "Notification permission granted" : "Notification permission not granted")
+                finishReview()
             }
         }
     }
+    private func finishReview() {
+        OpeningQA.record("Permission review completed")
+        revision = 2; reviewed = true; busy = false
+    }
 }
+
 struct PhoneWallpaper: View {
     let selection: Int
     var body: some View {
