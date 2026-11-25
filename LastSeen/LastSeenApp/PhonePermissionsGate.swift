@@ -26,7 +26,10 @@ struct PhonePermissionsGate: View {
                     Divider()
                     permission("bell.badge", "Game notifications", "Optional. Allow Last Seen to display real iOS alerts for game events. Test alerts are available in Settings.", alerts)
                     Button(alerts ? "Turn off game alerts" : "Allow game notifications") {
-                        if alerts { alerts = false; feedback = "" } else { authorizeAlerts() }
+                        if alerts {
+                            alerts = false; feedback = ""
+                            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["lastseen-lab-test"])
+                        } else { authorizeAlerts() }
                     }.buttonStyle(.bordered).disabled(busy)
                     if !feedback.isEmpty { Text(feedback).font(.footnote).foregroundColor(.secondary) }
                     Button {
