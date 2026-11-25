@@ -19,7 +19,7 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.security.ownerVerified") private var ownerVerified = false
     @AppStorage("lastseen.security.appearanceEnrolled") private var appearanceEnrolled = false
     @State private var showOwnerPasscode = false
-    @AppStorage("lastseen.recovery.stage") private var recoveryStage = 5
+    @AppStorage("lastseen.recovery.stage") private var recoveryStage = 6
     @AppStorage("lastseen.recovery.progress") private var recoveryProgress = 100
     @AppStorage("lastseen.recovery.simulated") private var recoverySimulated = false
     private var biometricUnlock: Bool { OwnerSecurityPolicy.canUseBiometrics(ownerVerified: ownerVerified, appearanceEnrolled: appearanceEnrolled) }
@@ -31,6 +31,7 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.setup.progress") private var setupProgress = 100
     @State private var testNotice = ""
     @State private var confirmSetupReplay = false
+    @State private var showOpeningQA = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -41,6 +42,7 @@ struct PhoneLabView: View {
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: LabApp.self) { app in
                 destination(app)
+                    .safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
                     .toolbar {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button { path = NavigationPath() } label: {
@@ -50,12 +52,14 @@ struct PhoneLabView: View {
                     }
             }
             .navigationDestination(for: AppPage.self) { page in
-                switch page {
-                case .worldThread(let neighbor): NeighborConversationView(neighbor: neighbor)
-                case .worldProfile(let neighbor): NeighborProfileView(neighbor: neighbor)
-                case .note(let id): PhoneNoteEditorView(noteID: id)
-                default: Text("Not available in Phone Lab")
-                }
+                Group {
+                    switch page {
+                    case .worldThread(let neighbor): NeighborConversationView(neighbor: neighbor)
+                    case .worldProfile(let neighbor): NeighborProfileView(neighbor: neighbor)
+                    case .note(let id): PhoneNoteEditorView(noteID: id)
+                    default: Text("Not available in Phone Lab")
+                    }
+                }.safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
             }
         }
         .environmentObject(world)
@@ -148,10 +152,11 @@ struct PhoneLabView: View {
                 Button("Use owner passcode") { showOwnerPasscode = true }.font(.subheadline).disabled(authContext != nil)
                 Button("Explore public apps") { authNotice = ""; locked = false }.font(.caption).disabled(authContext != nil)
             }
-            Text("Swipe up to open").font(.caption2).foregroundColor(.white.opacity(0.6))
+            Text("Swipe up inside the screen to open").font(.caption2).foregroundColor(.white.opacity(0.6))
         }
         .padding(24)
         .foregroundColor(.white)
+        .contentShape(Rectangle())
         .gesture(DragGesture(minimumDistance: 40).onEnded { value in
             if value.translation.height < -50 { requestUnlock() }
         })
@@ -186,18 +191,53 @@ struct PhoneLabView: View {
         }
     }
 
+    // Deliberately inside the app safe area. Real iOS edge gestures remain available.
+    private var gameHomeHandle: some View {
+        Button {
+            returnHome()
+        } label: {
+            VStack(spacing: 5) {
+                Capsule().fill(Color.white.opacity(0.65)).frame(width: 100, height: 5)
+                Text("Home · swipe up").font(.system(size: 10)).foregroundColor(.secondary)
+            }.frame(maxWidth: .infinity).frame(height: 42).contentShape(Rectangle())
+        }.buttonStyle(.plain)
+            .background(.ultraThinMaterial)
+            .accessibilityLabel("Return to in-game home")
+            .gesture(DragGesture(minimumDistance: 16).onEnded { value in
+                if value.translation.height < -20 { returnHome() }
+                else if abs(value.translation.width) > 50 && abs(value.translation.height) < 35 {
+                    returnHome(); panel = .recent
+                    OpeningQA.record("In-game recent apps gesture")
+                }
+            })
+    }
+
+    private func returnHome() {
+        withAnimation(.easeInOut(duration: 0.22)) { path = NavigationPath() }
+        OpeningQA.record("Returned to in-game home")
+    }
+
+    private func pullDown(_ target: LabPanel) -> some Gesture {
+        DragGesture(minimumDistance: 15).onEnded { value in
+            if value.translation.height > 28 && abs(value.translation.width) < value.translation.height {
+                panel = target
+                OpeningQA.record(target == .controls ? "In-game quick settings gesture" : "In-game notifications gesture")
+            }
+        }
+    }
+
     private var launcher: some View {
         VStack(spacing: 16) {
             HStack {
                 Button { panel = .notifications } label: {
                     Label("Notifications", systemImage: "bell")
-                        .labelStyle(.iconOnly).font(.title3)
-                }
+                        .labelStyle(.iconOnly).font(.title3).frame(width: 64, height: 44).contentShape(Rectangle())
+                }.simultaneousGesture(pullDown(.notifications))
                 Spacer()
                 Button { panel = .controls } label: {
                     Image(systemName: wifi ? "slider.horizontal.3" : "wifi.slash")
-                        .font(.title3).accessibilityLabel("Quick settings")
-                }
+                        .font(.title3).frame(width: 64, height: 44).contentShape(Rectangle()).accessibilityLabel("Quick settings")
+                }.simultaneousGesture(pullDown(.controls))
             }.padding(.horizontal, 7)
             ScrollView {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 24) {
@@ -224,6 +264,7 @@ struct PhoneLabView: View {
     }
 
     private func open(_ app: LabApp) {
+        OpeningQA.record("Opened in-game app: \(app.rawValue)")
         locked = false
         recent.removeAll { $0 == app }
         recent.insert(app, at: 0)
@@ -279,13 +320,15 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.3.0 (13)")
+                LabeledContent("Software", value: "1.3.1 (14)")
+                Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay phone setup") { confirmSetupReplay = true }
             }
         }
+        .sheet(isPresented: $showOpeningQA) { OpeningDiagnosticsView() }
         .confirmationDialog("Replay phone setup?", isPresented: $confirmSetupReplay) {
-            Button("Replay setup") { panel = nil; setupProgress = 0; setupStage = 0 }
-            Button("Replay entire introduction") { panel = nil; setupProgress = 0; setupStage = 0; recoveryProgress = 0; recoverySimulated = false; recoveryStage = 0 }
+            Button("Replay setup") { OpeningQA.record("Phone setup replay requested"); panel = nil; setupProgress = 0; setupStage = 0 }
+            Button("Replay entire introduction") { OpeningQA.record("Introduction replay requested"); panel = nil; setupProgress = 0; setupStage = 0; recoveryProgress = 0; recoverySimulated = false; recoveryStage = 0 }
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Your restored phone records and story saves will not be erased.")
