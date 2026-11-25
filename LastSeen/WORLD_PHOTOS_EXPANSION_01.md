@@ -1,5 +1,5 @@
 # World Photos Expansion 01 — asset intake
-November 25, 2026. Creator approved revised everyday batch and later workplace/mystery artwork. Milestone N (living world/narrative), with S4 asset acceptance. Upload pending; do not report integrated or build against a missing asset.
+November 25, 2026. Creator approved revised everyday batch and later workplace/mystery artwork. Milestone N (living world/narrative), with S4 asset acceptance. L1 upload verified November 25; player-facing integration remains gated by continuity.
 
 | Field | Value |
 |---|---|
@@ -10,7 +10,7 @@ November 25, 2026. Creator approved revised everyday batch and later workplace/m
 | Contents | 18 original PNGs: 10 revised everyday images, 8 subsequent additions (7 individual images and one intact composite); 17 individual images overall |
 | IDs | WorldPhoto_E01_01 through WorldPhoto_E01_18 |
 | Manifest | manifest.json, version 1; individual filenames, SHA-256, dimensions, kind and byte lengths |
-| Status | Creator-approved artwork; archive verified locally; GitHub binary upload and narrative/continuity acceptance OPEN |
+| Status | Creator-approved artwork; GitHub binary upload verified, local archive and decode verified; narrative/continuity acceptance OPEN |
 
 The superseded first ten repetitive/squinting drafts are excluded. Preserve approved originals byte-for-byte and previous asset collections; no replacement of existing stable IDs. Composite counts as one file; do not extract tiles as independent full-resolution approved photos. Use the earlier approved 100-world-photo planning target as a flexible guide, not a quota or a claim about distinct usable narrative photographs. Avoid near-identical poses and settings in future batches; vary framing, expression, wardrobe, subject and camera perspective, including photographs without Nora in frame.
 
@@ -21,3 +21,6 @@ The superseded first ten repetitive/squinting drafts are excluded. Preserve appr
 - Verify authored gate behavior, no hidden thumbnails/search/metadata leaks, offline access, zoom/legibility, bounded memory, voice/accessibility alternatives and cross-app consistency. Ensure appropriate player ability to record observations in Field Notes. Test exact file bytes in IPA, migration and iPhone 16e rendering, then update acceptance. Keep story assignments, clue interpretation and answers out of ordinary reports.
 
 This documentation update changes no runtime or active corrected Build 27 IPA.
+
+## Build 28 intake audit
+Release asset 792861753: exact expected size and digest confirmed. Local archive CRC, all hashes and all 18 image decodes passed. Visual review found repeated compositions, noncanonical labels, visible real-looking contact information/coordinates, uncertain cast/pet/family details and dates. Keep all originals in L1, stage verification in CI, do not bundle new assets for player viewing until correction/continuity review. No image-derived clue is required by the new chapter. Existing 39 previously imported images remain unchanged. This avoids publishing misleading clues or real-world identifiers; correction of the actual image pixels remains open, not claimed complete.

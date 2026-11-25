@@ -465,7 +465,7 @@ final class PhoneWorldStore: ObservableObject {
     }
     func visitWebRecord(_ id: String, now: Date = Date()) {
         guard let page = LumaWebCatalog.page(id), page.available(state.flags) else { return }
-        guard state.flags.insert("web.visited." + id).inserted else { return }
+        guard state.flags.insert("web.visited." + page.id).inserted else { return }
         advanceInvestigation(now: now)
         save()
     }
@@ -475,6 +475,15 @@ final class PhoneWorldStore: ObservableObject {
             advanceInvestigation(now: now); save()
         }
     }
+    @discardableResult
+    func submitWebReview(_ answer: String, now: Date = Date()) -> Bool {
+        guard LumaWebCatalog.isReviewReady(state.flags),
+              answer == "A copy may have a different import date from its original capture." else { return false }
+        if state.flags.insert("investigation.chapter2.reviewed").inserted {
+            advanceInvestigation(now:now); save()
+        }
+        return true
+    }
     func advanceInvestigation(now: Date = Date()) {
         guard state.everydayArchiveRevision != nil,
               state.flags.contains("phone-tutorial-finished"),
@@ -483,6 +492,14 @@ final class PhoneWorldStore: ObservableObject {
             append(NeighborMessage(id: "unknown-intro-v1", thread: Neighbor.unknown.id,
                 text: "Is this number working again? Before you trust anything on that phone, look at the studio's saved pages. Some of the records are not what they seem.",
                 fromPlayer: false, at: now, read: false))
+            save()
+        }
+        if state.flags.contains("investigation.chapter2.reviewed"),
+           state.flags.contains("web.visited.archive-ledger"),
+           state.flags.insert("investigation.chapter2.ledgerAcknowledged").inserted {
+            append(NeighborMessage(id:"unknown-review-v2",thread:Neighbor.unknown.id,
+                text:"You separated the copy from the original. Good. Keep that distinction in your notes. I still cannot tell you who made the first record.",
+                fromPlayer:false,at:now,read:false))
             save()
         }
     }

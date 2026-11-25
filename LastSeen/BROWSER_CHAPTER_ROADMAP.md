@@ -1,0 +1,8 @@
+# Build 28 — browser-first investigation expansion
+Creator-approved November 25, 2026. Preserve all Build 27 functions and saves, keep actual story secret in normal reports.
+- SOURCE: six additional local pages, differentiated website branding/section presentation, full-text search of available pages, direct exact addresses, back/forward, reload, bookmarks, history sheet with repeated visits and real timestamps, restored history explicitly undated, clear confirmation, keyboard dismissal on navigation.
+- SOURCE: new investigation review and restricted collection, action-driven access, independent evidence prerequisites, reversible wrong answer, idempotent follow-up correspondence, updated progress tracker. No live internet or externally routable navigation. Locked content excluded from search, history and direct navigation until authorized. Existing story gates remain intact.
+- SOURCE: narrow completed-action response improvement with regression coverage. Full context-aware messaging is still OPEN.
+- SOURCE: photo intake archive verified and held outside runtime pending correction. Do not treat artwork incidental details as canon or publish unsafe identifiers. Existing artwork preserved.
+- VERIFY: exact native CI, new unit tests, simulator smoke tests, device IPA integrity, iPhone 16e upgrade and browser UX, history persistence after relaunch/checkpoint restore, locked routes, search, full chapter progress and no leakage. No full-game ending claim.
+- OPEN: broader browser tabs, deeper site-specific interaction and realistic layouts, authenticated fictional services, expanded cross-app evidence, additional authored chapter content, all pending modernization and narrative scope. Do not present this initial slice as full browser or story completion.

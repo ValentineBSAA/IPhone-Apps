@@ -16,26 +16,69 @@ struct LumaWebPage: Identifiable {
 }
 enum LumaWebCatalog {
     static let pages: [LumaWebPage] = [
-        .init(id:"books",site:"Maple Street Bookshop",title:"Bookshop",address:"maplebooks.test",symbol:"books.vertical.fill",sections:["Independent books, thoughtful gifts and a quiet place to browse. Open 10–6.","Reservations are held for seven days. Bring your reservation reference to the counter."],links:["books-events","cafe"]),
+        .init(id:"books",site:"Maple Street Bookshop",title:"Bookshop",address:"maplebooks.test",symbol:"books.vertical.fill",sections:["Independent books, thoughtful gifts and a quiet place to browse. Open 10–6.","Reservations are held for seven days. Bring your reservation reference to the counter."],links:["books-events","books-reservations","cafe"]),
         .init(id:"books-events",site:"Maple Street Bookshop",title:"Events & reading club",address:"maplebooks.test/events",symbol:"calendar",sections:["Wednesday reading group · 6 PM","This month: mysteries, folklore and stories about places we remember. Ask at the counter about the next meeting."],links:["books"]),
         .init(id:"residents",site:"Ash Street Residents",title:"Resident noticeboard",address:"ashstreet.test",symbol:"building.2.fill",sections:["Welcome to the Ash Street residents' noticeboard.","Elevator inspection pending contractor confirmation. Front entrance and stairs remain available."],links:["residents-services","studio"]),
         .init(id:"residents-services",site:"Ash Street Residents",title:"Building services",address:"ashstreet.test/services",symbol:"wrench",sections:["Building office: Denise Hall.","Maintenance enquiries and parcel collection are handled by the office. Private resident records are not published here."],links:["residents"]),
-        .init(id:"cafe",site:"Maple Cafe",title:"Coffee & pastries",address:"maplecafe.test",symbol:"cup.and.saucer.fill",sections:["Espresso, cappuccino, pastries and sandwiches.","Across from the bookshop. Seasonal specials and a quiet corner to work."],links:["cafe-menu","books"]),
+        .init(id:"cafe",site:"Maple Cafe",title:"Coffee & pastries",address:"maplecafe.test",symbol:"cup.and.saucer.fill",sections:["Espresso, cappuccino, pastries and sandwiches.","Across from the bookshop. Seasonal specials and a quiet corner to work."],links:["cafe-menu","cafe-journal","books"]),
         .init(id:"cafe-menu",site:"Maple Cafe",title:"Seasonal menu",address:"maplecafe.test/menu",symbol:"fork.knife",sections:["Vanilla latte · lavender tea · cinnamon pastries","Breakfast and lunch served throughout the day."],links:["cafe"]),
-        .init(id:"studio",site:"Blue Hour Interactive",title:"Independent games, personal stories",address:"bluehour.test",symbol:"moon.stars.fill",sections:["A small independent studio in the Ash Street complex.","Nora Bennett leads development. The team works on experimental interactive stories, accessibility and thoughtful game design."],links:["studio-team","studio-projects","studio-notes"]),
+        .init(id:"studio",site:"Blue Hour Interactive",title:"Independent games, personal stories",address:"bluehour.test",symbol:"moon.stars.fill",sections:["A small independent studio in the Ash Street complex.","Nora Bennett leads development. The team works on experimental interactive stories, accessibility and thoughtful game design."],links:["studio-team","studio-projects","studio-notes","studio-news"]),
         .init(id:"studio-team",site:"Blue Hour Interactive",title:"Meet the studio",address:"bluehour.test/team",symbol:"person.2.fill",sections:["Nora Bennett · Founder / development","Adrian Cole · Technical lead","Tessa Reed · Art and production"],links:["studio","studio-projects"]),
         .init(id:"studio-projects",site:"Blue Hour Interactive",title:"Current projects",address:"bluehour.test/projects",symbol:"gamecontroller.fill",sections:["A work-in-progress psychological horror prototype explores memory, familiar places and unreliable observations.","Development material is not a statement of real events. The team keeps experimental references separate from ordinary project notes."],links:["studio","studio-notes"],images:["Recovered_B27_27","Recovered_B27_29"]),
         .init(id:"studio-notes",site:"Blue Hour Interactive",title:"Development journal",address:"bluehour.test/journal",symbol:"doc.text.fill",sections:["The current build review focuses on accessibility, persistence and visual consistency.","Some older reference records are missing from the current index. A recovered local index may be available after the phone's restoration investigation."],links:["studio","archive"],images:["Recovered_B27_26"]),
         .init(id:"archive",site:"Recovered archive",title:"Local archive index",address:"archive.test",symbol:"archivebox.fill",sections:["This is a cached, incomplete collection. Source claims have not been verified.","Some records may be inaccurate, altered or fictional. Compare them with material already available on the phone."],links:["archive-records","studio-notes"],gate:"investigation.contact.received"),
-        .init(id:"archive-records",site:"Recovered archive",title:"Recovered attachments",address:"archive.test/records",symbol:"photo.stack",sections:["Local recovered records. Dates and provenance may be unreliable.","Choose whether to reveal individual images. The text-only inspection option records the same discovery."],links:["archive"],gate:"web.visited.archive",images:["Recovered_B27_02","Recovered_B27_03","Recovered_B27_13","Recovered_B27_18"])
+        .init(id:"archive-records",site:"Recovered archive",title:"Recovered attachments",address:"archive.test/records",symbol:"photo.stack",sections:["Local recovered records. Dates and provenance may be unreliable.","Choose whether to reveal individual images. The text-only inspection option records the same discovery."],links:["archive","archive-review"],gate:"web.visited.archive",images:["Recovered_B27_02","Recovered_B27_03","Recovered_B27_13","Recovered_B27_18"])
+        , .init(id:"books-reservations",site:"Maple Street Bookshop",title:"Reservations & collections",address:"maplebooks.test/reservations",symbol:"bookmark",sections:["Pick up reserved books at the front counter. Bring the confirmation from your order.","Special orders are collected separately from reading-club stock. The shop does not publish customer details."],links:["books","books-events"])
+        , .init(id:"cafe-journal",site:"Maple Cafe",title:"From the counter",address:"maplecafe.test/journal",symbol:"newspaper",sections:["Our window seats are popular with people who bring laptops. Please keep the aisle clear when the reading group arrives.","This week's staff pick: a warm cinnamon pastry with a small coffee. Bring a reusable cup if you have one."],links:["cafe-menu","books-events"])
+        , .init(id:"studio-news",site:"Blue Hour Interactive",title:"Studio notebook",address:"bluehour.test/news",symbol:"newspaper",sections:["Development update · The team is separating the playable prototype from its reference library. Early builds may contain temporary names and duplicate images.","Production note · The review ledger uses two labels: capture time for the original record and import time for the copy. An imported image is not necessarily a new photograph.","Technical note · The public journal remains the stable reference. Internal review material is available only through the recovered index."],links:["studio","studio-notes"])
+        , .init(id:"archive-review",site:"Recovered archive",title:"Review desk",address:"archive.test/review",symbol:"lock.shield",sections:["The next folder is a restricted review collection. Its index is incomplete; entries cannot be treated as verified evidence.","Review the available record and the studio's public production note before submitting an interpretation."],links:["archive-records","studio-news","archive-collection"],gate:"web.visited.archive-records")
+        , .init(id:"archive-collection",site:"Recovered archive",title:"Review collection",address:"archive.test/collection",symbol:"folder.fill",sections:["Two catalog entries refer to the same reference export. Their import labels differ; the original capture field is missing from one.","A copy can circulate without establishing where or when the original was made. The review ledger marks this entry disputed, not resolved.","The next inquiry should establish provenance rather than assume the image depicts an event."],links:["archive-review","archive-ledger"],gate:"investigation.chapter2.reviewed")
+        , .init(id:"archive-ledger",site:"Recovered archive",title:"Provenance ledger",address:"archive.test/ledger",symbol:"doc.plaintext",sections:["Review ledger · Original capture: not independently confirmed. Import: recorded in the restored index. Source: unverified.","The collection has been separated into working references and disputed copies. Keep observations distinct from conclusions.","End of the currently recovered ledger. Further records remain unavailable."],links:["archive-collection","studio-news"],gate:"web.visited.archive-collection")
     ]
     static func page(_ id: String) -> LumaWebPage? {
         pages.first { $0.id == id || ($0.address == id) || ($0.site == id && !$0.address.contains("/")) }
     }
     static func visible(_ flags: Set<String>) -> [LumaWebPage] { pages.filter { $0.available(flags) } }
+    static func isReviewReady(_ flags: Set<String>) -> Bool {
+        flags.contains("web.visited.archive-review") && flags.contains("web.visited.studio-news") &&
+        (page("archive-records")?.images.contains { flags.contains("web.inspected." + $0) } ?? false)
+    }
+    static func search(_ raw: String, flags: Set<String>) -> [LumaWebPage] {
+        let q = normalized(raw)
+        return visible(flags).filter { p in
+            q.isEmpty ? !p.address.contains("/") : ([p.address,p.site,p.title] + p.sections).contains { $0.localizedCaseInsensitiveContains(q) }
+        }
+    }
     static func attachments(in flags: Set<String>) -> [String] { visible(flags).flatMap(\.images) }
     static func normalized(_ raw: String) -> String {
-        raw.trimmingCharacters(in:.whitespacesAndNewlines).lowercased().replacingOccurrences(of:"https://",with:"").replacingOccurrences(of:"http://",with:"").trimmingCharacters(in:CharacterSet(charactersIn:"/"))
+        var value = raw.trimmingCharacters(in:.whitespacesAndNewlines).lowercased()
+        if value.hasPrefix("https://") { value.removeFirst(8) }
+        else if value.hasPrefix("http://") { value.removeFirst(7) }
+        return value.trimmingCharacters(in:CharacterSet(charactersIn:"/"))
+    }
+}
+struct LumaBrowserVisit: Codable, Equatable {
+    let pageID: String
+    let date: Date?
+}
+enum LumaBrowserHistory {
+    static func decode(_ raw: String, legacy: String) -> [LumaBrowserVisit] {
+        if let data = raw.data(using:.utf8), let rows = try? JSONDecoder().decode([LumaBrowserVisit].self,from:data) {
+            return Array(rows.suffix(100))
+        }
+        return legacy.split(separator:"|").map(String.init).compactMap { id in
+            LumaWebCatalog.page(id).map { LumaBrowserVisit(pageID:$0.id,date:nil) }
+        }
+    }
+    static func encode(_ rows: [LumaBrowserVisit]) -> String {
+        guard let data = try? JSONEncoder().encode(Array(rows.suffix(100))) else { return "[]" }
+        return String(data:data,encoding:.utf8) ?? "[]"
+    }
+    static func record(_ id: String, in rows: [LumaBrowserVisit], now: Date = Date()) -> [LumaBrowserVisit] {
+        Array((rows + [LumaBrowserVisit(pageID:id,date:now)]).suffix(100))
+    }
+    static func visible(_ rows: [LumaBrowserVisit], flags: Set<String>) -> [LumaBrowserVisit] {
+        rows.filter { LumaWebCatalog.page($0.pageID)?.available(flags) == true }
     }
 }
 enum InvestigationProgress {
@@ -54,6 +97,8 @@ enum InvestigationProgress {
             .init(id:"studio",title:"Explore the restored web records",hint:"The studio's saved website is a useful place to start.",route:"browser",done:flags.contains("web.visited.studio")),
             .init(id:"followup",title:"Review new correspondence",hint:"Check recent messages and the pages they point toward.",route:"messages",done:flags.contains("web.visited.archive")),
             .init(id:"records",title:"Compare recovered records",hint:"Examine an available archive attachment or use its text-only inspection option.",route:"browser",done:flags.contains(where:{$0.hasPrefix("web.inspected.Recovered_B27_") && LumaWebCatalog.page("archive-records")!.images.contains(String($0.dropFirst("web.inspected.".count)))}))
+            , .init(id:"review",title:"Review the next collection",hint:"Compare the available web records and complete the review at the restricted collection.",route:"browser",done:flags.contains("investigation.chapter2.reviewed"))
+            , .init(id:"ledger",title:"Establish provenance",hint:"Revisit the accessible collection and read its linked ledger.",route:"browser",done:flags.contains("web.visited.archive-ledger"))
         ]
     }
     static func summary(_ flags: Set<String>) -> String { "\(steps(flags).filter(\.done).count) completed" }
@@ -115,6 +160,12 @@ struct LumaWebBrowser: View {
     @AppStorage("lastseen.lab.browserForwardStack") private var forwardRaw = ""
     @AppStorage("lastseen.lab.history") private var history = ""
     @AppStorage("lastseen.lab.bookmarks") private var bookmarks = ""
+    @AppStorage("lastseen.lab.browserVisitLog") private var visitRaw = ""
+    @State private var showHistory = false
+    @State private var confirmClear = false
+    @State private var reviewAnswer = ""
+    @State private var reviewNotice = ""
+    @FocusState private var addressFocused: Bool
     @AppStorage("lastseen.lab.browserSeeded") private var seeded = false
     @State private var query = ""
     @State private var showHint = false
@@ -123,29 +174,94 @@ struct LumaWebBrowser: View {
     private var page: LumaWebPage? { LumaWebCatalog.page(current).flatMap { $0.available(world.state.flags) ? $0 : nil } }
     private func entries(_ raw:String) -> [String] { raw.split(separator:"|").map(String.init).compactMap { x in x == home ? home : LumaWebCatalog.page(x).flatMap { $0.available(world.state.flags) ? $0.id : nil } } }
     private func encoded(_ values:[String]) -> String { values.joined(separator:"|") }
-    private var matches: [LumaWebPage] {
-        let q=LumaWebCatalog.normalized(query)
-        return LumaWebCatalog.visible(world.state.flags).filter { p in
-            q.isEmpty ? !p.address.contains("/") : (p.address.localizedCaseInsensitiveContains(q) || p.site.localizedCaseInsensitiveContains(q) || p.title.localizedCaseInsensitiveContains(q))
+    private var matches: [LumaWebPage] { LumaWebCatalog.search(query,flags:world.state.flags) }
+    private var visits: [LumaBrowserVisit] { LumaBrowserHistory.decode(visitRaw,legacy:history) }
+    private var visibleVisits: [LumaBrowserVisit] { LumaBrowserHistory.visible(visits,flags:world.state.flags) }
+    private func submitAddress() {
+        addressFocused = false
+        let q = LumaWebCatalog.normalized(query)
+        if let p = LumaWebCatalog.visible(world.state.flags).first(where:{$0.address == q}) { visit(p.id) }
+        else { showResults() }
+    }
+    private func tint(_ p:LumaWebPage) -> Color {
+        switch p.site {
+        case "Maple Street Bookshop": return Color(red:0.52,green:0.32,blue:0.22)
+        case "Maple Cafe": return Color(red:0.26,green:0.48,blue:0.35)
+        case "Ash Street Residents": return Color(red:0.23,green:0.39,blue:0.61)
+        case "Blue Hour Interactive": return Color(red:0.28,green:0.30,blue:0.60)
+        default: return Color(red:0.20,green:0.37,blue:0.36)
         }
+    }
+    private func websiteHeader(_ p:LumaWebPage) -> some View {
+        VStack(alignment:.leading,spacing:12) {
+            HStack {
+                Image(systemName:p.symbol).font(.title2)
+                Text(p.site).font(.headline)
+                Spacer()
+                Image(systemName:"globe").accessibilityHidden(true)
+            }
+            Divider().overlay(.white.opacity(0.3))
+            Text(p.title).font(.largeTitle.bold()).fixedSize(horizontal:false,vertical:true)
+            Text(p.address).font(.caption).opacity(0.85)
+        }.foregroundColor(.white).padding(20)
+        .frame(maxWidth:.infinity,alignment:.leading)
+        .background(tint(p),in:RoundedRectangle(cornerRadius:18))
+    }
+    private func websiteParagraph(_ text:String, index:Int, page p:LumaWebPage) -> some View {
+        VStack(alignment:.leading,spacing:8) {
+            if p.site == "Recovered archive" {
+                Text("RECORD " + String(index+1)).font(.caption.monospaced()).foregroundColor(.secondary)
+            } else if p.site == "Blue Hour Interactive" {
+                Label(index == 0 ? "Studio update" : "Development notes",systemImage:index == 0 ? "newspaper" : "doc.text").font(.caption.bold()).foregroundColor(tint(p))
+            } else if p.site == "Ash Street Residents" {
+                Label("Resident information",systemImage:"info.circle").font(.caption.bold()).foregroundColor(tint(p))
+            }
+            Text(text).font(p.site == "Maple Street Bookshop" ? .body.weight(.regular) : .body)
+                .fixedSize(horizontal:false,vertical:true).textSelection(.enabled)
+        }.frame(maxWidth:.infinity,alignment:.leading).padding(15).lumaSurface(radius:14)
+    }
+    private var reviewPanel: some View {
+        VStack(alignment:.leading,spacing:12) {
+            Label("Restricted collection",systemImage:"lock.shield").font(.headline)
+            if world.state.flags.contains("investigation.chapter2.reviewed") {
+                Label("Review accepted",systemImage:"checkmark.circle").foregroundColor(LumaDesign.accent)
+            } else if LumaWebCatalog.isReviewReady(world.state.flags) {
+                Text("Which interpretation is supported by the available records?").font(.subheadline)
+                ForEach(["The import date proves when the image was taken.","A copy may have a different import date from its original capture.","Every recovered image is independently verified."],id:\.self) { option in
+                    Button { reviewAnswer=option } label: {
+                        HStack { Image(systemName:reviewAnswer == option ? "largecircle.fill.circle" : "circle"); Text(option); Spacer() }.frame(maxWidth:.infinity,alignment:.leading)
+                    }.buttonStyle(.plain)
+                }
+                Button("Submit review") {
+                    reviewNotice = world.submitWebReview(reviewAnswer) ? "Review accepted." : "Compare the record labels again. Your progress is kept."
+                }.buttonStyle(.borderedProminent).disabled(reviewAnswer.isEmpty)
+                if !reviewNotice.isEmpty { Text(reviewNotice).font(.caption).foregroundColor(.secondary) }
+            } else {
+                Text("The review is locked until the necessary records have been examined.").font(.subheadline).foregroundColor(.secondary)
+            }
+        }.frame(maxWidth:.infinity,alignment:.leading).padding(15).lumaSurface()
     }
     var body: some View {
         VStack(spacing:0) {
             HStack {
                 Image(systemName:"magnifyingglass").foregroundColor(.secondary)
                 TextField("Search or enter address",text:$query).textInputAutocapitalization(.never).autocorrectionDisabled().submitLabel(.go)
-                    .onSubmit { let q=LumaWebCatalog.normalized(query); if let p=LumaWebCatalog.visible(world.state.flags).first(where:{$0.address==q}) ?? matches.first { visit(p.id) } else { showResults() } }
+                    .focused($addressFocused).onSubmit { submitAddress() }.accessibilityIdentifier("luma.browser.address")
                 if !query.isEmpty { Button { query=""; showResults() } label:{ Image(systemName:"xmark.circle.fill").accessibilityLabel("Clear address") } }
-                Button("Go") { let q=LumaWebCatalog.normalized(query); if let p=LumaWebCatalog.visible(world.state.flags).first(where:{$0.address==q}) ?? matches.first { visit(p.id) } else { showResults() } }
+                Button("Go") { submitAddress() }
+                Button { if let p=page { apply(p.id) } else { submitAddress() } } label:{ Image(systemName:"arrow.clockwise").accessibilityLabel("Reload page") }
             }.padding(12).background(.thinMaterial,in:RoundedRectangle(cornerRadius:16)).padding(10)
             ScrollView {
                 VStack(alignment:.leading,spacing:18) {
                     if let p=page {
-                        LumaHeader(title:p.site,detail:p.address,symbol:p.symbol)
-                        Text(p.title).font(.largeTitle.bold()).fixedSize(horizontal:false,vertical:true)
-                        ForEach(Array(p.sections.enumerated()),id:\.offset) { _,paragraph in
-                            Text(paragraph).frame(maxWidth:.infinity,alignment:.leading).padding(14).lumaSurface(radius:14)
+                        websiteHeader(p)
+                        if p.site == "Maple Cafe" || p.site == "Maple Street Bookshop" {
+                            Label(p.site == "Maple Cafe" ? "Coffee · Food · Community" : "Books · Events · Reservations",systemImage:p.symbol).font(.subheadline).foregroundColor(.secondary)
                         }
+                        ForEach(Array(p.sections.enumerated()),id:\.offset) { index,paragraph in
+                            websiteParagraph(paragraph,index:index,page:p)
+                        }
+                        if p.id == "archive-review" { reviewPanel }
                         ForEach(p.images,id:\.self) { asset in
                             VStack(alignment:.leading,spacing:12) {
                                 if revealed.contains(asset) && LumaWebCatalog.attachments(in:world.state.flags).contains(asset) {
@@ -175,8 +291,7 @@ struct LumaWebBrowser: View {
                         if matches.isEmpty { Text("No accessible saved pages match.").foregroundColor(.secondary) }
                         if query.isEmpty {
                             siteSection("Bookmarks",entries(bookmarks))
-                            siteSection("History",Array(entries(history).reversed()))
-                            if !history.isEmpty { Button("Clear history",role:.destructive){history=""} }
+                            Button { showHistory = true } label: { Label("Browsing history",systemImage:"clock.arrow.circlepath") }.buttonStyle(.bordered)
                         }
                     }
                 }.padding(18)
@@ -189,6 +304,8 @@ struct LumaWebBrowser: View {
                 Spacer()
                 Button { showResults(clear:true) } label:{ Image(systemName:"house").accessibilityLabel("Start page") }
                 Spacer()
+                Button { showHistory = true } label:{ Image(systemName:"clock.arrow.circlepath").accessibilityLabel("History") }
+                Spacer()
                 Button {
                     guard let p=page else{return}; var values=entries(bookmarks)
                     if values.contains(p.id){values.removeAll{$0==p.id}} else{values.append(p.id)}
@@ -199,14 +316,40 @@ struct LumaWebBrowser: View {
         }.navigationTitle("Browser").navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if !seeded { if history.isEmpty { history="cafe|books" }; if bookmarks.isEmpty{bookmarks="books"}; seeded=true }
+            if visitRaw.isEmpty { visitRaw=LumaBrowserHistory.encode(visits) }
             if let p=page { current=p.id; query=p.address } else { current="" }
         }
         .onChange(of:world.state.flags) { _ in if page==nil { current=""; revealed=[] } }
+        .sheet(isPresented:$showHistory) {
+            NavigationStack {
+                List {
+                    if visibleVisits.isEmpty { Text("No browsing history").foregroundColor(.secondary) }
+                    ForEach(Array(visibleVisits.reversed().enumerated()),id:\.offset) { _,entry in
+                        if let p=LumaWebCatalog.page(entry.pageID) {
+                            Button { showHistory=false; visit(p.id) } label: {
+                                VStack(alignment:.leading,spacing:4) {
+                                    Text(p.title).font(.headline)
+                                    Text(p.address).font(.caption).foregroundColor(.secondary)
+                                    if let date=entry.date { Text(date,format:.dateTime.month().day().hour().minute()).font(.caption2).foregroundColor(.secondary) }
+                                    else { Text("Restored history · date unavailable").font(.caption2).foregroundColor(.secondary) }
+                                }
+                            }
+                        }
+                    }
+                    if !visibleVisits.isEmpty { Button("Clear history",role:.destructive) { confirmClear=true } }
+                }.navigationTitle("History").toolbar {
+                    ToolbarItem(placement:.cancellationAction) { Button("Done") { showHistory=false } }
+                }.confirmationDialog("Clear browsing history?",isPresented:$confirmClear,titleVisibility:.visible) {
+                    Button("Clear history",role:.destructive) { history=""; visitRaw="[]" }
+                    Button("Cancel",role:.cancel) {}
+                } message: { Text("Bookmarks and investigation progress will be kept.") }
+            }
+        }
     }
     private func siteSection(_ title:String,_ ids:[String]) -> some View {
         VStack(alignment:.leading,spacing:10) {
             Text(title).font(.headline)
-            ForEach(Array(Set(ids)).sorted(),id:\.self) { id in
+            ForEach(ids.reduce(into:[String]()) { if !$0.contains($1) { $0.append($1) } },id:\.self) { id in
                 if let p=LumaWebCatalog.page(id) { Button { visit(id) } label:{ HStack{Text(p.title); Spacer(); Text(p.site).font(.caption).foregroundColor(.secondary)}.padding(10) }.buttonStyle(.plain) }
             }
         }
@@ -221,7 +364,8 @@ struct LumaWebBrowser: View {
         revealed=[]
         if id==home { current=""; query=""; return }
         guard let p=LumaWebCatalog.page(id),p.available(world.state.flags) else{return}
-        current=p.id; query=p.address
+        current=p.id; query=p.address; addressFocused=false; reviewAnswer=""; reviewNotice=""
+        visitRaw=LumaBrowserHistory.encode(LumaBrowserHistory.record(p.id,in:visits))
         history=encoded(Array((entries(history).filter{$0 != p.id}+[p.id]).suffix(100)))
         world.visitWebRecord(p.id)
     }

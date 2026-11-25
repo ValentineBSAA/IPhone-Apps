@@ -15,7 +15,7 @@ final class LumaSaveStore: ObservableObject {
         "lastseen.lab.messageSound","lastseen.lab.messageHaptics","lastseen.lab.horrorEffects",
         "lastseen.lab.hideLockPreviews","lastseen.lab.brightness","lastseen.lab.wifi","lastseen.lab.deferSystemEdges",
         "lastseen.lab.favoritePhotos","lastseen.lab.stopwatchStart","lastseen.lab.stopwatchElapsed","lastseen.lab.timerEnd",
-        "lastseen.lab.timerMinutes","lastseen.lab.history","lastseen.lab.bookmarks","lastseen.lab.browserSeeded",
+        "lastseen.lab.timerMinutes","lastseen.lab.history","lastseen.lab.browserVisitLog","lastseen.lab.bookmarks","lastseen.lab.browserSeeded",
         "lastseen.lab.calculatorHistory","lastseen.lab.browserPage","lastseen.lab.browserForward","lastseen.lab.browserBackStack","lastseen.lab.browserForwardStack",
         "lastseen.restored.mail.read","lastseen.setup.device","lastseen.relay.installed","lastseen.relay.versions",
         "lastseen.relay.sources","lastseen.relay.history","lastseen.relay.safeMode","lastseen.relay.compactIcons","lastseen.relay.tealTheme",

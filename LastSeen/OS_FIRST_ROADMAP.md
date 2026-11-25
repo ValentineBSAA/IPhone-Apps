@@ -40,7 +40,7 @@ Dependency order: S0 before expanding runtime scope; S1 establishes reliable pre
 | [PUZZLE_DESIGN_ROADMAP.md](PUZZLE_DESIGN_ROADMAP.md) | Original puzzle families, hints, research references, progress and acceptance. |
 | [GAMEPLAY_STATISTICS_ROADMAP.md](GAMEPLAY_STATISTICS_ROADMAP.md) | Live playtime, session, autosave and earned milestone counters. |
 | [LUMA_ASSISTANT_ROADMAP.md](LUMA_ASSISTANT_ROADMAP.md) | Voice, mic, offline assistant and acceptance. |
-| [WORLD_PHOTOS_EXPANSION_01.md](WORLD_PHOTOS_EXPANSION_01.md) | Approved photo intake, integrity and continuity review; L1 upload pending. |
+| [WORLD_PHOTOS_EXPANSION_01.md](WORLD_PHOTOS_EXPANSION_01.md) | Approved photo intake, integrity and continuity review; L1 upload verified; continuity hold. |
 | [NORA_WORLD_BIBLE.md](NORA_WORLD_BIBLE.md) / [CHARACTER_CONTINUITY.md](CHARACTER_CONTINUITY.md) | Canon and asset identity; not a plot walkthrough. |
 | [DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md) | Brief restart instructions for engineering. |
 | [BUILD27_CONSOLIDATION.md](BUILD27_CONSOLIDATION.md) | Historical Build 27 implementation log. |
@@ -48,3 +48,7 @@ Dependency order: S0 before expanding runtime scope; S1 establishes reliable pre
 
 ## 5. Next action and ongoing discipline
 First verify the actual corrected artifact, then deliver the extracted unsigned IPA (not outer ZIP) and one spoiler-free physical checklist. Check actual install and package transaction before unrelated physical work. Log feedback without resetting saved data. Update this status table and the active release ledger when evidence changes; update specialist specs when approved requirements change. Keep detailed technical decisions in their proper workstream, build history in consolidation log, private story specifics in spoiler-marked developer notes. No repeated append-only copies of new requirements across every document. Preserve all prior approved requirements in specialist docs, feature ledger and archived snapshots; research citations retained from earlier notes, verify links before relying on them for implementation.
+
+
+## Build 28 browser-first chapter slice
+Creator approved next chapter and richer browser. Runtime work begins after the Build 27 CI baseline; device package correction remains OPEN. See [browser chapter acceptance](BROWSER_CHAPTER_ROADMAP.md). New version 1.7.0 (28); no claim of CI or device pass until exact run confirms. All other approved S1/S2/S3/N requirements remain tracked and incomplete unless independently verified.

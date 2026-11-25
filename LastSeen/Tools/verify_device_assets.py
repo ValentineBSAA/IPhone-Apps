@@ -38,7 +38,7 @@ if a.ipa:
         names=z.namelist()
         assert len(names)==len(set(names)), "Duplicate ZIP paths"
         info=plistlib.loads(z.read(prefix+"Info.plist"))
-        assert info["CFBundleVersion"]=="27" and info["CFBundleShortVersionString"]=="1.6.0"
+        assert info["CFBundleVersion"]=="28" and info["CFBundleShortVersionString"]=="1.7.0"
         assert info["MinimumOSVersion"]=="16.0" and info["CFBundleIdentifier"]=="com.valentinebsaa.lastseen.horror"
         for name in ["Assets.car","Info.plist",info["CFBundleExecutable"]]:
             assert digest(z.read(prefix+name))==digest((a.app/name).read_bytes()), name

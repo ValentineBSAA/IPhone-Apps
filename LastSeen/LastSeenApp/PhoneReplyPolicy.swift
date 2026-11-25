@@ -30,6 +30,13 @@ enum PhoneReplyPolicy {
                 ? "Wait, what do you mean by jailbreak? Is that how you got her phone working?"
                 : "I'm not familiar with that. Are you trying to reach someone in the building?")
         }
+        let reportedUnlock = ["figured out how to unlock","managed to unlock","already unlocked","unlocked it","got it unlocked"].contains { normalized.contains($0) }
+        let asksForAccess = ["how do i","how can i","can you","what is","what's","don't know how","couldn't","could not","haven't","have not","didn't","not unlocked"].contains { normalized.contains($0) }
+        if neighbor == .maya && !intro && reportedUnlock && !asksForAccess {
+            return PhoneReplyPlan(text: mentions("nora","missing","where","safe")
+                ? "I'm glad you got it open. I wish I knew where she was. Please keep me updated on what you find."
+                : "I'm glad you got it open. Take your time, and let me know how it goes.")
+        }
         if mentions("password", "passcode", "pin", "unlock", "code") {
             return PhoneReplyPlan(text: neighbor == .maya
                 ? "I don't know her passcode. She was pretty careful about that stuff."
