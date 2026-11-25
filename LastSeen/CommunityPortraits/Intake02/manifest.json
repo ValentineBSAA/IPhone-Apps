@@ -1,0 +1,108 @@
+{
+  "source": "appcove/open-test-data",
+  "revision": "d17fea2414ec9c1a89eb0a33248a2c40772e9c0a",
+  "license": "Apache-2.0",
+  "status": "visually reviewed source reserves; not runtime assets",
+  "assets": [
+    {
+      "asset": "ReservePortrait_01.webp",
+      "source_path": "person/00f3f6c55434db3e-1/profile/base.webp",
+      "source_url": "https://github.com/appcove/open-test-data/blob/d17fea2414ec9c1a89eb0a33248a2c40772e9c0a/person/00f3f6c55434db3e-1/profile/base.webp",
+      "git_blob_sha": "c9ec67da5343691bd64c2ccfbb899f69d7804f34",
+      "width": 384,
+      "height": 384,
+      "license": "Apache-2.0",
+      "assigned_handle": null
+    },
+    {
+      "asset": "ReservePortrait_02.webp",
+      "source_path": "person/15f9c85a30f2f3eb-1/profile/base.webp",
+      "source_url": "https://github.com/appcove/open-test-data/blob/d17fea2414ec9c1a89eb0a33248a2c40772e9c0a/person/15f9c85a30f2f3eb-1/profile/base.webp",
+      "git_blob_sha": "079654c5eb99d4b0841c92b5c3a117f05c699ee9",
+      "width": 384,
+      "height": 384,
+      "license": "Apache-2.0",
+      "assigned_handle": null
+    },
+    {
+      "asset": "ReservePortrait_03.webp",
+      "source_path": "person/16ff9582693e8190-1/profile/base.webp",
+      "source_url": "https://github.com/appcove/open-test-data/blob/d17fea2414ec9c1a89eb0a33248a2c40772e9c0a/person/16ff9582693e8190-1/profile/base.webp",
+      "git_blob_sha": "b4bf2ed7f06a56a00f78d989adac2cdc5a252bbf",
+      "width": 384,
+      "height": 384,
+      "license": "Apache-2.0",
+      "assigned_handle": null
+    },
+    {
+      "asset": "ReservePortrait_04.webp",
+      "source_path": "person/194e7dafd9c4df32-1/profile/base.webp",
+      "source_url": "https://github.com/appcove/open-test-data/blob/d17fea2414ec9c1a89eb0a33248a2c40772e9c0a/person/194e7dafd9c4df32-1/profile/base.webp",
+      "git_blob_sha": "87bd5fa4ca5b6320a73fae15f88be2d5f198e3e7",
+      "width": 384,
+      "height": 384,
+      "license": "Apache-2.0",
+      "assigned_handle": null
+    },
+    {
+      "asset": "ReservePortrait_05.webp",
+      "source_path": "person/1a477bd04f9a7689-1/profile/base.webp",
+      "source_url": "https://github.com/appcove/open-test-data/blob/d17fea2414ec9c1a89eb0a33248a2c40772e9c0a/person/1a477bd04f9a7689-1/profile/base.webp",
+      "git_blob_sha": "1e697b78823870c4ddf647dc0f6910ca857482d7",
+      "width": 384,
+      "height": 384,
+      "license": "Apache-2.0",
+      "assigned_handle": null
+    },
+    {
+      "asset": "ReservePortrait_06.webp",
+      "source_path": "person/1c51f7867909f367-1/profile/base.webp",
+      "source_url": "https://github.com/appcove/open-test-data/blob/d17fea2414ec9c1a89eb0a33248a2c40772e9c0a/person/1c51f7867909f367-1/profile/base.webp",
+      "git_blob_sha": "0c066a6a59c17f2686ad3b2722bfd64159d6f4e1",
+      "width": 384,
+      "height": 384,
+      "license": "Apache-2.0",
+      "assigned_handle": null
+    },
+    {
+      "asset": "ReservePortrait_07.webp",
+      "source_path": "person/32682340332a2073-1/profile/base.webp",
+      "source_url": "https://github.com/appcove/open-test-data/blob/d17fea2414ec9c1a89eb0a33248a2c40772e9c0a/person/32682340332a2073-1/profile/base.webp",
+      "git_blob_sha": "47ccdd984431d5f79038c0660a9060d29e50f5bf",
+      "width": 384,
+      "height": 384,
+      "license": "Apache-2.0",
+      "assigned_handle": null
+    },
+    {
+      "asset": "ReservePortrait_08.webp",
+      "source_path": "person/392c16f05254b1b4-1/profile/base.webp",
+      "source_url": "https://github.com/appcove/open-test-data/blob/d17fea2414ec9c1a89eb0a33248a2c40772e9c0a/person/392c16f05254b1b4-1/profile/base.webp",
+      "git_blob_sha": "fad1263631277db83fd98f9c995ce11e27884eef",
+      "width": 384,
+      "height": 384,
+      "license": "Apache-2.0",
+      "assigned_handle": null
+    },
+    {
+      "asset": "ReservePortrait_09.webp",
+      "source_path": "person/40b6f3bcc73c9b38-1/profile/base.webp",
+      "source_url": "https://github.com/appcove/open-test-data/blob/d17fea2414ec9c1a89eb0a33248a2c40772e9c0a/person/40b6f3bcc73c9b38-1/profile/base.webp",
+      "git_blob_sha": "15a7915af8d610c8ba2fda730f5622fdd4d2b2d0",
+      "width": 384,
+      "height": 384,
+      "license": "Apache-2.0",
+      "assigned_handle": null
+    },
+    {
+      "asset": "ReservePortrait_10.webp",
+      "source_path": "person/42512daa86943579-1/profile/base.webp",
+      "source_url": "https://github.com/appcove/open-test-data/blob/d17fea2414ec9c1a89eb0a33248a2c40772e9c0a/person/42512daa86943579-1/profile/base.webp",
+      "git_blob_sha": "c97b9e07e3981a98edcec8d605640dfe11d64aaa",
+      "width": 384,
+      "height": 384,
+      "license": "Apache-2.0",
+      "assigned_handle": null
+    }
+  ]
+}

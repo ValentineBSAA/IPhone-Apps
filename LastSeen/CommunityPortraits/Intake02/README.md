@@ -1,0 +1,2 @@
+# Community portrait intake 02
+Ten synthetic 384x384 portraits acquired from AppCove open-test-data, unmodified source bytes verified by Git blob SHA. Wider adult age range. License and NOTICE retained. No imported personal names, no real identities and no plot assignments. Source-only reserves; do not treat as compiled or integrated. Convert to supported catalog format before runtime intake and validate in CI.
