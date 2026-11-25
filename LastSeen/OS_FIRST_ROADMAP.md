@@ -1,4 +1,11 @@
 # LAST SEEN — authoritative master roadmap
+
+## CURRENT GATE — audio corrective release (November 25, 2026)
+**HOLD until creator uploads the new sound ZIP.** This supersedes earlier planning/implementation gates. Once that ZIP arrives, creator has authorized the next single corrective release: inspect and validate assets, implement audio fixes, run mandatory CI and extract/verify the actual IPA. No additional confirmation needed unless the ZIP is incomplete or materially ambiguous. No runtime changes, version bump, or workflow run for this roadmap-only commit. Provisional next identity 1.8.2 (31), confirm latest branch and delivered identity before editing. 
+- B29 1.8.0 runtime f8bed6d94ca370b6c666fa50a2be01b7a41f7cf2, run 45692871585 SUCCESS, artifact 15060049448. Creator installed and reported no game-breaking issue but vertical launcher clipping.
+- B30 1.8.1 runtime 531f36ff7475b9d7b60de7722fedb9d4b07b1db7, run 45700584903 SUCCESS, artifact 15064780181, artifact ZIP SHA256 287726a3469b58cbc1bbd9c088b2646db014b6e2e882c0d3660e25e82a00ac57. Delivered IPA, creator reaches home normally after Face ID but hears no unlock sound. All other physical QA remains unconfirmed unless explicitly reported. Preserve new horizontal pages, page dots, fixed dock, Friends & feeds / Blue Hour / Little things folders, app visibility and save formats.
+- Next active detailed specification: [AUDIO_CORRECTIVE_ROADMAP.md](AUDIO_CORRECTIVE_ROADMAP.md). All earlier W01–W14 backlog retained, not implied complete. This corrective release is audio/security feedback focused; do not expand unrelated features or retest entire game physically. No story spoilers, no real device modifications. iPhone 16e primary; iOS 16 minimum. Direct GitHub work, no Codex handoff.
+
 Reorganized November 25, 2026. Start here. This document governs priority, dependencies and delivery; specialist documents govern implementation details. Historical files are retained, not current instructions. No approved feature is cancelled by reorganization. All ordinary reports remain spoiler-free.
 
 ## 1. Product pillars (locked)
