@@ -4,7 +4,9 @@ import UIKit
 
 final class RecoverySecurityTests: XCTestCase {
     func testOpeningPacingAndPausePolicy() {
-        XCTAssertEqual(OpeningPace.total, 125)
+        XCTAssertEqual(OpeningPace.total, 128)
+        XCTAssertEqual(OpeningPace.duration(3), 3)
+        XCTAssertTrue(OpeningPace.canAdvance(stage: 3, connected: false, active: true))
         XCTAssertEqual(OpeningPace.duration(1), 25)
         XCTAssertEqual(OpeningPace.duration(2), 85)
         XCTAssertEqual(OpeningPace.duration(4), 15)
@@ -13,6 +15,23 @@ final class RecoverySecurityTests: XCTestCase {
         XCTAssertFalse(OpeningPace.canAdvance(stage: 2, connected: true, active: false))
         XCTAssertTrue(OpeningPace.canAdvance(stage: 2, connected: true, active: true))
         XCTAssertTrue(OpeningPace.canAdvance(stage: 4, connected: false, active: true))
+    }
+
+    func testLiveTranscriptAndCinematicBoundaries() {
+        XCTAssertTrue(JailbreakTranscript.lines(stage: 0, elapsed: 0).isEmpty)
+        XCTAssertEqual(JailbreakTranscript.lines(stage: 1, elapsed: 25).count, 18)
+        XCTAssertEqual(JailbreakTranscript.lines(stage: 2, elapsed: 85).count, 63)
+        XCTAssertEqual(JailbreakTranscript.lines(stage: 3, elapsed: 0).count, 63)
+        for t in 1...85 {
+            let previous = JailbreakTranscript.lines(stage: 2, elapsed: t - 1)
+            let current = JailbreakTranscript.lines(stage: 2, elapsed: t)
+            XCTAssertEqual(Array(current.prefix(previous.count)), previous)
+        }
+        XCTAssertEqual(RestartPhase.opening(at: 0), .black)
+        XCTAssertEqual(RestartPhase.opening(at: 2), .userspace)
+        XCTAssertEqual(RestartPhase.opening(at: 8), .black)
+        XCTAssertEqual(RestartPhase.opening(at: 10), .respring)
+        XCTAssertEqual(RestartPhase.opening(at: 14), .respring)
     }
 
     func testExternalPowerProxy() {
