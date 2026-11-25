@@ -389,6 +389,9 @@ private struct LabPeopleView: View {
                                 .font(.subheadline).foregroundColor(.secondary).lineLimit(2)
                         }
                         Spacer()
+                        if messages, let latest = world.messages(person).last {
+                            Text(latest.at, style: .time).font(.caption2).foregroundColor(.secondary)
+                        }
                         if messages && world.countUnread(person) > 0 {
                             Text("\(world.countUnread(person))").font(.caption.bold())
                                 .padding(6).background(.teal, in: Capsule())
@@ -547,44 +550,131 @@ private struct LabFilesView: View {
 private struct LabBrowserView: View {
     let wifi: Bool
     @State private var search = ""
+    @State private var selected: String?
+    @State private var forwardPage: String?
     @AppStorage("lastseen.lab.history") private var history = ""
     @AppStorage("lastseen.lab.bookmarks") private var bookmarks = ""
-    let pages = ["Maple Street Bookshop": "Open 10–6. Reserved books are held for seven days.", "Ash Street Residents": "Building office notices, elevator inspections and community events.", "Maple Cafe": "Coffee, pastries and sandwiches. Across from the bookshop."]
+    @AppStorage("lastseen.lab.browserSeeded") private var seeded = false
+    private let pages = ["Maple Street Bookshop": "Open 10–6. Reserved books are held for seven days.", "Ash Street Residents": "Building office notices, elevator inspections and community events.", "Maple Cafe": "Coffee, pastries and sandwiches. Across from the bookshop."]
+    private let addresses = ["Maple Street Bookshop": "maplebooks.test", "Ash Street Residents": "ashstreet.test", "Maple Cafe": "maplecafe.test"]
+
     var body: some View {
-        List {
-            Section("Offline local pages") {
-                ForEach(pages.keys.sorted().filter { search.isEmpty || $0.localizedCaseInsensitiveContains(search) }, id: \.self) { name in
-                    NavigationLink {
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 20) {
-                                Text(name).font(.largeTitle.bold())
-                                Text(pages[name] ?? "")
-                                Button(bookmarks.contains(name) ? "Remove bookmark" : "Bookmark") {
-                                    var entries = Set(bookmarks.split(separator: "|").map(String.init))
-                                    if entries.contains(name) { entries.remove(name) } else { entries.insert(name) }
-                                    bookmarks = entries.sorted().joined(separator: "|")
-                                }.buttonStyle(.bordered)
-                            }.frame(maxWidth: .infinity, alignment: .leading).padding()
-                        }.navigationTitle("Local page").onAppear {
-                            if !history.split(separator: "|").contains(Substring(name)) { history += (history.isEmpty ? "" : "|") + name }
+        VStack(spacing: 0) {
+            HStack {
+                Image(systemName: "magnifyingglass").foregroundColor(.secondary)
+                TextField("Search or enter address", text: $search)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled().submitLabel(.go)
+                    .onSubmit { if let name = matching.first { visit(name) } }
+                if !search.isEmpty {
+                    Button { search = "" } label: { Image(systemName: "xmark.circle.fill").foregroundColor(.secondary) }
+                }
+            }.padding(12).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16)).padding(.horizontal).padding(.vertical, 8)
+            if let name = selected {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        HStack {
+                            Image(systemName: name == "Maple Cafe" ? "cup.and.saucer.fill" : name == "Maple Street Bookshop" ? "books.vertical.fill" : "building.2.fill")
+                                .font(.largeTitle)
+                            Spacer()
+                            Text("LOCAL").font(.caption2.weight(.semibold))
+                        }.foregroundColor(.white)
+                        Text(name).font(.largeTitle.bold()).foregroundColor(.white)
+                        Divider()
+                        Text(pages[name] ?? "").font(.title3)
+                        if name == "Maple Street Bookshop" {
+                            Text("Your reserved books").font(.headline)
+                            Text("Pick up in store before the end of the week.")
+                        } else if name == "Ash Street Residents" {
+                            Text("Resident noticeboard").font(.headline)
+                            Text("Please contact the building office for maintenance updates.")
+                        } else {
+                            Text("Today's menu").font(.headline)
+                            Text("Espresso · Cappuccino · Pastries · Sandwiches")
                         }
-                    } label: { Label(name, systemImage: "globe") }
+                        Label("Saved page · available offline", systemImage: "checkmark.circle").font(.caption).foregroundColor(.secondary)
+                    }.frame(maxWidth: .infinity, alignment: .leading).padding(24)
+                    .background(Color.teal.opacity(0.15), in: RoundedRectangle(cornerRadius: 24)).padding()
+                }
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        Text(search.isEmpty ? "Start page" : "Search results").font(.title2.bold())
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                            ForEach(matching, id: \.self) { name in
+                                Button { visit(name) } label: {
+                                    VStack(alignment: .leading, spacing: 7) {
+                                        Image(systemName: "globe").font(.title).foregroundColor(.teal)
+                                        Text(name).font(.subheadline.bold())
+                                        Text(addresses[name] ?? "").font(.caption2).foregroundColor(.secondary)
+                                    }.frame(maxWidth: .infinity, alignment: .leading).padding(13)
+                                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                                }.buttonStyle(.plain)
+                            }
+                        }
+                        if matching.isEmpty { Text("No saved sites match this search.").foregroundColor(.secondary) }
+                        if search.isEmpty {
+                            siteSection("Bookmarks", names: entries(bookmarks))
+                            siteSection("History", names: entries(history).reversed())
+                            if !history.isEmpty { Button("Clear history", role: .destructive) { history = "" }.font(.caption) }
+                        }
+                    }.padding()
                 }
             }
-            Section("Bookmarks") {
-                if bookmarks.isEmpty { Text("No bookmarks").foregroundColor(.secondary) }
-                ForEach(bookmarks.split(separator: "|").map(String.init), id: \.self) { name in
-                    NavigationLink(name) { Text(pages[name] ?? "").padding().navigationTitle(name) }
-                }
+            Divider()
+            HStack {
+                Button { forwardPage = selected; selected = nil; search = "" } label: { Image(systemName: "chevron.backward") }.disabled(selected == nil)
+                Spacer()
+                Button { if let name = forwardPage { visit(name) } } label: { Image(systemName: "chevron.forward") }.disabled(forwardPage == nil || selected != nil)
+                Spacer()
+                Button { selected = nil; search = ""; forwardPage = nil } label: { Image(systemName: "house") }
+                Spacer()
+                Button { if let name = selected { toggleBookmark(name) } } label: {
+                    Image(systemName: selected.map { entries(bookmarks).contains($0) } == true ? "bookmark.fill" : "bookmark")
+                }.disabled(selected == nil)
+            }.font(.title3).padding(.horizontal, 25).padding(.vertical, 14)
+            Text(wifi ? "Saved sites • Wi-Fi enabled in game" : "Saved sites • Wi-Fi disabled in game").font(.caption2).foregroundColor(.secondary).padding(.bottom, 4)
+        }
+        .navigationTitle("Browser").navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if !seeded {
+                if history.isEmpty { history = "Maple Cafe|Maple Street Bookshop" }
+                if bookmarks.isEmpty { bookmarks = "Maple Street Bookshop" }
+                seeded = true
             }
-            Section("History") {
-                if history.isEmpty { Text("No history").foregroundColor(.secondary) }
-                ForEach(history.split(separator: "|").map(String.init), id: \.self) { name in
-                    NavigationLink(name) { Text(pages[name] ?? "").padding().navigationTitle(name) }
-                }
-                if !history.isEmpty { Button("Clear history", role: .destructive) { history = "" } }
+        }
+    }
+    private var matching: [String] {
+        let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
+        return pages.keys.sorted().filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) || (addresses[$0]?.localizedCaseInsensitiveContains(query) ?? false) }
+    }
+    private func entries(_ value: String) -> [String] {
+        value.split(separator: "|").map(String.init).filter { pages[$0] != nil }
+    }
+    private func siteSection<S: Sequence>(_ title: String, names: S) -> some View where S.Element == String {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(.headline)
+            ForEach(Array(names), id: \.self) { name in
+                Button { visit(name) } label: {
+                    HStack {
+                        Image(systemName: title == "History" ? "clock" : "bookmark").foregroundColor(.teal)
+                        Text(name)
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.caption).foregroundColor(.secondary)
+                    }.padding(10)
+                }.buttonStyle(.plain)
             }
-            Section { Text(wifi ? "Simulated Wi-Fi on. Pages are bundled offline." : "Simulated Wi-Fi off. Saved pages remain available.").font(.footnote) }
-        }.navigationTitle("Browser").searchable(text: $search, prompt: "Search local sites")
+        }
+    }
+    private func visit(_ name: String) {
+        guard pages[name] != nil else { return }
+        selected = name
+        search = addresses[name] ?? ""
+        forwardPage = nil
+        history = (entries(history).filter { $0 != name } + [name]).joined(separator: "|")
+    }
+    private func toggleBookmark(_ name: String) {
+        var values = entries(bookmarks)
+        if values.contains(name) { values.removeAll { $0 == name } } else { values.append(name) }
+        bookmarks = values.joined(separator: "|")
     }
 }
