@@ -32,3 +32,6 @@ Updated November 25, 2026. Start here when resuming work in a new chat. This is 
 - GAME_DESIGN.md and older QA: legacy fixtures, not new campaign canon. Avoid legacy story spoilers in creator-facing reports.
 - PHONE_FEEDBACK_QA.md and LIVING_PHONE_QA.md: previous regression requirements.
 - Future spoiler-marked narrative documents: separate from creator-facing summary; repository access can still reveal their content.
+
+## Current checkpoint — Foundation, November 25, 2026
+Build 24 v1.4.1 successfully compiled, tested and published (run 45577112995). Nora ZIP uploaded and verified, staged photo and reactive messaging changes shipped. Physical testing incomplete: creator likes new Nora images, questions photo recovery/authentication, requests premium coherent system/app redesign. Creator approved [FOUNDATION_BUILD25.md](FOUNDATION_BUILD25.md), including working LumaOS identity, original artwork, system and app overhaul, manual save and configurable periodic autosaves plus event checkpoints. Save icon must be generated before compilation; initial generation failed, so artwork is pending. No Build 25 runtime changes or workflow started by this checkpoint. This supersedes earlier stale Build 23/L1 upload status; preserve historical entries for context.
