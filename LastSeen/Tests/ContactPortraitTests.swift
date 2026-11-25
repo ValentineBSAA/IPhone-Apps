@@ -32,8 +32,8 @@ final class ContactPortraitTests: XCTestCase {
             "Contact_Nora_01", "Contact_Eli_01", "Contact_Unit7_01"
         ]
         let secondary = Neighbor.allCases.map(\.portraitAssetName)
-        XCTAssertEqual(secondary.count, 2)
-        XCTAssertEqual(Set(primary + secondary).count, 5,
+        XCTAssertEqual(secondary.count, 7)
+        XCTAssertEqual(Set(primary + secondary).count, 10,
                        "Two different characters may not use the same default photo")
         for name in primary + secondary {
             XCTAssertNotNil(PortraitImages.load(name),

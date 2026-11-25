@@ -11,7 +11,7 @@ struct LumaMessagesDirectory: View {
     @State private var unreadOnly = false
     @State private var compose = false
     private var people: [Neighbor] {
-        Neighbor.allCases.filter { person in
+        Neighbor.visible(in: world.state).filter { person in
             !world.messages(person).isEmpty &&
             (!unreadOnly || world.countUnread(person) > 0) &&
             (search.isEmpty || person.name.localizedCaseInsensitiveContains(search) ||
@@ -65,7 +65,7 @@ struct LumaContactsDirectory: View {
     @State private var search = ""
     var messagePicker = false
     private var people: [Neighbor] {
-        Neighbor.allCases.filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) || $0.subtitle.localizedCaseInsensitiveContains(search) }
+        Neighbor.visible(in: world.state).filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) || $0.subtitle.localizedCaseInsensitiveContains(search) }
             .sorted { $0.name < $1.name }
     }
     var body: some View {
@@ -114,7 +114,7 @@ struct LumaPhoneDirectory: View {
     @State private var tab = 0
     @State private var search = ""
     private var people: [Neighbor] {
-        Neighbor.allCases.filter { person in
+        Neighbor.visible(in: world.state).filter { person in
             (tab != 0 || (world.state.favoriteContacts ?? []).contains(person.id)) &&
             (search.isEmpty || person.name.localizedCaseInsensitiveContains(search))
         }

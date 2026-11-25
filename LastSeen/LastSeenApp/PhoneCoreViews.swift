@@ -73,7 +73,7 @@ enum PhonePublicSearch {
             values.contains { $0.localizedCaseInsensitiveContains(q) }
         }
         var results: [PhoneSearchResult] = []
-        for n in Neighbor.allCases {
+        for n in Neighbor.visible(in: world) {
             if matches(n.name, n.subtitle) {
                 results.append(PhoneSearchResult("contact-" + n.id, n.name, n.subtitle, "person.crop.circle", "Contacts", detail: n.id))
             }
@@ -103,6 +103,7 @@ enum PhonePublicFiles {
         "Coffee plans": "Meet Maya at the cafe opposite the bookstore. Confirm the day by text.",
         "Desk reminder": "Private folders use the six-digit reference from my book reservation. — Nora"
     ]
+    static func available(in world: PhoneWorld) -> [String: String] { world.everydayArchiveRevision == nil ? documents : documents.merging(NoraEverydayArchive.documents) { existing, _ in existing } }
     static func tutorialVisit(for title: String) -> String? {
         switch title {
         case "Desk reminder": return "desk"
@@ -122,7 +123,7 @@ struct PhoneDocumentView: View {
                 Text(title).font(.largeTitle.bold()).fixedSize(horizontal: false, vertical: true)
                 Label("On this phone · Restored document", systemImage: "folder").font(.caption).foregroundColor(.secondary)
                 Divider()
-                Text(PhonePublicFiles.documents[title] ?? "Document unavailable.")
+                Text(PhonePublicFiles.available(in: world.state)[title] ?? "Document unavailable.")
                     .font(.body).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
             }.frame(maxWidth: .infinity, alignment: .leading).padding(24)
         }.navigationTitle(title).navigationBarTitleDisplayMode(.inline)

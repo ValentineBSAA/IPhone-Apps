@@ -384,7 +384,7 @@ struct PhoneMailView: View {
 
     private var mails: [PhoneMailItem] {
         let date = world.state.createdAt
-        return [
+        let original = [
             PhoneMailItem(id: "building-update", from: "Ash Street Building Office",
                 subject: "Upcoming elevator maintenance",
                 body: "Hello residents,\n\nThis is an advance notice that an elevator inspection is being arranged for this week. We will post the confirmed time in the lobby and notify residents when the contractor has approved the schedule.\n\nThe front entrance and stairwell remain available.\n\nThank you,\nDenise\nBuilding Office",
@@ -398,6 +398,8 @@ struct PhoneMailView: View {
                 body: "Hi neighbors,\n\nThe lobby noticeboard has a new calendar for building maintenance and community events. Please check for updates before making plans.\n\nHave a good week,\nAsh Street Neighbors",
                 date: date.addingTimeInterval(-86400))
         ]
+        guard lab, world.state.everydayArchiveRevision != nil else { return original }
+        return (original + NoraEverydayArchive.mail.map { item in PhoneMailItem(id: item.id, from: item.sender, subject: item.subject, body: item.body, date: date.addingTimeInterval(item.offset)) }).sorted { $0.date > $1.date }
     }
 
     var body: some View {

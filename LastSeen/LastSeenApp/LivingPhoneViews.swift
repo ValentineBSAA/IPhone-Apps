@@ -39,7 +39,7 @@ struct PhoneHomeView: View {
 
     private var unreadThreads: Int {
         let storyCount = Contact.allCases.filter { game.unreadCount(in: $0.id) > 0 }.count
-        let ordinaryCount = Neighbor.allCases.filter { world.countUnread($0) > 0 }.count
+        let ordinaryCount = Neighbor.visible(in: world.state).filter { world.countUnread($0) > 0 }.count
         return storyCount + ordinaryCount
     }
 
@@ -262,7 +262,7 @@ struct PhoneMessagesView: View {
                 contact: contact, neighbor: nil
             )
         }
-        let ordinary: [PhoneThreadSummary] = Neighbor.allCases.map { neighbor in
+        let ordinary: [PhoneThreadSummary] = Neighbor.visible(in: world.state).map { neighbor in
             let msgs = world.messages(neighbor)
             return PhoneThreadSummary(
                 id: neighbor.id, title: neighbor.name,
@@ -569,7 +569,7 @@ struct NeighborProfileView: View {
                 }
                 Text(neighbor == .maya
                      ? (world.tutorialStarted ? "Maya is a friend of Nora, the original owner of this phone." : "You met Maya through friends in the neighborhood. She sends ordinary updates and makes plans.")
-                     : "Denise manages notices and maintenance for Ash Street residents.")
+                     : (neighbor == .denise ? "Denise manages notices and maintenance for Ash Street residents." : neighbor.subtitle))
                     .font(.body)
                     .foregroundColor(Night.muted)
                     .frame(maxWidth: .infinity, alignment: .leading)

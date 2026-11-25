@@ -4,22 +4,34 @@ import SwiftUI
 /// Fictional everyday life surrounding the horror. It does not access real
 /// Contacts, Messages, Calendar, Mail, Photos, or device communication data.
 enum Neighbor: String, CaseIterable, Identifiable, Codable {
-    case maya, denise
+    case maya, denise, helen, lily, daniel, adrian, tessa
+    static let original: [Neighbor] = [.maya, .denise]
+    static func visible(in world: PhoneWorld) -> [Neighbor] { allCases.filter { original.contains($0) || world.threads[$0.id] != nil } }
 
     var id: String { rawValue }
     var name: String {
         switch self {
         case .maya: return "Maya Brooks"
         case .denise: return "Denise Hall"
+        case .helen: return "Helen Bennett"
+        case .lily: return "Lily Bennett"
+        case .daniel: return "Daniel Bennett"
+        case .adrian: return "Adrian Cole"
+        case .tessa: return "Tessa Reed"
         }
     }
     var subtitle: String {
         switch self {
         case .maya: return "Friend"
         case .denise: return "Building office"
+        case .helen: return "Mum"
+        case .lily: return "Sister"
+        case .daniel: return "Brother"
+        case .adrian: return "Technical lead · Blue Hour Interactive"
+        case .tessa: return "Artist / producer · Blue Hour Interactive"
         }
     }
-    var initials: String { self == .maya ? "MB" : "DH" }
+    var initials: String { name.split(separator: " ").prefix(2).compactMap(\.first).map { String($0) }.joined() }
 
     // Both portraits are existing, approved images. They are assigned as
     // unique character headshots rather than leaving new contacts as initials.
@@ -28,6 +40,11 @@ enum Neighbor: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .maya: return "Contact_Maya"
         case .denise: return "Contact_Denise"
+        case .helen: return "Contact_B27_01"
+        case .lily: return "Contact_B27_03"
+        case .daniel: return "Contact_B27_04"
+        case .adrian: return "Contact_B27_06"
+        case .tessa: return "Contact_B27_07"
         }
     }
 
@@ -79,6 +96,7 @@ struct PhoneWorld: Codable {
     var pendingReplies: [PhonePendingReply]? = nil
     var callHistory: [LumaCallRecord]? = nil
     var favoriteContacts: [String]? = nil
+    var everydayArchiveRevision: Int? = nil
 }
 
 /// This is a separate *fictional world save* while compatibility with existing
@@ -145,6 +163,7 @@ final class PhoneWorldStore: ObservableObject {
                 ]
             )
         }
+        if resolvedURL == RestoredPhoneBackup.url || state.everydayArchiveRevision != nil { NoraEverydayArchive.expand(&state) }
         save()
     }
 
@@ -213,7 +232,7 @@ final class PhoneWorldStore: ObservableObject {
     /// advance the introductory conversation; evidence gates remain independent.
     @discardableResult
     func sendReactive(to neighbor: Neighbor, text: String, now: Date = Date()) -> Bool {
-        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+        guard Neighbor.visible(in: state).contains(neighbor), !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               text.count <= 2000 else { return false }
         let pending = state.pendingReplies ?? []
         guard pending.filter({ $0.neighbor == neighbor }).count < 8 else { return false }
@@ -303,17 +322,20 @@ final class PhoneWorldStore: ObservableObject {
 
     func choices(_ neighbor: Neighbor) -> [String] {
         if neighbor == .maya && tutorialStarted { return tutorialChoices }
+        guard Neighbor.original.contains(neighbor) else { return [] }
         let stage = state.progress[neighbor.id] ?? 0
         if stage == 0 {
             switch neighbor {
             case .maya: return ["Coffee sounds good!", "I might be busy this week.", "How's work going?"]
             case .denise: return ["Thanks for letting me know.", "Do you know what time the elevator will be checked?"]
+            default: return []
             }
         }
         if stage == 1 {
             switch neighbor {
             case .maya: return ["I'll text you when I know.", "See you soon!"]
             case .denise: return ["Perfect, thank you.", "Could you send an update if that changes?"]
+            default: return []
             }
         }
         return []
@@ -362,6 +384,7 @@ final class PhoneWorldStore: ObservableObject {
             }
         case (.denise, _):
             response = "Of course! I'll message the building when we have the final schedule."
+        default: return false
         }
         append(NeighborMessage(id: "\(neighbor.id)-response-\(stage)", thread: neighbor.id,
                                text: response, fromPlayer: false,
@@ -447,6 +470,8 @@ final class PhoneWorldStore: ObservableObject {
 
     func restoreCheckpoint(_ replacement: PhoneWorld) throws {
         guard replacement.version == 1 else { throw CocoaError(.fileReadCorruptFile) }
+        var replacement = replacement
+        if storageURL == RestoredPhoneBackup.url || state.everydayArchiveRevision != nil { NoraEverydayArchive.expand(&replacement) }
         if persistToDisk {
             try FileManager.default.createDirectory(at: storageURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             try JSONEncoder().encode(replacement).write(to: storageURL, options: .atomic)

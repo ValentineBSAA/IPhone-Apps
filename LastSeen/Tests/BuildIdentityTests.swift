@@ -5,14 +5,14 @@ import XCTest
 /// the correct version. Jailbreak package managers depend on these plist keys.
 @MainActor
 final class BuildIdentityTests: XCTestCase {
-    func testShippedAppVersionIsOneFiveOneBuildTwentySix() throws {
+    func testShippedAppVersionIsOneSixZeroBuildTwentySeven() throws {
         let bundle = Bundle(for: GameStore.self)
         let marketing = try XCTUnwrap(bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)
         let build = try XCTUnwrap(bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String)
         let identifier = try XCTUnwrap(bundle.bundleIdentifier)
 
-        XCTAssertEqual(marketing, "1.5.1", "The actual installed app version must advance")
-        XCTAssertEqual(build, "26", "Every test build must use a strictly newer build number")
+        XCTAssertEqual(marketing, "1.6.0", "The actual installed app version must advance")
+        XCTAssertEqual(build, "27", "Every test build must use a strictly newer build number")
         XCTAssertEqual(identifier, "com.valentinebsaa.lastseen.horror")
         XCTAssertFalse((bundle.object(forInfoDictionaryKey: "NSFaceIDUsageDescription") as? String ?? "").isEmpty)
     }
@@ -20,7 +20,7 @@ final class BuildIdentityTests: XCTestCase {
     func testSecondaryContactsUseTheirOwnArtFiles() throws {
         for contact in Neighbor.allCases {
             let name = contact.portraitAssetName
-            XCTAssertTrue(name == "Contact_Maya" || name == "Contact_Denise")
+            XCTAssertTrue(name == "Contact_Maya" || name == "Contact_Denise" || name.hasPrefix("Contact_B27_"))
             let photo = try XCTUnwrap(PortraitImages.load(name),
                 "\(contact.name) has no real bundled portrait")
             XCTAssertGreaterThanOrEqual(photo.size.width, 110)

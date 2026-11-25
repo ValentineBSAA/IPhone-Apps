@@ -15,7 +15,7 @@ enum RestoredPhoneBackup {
         let morning = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: now) ?? now
         let inspection = calendar.date(byAdding: .day, value: 1, to: morning) ?? now
         let coffee = calendar.date(byAdding: .day, value: 2, to: morning) ?? now
-        return PhoneWorld(createdAt: now,
+        var restored = PhoneWorld(createdAt: now,
             threads: [
                 "maya": [
                     NeighborMessage(id: "maya-old-1", thread: "maya", text: "Nora, that book you lent me was SO good.", fromPlayer: false, at: now.addingTimeInterval(-day * 7), read: true),
@@ -42,6 +42,8 @@ enum RestoredPhoneBackup {
                 PhoneEvent(id: "coffee", title: "Coffee with Maya?", detail: "Tentative. Confirm by text.", startsAt: coffee.addingTimeInterval(7200), endsAt: coffee.addingTimeInterval(10800)),
                 PhoneEvent(id: "pickup", title: "Pick up book", detail: "Maple Street Bookshop", startsAt: morning.addingTimeInterval(25200), endsAt: morning.addingTimeInterval(27000))
             ])
+        NoraEverydayArchive.expand(&restored)
+        return restored
     }
 
     /// Atomic and idempotent: never overwrite a player's already-restored world.

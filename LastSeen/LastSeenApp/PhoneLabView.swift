@@ -531,7 +531,7 @@ struct PhoneLabView: View {
             VStack(spacing: 6) {
                 ZStack(alignment: .topTrailing) {
                     if app == .patchline || app == .relay {
-                        OpeningArt(name: app == .patchline ? "Opening_Unlock" : "Opening_Install", size: smallIcons ? 43 : 55)
+                        OpeningArt(name: app == .patchline ? "Jailbreak_Patchline" : "Jailbreak_Relay", size: smallIcons ? 43 : 55)
                     } else if !safeMode, tealTheme, let asset = ApprovedArt.themeName(for: app.rawValue) {
                         Image(asset).resizable().scaledToFit()
                             .frame(width: smallIcons ? 43 : 55, height: smallIcons ? 43 : 55)
@@ -622,7 +622,7 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.5.1 (26)")
+                LabeledContent("Software", value: "1.6.0 (27)")
                 Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay message tutorial") { confirmTutorialReplay = true }
                 Button("Replay phone setup") { confirmSetupReplay = true }
@@ -756,8 +756,8 @@ struct PhoneLabView: View {
             if q.isEmpty {
                 Text("Search restored phone contents. Protected records are not indexed.").font(.subheadline).foregroundColor(.secondary)
             } else {
-                let apps = LabApp.allCases.filter { $0.rawValue.localizedCaseInsensitiveContains(q) }
-                let results = PhonePublicSearch.results(query: q, world: world.state, documents: PhonePublicFiles.documents)
+                let apps = LabApp.allCases.filter { ($0 != .fieldNotes || fieldNotesAvailable) && $0.rawValue.localizedCaseInsensitiveContains(q) }
+                let results = PhonePublicSearch.results(query: q, world: world.state, documents: PhonePublicFiles.available(in: world.state))
                 if apps.isEmpty && results.isEmpty { Text("No results").foregroundColor(.secondary) }
                 if !apps.isEmpty {
                     Section("Applications") {
@@ -1109,7 +1109,8 @@ private struct PhoneCalendarRoute: Hashable { let day: Date }
 private struct PhoneFileRoute: Hashable { let title: String }
 
 private struct LabFilesView: View {
-    let documents = PhonePublicFiles.documents
+    @EnvironmentObject private var world: PhoneWorldStore
+    private var documents: [String: String] { PhonePublicFiles.available(in: world.state) }
     @State private var search = ""
     var body: some View {
         List {
