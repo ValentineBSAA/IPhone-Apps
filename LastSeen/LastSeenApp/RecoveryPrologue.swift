@@ -37,7 +37,6 @@ struct RecoveryPrologue: View {
     @State private var verbose = false
     @State private var showQA = false
     @State private var initialized = false
-    @State private var pulse = false
     private let accent = Color(red: 0.35, green: 0.86, blue: 0.77)
     private let background = Color(red: 0.035, green: 0.06, blue: 0.10)
     private var connected: Bool { powered || simulated }
@@ -300,7 +299,7 @@ struct RecoveryPrologue: View {
                 Button("Skip animation") {
                     elapsed = duration
                     OpeningQA.record("Animation explicitly skipped at stage \(stage)")
-                    finishTimedStage()
+                    if stage != 1 { finishTimedStage() }
                 }.font(.caption).foregroundColor(.secondary)
             }
         }
