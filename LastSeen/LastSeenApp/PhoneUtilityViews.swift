@@ -164,7 +164,7 @@ struct PhoneNotesView: View {
     var body: some View {
         List {
             if lab {
-                NavigationLink { ProtectedAreaView(area: .notes) } label: { Label("Locked notes", systemImage: "lock.fill") }
+                NavigationLink { ProtectedAreaView(area: .notes, onOpened: { world.recordTutorialVisit("journal") }) } label: { Label("Locked notes", systemImage: "lock.fill") }
             }
             Section {
                 ForEach(notes) { note in
@@ -190,8 +190,10 @@ struct PhoneNotesView: View {
                         .padding(.vertical, 5)
                     }
                     .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) { world.removeNote(note.id) } label: {
-                            Label("Delete", systemImage: "trash")
+                        if note.id != PhoneWorldStore.tutorialNoteID {
+                            Button(role: .destructive) { world.removeNote(note.id) } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
                         }
                         Button { world.togglePin(note.id) } label: {
                             Label(note.pinned ? "Unpin" : "Pin", systemImage: "pin")
@@ -228,20 +230,33 @@ struct PhoneNoteEditorView: View {
     @State private var bodyText = ""
 
     var body: some View {
-        VStack(spacing: 0) {
-            TextField("Title", text: $title)
-                .font(.system(size: 25, weight: .semibold))
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-            Divider().padding(.vertical, 14)
-            TextEditor(text: $bodyText)
-                .scrollContentBackground(.hidden)
-                .font(.system(size: 16))
-                .padding(.horizontal, 13)
-                .accessibilityLabel("Note body")
+        Group {
+            if noteID == PhoneWorldStore.tutorialNoteID {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 17) {
+                        Text(PhoneWorldStore.tutorialNoteTitle).font(.largeTitle.bold())
+                        Label("Restored note", systemImage: "lock.doc").font(.caption).foregroundColor(.secondary)
+                        Divider()
+                        Text(PhoneWorldStore.tutorialNoteBody).font(.body).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+                    }.frame(maxWidth: .infinity, alignment: .leading).padding(22)
+                }.onAppear { world.recordTutorialVisit("note") }
+            } else {
+                VStack(spacing: 0) {
+                    TextField("Title", text: $title)
+                        .font(.system(size: 25, weight: .semibold))
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                    Divider().padding(.vertical, 14)
+                    TextEditor(text: $bodyText)
+                        .scrollContentBackground(.hidden)
+                        .font(.system(size: 16))
+                        .padding(.horizontal, 13)
+                        .accessibilityLabel("Note body")
+                }
+            }
         }
         .background(Night.background.ignoresSafeArea())
-        .navigationTitle("Edit note")
+        .navigationTitle(noteID == PhoneWorldStore.tutorialNoteID ? "Note" : "Edit note")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if let n = world.state.notes.first(where: { $0.id == noteID }) {
