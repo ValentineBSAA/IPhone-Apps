@@ -15,7 +15,12 @@ for filename,digest,names,dimensions in packs:
             data=z.read(r["filename"])
             assert hashlib.sha256(data).hexdigest()==r["sha256"]
             assert data[:8]==b"\x89PNG\r\n\x1a\n" and struct.unpack(">II",data[16:24])==dimensions
-            if name.startswith("Jailbreak_"): assert r["status"]=="standalone"
+            if name.startswith("Contact_B27_"):
+                # Preserve original PNG bytes outside CoreUI's compiled catalog.
+                (pathlib.Path("LastSeenApp")/(name+".png")).write_bytes(data)
+                print("Verified standalone resource:",name)
+                continue
+            assert r["status"]=="standalone"
             dest=pathlib.Path("LastSeenApp/Assets.xcassets")/(name+".imageset")
             dest.mkdir(parents=True,exist_ok=True)
             (dest/"image.png").write_bytes(data)

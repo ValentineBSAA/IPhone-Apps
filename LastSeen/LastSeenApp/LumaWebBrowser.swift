@@ -149,7 +149,11 @@ struct LumaWebBrowser: View {
                         ForEach(p.images,id:\.self) { asset in
                             VStack(alignment:.leading,spacing:12) {
                                 if revealed.contains(asset) && LumaWebCatalog.attachments(in:world.state.flags).contains(asset) {
-                                    Image(asset).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius:12)).accessibilityLabel("Recovered image")
+                                    if let photo = PortraitImages.load(asset) {
+                                        Image(uiImage: photo).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius:12)).accessibilityLabel("Recovered image")
+                                    } else {
+                                        Label("Image unavailable. Text inspection remains available.",systemImage:"exclamationmark.triangle").font(.caption)
+                                    }
                                     Button("Hide image") { revealed.remove(asset) }
                                 } else {
                                     Label("Recovered attachment",systemImage:"photo.on.rectangle")

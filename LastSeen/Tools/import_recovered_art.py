@@ -11,8 +11,5 @@ with zipfile.ZipFile(path) as z:
         data=z.read(r["filename"])
         assert hashlib.sha256(data).hexdigest()==r["sha256"]
         assert data[:8]==b"\x89PNG\r\n\x1a\n" and struct.unpack(">II",data[16:24])==(r["width"],r["height"])
-        dest=pathlib.Path("LastSeenApp/Assets.xcassets")/(name+".imageset")
-        dest.mkdir(parents=True,exist_ok=True)
-        (dest/"image.png").write_bytes(data)
-        (dest/"Contents.json").write_text(json.dumps({"images":[{"filename":"image.png","idiom":"universal"}],"info":{"author":"xcode","version":1}}))
-        print("Verified:",name)
+        (pathlib.Path("LastSeenApp")/(name+".png")).write_bytes(data)
+        print("Verified standalone resource:",name)

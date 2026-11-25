@@ -209,8 +209,10 @@ jobs:
           test "$BUNDLE_ID" = "com.valentinebsaa.lastseen.horror"
           test -s "LastSeenApp/Assets.xcassets/Contact_Maya.imageset/photo.jpg"
           test -s "LastSeenApp/Assets.xcassets/Contact_Denise.imageset/photo.jpg"
-          test "$(find LastSeenApp/Assets.xcassets -maxdepth 1 -type d -name 'Contact_*.imageset' | wc -l | tr -d ' ')" = "22"
-          test "$(find LastSeenApp/Assets.xcassets -maxdepth 1 -type d -name 'Recovered_B27_*.imageset' | wc -l | tr -d ' ')" = "29"
+          test "$(find LastSeenApp/Assets.xcassets -maxdepth 1 -type d -name 'Contact_*.imageset' | wc -l | tr -d ' ')" = "12"
+          python3 Tools/verify_device_assets.py --app "$APP"
+          xcrun --sdk iphoneos assetutil --info "$APP/Assets.car" > device-asset-catalog.json
+          python3 Tools/verify_device_assets.py --catalog device-asset-catalog.json
 
       - name: Run story-engine, Phone Lab, restore, security and opening tests on iPhone simulator
         timeout-minutes: 20
@@ -263,7 +265,7 @@ jobs:
             zip -qr Last-Seen-v1.6.0-iOS16-unsigned.ipa Payload
           )
           test -s dist/Last-Seen-v1.6.0-iOS16-unsigned.ipa
-          unzip -l dist/Last-Seen-v1.6.0-iOS16-unsigned.ipa | grep -q 'Payload/LastSeen.app/Info.plist'
+          python3 Tools/verify_device_assets.py --ipa dist/Last-Seen-v1.6.0-iOS16-unsigned.ipa --app build/Build/Products/Release-iphoneos/LastSeen.app
 
       - name: Publish unsigned IPA for user-side installation
         uses: actions/upload-artifact@v4

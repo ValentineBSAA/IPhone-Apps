@@ -16,7 +16,12 @@ enum Night {
 /// lookup used by simulator regression tests and avoids test-host ambiguity.
 enum PortraitImages {
     static func load(_ name: String) -> UIImage? {
-        UIImage(named: name, in: Bundle(for: GameStore.self), compatibleWith: nil)
+        let bundle = Bundle(for: GameStore.self)
+        if name.hasPrefix("Contact_B27_") || name.hasPrefix("Recovered_B27_") {
+            guard let url = bundle.url(forResource: name, withExtension: "png") else { return nil }
+            return UIImage(contentsOfFile: url.path)
+        }
+        return UIImage(named: name, in: bundle, compatibleWith: nil)
     }
 }
 
