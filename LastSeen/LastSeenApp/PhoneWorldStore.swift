@@ -244,8 +244,10 @@ final class PhoneWorldStore: ObservableObject {
         guard pending.filter({ $0.neighbor == neighbor }).count < 8 else { return false }
         let introductory = neighbor == .maya && tutorialStarted && !tutorialFinished
         let key = (introductory ? "phone-tutorial-custom-" : "custom-") + UUID().uuidString
+        let lastReply = pending.last(where: { $0.neighbor == neighbor })?.text
+            ?? state.threads[neighbor.id]?.last(where: { !$0.fromPlayer && $0.id.hasPrefix("custom-") })?.text
         let plan = PhoneReplyPolicy.plan(for: neighbor, text: text, flags: state.flags,
-                                         tutorialStarted: tutorialStarted, tutorialFinished: tutorialFinished)
+                                         tutorialStarted: tutorialStarted, tutorialFinished: tutorialFinished, previousReply: lastReply)
         let previous = pending.filter { $0.neighbor == neighbor }.map(\.dueAt).max() ?? now
         let base = max(now, previous)
         let readAt = base.addingTimeInterval(0.8)

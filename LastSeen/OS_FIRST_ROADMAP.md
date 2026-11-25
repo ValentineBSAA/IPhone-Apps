@@ -69,3 +69,8 @@ Checkboxes denote only the exact bounded item stated, not whole feature acceptan
 
 ## 5. Delivery discipline
 Offline fictional LumaOS, iOS 16 minimum, iPhone 16e primary. No real device changes, accounts, surveillance, actual messaging or runtime API dependency. Preserve all save formats and approved features; no redundant apps. Deliver one verified installable IPA per cohesive milestone, never weaken mandatory tests, and distinguish source, asset, CI and hardware results. Narrative completion is essential; avoid indefinite OS expansion.
+
+## Build 32 implementation tranche 01 — historical living-world content
+- [x] SOURCE: 30 additional historical social posts, 36 comments/replies and 22 historical mail records (11 sent); studio promotion, personal and community activity. Stable restored-world gate, no new progress flags, historical dates and local repair-desk identity. Comments merged with local replies; historical mail presented as read. Existing privacy gates retained.
+- [x] SOURCE: initial everyday reply branches and immediate-repeat guard for secondary contacts. New regression tests added; not run yet.
+- [ ] Full conversation context, natural scheduler, confidential story completion and all integrated CI remain OPEN; no interim install.

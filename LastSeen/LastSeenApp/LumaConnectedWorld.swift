@@ -94,7 +94,7 @@ enum LumaMailCatalog {
             LumaMailRecord(id:"cw-mail-team",peer:"tessa",sender:"Tessa Reed",subject:"Team working agreement",body:"Thanks for putting the availability rules in writing. I'll keep the palette exports together and send a short summary after Friday. Please don't answer this tonight.",date:date.addingTimeInterval(-210000),kind:"inbox",attachments:["WorldDoc_01_07"]),
             LumaMailRecord(id:"cw-mail-spending",peer:"adrian",sender:"Adrian Cole",subject:"Equipment approval",body:"The existing test cable can get us through the morning, but I've set aside the replacement request. I won't order extra storage until the review is complete.",date:date.addingTimeInterval(-65000),kind:"inbox",attachments:["WorldDoc_01_06"])
         ]
-        return (originals+old+work+(world.connectedWorld?.mail ?? [])).sorted{$0.date>$1.date}
+        return (originals+old+work+LivingPhoneHistory.mail(anchor: date)+(world.connectedWorld?.mail ?? [])).sorted{$0.date>$1.date}
     }
     static func response(to peer:Neighbor,subject:String,body:String)->String {
         let words=Set((subject+" "+body).lowercased().split{!$0.isLetter && !$0.isNumber}.map(String.init))
@@ -138,7 +138,11 @@ enum LumaSocialCatalog {
             post("cg-03",.commonGround,"Maple Cafe","maplecafe","Fresh cinnamon pastries at the counter today. The window seats are open.",82000),
             post("cg-04",.commonGround,"Adrian Cole","adrian.c","Anyone else keeping a separate note for original capture dates and imported copies? It saves a surprising amount of confusion.",190000,"Contact_B27_06")
         ]
-        return (base+(world.connectedWorld?.posts ?? [])).filter{$0.channel==channel && ($0.gate.map{world.flags.contains($0)} ?? true)}.sorted{$0.date>$1.date}
+        return (base+LivingPhoneHistory.posts(anchor: d)+(world.connectedWorld?.posts ?? [])).filter{$0.channel==channel && ($0.gate.map{world.flags.contains($0)} ?? true)}.sorted{$0.date>$1.date}
+    }
+    static func comments(_ postID: String, channel: LumaSocialChannel, world: PhoneWorld) -> [LumaSocialComment] {
+        guard let post = visible(channel, world: world).first(where: { $0.id == postID }) else { return [] }
+        return (LivingPhoneHistory.comments(for: post) + (world.connectedWorld?.comments ?? []).filter { $0.postID == postID }).sorted { $0.date < $1.date }
     }
     static func visiblePhoto(_ post:LumaSocialPost,world:PhoneWorld)->String? {
         guard let id=post.photo,let record=NoraPhotoCatalog.photos.first(where:{$0.id==id}),!record.privateAlbum,
@@ -196,7 +200,7 @@ struct LumaConnectedMailView:View {
                 } label:{
                     VStack(alignment:.leading,spacing:5){
                         HStack {
-                            if item.kind=="inbox" && !read.contains(item.id) {Circle().fill(Color.blue).frame(width:8,height:8)}
+                            if item.kind=="inbox" && !item.id.hasPrefix("b32-mail-") && !read.contains(item.id) {Circle().fill(Color.blue).frame(width:8,height:8)}
                             Text(item.kind=="sent" || item.kind=="draft" ? "To: "+(Neighbor(rawValue:item.peer)?.name ?? item.peer) : item.sender).font(.headline)
                             Spacer()
                             Text(item.date,style:.date).font(.caption2).foregroundColor(.secondary)
@@ -332,7 +336,7 @@ struct LumaSocialView:View {
                         HStack{
                             Button{world.toggleSocial(.like,postID:post.id,channel:channel)}label:{Label("Like",systemImage:world.connected.likes.contains(post.id) ? "heart.fill":"heart")}.foregroundColor(world.connected.likes.contains(post.id) ? .pink:.secondary)
                             Spacer()
-                            NavigationLink{LumaSocialDiscussion(channel:channel,postID:post.id)}label:{Label("Comments",systemImage:"bubble.left")}
+                            NavigationLink{LumaSocialDiscussion(channel:channel,postID:post.id)}label:{Label("Comments (\(LumaSocialCatalog.comments(post.id, channel: channel, world: world.state).count))",systemImage:"bubble.left")}
                             Spacer()
                             Button{world.toggleSocial(.save,postID:post.id,channel:channel)}label:{Image(systemName:world.connected.savedPosts.contains(post.id) ? "bookmark.fill":"bookmark").accessibilityLabel("Save post")}
                         }.font(.subheadline).buttonStyle(.plain)
@@ -379,7 +383,7 @@ struct LumaSocialDiscussion:View{
             if let post=LumaSocialCatalog.visible(channel,world:world.state).first(where:{$0.id==postID}){
                 Section{Text(post.author).font(.headline);Text(post.body)}
                 Section("Comments"){
-                    let comments=world.connected.comments.filter{$0.postID==postID}
+                    let comments=LumaSocialCatalog.comments(postID,channel:channel,world:world.state)
                     if comments.isEmpty{Text("No restored comments").foregroundColor(.secondary)}
                     ForEach(comments){c in VStack(alignment:.leading){Text(c.author).font(.headline);Text(c.body);Text(c.date,style:.time).font(.caption).foregroundColor(.secondary)}}
                 }

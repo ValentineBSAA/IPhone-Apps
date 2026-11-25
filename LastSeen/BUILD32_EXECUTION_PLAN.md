@@ -25,3 +25,8 @@ This is the single active release plan. Master ledger is OS_FIRST_ROADMAP.md; ev
 
 ## C. Reporting and scope discipline
 Master checklist stays truthful: approved artwork is not integrated, initial source is not full completion, CI pass is not hardware pass. User has requested ultimate cohesive upgrade instead of multiple installs; scope is large and may require internal revisions, but do not request interim installs or silently drop requirements. Report blockers with concrete evidence and no plot content. This commit is preparation only; do not represent sections B as completed.
+
+## Build 32 implementation tranche 01 — historical living-world content
+- [x] SOURCE: 30 additional historical social posts, 36 comments/replies and 22 historical mail records (11 sent); studio promotion, personal and community activity. Stable restored-world gate, no new progress flags, historical dates and local repair-desk identity. Comments merged with local replies; historical mail presented as read. Existing privacy gates retained.
+- [x] SOURCE: initial everyday reply branches and immediate-repeat guard for secondary contacts. New regression tests added; not run yet.
+- [ ] Full conversation context, natural scheduler, confidential story completion and all integrated CI remain OPEN; no interim install.
