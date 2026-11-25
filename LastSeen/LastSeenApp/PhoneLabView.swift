@@ -653,7 +653,7 @@ struct PhoneLabView: View {
     private var notifications: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Notification Center").font(.largeTitle.bold()).padding(.top, 5)
+                LumaHeader(title: "Notification Center", detail: "Recent activity", symbol: "bell.badge")
                 Text("Recent messages").font(.subheadline).foregroundColor(.secondary)
                 ForEach(PhoneAlertCatalog.alerts(in: world.state, unreadOnly: false)) { alert in
                     PhoneNotificationCard(alert: alert) { openThread(alert.neighbor) }
@@ -668,7 +668,7 @@ struct PhoneLabView: View {
     private var quickControls: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 17) {
-                Text("Control Center").font(.largeTitle.bold())
+                LumaHeader(title: "Control Center", detail: "Your phone, your controls", symbol: "slider.horizontal.3")
                 HStack(spacing: 12) {
                     Button { wifi.toggle() } label: {
                         VStack(alignment: .leading, spacing: 14) {
@@ -690,7 +690,7 @@ struct PhoneLabView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Label("Brightness", systemImage: "sun.max").font(.headline)
                     Slider(value: $brightness, in: 0.35...1)
-                }.padding(17).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
+                }.padding(17).lumaSurface()
                 Button { panel = nil; open(.settings) } label: {
                     Label("Open Settings", systemImage: "gearshape.fill").frame(maxWidth: .infinity).padding(12)
                 }.buttonStyle(.bordered)
@@ -849,10 +849,10 @@ private struct LabPeopleView: View {
             } else {
                 Section("Owner card") {
                     HStack(spacing: 13) {
-                        Image(RestoredPhoneBackup.ownerPortrait).resizable().scaledToFill().frame(width: 58, height: 58).clipShape(Circle())
+                        Image(RestoredPhoneBackup.ownerPortrait).resizable().scaledToFill().frame(width: 80, height: 80).clipShape(Circle())
                         VStack(alignment: .leading, spacing: 4) {
                             Text(RestoredPhoneBackup.ownerName).font(.title3.bold())
-                            Text("Restored contact card").font(.caption).foregroundColor(.secondary)
+                            Text("My Card · Blue Hour Interactive").font(.caption).foregroundColor(.secondary)
                         }
                     }.padding(.vertical, 7)
                 }
@@ -885,7 +885,7 @@ private struct LabPeopleView: View {
                     }
                 }
             }
-        }.navigationTitle(messages ? "Messages" : "Contacts")
+        }.scrollContentBackground(.hidden).background(Night.background.ignoresSafeArea()).navigationTitle(messages ? "Messages" : "Contacts")
             .searchable(text: $search, prompt: messages ? "Search conversations" : "Search contacts")
     }
 }
@@ -962,7 +962,7 @@ private struct LabPhotosView: View {
                         }
                         Spacer()
                         Image(systemName: "chevron.right").font(.caption)
-                    }.padding(13).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    }.padding(13).lumaSurface(radius: 16)
                 }.buttonStyle(.plain)
             }.padding()
         }.navigationTitle("Photos")
@@ -1017,7 +1017,7 @@ private struct LabClockView: View {
                 VStack(spacing: 22) {
                     Spacer()
                     if tab == 0 {
-                        Image(systemName: "clock").font(.system(size: 62, weight: .thin)).foregroundColor(.teal)
+                        Image("Icon_Clock").resizable().scaledToFit().frame(width: 116, height: 116).clipShape(RoundedRectangle(cornerRadius: 26))
                         Text(context.date, style: .time).font(.system(size: 60, weight: .thin)).monospacedDigit()
                         Text(context.date, format: .dateTime.weekday(.wide).month(.wide).day())
                     } else if tab == 1 {
@@ -1054,7 +1054,7 @@ private struct LabClockView: View {
                     Spacer()
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-        }.padding(20).navigationTitle("Clock")
+        }.padding(20).background(Night.background.ignoresSafeArea()).navigationTitle("Clock")
     }
 }
 
@@ -1064,9 +1064,12 @@ private struct LabCalculatorView: View {
     @State private var operation: String?
     @State private var replace = true
     let keys = ["C","±","%","÷","7","8","9","×","4","5","6","−","1","2","3","+","0",".","="]
+    @State private var history: [String] = []
+    @State private var showHistory = false
     var body: some View {
         VStack(spacing: 12) {
             Spacer()
+            if let op = operation, let left = first { Text("\(String(format: "%.10g", left)) \(op)").font(.title3).foregroundColor(.secondary).frame(maxWidth: .infinity, alignment: .trailing) }
             Text(display).font(.system(size: 52, weight: .light)).lineLimit(1).minimumScaleFactor(0.3)
                 .frame(maxWidth: .infinity, alignment: .trailing).padding()
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 10) {
@@ -1077,7 +1080,9 @@ private struct LabCalculatorView: View {
                     }.buttonStyle(.plain)
                 }
             }
-        }.padding().background(Color.black.ignoresSafeArea()).navigationTitle("Calculator")
+        }.padding().background(Night.background.ignoresSafeArea()).navigationTitle("Calculator")
+        .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button { showHistory = true } label: { Image(systemName: "clock.arrow.circlepath").accessibilityLabel("Calculation history") } } }
+        .sheet(isPresented: $showHistory) { NavigationStack { List { ForEach(Array(history.enumerated()), id: \.offset) { item in Text(item.element) }; if history.isEmpty { Text("No calculations yet").foregroundColor(.secondary) } }.navigationTitle("History").toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { showHistory = false } } } } }
     }
     private func press(_ key: String) {
         if key == "C" { display = "0"; first = nil; operation = nil; replace = true; return }
@@ -1092,6 +1097,8 @@ private struct LabCalculatorView: View {
                 default: result = right == 0 ? .nan : left / right
                 }
                 display = result.isFinite ? String(format: "%.10g", result) : "Error"
+                history.insert("\(String(format: "%.10g", left)) \(op) \(String(format: "%.10g", right)) = \(display)", at: 0)
+                if history.count > 30 { history.removeLast() }
             }
             first = key == "=" ? nil : Double(display)
             operation = key == "=" ? nil : key
@@ -1117,6 +1124,7 @@ private struct LabFilesView: View {
     @State private var search = ""
     var body: some View {
         List {
+            LumaHeader(title: "On this phone", detail: "\(documents.count) restored documents", symbol: "folder.fill").listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
             NavigationLink { ProtectedAreaView(area: .files) } label: { Label("Protected files", systemImage: "lock.doc") }
             ForEach(documents.keys.sorted().filter { search.isEmpty || $0.localizedCaseInsensitiveContains(search) }, id: \.self) { name in
                 NavigationLink(value: PhoneFileRoute(title: name)) {
@@ -1129,7 +1137,7 @@ private struct LabFilesView: View {
                     }.padding(.vertical, 6)
                 }
             }
-        }.navigationTitle("Files").searchable(text: $search)
+        }.scrollContentBackground(.hidden).background(Night.background.ignoresSafeArea()).navigationTitle("Files").searchable(text: $search)
     }
 }
 
@@ -1184,7 +1192,7 @@ private struct LabBrowserView: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        Text(search.isEmpty ? "Start page" : "Search results").font(.title2.bold())
+                        LumaHeader(title: search.isEmpty ? "Start page" : "Search results", detail: "Saved sites and bookmarks", symbol: "globe")
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                             ForEach(matching, id: \.self) { name in
                                 Button { visit(name) } label: {
