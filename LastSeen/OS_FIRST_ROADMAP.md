@@ -194,3 +194,7 @@ OPEN implementation; creator approved a live Gameplay Statistics screen under Lu
 
 ## Approved modern Relay redesign — November 25, 2026
 See [RELAY_MODERNIZATION_ROADMAP.md](RELAY_MODERNIZATION_ROADMAP.md). OPEN: premium LumaOS-native package manager UI, discover/categories/search, package details and previews, clear transaction queue and progress, sources/activity/installed management, earned utility shortcuts and plain-language puzzle guidance, with all existing local package logic, save compatibility and corrective transaction tests preserved. No runtime changes in this documentation commit; do not interrupt active Build 27 Relay correction CI. Implement and regression-test in the next consolidated development milestone.
+
+
+## Approved discoverable Relay sources — November 25, 2026
+Extend [Relay modernization](RELAY_MODERNIZATION_ROADMAP.md) with a genuine optional repository discovery/add workflow: find fictional addresses in-world, manually add or copy from earned records, inspect source packages, refresh and manage optional sources offline. Preserve existing three baseline sources for migration; separate required, discovered and enabled repositories so recovery never exposes every optional source. No story spoilers or real networking. OPEN implementation and regression testing; do not interrupt the active corrective Build 27 run for documentation alone.
