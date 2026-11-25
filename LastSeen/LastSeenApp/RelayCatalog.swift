@@ -32,7 +32,11 @@ enum RelayCatalog {
         RelaySource(id: "studio", name: "Afterglow Studio", address: "https://studio.patchline.example/", icon: "paintpalette.fill", description: "Themes and SpringBoard customization", essential: false),
         RelaySource(id: "utilities", name: "Nightshift Utilities", address: "https://utilities.patchline.example/", icon: "wrench.and.screwdriver.fill", description: "Lock screen and everyday tweaks", essential: false)
     ]
-    static let defaultSources = "core|studio"
+    static let defaultSources = "core|studio|utilities"
+    static var requiredSourceIDs: Set<String> { Set(sources.map(\.id)) }
+    static func recoveredSources(_ raw: String) -> String {
+        encoded(ids(raw).intersection(requiredSourceIDs).union(requiredSourceIDs))
+    }
     static let packages = [
         RelayPackage("bootstrap", "Patchline Bootstrap", "2.0.0", "core", "System", "shippingbox.fill", "Essential rootless environment", "Core package catalog and services for this phone.", essential: true),
         RelayPackage("loader", "Patchline Loader", "1.2.0", "core", "System", "cpu", "SpringBoard tweak support", "Loads the phone's bundled customization settings.", essential: true),

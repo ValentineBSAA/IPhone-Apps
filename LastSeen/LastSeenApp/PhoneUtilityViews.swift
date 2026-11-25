@@ -164,7 +164,7 @@ struct PhoneNotesView: View {
     var body: some View {
         List {
             if lab {
-                NavigationLink { ProtectedAreaView(area: .notes) } label: { Label("Locked notes", systemImage: "lock.fill") }
+                NavigationLink { ProtectedAreaView(area: .notes, onOpened: { world.recordTutorialVisit("journal") }) } label: { Label("Locked notes", systemImage: "lock.fill") }
             }
             Section {
                 ForEach(notes) { note in
@@ -190,8 +190,10 @@ struct PhoneNotesView: View {
                         .padding(.vertical, 5)
                     }
                     .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) { world.removeNote(note.id) } label: {
-                            Label("Delete", systemImage: "trash")
+                        if note.id != PhoneWorldStore.tutorialNoteID {
+                            Button(role: .destructive) { world.removeNote(note.id) } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
                         }
                         Button { world.togglePin(note.id) } label: {
                             Label(note.pinned ? "Unpin" : "Pin", systemImage: "pin")
@@ -228,20 +230,33 @@ struct PhoneNoteEditorView: View {
     @State private var bodyText = ""
 
     var body: some View {
-        VStack(spacing: 0) {
-            TextField("Title", text: $title)
-                .font(.system(size: 25, weight: .semibold))
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-            Divider().padding(.vertical, 14)
-            TextEditor(text: $bodyText)
-                .scrollContentBackground(.hidden)
-                .font(.system(size: 16))
-                .padding(.horizontal, 13)
-                .accessibilityLabel("Note body")
+        Group {
+            if noteID == PhoneWorldStore.tutorialNoteID {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 17) {
+                        Text(PhoneWorldStore.tutorialNoteTitle).font(.largeTitle.bold())
+                        Label("Restored note", systemImage: "lock.doc").font(.caption).foregroundColor(.secondary)
+                        Divider()
+                        Text(PhoneWorldStore.tutorialNoteBody).font(.body).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+                    }.frame(maxWidth: .infinity, alignment: .leading).padding(22)
+                }.onAppear { world.recordTutorialVisit("note") }
+            } else {
+                VStack(spacing: 0) {
+                    TextField("Title", text: $title)
+                        .font(.system(size: 25, weight: .semibold))
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                    Divider().padding(.vertical, 14)
+                    TextEditor(text: $bodyText)
+                        .scrollContentBackground(.hidden)
+                        .font(.system(size: 16))
+                        .padding(.horizontal, 13)
+                        .accessibilityLabel("Note body")
+                }
+            }
         }
         .background(Night.background.ignoresSafeArea())
-        .navigationTitle("Edit note")
+        .navigationTitle(noteID == PhoneWorldStore.tutorialNoteID ? "Note" : "Edit note")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if let n = world.state.notes.first(where: { $0.id == noteID }) {
@@ -257,7 +272,8 @@ struct PhoneNoteEditorView: View {
 
 struct PhoneCalendarView: View {
     @EnvironmentObject private var world: PhoneWorldStore
-    @State private var selectedDay = Date()
+    @State private var selectedDay: Date
+    init(initialDay: Date = Date()) { _selectedDay = State(initialValue: initialDay) }
 
     private var matching: [PhoneEvent] {
         world.state.events
@@ -276,6 +292,7 @@ struct PhoneCalendarView: View {
                     .padding(10)
                     .background(Night.surface, in: RoundedRectangle(cornerRadius: 18))
 
+                Button("Today") { selectedDay = Date() }.buttonStyle(.bordered)
                 Text("Scheduled")
                     .font(.system(size: 19, weight: .semibold))
                 if matching.isEmpty {
@@ -303,6 +320,20 @@ struct PhoneCalendarView: View {
                     }
                 }
 
+                Text("Upcoming events").font(.headline).padding(.top, 6)
+                ForEach(world.state.events.filter { $0.endsAt >= Date() }.sorted { $0.startsAt < $1.startsAt }) { event in
+                    Button { selectedDay = event.startsAt } label: {
+                        HStack {
+                            Image(systemName: "calendar").foregroundColor(Night.accent)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(event.title).font(.subheadline.bold())
+                                Text(event.startsAt, format: .dateTime.month().day().hour().minute()).font(.caption).foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.caption)
+                        }.padding(12).background(Night.surface, in: RoundedRectangle(cornerRadius: 12))
+                    }.buttonStyle(.plain)
+                }
             }
             .padding(18)
         }
@@ -330,6 +361,13 @@ struct PhoneMailView: View {
         _readIDs = AppStorage(wrappedValue: "", lab ? "lastseen.restored.mail.read" : "lastseen.mail.read")
     }
     @State private var selected: String?
+    @State private var search = ""
+    @State private var unreadOnly = false
+    private var filteredMail: [PhoneMailItem] {
+        mails.filter { mail in
+            (!unreadOnly || !isRead(mail)) && (search.isEmpty || [mail.from, mail.subject, mail.body].contains { $0.localizedCaseInsensitiveContains(search) })
+        }
+    }
 
     private var mails: [PhoneMailItem] {
         let date = world.state.createdAt
@@ -351,7 +389,14 @@ struct PhoneMailView: View {
 
     var body: some View {
         List {
-            ForEach(mails) { mail in
+            Section {
+                Picker("Mailbox", selection: $unreadOnly) {
+                    Text("All mail").tag(false)
+                    Text("Unread").tag(true)
+                }.pickerStyle(.segmented)
+            }
+            if filteredMail.isEmpty { Text("No matching mail").foregroundColor(.secondary) }
+            ForEach(filteredMail) { mail in
                 Button {
                     selected = mail.id
                     if !readIDs.split(separator: "|").contains(Substring(mail.id)) {
@@ -360,6 +405,7 @@ struct PhoneMailView: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
+                            if !isRead(mail) { Circle().fill(Color.blue).frame(width: 8, height: 8) }
                             Text(mail.from)
                                 .font(.system(size: 16, weight: isRead(mail) ? .regular : .bold))
                             Spacer()
@@ -384,6 +430,7 @@ struct PhoneMailView: View {
         .scrollContentBackground(.hidden)
         .background(Night.background.ignoresSafeArea())
         .navigationTitle("Mail")
+        .searchable(text: $search, prompt: "Search mail")
         .sheet(item: Binding<MailSelection?>(
             get: { selected.map(MailSelection.init(id:)) },
             set: { selected = $0?.id }

@@ -404,6 +404,7 @@ struct NeighborConversationView: View {
                     .padding(.bottom, 14)
                 }
                 .onChange(of: world.messages(neighbor).count) { _ in
+                    world.markRead(neighbor)
                     withAnimation(.easeOut(duration: 0.25)) {
                         proxy.scrollTo("bottom", anchor: .bottom)
                     }
@@ -463,6 +464,17 @@ struct NeighborConversationView: View {
         .navigationTitle(neighbor.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: 8) {
+                    NeighborAvatar(neighbor: neighbor, size: 30)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(neighbor.name).font(.subheadline.bold())
+                        Text(neighbor.subtitle).font(.caption2).foregroundColor(.secondary)
+                    }
+                }
+            }
+        }
+        .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 NavigationLink(value: AppPage.worldProfile(neighbor)) {
                     Image(systemName: "person.crop.circle")
@@ -505,7 +517,7 @@ struct NeighborProfileView: View {
                         .background(Night.raised, in: RoundedRectangle(cornerRadius: 14))
                 }
                 Text(neighbor == .maya
-                     ? "You met Maya through friends in the neighborhood. She sends ordinary updates and makes plans."
+                     ? (world.tutorialStarted ? "Maya is a friend of Nora, the original owner of this phone." : "You met Maya through friends in the neighborhood. She sends ordinary updates and makes plans.")
                      : "Denise manages notices and maintenance for Ash Street residents.")
                     .font(.system(size: 14))
                     .foregroundColor(Night.muted)

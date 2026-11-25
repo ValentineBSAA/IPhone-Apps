@@ -17,8 +17,8 @@ settings:
     INFOPLIST_KEY_NSMicrophoneUsageDescription: "Future optional fictional voice conversations will use your microphone only when you explicitly start a call. This feature is currently disabled."
     INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Future optional spoken story replies will be transcribed on-device after you opt in. This feature is currently disabled."
     INFOPLIST_KEY_NSFaceIDUsageDescription: "Last Seen optionally uses your iPhone biometrics to unlock the fictional phone. No face data is collected."
-    MARKETING_VERSION: "1.3.7"
-    CURRENT_PROJECT_VERSION: "20"
+    MARKETING_VERSION: "1.3.8"
+    CURRENT_PROJECT_VERSION: "21"
 targets:
   LastSeen:
     type: application

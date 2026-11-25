@@ -82,6 +82,7 @@ struct OwnerPasscodeView: View {
 /// Every protected destination authenticates independently. The permission preflight is not an owner grant.
 struct ProtectedAreaView: View {
     let area: ProtectedArea
+    var onOpened: () -> Void = {}
     @AppStorage("lastseen.security.ownerVerified") private var ownerVerified = false
     @AppStorage("lastseen.security.appearanceEnrolled") private var appearanceEnrolled = false
     @Environment(\.scenePhase) private var phase
@@ -115,6 +116,7 @@ struct ProtectedAreaView: View {
             }.padding()
         }
         .navigationTitle(area.rawValue).navigationBarTitleDisplayMode(.inline)
+        .onChange(of: session) { unlocked in if unlocked { onOpened() } }
         .onDisappear { clearSession() }
         .onChange(of: phase) { if $0 == .background { clearSession() } }
         .sheet(isPresented: $enrollment) {
@@ -154,7 +156,7 @@ struct ProtectedAreaView: View {
             Text("Saved portrait · private").font(.caption).foregroundColor(.secondary)
         case .notes:
             Text("Personal journal").font(.title2.bold())
-            Text("I should make more time for myself. Finish the book, call Mum, and put the good photographs somewhere safe.").frame(maxWidth: .infinity, alignment: .leading)
+            Text("I should make more time for myself. Finish the book, call Mum, and put the good photographs somewhere safe.\n\nMaya was right. I need to stop cancelling our plans. Coffee after the bookshop, if everything goes well.").frame(maxWidth: .infinity, alignment: .leading)
             Text("— Nora").font(.caption).foregroundColor(.secondary)
         case .files:
             Text("Personal archive").font(.title2.bold())
