@@ -366,9 +366,12 @@ struct PhoneMessagesView: View {
 
 struct NeighborConversationView: View {
     let neighbor: Neighbor
+    var reactive = false
+    @Environment(\.scenePhase) private var phase
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var draft = ""
     @State private var showHelp = false
+    @State private var showSuggestions = true
 
     var body: some View {
         VStack(spacing: 0) {
@@ -380,7 +383,8 @@ struct NeighborConversationView: View {
                                 Text(message.at, style: .date).font(.caption).foregroundColor(Night.muted).padding(.top, 8)
                             }
                             HStack {
-                                if message.fromPlayer { Spacer(minLength: 55) }
+                                if message.fromPlayer { Spacer(minLength: 20) }
+                                else { NeighborAvatar(neighbor: neighbor, size: 28) }
                                 VStack(alignment: message.fromPlayer ? .trailing : .leading, spacing: 4) {
                                     Text(message.text)
                                         .font(.system(size: 15))
@@ -392,11 +396,34 @@ struct NeighborConversationView: View {
                                         .font(.system(size: 10))
                                         .foregroundColor(Night.muted)
                                         .padding(.horizontal, 4)
+                                    if reactive && message.fromPlayer && message.receiptTracked == true {
+                                        Text(message.recipientReadAt == nil ? "Delivered" : "Read")
+                                            .font(.caption2).foregroundColor(Night.muted)
+                                    }
                                 }
                                 .frame(maxWidth: 280, alignment: message.fromPlayer ? .trailing : .leading)
-                                if !message.fromPlayer { Spacer(minLength: 55) }
+                                if !message.fromPlayer { Spacer(minLength: 20) }
+                                else {
+                                    Image(RestoredPhoneBackup.ownerPortrait).resizable().scaledToFill()
+                                        .frame(width: 28, height: 28).clipShape(Circle())
+                                        .accessibilityLabel("Nora's phone")
+                                }
                             }
                             .id(message.id)
+                        }
+                        if reactive {
+                            TimelineView(.periodic(from: .now, by: 0.3)) { context in
+                                if world.isTyping(neighbor, now: context.date) {
+                                    HStack {
+                                        NeighborAvatar(neighbor: neighbor, size: 28)
+                                        Text("•••").font(.title2).foregroundColor(Night.muted)
+                                            .padding(.horizontal, 15).padding(.vertical, 7)
+                                            .background(Night.incoming, in: Capsule())
+                                        Text("Typing").font(.caption).foregroundColor(Night.muted)
+                                        Spacer()
+                                    }.accessibilityLabel(neighbor.name + " is typing")
+                                }
+                            }
                         }
                         Color.clear.frame(height: 2).id("bottom")
                     }
@@ -404,13 +431,14 @@ struct NeighborConversationView: View {
                     .padding(.bottom, 14)
                 }
                 .onChange(of: world.messages(neighbor).count) { _ in
-                    world.markRead(neighbor)
+                    if phase == .active && (!reactive || world.visibleThread == neighbor) { world.markRead(neighbor) }
                     withAnimation(.easeOut(duration: 0.25)) {
                         proxy.scrollTo("bottom", anchor: .bottom)
                     }
                 }
                 .onAppear {
-                    world.markRead(neighbor)
+                    if reactive { world.visibleThread = neighbor }
+                    if phase == .active { world.markRead(neighbor) }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         proxy.scrollTo("bottom", anchor: .bottom)
                     }
@@ -418,17 +446,24 @@ struct NeighborConversationView: View {
             }
 
             Divider()
-            if world.choices(neighbor).isEmpty {
+            if !reactive && world.choices(neighbor).isEmpty {
                 Text("Conversation is quiet for now.")
                     .font(.system(size: 13))
                     .foregroundColor(Night.muted)
                     .padding(18)
             } else {
                 VStack(spacing: 8) {
-                    ForEach(world.choices(neighbor), id: \.self) { choice in
+                    if reactive && !world.choices(neighbor).isEmpty {
+                        Button { showSuggestions.toggle() } label: {
+                            Label(showSuggestions ? "Hide suggested replies" : "Show suggested replies",
+                                  systemImage: showSuggestions ? "chevron.down" : "chevron.up").font(.caption)
+                        }
+                    }
+                    ForEach(showSuggestions ? world.choices(neighbor) : [], id: \.self) { choice in
                         Button {
                             draft = ""
-                            _ = world.reply(to: neighbor, text: choice)
+                            if reactive { _ = world.sendReactive(to: neighbor, text: choice) }
+                            else { _ = world.reply(to: neighbor, text: choice) }
                         } label: {
                             HStack {
                                 Text(choice)
@@ -460,6 +495,8 @@ struct NeighborConversationView: View {
                 .padding(12)
             }
         }
+        .onDisappear { if reactive && world.visibleThread == neighbor { world.visibleThread = nil } }
+        .onChange(of: phase) { if $0 == .active && reactive && world.visibleThread == neighbor { world.markRead(neighbor) } }
         .background(Night.background.ignoresSafeArea())
         .navigationTitle(neighbor.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -481,16 +518,16 @@ struct NeighborConversationView: View {
                 }
             }
         }
-        .alert("Choose an available response", isPresented: $showHelp) {
+        .alert(reactive ? "Message not sent" : "Choose an available response", isPresented: $showHelp) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("These conversations are authored and work offline. Select or type one of the suggested responses.")
+            Text(reactive ? "Keep messages under 2,000 characters and allow pending replies to arrive." : "These conversations are authored and work offline. Select or type one of the suggested responses.")
         }
     }
 
     private func send() {
         guard !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        if world.reply(to: neighbor, text: draft) { draft = "" }
+        if (reactive ? world.sendReactive(to: neighbor, text: draft) : world.reply(to: neighbor, text: draft)) { draft = "" }
         else { showHelp = true }
     }
 }
