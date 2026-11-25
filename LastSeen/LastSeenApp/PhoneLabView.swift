@@ -14,6 +14,9 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.relay.compactIcons") private var compactIcons = false
     @AppStorage("lastseen.relay.tealTheme") private var tealTheme = false
     @AppStorage("lastseen.relay.installed") private var relayInstalled = ""
+    @AppStorage("lastseen.relay.safeMode") private var safeMode = false
+    private func tweak(_ id: String) -> Bool { !safeMode && RelayCatalog.ids(relayInstalled).contains(id) }
+    private var smallIcons: Bool { (!safeMode && compactIcons) || tweak("fivegrid") }
     @AppStorage("lastseen.lab.brightness") private var brightness = 0.9
     @AppStorage("lastseen.lab.wifi") private var wifi = true
     @AppStorage("lastseen.setup.device") private var device = "My phone"
@@ -112,7 +115,7 @@ struct PhoneLabView: View {
         }
     }
 
-    private var backdrop: some View { PhoneWallpaper(selection: wallpaper).ignoresSafeArea() }
+    private var backdrop: some View { PhoneWallpaper(selection: safeMode && wallpaper == 2 ? 0 : wallpaper).ignoresSafeArea() }
 
     private var unread: Int { Neighbor.allCases.reduce(0) { $0 + world.countUnread($1) } }
 
@@ -124,7 +127,10 @@ struct PhoneLabView: View {
                 VStack(spacing: 5) {
                     Text(context.date, format: .dateTime.weekday(.wide).month(.wide).day())
                         .font(.headline)
-                    Text(context.date, style: .time)
+                    Group {
+                        if tweak("seconds") { Text(context.date, format: .dateTime.hour().minute().second()) }
+                        else { Text(context.date, style: .time) }
+                    }
                         .font(.system(size: 68, weight: .thin, design: .rounded))
                         .monospacedDigit().minimumScaleFactor(0.6).lineLimit(1)
                 }
@@ -231,6 +237,9 @@ struct PhoneLabView: View {
 
     private var launcher: some View {
         VStack(spacing: 16) {
+            if safeMode {
+                Button { open(.relay) } label: { Label("Safe Mode • open Relay to exit", systemImage: "exclamationmark.shield").font(.caption).foregroundColor(.orange) }
+            }
             HStack {
                 Button { panel = .notifications } label: {
                     Label("Notifications", systemImage: "bell")
@@ -243,7 +252,7 @@ struct PhoneLabView: View {
                 }.simultaneousGesture(pullDown(.controls))
             }.padding(.horizontal, 7)
             ScrollView {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 24) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: tweak("fivegrid") ? 5 : 4), spacing: 24) {
                     ForEach(LabApp.allCases.filter { !$0.inDock }) { app in icon(app) }
                 }.padding(.top, 22).padding(.bottom, 12)
             }
@@ -260,7 +269,9 @@ struct PhoneLabView: View {
             }.padding(.horizontal, 12)
             HStack(spacing: 7) {
                 ForEach(LabApp.allCases.filter(\.inDock)) { app in icon(app) }
-            }.padding(12).background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 27))
+            }.padding(12).background {
+                if !tweak("dockglass") { RoundedRectangle(cornerRadius: 27).fill(.ultraThinMaterial) }
+            }
         }
         .padding(.horizontal, 17).padding(.vertical, 12)
         .buttonStyle(.plain).foregroundColor(.white)
@@ -279,24 +290,26 @@ struct PhoneLabView: View {
         Button { open(app) } label: {
             VStack(spacing: 6) {
                 ZStack(alignment: .topTrailing) {
-                    if tealTheme, let asset = ApprovedArt.themeName(for: app.rawValue) {
+                    if !safeMode, tealTheme, let asset = ApprovedArt.themeName(for: app.rawValue) {
                         Image(asset).resizable().scaledToFit()
-                            .frame(width: compactIcons ? 47 : 55, height: compactIcons ? 47 : 55)
+                            .frame(width: smallIcons ? 43 : 55, height: smallIcons ? 43 : 55)
                     } else {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(LinearGradient(colors: [app.color, app.color.opacity(0.55)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .frame(width: compactIcons ? 47 : 55, height: compactIcons ? 47 : 55)
+                        .frame(width: smallIcons ? 43 : 55, height: smallIcons ? 43 : 55)
                         .overlay { Image(systemName: app.symbol).font(.system(size: 24, weight: .medium)) }
                     }
-                    if app == .messages && unread > 0 {
+                    if app == .messages && unread > 0 && !tweak("quietbadges") {
                         Text("\(unread)").font(.caption2.bold()).padding(5)
                             .background(.red, in: Capsule()).offset(x: 5, y: -5)
                     }
                 }
-                Text(app.rawValue).font(.system(size: 11, weight: .medium))
-                    .lineLimit(1).minimumScaleFactor(0.8)
+                if !tweak("clearlabels") {
+                    Text(app.rawValue).font(.system(size: 11, weight: .medium))
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                }
             }.frame(maxWidth: .infinity)
-        }.buttonStyle(.plain)
+        }.buttonStyle(.plain).accessibilityLabel(app.rawValue)
     }
 
     private var controls: some View {
@@ -318,6 +331,11 @@ struct PhoneLabView: View {
                     if relayInstalled.split(separator: "|").contains("midnight") { Text("Midnight Glass").tag(2) }
                 }
             }
+            Section("Jailbreak") {
+                LabeledContent("Environment", value: safeMode ? "Safe Mode" : "Rootless")
+                LabeledContent("Installed tweaks", value: String(RelayCatalog.ids(relayInstalled).count))
+                NavigationLink { RelayPackagesView(onRestart: { panel = nil; returnHome(); locked = true }) } label: { Label("Manage packages in Relay", systemImage: "shippingbox.fill") }
+            }
             Section("Gestures") {
                 Toggle("Immersive screen-edge gestures", isOn: $deferSystemEdges)
                 Text("Use the in-game gestures first. Repeat a system-edge swipe to access real iOS controls. Turn this off for standard iOS gesture priority.").font(.footnote).foregroundColor(.secondary)
@@ -332,7 +350,7 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.3.5 (18)")
+                LabeledContent("Software", value: "1.3.6 (19)")
                 Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay phone setup") { confirmSetupReplay = true }
             }
@@ -400,7 +418,7 @@ struct PhoneLabView: View {
             controls.navigationTitle("Settings")
         case .files: LabFilesView()
         case .browser: LabBrowserView(wifi: wifi)
-        case .relay: RelayPackagesView()
+        case .relay: RelayPackagesView(onRestart: { returnHome(); recent.removeAll(); locked = true })
         }
     }
 }
