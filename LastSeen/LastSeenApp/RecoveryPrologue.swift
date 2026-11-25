@@ -14,12 +14,13 @@ enum OpeningPace {
     static let preparation = 20
     static let installation = 65
     static let reboot = 15
-    static let total = recognition + diagnostics + preparation + installation + reboot
+    static let completionHold = 3
+    static let total = recognition + diagnostics + preparation + installation + completionHold + reboot
     static func duration(_ stage: Int) -> Int {
-        switch stage { case 1: return recognition + diagnostics; case 2: return preparation + installation; case 4: return reboot; default: return 0 }
+        switch stage { case 1: return recognition + diagnostics; case 2: return preparation + installation; case 3: return completionHold; case 4: return reboot; default: return 0 }
     }
     static func canAdvance(stage: Int, connected: Bool, active: Bool) -> Bool {
-        active && (stage == 4 || ((stage == 1 || stage == 2) && connected))
+        active && (stage == 3 || stage == 4 || ((stage == 1 || stage == 2) && connected))
     }
 }
 
@@ -34,7 +35,8 @@ struct RecoveryPrologue: View {
     @Environment(\.scenePhase) private var phase
     @State private var powered = false
     @State private var previousMonitoring: Bool?
-    @State private var verbose = false
+    @State private var verbose = true
+    @State private var followLogs = true
     @State private var showQA = false
     @State private var initialized = false
     private let accent = Color(red: 0.35, green: 0.86, blue: 0.77)
@@ -58,19 +60,12 @@ struct RecoveryPrologue: View {
         case 0: return connected ? "Your service session is ready." : "Connect your phone to power using a charging cable."
         case 1: return elapsed < OpeningPace.recognition ? "Establishing a virtual device session." : elapsed < duration ? "Checking the recovery environment and preserving archived records." : "Diagnostics passed. The custom environment is ready to install."
         case 2: return elapsed < OpeningPace.preparation ? "Preparing the local bootstrap and package environment." : "Keep the connection active while the custom environment is installed."
-        case 3: return "Patchline and Relay are ready. Restart the fictional phone to finish."
+        case 3: return "Patchline and Relay are ready. Userspace reboot will begin automatically."
         case 4: return "Finalizing services and refreshing the icon cache."
         default: return "A new environment. An unfamiliar backup. Your story begins here."
         }
     }
-    private var diagnosticLines: [String] {
-        let items = ["Virtual transport established", "Recovery manifest verified", "Archived records located", "Protected records preserved", "Compatibility confirmed"]
-        return Array(items.prefix(stage > 1 ? items.count : min(items.count, max(0, (elapsed - 10) / 3))))
-    }
-    private var installLines: [String] {
-        let items = ["Preparing bootstrap", "Preparing userspace environment", "Registering tweak loader", "Installing Relay package manager", "Verifying local package index", "Refreshing icon cache", "Preserving archived backup", "Finalizing custom environment"]
-        return Array(items.prefix(stage > 2 ? items.count : min(items.count, max(0, elapsed / 10))))
-    }
+    private var transcript: [String] { JailbreakTranscript.lines(stage: stage, elapsed: elapsed) }
 
     var body: some View {
         Group {
@@ -91,16 +86,16 @@ struct RecoveryPrologue: View {
         .tint(accent)
         .onAppear {
             guard !initialized else { return }
-            if revision < 3 {
+            if revision < 4 {
                 // One-time replay of the revised prologue, never reset the phone or earned access.
-                stage = 0; elapsed = 0; simulated = false; revision = 3
-                OpeningQA.record("Opening revision 3 initialized; existing phone records retained")
+                stage = 0; elapsed = 0; simulated = false; revision = 4
+                OpeningQA.record("Opening revision 4 initialized; existing phone records retained")
             }
             initialized = true
         }
         .onChange(of: phase) { value in
             guard stage < 6, initialized else { return }
-            if value == .background { OpeningQA.record("Opening backgrounded at stage \(stage), \(elapsed)s") }
+            if value == .background { RestartAudio.stop(); OpeningQA.record("Opening backgrounded at stage \(stage), \(elapsed)s") }
             if value == .active { readPower(); OpeningQA.record("Opening resumed at stage \(stage), \(elapsed)s") }
         }
         .sheet(isPresented: $showQA) { OpeningDiagnosticsView() }
@@ -111,11 +106,9 @@ struct RecoveryPrologue: View {
             if stage == 4 {
                 RestartArtwork(phase: RestartPhase.opening(at: elapsed))
                     .animation(reduceMotion ? nil : .easeInOut(duration: 0.65), value: RestartPhase.opening(at: elapsed))
-                    .overlay(alignment: .bottom) {
-                        if RestartPhase.opening(at: elapsed) != .black {
-                            Button("Skip animation") { elapsed = duration; finishTimedStage() }.font(.caption).foregroundColor(.white.opacity(0.6)).padding(.bottom, 24)
-                        }
-                    }.transition(.opacity)
+                    .accessibilityLabel(RestartPhase.opening(at: elapsed) == .respring ? "Simulated respring" : "Simulated userspace restart")
+                    .accessibilityAction(named: Text("Skip restart animation")) { elapsed = duration; finishTimedStage() }
+                    .transition(.opacity)
             } else {
             background.ignoresSafeArea()
             RadialGradient(colors: [accent.opacity(0.14), .clear], center: .top, startRadius: 10, endRadius: 450).ignoresSafeArea()
@@ -124,17 +117,16 @@ struct RecoveryPrologue: View {
                 ScrollView {
                     VStack(spacing: 20) {
                         if stage == 0 { connectionArt }
-                        else if stage == 4 { bootArt }
                         else { stageArt }
                         Text(phaseTitle).font(.system(size: 32, weight: .semibold, design: .rounded)).multilineTextAlignment(.center)
                             .accessibilityAddTraits(.isHeader)
                         Text(detail).font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
                         if stage == 0 { connectionStatus }
-                        if stage == 1 || stage == 2 || stage == 4 { progressCard }
+                        if stage == 1 || stage == 2 { progressCard }
                         if interrupted { interruptionCard }
+                        if stage > 0 && stage < 4 { verbosePanel }
                         if stage == 5 { completionInfo }
-                        if stage > 0 && stage < 5 { verbosePanel }
                     }.padding(.horizontal, 23).padding(.vertical, 24)
                 }.scrollIndicators(.hidden)
                 actions.padding(.horizontal, 23).padding(.bottom, 12)
@@ -178,10 +170,9 @@ struct RecoveryPrologue: View {
     private var stageArt: some View {
         let name: String = stage == 1 ? (elapsed < OpeningPace.recognition ? "Opening_USB" : "Opening_Diagnostics")
             : stage == 2 ? "Opening_Install" : stage == 3 ? "Opening_Unlock" : "Opening_Respring"
-        return OpeningArt(name: name, size: 176)
+        return OpeningArt(name: name, size: stage == 1 || stage == 2 ? 86 : 148)
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: name)
     }
-    private var bootArt: some View { OpeningArt(name: "Opening_Reboot", size: 176) }
     private var connectionStatus: some View {
         HStack(spacing: 12) {
             Circle().fill(connected ? accent : .orange).frame(width: 9, height: 9)
@@ -222,18 +213,49 @@ struct RecoveryPrologue: View {
         }.frame(maxWidth: .infinity, alignment: .leading).padding(14).background(.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 15))
     }
     private var verbosePanel: some View {
-        DisclosureGroup(isExpanded: $verbose) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("> Service session ready")
-                ForEach(diagnosticLines, id: \.self) { Text("> " + $0) }
-                if stage >= 2 { ForEach(installLines, id: \.self) { Text("> " + $0) } }
-                if stage == 4 { Text("> Starting virtual services") }
-            }.font(.system(.caption, design: .monospaced)).foregroundColor(accent)
-                .frame(maxWidth: .infinity, alignment: .leading).padding(12)
-                .background(.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 12)).padding(.top, 10)
-        } label: {
-            HStack(spacing: 8) { OpeningArt(name: "Opening_Terminal", size: 32); Text("Verbose mode") }
-        }.font(.subheadline).padding(14).background(.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 15))
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                verbose.toggle()
+            } label: {
+                HStack(spacing: 8) {
+                    OpeningArt(name: "Opening_Terminal", size: 30)
+                    Text("Verbose log").font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Text("\(transcript.count) entries").font(.caption.monospacedDigit()).foregroundColor(.secondary)
+                    Image(systemName: verbose ? "chevron.up" : "chevron.down")
+                }
+            }.buttonStyle(.plain)
+            if verbose {
+                HStack {
+                    Text("PATCHLINE • SIMULATED CONSOLE").font(.system(size: 9, weight: .medium, design: .monospaced)).foregroundColor(.secondary)
+                    Spacer()
+                    Button(followLogs ? "Pause scroll" : "Follow live") { followLogs.toggle() }
+                        .font(.caption2)
+                }
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 7) {
+                            Text("[SESSION] Virtual transport ready").foregroundColor(accent)
+                            ForEach(Array(transcript.enumerated()), id: \.offset) { entry in
+                                Text(String(format: "[%03d] ", entry.offset + 1) + entry.element)
+                                    .foregroundColor(entry.element.contains("PASS") || entry.element.contains("complete") ? .white : accent)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Color.clear.frame(height: 1).id("console-end")
+                        }.font(.system(.caption2, design: .monospaced))
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(12)
+                    }.frame(height: 232)
+                        .background(.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 13))
+                        .onAppear { if followLogs { proxy.scrollTo("console-end", anchor: .bottom) } }
+                        .onChange(of: transcript.count) { _ in
+                            if followLogs { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { proxy.scrollTo("console-end", anchor: .bottom) } }
+                        }
+                        .onChange(of: followLogs) { enabled in
+                            if enabled { proxy.scrollTo("console-end", anchor: .bottom) }
+                        }
+                }
+            }
+        }.padding(12).background(.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 15))
     }
     private var completionInfo: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -260,7 +282,7 @@ struct RecoveryPrologue: View {
             case 2:
                 Text(interrupted ? "Installation paused" : "Keep this screen open").font(.caption).foregroundColor(.secondary)
             case 3:
-                primary("Userspace reboot") { transition(4) }
+                Text("Userspace reboot starting…").font(.caption).foregroundColor(.secondary)
             case 4:
                 Text("Starting the new environment").font(.caption).foregroundColor(.secondary)
             case 5:
@@ -279,11 +301,12 @@ struct RecoveryPrologue: View {
     private func transition(_ next: Int) {
         OpeningQA.record("Stage \(stage) completed at \(elapsed)s; entering \(next)")
         elapsed = 0; stage = next
-        if next == 4 { OpeningQA.record("Userspace reboot started") }
+        if next == 4 { OpeningQA.record("Userspace reboot started"); RestartAudio.play("UserspaceDown", enabled: effects) }
         if next == 5 { RestartAudio.stop(); OpeningQA.record("Userspace reboot and respring completed; welcome displayed") }
     }
     private func finishTimedStage() {
         if stage == 2 { transition(3) }
+        else if stage == 3 { transition(4) }
         else if stage == 4 { transition(5) }
         else if stage == 1 { OpeningQA.record("Diagnostics finished at \(elapsed)s") }
     }
@@ -303,6 +326,7 @@ struct RecoveryPrologue: View {
     private func stopMonitoring() {
         if let previous = previousMonitoring { UIDevice.current.isBatteryMonitoringEnabled = previous }
         previousMonitoring = nil
+        RestartAudio.stop()
     }
     private func readPower() {
         let next = RecoveryPower.connected(UIDevice.current.batteryState)
@@ -345,6 +369,7 @@ struct RecoveryPrologue: View {
             guard !Task.isCancelled, stage == activeStage else { return }
             guard OpeningPace.canAdvance(stage: activeStage, connected: connected, active: phase == .active && !showQA) else { continue }
             elapsed = min(seconds, elapsed + 1)
+            if stage == 4 && elapsed == 2 { RestartAudio.play("UserspaceUp", enabled: effects) }
             if stage == 4 && elapsed == 8 {
                 OpeningQA.record("Respring started")
                 RestartAudio.play("RespringDown", enabled: effects)
