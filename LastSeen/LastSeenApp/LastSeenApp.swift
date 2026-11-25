@@ -5,12 +5,26 @@ struct LastSeenApp: App {
     @UIApplicationDelegateAdaptor(LastSeenAppDelegate.self) private var appDelegate
     var body: some Scene {
         WindowGroup {
+            root
+        }
+    }
+    @ViewBuilder private var root: some View {
+        #if DEBUG && targetEnvironment(simulator)
+        if ProcessInfo.processInfo.arguments.contains("--luma-ui-test") {
+            PhoneLabView(startUnlocked: true, uiFixture: true)
+        } else {
+            normalRoot
+        }
+        #else
+        normalRoot
+        #endif
+    }
+    @ViewBuilder private var normalRoot: some View {
             if ProcessInfo.processInfo.arguments.contains("--legacy-story") {
                 LegacyStoryRoot()
             } else {
                 PhonePermissionsGate()
             }
-        }
     }
 }
 

@@ -64,7 +64,7 @@ struct LockedPhotoSurface: View {
             Image("Photo_Locked_Texture").resizable().scaledToFill()
             VStack(spacing: 5) {
                 Image(systemName: "lock.fill").font(compact ? .title3 : .largeTitle)
-                Text("Locked").font(compact ? .caption2 : .headline)
+                Text("Unrecovered").font(compact ? .caption2 : .headline).lineLimit(1).minimumScaleFactor(0.7)
             }.foregroundColor(.white)
         }.clipped().accessibilityLabel("Locked photograph")
     }
@@ -84,7 +84,7 @@ struct NoraPrivateAlbum: View {
                 }
             }
         }
-        Text("Individual discoveries are required to recover these photos.")
+        Text("Access is verified. These photographs remain unrecovered until their individual discoveries are made.")
             .font(.caption).foregroundColor(.secondary)
     }
 }

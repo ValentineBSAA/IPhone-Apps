@@ -1,0 +1,211 @@
+import Foundation
+import SwiftUI
+
+struct LumaCheckpoint: Codable {
+    let version: Int
+    let date: Date
+    let playSeconds: Int
+    var world: PhoneWorld
+    let preferences: Data
+}
+@MainActor
+final class LumaSaveStore: ObservableObject {
+    static let keys = [
+        "lastseen.lab.wallpaper","lastseen.lab.lockWallpaper","lastseen.lab.wallpaperBlur","lastseen.lab.lightAppearance",
+        "lastseen.lab.messageSound","lastseen.lab.messageHaptics","lastseen.lab.horrorEffects",
+        "lastseen.lab.hideLockPreviews","lastseen.lab.brightness","lastseen.lab.wifi","lastseen.lab.deferSystemEdges",
+        "lastseen.lab.favoritePhotos","lastseen.lab.stopwatchStart","lastseen.lab.stopwatchElapsed","lastseen.lab.timerEnd",
+        "lastseen.lab.timerMinutes","lastseen.lab.history","lastseen.lab.bookmarks","lastseen.lab.browserSeeded",
+        "lastseen.lab.calculatorHistory","lastseen.lab.browserPage","lastseen.lab.browserForward",
+        "lastseen.restored.mail.read","lastseen.setup.device","lastseen.relay.installed","lastseen.relay.versions",
+        "lastseen.relay.sources","lastseen.relay.history","lastseen.relay.safeMode","lastseen.relay.compactIcons","lastseen.relay.tealTheme"
+    ]
+    static let manual = (1...3).map { "manual-\($0)" }
+    static let automatic = (1...3).map { "auto-\($0)" }
+    let root: URL
+    let defaults: UserDefaults
+    @Published private(set) var slots: [String: LumaCheckpoint] = [:]
+    @Published private(set) var invalid: Set<String> = []
+    @Published private(set) var notice = ""
+    @Published private(set) var playSeconds = 0
+    private var lastAutomatic: Date = .distantPast
+    private var sinceAutomatic = 0
+    private var previousInterval: Int?
+    static let manualCooldown: TimeInterval = 60
+    private var lastManual: Date { defaults.object(forKey: "lastseen.saves.lastManual") as? Date ?? .distantPast }
+    func canSaveManually(now: Date = Date()) -> Bool { now.timeIntervalSince(lastManual) >= Self.manualCooldown }
+    func manualRemaining(now: Date = Date()) -> Int { max(0, min(Int(Self.manualCooldown), Int(ceil(Self.manualCooldown - now.timeIntervalSince(lastManual))))) }
+    func persistPlayTime() { defaults.set(playSeconds, forKey: "lastseen.saves.playSeconds") }
+    @discardableResult
+    func writeManual(_ slot: String, world: PhoneWorld, now: Date = Date()) -> Bool {
+        guard Self.manual.contains(slot), canSaveManually(now: now) else { notice = "Manual save is cooling down."; return false }
+        guard write(slot, world: world, now: now) else { return false }
+        defaults.set(now, forKey: "lastseen.saves.lastManual")
+        return true
+    }
+    init(root: URL? = nil, defaults: UserDefaults = .standard) {
+        self.root = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("LastSeenCheckpoints", isDirectory: true)
+        self.defaults = defaults
+        playSeconds = max(0, defaults.integer(forKey: "lastseen.saves.playSeconds"))
+        refresh()
+    }
+    private func url(_ slot: String) -> URL { root.appendingPathComponent(slot + ".json") }
+    private func validSlot(_ slot: String) -> Bool { (Self.manual + Self.automatic).contains(slot) }
+    func read(_ slot: String) throws -> LumaCheckpoint {
+        guard validSlot(slot) else { throw CocoaError(.fileReadCorruptFile) }
+        let value = try JSONDecoder().decode(LumaCheckpoint.self, from: Data(contentsOf: url(slot)))
+        guard value.version == 1, value.world.version == 1, value.playSeconds >= 0 else { throw CocoaError(.fileReadCorruptFile) }
+        _ = try preferences(value)
+        return value
+    }
+    private func preferences(_ value: LumaCheckpoint) throws -> [String: Any] {
+        guard let result = try PropertyListSerialization.propertyList(from: value.preferences, format: nil) as? [String: Any],
+              Set(result.keys).isSubset(of: Set(Self.keys)),
+              result.values.allSatisfy({ $0 is String || $0 is NSNumber }) else { throw CocoaError(.fileReadCorruptFile) }
+        return result
+    }
+    func refresh() {
+        var found: [String: LumaCheckpoint] = [:]; var damaged: Set<String> = []
+        for slot in Self.manual + Self.automatic where FileManager.default.fileExists(atPath: url(slot).path) {
+            do { found[slot] = try read(slot) } catch { damaged.insert(slot) }
+        }
+        slots = found; invalid = damaged
+    }
+    @discardableResult
+    func write(_ slot: String, world: PhoneWorld, now: Date = Date(), quiet: Bool = false) -> Bool {
+        guard validSlot(slot) else { return false }
+        do {
+            let prefs = Dictionary(uniqueKeysWithValues: Self.keys.compactMap { key in defaults.object(forKey: key).map { (key, $0) } })
+            let bytes = try PropertyListSerialization.data(fromPropertyList: prefs, format: .binary, options: 0)
+            let value = LumaCheckpoint(version: 1, date: now, playSeconds: playSeconds, world: world, preferences: bytes)
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            try JSONEncoder().encode(value).write(to: url(slot), options: .atomic)
+            refresh()
+            defaults.set(playSeconds, forKey: "lastseen.saves.playSeconds")
+            if !quiet { notice = "Game saved." }
+            return true
+        } catch { notice = "Could not save. Existing checkpoints were preserved."; return false }
+    }
+    func automatic(world: PhoneWorld, now: Date = Date(), force: Bool = false) {
+        guard force || now.timeIntervalSince(lastAutomatic) >= 30 else { return }
+        let slot = Self.automatic.first(where: { slots[$0] == nil }) ??
+            Self.automatic.min(by: { (slots[$0]?.date ?? .distantPast) < (slots[$1]?.date ?? .distantPast) })!
+        if write(slot, world: world, now: now, quiet: true) {
+            lastAutomatic = now; sinceAutomatic = 0
+        }
+    }
+    func tick(world: PhoneWorld, minutes: Int) {
+        playSeconds += 1
+        if previousInterval != minutes { sinceAutomatic = 0; previousInterval = minutes }
+        guard [1,3,5,10].contains(minutes) else { return }
+        sinceAutomatic += 1
+        if sinceAutomatic >= minutes * 60 { automatic(world: world) }
+    }
+    func restore(_ slot: String, into world: PhoneWorldStore, now: Date = Date()) -> Bool {
+        do {
+            var value = try read(slot)
+            var prefs = try preferences(value)
+            // Preserve time remaining in fictional timers and pending conversations.
+            let delta = now.timeIntervalSince(value.date)
+            value.world.pendingReplies = value.world.pendingReplies?.map {
+                PhonePendingReply(id: $0.id, outgoingID: $0.outgoingID, neighbor: $0.neighbor, text: $0.text,
+                    readAt: $0.readAt.addingTimeInterval(delta), dueAt: $0.dueAt.addingTimeInterval(delta), startsTutorial: $0.startsTutorial)
+            }
+            for key in ["lastseen.lab.timerEnd","lastseen.lab.stopwatchStart"] {
+                if let old = prefs[key] as? NSNumber, old.doubleValue > 0 { prefs[key] = old.doubleValue + delta }
+            }
+            // Validate before touching the active world. Security enrollment is not restored.
+            try world.restoreCheckpoint(value.world)
+            for key in Self.keys {
+                if let object = prefs[key] { defaults.set(object, forKey: key) } else { defaults.removeObject(forKey: key) }
+            }
+            defaults.set(false, forKey: "lastseen.security.ownerVerified")
+            defaults.set(false, forKey: "lastseen.security.appearanceEnrolled")
+            playSeconds = value.playSeconds; sinceAutomatic = 0
+            defaults.set(playSeconds, forKey: "lastseen.saves.playSeconds")
+            lastAutomatic = now
+            notice = "Checkpoint restored."
+            return true
+        } catch { notice = "Checkpoint could not be loaded. Current game was kept."; return false }
+    }
+    func remove(_ slot: String) {
+        guard validSlot(slot) else { return }
+        do { try FileManager.default.removeItem(at: url(slot)); refresh(); notice = "Checkpoint removed." }
+        catch { notice = "Could not remove checkpoint." }
+    }
+}
+
+struct LumaSaveView: View {
+    @ObservedObject var store: LumaSaveStore
+    @EnvironmentObject private var world: PhoneWorldStore
+    @AppStorage("lastseen.saves.interval") private var interval = 5
+    let onLoad: (String) -> Void
+    @State private var action: String?
+    @State private var slot = ""
+    @State private var confirm = false
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                HStack(spacing: 15) {
+                    Image("Icon_Save").resizable().scaledToFit().frame(width: 74, height: 74).clipShape(RoundedRectangle(cornerRadius: 19))
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Game Saves").font(.largeTitle.bold())
+                        Text("Your investigation, preserved.").font(.subheadline).foregroundColor(.secondary)
+                    }
+                }
+                Text("Manual checkpoints").font(.title2.bold())
+                if !store.canSaveManually() { Text("Next manual save in \(store.manualRemaining()) seconds").font(.caption).foregroundColor(.secondary).monospacedDigit() }
+                ForEach(LumaSaveStore.manual, id: \.self) { row($0, manual: true) }
+                Text("Automatic checkpoints").font(.title2.bold())
+                Picker("Autosave interval", selection: $interval) {
+                    Text("Off").tag(0); Text("1 min").tag(1); Text("3 min").tag(3); Text("5 min").tag(5); Text("10 min").tag(10)
+                }.pickerStyle(.segmented)
+                Text("Automatic checkpoints are created only at the chosen active-play interval. Off creates none. Your live progress is still preserved. Manual saves share a one-minute cooldown.").font(.caption).foregroundColor(.secondary)
+                ForEach(LumaSaveStore.automatic, id: \.self) { row($0, manual: false) }
+                if !store.notice.isEmpty { Text(store.notice).font(.subheadline).foregroundColor(LumaDesign.accent).accessibilityAddTraits(.updatesFrequently) }
+            }.padding(18)
+        }.navigationTitle("Game Saves").navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog("Confirm \(action ?? "action")", isPresented: $confirm, titleVisibility: .visible) {
+            Button(action ?? "Continue", role: action == "Delete" ? .destructive : nil) {
+                switch action {
+                case "Save": _ = store.writeManual(slot, world: world.state)
+                case "Load": onLoad(slot)
+                case "Delete": store.remove(slot)
+                default: break
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(action == "Load" ? "Return to this checkpoint? Later discoveries may be lost from the active game. Manual saves and personal Field Notes are kept." : "Only the selected checkpoint is affected.")
+        }
+        .onAppear { store.refresh() }
+    }
+    private func choose(_ operation: String, _ id: String) { action = operation; slot = id; confirm = true }
+    private func row(_ id: String, manual: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: manual ? "archivebox" : "clock.arrow.circlepath").foregroundColor(LumaDesign.accent)
+                Text((manual ? "Save " : "Checkpoint ") + String(id.suffix(1))).font(.headline)
+                Spacer()
+                if let saved = store.slots[id] {
+                    Text(saved.date, format: .dateTime.month().day().hour().minute()).font(.caption).foregroundColor(.secondary)
+                } else { Text(store.invalid.contains(id) ? "Unreadable" : "Empty").font(.caption).foregroundColor(.secondary) }
+            }
+            if let saved = store.slots[id] { Text("\(saved.playSeconds / 60) minutes played").font(.caption).foregroundColor(.secondary) }
+            HStack {
+                if manual {
+                    Button("Save Now") {
+                        if store.slots[id] != nil || store.invalid.contains(id) { choose("Save", id) }
+                        else { _ = store.writeManual(id, world: world.state) }
+                    }.buttonStyle(.borderedProminent).frame(minHeight: 44)
+                    .disabled(!store.canSaveManually()).accessibilityIdentifier("luma.save." + id)
+                }
+                if store.slots[id] != nil { Button("Load") { choose("Load", id) }.buttonStyle(.bordered).frame(minHeight: 44).accessibilityIdentifier("luma.load." + id) }
+                Spacer()
+                if store.slots[id] != nil || store.invalid.contains(id) {
+                    Button(role: .destructive) { choose("Delete", id) } label: { Image(systemName: "trash").frame(width: 44, height: 44) }.accessibilityLabel("Delete checkpoint")
+                }
+            }
+        }.padding(15).lumaSurface()
+    }
+}

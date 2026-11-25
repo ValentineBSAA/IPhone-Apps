@@ -1,11 +1,11 @@
 import SwiftUI
 
 enum Night {
-    static let background = Color(red: 0.035, green: 0.043, blue: 0.060)
-    static let surface = Color(red: 0.083, green: 0.095, blue: 0.122)
-    static let raised = Color(red: 0.135, green: 0.147, blue: 0.176)
+    static let background = LumaDesign.background
+    static let surface = LumaDesign.surface
+    static let raised = LumaDesign.raised
     static let incoming = Color(red: 0.176, green: 0.190, blue: 0.224)
-    static let accent = Color(red: 0.47, green: 0.66, blue: 0.97)
+    static let accent = LumaDesign.accent
     static let outgoing = Color(red: 0.23, green: 0.40, blue: 0.68)
     static let danger = Color(red: 0.82, green: 0.25, blue: 0.34)
     static let muted = Color(red: 0.58, green: 0.61, blue: 0.69)

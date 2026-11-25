@@ -4,10 +4,30 @@ import LocalAuthentication
 
 /// Neutral, offline phone prototype. No GameStore or story routing is constructed here.
 struct PhoneLabView: View {
-    @StateObject private var world = PhoneWorldStore(storageURL: RestoredPhoneBackup.url)
+    @StateObject private var world: PhoneWorldStore
     @State private var path = NavigationPath()
+    @StateObject private var saves: LumaSaveStore
+    @AppStorage("lastseen.saves.interval") private var saveInterval = 5
+    @State private var checkpointReboot = false
+    @State private var circuitBanner = false
+    @State private var navigationGeneration = UUID()
+    @AppStorage("lastseen.lab.lockWallpaper") private var lockWallpaper = -1
+    @AppStorage("lastseen.lab.wallpaperBlur") private var wallpaperBlur = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var locked: Bool
-    init(startUnlocked: Bool = false) { _locked = State(initialValue: !startUnlocked) }
+    init(startUnlocked: Bool = false, uiFixture: Bool = false) {
+        _locked = State(initialValue: !startUnlocked)
+        #if DEBUG && targetEnvironment(simulator)
+        if uiFixture {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent("LumaUISmoke-" + UUID().uuidString)
+            _world = StateObject(wrappedValue: PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(), persistToDisk: false))
+            _saves = StateObject(wrappedValue: LumaSaveStore(root: root, defaults: UserDefaults(suiteName: "LumaUISmoke-" + UUID().uuidString) ?? .standard))
+            return
+        }
+        #endif
+        _world = StateObject(wrappedValue: PhoneWorldStore(storageURL: RestoredPhoneBackup.url))
+        _saves = StateObject(wrappedValue: LumaSaveStore())
+    }
     @State private var panel: LabPanel?
     @State private var recent: [LabApp] = []
     @State private var pendingThread: Neighbor?
@@ -25,7 +45,7 @@ struct PhoneLabView: View {
     @State private var didConfigureFeedback = false
     @State private var tutorialReplay = 0
     @State private var confirmTutorialReplay = false
-    private var tutorialDeliveryID: String { "\(didConfigureFeedback)-\(phase == .active)-\(tutorialReplay)" }
+    private var tutorialDeliveryID: String { "\(didConfigureFeedback)-\(phase == .active)-\(tutorialReplay)-\(checkpointReboot)" }
     @State private var searchQuery = ""
     @AppStorage("lastseen.lab.hideLockPreviews") private var hideLockPreviews = false
     private var alerts: [PhoneAlert] { PhoneAlertCatalog.alerts(in: world.state, unreadOnly: true) }
@@ -38,6 +58,7 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.relay.installed") private var relayInstalled = ""
     @AppStorage("lastseen.relay.safeMode") private var safeMode = false
     private func tweak(_ id: String) -> Bool { !safeMode && RelayCatalog.ids(relayInstalled).contains(id) }
+    private var fieldNotesAvailable: Bool { RecoveryCircuit.unlocked(world.state.flags) && tweak("fieldnotes") }
     private var smallIcons: Bool { (!safeMode && compactIcons) || tweak("fivegrid") }
     @AppStorage("lastseen.lab.brightness") private var brightness = 0.9
     @AppStorage("lastseen.lab.wifi") private var wifi = true
@@ -84,20 +105,25 @@ struct PhoneLabView: View {
             .navigationDestination(for: PhoneFileRoute.self) { route in
                 PhoneDocumentView(title: route.title).safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
             }
+            .navigationDestination(for: LumaCallRoute.self) { route in
+                LumaCallView(neighbor: route.neighbor)
+                    .safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
+            }
             .navigationDestination(for: AppPage.self) { page in
                 Group {
                     switch page {
                     case .worldThread(let neighbor): NeighborConversationView(neighbor: neighbor, reactive: true)
-                    case .worldProfile(let neighbor): NeighborProfileView(neighbor: neighbor)
+                    case .worldProfile(let neighbor): NeighborProfileView(neighbor: neighbor, phoneLab: true)
                     case .note(let id): PhoneNoteEditorView(noteID: id)
                     default: Text("Not available in Phone Lab")
                     }
                 }.safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
             }
         }
+        .id(navigationGeneration)
         .environmentObject(world)
         .defersSystemGestures(on: deferSystemEdges ? [.top, .bottom] : [])
-        .tint(Color(red: 0.36, green: 0.81, blue: 0.76))
+        .tint(LumaDesign.accent)
         .preferredColorScheme(.dark)
         .overlay {
             Color.black.opacity(max(0, 1 - brightness) * 0.75)
@@ -111,6 +137,21 @@ struct PhoneLabView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
+        .overlay(alignment: .top) {
+            if circuitBanner && !locked && !checkpointReboot && panel == nil {
+                Button { circuitBanner = false; open(.relay) } label: { CircuitNoticeCard() }
+                    .buttonStyle(.plain).padding(.horizontal, 14).padding(.top, 4)
+            }
+        }
+        .onChange(of: RecoveryCircuit.unlocked(world.state.flags)) { earned in
+            if earned && !checkpointReboot { circuitBanner = true }
+            else { circuitBanner = false }
+        }
+        .task(id: circuitBanner) {
+            guard circuitBanner else { return }
+            do { try await Task.sleep(nanoseconds: 6_000_000_000) } catch { return }
+            circuitBanner = false
+        }
         .task(id: banner?.id) {
             guard let id = banner?.id else { return }
             do { try await Task.sleep(nanoseconds: 5_000_000_000) } catch { return }
@@ -121,7 +162,7 @@ struct PhoneLabView: View {
             let sent = !outgoingIDs.subtracting(observedOutgoing).isEmpty
             observedIncoming = Set(incomingIDs)
             observedOutgoing = outgoingIDs
-            guard didConfigureFeedback, phase == .active else { return }
+            guard didConfigureFeedback, phase == .active, !checkpointReboot else { return }
             let newest = PhoneMessageArrival.newest(in: world.state, previous: previous)
             guard sent || newest != nil else { return }
             arrivalTask?.cancel()
@@ -152,17 +193,26 @@ struct PhoneLabView: View {
         .task(id: phase) {
             guard phase == .active else { return }
             while !Task.isCancelled {
-                world.advancePendingReplies()
+                do { try await Task.sleep(nanoseconds: 1_000_000_000) } catch { return }
+                guard !Task.isCancelled else { return }
+                if !checkpointReboot { saves.tick(world: world.state, minutes: saveInterval) }
+            }
+        }
+        .task(id: phase) {
+            guard phase == .active else { return }
+            while !Task.isCancelled {
+                if !checkpointReboot { world.advancePendingReplies() }
                 do { try await Task.sleep(nanoseconds: 250_000_000) } catch { return }
             }
         }
         .onChange(of: locked) { value in
-            guard didConfigureFeedback, phase == .active else { return }
+            guard didConfigureFeedback, phase == .active, !checkpointReboot else { return }
             PhoneSensoryEngine.play(value ? .lock : .unlock, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
         }
         .onChange(of: phase) { value in
             observedIncoming = Set(incomingIDs)
             observedOutgoing = outgoingIDs
+            if value == .background { saves.persistPlayTime() }
             if value != .active {
                 arrivalTask?.cancel(); arrivalTask = nil
                 PhoneSensoryEngine.stop()
@@ -177,10 +227,18 @@ struct PhoneLabView: View {
             PhoneSensoryEngine.stop()
         }
         .task(id: tutorialDeliveryID) {
-            guard didConfigureFeedback, phase == .active, !world.tutorialStarted else { return }
+            guard didConfigureFeedback, phase == .active, !checkpointReboot, !world.tutorialStarted else { return }
             do { try await Task.sleep(nanoseconds: 1_500_000_000) } catch { return }
-            guard !Task.isCancelled, phase == .active, !world.tutorialStarted else { return }
+            guard !Task.isCancelled, phase == .active, !checkpointReboot, !world.tutorialStarted else { return }
             world.startPhoneTutorial()
+        }
+        .fullScreenCover(isPresented: $checkpointReboot) {
+            RelayUserspaceView {
+                observedIncoming = Set(incomingIDs)
+                observedOutgoing = outgoingIDs
+                checkpointReboot = false
+                tutorialReplay += 1
+            }
         }
         .sheet(item: $panel) { item in
             NavigationStack {
@@ -190,13 +248,21 @@ struct PhoneLabView: View {
                     case .search: phoneSearch
                     case .notifications: notifications
                     case .recent:
-                        List {
-                            if recent.isEmpty { Text("No recent apps").foregroundColor(.secondary) }
-                            ForEach(recent) { app in
-                                Button { panel = nil; open(app) } label: {
-                                    Label(app.rawValue, systemImage: app.symbol)
+                        ScrollView {
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
+                                ForEach(recent.filter { $0 != .fieldNotes || fieldNotesAvailable }) { app in
+                                    Button { panel = nil; open(app) } label: {
+                                        VStack(spacing: 18) {
+                                            if let art = app.foundationIcon {
+                                                Image(art).resizable().scaledToFit().frame(width: 72, height: 72).clipShape(RoundedRectangle(cornerRadius: 18))
+                                            } else { Image(systemName: app.symbol).font(.system(size: 44)).frame(height: 72) }
+                                            Text(app.rawValue).font(.headline)
+                                            Text("Open app").font(.caption).foregroundColor(.secondary)
+                                        }.frame(maxWidth: .infinity).padding(18).lumaSurface()
+                                    }.buttonStyle(.plain)
                                 }
-                            }
+                            }.padding(18)
+                            if recent.isEmpty { Text("No recent apps").foregroundColor(.secondary) }
                         }
                     }
                 }
@@ -233,7 +299,13 @@ struct PhoneLabView: View {
         }
     }
 
-    private var backdrop: some View { PhoneWallpaper(selection: safeMode && wallpaper == 2 ? 0 : wallpaper).ignoresSafeArea() }
+    private var backdrop: some View {
+        let chosen = locked && lockWallpaper >= 0 ? lockWallpaper : wallpaper
+        return PhoneWallpaper(selection: LumaDesign.resolvedWallpaper(chosen, midnight: tweak("midnight")))
+            .blur(radius: !locked && wallpaperBlur ? 18 : 0)
+            .overlay(Color.black.opacity(locked ? 0.18 : 0.23))
+            .ignoresSafeArea()
+    }
 
     private var unread: Int { Neighbor.allCases.reduce(0) { $0 + world.countUnread($1) } }
 
@@ -288,7 +360,7 @@ struct PhoneLabView: View {
                     Text(biometricUnlock ? "Authenticate to unlock" : "Swipe up to open").font(.subheadline.weight(.medium))
                     Capsule().fill(.white.opacity(0.8)).frame(width: 110, height: 5)
                 }.frame(maxWidth: .infinity).padding(.vertical, 12).contentShape(Rectangle())
-            }.buttonStyle(.plain).disabled(authContext != nil)
+            }.buttonStyle(.plain).disabled(authContext != nil).accessibilityIdentifier("luma.lock.unlock")
                 .gesture(DragGesture(minimumDistance: 16).onEnded { value in
                     if value.translation.height < -20 { pendingThread = nil; requestUnlock() }
                 })
@@ -346,11 +418,11 @@ struct PhoneLabView: View {
         } label: {
             VStack(spacing: 5) {
                 Capsule().fill(Color.white.opacity(0.65)).frame(width: 100, height: 5)
-                Text("Home · swipe up").font(.system(size: 10)).foregroundColor(.secondary)
-            }.frame(maxWidth: .infinity).frame(height: 42).contentShape(Rectangle())
+
+            }.frame(maxWidth: .infinity).frame(height: 44).contentShape(Rectangle())
         }.buttonStyle(.plain)
             .background(.ultraThinMaterial)
-            .accessibilityLabel("Return to in-game home")
+            .accessibilityLabel("Return to in-game home").accessibilityIdentifier("luma.home")
             .gesture(DragGesture(minimumDistance: 16).onEnded { value in
                 if value.translation.height < -20 { returnHome() }
                 else if abs(value.translation.width) > 50 && abs(value.translation.height) < 35 {
@@ -361,7 +433,7 @@ struct PhoneLabView: View {
     }
 
     private func returnHome() {
-        withAnimation(.easeInOut(duration: 0.22)) { path = NavigationPath() }
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) { path = NavigationPath() }
         OpeningQA.record("Returned to in-game home")
     }
 
@@ -402,8 +474,22 @@ struct PhoneLabView: View {
                         }.foregroundColor(.white.opacity(0.85)).padding(12)
                             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 15))
                     }
+                    HStack(spacing: 10) {
+                        TimelineView(.periodic(from: .now, by: 60)) { context in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(context.date, style: .time).font(.title2.weight(.light)).monospacedDigit()
+                                Text(context.date, format: .dateTime.weekday(.wide).month(.abbreviated).day()).font(.caption)
+                            }.frame(maxWidth: .infinity, alignment: .leading).padding(14).lumaSurface()
+                        }
+                        Button { open(.calendar) } label: {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Label("Calendar", systemImage: "calendar").font(.caption.bold())
+                                Text(world.state.events.filter { $0.endsAt >= Date() }.sorted { $0.startsAt < $1.startsAt }.first?.title ?? "No upcoming events").font(.subheadline).lineLimit(2)
+                            }.frame(maxWidth: .infinity, alignment: .leading).padding(14).lumaSurface()
+                        }
+                    }
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: tweak("fivegrid") ? 5 : 4), spacing: 24) {
-                    ForEach(LabApp.allCases.filter { !$0.inDock }) { app in icon(app) }
+                    ForEach(LabApp.allCases.filter { !$0.inDock && ($0 != .fieldNotes || fieldNotesAvailable) }) { app in icon(app) }
                     }.padding(.top, 5).padding(.bottom, 12)
                 }
             }
@@ -413,6 +499,8 @@ struct PhoneLabView: View {
                 Button { withAnimation { locked = true } } label: {
                     Label("Lock", systemImage: "lock").font(.caption)
                 }
+                Spacer()
+                Button { open(.saves) } label: { Label("Saves", systemImage: "archivebox").font(.caption).frame(minHeight: 44) }
                 Spacer()
                 Button { panel = .recent } label: {
                     Label("Recent apps", systemImage: "square.on.square").font(.caption)
@@ -429,6 +517,7 @@ struct PhoneLabView: View {
     }
 
     private func open(_ app: LabApp) {
+        guard app != .fieldNotes || fieldNotesAvailable else { return }
         OpeningQA.record("Opened in-game app: \(app.rawValue)")
         locked = false
         recent.removeAll { $0 == app }
@@ -446,6 +535,10 @@ struct PhoneLabView: View {
                     } else if !safeMode, tealTheme, let asset = ApprovedArt.themeName(for: app.rawValue) {
                         Image(asset).resizable().scaledToFit()
                             .frame(width: smallIcons ? 43 : 55, height: smallIcons ? 43 : 55)
+                    } else if let art = app.foundationIcon {
+                        Image(art).resizable().scaledToFit()
+                            .frame(width: smallIcons ? 43 : 61, height: smallIcons ? 43 : 61)
+                            .clipShape(RoundedRectangle(cornerRadius: smallIcons ? 12 : 16))
                     } else {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(LinearGradient(colors: [app.color, app.color.opacity(0.55)], startPoint: .topLeading, endPoint: .bottomTrailing))
@@ -462,40 +555,52 @@ struct PhoneLabView: View {
                         .lineLimit(1).minimumScaleFactor(0.8)
                 }
             }.frame(maxWidth: .infinity)
-        }.buttonStyle(.plain).accessibilityLabel(app.rawValue)
+        }.buttonStyle(.plain).accessibilityLabel(app.rawValue).accessibilityIdentifier("luma.app." + app.rawValue)
     }
 
     private var controls: some View {
         Form {
-            Section("Device") {
-                LabeledContent("Device name", value: device)
-                NavigationLink { ProtectedAreaView(area: .security) } label: {
-                    Label("Face ID & Passcode", systemImage: "lock.shield")
+            Section {
+                HStack(spacing: 14) {
+                    Image("Brand_LumaOS").resizable().scaledToFit().frame(width: 66, height: 66).clipShape(RoundedRectangle(cornerRadius: 17))
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("LumaOS").font(.title2.bold())
+                        Text(device).font(.subheadline).foregroundColor(.secondary)
+                    }
+                }.padding(.vertical, 8)
+                NavigationLink { LumaSaveView(store: saves, onLoad: loadCheckpoint) } label: {
+                    Label("Game Saves", systemImage: "archivebox")
                 }
-                LabeledContent("Appearance", value: biometricUnlock ? "Registered" : "Locked")
-                Toggle("Wi-Fi (in-game)", isOn: $wifi)
+                NavigationLink { LumaWallpaperSettings(home: $wallpaper, lock: $lockWallpaper, blur: $wallpaperBlur, midnight: tweak("midnight")) } label: {
+                    Label("Wallpaper & appearance", systemImage: "photo.on.rectangle")
+                }
+            }
+            Section("Display & connectivity") {
+                LabeledContent("Device name", value: device)
+                Toggle(isOn: $wifi) { Label("Wi-Fi (in-game)", systemImage: "wifi") }
                 VStack(alignment: .leading) {
                     Text("Display brightness")
                     Slider(value: $brightness, in: 0.35...1)
                 }
-                Picker("Wallpaper", selection: $wallpaper) {
-                    Text("Coastal").tag(0)
-                    Text("Dusk").tag(1)
-                    if relayInstalled.split(separator: "|").contains("midnight") { Text("Midnight Glass").tag(2) }
+            }
+            Section("Security & privacy") {
+                NavigationLink { ProtectedAreaView(area: .security) } label: {
+                    Label("Biometrics & Passcode", systemImage: "lock.shield")
                 }
+                LabeledContent("Appearance", value: biometricUnlock ? "Registered" : "Locked")
             }
             Section("Jailbreak") {
                 LabeledContent("Environment", value: safeMode ? "Safe Mode" : "Rootless")
                 LabeledContent("Installed tweaks", value: String(RelayCatalog.ids(relayInstalled).count))
-                NavigationLink { RelayPackagesView(onRestart: { panel = nil; returnHome(); locked = true }) } label: { Label("Manage packages in Relay", systemImage: "shippingbox.fill") }
+                NavigationLink { RelayPackagesView(earnedFlags: world.state.flags, onRestart: { panel = nil; returnHome(); locked = true }) } label: { Label("Manage packages in Relay", systemImage: "shippingbox.fill") }
             }
             Section("Gestures") {
                 Toggle("Immersive screen-edge gestures", isOn: $deferSystemEdges)
-                Text("Use the in-game gestures first. Repeat a system-edge swipe to access real iOS controls. Turn this off for standard iOS gesture priority.").font(.footnote).foregroundColor(.secondary)
+                Text("Use the in-game gestures first. Repeat a system-edge swipe to access actual device controls. Turn this off for standard device gesture priority.").font(.footnote).foregroundColor(.secondary)
             }
             Section("Sounds & Haptics") {
-                Toggle("Phone sounds", isOn: $messageSound)
-                Toggle("Phone vibrations", isOn: $messageHaptics)
+                Toggle(isOn: $messageSound) { Label("Phone sounds", systemImage: "speaker.wave.2") }
+                Toggle(isOn: $messageHaptics) { Label("Phone vibrations", systemImage: "waveform.path") }
                 Toggle("Horror sensory effects", isOn: $horrorEffects)
                 NavigationLink {
                     PhoneSoundStudio(sound: $messageSound, haptics: $messageHaptics, horrorEnabled: $horrorEffects)
@@ -503,7 +608,7 @@ struct PhoneLabView: View {
                 Button {
                     PhoneSensoryEngine.play(.message, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
                 } label: { Label("Preview message alert", systemImage: "bell.badge") }
-                Text("In-game effects only. Each recording plays once. Sounds respect your iPhone's silent mode and volume. Haptics depend on device support and system settings. Horror cues are optional.")
+                Text("In-game effects only. Each recording plays once. Sounds respect your device's silent mode and volume. Haptics depend on device support and system settings. Horror cues are optional.")
                     .font(.footnote).foregroundColor(.secondary)
             }
             Section("Notifications and privacy") {
@@ -517,12 +622,14 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.4.1 (24)")
+                LabeledContent("Software", value: "1.5.1 (26)")
                 Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay message tutorial") { confirmTutorialReplay = true }
                 Button("Replay phone setup") { confirmSetupReplay = true }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(LumaDesign.background.ignoresSafeArea())
         .sheet(isPresented: $showOpeningQA) { OpeningDiagnosticsView() }
         .confirmationDialog("Replay message tutorial?", isPresented: $confirmTutorialReplay) {
             Button("Replay tutorial") {
@@ -546,7 +653,28 @@ struct PhoneLabView: View {
             Button("Replay entire introduction") { OpeningQA.record("Introduction replay requested"); panel = nil; setupProgress = 0; setupStage = 0; recoveryProgress = 0; recoverySimulated = false; recoveryStage = 0 }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Your restored phone records and story saves will not be erased.")
+            Text("Your restored phone records, Field Notes and story saves will not be erased.")
+        }
+    }
+
+    private func loadCheckpoint(_ slot: String) {
+        arrivalTask?.cancel(); arrivalTask = nil
+        PhoneSensoryEngine.stop()
+        guard !checkpointReboot else { return }
+        checkpointReboot = true
+        if saves.restore(slot, into: world) {
+            observedIncoming = Set(incomingIDs)
+            observedOutgoing = outgoingIDs
+            banner = nil; pendingThread = nil; circuitBanner = false
+            authContext?.invalidate(); authContext = nil
+            showOwnerPasscode = false
+            panel = nil
+            recent.removeAll()
+            returnHome()
+            locked = true
+            navigationGeneration = UUID()
+        } else {
+            checkpointReboot = false
         }
     }
 
@@ -555,7 +683,7 @@ struct PhoneLabView: View {
         let center = UNUserNotificationCenter.current()
         center.getNotificationSettings { settings in
             guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
-                DispatchQueue.main.async { testNotice = "Notifications are disabled in iOS Settings." }
+                DispatchQueue.main.async { testNotice = "Notifications are disabled in device settings." }
                 return
             }
             let content = UNMutableNotificationContent()
@@ -564,7 +692,7 @@ struct PhoneLabView: View {
             content.sound = .default
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 7, repeats: false)
             center.add(UNNotificationRequest(identifier: "lastseen-lab-test", content: content, trigger: trigger)) { error in
-                DispatchQueue.main.async { testNotice = error == nil ? "Test scheduled. Leave the app to see the iOS alert." : "Unable to schedule the test." }
+                DispatchQueue.main.async { testNotice = error == nil ? "Test scheduled. Leave the app to see the device alert." : "Unable to schedule the test." }
             }
         }
     }
@@ -572,7 +700,8 @@ struct PhoneLabView: View {
     private var notifications: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Notification Center").font(.largeTitle.bold()).padding(.top, 5)
+                LumaHeader(title: "Notification Center", detail: "Recent activity", symbol: "bell.badge")
+                if RecoveryCircuit.unlocked(world.state.flags) { CircuitNoticeCard() }
                 Text("Recent messages").font(.subheadline).foregroundColor(.secondary)
                 ForEach(PhoneAlertCatalog.alerts(in: world.state, unreadOnly: false)) { alert in
                     PhoneNotificationCard(alert: alert) { openThread(alert.neighbor) }
@@ -587,7 +716,7 @@ struct PhoneLabView: View {
     private var quickControls: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 17) {
-                Text("Control Center").font(.largeTitle.bold())
+                LumaHeader(title: "Control Center", detail: "Your phone, your controls", symbol: "slider.horizontal.3")
                 HStack(spacing: 12) {
                     Button { wifi.toggle() } label: {
                         VStack(alignment: .leading, spacing: 14) {
@@ -609,7 +738,7 @@ struct PhoneLabView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Label("Brightness", systemImage: "sun.max").font(.headline)
                     Slider(value: $brightness, in: 0.35...1)
-                }.padding(17).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
+                }.padding(17).lumaSurface()
                 Button { panel = nil; open(.settings) } label: {
                     Label("Open Settings", systemImage: "gearshape.fill").frame(maxWidth: .infinity).padding(12)
                 }.buttonStyle(.bordered)
@@ -672,8 +801,11 @@ struct PhoneLabView: View {
 
     @ViewBuilder private func destination(_ app: LabApp) -> some View {
         switch app {
-        case .messages: LabPeopleView(messages: true)
-        case .contacts: LabPeopleView(messages: false)
+        case .fieldNotes: if fieldNotesAvailable { FieldNotesView() } else { Text("Package unavailable") }
+        case .saves: LumaSaveView(store: saves, onLoad: loadCheckpoint)
+        case .messages: LumaMessagesDirectory()
+        case .contacts: LumaContactsDirectory()
+        case .phone: LumaPhoneDirectory()
         case .notes: PhoneNotesView(lab: true)
         case .calendar: PhoneCalendarView()
         case .mail: PhoneMailView(lab: true)
@@ -684,7 +816,7 @@ struct PhoneLabView: View {
             controls.navigationTitle("Settings")
         case .files: LabFilesView()
         case .browser: LabBrowserView(wifi: wifi)
-        case .relay: RelayPackagesView(onRestart: { returnHome(); recent.removeAll(); locked = true })
+        case .relay: RelayPackagesView(earnedFlags: world.state.flags, onRestart: { returnHome(); recent.removeAll(); locked = true })
         case .patchline: PatchlineControlView(openRelay: { open(.relay) }, onRestart: { returnHome(); recent.removeAll(); locked = true })
         }
     }
@@ -696,11 +828,18 @@ private enum LabPanel: String, Identifiable {
 }
 
 private enum LabApp: String, CaseIterable, Identifiable {
-    case messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline"
+    case fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves"
+    var foundationIcon: String? {
+        if self == .fieldNotes { return "Jailbreak_FieldNotes" }
+        if self == .relay || self == .patchline { return nil }
+        return self == .saves ? "Icon_Save" : "Icon_" + rawValue
+    }
     var id: String { rawValue }
-    var inDock: Bool { [.messages, .contacts, .browser, .settings].contains(self) }
+    var inDock: Bool { [.phone, .messages, .browser, .settings].contains(self) }
     var symbol: String {
         switch self {
+        case .fieldNotes: return "note.text"
+        case .phone: return "phone.fill"
         case .messages: return "message.fill"
         case .contacts: return "person.crop.circle.fill"
         case .photos: return "photo.on.rectangle"
@@ -714,10 +853,13 @@ private enum LabApp: String, CaseIterable, Identifiable {
         case .browser: return "globe"
         case .relay: return "shippingbox.fill"
         case .patchline: return "lock.open.fill"
+        case .saves: return "archivebox"
         }
     }
     var color: Color {
         switch self {
+        case .fieldNotes: return .teal
+        case .phone: return .green
         case .messages: return .teal
         case .contacts: return .indigo
         case .photos: return .pink
@@ -731,74 +873,8 @@ private enum LabApp: String, CaseIterable, Identifiable {
         case .browser: return .mint
         case .relay: return .teal
         case .patchline: return .teal
+        case .saves: return .indigo
         }
-    }
-}
-
-private struct LabPeopleView: View {
-    @EnvironmentObject private var world: PhoneWorldStore
-    let messages: Bool
-    @State private var search = ""
-    @State private var unreadOnly = false
-    private var people: [Neighbor] {
-        let result = Neighbor.allCases.filter { n in
-            (!messages || !unreadOnly || world.countUnread(n) > 0) &&
-            (search.isEmpty || n.name.localizedCaseInsensitiveContains(search) ||
-             (messages && world.messages(n).contains { $0.text.localizedCaseInsensitiveContains(search) }))
-        }
-        return messages ? result.sorted { (world.messages($0).last?.at ?? .distantPast) > (world.messages($1).last?.at ?? .distantPast) }
-            : result.sorted { $0.name < $1.name }
-    }
-    var body: some View {
-        List {
-            if messages {
-                Section {
-                    Picker("Conversations", selection: $unreadOnly) {
-                        Text("All messages").tag(false)
-                        Text("Unread").tag(true)
-                    }.pickerStyle(.segmented)
-                }
-            } else {
-                Section("Owner card") {
-                    HStack(spacing: 13) {
-                        Image(RestoredPhoneBackup.ownerPortrait).resizable().scaledToFill().frame(width: 58, height: 58).clipShape(Circle())
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(RestoredPhoneBackup.ownerName).font(.title3.bold())
-                            Text("Restored contact card").font(.caption).foregroundColor(.secondary)
-                        }
-                    }.padding(.vertical, 7)
-                }
-            }
-            Section(messages ? "Conversations" : "Contacts") {
-                if people.isEmpty { Text(messages && unreadOnly ? "No unread messages" : "No matches").foregroundColor(.secondary) }
-                ForEach(people) { person in
-                    NavigationLink(value: messages ? AppPage.worldThread(person) : AppPage.worldProfile(person)) {
-                        HStack(spacing: 12) {
-                            NeighborAvatar(neighbor: person, size: 52)
-                            VStack(alignment: .leading, spacing: 5) {
-                                HStack(alignment: .firstTextBaseline) {
-                                    Text(person.name).font(.headline)
-                                    Spacer(minLength: 3)
-                                    if messages, let latest = world.messages(person).last {
-                                        Text(latest.at, style: .relative).font(.caption2).foregroundColor(.secondary)
-                                    }
-                                }
-                                HStack {
-                                    Text(messages ? (world.messages(person).last?.text ?? "") : person.subtitle)
-                                        .font(.subheadline).foregroundColor(.secondary).lineLimit(2)
-                                    Spacer(minLength: 3)
-                                    if messages && world.countUnread(person) > 0 {
-                                        Text("\(world.countUnread(person))").font(.caption.bold())
-                                            .padding(6).background(Color.blue, in: Capsule()).foregroundColor(.white)
-                                    }
-                                }
-                            }
-                        }.padding(.vertical, 6)
-                    }
-                }
-            }
-        }.navigationTitle(messages ? "Messages" : "Contacts")
-            .searchable(text: $search, prompt: messages ? "Search conversations" : "Search contacts")
     }
 }
 
@@ -837,6 +913,13 @@ private struct LabPhotosView: View {
                     Spacer()
                     Text("\(shown.filter { available($0) }.count) recovered").font(.caption).foregroundColor(.secondary)
                 }
+                if !onlyFavorites {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("Photo recovery", systemImage: "photo.stack").font(.headline)
+                        ProgressView(value: Double(photos.filter { available($0) }.count), total: Double(max(1, photos.count))).tint(LumaDesign.accent)
+                        Text("Unrecovered photos appear as you investigate. Private access is separate.").font(.caption).foregroundColor(.secondary)
+                    }.padding(14).lumaSurface()
+                }
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 3), spacing: 4) {
                     ForEach(shown) { photo in
                         Button {
@@ -859,15 +942,15 @@ private struct LabPhotosView: View {
                 Text("Albums").font(.title2.bold()).padding(.top, 10)
                 NavigationLink { ProtectedAreaView(area: .photos) } label: {
                     HStack(spacing: 14) {
-                        Image(systemName: "lock.rectangle.stack.fill").font(.title2).foregroundColor(.teal)
-                            .frame(width: 52, height: 52).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                        Image("System_ProtectedStorage").resizable().scaledToFit()
+                            .frame(width: 60, height: 60).clipShape(RoundedRectangle(cornerRadius: 14))
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Private album").font(.headline)
-                            Text("Authentication required").font(.caption).foregroundColor(.secondary)
+                            Text("Protected access · discoveries required").font(.caption).foregroundColor(.secondary)
                         }
                         Spacer()
                         Image(systemName: "chevron.right").font(.caption)
-                    }.padding(13).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    }.padding(13).lumaSurface(radius: 16)
                 }.buttonStyle(.plain)
             }.padding()
         }.navigationTitle("Photos")
@@ -922,7 +1005,7 @@ private struct LabClockView: View {
                 VStack(spacing: 22) {
                     Spacer()
                     if tab == 0 {
-                        Image(systemName: "clock").font(.system(size: 62, weight: .thin)).foregroundColor(.teal)
+                        Image("Icon_Clock").resizable().scaledToFit().frame(width: 116, height: 116).clipShape(RoundedRectangle(cornerRadius: 26))
                         Text(context.date, style: .time).font(.system(size: 60, weight: .thin)).monospacedDigit()
                         Text(context.date, format: .dateTime.weekday(.wide).month(.wide).day())
                     } else if tab == 1 {
@@ -959,7 +1042,7 @@ private struct LabClockView: View {
                     Spacer()
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-        }.padding(20).navigationTitle("Clock")
+        }.padding(20).background(Night.background.ignoresSafeArea()).navigationTitle("Clock")
     }
 }
 
@@ -969,9 +1052,13 @@ private struct LabCalculatorView: View {
     @State private var operation: String?
     @State private var replace = true
     let keys = ["C","±","%","÷","7","8","9","×","4","5","6","−","1","2","3","+","0",".","="]
+    @AppStorage("lastseen.lab.calculatorHistory") private var storedHistory = ""
+    private var history: [String] { storedHistory.split(separator: "\n").map(String.init) }
+    @State private var showHistory = false
     var body: some View {
         VStack(spacing: 12) {
             Spacer()
+            if let op = operation, let left = first { Text("\(String(format: "%.10g", left)) \(op)").font(.title3).foregroundColor(.secondary).frame(maxWidth: .infinity, alignment: .trailing) }
             Text(display).font(.system(size: 52, weight: .light)).lineLimit(1).minimumScaleFactor(0.3)
                 .frame(maxWidth: .infinity, alignment: .trailing).padding()
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 10) {
@@ -982,7 +1069,9 @@ private struct LabCalculatorView: View {
                     }.buttonStyle(.plain)
                 }
             }
-        }.padding().background(Color.black.ignoresSafeArea()).navigationTitle("Calculator")
+        }.padding().background(Night.background.ignoresSafeArea()).navigationTitle("Calculator")
+        .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button { showHistory = true } label: { Image(systemName: "clock.arrow.circlepath").accessibilityLabel("Calculation history") } } }
+        .sheet(isPresented: $showHistory) { NavigationStack { List { ForEach(Array(history.enumerated()), id: \.offset) { item in Text(item.element) }; if history.isEmpty { Text("No calculations yet").foregroundColor(.secondary) } }.navigationTitle("History").toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { showHistory = false } } } } }
     }
     private func press(_ key: String) {
         if key == "C" { display = "0"; first = nil; operation = nil; replace = true; return }
@@ -997,6 +1086,8 @@ private struct LabCalculatorView: View {
                 default: result = right == 0 ? .nan : left / right
                 }
                 display = result.isFinite ? String(format: "%.10g", result) : "Error"
+                let record = "\(String(format: "%.10g", left)) \(op) \(String(format: "%.10g", right)) = \(display)"
+                storedHistory = ([record] + history).prefix(30).joined(separator: "\n")
             }
             first = key == "=" ? nil : Double(display)
             operation = key == "=" ? nil : key
@@ -1022,6 +1113,7 @@ private struct LabFilesView: View {
     @State private var search = ""
     var body: some View {
         List {
+            LumaHeader(title: "On this phone", detail: "\(documents.count) restored documents", symbol: "folder.fill").listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
             NavigationLink { ProtectedAreaView(area: .files) } label: { Label("Protected files", systemImage: "lock.doc") }
             ForEach(documents.keys.sorted().filter { search.isEmpty || $0.localizedCaseInsensitiveContains(search) }, id: \.self) { name in
                 NavigationLink(value: PhoneFileRoute(title: name)) {
@@ -1034,13 +1126,15 @@ private struct LabFilesView: View {
                     }.padding(.vertical, 6)
                 }
             }
-        }.navigationTitle("Files").searchable(text: $search)
+        }.scrollContentBackground(.hidden).background(Night.background.ignoresSafeArea()).navigationTitle("Files").searchable(text: $search)
     }
 }
 
 private struct LabBrowserView: View {
     let wifi: Bool
     @State private var search = ""
+    @AppStorage("lastseen.lab.browserPage") private var savedPage = ""
+    @AppStorage("lastseen.lab.browserForward") private var savedForward = ""
     @State private var selected: String?
     @State private var forwardPage: String?
     @AppStorage("lastseen.lab.history") private var history = ""
@@ -1089,7 +1183,7 @@ private struct LabBrowserView: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        Text(search.isEmpty ? "Start page" : "Search results").font(.title2.bold())
+                        LumaHeader(title: search.isEmpty ? "Start page" : "Search results", detail: "Saved sites and bookmarks", symbol: "globe")
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                             ForEach(matching, id: \.self) { name in
                                 Button { visit(name) } label: {
@@ -1126,7 +1220,11 @@ private struct LabBrowserView: View {
             Text(wifi ? "Saved pages • Offline browser" : "Saved pages • Wi-Fi off").font(.caption2).foregroundColor(.secondary).padding(.bottom, 4)
         }
         .navigationTitle("Browser").navigationBarTitleDisplayMode(.inline)
+        .onChange(of: selected) { savedPage = $0 ?? "" }
+        .onChange(of: forwardPage) { savedForward = $0 ?? "" }
         .onAppear {
+            selected = pages[savedPage] != nil ? savedPage : nil
+            forwardPage = pages[savedForward] != nil ? savedForward : nil
             if !seeded {
                 if history.isEmpty { history = "Maple Cafe|Maple Street Bookshop" }
                 if bookmarks.isEmpty { bookmarks = "Maple Street Bookshop" }

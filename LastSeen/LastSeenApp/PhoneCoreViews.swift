@@ -27,10 +27,7 @@ struct PhoneNotificationCard: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 9) {
                 HStack(spacing: 7) {
-                    Image(systemName: "message.fill")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.white).frame(width: 24, height: 24)
-                        .background(Color.green.gradient, in: RoundedRectangle(cornerRadius: 7))
+                    Image("Icon_Messages").resizable().scaledToFit().frame(width: 28, height: 28).clipShape(RoundedRectangle(cornerRadius: 7))
                     Text("MESSAGES").font(.caption2.weight(.semibold)).tracking(1)
                     Spacer(minLength: 3)
                     Text(alert.message.at, style: .relative).font(.caption2)
@@ -50,8 +47,7 @@ struct PhoneNotificationCard: View {
                 }.foregroundColor(.white)
             }
             .padding(13)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
-            .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(.white.opacity(0.13), lineWidth: 1))
+            .lumaSurface(radius: 22)
         }.buttonStyle(.plain)
             .accessibilityLabel(hidePreview ? "New message. Unlock to view." : "\(alert.neighbor.name), \(alert.message.text)")
     }

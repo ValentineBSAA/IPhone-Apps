@@ -25,9 +25,12 @@ struct PatchlineControlView: View {
                 LabeledContent("Tweak loader", value: safeMode ? "Disabled" : "Active")
                 LabeledContent("Installed tweaks", value: String(RelayCatalog.ids(installed).count))
             }
+            Section("Diagnostics") {
+                NavigationLink { RecoveryCircuitView() } label: { Label("Recovery Circuit", systemImage: "point.3.connected.trianglepath.dotted") }
+            }
             Section("Maintenance") {
                 Button { openRelay() } label: { Label("Open Relay", systemImage: "shippingbox.fill") }
-                Button { confirm = .respring } label: { Label("Restart SpringBoard", systemImage: "arrow.clockwise") }
+                Button { confirm = .respring } label: { Label("Restart LumaShell", systemImage: "arrow.clockwise") }
                 Button { confirm = .userspace } label: { Label("Reboot Userspace", systemImage: "power") }
                 Button { confirm = safeMode ? .normal : .safeMode } label: { Label(safeMode ? "Exit Safe Mode" : "Enter Safe Mode", systemImage: "exclamationmark.shield") }
                 Toggle("Restart sounds", isOn: $effects)
@@ -36,7 +39,7 @@ struct PatchlineControlView: View {
                 Button { showGuide = true } label: { Label("Welcome to Last Seen", systemImage: "book.closed") }
             }
             Section("About") {
-                Text("Patchline is part of the fictional Last Seen phone. Maintenance actions never restart or modify your real iPhone.").font(.footnote).foregroundColor(.secondary)
+                Text("Patchline is part of the fictional Last Seen phone. Maintenance actions never restart or modify your actual device.").font(.footnote).foregroundColor(.secondary)
             }
         }.navigationTitle("Patchline").navigationBarTitleDisplayMode(.inline)
             .confirmationDialog("Restart the phone environment?", isPresented: Binding(get: { confirm != nil }, set: { if !$0 { confirm = nil } }), titleVisibility: .visible, presenting: confirm) { action in

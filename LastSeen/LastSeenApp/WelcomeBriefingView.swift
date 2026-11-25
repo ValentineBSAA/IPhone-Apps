@@ -41,7 +41,7 @@ enum WelcomeBriefing {
             "Swipe down from the upper-left notification control to review notifications.",
             "Swipe down from the upper-right control to access quick settings.",
             "Swipe up on the lock screen to unlock.",
-            "Repeat a system-edge swipe when necessary to access your real iPhone controls."
+            "Repeat a system-edge swipe when necessary to access your actual device controls."
         ], ending: [
             "You can also customize your experience through Settings, Patchline and Relay."
         ]),
@@ -57,7 +57,7 @@ enum WelcomeBriefing {
             "Use it to:"
         ], bullets: [
             "Review your jailbreak environment.",
-            "Restart SpringBoard.",
+            "Restart LumaShell.",
             "Reboot userspace.",
             "Enter or exit Safe Mode.",
             "Manage restart sounds.",
@@ -70,7 +70,7 @@ enum WelcomeBriefing {
             "Make the phone your own.",
             "Relay provides repositories containing themes, tweaks and customization tools.",
             "Browse sources, search for packages, manage installed software, review updates and queue multiple changes.",
-            "Confirm your changes and restart SpringBoard when required.",
+            "Confirm your changes and restart LumaShell when required.",
             "All available packages are free."
         ]),
         Section(7, "Protected information", [
@@ -98,7 +98,7 @@ enum WelcomeBriefing {
             "Last Seen is an original fictional horror game.",
             "Its characters, conversations, applications, restored records and jailbreak environment exist entirely within the game.",
             "No real jailbreak, kernel exploitation, USB data transfer or device modification has occurred.",
-            "Optional native iPhone features remain under your control."
+            "Optional native device features remain under your control."
         ])
     ]
     static let closing = [
@@ -139,7 +139,7 @@ struct WelcomeBriefingView: View {
                             .accessibilityAddTraits(.isHeader)
                             .fixedSize(horizontal: false, vertical: true)
                         if !compact {
-                            Text("Bootstrap installed • Relay ready • SpringBoard reloaded")
+                            Text("Bootstrap installed • Relay ready • LumaShell reloaded")
                                 .font(.caption).foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }

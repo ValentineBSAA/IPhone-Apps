@@ -48,6 +48,7 @@ enum RelayCatalog {
         RelayPackage("dockglass", "Ghost Dock", "1.0.0", "studio", "Tweaks", "rectangle.bottomthird.inset.filled", "Transparent dock", "Removes the material background from the dock."),
         RelayPackage("seconds", "Second Hand", "1.0.0", "utilities", "Lock Screen", "clock", "Show seconds on the lock screen", "Adds live seconds to the lock-screen clock."),
         RelayPackage("quietbadges", "Quiet Badges", "1.0.0", "utilities", "Tweaks", "bell.slash", "Hide launcher badges", "Hides the red unread count on app icons. Messages and notification history remain intact."),
+        RelayPackage("fieldnotes", "Field Notes", "1.0.0", "utilities", "Utilities", "notebook", "Personal investigation notebook", "Keep your own observations and questions, separate from the restored records."),
         RelayPackage("fivegrid", "Five Across", "1.0.0", "utilities", "Tweaks", "square.grid.3x3", "Five-column home screen", "Displays five icons across the launcher, with smaller icon sizing.")
     ]
     static func package(_ id: String) -> RelayPackage? { packages.first { $0.id == id } }
@@ -57,8 +58,9 @@ enum RelayCatalog {
     static func installed(_ id: String, userIDs: Set<String>) -> Bool {
         package(id)?.essential == true || userIDs.contains(id)
     }
-    static func visible(_ p: RelayPackage, sources: Set<String>, installed: Set<String>) -> Bool {
-        p.essential || sources.contains(p.source) || installed.contains(p.id)
+    static func available(_ id: String, flags: Set<String>) -> Bool { id != "fieldnotes" || RecoveryCircuit.unlocked(flags) }
+    static func visible(_ p: RelayPackage, sources: Set<String>, installed: Set<String>, flags: Set<String> = []) -> Bool {
+        available(p.id, flags: flags) && (p.essential || sources.contains(p.source) || installed.contains(p.id))
     }
     static func versions(_ raw: String) -> [String: String] {
         var result: [String: String] = [:]
@@ -93,9 +95,9 @@ enum RelayPlan {
         guard !change.package.essential else { return current }
         return current.filter { $0.id != change.id } + [change]
     }
-    static func valid(_ changes: [RelayChange], sources: Set<String>, installed: Set<String>) -> Bool {
+    static func valid(_ changes: [RelayChange], sources: Set<String>, installed: Set<String>, flags: Set<String> = []) -> Bool {
         !changes.isEmpty && Set(changes.map(\.id)).count == changes.count && changes.allSatisfy { c in
-            guard let p = RelayCatalog.package(c.id), p == c.package, !p.essential else { return false }
+            guard let p = RelayCatalog.package(c.id), p == c.package, !p.essential, (c.action == .remove || RelayCatalog.available(c.id, flags: flags)) else { return false }
             switch c.action {
             case .install: return sources.contains(p.source) && !installed.contains(p.id)
             case .remove: return installed.contains(p.id)
