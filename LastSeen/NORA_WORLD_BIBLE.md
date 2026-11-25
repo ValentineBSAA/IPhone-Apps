@@ -1,4 +1,7 @@
 # LAST SEEN — Nora Bennett and the living world
+
+
+> **Current authoritative acceptance checkpoint (November 25, 2026):** [BUILD27_ACCEPTANCE.md](BUILD27_ACCEPTANCE.md) governs the single consolidated Build 27 release. Historical build statuses, older story-deferral instructions, and asset upload notes below are historical only where superseded. Do not declare the full build complete merely because compilation succeeds. Creator-facing updates must remain spoiler-free.
 Status: creator-approved identity and cast foundation, updated 2026-11-25. Canonical portrait approved; Build 23 physical feedback received; camera-roll implementation staged, not yet compiled. Spoiler-light. This supersedes the provisional owner biography for OS-first development, not the separate legacy campaign.
 
 ## Creative direction supplied by the creator
@@ -56,3 +59,7 @@ The disappearance must matter because Nora has unfinished commitments and people
 - Keep iOS 16 minimum, primary iPhone 16e QA, no network dependency, no real personal data, no real system modifications, no paid packages. Preserve approved welcome and jailbreak experience.
 
 This design document records approvals; it does not itself ship runtime content. See CHARACTER_CONTINUITY.md and DEVELOPMENT_HANDOFF.md for current production state.
+
+
+## Current approved creative direction
+The OS-first approach remains governing, but creator explicitly authorized Build 27 story expansion alongside technical development. Blue Hour Interactive develops a horror-game prototype as credible professional work; preserve ambiguity and distinguish ordinary records from authored suspense. Add an anonymous in-world correspondence and fictional local underground archive without pre-confirming identity or truth. Use gradual discoveries, optional contextual hints and the investigation tracker. Preserve realistic photo aesthetics and everyday life; no random scare galleries. The full plot remains to be authored and validated separately; do not reveal it in this document. See BUILD27_ACCEPTANCE.md for current scope.

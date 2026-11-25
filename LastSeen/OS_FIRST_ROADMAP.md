@@ -1,4 +1,7 @@
 # LAST SEEN — OS-first roadmap (2026-11-24)
+
+
+> **Current authoritative acceptance checkpoint (November 25, 2026):** [BUILD27_ACCEPTANCE.md](BUILD27_ACCEPTANCE.md) governs the single consolidated Build 27 release. Historical build statuses, older story-deferral instructions, and asset upload notes below are historical only where superseded. Do not declare the full build complete merely because compilation succeeds. Creator-facing updates must remain spoiler-free.
 **Current governing development direction. Supersedes story-first sequencing in older documents.** Preserve existing source, scripts, character portraits, save data and branch history. Do not rewrite or expand the horror narrative until the fictional phone is accepted by the owner on physical hardware. Existing stories are legacy development fixtures, not the mandated final plot.
 
 ## Product pillars

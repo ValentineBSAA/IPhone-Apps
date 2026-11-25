@@ -1,4 +1,7 @@
 # LAST SEEN — Development handoff
+
+
+> **Current authoritative acceptance checkpoint (November 25, 2026):** [BUILD27_ACCEPTANCE.md](BUILD27_ACCEPTANCE.md) governs the single consolidated Build 27 release. Historical build statuses, older story-deferral instructions, and asset upload notes below are historical only where superseded. Do not declare the full build complete merely because compilation succeeds. Creator-facing updates must remain spoiler-free.
 Updated November 25, 2026. Start here when resuming work in a new chat. This is a spoiler-light engineering handoff, not the story script.
 
 ## Current state
@@ -38,3 +41,7 @@ Build 24 v1.4.1 successfully compiled, tested and published (run 45577112995). N
 
 ## Build 25 implementation checkpoint — November 25, 2026
 Creator-approved archive Last-Seen-LumaOS-Foundation-Assets.zip is on L1 (39,594,969 bytes, SHA-256 ca5e1a9b050e3c6bf7f701aae8207281ab20f54d92b7d765a99b58042d35a2ba). Import all 26 verified assets; 10 standard wallpapers, 12 stock icons (Phone remains future functionality), Save icon, branding emblem and two security illustrations. Build 25 v1.5.0 on feature/last-seen-foundation adds shared design tokens, upgraded launcher, lock/home wallpaper previews and independent choice/blur, widgets, recent apps, core app presentation polish, authentication feedback, recovery status, manual slots and automatic checkpoints. Existing dark appearance remains; full light mode, app-specific deep feature expansions (folders/tabs/history persistence etc.) and remaining standalone illustrations are subsequent work, not claimed complete. Save snapshots capture OS-first fictional world and allowlisted preferences; three manual and three rotating automatic slots, 1/3/5/10 minutes or periodic off, event/background checkpointing, existing live persistence, corrupt-slot rejection and fresh protected-area authentication on load. Restore is atomic for world file; preferences are applied afterwards, not a cross-file transaction. No legacy campaign snapshots or real biometric credentials. Build 25 must pass native compilation, regression tests and physical QA before approval. No story revelations in creator-facing reports.
+
+
+## Current handoff — Build 27 consolidated release
+Build 26 v1.5.1 passed CI and packaging, but creator reports Assets.car issue; stop separate physical testing. Build 27 v1.6.0 is the only active physical QA target. Branch feature/last-seen-build27-noras-world; runtime checkpoint 991029ef7169c49194c7ce2d67bfa11a4f26215e. Run 45597383815 in progress at audit; recheck actual status. All approved new packs uploaded. Follow BUILD27_ACCEPTANCE.md first, BUILD27_CONSOLIDATION.md for implementation history, OS_FIRST_ROADMAP.md for older approvals, world bible and continuity for canon. Do not restart the build for documentation alone. Do not disclose plot or placements in reports. No final IPA verified yet.

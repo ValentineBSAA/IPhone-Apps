@@ -1,4 +1,7 @@
 # Build 27 — Nora's World (1.6.0)
+
+
+> **Current authoritative acceptance checkpoint (November 25, 2026):** [BUILD27_ACCEPTANCE.md](BUILD27_ACCEPTANCE.md) governs the single consolidated Build 27 release. Historical build statuses, older story-deferral instructions, and asset upload notes below are historical only where superseded. Do not declare the full build complete merely because compilation succeeds. Creator-facing updates must remain spoiler-free.
 Complete consolidation target. Preserve Build 26 and forward-port any later fixes before packaging. No story solutions in creator-facing reports.
 ## First slice staged
 Five new canon contacts, 25 restored messages, three notes, two calendar events, three mail records, four public documents, distinct local replies, additive revision migration, full 22-image verified importer and original Relay/Patchline artwork. Five unused contact portraits reserved; do not assign existing identities arbitrarily. Existing story gates untouched.
@@ -28,3 +31,7 @@ Run 45595727810 failed at PhoneLabView.swift:1184, expected expression. The old 
 
 ## Original media packaging correction
 Run 45596340837 compiled successfully and passed iOS version and sound checks. The device resource hash gate rejected Contact_B27_01.png after Xcode ran copypng -compress -strip-PNG-text. Disable both PNG processing settings so original standalone resources remain byte-identical. Keep all original manifest, compiled catalog and final IPA integrity checks; rerun full CI. Physical installation remains unverified.
+
+
+## Roadmap audit checkpoint
+The authoritative checklist now resolves old scope drift and records each unverified or incomplete requirement explicitly. All three Build 27 asset archives are present on L1. The latest run at audit is 45597383815; compilation in progress. Follow BUILD27_ACCEPTANCE.md for release gating, not historical stage descriptions. Documentation only; no runtime changes in this commit.

@@ -1,4 +1,7 @@
 # LAST SEEN — Character continuity register
+
+
+> **Current authoritative acceptance checkpoint (November 25, 2026):** [BUILD27_ACCEPTANCE.md](BUILD27_ACCEPTANCE.md) governs the single consolidated Build 27 release. Historical build statuses, older story-deferral instructions, and asset upload notes below are historical only where superseded. Do not declare the full build complete merely because compilation succeeds. Creator-facing updates must remain spoiler-free.
 Production source of truth for character identity, not a plot outline. Updated November 25, 2026.
 
 ## Identity lock NB-001
@@ -47,3 +50,7 @@ Pack: Last-Seen-Nora-Photo-Pack.zip; 7,637,104 bytes; archive SHA-256 5df2e321ae
 
 ## Spoiler discipline
 No disappearance explanation, twist, suspect answer, future clue solution or ending in creator-facing reports. Record future narrative dependencies in separately labeled spoiler files only when authored; do not fabricate a completed plot. Repository readers can access those files, so labels are warnings, not access controls. Keep QA focused on behavior and use non-revealing fixture identifiers.
+
+
+## Build 27 asset continuity checkpoint
+L1 contains the original Nora pack and all three approved new packs, with hashes in BUILD27_ACCEPTANCE.md. Source currently assigns five new portrait slots to established cast members, with remaining five reserved. Before any final publication, audit actual visual continuity against NB-001 and cast registry; do not infer that every generated portrait has been confirmed as a specific person. Anonymous sender intentionally has no canonical portrait. All 29 recovered images have neutral IDs; placement and chronology require private authoring review. Original images and manifests preserved. Do not expose future assignments, identities or gates in ordinary QA summaries.
