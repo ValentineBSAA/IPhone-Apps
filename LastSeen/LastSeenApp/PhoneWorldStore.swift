@@ -171,7 +171,13 @@ final class PhoneWorldStore: ObservableObject {
 
     /// Replay only the introductory authored messages and flags. Do not touch
     /// restored documents, other messages, notes, app settings or owner security.
+    func recoverPhotoDiscovery() {
+        let recovered = NoraPhotoCatalog.discoveryFlags(from: state.flags)
+        if recovered != state.flags { state.flags = recovered; save() }
+    }
+
     func resetPhoneTutorial() {
+        state.flags = NoraPhotoCatalog.discoveryFlags(from: state.flags)
         state.flags = Set(state.flags.filter { !$0.hasPrefix("phone-tutorial-") })
         for key in Array(state.threads.keys) {
             state.threads[key]?.removeAll { $0.id.hasPrefix("phone-tutorial-") }
@@ -184,6 +190,7 @@ final class PhoneWorldStore: ObservableObject {
               ["note", "desk", "reservation", "journal"].contains(id) else { return }
         if state.flags.insert("phone-tutorial-visited-" + id).inserted {
             advanceTutorial(now: now)
+            state.flags = NoraPhotoCatalog.discoveryFlags(from: state.flags)
             save()
         }
     }
@@ -248,6 +255,7 @@ final class PhoneWorldStore: ObservableObject {
             state.flags.insert("phone-tutorial-replied")
             tutorialMessage("notes", "Oh, thank you for telling me. I'm Maya, a friend of Nora's. I was expecting to hear from her. Could you look in Notes for something called Before I forget? She mentioned writing down her plans.", now: now.addingTimeInterval(0.1))
             advanceTutorial(now: now.addingTimeInterval(0.2))
+            state.flags = NoraPhotoCatalog.discoveryFlags(from: state.flags)
             save()
             return true
         }
