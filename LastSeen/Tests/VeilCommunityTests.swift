@@ -2,6 +2,34 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class VeilCommunityTests:XCTestCase {
+    func testRecoveredReferencesAndPageBookmarks() {
+        var state=RestoredPhoneBackup.snapshot()
+        XCTAssertTrue(VeilReferences.visible(state).isEmpty)
+        state.flags.formUnion(["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery])
+        let store=PhoneWorldStore(initial:state,persistToDisk:false)
+        XCTAssertEqual(VeilReferences.visible(store.state).count,1)
+        store.inspectVeilReference("private-index-reference")
+        XCTAssertNil(VeilReferences.target("private-index-reference",in:store.state))
+        store.inspectVeilReference("directory-reference")
+        let directory=VeilReferences.target("directory-reference",in:store.state)
+        XCTAssertNotNil(directory)
+        XCTAssertTrue(directory?.address.contains(".invalid/") ?? false)
+        XCTAssertNil(VeilArchive.resolve("https://example.com",in:store.state))
+        XCTAssertNil(VeilArchive.resolve("veil://fragment-04",in:store.state))
+        store.toggleVeilPageBookmark("directory",packages:"veil",safeMode:false)
+        XCTAssertEqual(VeilArchive.pageBookmarkIDs(store.state),["directory"])
+        state=store.state;state.flags.insert("web.visited.archive-ledger")
+        let later=PhoneWorldStore(initial:state,persistToDisk:false)
+        XCTAssertNil(VeilReferences.target("private-index-reference",in:later.state))
+        later.inspectVeilReference("private-index-reference")
+        let target=VeilReferences.target("private-index-reference",in:later.state)
+        XCTAssertNotNil(target)
+        XCTAssertFalse(VeilArchive.directoryPages(later.state).contains{$0.id=="fragment-04"})
+        XCTAssertEqual(VeilArchive.resolve(target?.address ?? "",in:later.state)?.id,"fragment-04")
+        XCTAssertFalse(VeilArchive.allowsImages("Safest"))
+        XCTAssertFalse(VeilArchive.allowsImages("unknown"))
+        XCTAssertTrue(VeilArchive.allowsImages("Safer"))
+    }
     func testCatalogAndAccess() {
         var world=RestoredPhoneBackup.snapshot()
         XCTAssertTrue(VeilCommunity.visible(world).isEmpty)

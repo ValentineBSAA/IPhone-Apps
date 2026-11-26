@@ -44,7 +44,16 @@ enum VeilArchive {
         let id: String
         let title: String
         let text: String
-        var address: String { "veil://" + id }
+        var address: String {
+            let hosts = [
+                "directory":"k7v3m2q5j6w4n7xb3t2p5h6r4z7c2f5d6y3g4s7k2q5m6v3j4n7x",
+                "boards":"b4q7s2j5m6z3v4n7w2r5k6x3g4c7t2h5p6d3y4f7b2q5s6j3m4z",
+                "records":"p6h3r7c2f5d4y6g3s7k2q5m4v6j3n7x2b5t4w6z3r7h2p5c4f6d",
+                "media":"t2w5z6r3h4p7c2f5d6y3g4s7k2q5m6v3j4n7x2b5t6w3z4r7h",
+                "fragment-04":"f4k7m2x5c6v3r4p7y2b5t6j3w4q7n2s5g6h3z4d7f2k5m6x3c4v"
+            ]
+            return "veil://"+(hosts[id] ?? "unavailable")+".invalid/"+id
+        }
     }
     private static let catalog: [Page] = [
         .init(id:"directory",title:"Local directory",text:"Recovered offline index. Some archived sources are incomplete."),
@@ -52,7 +61,23 @@ enum VeilArchive {
         .init(id:"records",title:"Correspondence cache",text:"An older message export is available in the restored phone. Keep original correspondence distinct from copied media."),
         .init(id:"media",title:"Recovered media",text:"Reference copies only. Their appearance, origin and capture dates are not authenticated. Some images may be unsettling.")
     ]
-    static func pages(_ world: PhoneWorld) -> [Page] { authorized(world) ? catalog : [] }
+    static func pages(_ world: PhoneWorld) -> [Page] {
+        guard authorized(world) else { return [] }
+        var result=catalog
+        if VeilReferences.inspected("private-index-reference",in:world) != nil {
+            result.append(.init(id:"fragment-04",title:"Recovered index fragment",text:"Partial index. The original source is disputed. Compare the available record with the restored browser's review ledger rather than assume the archive is a complete account."))
+        }
+        return result
+    }
+    static func directoryPages(_ world:PhoneWorld)->[Page] { pages(world).filter{$0.id != "fragment-04" || pageBookmarkIDs(world).contains($0.id)} }
+    static func resolve(_ raw:String,in world:PhoneWorld)->Page? {
+        let value=raw.trimmingCharacters(in:.whitespacesAndNewlines)
+        return pages(world).first { $0.address == value || ($0.id != "fragment-04" && ($0.id == value || "veil://"+$0.id == value)) }
+    }
+    static func pageBookmarkIDs(_ world:PhoneWorld)->Set<String> {
+        (world.connectedWorld?.veilPageBookmarks ?? []).intersection(Set(pages(world).map(\.id)))
+    }
+    static func allowsImages(_ security:String)->Bool { ["Standard","Safer"].contains(security) }
     static func media(_ world: PhoneWorld) -> [String] {
         authorized(world) ? (1...11).map { String(format:"Nora_Archive_%02d",$0) } : []
     }
@@ -62,20 +87,24 @@ struct VeilRecoveredImage: View {
     @EnvironmentObject private var world: PhoneWorldStore
     @Environment(\.scenePhase) private var phase
     @State private var revealed = false
+    @AppStorage("lastseen.veil.security") private var security = "Standard"
     var body: some View {
         if VeilArchive.media(world.state).contains(asset) {
             VStack(alignment:.leading,spacing:8) {
-                if revealed && phase == .active {
+                if revealed && phase == .active && VeilArchive.allowsImages(security) {
                     if let image = UIImage(named:asset) {
                         Image(uiImage:image).resizable().scaledToFit().accessibilityLabel("Recovered fictional photograph, origin unverified")
                     } else { Text("Image unavailable. Text remains accessible.").font(.caption) }
                 }
-                Button(revealed ? "Hide image" : "Reveal recovered image") {
-                    revealed.toggle()
-                    if revealed, UIImage(named:asset) != nil { world.recordVeilObservation(asset) }
-                }.buttonStyle(.bordered)
+                if VeilArchive.allowsImages(security) {
+                    Button(revealed ? "Hide image" : "Reveal recovered image") {
+                        guard phase == .active,VeilArchive.allowsImages(security) else { return }
+                        revealed.toggle()
+                        if revealed, UIImage(named:asset) != nil { world.recordVeilObservation(asset) }
+                    }.buttonStyle(.bordered)
+                } else { Label("Image hidden by security preference",systemImage:"shield").font(.caption) }
                 Text("Unverified reference image").font(.caption2).foregroundColor(.secondary)
-            }.onChange(of:phase) { if $0 != .active { revealed = false } }.onDisappear { revealed = false }
+            }.onChange(of:phase) { if $0 != .active { revealed = false } }.onChange(of:security) { _ in revealed = false }.onDisappear { revealed = false }
         }
     }
 }
@@ -104,11 +133,16 @@ struct VeilHistoricalConversation: View {
     }
 }
 struct VeilBrowser: View {
+    var initialReference:String? = nil
     @EnvironmentObject private var world: PhoneWorldStore
     @Environment(\.scenePhase) private var phase
     @AppStorage("lastseen.relay.installed") private var packages = ""
     @AppStorage("lastseen.relay.safeMode") private var safeMode = false
     @State private var connected = false
+    @State private var connecting = false
+    @State private var connectionStep = 0
+    @State private var didOpenInitial = false
+    @AppStorage("lastseen.lab.wifi") private var wifi = true
     @State private var routeGeneration = 1
     @State private var showNewIdentity = false
     @AppStorage("lastseen.veil.security") private var security = "Standard"
@@ -116,12 +150,15 @@ struct VeilBrowser: View {
     @State private var selected = "directory"
     @State private var notice = ""
     @State private var history: [String] = []
-    @State private var bookmarks: Set<String> = []
+    private var bookmarks:Set<String> { VeilArchive.pageBookmarkIDs(world.state) }
     private var allowed: Bool { VeilArchive.installed(world.state,packages:packages,safeMode:safeMode) }
     private var pages: [VeilArchive.Page] { VeilArchive.pages(world.state) }
+    private func disconnect() {
+        connecting=false; connected=false; connectionStep=0; address=""; history=[]; notice=""
+    }
     private func visit(_ raw: String) {
-        guard allowed,connected,phase == .active else { return }
-        guard let p = pages.first(where:{$0.address == raw || $0.id == raw}) else {
+        guard allowed,connected,wifi,phase == .active else { return }
+        guard let p = VeilArchive.resolve(raw,in:world.state) else {
             notice = raw.hasPrefix("veil://") ? "Service unreachable in this recovered directory." : "Invalid local service address. VEIL does not open external sites."
             return
         }
@@ -137,16 +174,22 @@ struct VeilBrowser: View {
                         else { Image(systemName:"eye.slash").font(.largeTitle) }
                         VStack(alignment:.leading) {
                             Text("V E I L").font(.title.bold())
-                            Text(connected ? "Local session connected" : "Local session disconnected").font(.caption).foregroundColor(.secondary)
+                            Text(connected ? "Local session connected" : connecting ? "Establishing local session" : "Local session disconnected").font(.caption).foregroundColor(.secondary)
                         }
                         Spacer()
                     }
                     Text("Fictional anonymous browser. All pages are bundled offline.").font(.caption).foregroundColor(.secondary)
-                    Button(connected ? "Disconnect session" : "Connect local session") {
-                        connected.toggle()
-                        if connected { selected = "directory"; address = "veil://directory" }
-                        else { address = ""; history = []; notice = "" }
+                    Button(connected ? "Disconnect session" : connecting ? "Cancel connection" : "Connect local session") {
+                        if connected || connecting { disconnect(); return }
+                        guard wifi else { notice="Simulated Wi-Fi is off."; return }
+                        guard phase == .active else { return }
+                        notice=""; connectionStep=0; connecting=true
                     }.buttonStyle(.borderedProminent).tint(.purple)
+                    if connecting {
+                        ProgressView(value:Double(connectionStep),total:3)
+                        Text(["Preparing local session","Checking cached directory","Opening local route","Ready"][min(3,connectionStep)]).font(.caption)
+                    }
+                    if !connected && !notice.isEmpty { Text(notice).font(.caption).foregroundColor(.secondary) }
                     if connected {
                         DisclosureGroup("Session privacy") {
                             LabeledContent("Local circuit",value:"Session "+String(routeGeneration))
@@ -170,7 +213,7 @@ struct VeilBrowser: View {
                             }.disabled(history.isEmpty)
                             Spacer()
                             Button(bookmarks.contains(selected) ? "Remove bookmark" : "Bookmark") {
-                                if bookmarks.contains(selected) { bookmarks.remove(selected) } else { bookmarks.insert(selected) }
+                                world.toggleVeilPageBookmark(selected,packages:packages,safeMode:safeMode)
                             }
                         }.font(.caption)
                         if !notice.isEmpty { Text(notice).font(.caption).foregroundColor(.secondary) }
@@ -191,8 +234,8 @@ struct VeilBrowser: View {
                                 }
                             }
                         }
-                        ForEach(pages) { page in
-                            Button { visit(page.id) } label: {
+                        ForEach(VeilArchive.directoryPages(world.state)) { page in
+                            Button { visit(page.address) } label: {
                                 HStack { Text(page.title); Spacer(); if bookmarks.contains(page.id) { Image(systemName:"bookmark.fill") }; Image(systemName:"chevron.right") }.padding(12).lumaSurface(radius:12)
                             }.buttonStyle(.plain)
                         }
@@ -202,13 +245,29 @@ struct VeilBrowser: View {
         }.tint(.purple).navigationTitle("VEIL").navigationBarTitleDisplayMode(.inline)
             .confirmationDialog("Start a new local identity?",isPresented:$showNewIdentity,titleVisibility:.visible) {
                 Button("Clear session",role:.destructive) {
-                    history = []; selected = "directory"; address = "veil://directory"; notice = ""
+                    history = []; selected = "directory"; address = VeilArchive.resolve("directory",in:world.state)?.address ?? ""; notice = ""
                     routeGeneration = routeGeneration >= 999 ? 1 : routeGeneration+1
                 }
                 Button("Cancel",role:.cancel) {}
             } message: { Text("Clears temporary browsing history. Saved threads and investigation progress remain.") }
-            .onChange(of:phase) { if $0 != .active { connected = false; address = ""; history = [] } }
-            .onChange(of:allowed) { if !$0 { connected = false; address = ""; history = []; bookmarks = [] } }
-            .onDisappear { connected = false; history = [] }
+            .task(id:connecting) {
+                guard connecting else { return }
+                for step in 1...3 {
+                    do { try await Task.sleep(nanoseconds:250_000_000) } catch { return }
+                    guard !Task.isCancelled,connecting,allowed,wifi,phase == .active else { return }
+                    connectionStep=step
+                }
+                connected=true; connecting=false
+                selected="directory"; address=VeilArchive.resolve("directory",in:world.state)?.address ?? ""
+                if !didOpenInitial,let initialReference {
+                    didOpenInitial=true
+                    if let target=VeilReferences.target(initialReference,in:world.state) { visit(target.address) }
+                    else { notice="Recovered reference unavailable." }
+                }
+            }
+            .onChange(of:phase) { if $0 != .active { disconnect() } }
+            .onChange(of:allowed) { if !$0 { disconnect() } }
+            .onChange(of:wifi) { if !$0 { disconnect(); notice="Simulated Wi-Fi is off." } }
+            .onDisappear { disconnect() }
     }
 }

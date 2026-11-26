@@ -1531,6 +1531,16 @@ private struct LabFilesView: View {
         List {
             LumaHeader(title: "On this phone", detail: "\(documents.count + WorldDocumentCatalog.visible(world.state).count) restored documents", symbol: "folder.fill").listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
             NavigationLink { ProtectedAreaView(area: .files) } label: { Label("Protected files", systemImage: "lock.doc") }
+            let references = VeilReferences.visible(world.state).filter { search.isEmpty || $0.filename.localizedCaseInsensitiveContains(search) }
+            if !references.isEmpty {
+                Section("Recovered bookmarks") {
+                    ForEach(references) { ref in
+                        NavigationLink { VeilReferenceReader(id:ref.id) } label: {
+                            Label(ref.filename,systemImage:"doc.badge.ellipsis").font(.headline)
+                        }
+                    }
+                }
+            }
             let records = WorldDocumentCatalog.search(search,world:world.state)
             if !records.isEmpty {
                 Section("Restored records") {
