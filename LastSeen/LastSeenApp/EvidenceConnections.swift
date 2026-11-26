@@ -134,6 +134,16 @@ struct EvidenceComparisonView: View {
                 }
             }
             if let selection,phase == .active {
+                if let challenge=PhotoFeatureMatch.challenge(selection.first,selection.second,in:world.state) {
+                    Section("Recurring detail challenge") {
+                        NavigationLink { PhotoFeatureMatchView(challengeID:challenge.id) } label:{
+                            Label(challenge.title,systemImage:"viewfinder")
+                        }
+                        if PhotoFeatureMatch.completed(challenge,in:world.state) {
+                            Label("Detail comparison recorded",systemImage:"checkmark.circle").font(.caption)
+                        }
+                    }
+                }
                 if let cameraID=[selection.first,selection.second].first(where:{$0.hasPrefix("haven:HavenWatch_")}),
                    let photoID=[selection.first,selection.second].first(where:{$0.hasPrefix("image:VEIL_Home_")}) {
                     Section("Original image comparison") {
@@ -224,5 +234,141 @@ struct EvidenceComparisonView: View {
                 if !first.isEmpty && !records.contains(where:{$0.id==first}){first="";notice=""}
                 if !second.isEmpty && !records.contains(where:{$0.id==second}){second="";notice=""}
             }
+    }
+}
+
+
+/// Curated observations from the hash-pinned six home-copy originals.
+/// Regions are approximate 3x3 image cells, not camera calibration.
+enum PhotoFeatureMatch {
+    struct Challenge:Identifiable {
+        let id:String
+        let title:String
+        let assets:[String]
+        let target:String
+        let regions:[Set<Int>]
+        let textClues:[String]
+        let note:String
+    }
+    static let all:[Challenge] = [
+        .init(id:"home-counter",title:"The kitchen counter",
+              assets:["VEIL_Home_01","VEIL_Home_03"],target:"Find the central expanse of the white island countertop in each photograph.",
+              regions:[[4,7],[7,8]],textClues:["The broad white surface crosses the center and lower center of the frame.","The white surface is in the lower portion, primarily beneath and to the right of the open book."],
+              note:"Both copies include a broad white kitchen island; the framing and activities differ."),
+        .init(id:"home-table",title:"The living room table",
+              assets:["VEIL_Home_02","VEIL_Home_05"],target:"Find the center of the wooden coffee table in each photograph.",
+              regions:[[7,8],[8]],textClues:["The tabletop occupies the lower middle and right of the frame.","The tabletop sits to the lower right of the seated figure."],
+              note:"Both copies depict a wooden coffee table by beige seating, with different visible activities and framing."),
+        .init(id:"home-seating",title:"A familiar seat",
+              assets:["VEIL_Home_02","VEIL_Home_06"],target:"Find the beige sofa cushions on the left side of each photograph.",
+              regions:[[0,3],[3,6]],textClues:["The beige back and seat cushions fill the left side around the upper and middle rows.","The beige cushions occupy the middle and lower left side of the view."],
+              note:"Both copies show beige seating beside a coffee table; similar furnishings are not unique identifiers.")
+    ]
+    static func available(_ world:PhoneWorld)->[Challenge] {
+        all.filter { c in c.assets.allSatisfy{RecoveredImageAnalysis.record($0,in:world) != nil} }
+    }
+    static func challenge(_ a:String,_ b:String,in world:PhoneWorld)->Challenge? {
+        available(world).first{Set($0.assets.map{"image:"+$0}) == Set([a,b])}
+    }
+    static func accepts(_ id:String,first:Int,second:Int,in world:PhoneWorld)->Challenge? {
+        guard let c=available(world).first(where:{$0.id==id}),
+              c.regions[0].contains(first),c.regions[1].contains(second) else{return nil}
+        return c
+    }
+    static func completed(_ c:Challenge,in world:PhoneWorld)->Bool {
+        available(world).contains{$0.id==c.id} &&
+        world.connectedWorld?.photoFeatureMatches?.contains(c.id)==true
+    }
+    static func notes(_ asset:String,in world:PhoneWorld)->[String] {
+        available(world).filter{$0.assets.contains(asset) && completed($0,in:world)}
+            .map{"Recorded visible-detail comparison: "+$0.note+" This does not authenticate a shared source."}
+    }
+}
+struct PhotoFeatureMatchView:View {
+    let challengeID:String
+    @EnvironmentObject private var world:PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
+    @AppStorage("lastseen.veil.security") private var security="Standard"
+    @State private var reveal=false
+    @State private var textOnly=false
+    @State private var first:Int?
+    @State private var second:Int?
+    @State private var notice=""
+    private func reset(){reveal=false;first=nil;second=nil;notice=""}
+    var body:some View {
+        List {
+            if let c=PhotoFeatureMatch.available(world.state).first(where:{$0.id==challengeID}),phase == .active {
+                Section {
+                    Text(c.target).font(.headline)
+                    Text("Mark the corresponding region in both original images. Different framing may place the detail in different cells.").font(.subheadline)
+                    Toggle("Text-only comparison",isOn:$textOnly)
+                    if !textOnly && VeilArchive.allowsImages(security) {
+                        Toggle("Reveal original photographs",isOn:$reveal)
+                    }
+                }
+                ForEach(0..<2,id:\.self) { i in
+                    Section(VeilArchive.mediaTitle(c.assets[i],in:world.state) ?? "Recovered photograph") {
+                        let selected=i==0 ? first:second
+                        if reveal && !textOnly && VeilArchive.allowsImages(security),
+                           let image=PortraitImages.load(c.assets[i]) {
+                            Image(uiImage:image).resizable().scaledToFit()
+                                .overlay {
+                                    GeometryReader { g in
+                                        Path { path in
+                                            for n in 1...2 {
+                                                let x=g.size.width*CGFloat(n)/3
+                                                let y=g.size.height*CGFloat(n)/3
+                                                path.move(to:CGPoint(x:x,y:0));path.addLine(to:CGPoint(x:x,y:g.size.height))
+                                                path.move(to:CGPoint(x:0,y:y));path.addLine(to:CGPoint(x:g.size.width,y:y))
+                                            }
+                                        }.stroke(.white.opacity(0.7),style:StrokeStyle(lineWidth:1,dash:[4,3]))
+                                        if let selected {
+                                            Rectangle().stroke(Color.yellow,lineWidth:3)
+                                                .frame(width:g.size.width/3,height:g.size.height/3)
+                                                .position(x:(CGFloat(selected%3)+0.5)*g.size.width/3,
+                                                          y:(CGFloat(selected/3)+0.5)*g.size.height/3)
+                                        }
+                                    }.allowsHitTesting(false).accessibilityHidden(true)
+                                }.accessibilityLabel("Original photograph with region grid")
+                        } else if textOnly || !VeilArchive.allowsImages(security) || (reveal && PortraitImages.load(c.assets[i])==nil) {
+                            Text(c.textClues[i]).font(.subheadline)
+                        } else {
+                            Text("Reveal the original or choose text-only comparison.").font(.caption)
+                        }
+                        if reveal || textOnly || !VeilArchive.allowsImages(security) {
+                            LazyVGrid(columns:Array(repeating:GridItem(.flexible()),count:3),spacing:6) {
+                                ForEach(0..<9,id:\.self) { cell in
+                                    Button {
+                                        if i==0 {first=cell} else {second=cell}
+                                        notice=""
+                                    } label:{
+                                        Text(ImageInterpretation.regions[cell]).font(.caption)
+                                            .frame(maxWidth:.infinity,minHeight:44)
+                                    }.buttonStyle(.bordered).tint(selected==cell ? .purple:.secondary)
+                                        .accessibilityAddTraits(selected==cell ? .isSelected:[])
+                                }
+                            }
+                        }
+                    }
+                }
+                Section {
+                    Button("Record matched detail") {
+                        guard phase == .active,let first,let second else{return}
+                        notice=world.recordPhotoFeatureMatch(c.id,first:first,second:second) ?
+                            "Visible detail recorded.":"Revisit both frames and locate the described feature."
+                    }.buttonStyle(.borderedProminent).disabled(first==nil || second==nil)
+                    if !notice.isEmpty {Text(notice).font(.caption)}
+                    if PhotoFeatureMatch.completed(c,in:world.state) {
+                        Label(c.note,systemImage:"checkmark.seal").foregroundColor(.teal)
+                    }
+                    Text("A recurring detail supports comparison, not a verified camera, date or identity.").font(.caption).foregroundColor(.secondary)
+                }
+            } else { Text("Comparison unavailable.") }
+        }.navigationTitle("Match visible details")
+        .onChange(of:phase){if $0 != .active {reset()}}
+        .onChange(of:security){_ in reset()}
+        .onChange(of:textOnly){_ in reset()}
+        .onChange(of:reveal){if !$0 {first=nil;second=nil;notice=""}}
+        .onDisappear{reset()}
     }
 }

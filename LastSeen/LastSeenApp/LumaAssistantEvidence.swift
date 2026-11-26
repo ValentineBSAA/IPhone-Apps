@@ -106,6 +106,7 @@ enum LumaAssistantEvidence {
                 if let summary=RecoveredImageAnalysis.summary(asset,in:world){facts.append(summary)}
                 if let light=RecoveredImageAnalysis.lightNote(asset,in:world){facts.append(light)}
                 facts += ImageInterpretation.notes(asset,in:world)
+                facts += PhotoFeatureMatch.notes(asset,in:world)
                 result.append(.init(id:"image:"+asset,title:VeilArchive.mediaTitle(asset,in:world) ?? "Recovered photograph",kind:.image,excerpts:facts))
             }
             if read {

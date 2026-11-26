@@ -1491,6 +1491,14 @@ final class PhoneWorldStore: ObservableObject {
         if state.flags.insert(RecoveredImageAnalysis.cameraMarker(asset)).inserted {save()}
     }
     @discardableResult
+    func recordPhotoFeatureMatch(_ id:String,first:Int,second:Int)->Bool {
+        guard let c=PhotoFeatureMatch.accepts(id,first:first,second:second,in:state) else{return false}
+        var value=connected
+        var matches=value.photoFeatureMatches ?? []
+        if matches.insert(c.id).inserted {value.photoFeatureMatches=matches;commitConnected(value)}
+        return true
+    }
+    @discardableResult
     func recordRegionalLightReview(_ asset:String,dark:Int,bright:Int)->Bool {
         guard RecoveredImageAnalysis.completed(asset,in:state),
               let image=PortraitImages.load(asset),
