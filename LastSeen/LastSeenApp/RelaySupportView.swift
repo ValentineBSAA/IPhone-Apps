@@ -58,7 +58,7 @@ struct RelaySupportView: View {
     private var displayedMessages: [RelaySupportMessage] { messages.filter { $0.id != generation?.replyID } }
     private var messages: [RelaySupportMessage] { world.state.relaySupport?.messages ?? [] }
     private func send() {
-        guard generation == nil else { return }
+        guard phase == .active,available,generation == nil else{return}
         let mayGenerate = selection.isEmpty || selection.contains { $0.kind == .document }
         if world.sendRelaySupport(draft, installed: installed, sources: sources, attachments: selection) {
             draft = ""; selection = []
@@ -69,9 +69,16 @@ struct RelaySupportView: View {
         else { failure = true }
     }
     private var available: Bool { RelaySupportAccess.available(installed: installed, flags: world.state.flags) }
+    private func clearTransient() {
+        generation=nil;showAttachments=false;report=nil;selection=[]
+    }
+    private var currentReport:RelaySupportDiagnostic? {
+        guard phase == .active,available,let report else{return nil}
+        return RelaySupportDiagnostic.capture(packageID:report.packageID,installed:installed,versions:versions,sources:sources,safeMode:safeMode,flags:world.state.flags)
+    }
     var body: some View {
         VStack(spacing: 12) {
-            if available {
+            if available && phase == .active {
                 HStack(spacing: 12) {
                     Image("Support_AlexMorgan").resizable().scaledToFill().frame(width: 52, height: 52).clipShape(Circle())
                     VStack(alignment: .leading) {
@@ -147,7 +154,8 @@ struct RelaySupportView: View {
                                         VStack(alignment: message.outgoing ? .trailing : .leading, spacing: 6) {
                                             Text(message.text).padding(12)
                                                 .background(message.outgoing ? Color.teal.opacity(0.3) : LumaDesign.raised, in: RoundedRectangle(cornerRadius: 16))
-                                            if let id = message.guideID, let guide = RelaySupportKnowledge.generalGuide(id), !message.outgoing {
+                                            if let id=message.guideID,let guide=RelaySupportKnowledge.generalGuide(id),!message.outgoing,
+                                               RelaySupportKnowledge.libraryEntry(id,flags:world.state.flags,sources:sources,installed:installed) != nil {
                                                 NavigationLink { RelaySupportGuideReader(id: id) } label: {
                                                     Label(guide.filename, systemImage: "doc.richtext").font(.caption).padding(10).lumaSurface(radius: 12)
                                                 }
@@ -198,11 +206,12 @@ struct RelaySupportView: View {
                         }.accessibilityLabel("Add support attachment")
                         TextField("Ask Alex", text: $draft, axis: .vertical).lineLimit(1...3).textFieldStyle(.roundedBorder).submitLabel(.send).onSubmit(send)
                         Button(action: send) { Image(systemName: "arrow.up.circle.fill").font(.title2).frame(width: 44, height: 44) }
-                            .disabled(generation != nil || (draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selection.isEmpty))
+                            .disabled(generation != nil || draft.count>2000 || (draft.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty && selection.isEmpty))
                             .accessibilityLabel("Send support question")
-                    }.padding(.horizontal, 14)
+                    }.padding(.horizontal,14)
+                    if !draft.isEmpty {Text("\(draft.count) / 2000").font(.caption2).foregroundColor(.secondary)}
                 }
-            } else { Text("Relay Support is not installed.").foregroundColor(.secondary) }
+            } else {Text(available ? "Support paused.":"Relay Support is not installed.").foregroundColor(.secondary)}
         }.navigationTitle("Relay Support").navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 world.beginRelaySupport(installed: installed)
@@ -220,12 +229,16 @@ struct RelaySupportView: View {
                 }
                 generation = nil
             }
-            .onDisappear { generation = nil }
+            .onDisappear {clearTransient()}
             .onChange(of: phase) {
-                if $0 != .active { generation = nil }
+                if $0 != .active {clearTransient()}
                 else if tab == "Chat" { world.markRelaySupportRead(installed: installed) }
             }
-            .onChange(of: available) { if !$0 { generation = nil } }
+            .onChange(of:available){if !$0 {clearTransient()} else if phase == .active {world.beginRelaySupport(installed:installed)}}
+            .onChange(of:world.state.flags){_ in clearTransient()}
+            .onChange(of:installed){_ in clearTransient()}
+            .onChange(of:sources){_ in clearTransient()}
+            .onChange(of:currentReport){value in if let report,value != report {self.report=nil}}
             .onChange(of: useOnDeviceAI) { if !$0 { generation = nil } }
             .onChange(of: tab) {
                 if $0 != "Chat" { generation = nil }
@@ -242,13 +255,16 @@ struct RelaySupportView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Review before sharing").font(.title2.bold())
+                            if currentReport == snapshot {
                             RelaySupportDiagnosticCard(report: snapshot)
                             Text("Only this report will be sent. Alex does not receive the rest of your phone's data.").font(.caption).foregroundColor(.secondary)
                             Button("Send report to Alex") {
+                                guard currentReport == snapshot else{return}
                                 if world.shareRelaySupportDiagnostic(snapshot, installed: installed, versions: versions, sources: sources, safeMode: safeMode) {
                                     report = nil; tab = "Chat"
                                 } else { report = nil; failure = true }
                             }.buttonStyle(.borderedProminent)
+                            } else {Text("Report no longer current. Capture a new report.").foregroundColor(.secondary)}
                         }.padding()
                     }.navigationTitle("Diagnostic report")
                         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { report = nil } } }
@@ -271,7 +287,7 @@ struct RelaySupportGuideReader: View {
     }
     var body: some View {
         ScrollView {
-            if RelaySupportAccess.available(installed: installed, flags: world.state.flags),
+            if phase == .active,RelaySupportAccess.available(installed: installed, flags: world.state.flags),
                let entry = RelaySupportKnowledge.libraryEntry(id, flags: world.state.flags, sources: sources, installed: installed) {
                 VStack(alignment: .leading, spacing: 16) {
                     Text(entry.title).font(.largeTitle.bold())
@@ -301,7 +317,7 @@ struct RelaySupportGuideReader: View {
         }.navigationTitle("Support guide").navigationBarTitleDisplayMode(.inline)
             .quickLookPreview($previewURL)
             .onChange(of: original) { if $0 != previewURL { previewURL = nil } }
-            .onChange(of: phase) { if $0 == .background { previewURL = nil } }
+            .onChange(of:phase){if $0 == .background {previewURL=nil}}
             .onDisappear { previewURL = nil }
     }
 }

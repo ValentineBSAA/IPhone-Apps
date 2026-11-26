@@ -160,12 +160,13 @@ struct VeilCommunityView:View {
 struct VeilThreadView:View {
     let id:String
     @EnvironmentObject private var world:PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
     @AppStorage("lastseen.relay.installed") private var packages=""
     @AppStorage("lastseen.relay.safeMode") private var safeMode=false
     private var allowed:Bool { VeilArchive.installed(world.state,packages:packages,safeMode:safeMode) }
     var body:some View {
         List {
-            if allowed,let thread=VeilCommunity.thread(id,in:world.state) {
+            if allowed,phase == .active,let thread=VeilCommunity.thread(id,in:world.state) {
                 Section {
                     Text(thread.title).font(.title2.bold())
                     NavigationLink { VeilHandleHistoryView(handle:thread.author) } label:{
@@ -199,7 +200,8 @@ struct VeilThreadView:View {
                 Text("No verified identities or live posting.").font(.caption).foregroundColor(.secondary)
             } else { Text("Thread unavailable") }
         }.navigationTitle("Archived thread").navigationBarTitleDisplayMode(.inline)
-            .onAppear { world.recordVeilThreadOpened(id,packages:packages,safeMode:safeMode) }
+            .onAppear {if phase == .active {world.recordVeilThreadOpened(id,packages:packages,safeMode:safeMode)}}
+            .onChange(of:phase){if $0 == .active {world.recordVeilThreadOpened(id,packages:packages,safeMode:safeMode)}}
     }
 }
 

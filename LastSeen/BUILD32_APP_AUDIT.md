@@ -4,8 +4,8 @@ Mandatory release gate for 1.9.0 (32), iPhone 16e. Every LabApp is listed exactl
 
 | App | Required review | Source status | Native | Device |
 |---|---|---|---|---|
-| VEIL | Offline routes, security modes, bookmarks, recovered media, staged unlocks | Pending | Pending | Pending |
-| Relay Support | Alex scope, attachments, local AI, technical troubleshooting | Pending | Pending | Pending |
+| VEIL | Offline routes, security modes, bookmarks, recovered media, staged unlocks | Targeted pass | Pending | Pending |
+| Relay Support | Alex scope, attachments, local AI, technical troubleshooting | Targeted pass | Pending | Pending |
 | Field Notes | Notebook, evidence links, saved comparisons, checkpoint access | Pending | Pending | Pending |
 | Phone | Recents, favorites, keypad, call outcomes, voicemail limitations | Targeted pass | Pending | Pending |
 | Messages | Search, typing, delivery, attachments, context, historical records | Targeted pass | Pending | Pending |

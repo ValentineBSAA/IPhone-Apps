@@ -2,6 +2,17 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class VeilCommunityTests:XCTestCase {
+    func testBackNavigationSkipsUnavailableServices() {
+        var state=RestoredPhoneBackup.snapshot()
+        state.flags.formUnion(["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery])
+        let (target,remaining)=VeilArchive.backTarget(["directory","records","home-index","invalid"],in:state)
+        XCTAssertEqual(target?.id,"records")
+        XCTAssertEqual(remaining,["directory"])
+        state.everydayArchiveRevision=nil
+        let (revoked,empty)=VeilArchive.backTarget(["directory","records"],in:state)
+        XCTAssertNil(revoked)
+        XCTAssertTrue(empty.isEmpty)
+    }
     func testRecoveredReferencesAndPageBookmarks() {
         var state=RestoredPhoneBackup.snapshot()
         XCTAssertTrue(VeilReferences.visible(state).isEmpty)

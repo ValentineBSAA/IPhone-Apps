@@ -83,6 +83,12 @@ enum VeilArchive {
         (world.connectedWorld?.veilPageBookmarks ?? []).intersection(Set(pages(world).map(\.id)))
     }
     static func allowsImages(_ security:String)->Bool { ["Standard","Safer"].contains(security) }
+    static func backTarget(_ history:[String],in world:PhoneWorld)->(Page?,[String]) {
+        let valid=Dictionary(uniqueKeysWithValues:pages(world).map{($0.id,$0)})
+        var remaining=Array(history.filter{valid[$0] != nil}.suffix(30))
+        guard let id=remaining.popLast() else{return (nil,remaining)}
+        return (valid[id],remaining)
+    }
     // The home cache is separate from authenticated camera snapshots.
     static let homeAssets = (1...6).map { String(format:"VEIL_Home_%02d",$0) }
     static let homeDescriptions: [String:String] = [
@@ -158,9 +164,11 @@ struct VeilRecoveredImage: View {
 }
 struct VeilHistoricalConversation: View {
     @EnvironmentObject private var world: PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
+    private func markOpened(){if phase == .active && VeilArchive.authorized(world.state){world.recordVeilCorrespondenceOpened()}}
     var body: some View {
         ScrollView {
-            if VeilArchive.authorized(world.state) {
+            if phase == .active,VeilArchive.authorized(world.state) {
                 VStack(spacing:14) {
                     Image(systemName:"person.crop.circle.badge.questionmark").font(.system(size:48)).foregroundColor(.secondary)
                     Text(VeilArchive.contactName).font(.title2.bold())
@@ -177,7 +185,8 @@ struct VeilHistoricalConversation: View {
                 }.padding(18)
             } else { Text("Conversation unavailable").padding() }
         }.navigationTitle("Recovered conversation").navigationBarTitleDisplayMode(.inline)
-            .onAppear { world.recordVeilCorrespondenceOpened() }
+            .onAppear {markOpened()}
+            .onChange(of:phase){if $0 == .active {markOpened()}}
     }
 }
 struct VeilBrowser: View {
@@ -202,6 +211,8 @@ struct VeilBrowser: View {
     @State private var selected = "directory"
     @State private var notice = ""
     @State private var history: [String] = []
+    @State private var pageSession=UUID()
+    @FocusState private var addressFocused:Bool
     private var bookmarks:Set<String> { VeilArchive.pageBookmarkIDs(world.state) }
     private var allowed: Bool { VeilArchive.installed(world.state,packages:packages,safeMode:safeMode) }
     private var pages: [VeilArchive.Page] { VeilArchive.pages(world.state) }
@@ -225,6 +236,7 @@ struct VeilBrowser: View {
     private func disconnect() {
         PhoneSensoryEngine.stopOptionalAtmosphere()
         connecting=false; connected=false; connectionStep=0; address=""; history=[]; notice=""
+        selected="directory";pageSession=UUID();addressFocused=false
     }
     private func visit(_ raw: String) {
         guard allowed,connected,wifi,phase == .active else { return }
@@ -234,9 +246,9 @@ struct VeilBrowser: View {
         }
         if selected != p.id {
             PhoneSensoryEngine.stopOptionalAtmosphere()
-            history.append(selected); history = Array(history.suffix(30))
+            history.append(selected); history = Array(history.suffix(30));pageSession=UUID()
         }
-        selected = p.id; address = p.address; notice = ""
+        selected = p.id; address = p.address; notice = "";addressFocused=false
     }
     var body: some View {
         ScrollView {
@@ -263,7 +275,7 @@ struct VeilBrowser: View {
                         Text(["Preparing local session","Checking cached directory","Opening local route","Ready"][min(3,connectionStep)]).font(.caption)
                     }
                     if !connected && !notice.isEmpty { Text(notice).font(.caption).foregroundColor(.secondary) }
-                    if connected {
+                    if connected && wifi && phase == .active {
                         DisclosureGroup("Session privacy") {
                             LabeledContent("Local circuit",value:"Session "+String(routeGeneration))
                             Picker("Security level",selection:$security) {
@@ -277,12 +289,14 @@ struct VeilBrowser: View {
                             Button("New identity") { showNewIdentity = true }
                         }.padding(12).lumaSurface()
                         HStack {
-                            TextField("Local address",text:$address).textInputAutocapitalization(.never).autocorrectionDisabled().textFieldStyle(.roundedBorder).submitLabel(.go).onSubmit { visit(address) }
+                            TextField("Local address",text:$address).textInputAutocapitalization(.never).autocorrectionDisabled().textFieldStyle(.roundedBorder).submitLabel(.go).focused($addressFocused).onSubmit { visit(address) }
                             Button("Go") { visit(address) }
                         }
                         HStack {
                             Button("Back") {
-                                if let previous = history.popLast(),let p = pages.first(where:{$0.id == previous}) { selected = p.id; address = p.address; notice = "" }
+                                let (target,remaining)=VeilArchive.backTarget(history,in:world.state)
+                                history=remaining
+                                if let p=target {selected=p.id;address=p.address;notice="";pageSession=UUID();addressFocused=false}
                             }.disabled(history.isEmpty)
                             Spacer()
                             Button(bookmarks.contains(selected) ? "Remove bookmark" : "Bookmark") {
@@ -338,12 +352,10 @@ struct VeilBrowser: View {
                                         }
                                     }
                                 }
-                                if security == "Safest" {
-                                    Label("Images hidden at this security level",systemImage:"shield").font(.caption)
+                                if !VeilArchive.allowsImages(security) {Label("Images hidden at this security level",systemImage:"shield").font(.caption)}
+                                VStack(spacing:12) {
                                     ForEach(VeilArchive.media(world.state),id:\.self){asset in VeilRecoveredImage(asset:asset).padding(10).lumaSurface()}
-                                } else {
-                                    ForEach(VeilArchive.media(world.state),id:\.self) { asset in VeilRecoveredImage(asset:asset).padding(10).lumaSurface() }
-                                }
+                                }.id(pageSession)
                             }
                         }
                         ForEach(VeilArchive.directoryPages(world.state)) { page in
@@ -362,7 +374,8 @@ struct VeilBrowser: View {
             }
             .confirmationDialog("Start a new local identity?",isPresented:$showNewIdentity,titleVisibility:.visible) {
                 Button("Clear session",role:.destructive) {
-                    history = []; selected = "directory"; address = VeilArchive.resolve("directory",in:world.state)?.address ?? ""; notice = ""
+                    guard allowed,connected,wifi,phase == .active else{return}
+                    history=[];selected="directory";address=VeilArchive.resolve("directory",in:world.state)?.address ?? "";notice="";pageSession=UUID();addressFocused=false
                     routeGeneration = routeGeneration >= 999 ? 1 : routeGeneration+1
                 }
                 Button("Cancel",role:.cancel) {}
@@ -389,7 +402,7 @@ struct VeilBrowser: View {
                 let valid=Set(pages.map(\.id))
                 history=history.filter{valid.contains($0)}
                 if !valid.contains(selected) {
-                    selected="directory"
+                    selected="directory";pageSession=UUID()
                     address=VeilArchive.resolve("directory",in:world.state)?.address ?? ""
                     notice="This recovered service is no longer available."
                 }
