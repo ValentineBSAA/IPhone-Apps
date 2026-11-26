@@ -79,9 +79,11 @@ enum MotionwellArchive {
             (filter != "History" || state.watch[clip.id] != nil)
         }
         if filter=="History" {
-            return rows.sorted{($0.id== $1.id) ? false :
-                (state.watch[$0.id]?.lastWatched ?? .distantPast) == (state.watch[$1.id]?.lastWatched ?? .distantPast) ? $0.id<$1.id :
-                (state.watch[$0.id]?.lastWatched ?? .distantPast) > (state.watch[$1.id]?.lastWatched ?? .distantPast)}
+            return rows.sorted {
+                let left=state.watch[$0.id]?.lastWatched ?? .distantPast
+                let right=state.watch[$1.id]?.lastWatched ?? .distantPast
+                return left == right ? $0.id < $1.id : left > right
+            }
         }
         return rows
     }

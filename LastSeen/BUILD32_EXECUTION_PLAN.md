@@ -446,3 +446,11 @@ Master checklist stays truthful: approved artwork is not integrated, initial sou
 ## B32 tranche 97: Clock and Calculator
 - [x] SOURCE: reviewed timer/stopwatch state and checkpoint rebasing; bounded finite timer display and configured duration, guarded stopwatch arithmetic and invalid stored values. Extracted calculator state machine with repeat equals, operator replacement, divide-by-zero recovery, contextual percentage, digit deletion, decimal validation, adaptive keys and confirmed history clearing. Existing local history and timer identity retained. Added arithmetic/time boundary tests and updated app register. Initial tree creation rejected due to incorrect base identifier; corrected retry committed.
 - [ ] Native tests, device timer completion, stopwatch rebase, calculator layout and all other acceptance remain open. No IPA or native workflow dispatched.
+
+## B32 tranche 98: Browser and Voice Memos
+- [x] SOURCE: bounded browser history/navigation, active inspection and transient reveal/review reset; memo search, clamped seek, unavailable-record reset and lifecycle playback guards. Added regression cases and updated register. No new audio or assets.
+- [ ] Native navigation and playback tests pending.
+
+## B32 tranche 99: Dayblink and Motionwell
+- [x] SOURCE: Dayblink open-once viewer holds an ephemeral record ID, rechecks consumed record and current archive access, clears on inactivity/revocation/departure, distinguishes opened/expired and shows authored caption during the current viewing only; active story marking, character count and chronological saved pictures. Motionwell trimmed handle search, deterministic history ordering, bounded progress and resume, failed local media retry, active player setup, route/interruption/background pause, confirmed history clearing, comment limits. Added regression cases and app register updates. No new media, publication schedules or story gates.
+- [ ] Native tests, actual six-video playback/decoding, view lifecycle, notification routing, and hardware acceptance remain open. No IPA or native workflow dispatched.
