@@ -23,13 +23,15 @@ enum LumaArchiveGuidance {
         let w=c.world
         guard VeilArchive.authorized(w) else{return nil}
         func hint(_ text:String,_ app:LabApp)->LumaAssistantAnswer {
-            .init(text:text,clipID:"conversation",app:c.availableApps.contains(app) ? app:nil)
+            // Already recovered records remain readable without simulated Wi-Fi.
+            // Only a step that actually needs the anonymous browser requires it.
+            if app == .veil && !c.wifi {
+                return .init(text:"The phone's Wi-Fi is off. You can review records already recovered, or return to Settings to reconnect the local browser.",clipID:"conversation",app:c.availableApps.contains(.settings) ? .settings:nil)
+            }
+            return .init(text:text,clipID:"conversation",app:c.availableApps.contains(app) ? app:nil)
         }
         guard c.availableApps.contains(.veil),!c.safeMode else {
             return hint("The local anonymous browser is not available in this session. You can continue exploring ordinary records, or check your local package environment.",.relay)
-        }
-        if !c.wifi {
-            return hint("The phone's simulated Wi-Fi is off. You can review records already recovered, or return to Settings to reconnect the local browser.",.settings)
         }
         if VeilCommunity.reconstructionOpened(w) {
             return hint("You've read the recovered annotation review. You can revisit Nora's own account or keep your remaining questions open; you don't need to force an identity or a theory.",.messages)

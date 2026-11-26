@@ -40,6 +40,8 @@ import XCTest
         XCTAssertFalse(explicitMain.answer.text.contains("recovered correspondence"))
         let explicitArchive=LumaAssistantConversation.reply("archive investigation hint",context:context())
         XCTAssertEqual(explicitArchive.answer.text,start.answer.text)
+        let offlineCorrespondence=LumaAssistantContext(world:world,availableApps:[.messages,.veil,.settings],wifi:false,sound:false,haptics:false,safeMode:false,installedCount:1,timerEnd:0,now:world.createdAt)
+        XCTAssertEqual(LumaAssistantConversation.reply("archive investigation hint",context:offlineCorrespondence).answer.app,.messages)
         XCTAssertFalse(start.answer.text.contains("home copies"))
         let unavailable=LumaAssistantConversation.reply("hint",context:context([.messages]))
         XCTAssertNil(unavailable.answer.app)

@@ -25,6 +25,10 @@ import XCTest
             XCTAssertNil(response.packageID)
             XCTAssertNil(store.relaySupportGenerationRequest(installed:installed,sources:sources))
         }
+        XCTAssertFalse(RelaySupportScope.personalQuestion("Where is Nora's backup?"))
+        XCTAssertFalse(RelaySupportScope.personalQuestion("Where are Nora's phone settings?"))
+        XCTAssertTrue(RelaySupportScope.personalQuestion("Where is Nora now?"))
+        XCTAssertTrue(RelaySupportScope.personalQuestion("Did Nora like music on the phone?"))
         XCTAssertTrue(store.sendRelaySupport("How do I use Compact Grid?",installed:installed,sources:sources))
         XCTAssertEqual(store.state.relaySupport?.messages.last?.packageID,"compact")
     }

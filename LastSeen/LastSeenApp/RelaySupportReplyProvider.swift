@@ -15,10 +15,14 @@ protocol RelaySupportReplyProvider {
 enum RelaySupportScope {
     static func personalQuestion(_ text:String)->Bool {
         let words=Set(text.lowercased().split{!$0.isLetter && !$0.isNumber}.map(String.init))
-        let personal:Set<String>=["whereabouts","missing","disappeared","stalking","stalker","family","friends","childhood","hobbies","relationship","boyfriend","girlfriend","favorite","favourite","identity","personal","where","who","like","likes","liked","know","life","music"]
-        return words.contains("nora") && !words.isDisjoint(with:personal)
+        guard words.contains("nora") else{return false}
+        let personal:Set<String>=["whereabouts","missing","disappeared","stalking","stalker","family","friends","childhood","hobbies","relationship","boyfriend","girlfriend","favorite","favourite","identity","personal","life","music"]
+        if !words.isDisjoint(with:personal) {return true}
+        let ambiguous:Set<String>=["where","who","like","likes","liked","know"]
+        let technical:Set<String>=["backup","restore","checkpoint","package","packages","relay","patchline","settings","diagnostic","diagnostics","respring","reboot","crash","error","files","storage","device","battery","wifi","bluetooth"]
+        return !words.isDisjoint(with:ambiguous) && words.isDisjoint(with:technical)
     }
-    static let personalReply="I handle technical support for the simulated phone. Luma is the better assistant for questions about Nora and the records you've recovered. I don't have access to her private history."
+    static let personalReply="I handle technical support for the phone. Luma is the better assistant for questions about Nora and the records you've recovered. I don't have access to her private history."
 }
 struct RelaySupportLocalProvider: RelaySupportReplyProvider {
     private static let stop: Set<String> = ["a","an","the","to","of","and","or","is","it","i","my","me","you","can","could","would","how","what","where","why","do","does","did","with","for","this","that","please","about","tell","help","use","using"]
