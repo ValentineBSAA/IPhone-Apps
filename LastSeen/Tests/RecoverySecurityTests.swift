@@ -54,6 +54,23 @@ final class RecoverySecurityTests: XCTestCase {
         XCTAssertFalse(OwnerSecurityPolicy.acceptsCallback(currentRequest: true, eligible: true, background: true))
     }
 
+    func testProtectedDisplayRequiresLiveOwnerSessionAndCheckpoint() {
+        for session in [false,true] {
+            for passcode in [false,true] {
+                for owner in [false,true] {
+                    for appearance in [false,true] {
+                        for active in [false,true] {
+                            for current in [false,true] {
+                                XCTAssertEqual(OwnerSecurityPolicy.canDisplayProtected(session:session,passcodeSession:passcode,ownerVerified:owner,appearanceEnrolled:appearance,active:active,sameCheckpoint:current),
+                                               session && owner && active && current && (passcode || appearance))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     func testOwnerCodeAndBiometricGate() {
         XCTAssertTrue(OwnerSecurityPolicy.accepts(OwnerSecurityPolicy.fixtureCode))
         XCTAssertFalse(OwnerSecurityPolicy.accepts(""))

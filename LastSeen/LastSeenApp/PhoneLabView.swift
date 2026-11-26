@@ -129,7 +129,7 @@ struct PhoneLabView: View {
                     .safeAreaInset(edge: .bottom, spacing: 0) { gameHomeHandle }
                     .toolbar {
                         ToolbarItem(placement: .navigationBarTrailing) {
-                            Button { path = NavigationPath() } label: {
+                            Button { returnHome() } label: {
                                 Image(systemName: "house").accessibilityLabel("Return to phone home")
                             }
                         }
@@ -154,8 +154,12 @@ struct PhoneLabView: View {
             .navigationDestination(for: AppPage.self) { page in
                 Group {
                     switch page {
-                    case .worldThread(let neighbor): NeighborConversationView(neighbor: neighbor, reactive: true)
-                    case .worldProfile(let neighbor): NeighborProfileView(neighbor: neighbor, phoneLab: true)
+                    case .worldThread(let neighbor):
+                        if !locked && !checkpointReboot && Neighbor.visible(in:world.state).contains(neighbor) {NeighborConversationView(neighbor:neighbor,reactive:true)}
+                        else {Text("Conversation unavailable")}
+                    case .worldProfile(let neighbor):
+                        if !locked && !checkpointReboot && Neighbor.visible(in:world.state).contains(neighbor) {NeighborProfileView(neighbor:neighbor,phoneLab:true)}
+                        else {Text("Contact unavailable")}
                     case .note(let id): PhoneNoteEditorView(noteID: id)
                     default: Text("Not available in Phone Lab")
                     }
@@ -315,8 +319,9 @@ struct PhoneLabView: View {
         }
         .onChange(of: locked) { value in
             guard value else { return }
-            pendingLumaImage=nil
-            activityBanner = nil; activityQueue.clear()
+            returnHome()
+            panel=nil;banner=nil
+            activityBanner=nil;activityQueue.clear()
             PhoneSensoryEngine.cancelAuthentication()
             guard didConfigureFeedback, phase == .active, !checkpointReboot else { return }
             PhoneSensoryEngine.play(.lock, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
@@ -333,7 +338,7 @@ struct PhoneLabView: View {
                 }
                 else { PhoneSensoryEngine.stopSound(); PhoneSensoryEngine.stopHaptics() }
                 banner = nil; activityBanner = nil; activityQueue.clear()
-            }
+            } else {routePendingUnlock()}
         }
         .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { notification in
             if let raw = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
@@ -414,7 +419,8 @@ struct PhoneLabView: View {
         }) {
             ScrollView {
                 OwnerPasscodeView(onSuccess: {
-                    ownerVerified = true; showOwnerPasscode = false; completeUnlock()
+                    guard phase == .active,locked,!checkpointReboot,showOwnerPasscode else{return}
+                    ownerVerified=true;showOwnerPasscode=false;completeUnlock()
                 }, onCancel: { showOwnerPasscode = false; pendingThread = nil; pendingActivityID = nil })
             }.preferredColorScheme(.dark).presentationDetents([.large])
         }
@@ -536,15 +542,21 @@ struct PhoneLabView: View {
     }
 
     private func completeUnlock() {
-        guard locked else { return }
+        guard locked,!checkpointReboot,phase != .background else{return}
         authNotice = ""
         PhoneSensoryEngine.authentication(.unlock, sound: messageSound, haptics: messageHaptics)
         withAnimation(.easeInOut(duration: 0.25)) { locked = false }
-        let activityID = pendingActivityID
-        pendingActivityID = nil
-        if let activityID, let notice = LumaActivityCatalog.visible(world.state).first(where: { $0.id == activityID }) {
-            pendingThread = nil; openActivity(notice)
-        } else if let neighbor = pendingThread { pendingThread = nil; openThread(neighbor) }
+        routePendingUnlock()
+    }
+
+    private func routePendingUnlock() {
+        guard phase == .active,!locked,!checkpointReboot else{return}
+        let activityID=pendingActivityID
+        let neighbor=pendingThread
+        pendingActivityID=nil;pendingThread=nil
+        if let activityID {
+            if let notice=LumaActivityCatalog.visible(world.state).first(where:{$0.id==activityID}) {openActivity(notice)}
+        } else if let neighbor {openThread(neighbor)}
     }
 
     private func openActivity(_ snapshot:LumaActivityNotice) {
@@ -560,6 +572,7 @@ struct PhoneLabView: View {
     }
 
     private func openThread(_ neighbor: Neighbor) {
+        guard phase == .active,!locked,!checkpointReboot,Neighbor.visible(in:world.state).contains(neighbor) else{return}
         panel = nil
         banner = nil
         open(.messages)
@@ -594,9 +607,11 @@ struct PhoneLabView: View {
             return
         }
         authContext = context
+        let requestEpoch=world.checkpointEpoch
         context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Unlock your fictional Last Seen phone.") { success, error in
             DispatchQueue.main.async {
-                guard authContext === context else { return }
+                guard authContext === context else{return}
+                guard requestEpoch==world.checkpointEpoch else{cancelLockAuthentication();return}
                 guard OwnerSecurityPolicy.acceptsCallback(currentRequest: true, eligible: locked && biometricUnlock && !checkpointReboot,
                     background: phase == .background || UIApplication.shared.applicationState == .background) else {
                     cancelLockAuthentication()
@@ -869,7 +884,7 @@ struct PhoneLabView: View {
     }
 
     private func open(_ app: LabApp) {
-        guard appAvailable(app) else { return }
+        guard phase == .active,!locked,!checkpointReboot,appAvailable(app) else{return}
         pendingLumaImage=nil
         homeFolder = nil
         OpeningQA.record("Opened in-game app: \(app.rawValue)")

@@ -6,6 +6,9 @@ import UIKit
 enum OwnerSecurityPolicy {
     static let fixtureCode = "241607"
     static func accepts(_ candidate: String) -> Bool { candidate == fixtureCode }
+    static func canDisplayProtected(session:Bool,passcodeSession:Bool,ownerVerified:Bool,appearanceEnrolled:Bool,active:Bool,sameCheckpoint:Bool)->Bool {
+        session && ownerVerified && active && sameCheckpoint && (passcodeSession || appearanceEnrolled)
+    }
     static func canUseBiometrics(ownerVerified: Bool, appearanceEnrolled: Bool) -> Bool {
         ownerVerified && appearanceEnrolled
     }
@@ -26,6 +29,7 @@ enum ProtectedArea: String {
 struct OwnerPasscodeView: View {
     let onSuccess: () -> Void
     var onCancel: (() -> Void)? = nil
+    @Environment(\.scenePhase) private var phase
     @State private var digits = ""
     @State private var attempts = 0
     @State private var cooldownUntil = Date.distantPast
@@ -59,7 +63,7 @@ struct OwnerPasscodeView: View {
                                 }.frame(maxWidth: .infinity).frame(height: 56)
                                     .lumaSurface(radius: 18)
                             }.buttonStyle(.plain).accessibilityLabel(key == "delete" ? "Delete digit" : key)
-                                .disabled(remaining > 0)
+                                .disabled(remaining > 0 || phase != .active)
                         }
                     }
                 }.frame(maxWidth: 310)
@@ -69,10 +73,10 @@ struct OwnerPasscodeView: View {
                 if showHint { Text("Hint: check the restored Files and book reservation.").font(.caption).foregroundColor(.secondary) }
                 if let onCancel { Button("Cancel", action: onCancel).font(.subheadline) }
             }.padding(20).frame(maxWidth: .infinity)
-        }
+        }.onChange(of:phase){if $0 != .active {digits="";showHint=false}}
     }
     private func press(_ key: String) {
-        guard Date() >= cooldownUntil else { return }
+        guard phase == .active,Date() >= cooldownUntil else{return}
         if key == "delete" {
             if !digits.isEmpty { digits.removeLast() }
             return
@@ -96,6 +100,9 @@ struct OwnerPasscodeView: View {
 struct ProtectedAreaView: View {
     let area: ProtectedArea
     var onOpened: () -> Void = {}
+    @EnvironmentObject private var world:PhoneWorldStore
+    @State private var sessionEpoch:UUID?
+    @State private var openingRecorded=false
     @AppStorage("lastseen.security.ownerVerified") private var ownerVerified = false
     @AppStorage("lastseen.security.appearanceEnrolled") private var appearanceEnrolled = false
     @Environment(\.scenePhase) private var phase
@@ -110,13 +117,20 @@ struct ProtectedAreaView: View {
         OwnerSecurityPolicy.canUseBiometrics(ownerVerified: ownerVerified, appearanceEnrolled: appearanceEnrolled)
     }
 
+    private var displayAllowed:Bool {
+        OwnerSecurityPolicy.canDisplayProtected(session:session,passcodeSession:passcodeSession,ownerVerified:ownerVerified,appearanceEnrolled:appearanceEnrolled,active:phase == .active,sameCheckpoint:sessionEpoch == world.checkpointEpoch)
+    }
+    private func recordOpening() {
+        guard displayAllowed,!openingRecorded else{return}
+        openingRecorded=true;onOpened()
+    }
     var body: some View {
         ScrollView {
             VStack(spacing: 18) {
-                if session {
+                if displayAllowed {
                     content
                     Button("Lock this area") { clearSession() }.buttonStyle(.bordered)
-                } else {
+                } else if phase == .active {
                     if canUseBiometrics {
                         Button { authenticate(forEnrollment: false) } label: {
                             Label("Authenticate with Device biometrics", systemImage: "faceid").frame(maxWidth: .infinity)
@@ -124,17 +138,21 @@ struct ProtectedAreaView: View {
                         Text("Or use the owner passcode").font(.caption).foregroundColor(.secondary)
                     }
                     OwnerPasscodeView(onSuccess: {
-                        ownerVerified = true; session = true; passcodeSession = true
+                        guard phase == .active,context == nil else{return}
+                        ownerVerified=true;sessionEpoch=world.checkpointEpoch;passcodeSession=true;session=true
                         PhoneSensoryEngine.authentication(.unlock, sound: sound, haptics: haptics)
                     }).disabled(context != nil)
-                }
+                } else {Label("Protected content hidden",systemImage:"lock.shield")}
                 if !notice.isEmpty { Text(notice).font(.footnote).foregroundColor(.secondary) }
             }.padding()
         }
         .navigationTitle(area.rawValue).navigationBarTitleDisplayMode(.inline)
-        .onChange(of: session) { unlocked in if unlocked { onOpened() } }
-        .onDisappear { clearSession() }
-        .onChange(of: phase) { if $0 == .background { clearSession() } }
+        .onChange(of:displayAllowed){if $0 {recordOpening()}}
+        .onDisappear {clearSession()}
+        .onChange(of:phase){if $0 == .background {clearSession()} else if $0 == .active {recordOpening()}}
+        .onChange(of:world.checkpointEpoch){_ in clearSession()}
+        .onChange(of:ownerVerified){if !$0 {clearSession()}}
+        .onChange(of:appearanceEnrolled){if !$0 && !passcodeSession {clearSession()}}
         .sheet(isPresented: $enrollment) {
             VStack(spacing: 20) {
                 Image(systemName: "faceid").font(.system(size: 75, weight: .light)).foregroundColor(.teal)
@@ -184,7 +202,8 @@ struct ProtectedAreaView: View {
         context = nil
         previous?.invalidate()
         PhoneSensoryEngine.cancelAuthentication()
-        session = false; passcodeSession = false; enrollment = false; notice = ""
+        session=false;passcodeSession=false;enrollment=false;notice=""
+        sessionEpoch=nil;openingRecorded=false
     }
     private func authenticate(forEnrollment: Bool) {
         guard context == nil, phase == .active, UIApplication.shared.applicationState != .background,
@@ -197,9 +216,11 @@ struct ProtectedAreaView: View {
             return
         }
         context = candidate
+        let requestEpoch=world.checkpointEpoch
         candidate.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: forEnrollment ? "Register your appearance in Last Seen." : "Unlock protected fictional records in Last Seen.") { success, error in
             DispatchQueue.main.async {
-                guard context === candidate else { return }
+                guard context === candidate else{return}
+                guard requestEpoch==world.checkpointEpoch else{clearSession();return}
                 let eligible = forEnrollment ? (ownerVerified && session && passcodeSession && enrollment) : canUseBiometrics
                 guard OwnerSecurityPolicy.acceptsCallback(currentRequest: true, eligible: eligible,
                     background: phase == .background || UIApplication.shared.applicationState == .background) else {
@@ -220,7 +241,7 @@ struct ProtectedAreaView: View {
                     notice = "Appearance registered."
                     PhoneSensoryEngine.authentication(.unlock, sound: sound, haptics: haptics)
                 } else if canUseBiometrics {
-                    session = true; passcodeSession = false; notice = ""
+                    sessionEpoch=requestEpoch;passcodeSession=false;session=true;notice=""
                     PhoneSensoryEngine.authentication(.unlock, sound: sound, haptics: haptics)
                 }
             }
