@@ -1,7 +1,7 @@
 """Pinned expansion inventory and explicitly reviewed runtime subset."""
 import hashlib, json, pathlib, struct, zipfile
 
-APPROVED = {"WorldPhoto_E01_05.png", "WorldPhoto_E01_08.png"}
+APPROVED = {f"WorldPhoto_E01_{i:02}.png" for i in range(1,11)}
 
 def verified_originals(path):
     path=pathlib.Path(path)
@@ -38,4 +38,4 @@ if __name__=="__main__":
     reject_held(app.rglob("*"))
     for name,data in originals.items():
         (app/name).write_bytes(data)
-    print("Verified 18 expansion originals; imported exactly two reviewed camera-roll originals.")
+    print(f"Verified 18 expansion originals; imported exactly {len(APPROVED)} reviewed camera-roll originals.")

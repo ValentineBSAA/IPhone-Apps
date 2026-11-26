@@ -29,10 +29,24 @@ struct NoraPhoto: Identifiable {
 }
 
 enum NoraPhotoCatalog {
-    static let everydayTitles=["WorldPhoto_E01_05":"Trying on a dress","WorldPhoto_E01_08":"Autumn walk"]
+    static let everydayTitles=[
+        "WorldPhoto_E01_01":"Morning coffee","WorldPhoto_E01_02":"Coffee and sketches",
+        "WorldPhoto_E01_03":"Late work session","WorldPhoto_E01_04":"Browsing books",
+        "WorldPhoto_E01_05":"Trying on a dress","WorldPhoto_E01_06":"Dinner together",
+        "WorldPhoto_E01_07":"Studio snapshot","WorldPhoto_E01_08":"Autumn walk",
+        "WorldPhoto_E01_09":"Market trip","WorldPhoto_E01_10":"Rainy evening"
+    ]
     static let everydayDescriptions=[
+        "WorldPhoto_E01_01":"Selfie beside a window, indoor plants and a refrigerator, holding an iced drink.",
+        "WorldPhoto_E01_02":"A pastry, iced drink and open sketchbook on a cafe table. The visible cafe branding is not an established location.",
+        "WorldPhoto_E01_03":"A work session at a desk with monitors, notes, sketches and a warm desk lamp.",
+        "WorldPhoto_E01_04":"Browsing a bookshop, holding books beside a shelf. No confirmed purchase or store identity.",
         "WorldPhoto_E01_05":"Mirror photograph of a patterned dress, cardigan and floral phone case in a clothing shop. No verified purchase or date.",
-        "WorldPhoto_E01_08":"Outdoor selfie in warm autumn light, with fallen leaves and a takeaway cup in a bag. No verified location or date."
+        "WorldPhoto_E01_06":"A group sharing a meal at a candlelit table. The other people are not identified by the archive.",
+        "WorldPhoto_E01_07":"A group snapshot beside a workstation and Blue Hour Interactive sign. The image does not authenticate the other participants.",
+        "WorldPhoto_E01_08":"Outdoor selfie in warm autumn light, with fallen leaves and a takeaway cup in a bag. No verified location or date.",
+        "WorldPhoto_E01_09":"A shopping basket with produce beside a flower display. No verified purchase or shop identity.",
+        "WorldPhoto_E01_10":"A seated passenger with a takeaway cup, bag and rain on the vehicle window. No verified journey or date."
     ]
     static let photos: [NoraPhoto] = (1...12).map { i in
         let gate: NoraPhotoGate

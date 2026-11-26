@@ -654,3 +654,8 @@ Master checklist stays truthful: approved artwork is not integrated, initial sou
 ## B32 tranche 149: studio workbench and environment reference expansion
 - [x] SOURCE: ten additional inspected artwork previews assigned to three optional local Browser galleries. Explicit authored source context, discoverable links, unique assets, accessible descriptions, Luma handoff via existing image inspection, studio-sign region puzzle, two synthetic findings, access-revocation regression. Reused existing verified standalone PNGs, no changes to originals, no mandatory new puzzle gate. 26/47 assigned; 21 remain (5 recovered,16 expansion).
 - [ ] Latest native compile/tests and creative voice acceptance remain open. No native build or IPA dispatched.
+
+## B32 tranche 150: finish recovered collection and expand everyday life
+- [x] Prior source-only run 45766441714 SUCCESS at c4de81b: whole-tree Swift parse, release contract/9 fixtures, pinned artwork and actual two-original importer/reject-held checks passed. No native compile.
+- [x] SOURCE: four additional recovered images assigned to gated prototype scene/prop page; one deliberately unlisted for tonal fit (original still retained in existing standalone resource set). Eight ordinary expansion images assigned to camera roll; ten approved noncomposite originals now allowlisted, text descriptions, Luma source access, existing favorites and analysis. No new required mystery dependency. Regression covers earned page, held record and ten expansion assets. 38 assigned, one intentional hold, eight expansion decisions pending.
+- [ ] Latest source/native tests, remaining expansion decisions, voice creative approval. No native workflow dispatched or IPA produced.

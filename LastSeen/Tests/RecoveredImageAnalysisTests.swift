@@ -141,7 +141,7 @@ import XCTest
     }
     func testReviewedEverydayExpansionPhotosAreOrdinaryRecords() throws {
         let store=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
-        let ids=["WorldPhoto_E01_05","WorldPhoto_E01_08"]
+        let ids=(1...10).map{String(format:"WorldPhoto_E01_%02d",$0)}
         for id in ids {
             XCTAssertTrue(NoraPhotoCatalog.library(store.state.flags,filter:.recovered).contains{$0.id==id})
             XCTAssertNil(RecoveredImageAnalysis.record(id,in:store.state))
@@ -153,6 +153,29 @@ import XCTest
         XCTAssertEqual(Set(NoraPhotoCatalog.photos.filter{$0.id.hasPrefix("WorldPhoto_E01_")}.map(\.id)),Set(ids))
         XCTAssertFalse(NoraPhotoCatalog.photos.contains{$0.id=="WorldPhoto_E01_11"})
         XCTAssertEqual(NoraPhotoCatalog.library(store.state.flags,filter:.favorites,favorites:Set(ids)).map(\.id),ids)
+    }
+    func testSceneStudiesRemainOptionalAndHeldArtIsUnlisted() throws {
+        let store=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
+        let page=try XCTUnwrap(LumaWebCatalog.page("studio-scene-studies"))
+        XCTAssertFalse(page.available(store.state.flags))
+        store.visitWebRecord("studio-projects")
+        store.visitWebRecord("studio-reference-gallery")
+        XCTAssertTrue(page.available(store.state.flags))
+        store.inspectWebAttachment("Recovered_B27_04")
+        XCTAssertNil(RecoveredImageAnalysis.record("Recovered_B27_04",in:store.state))
+        store.visitWebRecord(page.id)
+        for id in page.images {
+            XCTAssertNotNil(PortraitImages.load(id))
+            store.inspectWebAttachment(id)
+            XCTAssertNotNil(RecoveredImageAnalysis.record(id,in:store.state))
+            XCTAssertTrue(LumaAssistantEvidence.selected("image:"+id,in:store.state)?.excerpts.contains{$0.hasPrefix("Visible scene:")} ?? false)
+        }
+        XCTAssertEqual(page.images.count,4)
+        XCTAssertFalse(LumaWebCatalog.pages.flatMap(\.images).contains("Recovered_B27_06"))
+        XCTAssertFalse(VeilArchive.media(store.state).contains("Recovered_B27_06"))
+        var revoked=store.state
+        revoked.flags.remove("web.visited.studio-reference-gallery")
+        XCTAssertNil(RecoveredImageAnalysis.record("Recovered_B27_04",in:revoked))
     }
     func testStudioReferenceGalleriesAndBrandComparison() throws {
         let store=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)

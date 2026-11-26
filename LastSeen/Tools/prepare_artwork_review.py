@@ -17,7 +17,8 @@ PACKS = (
      "0d7b45bc6bc2ec65d77c2fb47c41ed9879fb79da0e610bfd5a07fa9d30ab0e10",
      46400998, "WorldPhoto_E01_", 18),
 )
-ASSIGNED = {f"Recovered_B27_{i:02}" for i in (1, 2, 3, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29)} | {"WorldPhoto_E01_05","WorldPhoto_E01_08"}
+ASSIGNED = {f"Recovered_B27_{i:02}" for i in range(1,30) if i != 6} | {f"WorldPhoto_E01_{i:02}" for i in range(1,11)}
+HELD = {"Recovered_B27_06": "Reviewed; intimate horror composition is not needed for the playable investigation."}
 
 
 def require(condition, message):
@@ -56,7 +57,7 @@ def inspect_pack(root, pack):
                 original.load()
                 require(original.size == (record["width"], record["height"]),
                         f"{asset}: dimensions mismatch")
-            if asset not in ASSIGNED:
+            if asset not in ASSIGNED and asset not in HELD:
                 entries.append((asset, data, {
                     "asset": asset, "source_archive": filename,
                     "original_sha256": record["sha256"],
@@ -74,7 +75,7 @@ def prepare(root, output):
     require(not output.exists(), "Choose a new output directory; existing reviews are never overwritten.")
     # Validate both complete archives before creating any review output.
     entries = [entry for pack in PACKS for entry in inspect_pack(root, pack)]
-    require(len(entries) == 21, "Expected 21 outstanding originals")
+    require(len(entries) == 8, "Expected 8 outstanding originals")
     output.mkdir(parents=True)
     originals = output / "originals"
     originals.mkdir()
@@ -93,7 +94,7 @@ def prepare(root, output):
         sheet.save(output / f"review-{start//8+1:02}.png")
     (output / "review-ledger.json").write_text(
         json.dumps({"review_complete": False, "runtime_import": False,
-                    "assets": [record for _, _, record in entries]},
+                    "held": HELD, "assets": [record for _, _, record in entries]},
                    indent=2) + "\n", encoding="utf-8")
     print(f"Prepared {len(entries)} pending originals, {(len(entries)+7)//8} contact sheets and a private ledger.")
     print("No gameplay assignment or runtime import has been performed.")
