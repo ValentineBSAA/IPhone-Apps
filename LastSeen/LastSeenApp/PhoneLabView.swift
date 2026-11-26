@@ -97,7 +97,10 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.relay.tealTheme") private var tealTheme = false
     @AppStorage("lastseen.relay.installed") private var relayInstalled = ""
     @AppStorage("lastseen.relay.safeMode") private var safeMode = false
-    private func tweak(_ id: String) -> Bool { RelayCatalog.tweakActive(id, installed: relayInstalled, safeMode: safeMode, flags: world.state.flags) }
+    private func tweak(_ id: String) -> Bool {
+        EntityEcho.overridesTweak(id,flags:world.state.flags,safeMode:safeMode) ||
+        RelayCatalog.tweakActive(id, installed: relayInstalled, safeMode: safeMode, flags: world.state.flags)
+    }
     private var fieldNotesAvailable: Bool { RecoveryCircuit.unlocked(world.state.flags) && tweak("fieldnotes") }
     private var supportAvailable: Bool { RelaySupportAccess.available(installed: relayInstalled, flags: world.state.flags) }
     private var veilAvailable: Bool { VeilArchive.installed(world.state, packages: relayInstalled, safeMode: safeMode) }
@@ -852,6 +855,11 @@ struct PhoneLabView: View {
                 Image(systemName:"bell").font(.title3).frame(width:44,height:44).contentShape(Rectangle())
             }.accessibilityLabel("Notifications").simultaneousGesture(pullDown(.notifications))
             Spacer(minLength:0)
+            if EntityEcho.active(world.state.flags) {
+                Button {open(.patchline)} label:{
+                    Image(systemName:"exclamationmark.shield.fill").foregroundColor(.orange).frame(width:44,height:44)
+                }.accessibilityLabel("Foreign extension detected, open Patchline")
+            }
             if safeMode {
                 Button { open(.relay) } label:{
                     Label("Safe Mode",systemImage:"exclamationmark.shield").font(.caption.weight(.medium)).foregroundColor(.orange)

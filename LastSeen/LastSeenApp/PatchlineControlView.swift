@@ -59,6 +59,15 @@ struct PatchlineControlView: View {
                     }.navigationTitle("Package activity")
                 }
             }
+            if EntityEcho.active(earnedFlags) {
+                Section("Foreign extension") {
+                    Label(safeMode ? "ECHO paused · still installed" : "ECHO · three unverified hooks",systemImage:"exclamationmark.shield").foregroundColor(.orange)
+                    Text("Clock seconds, compact icons and hidden badge counts. Safe Mode pauses these overrides; quarantine removes them.").font(.caption)
+                    NavigationLink { EntityEchoRemovalView() } label: {Label("Contain foreign extension",systemImage:"waveform.path.ecg")}
+                }
+            } else if earnedFlags.contains(EntityEcho.removed) {
+                Section("Foreign extension") {Label("ECHO quarantined",systemImage:"checkmark.shield")}
+            }
             Section("Diagnostics") {
                 NavigationLink { PatchlineLoaderDiagnostics(flags: earnedFlags) } label: { Label("Tweak loader diagnostics", systemImage: "cpu") }
                 NavigationLink { RecoveryCircuitView() } label: { Label("Recovery Circuit", systemImage: "point.3.connected.trianglepath.dotted") }

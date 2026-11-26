@@ -1732,6 +1732,29 @@ final class PhoneWorldStore: ObservableObject {
         guard VeilArchive.authorized(state) else { return }
         if state.flags.insert("veil.correspondence.opened").inserted { save() }
     }
+    @discardableResult func installEntityEcho(packages:String,safeMode:Bool,epoch:UUID)->Bool {
+        guard epoch==checkpointEpoch, !recoveryRequired, !settingsRecoveryRequired,
+              EntityEcho.canInstall(state), VeilArchive.installed(state,packages:packages,safeMode:safeMode) else{return false}
+        return commitEntityEchoFlag(EntityEcho.installed)
+    }
+
+    @discardableResult func removeEntityEcho(answers:[String],epoch:UUID)->Bool {
+        guard epoch==checkpointEpoch, !recoveryRequired, !settingsRecoveryRequired,
+              EntityEcho.active(state.flags),EntityEcho.valid(answers) else{return false}
+        return commitEntityEchoFlag(EntityEcho.removed)
+    }
+
+    private func commitEntityEchoFlag(_ flag:String)->Bool {
+        let prior=state.flags
+        state.flags.insert(flag)
+        save()
+        if persistenceFailed || recoveryRequired || settingsRecoveryRequired {
+            state.flags=prior
+            return false
+        }
+        return true
+    }
+
     private func save() {
         guard persistToDisk,!recoveryRequired,!settingsRecoveryRequired else { return }
         guard !LumaRestoreJournal.pending(worldURL:storageURL) else {

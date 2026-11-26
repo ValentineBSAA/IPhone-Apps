@@ -329,6 +329,9 @@ struct VeilBrowser: View {
                         if let page = pages.first(where:{$0.id == selected}) {
                             Text(page.title).font(.title2.bold())
                             Text(page.text)
+                            if page.id == "directory" {
+                                EntityEchoOffer(packages:packages,safeMode:safeMode,sessionAvailable:allowed && connected && wifi && phase == .active)
+                            }
                             if page.id == "boards" {
                                 NavigationLink { VeilCommunityView() } label: { Label("Browse archived boards",systemImage:"text.bubble") }
                             }
