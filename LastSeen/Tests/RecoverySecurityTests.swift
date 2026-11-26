@@ -37,7 +37,8 @@ final class RecoverySecurityTests: XCTestCase {
         XCTAssertEqual(RestartPhase.opening(at: 2), .userspace)
         XCTAssertEqual(RestartPhase.opening(at: 8), .black)
         XCTAssertEqual(RestartPhase.opening(at: 10), .respring)
-        XCTAssertEqual(RestartPhase.opening(at: 14), .respring)
+        XCTAssertEqual(RestartPhase.opening(at: 13), .respring)
+        XCTAssertEqual(RestartPhase.opening(at: 14), .black)
     }
 
     func testExternalPowerProxy() {

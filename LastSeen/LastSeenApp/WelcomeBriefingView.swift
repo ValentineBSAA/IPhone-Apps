@@ -67,7 +67,7 @@ enum WelcomeBriefing {
             "Access Relay."
         ], ending: [
             "Safe Mode temporarily pauses optional tweaks and dependent applications without uninstalling packages. Essential maintenance and Relay Support remain available when installed.",
-            "Restart LumaShell refreshes the fictional interface; Reboot Userspace restarts the fictional environment. Both retain restored records and installed packages.",
+            "Restart LumaShell (respring) briefly reloads the interface with a small spinner. Reboot Userspace restarts the broader fictional environment, displaying the original Patchline boot mark. Both return to the lock screen and retain restored records and installed packages. Neither performs a full device reboot.",
             "Check Package activity and Tweak loader diagnostics to see why installed software may be paused or unavailable.",
             "Recovery Circuit is an optional local dependency puzzle. Completing it makes Field Notes available in Relay. Local services lists additional utilities and their requirements.",
             "You can reopen this guide from Patchline at any time."

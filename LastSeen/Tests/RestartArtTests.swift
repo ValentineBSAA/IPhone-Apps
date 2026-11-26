@@ -31,6 +31,12 @@ final class RestartArtTests: XCTestCase {
         }
     }
 
+    func testMaintenanceRestartSequencesAreDistinct() {
+        XCTAssertEqual((0...5).map{RestartPhase.shellRestart(at:$0)},[.black,.respring,.respring,.respring,.black,.black])
+        XCTAssertEqual((0...15).filter{RestartPhase.userspaceRestart(at:$0) == .userspace},Array(2..<12))
+        XCTAssertFalse((0...15).contains{RestartPhase.userspaceRestart(at:$0) == .respring})
+        XCTAssertFalse((0...5).contains{RestartPhase.shellRestart(at:$0) == .userspace})
+    }
     func testOpeningRestartSequence() {
         // OpeningPace total is owned by RecoverySecurityTests; this suite tests restart art only.
         XCTAssertEqual(OpeningPace.duration(4), OpeningPace.reboot)
@@ -39,6 +45,8 @@ final class RestartArtTests: XCTestCase {
         XCTAssertEqual(RestartPhase.opening(at: 7), .userspace)
         XCTAssertEqual(RestartPhase.opening(at: 8), .black)
         XCTAssertEqual(RestartPhase.opening(at: 10), .respring)
-        XCTAssertEqual(RestartPhase.opening(at: 14), .respring)
+        XCTAssertEqual(RestartPhase.opening(at: 13), .respring)
+        XCTAssertEqual(RestartPhase.opening(at: 14), .black)
+        XCTAssertEqual(RestartPhase.opening(at: 15), .black)
     }
 }

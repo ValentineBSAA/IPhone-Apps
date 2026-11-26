@@ -27,6 +27,7 @@ struct PhoneLabView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var locked: Bool
+    @State private var restartLockTransition=false
     init(startUnlocked: Bool = false, uiFixture: Bool = false) {
         _locked = State(initialValue: !startUnlocked)
         #if DEBUG && targetEnvironment(simulator)
@@ -399,7 +400,9 @@ struct PhoneLabView: View {
             panel=nil;banner=nil
             activityBanner=nil;activityQueue.clear()
             PhoneSensoryEngine.cancelAuthentication()
-            guard didConfigureFeedback, phase == .active, !checkpointReboot else { return }
+            let restartLock=restartLockTransition
+            restartLockTransition=false
+            guard !restartLock,didConfigureFeedback,phase == .active,!checkpointReboot else{return}
             PhoneSensoryEngine.play(.lock, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
         }
         .onChange(of: phase) { value in
@@ -733,6 +736,18 @@ struct PhoneLabView: View {
             })
     }
 
+    /// The fictional restart returns to the lock screen without a second
+    /// power-button sound or a stale notification/authentication route.
+    private func finishEnvironmentRestart() {
+        cancelTestAlert();cancelLockAuthentication()
+        arrivalTask?.cancel();arrivalTask=nil
+        banner=nil;activityBanner=nil;activityQueue.clear()
+        pendingLumaImage=nil;panel=nil;recent.removeAll();searchQuery=""
+        homePage=0;returnHome()
+        observedIncoming=Set(incomingIDs);observedOutgoing=outgoingIDs
+        restartLockTransition = !locked
+        locked=true;navigationGeneration=UUID()
+    }
     private func returnHome() {
         pendingLumaImage=nil
         homeFolder = nil
@@ -1061,7 +1076,7 @@ struct PhoneLabView: View {
             Section("Jailbreak") {
                 LabeledContent("Environment", value: safeMode ? "Safe Mode" : "Rootless")
                 LabeledContent("Installed tweaks", value: String(RelayCatalog.ids(relayInstalled).count))
-                NavigationLink { RelayPackagesView(earnedFlags: world.state.flags, onRestart: { panel = nil; returnHome(); locked = true }) } label: { Label("Manage packages in Relay", systemImage: "shippingbox.fill") }
+                NavigationLink { RelayPackagesView(earnedFlags: world.state.flags, onRestart: { finishEnvironmentRestart() }) } label: { Label("Manage packages in Relay", systemImage: "shippingbox.fill") }
             }
             Section("Gestures") {
                 Toggle("Immersive screen-edge gestures", isOn: $deferSystemEdges)
@@ -1384,8 +1399,8 @@ struct PhoneLabView: View {
             controls.navigationTitle("Settings")
         case .files: LabFilesView()
         case .browser: LumaWebBrowser(wifi: wifi)
-        case .relay: RelayPackagesView(earnedFlags: world.state.flags, onRestart: { returnHome(); recent.removeAll(); locked = true })
-        case .patchline: PatchlineControlView(openRelay: { open(.relay) }, onRestart: { returnHome(); recent.removeAll(); locked = true }, earnedFlags: world.state.flags)
+        case .relay: RelayPackagesView(earnedFlags: world.state.flags, onRestart: { finishEnvironmentRestart() })
+        case .patchline: PatchlineControlView(openRelay: { open(.relay) }, onRestart: { finishEnvironmentRestart() }, earnedFlags: world.state.flags)
         }
     }
 }

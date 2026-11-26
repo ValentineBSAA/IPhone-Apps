@@ -121,9 +121,9 @@ struct RecoveryPrologue: View {
         ZStack {
             if stage == 4 {
                 RestartArtwork(phase: RestartPhase.opening(at: elapsed))
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.65), value: RestartPhase.opening(at: elapsed))
+                    .animation(reduceMotion ? nil : .easeInOut(duration:0.22),value:RestartPhase.opening(at:elapsed))
                     .accessibilityLabel(RestartPhase.opening(at: elapsed) == .respring ? "Simulated respring" : "Simulated userspace restart")
-                    .accessibilityAction(named: Text("Skip restart animation")) { elapsed = duration; finishTimedStage() }
+                    .accessibilityAction(named: Text("Skip restart animation")) { guard phase == .active,!showQA,stage == 4 else{return};elapsed=duration;finishTimedStage() }
                     .transition(.opacity)
             } else if (1...3).contains(stage) {
                 terminalScreen
@@ -409,12 +409,12 @@ struct RecoveryPrologue: View {
                 logQuarter = 0
             }
             elapsed = min(seconds, elapsed + 1)
-            if stage == 4 && elapsed == 2 { RestartAudio.play("UserspaceUp", enabled: effects) }
+            if stage == 4 && elapsed == 7 { RestartAudio.play("UserspaceUp", enabled: effects) }
             if stage == 4 && elapsed == 8 {
                 OpeningQA.record("Respring started")
                 RestartAudio.play("RespringDown", enabled: effects)
             }
-            if stage == 4 && elapsed == 10 { RestartAudio.play("RespringUp", enabled: effects) }
+            if stage == 4 && elapsed == 14 { RestartAudio.play("RespringUp", enabled: effects) }
             if elapsed == OpeningPace.recognition && stage == 1 { OpeningQA.record("Device recognition completed") }
             if elapsed == OpeningPace.preparation && stage == 2 { OpeningQA.record("Environment preparation completed") }
         }
