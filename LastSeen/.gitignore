@@ -1,0 +1,5 @@
+# Local credentials only; never commit ElevenLabs or other provider keys.
+.env
+.env.*
+!.env.example
+VoiceAssets/VoiceCandidateWork/
