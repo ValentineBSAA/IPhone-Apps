@@ -1,6 +1,20 @@
 import XCTest
 @testable import LastSeen
 @MainActor final class InvestigationProgressTests: XCTestCase {
+    func testGuidanceDoesNotExposeFutureLeads() throws {
+        var state = RestoredPhoneBackup.snapshot()
+        state.flags.formUnion([InvestigationReview.finished, InvestigationResolution.completed])
+        XCTAssertTrue(InvestigationProgress.completed(state.flags).isEmpty)
+        XCTAssertEqual(InvestigationProgress.current(state.flags)?.id, "contact")
+        let first = try XCTUnwrap(InvestigationProgress.guidance(state, detailed: true))
+        XCTAssertEqual(first.route, "messages")
+        XCTAssertNil(first.pageID)
+        state.flags.formUnion(["phone-tutorial-replied", "phone-tutorial-file-guidance", "phone-tutorial-finished"])
+        let next = try XCTUnwrap(InvestigationProgress.guidance(state, detailed: true))
+        XCTAssertEqual(next.pageID, "studio")
+        XCTAssertTrue(LumaWebCatalog.visible(state.flags).contains { $0.id == next.pageID })
+        XCTAssertNil(InvestigationProgress.guidance(state, detailed: false)?.pageID)
+    }
     func testAnonymousContactAndArchiveGates() throws {
         var state=RestoredPhoneBackup.snapshot()
         let w=PhoneWorldStore(initial:state,persistToDisk:false)

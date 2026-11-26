@@ -132,7 +132,70 @@ enum InvestigationProgress {
             , .init(id:"review4-finish",title:"Complete the review",hint:"Return to the last recovered record and review the available decision.",route:"browser",done:flags.contains(InvestigationResolution.completed))
         ]
     }
-    static func summary(_ flags: Set<String>) -> String { "\(steps(flags).filter(\.done).count) completed" }
+    /// Only the contiguous earned prefix is shown. A later flag from an
+    /// interrupted checkpoint never exposes a future lead in the overview.
+    static func completed(_ flags: Set<String>) -> [Step] {
+        Array(steps(flags).prefix(while: { $0.done }))
+    }
+    static func current(_ flags: Set<String>) -> Step? {
+        steps(flags).dropFirst(completed(flags).count).first
+    }
+    static func summary(_ flags: Set<String>) -> String { "\(completed(flags).count) completed" }
+
+    struct Guidance {
+        let text: String
+        let route: String
+        var pageID: String? = nil
+        var waiting = false
+    }
+
+    /// Concrete guidance is derived from the current earned lead, never from
+    /// a future chapter or a puzzle solution. Browser destinations must still
+    /// be visible under the normal catalog policy.
+    static func guidance(_ world: PhoneWorld, detailed: Bool) -> Guidance? {
+        let flags = world.flags
+        guard let step = current(flags) else { return nil }
+        if !detailed { return .init(text: step.hint, route: step.route) }
+        func page(_ id: String, _ text: String) -> Guidance {
+            guard let record = LumaWebCatalog.page(id), record.available(flags) else {
+                return .init(text: step.hint, route: step.route)
+            }
+            return .init(text: text + " Open " + record.title + " in Browser (" + record.address + ").", route: "browser", pageID: record.id)
+        }
+        func mail(_ id: String) -> Guidance {
+            let delivered = LumaMailCatalog.visible(world).contains { $0.id == id && $0.kind == "inbox" }
+            if delivered {
+                return .init(text: "The expected message is available in Mail. Check Inbox, Archive or Trash if you moved it earlier.", route: "mail")
+            }
+            return .init(text: "The next message has not arrived yet. You can explore other available apps while the local activity continues.", route: "mail", waiting: true)
+        }
+        switch step.id {
+        case "contact": return .init(text: "Open Messages and return to the introductory conversation. Send a reply before looking for more leads.", route: "messages")
+        case "personal":
+            if !flags.contains("phone-tutorial-visited-note") { return .init(text: "Open the reminder mentioned in the conversation, not just the Notes app.", route: "notes") }
+            return .init(text: "Open both of the documents mentioned in the conversation. Reading only the file list is not enough.", route: "files")
+        case "recovery": return .init(text: "Return to the protected record mentioned in Messages. Use information you have already found, or revisit the conversation for context.", route: "files")
+        case "studio": return page("studio", "Read the available studio website.")
+        case "followup": return page("archive", "Follow the newly available local index.")
+        case "records": return page("archive-records", "Inspect one available attachment. The text-only option counts equally.")
+        case "review":
+            if !flags.contains("web.visited.studio-news") { return page("studio-news", "Read the production note before attempting the comparison.") }
+            return page("archive-review", "Compare the sources you have already inspected and submit your own interpretation.")
+        case "ledger":
+            if !flags.contains("web.visited.archive-collection") { return page("archive-collection", "Read the newly available collection and follow its links.") }
+            return page("archive-ledger", "Read the linked ledger.")
+        case "review3-mail": return mail(InvestigationReview.mailID)
+        case "review3-compare":
+            if !flags.contains("web.visited.studio-news") { return page("studio-news", "Read the source note first.") }
+            return page(InvestigationReview.pageID, "Complete the comparison using your own observations. Incorrect choices can be revised.")
+        case "review4-session":
+            if !flags.contains("web.visited." + InvestigationResolution.indexID) { return page(InvestigationResolution.indexID, "Read the newly available record.") }
+            return page(InvestigationResolution.noteID, "Read the linked record before moving on.")
+        case "review4-mail": return mail(InvestigationResolution.mailID)
+        case "review4-finish": return page(InvestigationResolution.conclusionID, "Review the available decision when you are ready.")
+        default: return .init(text: step.hint, route: step.route)
+        }
+    }
     static func unknownReply(words: Set<String>, flags: Set<String>) -> String {
         if !words.isDisjoint(with:["nora","who","name","identity","you"]) { return "A name on a screen isn't proof. Please compare what you can actually verify." }
         if !words.isDisjoint(with:["where","location","address","safe"]) { return "I can't confirm a location. Start with what you already have." }
@@ -149,8 +212,10 @@ struct InvestigationProgressView: View {
     let openNotes: () -> Void
     let openFiles: () -> Void
     let openMail: () -> Void
-    @State private var showHint = false
-    private var steps: [InvestigationProgress.Step] { InvestigationProgress.steps(world.state.flags) }
+    @State private var hintLevel = 0
+    private var completed: [InvestigationProgress.Step] { InvestigationProgress.completed(world.state.flags) }
+    private var lead: InvestigationProgress.Step? { InvestigationProgress.current(world.state.flags) }
+    private var guidance: InvestigationProgress.Guidance? { InvestigationProgress.guidance(world.state, detailed: hintLevel >= 2) }
     var body: some View {
         List {
             Section {
@@ -158,17 +223,19 @@ struct InvestigationProgressView: View {
                 Text("A record of your discoveries, not a solution guide. New leads appear as you explore.").font(.footnote).foregroundColor(.secondary)
             }
             Section("Completed") {
-                if !steps.contains(where: \.done) { Text("No completed leads yet.").foregroundColor(.secondary) }
-                ForEach(steps.filter(\.done)) { step in Label(step.title,systemImage:"checkmark.circle.fill").foregroundColor(LumaDesign.accent) }
+                if completed.isEmpty { Text("No completed leads yet.").foregroundColor(.secondary) }
+                ForEach(completed) { step in Label(step.title,systemImage:"checkmark.circle.fill").foregroundColor(LumaDesign.accent) }
             }
             Section("Current lead") {
-                if let step=steps.first(where:{ !$0.done }) {
+                if let step = lead {
                     Label(step.title,systemImage:"magnifyingglass")
-                    Button(showHint ? "Hide hint" : "I need a hint") { showHint.toggle() }
-                    if showHint {
-                        Text(step.hint).foregroundColor(.secondary)
+                    Button(hintLevel == 0 ? "I need a hint" : "Hide hints") { hintLevel = hintLevel == 0 ? 1 : 0 }
+                    if hintLevel > 0, let guidance {
+                        Text(guidance.text).foregroundColor(.secondary)
+                        if hintLevel == 1 { Button("More specific guidance") { hintLevel = 2 } }
+                        if guidance.waiting { Label("Awaiting local activity", systemImage: "clock").font(.caption).foregroundColor(.secondary) }
                         Button("Open suggested app") {
-                            switch step.route {
+                            switch guidance.route {
                             case "browser": openBrowser()
                             case "messages": openMessages()
                             case "notes": openNotes()
@@ -179,10 +246,11 @@ struct InvestigationProgressView: View {
                     }
                 } else { Text(world.state.flags.contains(InvestigationResolution.completed) ? "Investigation complete. You may continue exploring the phone." : "All currently documented leads completed. Keep exploring.").foregroundColor(.secondary) }
             }
-            if steps.contains(where:{ !$0.done }) {
+            if lead != nil {
                 Section("Not yet uncovered") { Label("Further leads remain unavailable",systemImage:"lock.fill").foregroundColor(.secondary) }
             }
         }.navigationTitle("Investigation progress").scrollContentBackground(.hidden).background(LumaDesign.background)
+            .onChange(of: lead?.id) { _ in hintLevel = 0 }
     }
 }
 struct LumaWebBrowser: View {
