@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Fictional local activity. No real push messages, network or OS notification access.
 struct LumaActivityNotice: Codable, Equatable, Identifiable {
-    enum Kind: String, Codable { case mail, social, timer, dayblink, security, support }
+    enum Kind: String, Codable { case mail, social, timer, dayblink, security, support, motionwell }
     let id: String
     let kind: Kind
     let date: Date
@@ -20,6 +20,7 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
         case .dayblink: return "Dayblink"
         case .security: return "HavenWatch"
         case .support: return "Relay Support"
+        case .motionwell: return "Motionwell"
         }
     }
     var symbol: String {
@@ -30,13 +31,14 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
         case .dayblink: return "camera.fill"
         case .security: return "shield.lefthalf.filled"
         case .support: return "headset"
+        case .motionwell: return "play.rectangle.fill"
         }
     }
     var cue: PhoneCue { kind == .timer ? .timerCompleted : kind == .security ? .corrupted : .general }
     var profile: PhoneHapticProfile {
         switch kind {
         case .mail: return .mail
-        case .social, .dayblink, .support: return .social
+        case .social, .dayblink, .support, .motionwell: return .social
         case .timer: return .cue(.timerCompleted)
         case .security: return .security
         }
@@ -55,6 +57,9 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
             return prefs.notificationsEnabled && !(author.map { prefs.mutedAuthors.contains($0) } ?? false)
                 && LumaSocialCatalog.visible(channel, world: state).contains { $0.id == targetID }
         case .timer: return true
+        case .motionwell:
+            guard let targetID else { return false }
+            return MotionwellArchive.canNotify(targetID, world: state)
         case .support:
             guard let targetID, let history = state.relaySupport,
                   history.activeInstallation == true, history.notificationsEnabled ?? true,
@@ -73,6 +78,7 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
     func hidePreview(in state: PhoneWorld) -> Bool {
         if kind == .security { return true }
         if kind == .support { return !(state.relaySupport?.previewsEnabled ?? false) }
+        if kind == .motionwell { return !(state.connectedWorld?.motionwell?.previewsEnabled ?? false) }
         if kind == .dayblink { return !(state.connectedWorld?.dayblink?.previewsEnabled ?? false) }
         guard let channel else { return false }
         return !(state.connectedWorld?.socialPreferences?[channel.rawValue]?.showPreviews ?? true)
@@ -181,7 +187,13 @@ struct LumaActivityDetail: View {
     let id: String
     @EnvironmentObject private var world: PhoneWorldStore
     private var notice: LumaActivityNotice? {
-        (world.connected.activityJournal ?? []).first { $0.id == id && $0.canPresent(in: world.state) }
+        (world.connected.activityJournal ?? []).first { notice in
+            guard notice.id == id else { return false }
+            if notice.kind == .motionwell {
+                return MotionwellArchive.visible(world.state).contains { $0.id == notice.targetID }
+            }
+            return notice.canPresent(in: world.state)
+        }
     }
     var body: some View {
         if let notice {
@@ -198,6 +210,10 @@ struct LumaActivityDetail: View {
                 HavenWatchEventDetail()
             case .support:
                 RelaySupportView()
+            case .motionwell:
+                if let target = notice.targetID, let clip = MotionwellArchive.visible(world.state).first(where: { $0.id == target }) {
+                    MotionwellPlayerView(clip: clip)
+                } else { Text("Video unavailable") }
             case .dayblink:
                 if let author = notice.author, let friend = DayblinkFriend(rawValue: author) {
                     DayblinkThread(friend: friend)

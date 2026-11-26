@@ -3,6 +3,33 @@ import AVFoundation
 @testable import LastSeen
 
 @MainActor final class MotionwellTests: XCTestCase {
+    func testScheduledUploadsAndChannelPreferences() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let store = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(now: now), persistToDisk: false)
+        store.toggleMotionwellSubscription("maplecafe")
+        store.toggleMotionwellSubscription("avery.green")
+        store.setMotionwellChannelAlerts("avery.green", enabled: false)
+        store.advanceMotionwell(now: now)
+        store.advanceMotionwell(now: now.addingTimeInterval(89))
+        XCTAssertEqual(MotionwellArchive.visible(store.state).count, 4)
+        store.advanceMotionwell(now: now.addingTimeInterval(90))
+        XCTAssertEqual(MotionwellArchive.visible(store.state).count, 5)
+        let notice = try XCTUnwrap(LumaActivityCatalog.visible(store.state).first { $0.kind == .motionwell })
+        XCTAssertEqual(notice.targetID, "cafe-lunch")
+        XCTAssertTrue(notice.hidePreview(in: store.state))
+        store.setMotionwellNotifications(enabled: true, previews: true)
+        XCTAssertFalse(notice.hidePreview(in: store.state))
+        store.advanceMotionwell(now: now.addingTimeInterval(240))
+        XCTAssertEqual(MotionwellArchive.visible(store.state).count, 6)
+        XCTAssertEqual(LumaActivityCatalog.visible(store.state).filter { $0.kind == .motionwell }.count, 1)
+        store.markMotionwellUploadSeen("cafe-lunch")
+        XCTAssertFalse(notice.canPresent(in: store.state))
+        store.advanceMotionwell(now: now.addingTimeInterval(600))
+        XCTAssertEqual((store.connected.activityJournal ?? []).filter { $0.kind == .motionwell }.count, 1)
+        XCTAssertEqual(try JSONDecoder().decode(PhoneWorld.self, from: JSONEncoder().encode(store.state)).connectedWorld?.motionwell, store.connected.motionwell)
+        for upload in MotionwellArchive.scheduled { XCTAssertNotNil(upload.clip.url) }
+    }
+
     func testLocalMediaAndAccountPersistence() throws {
         let locked = PhoneWorldStore(persistToDisk: false)
         XCTAssertTrue(MotionwellArchive.visible(locked.state).isEmpty)

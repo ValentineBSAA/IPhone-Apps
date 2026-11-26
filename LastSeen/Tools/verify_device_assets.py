@@ -32,8 +32,8 @@ with zipfile.ZipFile("LastSeen_Build32_RelaySupport_ContentPack_v1.zip") as supp
 motion_root=pathlib.Path("LastSeenApp/MotionwellMedia")
 motion_manifest=motion_root/"MotionwellMediaManifest.json"
 motion_records=json.loads(motion_manifest.read_text())["assets"]
-assert {r["filename"] for r in motion_records}=={"Motionwell_coffee.mp4","Motionwell_woodland.mp4","Motionwell_animals.mp4","Motionwell_studio.mp4"}
-assert len(motion_records)==4
+assert {r["filename"] for r in motion_records}=={"Motionwell_coffee.mp4","Motionwell_woodland.mp4","Motionwell_animals.mp4","Motionwell_studio.mp4","Motionwell_cafe-lunch.mp4","Motionwell_green-walk.mp4"}
+assert len(motion_records)==6
 for record in motion_records:
     assert digest((motion_root/record["filename"]).read_bytes())==record["sha256"]
     expected[record["filename"]]=record["sha256"]

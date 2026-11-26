@@ -34,6 +34,10 @@ struct MotionwellState: Codable, Equatable {
     var comments: [MotionwellComment] = []
     var notificationsEnabled = true
     var previewsEnabled = false
+    var publicationStart: Date? = nil
+    var published: Set<String>? = nil
+    var mutedChannels: Set<String>? = nil
+    var seenUploads: Set<String>? = nil
 }
 enum MotionwellArchive {
     static let clips: [MotionwellClip] = [
@@ -42,8 +46,28 @@ enum MotionwellArchive {
         .init(id: "animals", creator: "Nina Wells", handle: "nina.wild", title: "Two very different animals", poster: "CommunityMedia_Fox", seconds: 30, short: false, description: "A short wildlife and pet photo essay. Observe wildlife respectfully; the pictures are shared illustrations, not a local sighting."),
         .init(id: "studio", creator: "Blue Hour Interactive", handle: "bluehour", title: "A moment to reset", poster: "CommunityMedia_Mountains", seconds: 60, short: false, description: "A silent studio mood reel about taking a break from work. Original editing of licensed public photographs, not a product trailer or recorded studio footage.")
     ]
+    struct ScheduledUpload {
+        let clip: MotionwellClip
+        let delay: TimeInterval
+    }
+    static let scheduled: [ScheduledUpload] = [
+        .init(clip: .init(id: "cafe-lunch", creator: "Maple Cafe", handle: "maplecafe", title: "A small lunch break", poster: "CommunityMedia_Udon", seconds: 24, short: true, description: "A silent animated photo essay pairing a bowl of noodles with a quiet coffee break. Shared illustrations, not footage from the cafe."), delay: 90),
+        .init(clip: .init(id: "green-walk", creator: "Avery Quinn", handle: "avery.green", title: "Two views of the outdoors", poster: "CommunityMedia_Forest", seconds: 36, short: false, description: "A silent animated photo essay with forest and mountain scenery. Shared licensed images, not a live location or personal recording."), delay: 240)
+    ]
     static func visible(_ world: PhoneWorld) -> [MotionwellClip] {
-        world.everydayArchiveRevision == nil ? [] : clips
+        guard world.everydayArchiveRevision != nil else { return [] }
+        let published = world.connectedWorld?.motionwell?.published ?? []
+        return scheduled.reversed().filter { published.contains($0.clip.id) }.map(\.clip) + clips
+    }
+    static func canNotify(_ id: String, world: PhoneWorld) -> Bool {
+        guard let state = world.connectedWorld?.motionwell,
+              state.notificationsEnabled, state.published?.contains(id) == true,
+              !(state.seenUploads ?? []).contains(id),
+              let upload = scheduled.first(where: { $0.clip.id == id }),
+              state.subscriptions.contains(upload.clip.handle),
+              !(state.mutedChannels ?? []).contains(upload.clip.handle),
+              visible(world).contains(upload.clip), upload.clip.url != nil else { return false }
+        return true
     }
 }
 struct MotionwellView: View {
@@ -83,7 +107,7 @@ struct MotionwellView: View {
                     if clips.isEmpty { Text("Nothing here yet.").foregroundColor(.secondary).padding() }
                     ForEach(clips) { clip in
                         NavigationLink { MotionwellPlayerView(clip: clip) } label: {
-                            MotionwellTile(clip: clip, progress: state.watch[clip.id]?.seconds)
+                            MotionwellTile(clip: clip, progress: state.watch[clip.id]?.seconds, isNew: state.published?.contains(clip.id) == true && !(state.seenUploads ?? []).contains(clip.id))
                         }.buttonStyle(.plain)
                     }
                     Text("Offline restored media. These initial videos are animated photo essays, not camera recordings or live streams.").font(.caption).foregroundColor(.secondary)
@@ -101,6 +125,7 @@ struct MotionwellView: View {
 struct MotionwellTile: View {
     let clip: MotionwellClip
     let progress: Double?
+    var isNew = false
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ZStack(alignment: .bottomTrailing) {
@@ -111,7 +136,10 @@ struct MotionwellTile: View {
                 Text(clip.url == nil ? "Unavailable" : clip.durationLabel).font(.caption2.bold()).padding(5).background(.black.opacity(0.8)).foregroundColor(.white).padding(6)
             }.clipShape(RoundedRectangle(cornerRadius: 12))
             if let progress { ProgressView(value: min(progress, Double(clip.seconds)), total: Double(clip.seconds)).tint(.red) }
-            Text(clip.title).font(.headline)
+            HStack {
+                Text(clip.title).font(.headline)
+                if isNew { Text("NEW").font(.caption2.bold()).foregroundColor(.red) }
+            }
             Text(clip.creator + (clip.short ? " · Short photo essay" : " · Photo essay")).font(.caption).foregroundColor(.secondary)
         }.padding(12).lumaSurface(radius: 16)
     }
@@ -191,6 +219,7 @@ struct MotionwellPlayerView: View {
         }.navigationTitle("Watch").navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 guard MotionwellArchive.visible(world.state).contains(clip), let url = clip.url, player == nil else { return }
+                world.markMotionwellUploadSeen(clip.id)
                 let item = AVPlayer(url: url)
                 let resume = state.watch[clip.id]?.seconds ?? 0
                 if resume > 0 && resume < Double(clip.seconds) - 2 { item.seek(to: CMTime(seconds: resume, preferredTimescale: 600)) }
@@ -222,6 +251,11 @@ struct MotionwellChannel: View {
                     Text(first.creator).font(.title2.bold())
                     Text("@" + handle).foregroundColor(.secondary)
                     Button((world.connected.motionwell?.subscriptions.contains(handle) ?? false) ? "Unsubscribe" : "Subscribe") { world.toggleMotionwellSubscription(handle) }
+                    if world.connected.motionwell?.subscriptions.contains(handle) == true {
+                        Toggle("New video alerts", isOn: Binding(
+                            get: { !(world.connected.motionwell?.mutedChannels ?? []).contains(handle) },
+                            set: { world.setMotionwellChannelAlerts(handle, enabled: $0) }))
+                    }
                 }
                 Section("Videos") {
                     ForEach(clips) { clip in
@@ -254,7 +288,7 @@ struct MotionwellSettings: View {
                 Section("Notification preferences") {
                     Toggle("Channel notifications", isOn: Binding(get: { state.notificationsEnabled }, set: { world.setMotionwellNotifications(enabled: $0, previews: state.previewsEnabled) }))
                     Toggle("Show previews", isOn: Binding(get: { state.previewsEnabled }, set: { world.setMotionwellNotifications(enabled: state.notificationsEnabled, previews: $0) }))
-                    Text("Preferences saved. No new uploads are scheduled yet.").font(.caption).foregroundColor(.secondary)
+                    Text("Follow a channel to receive alerts for its authored local releases. Older videos do not generate alerts. No live uploads or external services.").font(.caption).foregroundColor(.secondary)
                 }
             } else { Text("Account unavailable") }
         }.navigationTitle("Account & settings")

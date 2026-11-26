@@ -294,6 +294,7 @@ final class PhoneWorldStore: ObservableObject {
         advanceSocialReplies(now: now)
         advanceDayblink(now: now)
         advanceHavenWatch(now: now)
+        advanceMotionwell(now: now)
         let pending = state.pendingReplies ?? []
         guard !pending.isEmpty else { return }
         var changed = false
@@ -968,11 +969,64 @@ final class PhoneWorldStore: ObservableObject {
         d.pending.removeAll { delivered.contains($0.record.id) }
         c.dayblink = d; commitConnected(c)
     }
+    func advanceMotionwell(now: Date = Date()) {
+        guard state.everydayArchiveRevision != nil else { return }
+        var c = connected
+        var m = c.motionwell ?? MotionwellState()
+        let original = m
+        if m.publicationStart == nil { m.publicationStart = now }
+        guard let start = m.publicationStart else { return }
+        for upload in MotionwellArchive.scheduled where now.timeIntervalSince(start) >= upload.delay &&
+            !(m.published ?? []).contains(upload.clip.id) && upload.clip.url != nil {
+            m.published = (m.published ?? []).union([upload.clip.id])
+            if m.notificationsEnabled, m.subscriptions.contains(upload.clip.handle),
+               !(m.mutedChannels ?? []).contains(upload.clip.handle) {
+                addActivity(.init(id: "motionwell-" + upload.clip.id, kind: .motionwell,
+                    date: now, title: upload.clip.creator, detail: upload.clip.title,
+                    targetID: upload.clip.id, channel: nil, author: upload.clip.handle), to: &c)
+            }
+        }
+        guard m != original else { return }
+        c.motionwell = m; commitConnected(c)
+    }
+
+    func setMotionwellChannelAlerts(_ handle: String, enabled: Bool) {
+        guard state.everydayArchiveRevision != nil,
+              var m = connected.motionwell, m.subscriptions.contains(handle) else { return }
+        var c = connected
+        var muted = m.mutedChannels ?? []
+        if enabled { muted.remove(handle) } else { muted.insert(handle) }
+        m.mutedChannels = muted
+        c.motionwell = m
+        if !enabled {
+            for i in (c.activityJournal ?? []).indices where c.activityJournal?[i].kind == .motionwell &&
+                c.activityJournal?[i].author == handle {
+                c.activityJournal?[i].dismissed = true
+            }
+        }
+        commitConnected(c)
+    }
+
+    func markMotionwellUploadSeen(_ id: String) {
+        guard var m = connected.motionwell, m.published?.contains(id) == true,
+              !(m.seenUploads ?? []).contains(id),
+              MotionwellArchive.visible(state).contains(where: { $0.id == id }) else { return }
+        var c = connected
+        m.seenUploads = (m.seenUploads ?? []).union([id])
+        c.motionwell = m; commitConnected(c)
+    }
+
     func toggleMotionwellSubscription(_ handle: String) {
         guard MotionwellArchive.visible(state).contains(where: { $0.handle == handle }) else { return }
         var c = connected
         var m = c.motionwell ?? MotionwellState()
-        if !m.subscriptions.insert(handle).inserted { m.subscriptions.remove(handle) }
+        if !m.subscriptions.insert(handle).inserted {
+            m.subscriptions.remove(handle)
+            for i in (c.activityJournal ?? []).indices where c.activityJournal?[i].kind == .motionwell &&
+                c.activityJournal?[i].author == handle {
+                c.activityJournal?[i].dismissed = true
+            }
+        }
         c.motionwell = m; commitConnected(c)
     }
     func toggleMotionwellItem(_ id: String, saved: Bool) {
@@ -1015,6 +1069,11 @@ final class PhoneWorldStore: ObservableObject {
         var c = connected
         var m = c.motionwell ?? MotionwellState()
         m.notificationsEnabled = enabled; m.previewsEnabled = previews
+        if !enabled {
+            for i in (c.activityJournal ?? []).indices where c.activityJournal?[i].kind == .motionwell {
+                c.activityJournal?[i].dismissed = true
+            }
+        }
         c.motionwell = m; commitConnected(c)
     }
     func advanceHavenWatch(now: Date = Date()) {

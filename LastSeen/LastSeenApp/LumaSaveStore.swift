@@ -148,6 +148,9 @@ final class LumaSaveStore: ObservableObject {
                     let date=pending.dueAt.addingTimeInterval(delta)
                     return LumaPendingMail(record:LumaMailRecord(id:r.id,peer:r.peer,sender:r.sender,subject:r.subject,body:r.body,date:date,kind:r.kind,attachments:r.attachments),dueAt:date)
                 }
+                if let start = connected.motionwell?.publicationStart {
+                    connected.motionwell?.publicationStart = start.addingTimeInterval(delta)
+                }
                 value.world.connectedWorld=connected
             }
             let timerKey = "lastseen.lab.timerEnd"

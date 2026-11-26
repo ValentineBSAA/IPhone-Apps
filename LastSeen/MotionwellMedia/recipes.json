@@ -48,6 +48,30 @@
       "creator": "Blue Hour Interactive",
       "title": "A moment to reset",
       "source": "CommunityPortraits/everyday-media-manifest.json"
+    },
+    {
+      "id": "cafe-lunch",
+      "seconds": 24,
+      "photos": [
+        "CommunityMedia_Udon",
+        "CommunityMedia_Coffee"
+      ],
+      "kind": "silent animated photo essay",
+      "creator": "Maple Cafe",
+      "title": "A small lunch break",
+      "source": "CommunityPortraits/everyday-media-manifest.json"
+    },
+    {
+      "id": "green-walk",
+      "seconds": 36,
+      "photos": [
+        "CommunityMedia_Forest",
+        "CommunityMedia_Mountains"
+      ],
+      "kind": "silent animated photo essay",
+      "creator": "Avery Quinn",
+      "title": "Two views of the outdoors",
+      "source": "CommunityPortraits/everyday-media-manifest.json"
     }
   ]
 }
