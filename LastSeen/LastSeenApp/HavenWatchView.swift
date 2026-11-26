@@ -37,6 +37,14 @@ enum HavenWatchArchive {
     static func opened(_ world:PhoneWorld)->[HavenWatchFrame] {
         frames(in:world).filter { world.flags.contains(marker($0.id)) }
     }
+    static func filtered(_ world:PhoneWorld,camera:HavenCamera?=nil,favoritesOnly:Bool=false,openedOnly:Bool=false)->[HavenWatchFrame] {
+        let favorites=world.connectedWorld?.havenWatch?.favorites ?? []
+        return frames(in:world).filter { frame in
+            (camera == nil || frame.camera == camera) &&
+            (!favoritesOnly || favorites.contains(frame.id)) &&
+            (!openedOnly || world.flags.contains(marker(frame.id)))
+        }
+    }
     static func frames(in world: PhoneWorld) -> [HavenWatchFrame] {
         guard world.everydayArchiveRevision != nil else { return [] }
         return HavenCamera.allCases.flatMap { camera in
@@ -48,6 +56,8 @@ enum HavenWatchArchive {
 struct HavenWatchView: View {
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var favoritesOnly = false
+    @State private var openedOnly=false
+    @State private var cameraFilter:HavenCamera?
     private var prefs: HavenWatchPreferences { world.connected.havenWatch ?? HavenWatchPreferences() }
     private var frames: [HavenWatchFrame] { HavenWatchArchive.frames(in: world.state) }
     var body: some View {
@@ -86,7 +96,10 @@ struct HavenWatchView: View {
                             }.padding(12).lumaSurface()
                         }.buttonStyle(.plain)
                     }
-                    ForEach([HavenWatchEvents.visible(world.state),HavenWatchEvents.followup(world.state)].compactMap{$0}) { event in
+                    Text("Archive updates").font(.title2.bold())
+                    let updates=HavenWatchEvents.history(world.state)
+                    if updates.isEmpty {Text("No restored index updates.").font(.caption).foregroundColor(.secondary)}
+                    ForEach(updates) { event in
                         NavigationLink { HavenWatchEventDetail(eventID:event.id) } label: {
                             VStack(alignment: .leading, spacing: 5) {
                                 Label(HavenWatchEvents.title(event), systemImage: "archivebox").font(.headline)
@@ -102,10 +115,16 @@ struct HavenWatchView: View {
                             }.frame(maxWidth:.infinity,alignment:.leading).padding(12).lumaSurface()
                         }.buttonStyle(.plain)
                     }
-                    Toggle("Show saved snapshots only", isOn: $favoritesOnly)
-                    Text("Activity history").font(.title2.bold())
-                    let selected = frames.filter { !favoritesOnly || prefs.favorites.contains($0.id) }
-                    if selected.isEmpty { Text("No saved snapshots.").foregroundColor(.secondary) }
+                    Text("Snapshot library").font(.title2.bold())
+                    Picker("Camera",selection:$cameraFilter) {
+                        Text("All cameras").tag(Optional<HavenCamera>.none)
+                        ForEach(HavenCamera.allCases){camera in Text(camera.rawValue).tag(Optional(camera))}
+                    }
+                    Toggle("Bookmarked only",isOn:$favoritesOnly)
+                    Toggle("Reviewed only",isOn:$openedOnly)
+                    let selected=HavenWatchArchive.filtered(world.state,camera:cameraFilter,favoritesOnly:favoritesOnly,openedOnly:openedOnly)
+                    Text("\(selected.count) of \(frames.count) snapshots · capture dates unavailable").font(.caption).foregroundColor(.secondary)
+                    if selected.isEmpty {Text("No snapshots match these filters.").foregroundColor(.secondary)}
                     ForEach(selected) { frame in
                         NavigationLink { HavenFrameDetail(frame: frame) } label: {
                             HStack {
@@ -115,7 +134,8 @@ struct HavenWatchView: View {
                                     Text(frame.label).font(.caption).foregroundColor(.secondary)
                                 }
                                 Spacer()
-                                if prefs.favorites.contains(frame.id) { Image(systemName: "bookmark.fill") }
+                                if world.state.flags.contains(HavenWatchArchive.marker(frame.id)) {Image(systemName:"checkmark.circle").accessibilityLabel("Reviewed")}
+                                if prefs.favorites.contains(frame.id) {Image(systemName:"bookmark.fill").accessibilityLabel("Bookmarked")}
                             }.padding(10).lumaSurface()
                         }.buttonStyle(.plain)
                     }
@@ -169,10 +189,11 @@ struct HavenFrameDetail: View {
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var zoom = 1.0
     @Environment(\.scenePhase) private var phase
+    private var available:Bool {HavenWatchArchive.frames(in:world.state).contains(frame)}
     private var prefs: HavenWatchPreferences { world.connected.havenWatch ?? HavenWatchPreferences() }
     var body: some View {
         ScrollView {
-            if HavenWatchArchive.frames(in: world.state).contains(frame) {
+            if phase == .active && available {
                 VStack(alignment: .leading, spacing: 14) {
                     ZStack(alignment: .topLeading) {
                         GeometryReader { geometry in
@@ -183,8 +204,18 @@ struct HavenFrameDetail: View {
                         Text("CAM " + frame.camera.number + "  ·  ARCHIVE").font(.caption2.monospaced()).padding(6)
                             .background(Color.black.opacity(0.72)).foregroundColor(.white)
                     }.clipShape(RoundedRectangle(cornerRadius: 10))
-                    HStack { Text("Zoom"); Slider(value: $zoom, in: 1...3); Text(String(format: "%.1f×", zoom)).monospacedDigit() }
+                    HStack {
+                        Text("Zoom")
+                        Slider(value:$zoom,in:1...3).accessibilityLabel("Snapshot zoom")
+                        Text(String(format:"%.1f×",zoom)).monospacedDigit()
+                        Button("Reset"){zoom=1}.disabled(zoom==1)
+                    }
+                    Toggle("Infrared-style viewing",isOn:Binding(get:{prefs.infrared},set:{value in
+                        guard phase == .active,available else{return}
+                        var next=prefs;next.infrared=value;world.setHavenWatch(next)
+                    }))
                     Button {
+                        guard phase == .active,available else{return}
                         var next = prefs
                         if !next.favorites.insert(frame.id).inserted { next.favorites.remove(frame.id) }
                         world.setHavenWatch(next)
@@ -203,8 +234,9 @@ struct HavenFrameDetail: View {
         }.navigationTitle(frame.camera.rawValue)
             .onAppear { if phase == .active { world.recordHavenSnapshotOpened(frame.id) } }
             .onChange(of:phase) { value in
-                if value == .active { world.recordHavenSnapshotOpened(frame.id) }
+                if value == .active {world.recordHavenSnapshotOpened(frame.id)} else {zoom=1}
             }
+            .onChange(of:available){if !$0 {zoom=1}}
     }
 }
 

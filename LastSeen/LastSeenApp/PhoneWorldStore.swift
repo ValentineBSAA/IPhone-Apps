@@ -1293,6 +1293,15 @@ final class PhoneWorldStore: ObservableObject {
               VeilCommunity.reconstructionReady(state) else{return}
         if state.flags.insert(VeilCommunity.reconstructionMarker).inserted { save() }
     }
+    func acknowledgeHavenEvent(_ id:String) {
+        guard HavenWatchEvents.event(id,in:state) != nil else{return}
+        if id == HavenWatchEvents.followupID {recordHavenFollowupOpened()}
+        var value=connected
+        if let index=value.activityJournal?.firstIndex(where:{$0.kind == .security && $0.targetID==id && !$0.dismissed}) {
+            value.activityJournal?[index].dismissed=true
+            commitConnected(value)
+        }
+    }
     func recordHavenFollowupOpened() {
         guard HavenWatchEvents.followup(state) != nil else{return}
         if state.flags.insert(HavenWatchEvents.followupOpened).inserted { save() }
@@ -1313,6 +1322,11 @@ final class PhoneWorldStore: ObservableObject {
         var next = preferences
         next.favorites.formIntersection(Set(HavenWatchArchive.frames(in: state).map(\.id)))
         value.havenWatch = next
+        if !next.alertsEnabled {
+            for i in (value.activityJournal ?? []).indices where value.activityJournal?[i].kind == .security {
+                value.activityJournal?[i].dismissed=true
+            }
+        }
         commitConnected(value)
     }
     func socialPreferences(_ channel: LumaSocialChannel) -> LumaSocialPreferences {

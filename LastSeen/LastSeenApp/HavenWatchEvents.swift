@@ -42,6 +42,11 @@ enum HavenWatchEvents {
               event.id == archiveID, event.delivered else { return nil }
         return event
     }
+    static func history(_ world:PhoneWorld)->[HavenWatchEvent] {
+        [visible(world),followup(world)].compactMap{$0}.sorted {
+            $0.due == $1.due ? $0.id < $1.id : $0.due > $1.due
+        }
+    }
     static func title(_ event: HavenWatchEvent) -> String {
         event.id == followupID ? "Retained label recovered" : "Recovered index updated"
     }
@@ -54,6 +59,11 @@ struct HavenWatchEventDetail: View {
     var eventID:String = HavenWatchEvents.archiveID
     @EnvironmentObject private var world: PhoneWorldStore
     @Environment(\.scenePhase) private var phase
+    private var event:HavenWatchEvent? {HavenWatchEvents.event(eventID,in:world.state)}
+    private func acknowledge() {
+        guard phase == .active,event != nil else{return}
+        world.acknowledgeHavenEvent(eventID)
+    }
     var body: some View {
         List {
             if let event = HavenWatchEvents.event(eventID,in:world.state),phase == .active {
@@ -80,7 +90,8 @@ struct HavenWatchEventDetail: View {
                 }
             } else { Text("Activity unavailable").foregroundColor(.secondary) }
         }.navigationTitle("Archive activity")
-        .onAppear { if phase == .active && eventID == HavenWatchEvents.followupID { world.recordHavenFollowupOpened() } }
-        .onChange(of:phase) { if $0 == .active && eventID == HavenWatchEvents.followupID { world.recordHavenFollowupOpened() } }
+        .onAppear {acknowledge()}
+        .onChange(of:phase){if $0 == .active {acknowledge()}}
+        .onChange(of:event?.id){if $0 != nil {acknowledge()}}
     }
 }
