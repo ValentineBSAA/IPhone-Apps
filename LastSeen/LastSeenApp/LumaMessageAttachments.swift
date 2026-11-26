@@ -79,11 +79,20 @@ struct LumaMessageAttachmentPicker: View {
     @Binding var selection: [LumaMessageAttachment]
     @EnvironmentObject private var world: PhoneWorldStore
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var phase
+    private var eligible:[LumaMessageAttachment] {
+        thread == .unknown ? []:LumaMessageAttachmentCatalog.shareable(world.state)
+    }
+    private func reconcile() {
+        selection=Array(selection.filter{eligible.contains($0)}.prefix(3))
+    }
     var body: some View {
         List {
             Section("Select up to 3") {
-                ForEach(LumaMessageAttachmentCatalog.shareable(world.state)) { item in
+                if eligible.isEmpty {Text("No eligible attachments").foregroundColor(.secondary)}
+                ForEach(phase == .active ? eligible:[]) { item in
                     Button {
+                        guard phase == .active,eligible.contains(item) else{return}
                         if selection.contains(item) { selection.removeAll { $0 == item } }
                         else if selection.count < 3 { selection.append(item) }
                     } label: {
@@ -100,6 +109,10 @@ struct LumaMessageAttachmentPicker: View {
             }
             Section { Text("Only eligible fictional phone records can be attached. Private or unrecovered items and real-device files are excluded.").font(.caption).foregroundColor(.secondary) }
         }.navigationTitle("Attachments")
+            .onAppear{reconcile()}
+            .onChange(of:eligible){_ in reconcile()}
+            .onChange(of:world.checkpointEpoch){_ in selection=[];dismiss()}
+            .onChange(of:phase){if $0 != .active {selection=[];dismiss()}}
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
     }
 }
@@ -109,9 +122,12 @@ struct LumaMessageAttachmentTile: View {
     let thread: Neighbor
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var preview = false
+    @Environment(\.scenePhase) private var phase
+    private var readable:Bool {phase == .active && LumaMessageAttachmentCatalog.canRead(attachment,thread:thread,world:world.state)}
     var body: some View {
-        if LumaMessageAttachmentCatalog.canRead(attachment, thread: thread, world: world.state) {
-            Button { preview = true } label: {
+        Group {
+        if readable {
+            Button {if readable {preview=true}} label: {
                 VStack(alignment: .leading, spacing: 6) {
                     if attachment.kind == .photo {
                         Image(attachment.recordID).resizable().scaledToFit().frame(maxHeight: 150).clipShape(RoundedRectangle(cornerRadius: 12))
@@ -124,7 +140,7 @@ struct LumaMessageAttachmentTile: View {
                 .sheet(isPresented: $preview) {
                     NavigationStack {
                         Group {
-                            if LumaMessageAttachmentCatalog.canRead(attachment, thread: thread, world: world.state) {
+                            if readable {
                                 switch attachment.kind {
                                 case .photo:
                                     ScrollView { Image(attachment.recordID).resizable().scaledToFit().padding() }
@@ -149,5 +165,7 @@ struct LumaMessageAttachmentTile: View {
         } else {
             Label("Attachment unavailable", systemImage: "lock.doc").font(.caption).foregroundColor(.secondary)
         }
+        }.onChange(of:readable){if !$0 {preview=false}}
+         .onChange(of:world.checkpointEpoch){_ in preview=false}
     }
 }

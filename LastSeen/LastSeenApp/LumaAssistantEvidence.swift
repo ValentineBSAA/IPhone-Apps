@@ -215,3 +215,19 @@ enum LumaAssistantEvidence {
         return intro+" (“"+record.title+"”):\n“"+excerpt+"”\nThat is what the record says, not independent confirmation. Which part would you like to examine?"
     }
 }
+
+
+/// Ephemeral record reference; never persisted with the world.
+struct LumaImageHandoff:Equatable {
+    let asset:String
+    let epoch:UUID
+    static func make(_ asset:String,epoch:UUID,in world:PhoneWorld)->Self? {
+        guard RecoveredImageAnalysis.record(asset,in:world) != nil,
+              LumaAssistantEvidence.selected("image:"+asset,in:world) != nil else{return nil}
+        return .init(asset:asset,epoch:epoch)
+    }
+    func resolve(epoch current:UUID,in world:PhoneWorld)->String? {
+        guard epoch==current,Self.make(asset,epoch:current,in:world) != nil else{return nil}
+        return asset
+    }
+}

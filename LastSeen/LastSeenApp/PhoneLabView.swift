@@ -8,7 +8,7 @@ import AVFoundation
 struct PhoneLabView: View {
     @StateObject private var world: PhoneWorldStore
     @State private var path = NavigationPath()
-    @State private var pendingLumaImage:String?
+    @State private var pendingLumaImage:LumaImageHandoff?
     @StateObject private var saves: LumaSaveStore
     @AppStorage("lastseen.saves.interval") private var saveInterval = 5
     @State private var checkpointReboot = false
@@ -165,9 +165,10 @@ struct PhoneLabView: View {
         .id(navigationGeneration)
         .environmentObject(world)
         .environment(\.sendImageToLuma,{ asset in
-            guard RecoveredImageAnalysis.record(asset,in:world.state) != nil,appAvailable(.assistant),!locked,!checkpointReboot else{return}
+            guard phase == .active,appAvailable(.assistant),!locked,!checkpointReboot,
+                  let handoff=LumaImageHandoff.make(asset,epoch:world.checkpointEpoch,in:world.state) else{return}
             open(.assistant)
-            pendingLumaImage=asset
+            pendingLumaImage=handoff
         })
         .defersSystemGestures(on: deferSystemEdges ? [.top, .bottom] : [])
         .tint(LumaDesign.accent)
@@ -1243,8 +1244,9 @@ struct PhoneLabView: View {
         case .motionwell: MotionwellView()
         case .voiceMemos: LumaVoiceMemos()
         case .assistant: LumaAssistantView(context: { LumaAssistantContext(world: world.state, availableApps: Set(LabApp.allCases.filter { appAvailable($0) }), wifi: wifi, sound: messageSound, haptics: messageHaptics, safeMode: safeMode, installedCount: RelayCatalog.ids(relayInstalled).count, timerEnd: feedbackTimerEnd, now: Date()) }, openApp: { open($0) }, acknowledgeBoundaries: { world.acknowledgeLumaBoundaries() }, rememberSession: { world.rememberLumaSession($0) }, takeImageHandoff: {
-            let asset=pendingLumaImage;pendingLumaImage=nil;return asset
-        })
+            let handoff=pendingLumaImage;pendingLumaImage=nil
+            return handoff?.resolve(epoch:world.checkpointEpoch,in:world.state)
+        }, checkpointEpoch:{world.checkpointEpoch})
         case .workstation: LumaWorkbenchView(openRelay:{open(.relay)},openFiles:{open(.files)})
         case .photos: LabPhotosView()
         case .clock: LabClockView(onFinish: { settleTimer(now: $0, present: true) })
@@ -1352,7 +1354,8 @@ private struct LabPhoto: Identifiable {
 private struct LabPhotosView: View {
     @EnvironmentObject private var world: PhoneWorldStore
     @Environment(\.sendImageToLuma) private var sendImageToLuma
-    @State private var pendingModalHandoff:String?
+    @State private var pendingModalHandoff:LumaImageHandoff?
+    @State private var photoEpoch:UUID?
     @State private var selection: LabPhoto?
     @AppStorage("lastseen.lab.favoritePhotos") private var favorites = ""
     @Environment(\.scenePhase) private var photoPhase
@@ -1372,6 +1375,7 @@ private struct LabPhotosView: View {
     private func openPhoto(_ photo:LabPhoto) {
         guard photoPhase == .active else{return}
         scale=1
+        photoEpoch=world.checkpointEpoch
         selection=photo
         if available(photo){world.recordCameraAnalysisOpened(photo.asset)}
     }
@@ -1443,16 +1447,17 @@ private struct LabPhotosView: View {
             }.padding()
         }.navigationTitle("Photos")
         .onAppear { world.recoverPhotoDiscovery() }
-        .onChange(of:photoPhase){if $0 != .active {pendingModalHandoff=nil;selection=nil;scale=1}}
-        .sheet(item: $selection,onDismiss:{
-            let asset=pendingModalHandoff
-            pendingModalHandoff=nil
-            if photoPhase == .active,let asset,RecoveredImageAnalysis.record(asset,in:world.state) != nil {sendImageToLuma?(asset)}
+        .onChange(of:photoPhase){if $0 != .active {pendingModalHandoff=nil;selection=nil;scale=1;photoEpoch=nil}}
+        .onChange(of:world.checkpointEpoch){_ in pendingModalHandoff=nil;selection=nil;photoEpoch=nil;scale=1}
+        .sheet(item:$selection,onDismiss:{
+            let handoff=pendingModalHandoff
+            pendingModalHandoff=nil;photoEpoch=nil
+            if photoPhase == .active,let asset=handoff?.resolve(epoch:world.checkpointEpoch,in:world.state) {sendImageToLuma?(asset)}
         }) { photo in
             NavigationStack {
                 VStack(spacing: 16) {
                     Spacer()
-                    if available(photo) && photoPhase == .active {
+                    if available(photo) && photoPhase == .active && photoEpoch == world.checkpointEpoch {
                     Image(photo.asset).resizable().scaledToFit()
                         .scaleEffect(scale).gesture(MagnificationGesture().onChanged { scale = min(3, max(1, $0)) })
                         .clipped().onTapGesture(count: 2) { withAnimation { scale = scale > 1 ? 1 : 2 } }
@@ -1489,8 +1494,9 @@ private struct LabPhotosView: View {
                 }.padding().navigationTitle(available(photo) && photoPhase == .active ? photo.title : "Locked photograph").navigationBarTitleDisplayMode(.inline)
                     .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { selection = nil } } }
             }.environment(\.sendImageToLuma,{ asset in
-                guard photoPhase == .active,RecoveredImageAnalysis.record(asset,in:world.state) != nil else{return}
-                pendingModalHandoff=asset
+                guard photoPhase == .active,photoEpoch == world.checkpointEpoch,
+                      let handoff=LumaImageHandoff.make(asset,epoch:world.checkpointEpoch,in:world.state) else{return}
+                pendingModalHandoff=handoff
                 selection=nil
             }).preferredColorScheme(.dark)
         }

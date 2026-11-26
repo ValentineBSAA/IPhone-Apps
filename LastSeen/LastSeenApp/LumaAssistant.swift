@@ -92,6 +92,7 @@ struct LumaAssistantView: View {
     let acknowledgeBoundaries: () -> Void
     let rememberSession: (LumaAssistantSession?) -> Void
     var takeImageHandoff: () -> String? = {nil}
+    var checkpointEpoch:()->UUID = {UUID(uuid:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0))}
     @State private var previousMemoryID: String?
     @State private var recollectionCount = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -172,9 +173,11 @@ struct LumaAssistantView: View {
         cancelImageScan();stopAudio()
         interpretation?.cancel();interpretation=nil;requestID=UUID()
         let id=UUID();imageScanID=id
+        let epoch=checkpointEpoch()
         imageScan=Task { @MainActor in
             let result=await LumaImageAnalysis.scan(asset,world:context().world,security:imageSecurity)
             guard !Task.isCancelled,imageScanID==id,phase == .active,evidenceID==recordID else{return}
+            guard checkpointEpoch()==epoch else{clearTransientContext();return}
             imageScan=nil
             guard let result=LumaImageAnalysis.verified(result,recordID:recordID,world:context().world,security:imageSecurity),
                   let record=LumaAssistantEvidence.selected(recordID,in:context().world) else {
@@ -225,6 +228,7 @@ struct LumaAssistantView: View {
         interpretation?.cancel(); interpretation = nil
         if LumaAssistantTrust.acknowledgesBoundaries(text) { acknowledgeBoundaries() }
         let id = UUID(); requestID = id
+        let epoch=checkpointEpoch()
         if imageScan != nil {cancelImageScan()}
         let current = context()
         let previous = conversationTopic
@@ -235,7 +239,7 @@ struct LumaAssistantView: View {
             interpretation = Task { @MainActor in
                 let inferred = await LumaIntentInterpreter.interpret(text,previous:previous)
                 guard !Task.isCancelled,requestID==id,phase == .active else{return}
-                guard !accessSnapshot.revokes(access) else {clearTransientContext();lastAccess=accessSnapshot;return}
+                guard checkpointEpoch()==epoch,!accessSnapshot.revokes(access) else{clearTransientContext();lastAccess=accessSnapshot;return}
                 accept(text,LumaAssistantConversation.reply(text,context:context(),previous:previous,interpreted:inferred,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount,evidenceID:evidenceID,visualReport:imageReport,imageSecurity:imageSecurity))
                 interpretation = nil
             }
@@ -379,6 +383,7 @@ struct LumaAssistantView: View {
                 if $0 != .active {clearTransientContext()}
                 else {lastAccess=accessSnapshot;resumeSession();receiveImageHandoff()}
             }
+            .onChange(of:checkpointEpoch()){_ in clearTransientContext();lastAccess=accessSnapshot}
             .onChange(of:imageSecurity) { _ in
                 // Earlier turns may contain scan results even when the player
                 // subsequently cleared the selection or opened another record.

@@ -139,6 +139,7 @@ final class PhoneWorldStore: ObservableObject {
     @Published private(set) var state: PhoneWorld
     @Published var visibleThread: Neighbor? = nil
     private var supportGenerationEpoch = UUID()
+    @Published private(set) var checkpointEpoch=UUID()
     private let persistToDisk: Bool
     private let storageURL: URL
 
@@ -745,6 +746,7 @@ final class PhoneWorldStore: ObservableObject {
         }
         visibleThread = nil
         supportGenerationEpoch = UUID()
+        checkpointEpoch=UUID()
         state = replacement
     }
 
