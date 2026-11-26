@@ -18,7 +18,17 @@ PACKS = (
      46400998, "WorldPhoto_E01_", 18),
 )
 ASSIGNED = {f"Recovered_B27_{i:02}" for i in range(1,30) if i != 6} | {f"WorldPhoto_E01_{i:02}" for i in range(1,11)}
-HELD = {"Recovered_B27_06": "Reviewed; intimate horror composition is not needed for the playable investigation."}
+HELD = {
+    "Recovered_B27_06": "Reviewed; intimate horror composition is not needed for the playable investigation.",
+    "WorldPhoto_E01_11": "Reserve: conflicting Luma Studios branding and development labels.",
+    "WorldPhoto_E01_12": "Reserve: intact composite, conflicting studio branding and unverified mixed-context scenes.",
+    "WorldPhoto_E01_13": "Reserve: conflicting studio branding, embedded dates and uncorroborated project labels.",
+    "WorldPhoto_E01_14": "Reserve: conflicting studio branding and prototype software labels.",
+    "WorldPhoto_E01_15": "Reserve: conflicting studio branding and uncorroborated production notes.",
+    "WorldPhoto_E01_16": "Reserve: conflicting studio branding and embedded calendar details.",
+    "WorldPhoto_E01_17": "Reserve: conflicting studio branding and uncorroborated personal documents.",
+    "WorldPhoto_E01_18": "Reserve: conflicting studio branding and uncorroborated on-screen correspondence."
+}
 
 
 def require(condition, message):
@@ -75,7 +85,10 @@ def prepare(root, output):
     require(not output.exists(), "Choose a new output directory; existing reviews are never overwritten.")
     # Validate both complete archives before creating any review output.
     entries = [entry for pack in PACKS for entry in inspect_pack(root, pack)]
-    require(len(entries) == 8, "Expected 8 outstanding originals")
+    inventory={f"{prefix}{i:02}" for _,_,_,prefix,count in PACKS for i in range(1,count+1)}
+    require(not ASSIGNED.intersection(HELD) and ASSIGNED.union(HELD)==inventory,
+            "Every original needs exactly one explicit disposition")
+    require(not entries, "Unexpected unresolved originals")
     output.mkdir(parents=True)
     originals = output / "originals"
     originals.mkdir()
@@ -93,7 +106,8 @@ def prepare(root, output):
             draw.text((x+10, y+390), asset, fill="white")
         sheet.save(output / f"review-{start//8+1:02}.png")
     (output / "review-ledger.json").write_text(
-        json.dumps({"review_complete": False, "runtime_import": False,
+        json.dumps({"review_complete": not entries, "runtime_import": False,
+                    "assigned": sorted(ASSIGNED),
                     "held": HELD, "assets": [record for _, _, record in entries]},
                    indent=2) + "\n", encoding="utf-8")
     print(f"Prepared {len(entries)} pending originals, {(len(entries)+7)//8} contact sheets and a private ledger.")

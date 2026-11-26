@@ -16,6 +16,10 @@ with zipfile.ZipFile(path) as z:
         assert not (pathlib.Path("LastSeenApp/Assets.xcassets")/(name+".imageset")).exists(), "Recovered catalog alias: "+name
         validated.append((name,data))
     # Verify the entire inventory before writing any resource.
+    held=pathlib.Path("LastSeenApp/Recovered_B27_06.png")
+    assert not held.exists(), "Held recovered original must be removed from scratch import directory"
     for name,data in validated:
+        if name=="Recovered_B27_06":
+            continue
         (pathlib.Path("LastSeenApp")/(name+".png")).write_bytes(data)
         print("Verified standalone resource:",name)

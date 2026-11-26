@@ -15,9 +15,15 @@ expected={}
 for name in packs:
     with zipfile.ZipFile(name) as z:
         for record in json.loads(z.read("manifest.json"))["assets"]:
+            if record["filename"]=="Recovered_B27_06.png":
+                assert name=="Last-Seen-Build27-Recovered-Images.zip"
+                continue
             assert record["filename"] not in expected
             expected[record["filename"]]=record["sha256"]
-assert len(expected)==53
+assert len(expected)==52
+def reject_held_recovered(paths):
+    assert not any(pathlib.PurePosixPath(str(p)).name in {"Recovered_B27_06.png","Recovered_B27_06.imageset","Recovered_B27_06"} for p in paths), "Held recovered original in runtime"
+reject_held_recovered(pathlib.Path("LastSeenApp").rglob("*"))
 for name,data in verified_originals("Last-Seen-World-Photos-Expansion-01.zip").items():
     assert name not in expected
     assert digest((pathlib.Path("LastSeenApp")/name).read_bytes())==digest(data)
@@ -76,6 +82,7 @@ assert len([name for name in expected if name.startswith("CommunityReserve")]) =
 if a.app:
     reject_unapproved_voice(a.app.rglob("*"))
     reject_held(a.app.rglob("*"))
+    reject_held_recovered(a.app.rglob("*"))
     car=(a.app/"Assets.car").read_bytes()
     assert car.startswith(b"BOMStore") and len(car)>1024, "Malformed compiled asset catalog"
     print("Device Assets.car:",len(car),"bytes SHA-256",digest(car))
@@ -101,7 +108,8 @@ if a.catalog:
     # Build27 originals are standalone PNGs, not CoreUI renditions.
     # Their exact bytes are already verified against the pinned manifest in
     # both the device bundle and the final IPA.
-    assert all(f"Recovered_B27_{i:02d}.png" in expected for i in range(1,30))
+    assert {n for n in expected if n.startswith("Recovered_B27_")} == {f"Recovered_B27_{i:02d}.png" for i in range(1,30) if i!=6}
+    assert not any(isinstance(name,str) and name.startswith("Recovered_B27_") for name in names), "Recovered originals must remain standalone"
     assert not any(isinstance(name,str) and name.startswith("WorldPhoto_E01_") for name in names), "Held world artwork in compiled catalog"
     missing=required-names
     assert not missing, f"Device catalog missing required renditions: {sorted(missing)}"
@@ -117,6 +125,7 @@ if a.ipa:
         assert len(names)==len(set(names)), "Duplicate ZIP paths"
         reject_unapproved_voice(names)
         reject_held(names)
+        reject_held_recovered(names)
         info=plistlib.loads(z.read(prefix+"Info.plist"))
         assert info["CFBundleVersion"]=="32" and info["CFBundleShortVersionString"]=="1.9.0", "IPA identity disagrees with release contract"
         assert info["MinimumOSVersion"]=="16.0" and info["CFBundleIdentifier"]=="com.valentinebsaa.lastseen.horror"

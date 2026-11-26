@@ -39,6 +39,10 @@ def verify():
             name = r["asset_id"]
             filename = name + ".png"
             require(r["filename"] == filename, "Unexpected recovered filename")
+            if name=="Recovered_B27_06":
+                require(not (APP / filename).exists() and not (CATALOG / (name+".imageset")).exists(),
+                        "Held recovered original in runtime")
+                continue
             require(digest((APP / filename).read_bytes()) == r["sha256"],
                     "Standalone artwork differs: " + name)
             require(not (CATALOG / (name + ".imageset")).exists(),
@@ -74,7 +78,7 @@ def verify():
         require((APP/name).read_bytes()==data,"Expansion original differs: "+name)
     require(not any(APP.rglob("LastSeen_B32_VoiceCandidates*")),
             "Unapproved candidate archive must remain outside runtime")
-    print("Photo preflight: 29 standalone originals, 16 Nora assets, four canonical aliases, 12 VEIL assets and six additional VEIL home originals verified; held artwork excluded.")
+    print("Photo preflight: 28 recovered standalone originals plus ten expansion originals, 16 Nora assets, four canonical aliases, 12 VEIL assets and six additional VEIL home originals verified; held artwork excluded.")
 
 if __name__ == "__main__":
     verify()

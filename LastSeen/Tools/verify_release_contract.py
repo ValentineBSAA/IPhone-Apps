@@ -76,6 +76,23 @@ app_names=re.findall(r'= "([^"]+)"',launcher)
 audit_names=re.findall(r'^\| ([^|]+) \| .* \| (?:Pending|Targeted pass|Source reviewed) \| (?:Pending|Passed) \| (?:Pending|Passed) \|$',read("BUILD32_APP_AUDIT.md"),re.M)
 require(len(app_names)==len(set(app_names)) and len(audit_names)==len(set(audit_names)) and set(app_names)==set(audit_names),
         "App acceptance register differs from launcher: "+str(set(app_names).symmetric_difference(audit_names)))
+# Final visual decisions must agree with playable catalogs. Parse only
+# literal authored image arrays/keys, without requiring Pillow or media bytes.
+web = read("LastSeenApp/LumaWebBrowser.swift")
+veil = read("LastSeenApp/VeilBrowser.swift")
+photo = read("LastSeenApp/NoraPhotoCatalog.swift")
+browser_images = [asset for group in re.findall(r'images:\s*\[([^\]]*)\]',web)
+                  for asset in re.findall(r'"(Recovered_B27_\d{2})"',group)]
+reflection = re.findall(r'"(Recovered_B27_\d{2})"',veil.split("static let reflectionAssets=",1)[1].split("\n",1)[0])
+expected_recovered = {f"Recovered_B27_{i:02}" for i in range(1,30) if i!=6}
+require(set(browser_images+reflection)==expected_recovered and len(browser_images+reflection)==len(expected_recovered),
+        "Recovered assignments differ from the browser and VEIL inventory")
+titles = photo.split("static let everydayTitles=",1)[1].split("static let everydayDescriptions=",1)[0]
+descriptions = photo.split("static let everydayDescriptions=",1)[1].split("static let photos:",1)[0]
+expected_expansion={f"WorldPhoto_E01_{i:02}" for i in range(1,11)}
+require(set(re.findall(r'"(WorldPhoto_E01_\d{2})"\s*:',titles))==expected_expansion and
+        set(re.findall(r'"(WorldPhoto_E01_\d{2})"\s*:',descriptions))==expected_expansion,
+        "Camera roll expansion titles/descriptions differ from approved inventory")
 source = read("LastSeenApp/RecoveryPrologue.swift")
 pace = source.split("enum OpeningPace {", 1)[1].split("    static func duration", 1)[0]
 constants = {name: int(value) for name, value in re.findall(r"static let (\w+) = (\d+)\s*$", pace, re.M)}

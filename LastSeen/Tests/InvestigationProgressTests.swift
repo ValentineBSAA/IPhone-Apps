@@ -96,7 +96,12 @@ import XCTest
         let asset=LumaWebCatalog.page("archive-records")!.images.first!
         w.inspectWebAttachment(asset)
         XCTAssertFalse(w.state.flags.contains("web.inspected."+asset))
-        for i in 1...29 { XCTAssertNotNil(PortraitImages.load(String(format:"Recovered_B27_%02d",i))) }
+        for i in 1...29 where i != 6 { XCTAssertNotNil(PortraitImages.load(String(format:"Recovered_B27_%02d",i))) }
+        XCTAssertNil(PortraitImages.load("Recovered_B27_06"))
+        let assignments=LumaWebCatalog.pages.flatMap(\.images)+VeilArchive.reflectionAssets
+        let recovered=assignments.filter{$0.hasPrefix("Recovered_B27_")}
+        XCTAssertEqual(Set(recovered),Set((1...29).filter{$0 != 6}.map{String(format:"Recovered_B27_%02d",$0)}))
+        XCTAssertEqual(recovered.count,28)
         XCTAssertEqual(Set(LumaWebCatalog.pages.map(\.id)).count,LumaWebCatalog.pages.count)
     }
 }
