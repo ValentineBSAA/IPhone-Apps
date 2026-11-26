@@ -45,6 +45,15 @@ struct EvidenceConnection: Codable, Equatable, Identifiable {
     func discussion(in world:PhoneWorld)->String? {
         guard Self.make(first,second,relation:relation,in:world) != nil else{return nil}
         let ids=Set([first,second])
+        if ids == Set([SocialArchiveReview.readingID,"image:VEIL_Home_03"]) {
+            return "The public post describes an ordinary reading goal. The recovered photograph shows a similar activity, but is not established as the photograph Nora published. Compare the descriptions without assuming shared provenance."
+        }
+        if ids == Set([SocialArchiveReview.datesID,"veil:home-index"]) {
+            return "The public discussion distinguishes original capture from import; the index describes a revision of the collection. These records support comparing dates and order, not assigning an original capture date."
+        }
+        if ids == Set([SocialArchiveReview.recordID,"veil:conversation"]) {
+            return "The local draft and historical correspondence both describe a wish to set boundaries and retain records. The draft was not published. This is a connection between recovered statements, not confirmation of the sender's identity."
+        }
         if HavenCrossArchiveReview.matchingPair(self,in:world) {
             return "These two records describe comparable rooms but belong to different collections. Examine their source labels; neither collection supplies a verified original capture date."
         }
@@ -149,10 +158,13 @@ struct EvidenceComparisonView: View {
                         Button("Save connection") {
                             guard phase == .active else{return}
                             let readyBefore=VeilReferences.homeIndexReady(world.state)
+                            let socialBefore=SocialArchiveReview.ready(world.state)
                             if world.saveEvidenceConnection(first,second,relation:relation) {
-                                notice = !readyBefore && VeilReferences.homeIndexReady(world.state)
-                                    ? "Connection saved. A new recovered reference is available in Files."
-                                    : "Connection saved to the current checkpoint."
+                                if !readyBefore && VeilReferences.homeIndexReady(world.state) {
+                                    notice="Connection saved. A new recovered reference is available in Files."
+                                } else if !socialBefore && SocialArchiveReview.ready(world.state) {
+                                    notice="Connection saved. Additional restored account material is available in Afterframe."
+                                } else { notice="Connection saved to the current checkpoint." }
                             } else { notice="Connection could not be saved." }
                         }.buttonStyle(.borderedProminent)
                         if !notice.isEmpty {Text(notice).font(.caption)}

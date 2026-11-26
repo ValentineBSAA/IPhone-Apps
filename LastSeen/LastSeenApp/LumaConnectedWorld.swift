@@ -361,7 +361,11 @@ struct SocialArchiveReviewView:View {
         List {
             if HavenCrossArchiveReview.reviewed(world.state),phase == .active {
                 Section("Revisit public records") {
-                    Text("Compare Nora's reading post with the recovered home copy, and the discussion about dates with the secondary index. Separate public descriptions from claims about private activity.")
+                    Text("Compare descriptions in Nora's reading post and the recovered home copy. Then compare dates or order in the CommonGround discussion and the secondary index. Separate public descriptions from claims about private activity.")
+                    if VeilArchive.homeMedia(world.state).contains("VEIL_Home_03"),
+                       !world.state.flags.contains("veil.viewed.VEIL_Home_03") {
+                        NavigationLink { VeilBrowser() } label:{ Label("Revisit VEIL media",systemImage:"eye.slash") }
+                    }
                     NavigationLink { LumaSocialDiscussion(channel:.afterframe,postID:"af-04") } label:{ Text("Afterframe · saved post") }
                     NavigationLink { LumaSocialDiscussion(channel:.commonGround,postID:"cg-04") } label:{ Text("CommonGround · record discussion") }
                     NavigationLink { EvidenceComparisonView() } label:{ Label("Compare opened records",systemImage:"rectangle.split.2x1") }
