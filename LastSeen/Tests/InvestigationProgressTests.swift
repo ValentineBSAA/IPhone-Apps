@@ -1,6 +1,21 @@
 import XCTest
 @testable import LastSeen
 @MainActor final class InvestigationProgressTests: XCTestCase {
+    func testInspectionMarkerRequiresAccessibleVisitedSource() throws {
+        var state=RestoredPhoneBackup.snapshot()
+        state.flags.formUnion(["phone-tutorial-replied","phone-tutorial-file-guidance","phone-tutorial-finished","web.visited.studio","investigation.contact.received","web.visited.archive"])
+        let asset=try XCTUnwrap(LumaWebCatalog.page("archive-records")?.images.first)
+        state.flags.insert("web.inspected."+asset)
+        XCTAssertEqual(InvestigationProgress.current(state.flags)?.id,"records")
+        state.flags.insert("web.visited.archive-records")
+        XCTAssertEqual(InvestigationProgress.current(state.flags)?.id,"review")
+        state.flags.remove("investigation.contact.received")
+        // The source is still available if the archive visit itself is retained.
+        XCTAssertEqual(InvestigationProgress.current(state.flags)?.id,"review")
+        state.flags.remove("web.visited.archive-records")
+        XCTAssertEqual(InvestigationProgress.current(state.flags)?.id,"records")
+    }
+
     func testGuidanceDoesNotExposeFutureLeads() throws {
         var state = RestoredPhoneBackup.snapshot()
         state.flags.formUnion([InvestigationReview.finished, InvestigationResolution.completed])

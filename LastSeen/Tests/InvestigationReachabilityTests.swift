@@ -37,6 +37,11 @@ import XCTest
         w.advanceConnectedMail(now: now.addingTimeInterval(25))
         w.advanceInvestigation(now: now.addingTimeInterval(26))
         XCTAssertFalse(w.connected.pendingMail.contains { $0.record.id == InvestigationReview.mailID })
+        // The critical correspondence remains recoverable after moving folders.
+        w.moveConnectedMail(InvestigationReview.mailID,folder:"archive")
+        XCTAssertTrue(LumaMailCatalog.mailbox(w.state,folder:"archive").contains{$0.id==InvestigationReview.mailID})
+        w.moveConnectedMail(InvestigationReview.mailID,folder:"trash")
+        XCTAssertTrue(LumaMailCatalog.mailbox(w.state,folder:"trash").contains{$0.id==InvestigationReview.mailID})
         w.recordInvestigationMailRead(InvestigationReview.mailID)
         w.visitWebRecord(InvestigationReview.pageID, now: now.addingTimeInterval(26))
         w.setInvestigationReviewChoice("a", value: 0)
@@ -62,6 +67,33 @@ import XCTest
             restored.advanceInvestigation(now: now.addingTimeInterval(100))
             XCTAssertFalse(restored.connected.pendingMail.contains { $0.record.id == InvestigationResolution.mailID })
         }
+    }
+
+    func testMissingScriptedMessagesReconcileWithoutReplayingExistingHistory() throws {
+        let now=Date(timeIntervalSince1970:1800000000)
+        var initial=RestoredPhoneBackup.snapshot(now:now)
+        initial.flags.formUnion(["phone-tutorial-finished","web.visited.studio","investigation.contact.received"])
+        let w=PhoneWorldStore(initial:initial,persistToDisk:false)
+        XCTAssertFalse(w.messages(.unknown).contains{$0.id=="unknown-intro-v1"})
+        w.advanceInvestigation(now:now)
+        let first=try XCTUnwrap(w.messages(.unknown).first{$0.id=="unknown-intro-v1"})
+        w.markRead(.unknown)
+        w.advanceInvestigation(now:now.addingTimeInterval(10))
+        XCTAssertEqual(w.messages(.unknown).filter{$0.id==first.id}.count,1)
+        XCTAssertEqual(w.messages(.unknown).first{$0.id==first.id}?.at,first.at)
+        XCTAssertEqual(w.messages(.unknown).first{$0.id==first.id}?.read,true)
+        var interrupted=w.state
+        interrupted.flags.formUnion(["investigation.chapter2.reviewed","web.visited.archive-ledger","investigation.chapter2.ledgerAcknowledged"])
+        let resumed=PhoneWorldStore(initial:interrupted,persistToDisk:false)
+        resumed.advanceInvestigation(now:now.addingTimeInterval(20))
+        resumed.advanceInvestigation(now:now.addingTimeInterval(21))
+        XCTAssertEqual(resumed.messages(.unknown).filter{$0.id=="unknown-review-v2"}.count,1)
+        XCTAssertEqual(resumed.messages(.unknown).filter{$0.id==first.id}.count,1)
+        var revoked=interrupted
+        revoked.flags.remove("phone-tutorial-finished")
+        let unavailable=PhoneWorldStore(initial:revoked,persistToDisk:false)
+        unavailable.advanceInvestigation(now:now)
+        XCTAssertFalse(unavailable.messages(.unknown).contains{$0.id=="unknown-review-v2"})
     }
 
     func testRequestMarkerDoesNotGrantAccess() {
