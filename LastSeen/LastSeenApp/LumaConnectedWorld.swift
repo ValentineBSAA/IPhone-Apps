@@ -150,10 +150,13 @@ enum LumaMailCatalog {
                 (q.isEmpty || [item.subject,item.sender,item.body,peer].contains{$0.localizedCaseInsensitiveContains(q)})
         }
     }
-    static func response(to peer:Neighbor,subject:String,body:String)->String {
+    static func response(to peer:Neighbor,subject:String,body:String,flags:Set<String>=[])->String {
         let words=Set((subject+" "+body).lowercased().split{!$0.isLetter && !$0.isNumber}.map(String.init))
         if !words.isDisjoint(with:["password","passcode","credentials","pin"]) {
             return "Thank you for the message. I cannot authorize private account access by email. Please keep the restored records separate from live accounts.\n\n"+peer.name
+        }
+        if peer == .maya,let status=PhoneReplyPolicy.mayaStatusReply(subject+" "+body,flags:flags) {
+            return status+"\n\nMaya"
         }
         switch peer {
         case .adrian:

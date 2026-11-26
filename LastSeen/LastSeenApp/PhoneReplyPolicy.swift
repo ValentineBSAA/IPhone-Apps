@@ -19,6 +19,18 @@ struct PhoneReplyPlan {
 
 /// Offline authored reactions. No external model, invented evidence or access grants.
 enum PhoneReplyPolicy {
+    /// Shared knowledge boundary for live conversations and mail. Historical
+    /// records remain immutable; only pending and newly composed replies use it.
+    static func ownerStatusQuestion(_ text:String)->Bool {
+        !PhoneEverydayConversation.words(text).isDisjoint(with:["nora","missing","where","safe","disappeared","location","address"])
+    }
+    static func privateAccessQuestion(_ text:String)->Bool {
+        !PhoneEverydayConversation.words(text).isDisjoint(with:["password","passcode","credentials","pin","unlock","code"])
+    }
+    static func mayaStatusReply(_ text:String,flags:Set<String>)->String? {
+        guard flags.contains(InvestigationResolution.read),ownerStatusQuestion(text),!privateAccessQuestion(text) else{return nil}
+        return "I've spoken to her. She asked for some time and I want to respect that. I can't tell you her location."
+    }
     static func plan(for neighbor: Neighbor, text: String, flags: Set<String>,
                      tutorialStarted: Bool, tutorialFinished: Bool, previousReply: String? = nil, previousMessage: String? = nil, recentReplies: [String] = []) -> PhoneReplyPlan {
         let normalized = text.lowercased()
@@ -30,9 +42,8 @@ enum PhoneReplyPolicy {
             }
             return PhoneReplyPlan(text: InvestigationProgress.unknownReply(words: words, flags: flags))
         }
-        if neighbor == .maya && flags.contains(InvestigationResolution.read) &&
-            mentions("nora","missing","where","safe","disappeared","location","address") {
-            return PhoneReplyPlan(text: "I've spoken to her. She asked for some time and I want to respect that. I can't tell you her location.")
+        if neighbor == .maya,let status=mayaStatusReply(text,flags:flags) {
+            return PhoneReplyPlan(text:status)
         }
         if !Neighbor.original.contains(neighbor) {
             if let everyday = PhoneEverydayConversation.reply(neighbor: neighbor, text: text, previousMessage: previousMessage, previousReply: previousReply, recentReplies: recentReplies) {

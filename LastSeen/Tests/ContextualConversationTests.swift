@@ -2,6 +2,37 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class ContextualConversationTests: XCTestCase {
+    func testStatusKnowledgeAndMailDeliveryRemainConsistent() throws {
+        let now=Date(timeIntervalSince1970:1_800_000_000)
+        let initial=RestoredPhoneBackup.snapshot(now:now)
+        let question="Is Nora safe?"
+        let w=PhoneWorldStore(initial:initial,persistToDisk:false)
+        XCTAssertTrue(w.sendReactive(to:.maya,text:question,now:now))
+        XCTAssertTrue(w.sendConnectedMail(draftID:nil,peer:.maya,subject:"Checking in",body:question,now:now))
+        let pending=try XCTUnwrap(w.state.pendingReplies?.first)
+        let queued=try XCTUnwrap(w.connected.pendingMail.first)
+        var restored=w.state
+        restored.flags.insert(InvestigationResolution.read)
+        let status=try XCTUnwrap(PhoneReplyPolicy.mayaStatusReply(question,flags:restored.flags))
+        XCTAssertNotEqual(pending.text,status)
+        XCTAssertNotEqual(queued.record.body,status+"\n\nMaya")
+        let resume=PhoneWorldStore(initial:restored,persistToDisk:false)
+        let delivery=max(pending.dueAt,queued.dueAt).addingTimeInterval(10)
+        resume.advancePendingReplies(now:delivery)
+        let message=try XCTUnwrap(resume.messages(.maya).first(where:{$0.id==pending.id}))
+        let reply=try XCTUnwrap(resume.connected.mail.first(where:{$0.id==queued.record.id}))
+        XCTAssertEqual(message.text,status)
+        XCTAssertEqual(reply.body,status+"\n\nMaya")
+        XCTAssertEqual(message.at,delivery)
+        XCTAssertEqual(reply.date,delivery)
+        resume.advancePendingReplies(now:delivery.addingTimeInterval(30))
+        XCTAssertEqual(resume.connected.mail.filter{$0.id==reply.id}.count,1)
+        XCTAssertEqual(resume.messages(.maya).filter{$0.id==message.id}.count,1)
+        XCTAssertNil(PhoneReplyPolicy.mayaStatusReply("Nora's passcode",flags:restored.flags))
+        XCTAssertNil(PhoneReplyPolicy.mayaStatusReply(question,flags:initial.flags))
+        XCTAssertFalse(LumaMailCatalog.response(to:.denise,subject:"Checking in",body:question,flags:restored.flags).contains(status))
+    }
+
     func testFictionalCallOutcomesAndContactAvailability() throws {
         var initial=RestoredPhoneBackup.snapshot()
         initial.threads.removeValue(forKey:Neighbor.unknown.id)

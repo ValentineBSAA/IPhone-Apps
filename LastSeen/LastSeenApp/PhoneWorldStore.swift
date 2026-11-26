@@ -352,7 +352,7 @@ final class PhoneWorldStore: ObservableObject {
             } else {
                 let text = currentPendingReplyText(item)
                 append(NeighborMessage(id: item.id, thread: item.neighbor.id, text: text,
-                                       fromPlayer: false, at: item.dueAt, read: false))
+                                       fromPlayer: false, at: text == item.text ? item.dueAt : now, read: false))
             }
             changed = true
         }
@@ -396,15 +396,18 @@ final class PhoneWorldStore: ObservableObject {
         // Keep ordinary authored replies stable; only reevaluate those whose
         // speaker's knowledge or service state has changed since composition.
         guard let outgoing = state.threads[item.neighbor.id]?.first(where: { $0.id == item.outgoingID && $0.fromPlayer }) else { return item.text }
-        if item.neighbor == .unknown && state.flags.contains("web.visited." + InvestigationResolution.indexID) {
+        if item.neighbor == .unknown {
             return PhoneReplyPolicy.plan(for: item.neighbor, text: outgoing.text, flags: state.flags,
                                          tutorialStarted: tutorialStarted, tutorialFinished: tutorialFinished).text
         }
-        if item.neighbor == .maya && state.flags.contains(InvestigationResolution.read) {
-            let words = PhoneEverydayConversation.words(outgoing.text)
-            if !words.isDisjoint(with: ["nora","missing","where","safe","disappeared","location","address"]) {
-                return PhoneReplyPolicy.plan(for: item.neighbor, text: outgoing.text, flags: state.flags,
-                                             tutorialStarted: tutorialStarted, tutorialFinished: tutorialFinished).text
+        if item.neighbor == .maya,PhoneReplyPolicy.ownerStatusQuestion(outgoing.text),
+           !PhoneReplyPolicy.privateAccessQuestion(outgoing.text) {
+            // Refresh only an explicit status response, not ordinary contextual
+            // conversations that happen to mention the owner.
+            if let status=PhoneReplyPolicy.mayaStatusReply(outgoing.text,flags:state.flags) {return status}
+            if PhoneReplyPolicy.mayaStatusReply(outgoing.text,flags:[InvestigationResolution.read]) == item.text {
+                return PhoneReplyPolicy.plan(for:item.neighbor,text:outgoing.text,flags:state.flags,
+                    tutorialStarted:tutorialStarted,tutorialFinished:tutorialFinished).text
             }
         }
         return item.text
@@ -958,7 +961,7 @@ final class PhoneWorldStore: ObservableObject {
         let id=UUID().uuidString
         c.mail.append(LumaMailRecord(id:id,peer:peer.id,sender:"Repair desk",subject:subject,body:body,date:now,kind:"sent"))
         let due=now.addingTimeInterval(peer == .denise ? 45 : 30)
-        let answer=LumaMailCatalog.response(to:peer,subject:subject,body:body)
+        let answer=LumaMailCatalog.response(to:peer,subject:subject,body:body,flags:state.flags)
         let reply=LumaMailRecord(id:"reply-"+id,peer:peer.id,sender:peer.name,subject:subject.hasPrefix("Re:") ? subject : "Re: "+subject,body:answer,date:due,kind:"inbox")
         c.pendingMail.append(LumaPendingMail(record:reply,dueAt:due))
         commitConnected(c); return true
@@ -971,8 +974,19 @@ final class PhoneWorldStore: ObservableObject {
         for entry in due where !c.mail.contains(where:{$0.id==entry.record.id}) {
             if entry.record.id == InvestigationReview.mailID && !InvestigationReview.availableMail(state) { continue }
             if entry.record.id == InvestigationResolution.mailID && !InvestigationResolution.availableMail(state) { continue }
-            c.mail.append(entry.record)
-            addActivity(.init(id: "mail-" + entry.record.id, kind: .mail, date: entry.dueAt, title: entry.record.sender, detail: entry.record.subject, targetID: entry.record.id, channel: nil, author: nil), to: &c)
+            var record=entry.record
+            if record.peer == Neighbor.maya.id,record.id.hasPrefix("reply-"),
+               let sent=c.mail.first(where:{$0.id==String(record.id.dropFirst(6)) && $0.kind=="sent" && $0.peer==record.peer}) {
+                let answer=LumaMailCatalog.response(to:.maya,subject:sent.subject,body:sent.body,flags:state.flags)
+                if answer != record.body {
+                    // A newly refreshed answer must not appear to predate
+                    // knowledge that was unavailable at its original deadline.
+                    record=LumaMailRecord(id:record.id,peer:record.peer,sender:record.sender,
+                        subject:record.subject,body:answer,date:now,kind:record.kind,attachments:record.attachments)
+                }
+            }
+            c.mail.append(record)
+            addActivity(.init(id: "mail-" + record.id, kind: .mail, date: record.date, title: record.sender, detail: record.subject, targetID: record.id, channel: nil, author: nil), to: &c)
         }
         c.pendingMail.removeAll{$0.dueAt<=now}
         commitConnected(c)
