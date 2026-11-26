@@ -58,6 +58,35 @@ final class RestoredPhoneBackupTests: XCTestCase {
     }
 
     @MainActor
+    func testMalformedSettingsReceiptBlocksWorldWritesAndPreservesIntent() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite="settings-recovery-"+UUID().uuidString
+        let defaults=try XCTUnwrap(UserDefaults(suiteName:suite))
+        defer{defaults.removePersistentDomain(forName:suite);try? FileManager.default.removeItem(at:root)}
+        let url=root.appendingPathComponent("world.json")
+        try RestoredPhoneBackup.restore(to:url)
+        let original=try Data(contentsOf:url)
+        let receipt=LumaRestoreJournal.url(for:url)
+        let malformed=Data("unreadable receipt fixture".utf8)
+        try malformed.write(to:receipt)
+        let store=PhoneWorldStore(storageURL:url)
+        XCTAssertFalse(store.recoveryRequired)
+        XCTAssertTrue(store.settingsRecoveryRequired)
+        XCTAssertFalse(store.retrySettingsRecovery())
+        _ = store.addNote(title:"Blocked persistence fixture")
+        XCTAssertEqual(try Data(contentsOf:url),original)
+        XCTAssertThrowsError(try store.restoreCheckpoint(RestoredPhoneBackup.snapshot()))
+        let prefs=try PropertyListSerialization.data(fromPropertyList:["lastseen.lab.messageSound":false],format:.binary,options:0)
+        try store.restoreCheckpoint(RestoredPhoneBackup.snapshot(),
+            settings:.init(preferences:prefs,playSeconds:0),defaults:defaults)
+        XCTAssertFalse(store.settingsRecoveryRequired)
+        XCTAssertFalse(LumaRestoreJournal.pending(worldURL:url))
+        let preserved=try XCTUnwrap(FileManager.default.contentsOfDirectory(at:root,includingPropertiesForKeys:nil)
+            .first{$0.lastPathComponent.hasPrefix("world.json.restore-pending.preserved-")})
+        XCTAssertEqual(try Data(contentsOf:preserved),malformed)
+    }
+
+    @MainActor
     func testRestoreReceiptOnlyAppliesToCommittedWorldBytes() throws {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let suite="restore-receipt-"+UUID().uuidString

@@ -25,9 +25,21 @@ enum LumaRestoreJournal {
     static func url(for worldURL:URL)->URL {
         worldURL.appendingPathExtension("restore-pending")
     }
+    static func pending(worldURL:URL)->Bool {
+        FileManager.default.fileExists(atPath:url(for:worldURL).path)
+    }
+    /// Preserve an unresolved receipt before an explicitly selected replacement.
+    static func archivePending(worldURL:URL)throws {
+        let source=url(for:worldURL)
+        guard pending(worldURL:worldURL) else{return}
+        let destination=source.appendingPathExtension("preserved-"+UUID().uuidString)
+        try Data(contentsOf:source).write(to:destination,options:.atomic)
+        try FileManager.default.removeItem(at:source)
+    }
     static func prepare(worldURL:URL,target:Data,settings:Settings)throws {
         _ = try LumaSaveStore.validatedPreferences(settings.preferences)
         guard settings.playSeconds>=0 else{throw CocoaError(.fileReadCorruptFile)}
+        guard !pending(worldURL:worldURL) else{throw CocoaError(.fileWriteUnknown)}
         let receipt=Receipt(version:1,targetDigest:Data(SHA256.hash(data:target)),settings:settings)
         try JSONEncoder().encode(receipt).write(to:url(for:worldURL),options:.atomic)
     }

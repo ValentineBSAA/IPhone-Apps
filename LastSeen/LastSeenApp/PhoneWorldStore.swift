@@ -143,6 +143,8 @@ final class PhoneWorldStore: ObservableObject {
     private let persistToDisk: Bool
     private let storageURL: URL
     @Published private(set) var recoveryRequired=false
+    @Published private(set) var settingsRecoveryRequired=false
+    private var recoveryDefaults:UserDefaults = .standard
     @Published private(set) var persistenceFailed=false
 
     static var saveURL: URL {
@@ -211,6 +213,7 @@ final class PhoneWorldStore: ObservableObject {
             )
         }
         recoveryRequired=damaged
+        settingsRecoveryRequired=persistToDisk && LumaRestoreJournal.pending(worldURL:resolvedURL)
         if resolvedURL == RestoredPhoneBackup.url || state.everydayArchiveRevision != nil { NoraEverydayArchive.expand(&state) }
         // Do not rewrite a loaded file on launch: the restore receipt may
         // still need its exact bytes, and an unreadable file must survive.
@@ -756,6 +759,16 @@ final class PhoneWorldStore: ObservableObject {
         save()
     }
 
+    /// Retry without changing the world or choosing a different checkpoint.
+    @discardableResult
+    func retrySettingsRecovery()->Bool {
+        guard persistToDisk else{return true}
+        do {try LumaRestoreJournal.recover(worldURL:storageURL,defaults:recoveryDefaults)}
+        catch { /* Keep the receipt and recovery screen. */ }
+        settingsRecoveryRequired=LumaRestoreJournal.pending(worldURL:storageURL)
+        return !settingsRecoveryRequired
+    }
+
     func restoreCheckpoint(_ replacement: PhoneWorld,settings:LumaRestoreJournal.Settings?=nil,defaults:UserDefaults = .standard) throws {
         guard replacement.version == 1 else { throw CocoaError(.fileReadCorruptFile) }
         var replacement = replacement
@@ -772,8 +785,21 @@ final class PhoneWorldStore: ObservableObject {
                 let archive=storageURL.appendingPathExtension("damaged-"+UUID().uuidString)
                 try damagedBytes.write(to:archive,options:.atomic)
             }
-            if let settings {try LumaRestoreJournal.prepare(worldURL:storageURL,target:bytes,settings:settings)}
-            try bytes.write(to:storageURL,options:.atomic)
+            if LumaRestoreJournal.pending(worldURL:storageURL) {
+                // Only a user-selected replacement with matching settings may
+                // supersede an unresolved receipt.
+                guard settings != nil else{throw CocoaError(.fileWriteUnknown)}
+                try LumaRestoreJournal.archivePending(worldURL:storageURL)
+            }
+            if let settings {
+                recoveryDefaults=defaults
+                try LumaRestoreJournal.prepare(worldURL:storageURL,target:bytes,settings:settings)
+            }
+            do {try bytes.write(to:storageURL,options:.atomic)}
+            catch {
+                settingsRecoveryRequired=LumaRestoreJournal.pending(worldURL:storageURL)
+                throw error
+            }
         }
         // No throwing operation after the world commit: if cleanup fails,
         // keep the receipt for startup recovery, not a false restore failure.
@@ -793,6 +819,7 @@ final class PhoneWorldStore: ObservableObject {
         checkpointEpoch=UUID()
         state = replacement
         recoveryRequired=false
+        settingsRecoveryRequired=persistToDisk && LumaRestoreJournal.pending(worldURL:storageURL)
         persistenceFailed=false
     }
 
@@ -1670,7 +1697,10 @@ final class PhoneWorldStore: ObservableObject {
         if state.flags.insert("veil.correspondence.opened").inserted { save() }
     }
     private func save() {
-        guard persistToDisk,!recoveryRequired else { return }
+        guard persistToDisk,!recoveryRequired,!settingsRecoveryRequired else { return }
+        guard !LumaRestoreJournal.pending(worldURL:storageURL) else {
+            settingsRecoveryRequired=true;return
+        }
         do {
             let dir = storageURL.deletingLastPathComponent()
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)

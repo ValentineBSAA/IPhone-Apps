@@ -85,10 +85,13 @@ private struct LegacyStoryRoot: View {
     @Environment(\.scenePhase) private var phase
 
     var body: some View {
-        if world.recoveryRequired {
+        if world.recoveryRequired || world.settingsRecoveryRequired {
             VStack(spacing:16) {
                 Label("Legacy save unavailable",systemImage:"externaldrive.badge.exclamationmark").font(.title2.bold())
-                Text("The unreadable legacy world is preserved. This mode does not share the main phone's checkpoints.")
+                Text("The legacy world and any unresolved settings receipt are preserved. This mode does not share the main phone's checkpoints.")
+                if world.settingsRecoveryRequired {
+                    Button("Retry settings recovery"){world.retrySettingsRecovery()}.buttonStyle(.bordered)
+                }
             }.padding(24)
         } else { legacyBody }
     }
