@@ -78,8 +78,29 @@ enum VeilArchive {
         (world.connectedWorld?.veilPageBookmarks ?? []).intersection(Set(pages(world).map(\.id)))
     }
     static func allowsImages(_ security:String)->Bool { ["Standard","Safer"].contains(security) }
+    // The home cache is separate from authenticated camera snapshots.
+    static let homeAssets = (1...6).map { String(format:"VEIL_Home_%02d",$0) }
+    static let homeDescriptions: [String:String] = [
+        "VEIL_Home_01":"Food preparation at a white kitchen island.",
+        "VEIL_Home_02":"Laptop use beside a beige sectional and wooden coffee table.",
+        "VEIL_Home_03":"A paperback and mug at a kitchen island.",
+        "VEIL_Home_04":"A balcony with string lights and a city skyline at dusk.",
+        "VEIL_Home_05":"A person resting on a beige sofa with a mug.",
+        "VEIL_Home_06":"Plant care beside a living room television."
+    ]
+    static func homeMedia(_ world:PhoneWorld) -> [String] {
+        guard authorized(world), world.flags.contains("veil.correspondence.opened"),
+              world.flags.contains("veil.viewed.Nora_Archive_08") else { return [] }
+        let reviewed = world.connectedWorld?.recoveredImageReviews ?? []
+        let first = Array(homeAssets.prefix(3))
+        let advanced = first.prefix(2).allSatisfy {
+            world.flags.contains("veil.viewed."+$0) && reviewed.contains($0)
+        }
+        return advanced ? homeAssets : first
+    }
     static func media(_ world: PhoneWorld) -> [String] {
-        authorized(world) ? (1...11).map { String(format:"Nora_Archive_%02d",$0) } : []
+        guard authorized(world) else { return [] }
+        return (1...11).map { String(format:"Nora_Archive_%02d",$0) } + homeMedia(world)
     }
 }
 struct VeilRecoveredImage: View {

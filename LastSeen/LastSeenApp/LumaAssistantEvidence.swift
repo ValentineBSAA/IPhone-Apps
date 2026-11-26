@@ -71,6 +71,7 @@ enum LumaAssistantEvidence {
                     let date = VeilArchive.date(message,in:world).formatted(date:.abbreviated,time:.omitted)
                     facts.append("The historical conversation includes a copy of this attachment under the date "+date+". That is a message date, not a verified capture date.")
                 }
+                if let description=VeilArchive.homeDescriptions[asset] { facts.append("Visible scene: "+description+" Similar furnishings do not authenticate a camera source.") }
                 if let summary=RecoveredImageAnalysis.summary(asset,in:world){facts.append(summary)}
                 facts += ImageInterpretation.notes(asset,in:world)
                 result.append(.init(id:"image:"+asset,title:"Recovered photograph "+String(i+1),kind:.image,excerpts:facts))

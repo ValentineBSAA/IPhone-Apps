@@ -47,6 +47,16 @@ struct EvidenceConnection: Codable, Equatable, Identifiable {
         if ids == Set(["web:studio-news","web:archive-ledger"]) {
             return "Both records discuss the distinction between original capture and import. The ledger leaves the source uncertain. A shared terminology is useful context, not independent authentication."
         }
+        if ids == Set(["image:VEIL_Home_01","image:VEIL_Home_03"]) {
+            return "Both copies show a white kitchen island and dark cabinetry, but the activities and framing differ. Similar interiors support a comparison, not a verified shared camera or capture date."
+        }
+        if ids == Set(["image:VEIL_Home_02","image:VEIL_Home_05"]) ||
+           ids == Set(["image:VEIL_Home_02","image:VEIL_Home_06"]) {
+            return "The beige seating and wooden furnishings provide a visible point of comparison. The framing differs; do not assign these copies to a HavenWatch camera without independent support."
+        }
+        if ids.contains("veil:thread:ordinary-hours"), ids.contains(where: { $0.hasPrefix("image:VEIL_Home_") }) {
+            return "The discussion expresses an intrusive interest in everyday moments. The selected copy illustrates an ordinary activity; the discussion does not establish who obtained the image or when."
+        }
         if ids.contains("veil:conversation"),let imageID=ids.first(where:{$0.hasPrefix("image:")}) {
             let asset=String(imageID.dropFirst(6))
             if VeilArchive.messages(world).contains(where:{$0.attachment==asset}) {

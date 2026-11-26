@@ -34,7 +34,10 @@ enum ImageInterpretation {
         .init(id:"interpretation-03",asset:"Nora_Archive_09",mode:.echo,region:6,note:"The interpretive layer introduces a displaced border fragment. Compare it to the unchanged original before recording any theory.",pattern:.displacedCorners),
         .init(id:"interpretation-04",asset:"Nora_Archive_10",mode:.scanlines,region:1,note:"The reconstructed bands introduce a repeated circular trace. The trace is authored preview content rather than a feature authenticated in the source.",pattern:.rings),
         .init(id:"interpretation-05",asset:"Recovered_B27_03",mode:.scanlines,region:8,note:"A discontinuity appears in the synthetic bands. It is not a verified physical object in the original reference.",pattern:.interruptedBars),
-        .init(id:"interpretation-06",asset:"Recovered_B27_13",mode:.echo,region:3,note:"The echoed preview contains a displaced shape. The underlying original remains unchanged.",pattern:.displacedCorners)
+        .init(id:"interpretation-06",asset:"Recovered_B27_13",mode:.echo,region:3,note:"The echoed preview contains a displaced shape. The underlying original remains unchanged.",pattern:.displacedCorners),
+        .init(id:"interpretation-07",asset:"VEIL_Home_02",mode:.echo,region:5,note:"An extra border trace appears only in the synthetic echo. The source image does not establish a recording device.",pattern:.displacedCorners),
+        .init(id:"interpretation-08",asset:"VEIL_Home_04",mode:.scanlines,region:1,note:"A repeated ring appears only in the reconstruction. It cannot establish a person or event outside the frame.",pattern:.rings),
+        .init(id:"interpretation-09",asset:"VEIL_Home_06",mode:.echo,region:3,note:"The interpretation adds a broken outline. Keep it separate from the visible furnishings and original pixels.",pattern:.outline)
     ]
     static let regions=["Upper left","Upper middle","Upper right","Middle left","Center","Middle right","Lower left","Lower middle","Lower right"]
     static func modes(_ asset:String,in world:PhoneWorld)->[Mode] {
