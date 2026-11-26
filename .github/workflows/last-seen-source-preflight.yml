@@ -74,6 +74,28 @@ jobs:
               raise AssertionError("Held original was not rejected")
           print("Approved expansion importer and rejection of held image verified.")
           PY
+      - name: Exercise recovered importer and final disposition in scratch directory
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/lastseen-recovered-test/LastSeenApp"
+          cp "$RUNNER_TEMP/lastseen-packs/Last-Seen-Build27-Recovered-Images.zip" "$RUNNER_TEMP/lastseen-recovered-test/"
+          cp LastSeen/Tools/import_recovered_art.py "$RUNNER_TEMP/lastseen-recovered-test/"
+          cd "$RUNNER_TEMP/lastseen-recovered-test"
+          python3 import_recovered_art.py
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import json
+          root=Path("LastSeenApp")
+          approved={f"Recovered_B27_{i:02}.png" for i in range(1,30) if i!=6}
+          assert {p.name for p in root.iterdir()}==approved
+          with ZipFile("Last-Seen-Build27-Recovered-Images.zip") as z:
+              assert all((root/name).read_bytes()==z.read(name) for name in approved)
+          import os
+          ledger=json.loads((Path(os.environ["RUNNER_TEMP"])/"lastseen-review/review-ledger.json").read_text())
+          assert ledger["review_complete"] and not ledger["assets"] and len(ledger["assigned"])==38 and len(ledger["held"])==9
+          print("Final disposition: 38 assigned, 9 held, exact originals verified.")
+          PY
       - name: Preserve exact recovered artwork archive
         uses: actions/upload-artifact@v4
         with:
@@ -95,7 +117,6 @@ jobs:
         with:
           name: LastSeen-B32-Artwork-Review-Sheets
           path: |
-            ${{ runner.temp }}/lastseen-review/review-*.png
             ${{ runner.temp }}/lastseen-review/review-ledger.json
           if-no-files-found: error
           retention-days: 14
