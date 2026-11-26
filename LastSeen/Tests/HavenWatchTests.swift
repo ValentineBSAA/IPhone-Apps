@@ -70,6 +70,12 @@ import UIKit
         w.recordNoraFriendArchiveOpened()
         w.recordNoraFriendArchiveOpened()
         XCTAssertTrue(NoraFriendArchive.opened(w.state))
+        func guidance(_ state:PhoneWorld,question:String="hint",previous:LumaConversationTopic?=nil)->LumaConversationReply {
+            let c=LumaAssistantContext(world:state,availableApps:[.messages,.veil,.havenWatch,.files,.afterframe],
+                wifi:true,sound:false,haptics:false,safeMode:false,installedCount:1,timerEnd:0,now:state.createdAt)
+            return LumaAssistantConversation.reply(question,context:c,previous:previous)
+        }
+        XCTAssertEqual(guidance(w.state).answer.app,.havenWatch)
         func atmosphere(_ state:PhoneWorld,active:Bool=true,enabled:Bool=true,
                         intensity:LumaArchiveAtmosphere.Intensity = .standard,
                         reduceMotion:Bool=false,security:String="Standard")->LumaArchiveAtmosphere.Treatment? {
@@ -131,6 +137,7 @@ import UIKit
         w.advanceHavenFollowup(now:now.addingTimeInterval(63))
         let event=try XCTUnwrap(HavenWatchEvents.event(HavenWatchEvents.followupID,in:w.state))
         XCTAssertEqual(event.id,HavenWatchEvents.followupID)
+        XCTAssertTrue(guidance(w.state).answer.text.contains("available archive activity"))
         XCTAssertNil(HavenWatchEvents.event("invalid",in:w.state))
         let notices=LumaActivityCatalog.visible(w.state).filter{$0.id == event.id}
         XCTAssertEqual(notices.count,1)
@@ -138,6 +145,12 @@ import UIKit
         XCTAssertNil(LumaAssistantEvidence.selected(HavenWatchEvents.followupRecordID,in:w.state))
         w.recordHavenFollowupOpened()
         XCTAssertNotNil(LumaAssistantEvidence.selected(HavenWatchEvents.followupRecordID,in:w.state))
+        let gentle=guidance(w.state)
+        let specific=guidance(w.state,question:"tell me more",previous:gentle.topic)
+        XCTAssertEqual(gentle.answer.app,.veil)
+        XCTAssertEqual(specific.topic,.nextStep)
+        XCTAssertNotEqual(gentle.answer.text,specific.answer.text)
+        XCTAssertTrue(specific.answer.text.contains("wording"))
         XCTAssertEqual(VeilCommunity.visible(w.state).count,20)
         XCTAssertEqual(VeilCommunity.visible(w.state).flatMap(\.replies).count,60)
         XCTAssertTrue(VeilCommunity.history("lowlight",in:w.state).contains{$0.id == "borrowed-caption"})
@@ -157,6 +170,8 @@ import UIKit
         w.recordVeilAnnotationReview(packages:"veil",safeMode:false)
         XCTAssertTrue(VeilCommunity.reconstructionOpened(w.state))
         XCTAssertNotNil(LumaAssistantEvidence.selected(VeilCommunity.reconstructionID,in:w.state))
+        XCTAssertTrue(guidance(w.state).answer.text.contains("You've read"))
+        XCTAssertEqual(guidance(w.state).answer.app,.messages)
         var revokedReview=w.state
         revokedReview.flags.remove(HavenWatchEvents.followupOpened)
         XCTAssertFalse(VeilCommunity.reconstructionOpened(revokedReview))

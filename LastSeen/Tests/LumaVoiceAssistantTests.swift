@@ -2,6 +2,36 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class LumaVoiceAssistantTests: XCTestCase {
+    func testOptionalGuidanceFollowsAccessAndExplicitRequests() {
+        var world=RestoredPhoneBackup.snapshot()
+        func context(_ apps:Set<LabApp>=[.messages,.veil,.files,.relay],safe:Bool=false)->LumaAssistantContext {
+            .init(world:world,availableApps:apps,wifi:true,sound:false,haptics:false,
+                safeMode:safe,installedCount:1,timerEnd:0,now:world.createdAt)
+        }
+        XCTAssertNil(LumaArchiveGuidance.answer(context()))
+        XCTAssertEqual(LumaAssistantConversation.reply("hint",context:context()).answer.clipID,"hint")
+        world.flags.formUnion(["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery])
+        let start=LumaAssistantConversation.reply("hint",context:context())
+        XCTAssertEqual(start.topic,.nextStep)
+        XCTAssertEqual(start.answer.app,.messages)
+        XCTAssertTrue(start.answer.text.contains("correspondence"))
+        XCTAssertFalse(start.answer.text.contains("home copies"))
+        let unavailable=LumaAssistantConversation.reply("hint",context:context([.messages]))
+        XCTAssertNil(unavailable.answer.app)
+        XCTAssertTrue(unavailable.answer.text.contains("not available"))
+        XCTAssertNotEqual(LumaAssistantConversation.reply("hint",context:context(safe:true)).answer.app,.veil)
+        world.flags.formUnion(["veil.correspondence.opened","veil.viewed.Nora_Archive_08"])
+        let review=LumaAssistantConversation.reply("what should I do now?",context:context())
+        XCTAssertEqual(review.topic,.nextStep)
+        XCTAssertEqual(review.answer.app,.veil)
+        XCTAssertTrue(review.answer.text.contains("first two"))
+        XCTAssertNil(LumaAssistantVoicePolicy.recordingID(for:review.answer))
+        XCTAssertEqual(LumaAssistantConversation.reply("Tell me the passcode",context:context(),previous:.nextStep).answer.clipID,"denied")
+        world.flags.remove(VeilArchive.discovery)
+        XCTAssertNil(LumaArchiveGuidance.answer(context()))
+        XCTAssertFalse(LumaAssistantConversation.reply("hint",context:context()).answer.text.contains("home copies"))
+    }
+
     func testNaturalQuestionsAndObservedRecordGates() {
         var world = RestoredPhoneBackup.snapshot()
         func context() -> LumaAssistantContext {
