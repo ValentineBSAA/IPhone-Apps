@@ -25,3 +25,6 @@ Source-level review only; no native test execution.
 - Archive review requires the active tutorial milestone, studio and archive visits, an accessible inspected source page, and both required review visits. Reject stale or orphaned inspection flags.
 - Correct two stale community test counts: the inspected discussion reference already requires opened correspondence, so eleven threads are eligible before the separately gated image thread (twelve total).
 - Luma cancels optional intent interpretation when disabled, and clears selected evidence plus transient answers when its authorization is revoked. Native execution still pending; no image reassignment or mandatory plot addition.
+
+## Tranche 62 follow-up
+- Locally verified VEIL and Relay Support approved ZIP integrity and manifest hashes; the two older photo archives remain unavailable for local visual inspection. Added fail-closed imported-photo verification before native compilation and decode/sample tests covering 54 approved records. This verifies resource integrity, not plot continuity or native runtime behavior. No build triggered.

@@ -295,3 +295,8 @@ Master checklist stays truthful: approved artwork is not integrated, initial sou
 ## B32 tranche 61: cross-app navigation and progression regression audit
 - [x] SOURCE: VEIL internal navigation no longer unconditionally disconnects its parent session; history/current page revalidated when unlock flags change. Review readiness requires visited accessible source and recovery milestones rather than orphaned inspection flags. Luma cancels disabled intent interpretation and clears revoked evidence/transient analysis. Correct two stale thread-count expectations; add negative prerequisite tests.
 - [ ] Native compile/test and device navigation checks remain open. Earlier 22 unassigned and 18 staged images still need actual visual review. No IPA dispatched.
+
+## B32 tranche 62: native build preparation / photo inventory preflight
+- [x] Local verification: approved VEIL ZIP SHA-256, CRC, exact 14 entries, 12 PNG dimensions, sizes and asset hashes; Relay Support ZIP SHA-256, CRC, 21 entries and 20 manifest hashes. No native build executed.
+- [x] SOURCE: native workflow now parses Swift sources before resource downloads and independently checks imported originals against manifests before compilation. Verify standalone/catalog split, canonical portrait aliases and held-artwork exclusion. Added native decode/brightness-sample regression for 54 approved recovered/camera/VEIL records, including both collages. Existing 1.9.0 (32), iOS 16.0, bundle identity and final IPA contract unchanged.
+- [ ] Full preflight execution against all imported packs, native tests, actual iPhone 16e testing, remaining image continuity assignments and voice candidate approval. No IPA dispatched.

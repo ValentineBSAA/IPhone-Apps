@@ -2,6 +2,21 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class LumaImageAnalysisTests:XCTestCase {
+    func testApprovedPhotoCollectionsDecodeAndProduceSamples() throws {
+        let originals=(1...29).map{String(format:"Recovered_B27_%02d",$0)}
+        let archive=(1...11).map{String(format:"Nora_Archive_%02d",$0)}
+        let camera=NoraPhotoCatalog.photos.map(\.id)
+        let all=originals+archive+camera
+        XCTAssertEqual(Set(all).count,54)
+        for asset in all {
+            let image=try XCTUnwrap(PortraitImages.load(asset),asset)
+            XCTAssertGreaterThan(image.size.width,200,asset)
+            XCTAssertGreaterThan(image.size.height,200,asset)
+            let bins=try XCTUnwrap(RecoveredImageAnalysis.brightnessBins(image),asset)
+            XCTAssertEqual(bins.count,3,asset)
+            XCTAssertEqual(bins.reduce(0,+),1024,asset)
+        }
+    }
     func testSharedClassifierDoesNotShareCharacterResponses() {
         let predictions:[(String,Float)]=[("building",0.98),("room",0.88),("person",0.99),("plant",0.2)]
         let labels=LocalSceneClassifier.categories(predictions)
