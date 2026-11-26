@@ -317,6 +317,42 @@ struct RegionalLightScanView:View {
     private func clear(){
         values=nil;scanned=[];dark=nil;bright=nil;pickingDark=true;notice="";scanEpoch=nil
     }
+    private func sampleLabel(_ index:Int,values:[Int])->String {
+        var parts=[ImageInterpretation.regions[index]]
+        parts.append(scanned.contains(index) ? "light reading "+String(values[index]) : "not sampled")
+        if dark==index {parts.append("marked darkest")}
+        if bright==index {parts.append("marked brightest")}
+        return parts.joined(separator:", ")
+    }
+    private func selectSample(_ index:Int) {
+        guard phase == .active,scanEpoch==world.checkpointEpoch,
+              RecoveredImageAnalysis.completed(asset,in:world.state) else{return}
+        if !scanned.insert(index).inserted {
+            if pickingDark {dark=index} else {bright=index}
+        }
+        notice=""
+    }
+    private func sampleCell(_ index:Int,values:[Int])->some View {
+        let markedDark=dark==index
+        let markedBright=bright==index
+        let tint:Color=(markedDark || markedBright) ? .purple : .secondary
+        return Button {selectSample(index)} label:{
+            VStack(spacing:4) {
+                Text(ImageInterpretation.regions[index]).font(.caption2)
+                Text(scanned.contains(index) ? String(values[index]) : "Probe").font(.headline.monospacedDigit())
+                if markedDark || markedBright {
+                    Text(markedDark && markedBright ? "Both" : markedDark ? "Darkest" : "Brightest").font(.caption2)
+                }
+            }.frame(maxWidth:.infinity,minHeight:64)
+        }.buttonStyle(.bordered).tint(tint)
+            .accessibilityLabel(sampleLabel(index,values:values))
+    }
+    private func sampleGrid(_ values:[Int])->some View {
+        let columns=Array(repeating:GridItem(.flexible()),count:dynamicTypeSize.isAccessibilitySize ? 1:3)
+        return LazyVGrid(columns:columns,spacing:8) {
+            ForEach(0..<9,id:\.self){index in sampleCell(index,values:values)}
+        }
+    }
     var body:some View {
         if RecoveredImageAnalysis.completed(asset,in:world.state),phase == .active {
             VStack(alignment:.leading,spacing:12) {
@@ -333,29 +369,7 @@ struct RegionalLightScanView:View {
                             Text("Darkest").tag(true)
                             Text("Brightest").tag(false)
                         }.pickerStyle(.segmented)
-                        LazyVGrid(columns:Array(repeating:GridItem(.flexible()),count:dynamicTypeSize.isAccessibilitySize ? 1:3),spacing:8) {
-                            ForEach(0..<9,id:\.self) { i in
-                                Button {
-                                    guard phase == .active,scanEpoch==world.checkpointEpoch,RecoveredImageAnalysis.completed(asset,in:world.state) else{return}
-                                    if scanned.insert(i).inserted {
-                                        notice=""
-                                    } else {
-                                        if pickingDark {dark=i} else {bright=i}
-                                        notice=""
-                                    }
-                                } label:{
-                                    VStack(spacing:4) {
-                                        Text(ImageInterpretation.regions[i]).font(.caption2)
-                                        Text(scanned.contains(i) ? String(values[i]) : "Probe").font(.headline.monospacedDigit())
-                                        if dark==i || bright==i {
-                                            Text(dark==i && bright==i ? "Both" : dark==i ? "Darkest":"Brightest").font(.caption2)
-                                        }
-                                    }.frame(maxWidth:.infinity,minHeight:64)
-                                }.buttonStyle(.bordered)
-                                    .tint(dark==i || bright==i ? .purple:.secondary)
-                                    .accessibilityLabel(ImageInterpretation.regions[i]+(scanned.contains(i) ? ", light reading "+String(values[i]) : ", not sampled")+(dark==i ? ", marked darkest":"")+(bright==i ? ", marked brightest":""))
-                            }
-                        }
+                        sampleGrid(values)
                         Text("First tap samples a cell. Tap it again to mark it using the selected mode. Readings range from 0 to 255.").font(.caption).foregroundColor(.secondary)
                         Button("Record contrast pair") {
                             guard phase == .active,scanEpoch == world.checkpointEpoch,scanned.count==9,let dark,let bright else{return}

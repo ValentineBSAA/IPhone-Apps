@@ -272,6 +272,102 @@ struct VeilBrowser: View {
         }
         selected = p.id; address = p.address; notice = "";addressFocused=false
     }
+    @ViewBuilder private var mediaPage:some View {
+        if !VeilArchive.homeMedia(world.state).isEmpty {
+                    NavigationLink { EvidenceComparisonView() } label: {
+                        Label("Compare opened archive records",systemImage:"rectangle.split.2x1")
+                    }
+                    if VeilReferences.homeIndexReady(world.state) {
+                        NavigationLink { VeilReferenceReader(id:VeilReferences.homeIndexID) } label:{
+                            Label("Open recovered Files reference",systemImage:"doc.badge.ellipsis")
+                        }
+                    } else if VeilArchive.homeMedia(world.state).count < 6 {
+                        let initial=VeilArchive.homeAssets.prefix(2)
+                        let completed=initial.filter{RecoveredImageAnalysis.completed($0,in:world.state)}.count
+                        Text("Initial home-copy reviews: "+String(completed)+" of "+String(initial.count)+". Review the first two home copies to recover more material.").font(.caption)
+                    } else {
+                        Text("Compare a reviewed home copy's description with the opened discussion about ordinary moments.").font(.caption)
+                        if VeilCommunity.thread("ordinary-hours",in:world.state) != nil {
+                            NavigationLink { VeilThreadView(id:"ordinary-hours") } label:{
+                                Label("Open related archived discussion",systemImage:"text.bubble")
+                            }
+                        } else if VeilReferences.visible(world.state).contains(where:{$0.id=="board-reference"}) {
+                            NavigationLink { VeilReferenceReader(id:"board-reference") } label:{
+                                Label("Inspect discussion bookmark",systemImage:"doc.badge.ellipsis")
+                            }
+                        }
+                    }
+                }
+                if !VeilArchive.allowsImages(security) {Label("Images hidden at this security level",systemImage:"shield").font(.caption)}
+                VStack(spacing:12) {
+                    ForEach(VeilArchive.media(world.state),id:\.self){asset in VeilRecoveredImage(asset:asset).padding(10).lumaSurface()}
+                }.id(pageSession)
+    }
+    @ViewBuilder private func pageContent(_ page:VeilArchive.Page)->some View {
+        Text(page.title).font(.title2.bold())
+        Text(page.text)
+        if page.id == "directory",EntityEcho.active(world.state.flags) {
+            Label("Local archive integrity warning",systemImage:"exclamationmark.shield").foregroundColor(.orange)
+            NavigationLink("Inspect local extension"){EntityEchoRemovalView()}
+        }
+        if page.id == "boards" {
+            NavigationLink { VeilCommunityView() } label: { Label("Browse archived boards",systemImage:"text.bubble") }
+        }
+        if page.id == "records" {
+            NavigationLink { VeilHistoricalConversation() } label: { Label("Open recovered correspondence",systemImage:"message") }
+        }
+        if page.id == "home-index" {
+            Button("Record recovered index") { recordIndex() }
+                .buttonStyle(.borderedProminent)
+                .disabled(world.state.flags.contains("veil.home-index.opened"))
+            if world.state.flags.contains("veil.home-index.opened") {
+                NavigationLink { VeilDisputeReviewView() } label: {
+                    Label("Read related accounts",systemImage:"text.bubble")
+                }
+                NavigationLink { EvidenceComparisonView(initialRecordID:"veil:home-index") } label: {
+                    Label("Compare index with opened records",systemImage:"rectangle.split.2x1")
+                }
+            }
+        }
+        if page.id == "media" {mediaPage}
+    }
+    @ViewBuilder private var sessionControls:some View {
+        DisclosureGroup("Session privacy") {
+            LabeledContent("Local circuit",value:"Session "+String(routeGeneration))
+            Picker("Security level",selection:$security) {
+                ForEach(["Standard","Safer","Safest"],id: \.self) { Text($0) }
+            }
+            Text("Simulated security preference. Safest displays text instead of archive images; no actual encryption or network routing takes place.").font(.caption).foregroundColor(.secondary)
+            Button("New circuit for this page") {
+                routeGeneration = routeGeneration >= 999 ? 1 : routeGeneration+1
+                notice = "Local circuit refreshed. Current page retained."
+            }
+            Button("New identity") { showNewIdentity = true }
+        }.padding(12).lumaSurface()
+        HStack {
+            TextField("Local address",text:$address).textInputAutocapitalization(.never).autocorrectionDisabled().textFieldStyle(.roundedBorder).submitLabel(.go).focused($addressFocused).onSubmit { visit(address) }
+            Button("Go") { visit(address) }
+        }
+        HStack {
+            Button("Back") {
+                let (target,remaining)=VeilArchive.backTarget(history,in:world.state)
+                history=remaining
+                if let p=target {selected=p.id;address=p.address;notice="";pageSession=UUID();addressFocused=false}
+            }.disabled(history.isEmpty)
+            Spacer()
+            Button(bookmarks.contains(selected) ? "Remove bookmark" : "Bookmark") {
+                world.toggleVeilPageBookmark(selected,packages:packages,safeMode:safeMode)
+            }
+        }.font(.caption)
+        if !notice.isEmpty { Text(notice).font(.caption).foregroundColor(.secondary) }
+    }
+    private var directoryLinks:some View {
+        ForEach(VeilArchive.directoryPages(world.state)) { page in
+            Button { visit(page.address) } label: {
+                HStack { Text(page.title); Spacer(); if bookmarks.contains(page.id) { Image(systemName:"bookmark.fill") }; Image(systemName:"chevron.right") }.padding(12).lumaSurface(radius:12)
+            }.buttonStyle(.plain)
+        }
+    }
     var body: some View {
         ScrollView {
             if allowed {
@@ -298,97 +394,9 @@ struct VeilBrowser: View {
                     }
                     if !connected && !notice.isEmpty { Text(notice).font(.caption).foregroundColor(.secondary) }
                     if connected && wifi && phase == .active {
-                        DisclosureGroup("Session privacy") {
-                            LabeledContent("Local circuit",value:"Session "+String(routeGeneration))
-                            Picker("Security level",selection:$security) {
-                                ForEach(["Standard","Safer","Safest"],id: \.self) { Text($0) }
-                            }
-                            Text("Simulated security preference. Safest displays text instead of archive images; no actual encryption or network routing takes place.").font(.caption).foregroundColor(.secondary)
-                            Button("New circuit for this page") {
-                                routeGeneration = routeGeneration >= 999 ? 1 : routeGeneration+1
-                                notice = "Local circuit refreshed. Current page retained."
-                            }
-                            Button("New identity") { showNewIdentity = true }
-                        }.padding(12).lumaSurface()
-                        HStack {
-                            TextField("Local address",text:$address).textInputAutocapitalization(.never).autocorrectionDisabled().textFieldStyle(.roundedBorder).submitLabel(.go).focused($addressFocused).onSubmit { visit(address) }
-                            Button("Go") { visit(address) }
-                        }
-                        HStack {
-                            Button("Back") {
-                                let (target,remaining)=VeilArchive.backTarget(history,in:world.state)
-                                history=remaining
-                                if let p=target {selected=p.id;address=p.address;notice="";pageSession=UUID();addressFocused=false}
-                            }.disabled(history.isEmpty)
-                            Spacer()
-                            Button(bookmarks.contains(selected) ? "Remove bookmark" : "Bookmark") {
-                                world.toggleVeilPageBookmark(selected,packages:packages,safeMode:safeMode)
-                            }
-                        }.font(.caption)
-                        if !notice.isEmpty { Text(notice).font(.caption).foregroundColor(.secondary) }
-                        if let page = pages.first(where:{$0.id == selected}) {
-                            Text(page.title).font(.title2.bold())
-                            Text(page.text)
-                            if page.id == "directory",EntityEcho.active(world.state.flags) {
-                                Label("Local archive integrity warning",systemImage:"exclamationmark.shield").foregroundColor(.orange)
-                                NavigationLink("Inspect local extension"){EntityEchoRemovalView()}
-                            }
-                            if page.id == "boards" {
-                                NavigationLink { VeilCommunityView() } label: { Label("Browse archived boards",systemImage:"text.bubble") }
-                            }
-                            if page.id == "records" {
-                                NavigationLink { VeilHistoricalConversation() } label: { Label("Open recovered correspondence",systemImage:"message") }
-                            }
-                            if page.id == "home-index" {
-                                Button("Record recovered index") { recordIndex() }
-                                    .buttonStyle(.borderedProminent)
-                                    .disabled(world.state.flags.contains("veil.home-index.opened"))
-                                if world.state.flags.contains("veil.home-index.opened") {
-                                    NavigationLink { VeilDisputeReviewView() } label: {
-                                        Label("Read related accounts",systemImage:"text.bubble")
-                                    }
-                                    NavigationLink { EvidenceComparisonView(initialRecordID:"veil:home-index") } label: {
-                                        Label("Compare index with opened records",systemImage:"rectangle.split.2x1")
-                                    }
-                                }
-                            }
-                            if page.id == "media" {
-                                if !VeilArchive.homeMedia(world.state).isEmpty {
-                                    NavigationLink { EvidenceComparisonView() } label: {
-                                        Label("Compare opened archive records",systemImage:"rectangle.split.2x1")
-                                    }
-                                    if VeilReferences.homeIndexReady(world.state) {
-                                        NavigationLink { VeilReferenceReader(id:VeilReferences.homeIndexID) } label:{
-                                            Label("Open recovered Files reference",systemImage:"doc.badge.ellipsis")
-                                        }
-                                    } else if VeilArchive.homeMedia(world.state).count < 6 {
-                                        let initial=VeilArchive.homeAssets.prefix(2)
-                                        let completed=initial.filter{RecoveredImageAnalysis.completed($0,in:world.state)}.count
-                                        Text("Initial home-copy reviews: "+String(completed)+" of "+String(initial.count)+". Review the first two home copies to recover more material.").font(.caption)
-                                    } else {
-                                        Text("Compare a reviewed home copy's description with the opened discussion about ordinary moments.").font(.caption)
-                                        if VeilCommunity.thread("ordinary-hours",in:world.state) != nil {
-                                            NavigationLink { VeilThreadView(id:"ordinary-hours") } label:{
-                                                Label("Open related archived discussion",systemImage:"text.bubble")
-                                            }
-                                        } else if VeilReferences.visible(world.state).contains(where:{$0.id=="board-reference"}) {
-                                            NavigationLink { VeilReferenceReader(id:"board-reference") } label:{
-                                                Label("Inspect discussion bookmark",systemImage:"doc.badge.ellipsis")
-                                            }
-                                        }
-                                    }
-                                }
-                                if !VeilArchive.allowsImages(security) {Label("Images hidden at this security level",systemImage:"shield").font(.caption)}
-                                VStack(spacing:12) {
-                                    ForEach(VeilArchive.media(world.state),id:\.self){asset in VeilRecoveredImage(asset:asset).padding(10).lumaSurface()}
-                                }.id(pageSession)
-                            }
-                        }
-                        ForEach(VeilArchive.directoryPages(world.state)) { page in
-                            Button { visit(page.address) } label: {
-                                HStack { Text(page.title); Spacer(); if bookmarks.contains(page.id) { Image(systemName:"bookmark.fill") }; Image(systemName:"chevron.right") }.padding(12).lumaSurface(radius:12)
-                            }.buttonStyle(.plain)
-                        }
+                        sessionControls
+                        if let page = pages.first(where:{$0.id == selected}) {pageContent(page)}
+                        directoryLinks
                     }
                 }.padding(18)
             } else { Text("Application unavailable").padding() }
