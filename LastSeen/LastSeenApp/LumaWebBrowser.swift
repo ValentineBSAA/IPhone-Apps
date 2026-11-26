@@ -98,8 +98,18 @@ enum LumaWebCatalog {
         "Recovered_B27_08":"A person holding a phone in a wet, dimly illuminated parking area. The phone display shows a similar dark scene.",
         "Recovered_B27_20":"A printed kitchen scene containing a long shadow, handwritten labels and an embedded date-like marking. The markings are part of the prototype prop, not verified provenance."
     ]
+    /// Recovered artwork is restricted to VEIL; the public catalog retains text-only records.
+    static func allowsPublicImage(_ asset: String) -> Bool { false }
+    static var restrictedMedia: [String] {
+        Array(Set(pages.flatMap(\.images))).sorted()
+    }
+    static func restrictedAddress(_ raw: String) -> Bool {
+        let value = (raw.removingPercentEncoding ?? raw).lowercased()
+        return value.contains(".onion") || value.contains("veil://")
+    }
     static func page(_ id: String) -> LumaWebPage? {
-        pages.first { $0.id == id || ($0.address == id) || ($0.site == id && !$0.address.contains("/")) }
+        guard !restrictedAddress(id) else { return nil }
+        return pages.first { $0.id == id || ($0.address == id) || ($0.site == id && !$0.address.contains("/")) }
     }
     static func visible(_ flags: Set<String>) -> [LumaWebPage] { pages.filter { $0.available(flags) } }
     static func isReviewReady(_ flags: Set<String>) -> Bool {
@@ -111,6 +121,7 @@ enum LumaWebCatalog {
         return source.images.contains { flags.contains("web.inspected."+$0) }
     }
     static func search(_ raw: String, flags: Set<String>) -> [LumaWebPage] {
+        guard !restrictedAddress(raw) else { return [] }
         let q = normalized(raw)
         return visible(flags).filter { p in
             q.isEmpty ? !p.address.contains("/") : ([p.address,p.site,p.title] + p.sections).contains { $0.localizedCaseInsensitiveContains(q) }
@@ -170,7 +181,7 @@ enum InvestigationProgress {
             .init(id:"contact",title:"Establish contact",hint:"Check the latest conversation in Messages. Explain how you received the phone.",route:"messages",done:flags.contains("phone-tutorial-replied")),
             .init(id:"personal",title:"Follow the first leads",hint:"Read the reminders already mentioned in the conversation, then compare available documents.",route:"notes",done:flags.contains("phone-tutorial-file-guidance")),
             .init(id:"recovery",title:"Complete the initial recovery",hint:"Return to the protected records once you have found the necessary information. Revisit Files if needed.",route:"files",done:flags.contains("phone-tutorial-finished")),
-            .init(id:"studio",title:"Explore the restored web records",hint:"The studio's saved website is a useful place to start.",route:"browser",done:flags.contains("web.visited.studio")),
+            .init(id:"studio",title:"Explore the restored web records",hint:"Read the studio website and its development journal.",route:"browser",done:flags.contains("investigation.contact.received")),
             .init(id:"followup",title:"Review new correspondence",hint:"Check recent messages and the pages they point toward.",route:"messages",done:flags.contains("web.visited.archive")),
             .init(id:"records",title:"Compare recovered records",hint:"Examine an available archive attachment or use its text-only inspection option.",route:"browser",done:(LumaWebCatalog.page("archive-records")?.images.contains{asset in LumaWebCatalog.visitedAttachments(in:flags).contains(asset) && flags.contains("web.inspected."+asset)} ?? false))
             , .init(id:"review",title:"Review the next collection",hint:"Compare the available web records and complete the review at the restricted collection.",route:"browser",done:flags.contains("investigation.chapter2.reviewed"))
@@ -227,7 +238,9 @@ enum InvestigationProgress {
             if !flags.contains("phone-tutorial-visited-note") { return .init(text: "Open the reminder mentioned in the conversation, not just the Notes app.", route: "notes") }
             return .init(text: "Open both of the documents mentioned in the conversation. Reading only the file list is not enough.", route: "files")
         case "recovery": return .init(text: "Return to the protected record mentioned in Messages. Use information you have already found, or revisit the conversation for context.", route: "files")
-        case "studio": return page("studio", "Read the available studio website.")
+        case "studio":
+            if flags.contains("web.visited.studio") { return page("studio-notes", "Read the development journal linked from the studio website.") }
+            return page("studio", "Read the available studio website.")
         case "followup": return page("archive", "Follow the newly available local index.")
         case "records": return page("archive-records", "Inspect one available attachment. The text-only option counts equally.")
         case "review":
@@ -339,6 +352,7 @@ struct LumaWebBrowser: View {
     @FocusState private var addressFocused: Bool
     @AppStorage("lastseen.lab.browserSeeded") private var seeded = false
     @State private var query = ""
+    @State private var addressNotice = ""
     @State private var showHint = false
     @State private var revealed: Set<String> = []
     private let home = "@home"
@@ -349,7 +363,7 @@ struct LumaWebBrowser: View {
     private func inspect(_ asset:String,reveal:Bool) {
         guard phase == .active,let p=page,p.images.contains(asset),world.state.flags.contains("web.visited."+p.id) else{return}
         world.inspectWebAttachment(asset)
-        if reveal,world.state.flags.contains("web.inspected."+asset){revealed.insert(asset)}
+        if reveal,LumaWebCatalog.allowsPublicImage(asset),world.state.flags.contains("web.inspected."+asset){revealed.insert(asset)}
     }
     private func encoded(_ values:[String]) -> String { values.joined(separator:"|") }
     private var matches: [LumaWebPage] { LumaWebCatalog.search(query,flags:world.state.flags) }
@@ -357,6 +371,10 @@ struct LumaWebBrowser: View {
     private var visibleVisits: [LumaBrowserVisit] { LumaBrowserHistory.visible(visits,flags:world.state.flags) }
     private func submitAddress() {
         addressFocused = false
+        addressNotice = ""
+        if LumaWebCatalog.restrictedAddress(query) {
+            showResults(); addressNotice = "This address is not available in the regular browser."; return
+        }
         let q = LumaWebCatalog.normalized(query)
         if let p = LumaWebCatalog.visible(world.state.flags).first(where:{$0.address == q}) { visit(p.id) }
         else { showResults() }
@@ -444,7 +462,7 @@ struct LumaWebBrowser: View {
                         if p.id == InvestigationResolution.conclusionID { InvestigationResolutionPanel() }
                         ForEach(p.images,id:\.self) { asset in
                             VStack(alignment:.leading,spacing:12) {
-                                if phase == .active && revealed.contains(asset) && LumaWebCatalog.visitedAttachments(in:world.state.flags).contains(asset) {
+                                if LumaWebCatalog.allowsPublicImage(asset) && phase == .active && revealed.contains(asset) && LumaWebCatalog.visitedAttachments(in:world.state.flags).contains(asset) {
                                     if let photo = PortraitImages.load(asset) {
                                         Image(uiImage: photo).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius:12)).accessibilityLabel("Recovered image")
                                     } else {
@@ -453,11 +471,13 @@ struct LumaWebBrowser: View {
                                     Button("Hide image") { revealed.remove(asset) }
                                 } else {
                                     Label("Recovered attachment",systemImage:"photo.on.rectangle")
-                                    Button("Reveal image") { inspect(asset,reveal:true) }.buttonStyle(.bordered)
-                                    Button("Inspect without image") { inspect(asset,reveal:false) }.font(.caption)
+                                    if LumaWebCatalog.allowsPublicImage(asset) {
+                                        Button("Reveal image") { inspect(asset,reveal:true) }.buttonStyle(.bordered)
+                                    }
+                                    Button("Read record metadata") { inspect(asset,reveal:false) }.buttonStyle(.bordered)
                                     if world.state.flags.contains("web.inspected."+asset) { Label("Inspected",systemImage:"checkmark.circle").font(.caption) }
                                 }
-                                if RecoveredImageAnalysis.record(asset,in:world.state) != nil {
+                                if LumaWebCatalog.allowsPublicImage(asset), RecoveredImageAnalysis.record(asset,in:world.state) != nil {
                                     if let description=LumaWebCatalog.referenceDescriptions[asset] {
                                         Text(description).font(.subheadline)
                                     }
@@ -474,6 +494,7 @@ struct LumaWebBrowser: View {
                         Label("Saved local page",systemImage:"checkmark.circle").font(.caption).foregroundColor(.secondary)
                     } else {
                         LumaHeader(title:query.isEmpty ? "Start page" : "Search results",detail:"Saved sites and bookmarks",symbol:"globe")
+                        if !addressNotice.isEmpty { Text(addressNotice).font(.subheadline).foregroundColor(.secondary) }
                         ForEach(matches) { p in
                             Button { visit(p.id) } label:{ HStack(spacing:12) { Image(systemName:p.symbol).font(.title2).foregroundColor(LumaDesign.accent); VStack(alignment:.leading){ Text(p.site).font(.headline); Text(p.address).font(.caption).foregroundColor(.secondary) }; Spacer(); Image(systemName:"chevron.right") }.padding(14).lumaSurface() }.buttonStyle(.plain)
                         }

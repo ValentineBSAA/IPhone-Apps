@@ -121,7 +121,7 @@ enum VeilArchive {
         return reflectionAssets
     }
     static func mediaDescription(_ asset:String)->String? {
-        homeDescriptions[asset] ?? reflectionDescriptions[asset]
+        homeDescriptions[asset] ?? reflectionDescriptions[asset] ?? LumaWebCatalog.referenceDescriptions[asset]
     }
     static func mediaTitle(_ asset:String,in world:PhoneWorld)->String? {
         guard let index=media(world).firstIndex(of:asset) else{return nil}
@@ -129,7 +129,8 @@ enum VeilArchive {
     }
     static func media(_ world: PhoneWorld) -> [String] {
         guard authorized(world) else { return [] }
-        return (1...11).map { String(format:"Nora_Archive_%02d",$0) } + homeMedia(world) + reflectionMedia(world)
+        let relocated = Set(LumaWebCatalog.visitedAttachments(in:world.flags)).intersection(LumaWebCatalog.restrictedMedia).sorted()
+        return (1...11).map { String(format:"Nora_Archive_%02d",$0) } + homeMedia(world) + reflectionMedia(world) + relocated
     }
 }
 struct VeilRecoveredImage: View {

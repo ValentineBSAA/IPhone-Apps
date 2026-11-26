@@ -7,3 +7,9 @@ User authorized comprehensive audit then build. The version identity is staged; 
 - QA33-05/06/07/08 research: Apple HIG https://developer.apple.com/design/human-interface-guidelines/tab-bars , https://developer.apple.com/design/human-interface-guidelines/search-fields , https://developer.apple.com/videos/play/wwdc2025/284/ , https://support.apple.com/guide/iphone/customize-your-safari-settings-iphb3100d149/26/ios/26 . Adopt persistent distinct tabs, reachable search, floating bars on modern OS and iOS16-compatible fallback; redesign pending.
 - QA33-14 research: https://developer.apple.com/documentation/FoundationModels/generating-content-and-performing-tasks-with-foundation-models ; availability depends on hardware/settings. Existing classifier is not generative conversation. No model changes yet.
 - QA33-09 through 16 including VEIL isolation, dialogue, event pacing, Motionwell retirement and full audit remain open. Do not package just because version metadata is prepared. No new credits or real network gameplay.
+
+## Pass 2: browser isolation, earned event and guidance
+- Public catalog refuses onion/VEIL addresses and recovered image rendering and analysis handoffs. Text-only records preserve the main review gate; relocated originals only available in authorized VEIL after relevant source visit. Neutral site redesign and cross-app checks still required.
+- Unknown contact no longer triggered by homepage alone; requires journal visit or previously earned contact. Progress guidance revised. Existing narrative retained. Native regression suite pending.
+- Luma recognizes broader help requests and offers specific next-step fallback. Full conversational redesign remains open.
+- No packaging.

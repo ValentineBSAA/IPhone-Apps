@@ -691,6 +691,9 @@ final class PhoneWorldStore: ObservableObject {
         guard state.everydayArchiveRevision != nil,
               state.flags.contains("phone-tutorial-finished"),
               state.flags.contains("web.visited.studio") else { return }
+        let hasContact = state.flags.contains("investigation.contact.received")
+        let earnedContact = state.flags.contains("web.visited.studio-notes")
+        guard hasContact || earnedContact else { return }
         if state.flags.insert("investigation.contact.received").inserted ||
            !(state.threads[Neighbor.unknown.id] ?? []).contains(where:{$0.id=="unknown-intro-v1"}) {
             append(NeighborMessage(id: "unknown-intro-v1", thread: Neighbor.unknown.id,

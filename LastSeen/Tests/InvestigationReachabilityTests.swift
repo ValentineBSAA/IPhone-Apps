@@ -12,6 +12,7 @@ import XCTest
         XCTAssertFalse(w.completeInvestigationReview(now: now))
         XCTAssertFalse(w.finishInvestigation(.minimal, now: now))
         w.visitWebRecord("studio", now: now)
+        w.visitWebRecord("studio-notes", now: now)
         w.visitWebRecord("archive", now: now)
         w.visitWebRecord("archive-records", now: now)
         w.visitWebRecord("archive-review", now: now)

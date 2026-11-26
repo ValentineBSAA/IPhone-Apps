@@ -34,7 +34,7 @@ enum RecoveredImageAnalysis {
         var records=NoraPhotoCatalog.photos.filter {
             cameraAvailable($0.id,in:world) && world.flags.contains(cameraMarker($0.id))
         }.map {Record(id:$0.id,source:.cameraRoll)}
-        let images=Set(LumaWebCatalog.visitedAttachments(in:world.flags)).filter{world.flags.contains("web.inspected."+$0)}
+        let images=Set(LumaWebCatalog.visitedAttachments(in:world.flags)).filter{LumaWebCatalog.allowsPublicImage($0) && world.flags.contains("web.inspected."+$0)}
         records += images.sorted().map{Record(id:$0,source:.browser)}
         if VeilArchive.authorized(world) {
             records += VeilArchive.media(world).filter{world.flags.contains("veil.viewed."+$0)}.map{Record(id:$0,source:.veil)}

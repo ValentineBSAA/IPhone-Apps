@@ -153,7 +153,7 @@ enum LumaAssistantConversation {
         }
         let mainRequest=["main investigation hint","main story hint","main investigation guidance","more specific main investigation hint"].contains(normalized)
         let archiveRequest=["archive investigation hint","veil investigation hint","more specific archive investigation hint"].contains(normalized)
-        let explicitHint = ["hint","help me investigate","what should i do","what should i do now","what do i do now","what should i do next","where do i go next","i m stuck","im stuck","give me a hint"].contains(normalized)
+        let explicitHint = ["hint","help me investigate","what should i do","what should i do now","what do i do now","what should i do next","where do i go next","i m stuck","im stuck","give me a hint"].contains(normalized) || (!forbidden.isDisjoint(with:["next","stuck","lost","confused"]) && !forbidden.isDisjoint(with:["help","what","where","do","go","find","look","i"]))
         let followupHint = previous == .nextStep && ["tell me more","more","another hint","can you be more specific","what do you mean","give me a hint"].contains(normalized)
         if mainRequest {
             return .init(topic:.nextStep,answer:mainGuidance(c,detailed:normalized.hasPrefix("more specific")),guidanceTrack:.main)
@@ -233,7 +233,8 @@ enum LumaAssistantConversation {
             }
             return .init(topic:.nextStep,answer:mainGuidance(c,detailed:previous == .nextStep),guidanceTrack:.main)
         case .general:
-            return result("Tell me a little more about what you found. Was it a message, picture, document, or something you noticed while using an app?")
+            let guidance = mainGuidance(c,detailed:true)
+            return result("I’m not sure I understood that question. If you’re trying to move the investigation forward, " + guidance.text, app:guidance.app)
         }
     }
 }
