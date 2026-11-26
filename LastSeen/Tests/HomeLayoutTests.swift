@@ -48,6 +48,42 @@ final class HomeLayoutTests:XCTestCase {
         XCTAssertEqual(LumaImageViewportGeometry.clamp(proposed,image:image,viewport:viewport,scale:2),CGSize(width:150,height:0))
         XCTAssertEqual(LumaImageViewportGeometry.clamp(proposed,image:image,viewport:viewport,scale:3),CGSize(width:300,height:-75))
     }
+    func testExpandedLayoutGeometryMatrix() {
+        for width:CGFloat in [320,390,430,844] {
+            for height:CGFloat in [220,300,390,470,540,600,740,844] {
+                for five in [false,true] {
+                    for small in [false,true] {
+                        for accessible in [false,true] {
+                            let layout=LumaHomeLayout(width:width,height:height,fiveColumns:five,smallIcons:small,accessibleLayout:accessible)
+                            XCTAssertTrue((1...3).contains(layout.rows))
+                            XCTAssertEqual(layout.columns,accessible ? 4 : (five ? 5:4))
+                            XCTAssertGreaterThanOrEqual(layout.rowHeight,(accessible ? 96:79)-0.0001)
+                            XCTAssertTrue((22...61).contains(layout.iconSize))
+                            XCTAssertEqual(layout.needsScroll,layout.contentHeight>height+0.5)
+                            if accessible {XCTAssertFalse(layout.showWidgets)}
+                        }
+                    }
+                }
+            }
+        }
+    }
+    func testViewportGeometryMatrix() {
+        for image in [CGSize(width:600,height:300),CGSize(width:300,height:600),CGSize(width:300,height:300),CGSize(width:1,height:1000)] {
+            for viewport in [CGSize(width:300,height:300),CGSize(width:320,height:180),CGSize(width:180,height:320)] {
+                for scale:CGFloat in [1,1.5,2,3] {
+                    let fit=LumaImageViewportGeometry.fitted(image,in:viewport)
+                    XCTAssertLessThanOrEqual(fit.width,viewport.width+0.0001)
+                    XCTAssertLessThanOrEqual(fit.height,viewport.height+0.0001)
+                    for offset in [CGSize(width:1000,height:-1000),CGSize(width:-1000,height:1000),.zero] {
+                        let result=LumaImageViewportGeometry.clamp(offset,image:image,viewport:viewport,scale:scale)
+                        XCTAssertLessThanOrEqual(abs(result.width),max(0,(fit.width*scale-viewport.width)/2)+0.0001)
+                        XCTAssertLessThanOrEqual(abs(result.height),max(0,(fit.height*scale-viewport.height)/2)+0.0001)
+                        if scale==1 {XCTAssertEqual(result.width,0,accuracy:0.0001);XCTAssertEqual(result.height,0,accuracy:0.0001)}
+                    }
+                }
+            }
+        }
+    }
     func testPersonalFoldersAndToolPage() {
         let pages=LumaHomeLayout.pages(columns:4,rows:2,fieldNotes:true)
         XCTAssertEqual(pages.count,2)

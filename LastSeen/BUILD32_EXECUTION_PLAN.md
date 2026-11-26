@@ -626,3 +626,11 @@ Master checklist stays truthful: approved artwork is not integrated, initial sou
 ## B32 tranche 142: committed-world recovery retry and transient reset
 - [x] SOURCE: successful settings retry rereads the committed world instead of exposing transient mutations made while writes were blocked. Damaged/missing world falls back to recovery gate, never a starter world. Reset checkpoint and generation identity; synchronize recovered play counters and automatic-save scheduling. Recovery screen success resets navigation, banners, authentication, sound, and timer baseline; legacy retry requires active scene. Added regression fixture for transient edit rejection, committed bytes, epoch and play counter refresh.
 - [ ] Native compile and recovery-interruption tests pending. Both original artwork archives still absent from the local environment; 40 assignment and ten voice creative approval gates unchanged. No workflow dispatched or IPA produced.
+
+## B32 tranche 143: isolated no-IPA preflight workflow
+- [x] Added `.github/workflows/last-seen-source-preflight.yml` at 785e0d3f8c542fedd379d830cff3b34d95e6e833. Separate jobs parse Swift, validate release contracts and retrieve exact L1 artwork ZIPs for review artifacts; no native build or IPA command. Push path limited to that workflow; explicit workflow_dispatch also supported.
+- [ ] Execution status and artifact IDs not visible in current connector (commit status empty; workflow-run listing only covers PR events). Verify actual run via Actions UI; do not mark either job passed without evidence.
+
+## B32 tranche 144: executable local Swift geometry checks
+- [x] Extracted current LumaHomeLayout stored properties/initializer and LumaImageViewportGeometry implementation into a Foundation-only Linux Swift harness. `swiftc -swift-version 5` compiled and executable assertions passed 256 home layout combinations and 144 fitted-image/pan cases. Added corresponding XCTest matrices. This tests extracted logic, not SwiftUI rendering or complete app compilation.
+- [ ] Source workflow execution remains unconfirmed; only voice archives available locally and GitHub DNS lookup still fails. Forty artwork assignments and ten creative voice decisions remain pending. No native build/workflow dispatched in this tranche, no IPA.
