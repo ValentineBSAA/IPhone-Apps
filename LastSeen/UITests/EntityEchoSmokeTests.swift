@@ -10,9 +10,19 @@ final class EntityEchoSmokeTests:XCTestCase {
         app.launch()
         func tapReachable(_ id:String) {
             let button=app.buttons[id].firstMatch
-            for _ in 0..<10 {
-                if button.exists && button.isHittable {break}
-                app.swipeUp()
+            // A rejected selection or an expanded stage can move the desired
+            // control above the current viewport. Search both directions.
+            if !button.isHittable {
+                for _ in 0..<10 {
+                    if button.isHittable {break}
+                    app.swipeDown()
+                }
+            }
+            if !button.isHittable {
+                for _ in 0..<10 {
+                    if button.isHittable {break}
+                    app.swipeUp()
+                }
             }
             XCTAssertTrue(button.exists && button.isHittable,id)
             button.tap()
@@ -24,6 +34,7 @@ final class EntityEchoSmokeTests:XCTestCase {
         tapReachable("echo.containment.route")
         XCTAssertTrue(app.navigationBars["Echo containment"].waitForExistence(timeout:8))
         tapReachable("echo.trace.Wallpaper")
+        XCTAssertTrue(app.staticTexts["That hook is legitimate. Review the trace and try another."].exists)
         XCTAssertFalse(app.staticTexts["Extension quarantined"].exists)
         tapReachable("echo.trace.Clock echo")
         tapReachable("echo.trace.Grid echo")
@@ -32,10 +43,11 @@ final class EntityEchoSmokeTests:XCTestCase {
         tapReachable("echo.repair.Isolate")
         tapReachable("echo.repair.Restore")
         tapReachable("echo.commit")
+        XCTAssertTrue(app.staticTexts["Service order is not verified. Recheck the dependency hints."].exists)
         XCTAssertFalse(app.staticTexts["echo.containment.result"].exists)
-        // The wrong order clears only the repair sequence. Scroll up to
-        // return to its first choice, then complete the corrected attempt.
-        app.swipeDown()
+        XCTAssertFalse(app.buttons["echo.commit"].isEnabled)
+        // A rejected repair order clears only its stage. The helper can find
+        // the earlier choices again even after scrolling to the final button.
         tapReachable("echo.repair.Isolate")
         tapReachable("echo.repair.Verify")
         tapReachable("echo.repair.Restore")
