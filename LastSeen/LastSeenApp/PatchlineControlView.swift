@@ -73,6 +73,7 @@ struct PatchlineControlView: View {
             }
             Section("Player guide") {
                 Button { showGuide = true } label: { Label("Welcome to Last Seen", systemImage: "book.closed") }
+                Text("Updated guide: package queues, discovered sources, Safe Mode, local services, Relay Support, VEIL and Game Saves.").font(.caption).foregroundColor(.secondary)
             }
             Section("About") {
                 Text("Patchline is part of the fictional Last Seen phone. Maintenance actions never restart or modify your actual device.").font(.footnote).foregroundColor(.secondary)

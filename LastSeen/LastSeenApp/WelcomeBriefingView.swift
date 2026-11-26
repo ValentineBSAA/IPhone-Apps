@@ -43,14 +43,17 @@ enum WelcomeBriefing {
             "Swipe up on the lock screen to unlock.",
             "Repeat a system-edge swipe when necessary to access your actual device controls."
         ], ending: [
-            "You can also customize your experience through Settings, Patchline and Relay."
+            "Find applications in folders and on additional home-screen pages. Use the phone search to locate available apps.",
+            "You can also customize your experience through Settings, Patchline and Relay. Installed applications may appear on a later home-screen page."
         ]),
         Section(4, "The world inside", [
             "Explore conversations, photographs, calendars, emails, notes, contacts and files.",
             "Get to know the people whose lives are connected to this phone. Pay attention to what they say, what they remember and what they choose not to discuss.",
             "An ordinary conversation may contain an important detail. A photograph may contradict something you previously read. A forgotten appointment may become significant later.",
             "Your real device's time and date can influence the atmosphere of the experience.",
-            "You do not need to play at a particular hour to enjoy the story."
+            "You do not need to play at a particular hour to enjoy the story.",
+            "Open a record before asking Luma Assistant about it. Use Analyze image or Send to Luma on available photographs. Keep original observations separate from synthetic reconstructions.",
+            "Use Game Saves to make checkpoints or return to an earlier investigation. Restoring a checkpoint restores its progress and settings; later discoveries may no longer be accessible."
         ]),
         Section(5, "Patchline", [
             "Patchline is your jailbreak management utility.",
@@ -63,14 +66,21 @@ enum WelcomeBriefing {
             "Manage restart sounds.",
             "Access Relay."
         ], ending: [
-            "Safe Mode temporarily disables visual tweaks without uninstalling your packages.",
-            "Restarting the environment does not erase your restored records or story progress."
+            "Safe Mode temporarily pauses optional tweaks and dependent applications without uninstalling packages. Essential maintenance and Relay Support remain available when installed.",
+            "Restart LumaShell refreshes the fictional interface; Reboot Userspace restarts the fictional environment. Both retain restored records and installed packages.",
+            "Check Package activity and Tweak loader diagnostics to see why installed software may be paused or unavailable.",
+            "Recovery Circuit is an optional local dependency puzzle. Completing it makes Field Notes available in Relay. Local services lists additional utilities and their requirements.",
+            "You can reopen this guide from Patchline at any time."
         ]),
         Section(6, "Relay Package Manager", [
             "Make the phone your own.",
             "Relay provides repositories containing themes, tweaks and customization tools.",
-            "Browse sources, search for packages, manage installed software, review updates and queue multiple changes.",
-            "Confirm your changes and restart LumaShell when required.",
+            "Use Relay, Sources, Changes, Installed and Search to browse the local catalog, review updates and manage software.",
+            "Open a package to read its requirements, conflicts and usage notes. Queue Install, Upgrade or Removal, then open Queue and review the proposed changes before confirming. Restart LumaShell when required.",
+            "Some packages require discoveries before installation. Additional repositories can be found while reading local records; add their exact in-game addresses in Sources. Removing a repository does not uninstall its packages.",
+            "Optional themes, layout tools, accessibility utilities and investigation tools have different effects. Safe Mode can pause them; Patchline diagnostics can explain why.",
+            "Relay Support is an optional standalone package for technical help. Alex Morgan helps with the jailbreak environment; Luma Assistant handles opened personal and investigation records. Removing Relay Support hides the app but keeps its local history.",
+            "VEIL is another discoverable optional package. Read the relevant recovered local records first. Open discovered .onion bookmark files in VEIL when authorized; its fictional network is entirely offline. Security preferences can hide images while retaining text inspection.",
             "All available packages are free."
         ]),
         Section(7, "Protected information", [
@@ -112,10 +122,12 @@ enum WelcomeBriefing {
 /// Preserve established setup and records; on a Build 19 upgrade show only the new briefing.
 /// Fresh installations and older opening revisions retain the original initialization path.
 enum WelcomeRevision {
-    static let current = 7
+    static let current = 8
     static func destination(previousRevision: Int, stage: Int) -> Int {
         if previousRevision < 6 { return 0 }
-        if previousRevision < current && stage >= 6 { return 5 }
+        // Preserve the original v6 -> v7 briefing migration. Updating the
+        // guide for v8 must not interrupt an existing completed phone setup.
+        if previousRevision < 7 && stage >= 6 { return 5 }
         return stage
     }
 }

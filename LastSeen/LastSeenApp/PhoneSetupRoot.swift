@@ -55,6 +55,7 @@ struct PhoneSetupRoot: View {
                         case 0:
                             hero("sparkles", title: "Hello.", detail: "A new phone. A fresh start.")
                             Text("Set up your device in a few simple steps.").foregroundColor(.secondary)
+                            Label("Patchline and Relay are ready. Additional local packages can be discovered after setup.",systemImage:"checkmark.seal").font(.caption).foregroundColor(.secondary)
                         case 1:
                             hero("iphone", title: "Make it yours", detail: "Choose a name for your new device.")
                             TextField("Device name", text: $device)
@@ -75,6 +76,7 @@ struct PhoneSetupRoot: View {
                                 Label("Recommended backup", systemImage: "checkmark.seal")
                                     .font(.headline)
                                 Text("Contacts, messages, photos and app data").font(.subheadline)
+                                Text("Existing saves and package settings are retained. Protected owner records still require their own access checks.").font(.caption).foregroundColor(.secondary)
                                 Text("Ready to restore").font(.caption).foregroundColor(.secondary)
                             }.frame(maxWidth: .infinity, alignment: .leading).padding()
                                 .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18))

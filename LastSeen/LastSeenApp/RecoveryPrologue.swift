@@ -61,7 +61,7 @@ struct RecoveryPrologue: View {
         case 0: return connected ? "Your service session is ready." : "Connect your phone to power using a charging cable."
         case 1: return elapsed < OpeningPace.recognition ? "Establishing device session." : elapsed < duration ? "Checking the recovery environment and preserving archived records." : "Diagnostics passed. The custom environment is ready to install."
         case 2: return elapsed < OpeningPace.preparation ? "Preparing the local bootstrap and package environment." : "Keep the connection active while the custom environment is installed."
-        case 3: return "Patchline and Relay are ready. Userspace reboot will begin automatically."
+        case 3: return "Patchline, Relay and the local package catalog are ready. Userspace reboot will begin automatically."
         case 4: return "Finalizing services and refreshing the icon cache."
         default: return "A new environment. An unfamiliar backup. Your story begins here."
         }
@@ -94,7 +94,7 @@ struct RecoveryPrologue: View {
                 }
                 stage = next
                 revision = WelcomeRevision.current
-                OpeningQA.record("Welcome revision 7 initialized; existing phone setup and records retained")
+                OpeningQA.record("Welcome revision \(WelcomeRevision.current) initialized; existing phone setup and records retained")
             }
             initialized = true
         }

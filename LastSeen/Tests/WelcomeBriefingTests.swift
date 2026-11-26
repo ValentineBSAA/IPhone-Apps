@@ -26,8 +26,17 @@ final class WelcomeBriefingTests: XCTestCase {
         }
     }
 
+    func testUpdatedJailbreakGuideCoversCurrentFeatures() {
+        let sections=WelcomeBriefing.sections
+        let text=sections.flatMap{$0.paragraphs+$0.bullets+$0.ending}.joined(separator:" ")
+        for term in ["Package activity","Tweak loader diagnostics","Recovery Circuit","Local services","Field Notes","Queue Install","Sources","Changes","Installed","Search","Relay Support","Alex Morgan","Luma Assistant","VEIL",".onion","Game Saves","Safe Mode","Reboot Userspace","Restart LumaShell","Send to Luma"] {
+            XCTAssertTrue(text.contains(term),"Missing current guide topic: "+term)
+        }
+        XCTAssertTrue(text.contains("entirely offline"))
+        XCTAssertTrue(text.contains("No real jailbreak"))
+    }
     func testWelcomeUpgradePreservesOpeningAndSetupRouting() {
-        XCTAssertEqual(WelcomeRevision.current, 7)
+        XCTAssertEqual(WelcomeRevision.current, 8)
         XCTAssertEqual(WelcomeRevision.destination(previousRevision: 0, stage: 0), 0)
         XCTAssertEqual(WelcomeRevision.destination(previousRevision: 5, stage: 6), 0)
         for stage in 0...5 {
@@ -35,5 +44,9 @@ final class WelcomeBriefingTests: XCTestCase {
         }
         XCTAssertEqual(WelcomeRevision.destination(previousRevision: 6, stage: 6), 5)
         XCTAssertEqual(WelcomeRevision.destination(previousRevision: 7, stage: 6), 6)
+        for stage in 0...6 {
+            XCTAssertEqual(WelcomeRevision.destination(previousRevision: 7, stage: stage),stage)
+            XCTAssertEqual(WelcomeRevision.destination(previousRevision: 8, stage: stage),stage)
+        }
     }
 }

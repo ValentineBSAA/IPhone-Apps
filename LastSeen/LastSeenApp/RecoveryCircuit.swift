@@ -26,10 +26,12 @@ enum RecoveryCircuit {
 
 struct RecoveryCircuitView: View {
     @EnvironmentObject private var world: PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
     @State private var stage = 0
     @State private var selection: [String] = []
     @State private var feedback = ""
     @State private var finished = false
+    private func resetSession() {stage=0;selection=[];feedback="";finished=false}
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
@@ -59,17 +61,19 @@ struct RecoveryCircuitView: View {
                         }
                     }.padding(14).lumaSurface()
                     ForEach(RecoveryCircuit.choices[stage], id: \.self) { choice in
-                        Button { selection.append(choice); feedback = "" } label: {
+                        Button { guard phase == .active,selection.count<3,!selection.contains(choice) else{return};selection.append(choice); feedback = "" } label: {
                             Label(choice, systemImage: "cpu").frame(maxWidth: .infinity, minHeight: 44)
                         }.buttonStyle(.bordered).disabled(selection.contains(choice)).accessibilityIdentifier("circuit.choice." + choice)
                     }
                     HStack {
                         Button("Clear") { selection = []; feedback = "" }.buttonStyle(.bordered)
                         Button("Verify sequence") {
+                            guard phase == .active else{return}
                             guard RecoveryCircuit.valid(selection, stage: stage) else { feedback = "Dependency conflict. Try again; no records were changed."; selection = []; return }
                             if stage + 1 == RecoveryCircuit.stages.count {
                                 _ = world.completeRecoveryCircuit(verified: RecoveryCircuit.stages)
-                                finished = true
+                                finished = RecoveryCircuit.unlocked(world.state.flags)
+                                if !finished {feedback="Service could not be verified. Try again."}
                             } else { stage += 1 }
                             selection = []; feedback = ""
                         }.buttonStyle(.borderedProminent).disabled(selection.count != 3)
@@ -79,6 +83,9 @@ struct RecoveryCircuitView: View {
             }.padding(18)
         }.background(LumaDesign.background.ignoresSafeArea())
             .navigationTitle("Recovery Circuit").navigationBarTitleDisplayMode(.inline)
+            .onChange(of:world.checkpointEpoch){_ in resetSession()}
+            .onChange(of:phase){if $0 != .active {selection=[];feedback=""}}
+            .onChange(of:RecoveryCircuit.unlocked(world.state.flags)){if !$0 {resetSession()}}
     }
 }
 
