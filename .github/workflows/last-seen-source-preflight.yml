@@ -50,7 +50,7 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/lastseen-review-venv"
           "$RUNNER_TEMP/lastseen-review-venv/bin/python" -m pip install --disable-pip-version-check Pillow
           "$RUNNER_TEMP/lastseen-review-venv/bin/python" LastSeen/Tools/prepare_artwork_review.py --packs "$RUNNER_TEMP/lastseen-packs" --output "$RUNNER_TEMP/lastseen-review"
-          echo "Forty pending originals verified for review; no narrative assignment or runtime import." >> "$GITHUB_STEP_SUMMARY"
+          echo "Outstanding originals verified for review; no narrative assignment or runtime import." >> "$GITHUB_STEP_SUMMARY"
       - name: Preserve exact recovered artwork archive
         uses: actions/upload-artifact@v4
         with:

@@ -1488,7 +1488,7 @@ private struct LabPhotosView: View {
     @State private var scale: CGFloat = 1
     @State private var gridColumns=3
     private func makePhoto(_ record:NoraPhoto)->LabPhoto {
-        LabPhoto(id:record.id,title:record.title,asset:record.id,caption:"Recovered photograph · Capture date unavailable",record:record)
+        LabPhoto(id:record.id,title:record.title,asset:record.id,caption:NoraPhotoCatalog.everydayDescriptions[record.id] ?? "Recovered photograph · Capture date unavailable",record:record)
     }
     private var photos: [LabPhoto] {
         NoraPhotoCatalog.library(world.state.flags,filter:.library).map(makePhoto)
@@ -1539,8 +1539,12 @@ private struct LabPhotosView: View {
                         } label: {
                             GeometryReader { geo in
                                 Group {
-                                    if available(photo) && photoPhase == .active { Image(photo.asset).resizable().scaledToFill() }
-                                    else { LockedPhotoSurface() }
+                                    if available(photo) && photoPhase == .active {
+                                        if photo.asset.hasPrefix("WorldPhoto_E01_") {
+                                            if let image=PortraitImages.load(photo.asset) {Image(uiImage:image).resizable().scaledToFill()}
+                                            else {Image(systemName:"photo.badge.exclamationmark").foregroundColor(.secondary)}
+                                        } else {Image(photo.asset).resizable().scaledToFill()}
+                                    } else { LockedPhotoSurface() }
                                 }.frame(width: geo.size.width, height: geo.size.height).clipped()
                                     .overlay(alignment: .bottomTrailing) {
                                         if available(photo) && isFavorite(photo.id) { Image(systemName: "heart.fill").font(.caption).padding(6).foregroundColor(.white).shadow(radius: 3) }
@@ -1583,7 +1587,7 @@ private struct LabPhotosView: View {
                 ScrollView {
                 VStack(spacing: 16) {
                     if available(photo) && photoPhase == .active && photoEpoch == world.checkpointEpoch {
-                    if let image=UIImage(named:photo.asset) {
+                    if let image=PortraitImages.load(photo.asset) {
                         LumaImageViewport(image:image,scale:$scale)
                             .frame(height:320).clipShape(RoundedRectangle(cornerRadius:12))
                             .id(photo.id)

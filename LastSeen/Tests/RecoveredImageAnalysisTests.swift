@@ -139,6 +139,21 @@ import XCTest
         XCTAssertNil(LumaAssistantEvidence.selected("image:"+pair[0],in:restored))
         XCTAssertTrue(pair.allSatisfy{PortraitImages.load($0) != nil})
     }
+    func testReviewedEverydayExpansionPhotosAreOrdinaryRecords() throws {
+        let store=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
+        let ids=["WorldPhoto_E01_05","WorldPhoto_E01_08"]
+        for id in ids {
+            XCTAssertTrue(NoraPhotoCatalog.library(store.state.flags,filter:.recovered).contains{$0.id==id})
+            XCTAssertNil(RecoveredImageAnalysis.record(id,in:store.state))
+            XCTAssertNotNil(PortraitImages.load(id))
+            store.recordCameraAnalysisOpened(id)
+            XCTAssertTrue(store.completeRecoveredImageAnalysis(id,source:0,limit:0))
+            XCTAssertTrue(LumaAssistantEvidence.selected("image:"+id,in:store.state)?.excerpts.contains{$0.hasPrefix("Visible scene:")} ?? false)
+        }
+        XCTAssertEqual(Set(NoraPhotoCatalog.photos.filter{$0.id.hasPrefix("WorldPhoto_E01_")}.map(\.id)),Set(ids))
+        XCTAssertFalse(NoraPhotoCatalog.photos.contains{$0.id=="WorldPhoto_E01_11"})
+        XCTAssertEqual(NoraPhotoCatalog.library(store.state.flags,filter:.favorites,favorites:Set(ids)).map(\.id),ids)
+    }
     func testRegionalLightPairValidation() {
         let sample=[10,80,220,10,110,220,40,90,160]
         XCTAssertTrue(RecoveredImageAnalysis.validLightPair(sample,dark:0,bright:2))

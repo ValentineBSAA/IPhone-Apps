@@ -170,6 +170,8 @@ struct RecoveredImageAnalysisView:View {
                         Text(description).font(.subheadline)
                     } else if item.source == .browser,let description=LumaWebCatalog.referenceDescriptions[asset] {
                         Text(description).font(.subheadline)
+                    } else if item.source == .cameraRoll,let description=NoraPhotoCatalog.everydayDescriptions[asset] {
+                        Text(description).font(.subheadline)
                     }
                     Text("Original capture time and photographer are not independently established by this local copy.").font(.caption).foregroundColor(.secondary)
                 }

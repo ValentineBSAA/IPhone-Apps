@@ -1,6 +1,7 @@
 """Validate physical-device build resources and final IPA bytes, not just simulator assets."""
 import argparse, hashlib, json, pathlib, plistlib, zipfile, wave
 from verify_ipa_payload import verify_payload
+from verify_world_photo_intake import verified_originals,reject_held
 from import_phone_sounds import TRACKS as ORIGINAL_TRACKS
 from import_extra_phone_sounds import TRACKS as CORRECTIVE_TRACKS
 p=argparse.ArgumentParser()
@@ -17,6 +18,10 @@ for name in packs:
             assert record["filename"] not in expected
             expected[record["filename"]]=record["sha256"]
 assert len(expected)==53
+for name,data in verified_originals("Last-Seen-World-Photos-Expansion-01.zip").items():
+    assert name not in expected
+    assert digest((pathlib.Path("LastSeenApp")/name).read_bytes())==digest(data)
+    expected[name]=digest(data)
 # Use the same pinned originals as the importers, not hashes of potentially
 # corrupted output. Restart WAVs are deterministic local generated resources.
 assert len(ORIGINAL_TRACKS)==11 and len(CORRECTIVE_TRACKS)==4
@@ -70,7 +75,7 @@ for credit in pathlib.Path("LastSeenApp/CommunityReserveCredits").iterdir():
 assert len([name for name in expected if name.startswith("CommunityReserve")]) == 4
 if a.app:
     reject_unapproved_voice(a.app.rglob("*"))
-    assert not any(a.app.rglob("WorldPhoto_E01_*")), "Held world artwork in device bundle"
+    reject_held(a.app.rglob("*"))
     car=(a.app/"Assets.car").read_bytes()
     assert car.startswith(b"BOMStore") and len(car)>1024, "Malformed compiled asset catalog"
     print("Device Assets.car:",len(car),"bytes SHA-256",digest(car))
@@ -111,7 +116,7 @@ if a.ipa:
         names=z.namelist()
         assert len(names)==len(set(names)), "Duplicate ZIP paths"
         reject_unapproved_voice(names)
-        assert not any(pathlib.PurePosixPath(name).name.startswith("WorldPhoto_E01_") for name in names), "Held world artwork in final IPA"
+        reject_held(names)
         info=plistlib.loads(z.read(prefix+"Info.plist"))
         assert info["CFBundleVersion"]=="32" and info["CFBundleShortVersionString"]=="1.9.0", "IPA identity disagrees with release contract"
         assert info["MinimumOSVersion"]=="16.0" and info["CFBundleIdentifier"]=="com.valentinebsaa.lastseen.horror"

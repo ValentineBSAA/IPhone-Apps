@@ -7,7 +7,7 @@ struct NoraPhoto: Identifiable {
     let id: String
     let gate: NoraPhotoGate
     var privateAlbum: Bool { gate == .future }
-    var title: String { "Photo " + String(id.suffix(2)) }
+    var title: String { NoraPhotoCatalog.everydayTitles[id] ?? ("Photo " + String(id.suffix(2))) }
     func available(flags: Set<String>, authenticated: Bool = false) -> Bool {
         switch gate {
         case .publicPhoto: return true
@@ -29,6 +29,11 @@ struct NoraPhoto: Identifiable {
 }
 
 enum NoraPhotoCatalog {
+    static let everydayTitles=["WorldPhoto_E01_05":"Trying on a dress","WorldPhoto_E01_08":"Autumn walk"]
+    static let everydayDescriptions=[
+        "WorldPhoto_E01_05":"Mirror photograph of a patterned dress, cardigan and floral phone case in a clothing shop. No verified purchase or date.",
+        "WorldPhoto_E01_08":"Outdoor selfie in warm autumn light, with fallen leaves and a takeaway cup in a bag. No verified location or date."
+    ]
     static let photos: [NoraPhoto] = (1...12).map { i in
         let gate: NoraPhotoGate
         switch i {
@@ -39,7 +44,7 @@ enum NoraPhotoCatalog {
         default: gate = .future
         }
         return NoraPhoto(id: String(format: "Nora_Photo_%02d", i), gate: gate)
-    } + [NoraPhoto(id: "Nora_Collage_01", gate: .future), NoraPhoto(id: "Nora_Collage_02", gate: .future)]
+    } + [NoraPhoto(id: "Nora_Collage_01", gate: .future), NoraPhoto(id: "Nora_Collage_02", gate: .future)] + everydayTitles.keys.sorted().map{NoraPhoto(id:$0,gate:.publicPhoto)}
     enum LibraryFilter:String,CaseIterable,Identifiable {
         case library="Library", recovered="Recovered", favorites="Favorites"
         var id:String {rawValue}

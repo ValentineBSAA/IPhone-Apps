@@ -128,6 +128,7 @@ enum LumaAssistantEvidence {
             if let summary=RecoveredImageAnalysis.summary(item.id,in:world){facts.append(summary)}
             if let light=RecoveredImageAnalysis.lightNote(item.id,in:world){facts.append(light)}
             if item.source == .browser,let description=LumaWebCatalog.referenceDescriptions[item.id] {facts.append("Visible scene: "+description)}
+            if item.source == .cameraRoll,let description=NoraPhotoCatalog.everydayDescriptions[item.id] {facts.append("Visible scene: "+description)}
             facts += ImageInterpretation.notes(item.id,in:world)
             facts += PhotoFeatureMatch.notes(item.id,in:world)
             result.append(.init(id:"image:"+item.id,title:item.title,kind:.image,excerpts:facts))

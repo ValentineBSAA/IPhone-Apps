@@ -8,6 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 from zipfile import ZipFile
+from verify_world_photo_intake import verified_originals,reject_held
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "LastSeenApp"
@@ -67,8 +68,10 @@ def verify():
         for r in records:
             verify_catalog(r["id"], "photo.png", r["sha256"])
     print("Six additional VEIL home originals verified.")
-    require(not any(APP.rglob("WorldPhoto_E01_*")),
-            "Held world expansion artwork must remain outside runtime")
+    originals=verified_originals(ROOT / "Last-Seen-World-Photos-Expansion-01.zip")
+    reject_held(APP.rglob("*"))
+    for name,data in originals.items():
+        require((APP/name).read_bytes()==data,"Expansion original differs: "+name)
     require(not any(APP.rglob("LastSeen_B32_VoiceCandidates*")),
             "Unapproved candidate archive must remain outside runtime")
     print("Photo preflight: 29 standalone originals, 16 Nora assets, four canonical aliases, 12 VEIL assets and six additional VEIL home originals verified; held artwork excluded.")
