@@ -208,6 +208,52 @@ enum PhoneMailArrival {
     }
 }
 
+/// A bounded sound queue. Authentication outcomes take precedence over waiting
+/// alerts, but never restart an alert already in progress. Keypad/outgoing
+/// sounds are expendable when a real notification needs the player.
+enum PhoneAudioPriority {
+    enum Decision: Equatable { case start, enqueue, drop }
+    static func interaction(_ cue: PhoneCue) -> Bool {
+        cue.isKeypress || cue == .outgoing
+    }
+    static func decision(for cue: PhoneCue, playing: PhoneCue?, waiting: Bool) -> Decision {
+        if interaction(cue) {
+            if waiting { return .drop }
+            if let playing, !interaction(playing) { return .drop }
+            return .start
+        }
+        if let playing {
+            if interaction(playing) && (!waiting || cue.isAuthentication) { return .start }
+            if cue.isAuthentication && playing.isAuthentication { return .start }
+            return .enqueue
+        }
+        return waiting && !cue.isAuthentication ? .enqueue : .start
+    }
+}
+
+struct PhoneAudioQueue {
+    struct Entry: Equatable {
+        let cue: PhoneCue
+        let horrorEnabled: Bool
+    }
+    private(set) var entries: [Entry] = []
+    var isEmpty: Bool { entries.isEmpty }
+    mutating func append(_ entry: Entry) {
+        if entry.cue.isAuthentication {
+            cancelAuthentication()
+            if entries.count >= 12 { entries.removeLast() }
+            entries.insert(entry, at: 0)
+        } else if entries.count < 12 {
+            entries.append(entry)
+        }
+    }
+    mutating func next() -> Entry? {
+        entries.isEmpty ? nil : entries.removeFirst()
+    }
+    mutating func cancelAuthentication() { entries.removeAll { $0.cue.isAuthentication } }
+    mutating func removeAll() { entries.removeAll() }
+}
+
 @MainActor
 enum PhoneSensoryEngine {
     private static var audio: AVAudioPlayer?
@@ -215,7 +261,7 @@ enum PhoneSensoryEngine {
     private static var hapticPlayer: CHHapticPatternPlayer?
     private static var currentCue: PhoneCue?
     private static var deferredAuthentication: Task<Void, Never>?
-    private static var queued: [(PhoneCue, Bool, Bool, Bool)] = []
+    private static var queued = PhoneAudioQueue()
     private static var drainTask: Task<Void, Never>?
     private static var hapticQueue: [PhoneHapticProfile] = []
     private static var hapticDrain: Task<Void, Never>?
@@ -235,7 +281,10 @@ enum PhoneSensoryEngine {
             for _ in 0..<50 {
                 guard !Task.isCancelled else { return }
                 let state = UIApplication.shared.applicationState
-                if state == .background { return }
+                if state == .background {
+                    deferredAuthentication = nil
+                    return
+                }
                 if state == .active {
                     deferredAuthentication = nil
                     let defaults = UserDefaults.standard
@@ -246,11 +295,17 @@ enum PhoneSensoryEngine {
                 }
                 do { try await Task.sleep(nanoseconds: 100_000_000) } catch { return }
             }
+            deferredAuthentication = nil
             OpeningQA.record("Authentication audio expired while inactive")
         }
     }
     static func cancelAuthentication() {
         deferredAuthentication?.cancel(); deferredAuthentication = nil
+        queued.cancelAuthentication()
+        hapticQueue.removeAll {
+            if case .cue(let cue) = $0 { return cue.isAuthentication }
+            return false
+        }
     }
     private static func scheduleDrain() {
         guard drainTask == nil else { return }
@@ -259,9 +314,12 @@ enum PhoneSensoryEngine {
                 do { try await Task.sleep(nanoseconds: 50_000_000) } catch { return }
                 guard UIApplication.shared.applicationState == .active else { queued.removeAll(); break }
                 if audio?.isPlaying == true { continue }
-                guard !queued.isEmpty else { break }
-                let next = queued.removeFirst()
-                play(next.0, sound: next.1, haptics: next.2, horrorEnabled: next.3)
+                guard let next = queued.next() else { break }
+                guard preference("lastseen.lab.messageSound"),
+                      !next.cue.isHorror || (next.horrorEnabled && preference("lastseen.lab.horrorEffects")) else { continue }
+                // Draining bypasses admission; otherwise the first item could
+                // be requeued behind its own successors.
+                startAudio(next.cue)
             }
             drainTask = nil
         }
@@ -276,35 +334,55 @@ enum PhoneSensoryEngine {
             requestHaptics(hapticProfile ?? .cue(cue))
         }
         guard sound && preference("lastseen.lab.messageSound") else { return 0 }
-        if audio?.isPlaying == true, let currentCue {
-            if cue.isKeypress && !currentCue.isKeypress { return 0 }
-            if !cue.isKeypress && !currentCue.isKeypress && !cue.isAuthentication {
-                if queued.count < 12 { queued.append((cue, sound, false, horrorEnabled)); scheduleDrain() }
-                OpeningQA.record("Phone audio queued: " + cue.rawValue)
-                return 0
+        let playing = audio?.isPlaying == true ? currentCue : nil
+        switch PhoneAudioPriority.decision(for: cue, playing: playing, waiting: !queued.isEmpty) {
+        case .drop: return 0
+        case .enqueue:
+            queued.append(.init(cue: cue, horrorEnabled: horrorEnabled))
+            scheduleDrain()
+            OpeningQA.record("Phone audio queued: " + cue.rawValue)
+            return 0
+        case .start:
+            let duration = startAudio(cue)
+            if !queued.isEmpty { scheduleDrain() }
+            return duration
+        }
+    }
+
+    @discardableResult
+    private static func startAudio(_ cue: PhoneCue) -> Double {
+        audio?.stop(); audio = nil; currentCue = nil
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.ambient, mode: .default)
+            try session.setActive(true)
+            func start(_ candidate: AVAudioPlayer) -> Double? {
+                candidate.numberOfLoops = 0
+                candidate.volume = cue == .passcodeKeypress || cue == .authenticationFailed || cue == .timerCompleted ? 1.0 : 0.8
+                candidate.prepareToPlay()
+                guard candidate.play() else { return nil }
+                audio = candidate; currentCue = cue
+                return candidate.duration
             }
-        }
-        var playbackDuration = 0.0
-        if sound {
-            do {
-                audio?.stop()
-                try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
-                if let url = cue.audioURL() {
-                    audio = try AVAudioPlayer(contentsOf: url)
-                } else {
-                    OpeningQA.record("Missing bundled phone sound: " + cue.assetName)
-                    audio = try AVAudioPlayer(data: cue.waveData())
+            if let url = cue.audioURL() {
+                if let candidate = try? AVAudioPlayer(contentsOf: url), let duration = start(candidate) {
+                    OpeningQA.record("Phone audio started: " + cue.rawValue)
+                    return duration
                 }
-                audio?.numberOfLoops = 0
-                playbackDuration = audio?.duration ?? 0
-                audio?.volume = cue == .passcodeKeypress || cue == .authenticationFailed || cue == .timerCompleted ? 1.0 : 0.8
-                audio?.prepareToPlay()
-                currentCue = cue
-                if audio?.play() == true { OpeningQA.record("Phone audio started: " + cue.rawValue) }
-                else { OpeningQA.record("Phone audio start failed: " + cue.rawValue) }
-            } catch { OpeningQA.record("Phone audio unavailable") }
+                OpeningQA.record("Bundled phone sound failed to start: " + cue.assetName)
+            } else {
+                OpeningQA.record("Missing bundled phone sound: " + cue.assetName)
+            }
+            // Runtime resilience only. Release asset checks still require the original files.
+            if let duration = start(try AVAudioPlayer(data: cue.waveData())) {
+                OpeningQA.record("Phone fallback audio started: " + cue.rawValue)
+                return duration
+            }
+        } catch {
+            OpeningQA.record("Phone audio session or player unavailable: " + cue.rawValue)
         }
-        return playbackDuration
+        OpeningQA.record("Phone audio start failed: " + cue.rawValue)
+        return 0
     }
 
     private static func requestHaptics(_ profile: PhoneHapticProfile) {
@@ -313,7 +391,14 @@ enum PhoneSensoryEngine {
             // Keypresses never interrupt an incoming alert. Alert bursts retain
             // a short FIFO, independent of the length of any sound recording.
             if profile.isInteraction { return }
-            if hapticQueue.count < 12 { hapticQueue.append(profile) }
+            if case .cue(let cue) = profile, cue.isAuthentication {
+                hapticQueue.removeAll {
+                    if case .cue(let pending) = $0 { return pending.isAuthentication }
+                    return false
+                }
+                if hapticQueue.count >= 12 { hapticQueue.removeLast() }
+                hapticQueue.insert(profile, at: 0)
+            } else if hapticQueue.count < 12 { hapticQueue.append(profile) }
             if hapticDrain == nil {
                 hapticDrain = Task { @MainActor in
                     while !Task.isCancelled {

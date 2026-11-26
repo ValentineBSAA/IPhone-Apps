@@ -2,6 +2,7 @@ import SwiftUI
 import UserNotifications
 import LocalAuthentication
 import UIKit
+import AVFoundation
 
 /// Neutral, offline phone prototype. No GameStore or story routing is constructed here.
 struct PhoneLabView: View {
@@ -312,6 +313,13 @@ struct PhoneLabView: View {
                 }
                 else { PhoneSensoryEngine.stopSound(); PhoneSensoryEngine.stopHaptics() }
                 banner = nil; activityBanner = nil; activityQueue.clear()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { notification in
+            if let raw = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+               AVAudioSession.InterruptionType(rawValue: raw) == .began {
+                PhoneSensoryEngine.stopSound()
+                PhoneSensoryEngine.stopHaptics()
             }
         }
         .onChange(of: messageSound) { if !$0 { PhoneSensoryEngine.stopSound() } }

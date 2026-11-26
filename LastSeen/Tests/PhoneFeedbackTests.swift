@@ -30,6 +30,37 @@ final class PhoneFeedbackTests: XCTestCase {
         }
     }
 
+    func testAudioAdmissionPreservesAlertsAndAuthenticationPriority() {
+        XCTAssertEqual(PhoneAudioPriority.decision(for: .passcodeKeypress, playing: .message, waiting: false), .drop)
+        XCTAssertEqual(PhoneAudioPriority.decision(for: .outgoing, playing: nil, waiting: true), .drop)
+        XCTAssertEqual(PhoneAudioPriority.decision(for: .message, playing: .passcodeKeypress, waiting: false), .start)
+        XCTAssertEqual(PhoneAudioPriority.decision(for: .general, playing: nil, waiting: true), .enqueue)
+        XCTAssertEqual(PhoneAudioPriority.decision(for: .unlock, playing: .message, waiting: false), .enqueue)
+        XCTAssertEqual(PhoneAudioPriority.decision(for: .unlock, playing: .passcodeKeypress, waiting: true), .start)
+        XCTAssertEqual(PhoneAudioPriority.decision(for: .unlock, playing: nil, waiting: true), .start)
+    }
+
+    func testAudioQueueBoundsOrderingAndCancellation() {
+        var queue = PhoneAudioQueue()
+        for cue in [PhoneCue.message, .general, .timerCompleted] {
+            queue.append(.init(cue: cue, horrorEnabled: false))
+        }
+        queue.append(.init(cue: .authenticationFailed, horrorEnabled: false))
+        queue.append(.init(cue: .unlock, horrorEnabled: false))
+        XCTAssertEqual(queue.next()?.cue, .unlock)
+        XCTAssertEqual(queue.next()?.cue, .message)
+        XCTAssertEqual(queue.next()?.cue, .general)
+        queue.append(.init(cue: .authenticationFailed, horrorEnabled: false))
+        queue.cancelAuthentication()
+        XCTAssertEqual(queue.next()?.cue, .timerCompleted)
+        XCTAssertNil(queue.next())
+        for _ in 0..<20 { queue.append(.init(cue: .message, horrorEnabled: false)) }
+        XCTAssertEqual(queue.entries.count, 12)
+        queue.append(.init(cue: .unlock, horrorEnabled: false))
+        XCTAssertEqual(queue.entries.count, 12)
+        XCTAssertEqual(queue.next()?.cue, .unlock)
+    }
+
     func testCorrectiveCueClassification() {
         XCTAssertTrue(PhoneCue.unlock.isAuthentication)
         XCTAssertTrue(PhoneCue.authenticationFailed.isAuthentication)
