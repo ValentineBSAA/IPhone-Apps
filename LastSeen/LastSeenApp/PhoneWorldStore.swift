@@ -113,6 +113,7 @@ struct PhoneWorld: Codable {
 final class PhoneWorldStore: ObservableObject {
     @Published private(set) var state: PhoneWorld
     @Published var visibleThread: Neighbor? = nil
+    private var supportGenerationEpoch = UUID()
     private let persistToDisk: Bool
     private let storageURL: URL
 
@@ -658,6 +659,7 @@ final class PhoneWorldStore: ObservableObject {
             try JSONEncoder().encode(replacement).write(to: storageURL, options: .atomic)
         }
         visibleThread = nil
+        supportGenerationEpoch = UUID()
         state = replacement
     }
 
@@ -693,6 +695,33 @@ final class PhoneWorldStore: ObservableObject {
         history.messages.append(.init(id: UUID().uuidString, text: answer.text, at: now, outgoing: false,
                                       guideID: answer.guideID.flatMap { RelaySupportKnowledge.generalGuide($0)?.id },
                                       packageID: answer.packageID))
+        state.relaySupport = history
+        save()
+        return true
+    }
+
+    func relaySupportGenerationRequest(installed: String, sources: String) -> RelaySupportGenerationRequest? {
+        guard RelaySupportAccess.available(installed: installed, flags: state.flags),
+              let messages = state.relaySupport?.messages, messages.count >= 2 else { return nil }
+        let reply = messages[messages.count - 1], question = messages[messages.count - 2]
+        return RelaySupportGenerationRequest.prepare(question: question, fallback: reply,
+            recent: Array(messages.dropLast(2).suffix(8)), flags: state.flags, installed: installed,
+            sources: sources, epoch: supportGenerationEpoch)
+    }
+
+    @discardableResult
+    func finishRelaySupportGeneration(_ request: RelaySupportGenerationRequest, text: String, installed: String, sources: String) -> Bool {
+        guard request.epoch == supportGenerationEpoch, request.flags == state.flags,
+              request.installed == installed, request.sources == sources,
+              RelaySupportAccess.available(installed: installed, flags: state.flags),
+              var history = state.relaySupport, history.messages.count >= 2,
+              history.messages.last?.id == request.replyID,
+              history.messages.last?.generatedOnDevice != true,
+              history.messages[history.messages.count - 2].id == request.questionID,
+              RelaySupportGenerationRequest.accepts(text, flags: state.flags, sources: sources, installed: installed) else { return false }
+        let old = history.messages.removeLast()
+        history.messages.append(.init(id: old.id, text: text.trimmingCharacters(in: .whitespacesAndNewlines), at: old.at,
+            outgoing: false, guideID: old.guideID, packageID: old.packageID, generatedOnDevice: true))
         state.relaySupport = history
         save()
         return true

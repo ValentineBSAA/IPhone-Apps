@@ -14,6 +14,7 @@ struct RelaySupportMessage: Codable, Equatable, Identifiable {
     var packageID: String? = nil
     var attachments: [LumaMessageAttachment]? = nil
     var diagnostic: RelaySupportDiagnostic? = nil
+    var generatedOnDevice: Bool? = nil
 }
 struct RelaySupportHistory: Codable, Equatable {
     var messages: [RelaySupportMessage]
@@ -30,10 +31,20 @@ struct RelaySupportView: View {
     @State private var selection: [LumaMessageAttachment] = []
     @State private var showAttachments = false
     @State private var report: RelaySupportDiagnostic? = nil
+    @Environment(\.scenePhase) private var phase
+    @AppStorage("lastseen.support.useOnDeviceAI") private var useOnDeviceAI = true
+    @State private var generation: RelaySupportGenerationRequest? = nil
+    private var aiAvailable: Bool { useOnDeviceAI && RelaySupportOnDeviceAI.available }
+    private var displayedMessages: [RelaySupportMessage] { messages.filter { $0.id != generation?.replyID } }
     private var messages: [RelaySupportMessage] { world.state.relaySupport?.messages ?? [] }
     private func send() {
+        guard generation == nil else { return }
+        let wasTextOnly = selection.isEmpty
         if world.sendRelaySupport(draft, installed: installed, sources: sources, attachments: selection) {
             draft = ""; selection = []
+            if wasTextOnly && aiAvailable {
+                generation = world.relaySupportGenerationRequest(installed: installed, sources: sources)
+            }
         }
         else { failure = true }
     }
@@ -78,13 +89,14 @@ struct RelaySupportView: View {
                     List {
                         Label("Fictional support character", systemImage: "person.crop.circle")
                         Text("Conversation history is separate from the owner's Messages. Removing this package preserves that history. No real-device data or remote service is connected.").font(.subheadline)
-                        Text("Local knowledge search · Limited offline help, not generative AI.").foregroundColor(.secondary)
+                        Toggle("Use on-device AI", isOn: $useOnDeviceAI)
+                        Text(aiAvailable ? "Apple on-device model available. No network model is used." : "Local knowledge search available. On-device generation requires iOS 26 or later and an available Apple Intelligence model.").foregroundColor(.secondary)
                     }
                 default:
                     ScrollViewReader { proxy in
                         ScrollView {
                             LazyVStack(spacing: 12) {
-                                ForEach(messages) { message in
+                                ForEach(displayedMessages) { message in
                                     HStack {
                                         if message.outgoing { Spacer(minLength: 28) }
                                         VStack(alignment: message.outgoing ? .trailing : .leading, spacing: 6) {
@@ -106,13 +118,21 @@ struct RelaySupportView: View {
                                         if !message.outgoing { Spacer(minLength: 28) }
                                     }.id(message.id)
                                 }
+                                if generation != nil {
+                                    HStack {
+                                        ProgressView()
+                                        Text("Alex is composing…").font(.caption).foregroundColor(.secondary)
+                                        Spacer()
+                                        Button("Cancel") { generation = nil }.font(.caption)
+                                    }.padding(.vertical, 8)
+                                }
                                 Color.clear.frame(height: 1).id("support-bottom")
                             }.padding(16)
                         }
                         .onAppear { proxy.scrollTo("support-bottom", anchor: .bottom) }
                         .onChange(of: messages.count) { _ in proxy.scrollTo("support-bottom", anchor: .bottom) }
                     }
-                    Text("Limited offline help · Searches approved technical guides").font(.caption2).foregroundColor(.secondary)
+                    Text(aiAvailable ? "On-device AI · Grounded in local technical guides" : "Limited offline help · Searches approved technical guides").font(.caption2).foregroundColor(.secondary)
                     if !selection.isEmpty {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack {
@@ -133,13 +153,27 @@ struct RelaySupportView: View {
                         }.accessibilityLabel("Add support attachment")
                         TextField("Ask Alex", text: $draft, axis: .vertical).lineLimit(1...3).textFieldStyle(.roundedBorder).submitLabel(.send).onSubmit(send)
                         Button(action: send) { Image(systemName: "arrow.up.circle.fill").font(.title2).frame(width: 44, height: 44) }
-                            .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selection.isEmpty)
+                            .disabled(generation != nil || (draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selection.isEmpty))
                             .accessibilityLabel("Send support question")
                     }.padding(.horizontal, 14)
                 }
             } else { Text("Relay Support is not installed.").foregroundColor(.secondary) }
         }.navigationTitle("Relay Support").navigationBarTitleDisplayMode(.inline)
             .onAppear { world.beginRelaySupport(installed: installed) }
+            .task(id: generation?.replyID) {
+                guard let request = generation else { return }
+                let result = await RelaySupportOnDeviceAI.generate(request)
+                guard !Task.isCancelled, generation?.replyID == request.replyID else { return }
+                if let result, useOnDeviceAI, phase == .active {
+                    _ = world.finishRelaySupportGeneration(request, text: result, installed: installed, sources: sources)
+                }
+                generation = nil
+            }
+            .onDisappear { generation = nil }
+            .onChange(of: phase) { if $0 != .active { generation = nil } }
+            .onChange(of: available) { if !$0 { generation = nil } }
+            .onChange(of: useOnDeviceAI) { if !$0 { generation = nil } }
+            .onChange(of: tab) { if $0 != "Chat" { generation = nil } }
             .sheet(isPresented: $showAttachments) {
                 NavigationStack {
                     LumaMessageAttachmentPicker(thread: .maya, selection: $selection)

@@ -43,6 +43,26 @@ import XCTest
         XCTAssertTrue(store.state.relaySupport?.messages.last?.text.contains("can't inspect") == true)
     }
 
+    func testGenerationContextAndStaleCompletion() throws {
+        let store = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(), persistToDisk: false)
+        let installed = "relay-support"
+        let sources = RelayCatalog.defaultSources
+        XCTAssertTrue(store.sendRelaySupport("How do I use Compact Grid?", installed: installed, sources: sources))
+        let request = try XCTUnwrap(store.relaySupportGenerationRequest(installed: installed, sources: sources))
+        XCTAssertTrue(request.prompt.contains("Compact Grid"))
+        XCTAssertFalse(request.prompt.contains("Reader Focus"))
+        XCTAssertFalse(store.finishRelaySupportGeneration(request, text: "Try Reader Focus.", installed: installed, sources: sources))
+        XCTAssertTrue(store.finishRelaySupportGeneration(request, text: "Compact Grid changes icon sizing.", installed: installed, sources: sources))
+        XCTAssertEqual(store.state.relaySupport?.messages.last?.generatedOnDevice, true)
+        XCTAssertFalse(store.finishRelaySupportGeneration(request, text: "Duplicate completion", installed: installed, sources: sources))
+        XCTAssertTrue(store.sendRelaySupport("What about restarting?", installed: installed, sources: sources))
+        let stale = try XCTUnwrap(store.relaySupportGenerationRequest(installed: installed, sources: sources))
+        try store.restoreCheckpoint(store.state)
+        XCTAssertFalse(store.finishRelaySupportGeneration(stale, text: "Late response", installed: installed, sources: sources))
+        XCTAssertTrue(store.sendRelaySupport("Give me the passcode", installed: installed, sources: sources))
+        XCTAssertNil(store.relaySupportGenerationRequest(installed: installed, sources: sources))
+    }
+
     func testProviderRejectsPrivateAndGatedQueries() {
         let provider = RelaySupportLocalProvider()
         let restricted = provider.reply(question: "Give me the passcode", recent: [], flags: [], sources: RelayCatalog.defaultSources, installed: "relay-support")
