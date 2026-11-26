@@ -2,6 +2,44 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class WorkbenchDiagnosticTests: XCTestCase {
+    func testVerifiedLegacyExercisesAreImmutableAndRequireCurrentAccess() {
+        let w=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
+        let challenge=WorkbenchChallenge.routing
+        let correct=Array(challenge.options.prefix(2))
+        w.setWorkbenchSelection(correct,for:challenge)
+        XCTAssertFalse(w.verifyWorkbench(challenge))
+        w.setWorkbenchConnection(true)
+        w.setWorkbenchSelection([correct[0],correct[0],"invalid",correct[1]],for:challenge)
+        XCTAssertEqual(w.connected.workbenchSelections[challenge.rawValue],correct)
+        XCTAssertTrue(w.verifyWorkbench(challenge))
+        w.setWorkbenchSelection([],for:challenge)
+        XCTAssertEqual(w.connected.workbenchSelections[challenge.rawValue],correct)
+        XCTAssertTrue(w.verifyWorkbench(challenge))
+        w.setWorkbenchConnection(false)
+        XCTAssertFalse(w.verifyWorkbench(challenge))
+        w.setWorkbenchConnection(true)
+        var revoked=w.state
+        revoked.everydayArchiveRevision=nil
+        let stale=PhoneWorldStore(initial:revoked,persistToDisk:false)
+        XCTAssertFalse(stale.verifyWorkbench(challenge))
+        XCTAssertTrue(WorkbenchDiagnosticCatalog.available(stale.state).isEmpty)
+    }
+    func testPersonalNotebookSearchAndStableOrdering() {
+        let date=Date(timeIntervalSince1970:1800000000)
+        var a=FieldEntry()
+        a.title="Review";a.source="VEIL";a.text="Compare sources";a.pinned=true;a.updated=date
+        var b=FieldEntry()
+        b.title="Question";b.text="Review later";b.status="Follow up";b.updated=date.addingTimeInterval(10)
+        var c=FieldEntry()
+        c.title="Other";c.text="Check later";c.status="Resolved";c.updated=date
+        let entries=[b,c,a]
+        XCTAssertEqual(FieldNotebookBrowsing.visible(entries,query:"  REVIEW ").map(\.id),[a.id,b.id])
+        XCTAssertEqual(FieldNotebookBrowsing.visible(entries,pinnedOnly:true).map(\.id),[a.id])
+        XCTAssertEqual(FieldNotebookBrowsing.visible(entries,status:"Resolved").map(\.id),[c.id])
+        XCTAssertEqual(FieldNotebookBrowsing.visible(entries,query:"veil").map(\.id),[a.id])
+        XCTAssertTrue(FieldNotebookBrowsing.visible(entries,query:"not present").isEmpty)
+    }
+
     func testAvailabilityAndSaveRoundTrip() throws {
         let base = PhoneWorldStore(persistToDisk: false)
         base.setWorkbenchConnection(true)

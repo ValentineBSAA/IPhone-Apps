@@ -6,7 +6,7 @@ Mandatory release gate for 1.9.0 (32), iPhone 16e. Every LabApp is listed exactl
 |---|---|---|---|---|
 | VEIL | Offline routes, security modes, bookmarks, recovered media, staged unlocks | Targeted pass | Pending | Pending |
 | Relay Support | Alex scope, attachments, local AI, technical troubleshooting | Targeted pass | Pending | Pending |
-| Field Notes | Notebook, evidence links, saved comparisons, checkpoint access | Pending | Pending | Pending |
+| Field Notes | Notebook, evidence links, saved comparisons, checkpoint access | Targeted pass | Pending | Pending |
 | Phone | Recents, favorites, keypad, call outcomes, voicemail limitations | Targeted pass | Pending | Pending |
 | Messages | Search, typing, delivery, attachments, context, historical records | Targeted pass | Pending | Pending |
 | Contacts | Directory, profile links, favorites, availability | Targeted pass | Pending | Pending |
@@ -25,7 +25,7 @@ Mandatory release gate for 1.9.0 (32), iPhone 16e. Every LabApp is listed exactl
 | Afterframe | Photo feed, profiles, drafts, privacy, social actions | Targeted pass | Pending | Pending |
 | Connective | Studio feed, profiles, social actions, account settings | Targeted pass | Pending | Pending |
 | CommonGround | Discussions, replies, profiles, community alerts | Targeted pass | Pending | Pending |
-| Workstation | Connection, diagnostics, image tools, progression | Pending | Pending | Pending |
+| Workstation | Connection, diagnostics, image tools, progression | Targeted pass | Pending | Pending |
 | HavenWatch | Fixed-camera archive, preferences, events, privacy, notifications | Targeted pass | Pending | Pending |
 | Dayblink | Stories, local media, expiry, interactions, notifications | Targeted pass | Pending | Pending |
 | Motionwell | Catalog, media availability, playback, saved state, notifications | Targeted pass | Pending | Pending |
