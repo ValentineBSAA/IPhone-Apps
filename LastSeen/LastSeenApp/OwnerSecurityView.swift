@@ -9,6 +9,11 @@ enum OwnerSecurityPolicy {
     static func canUseBiometrics(ownerVerified: Bool, appearanceEnrolled: Bool) -> Bool {
         ownerVerified && appearanceEnrolled
     }
+    // Face ID may report while the app is inactive. True background, an
+    // invalidated request, or revoked eligibility must never grant access.
+    static func acceptsCallback(currentRequest: Bool, eligible: Bool, background: Bool) -> Bool {
+        currentRequest && eligible && !background
+    }
 }
 
 enum ProtectedArea: String {
@@ -175,11 +180,15 @@ struct ProtectedAreaView: View {
         }
     }
     private func clearSession() {
-        context?.invalidate(); context = nil
+        let previous = context
+        context = nil
+        previous?.invalidate()
+        PhoneSensoryEngine.cancelAuthentication()
         session = false; passcodeSession = false; enrollment = false; notice = ""
     }
     private func authenticate(forEnrollment: Bool) {
-        guard context == nil, forEnrollment ? (ownerVerified && session && passcodeSession && enrollment) : canUseBiometrics else { return }
+        guard context == nil, phase == .active, UIApplication.shared.applicationState != .background,
+              forEnrollment ? (ownerVerified && session && passcodeSession && enrollment) : canUseBiometrics else { return }
         let candidate = LAContext()
         candidate.localizedFallbackTitle = ""
         var error: NSError?
@@ -191,6 +200,12 @@ struct ProtectedAreaView: View {
         candidate.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: forEnrollment ? "Register your appearance in Last Seen." : "Unlock protected fictional records in Last Seen.") { success, error in
             DispatchQueue.main.async {
                 guard context === candidate else { return }
+                let eligible = forEnrollment ? (ownerVerified && session && passcodeSession && enrollment) : canUseBiometrics
+                guard OwnerSecurityPolicy.acceptsCallback(currentRequest: true, eligible: eligible,
+                    background: phase == .background || UIApplication.shared.applicationState == .background) else {
+                    clearSession()
+                    return
+                }
                 context = nil
                 guard success else {
                     if (error as? LAError)?.code == .authenticationFailed {

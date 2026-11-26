@@ -47,6 +47,13 @@ final class RecoverySecurityTests: XCTestCase {
         XCTAssertFalse(RecoveryPower.connected(.unknown))
     }
 
+    func testAuthenticationCallbackRequiresCurrentEligibleForegroundRequest() {
+        XCTAssertTrue(OwnerSecurityPolicy.acceptsCallback(currentRequest: true, eligible: true, background: false))
+        XCTAssertFalse(OwnerSecurityPolicy.acceptsCallback(currentRequest: false, eligible: true, background: false))
+        XCTAssertFalse(OwnerSecurityPolicy.acceptsCallback(currentRequest: true, eligible: false, background: false))
+        XCTAssertFalse(OwnerSecurityPolicy.acceptsCallback(currentRequest: true, eligible: true, background: true))
+    }
+
     func testOwnerCodeAndBiometricGate() {
         XCTAssertTrue(OwnerSecurityPolicy.accepts(OwnerSecurityPolicy.fixtureCode))
         XCTAssertFalse(OwnerSecurityPolicy.accepts(""))

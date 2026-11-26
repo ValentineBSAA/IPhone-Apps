@@ -1,6 +1,7 @@
 import SwiftUI
 import UserNotifications
 import LocalAuthentication
+import UIKit
 
 /// Neutral, offline phone prototype. No GameStore or story routing is constructed here.
 struct PhoneLabView: View {
@@ -311,7 +312,10 @@ struct PhoneLabView: View {
             if value != .active { saves.persistPlayTime() }
             if value != .active {
                 arrivalTask?.cancel(); arrivalTask = nil
-                if value == .background { PhoneSensoryEngine.stop() }
+                if value == .background {
+                    cancelLockAuthentication()
+                    PhoneSensoryEngine.stop()
+                }
                 else { PhoneSensoryEngine.stopSound(); PhoneSensoryEngine.stopHaptics() }
                 banner = nil; activityBanner = nil; activityQueue.clear()
             }
@@ -321,6 +325,7 @@ struct PhoneLabView: View {
         .onChange(of: horrorEffects) { if !$0 { PhoneSensoryEngine.stop() } }
         .onDisappear {
             arrivalTask?.cancel(); arrivalTask = nil
+            cancelLockAuthentication()
             PhoneSensoryEngine.stop()
         }
         .task(id: tutorialDeliveryID) {
@@ -372,7 +377,9 @@ struct PhoneLabView: View {
             .preferredColorScheme(.dark)
             .presentationDetents([.medium, .large])
         }
-        .sheet(isPresented: $showOwnerPasscode) {
+        .sheet(isPresented: $showOwnerPasscode, onDismiss: {
+            if locked { pendingThread = nil; pendingActivityID = nil }
+        }) {
             ScrollView {
                 OwnerPasscodeView(onSuccess: {
                     ownerVerified = true; showOwnerPasscode = false; completeUnlock()
@@ -466,7 +473,9 @@ struct PhoneLabView: View {
                 }.frame(maxWidth: .infinity).padding(.vertical, 12).contentShape(Rectangle())
             }.buttonStyle(.plain).disabled(authContext != nil).accessibilityIdentifier("luma.lock.unlock")
                 .gesture(DragGesture(minimumDistance: 16).onEnded { value in
-                    if value.translation.height < -20 { pendingThread = nil; pendingActivityID = nil; requestUnlock() }
+                    if value.translation.height < -20 && authContext == nil {
+                        pendingThread = nil; pendingActivityID = nil; requestUnlock()
+                    }
                 })
         }.padding(.horizontal, 18).padding(.vertical, 10).foregroundColor(.white)
     }
@@ -503,8 +512,18 @@ struct PhoneLabView: View {
         path.append(AppPage.worldThread(neighbor))
     }
 
+    private func cancelLockAuthentication() {
+        let previous = authContext
+        authContext = nil
+        previous?.invalidate()
+        pendingThread = nil; pendingActivityID = nil
+        showOwnerPasscode = false
+        PhoneSensoryEngine.cancelAuthentication()
+    }
+
     private func requestUnlock() {
-        guard locked, authContext == nil else { return }
+        guard locked, authContext == nil, phase == .active,
+              UIApplication.shared.applicationState != .background, !checkpointReboot else { return }
         PhoneSensoryEngine.cancelAuthentication()
         authNotice = ""
         guard biometricUnlock else {
@@ -524,6 +543,11 @@ struct PhoneLabView: View {
         context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Unlock your fictional Last Seen phone.") { success, error in
             DispatchQueue.main.async {
                 guard authContext === context else { return }
+                guard OwnerSecurityPolicy.acceptsCallback(currentRequest: true, eligible: locked && biometricUnlock && !checkpointReboot,
+                    background: phase == .background || UIApplication.shared.applicationState == .background) else {
+                    cancelLockAuthentication()
+                    return
+                }
                 authContext = nil
                 if success {
                     completeUnlock()

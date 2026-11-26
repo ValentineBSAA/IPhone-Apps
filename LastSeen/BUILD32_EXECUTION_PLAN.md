@@ -114,3 +114,7 @@ Master checklist stays truthful: approved artwork is not integrated, initial sou
 ## B32 tranche 17: visible-time notification correction
 - [x] SOURCE: app notification banners now use a continuous five-second visible interval; message/lock/panel/authentication/background obstruction cancels presentation timing, and an eligible resumed banner gets a fresh interval. Eligibility is revalidated against current persisted activity, including dismissal and changed access/notification gates. Added focused regression coverage for preemption, resumption and dismissal.
 - [ ] Native compile, actual SwiftUI timing and physical verification remain OPEN. All existing release gates remain mandatory; no workflow dispatch or IPA.
+
+## B32 tranche 18: authentication lifecycle and lock routing
+- [x] SOURCE: lock-screen and protected-area biometric callbacks revalidate current request, access eligibility and true background state, while allowing the ordinary inactive Face ID transition. Background/disappearance invalidates pending lock authentication, clears stale notification destinations and cancels deferred feedback. Interactive passcode dismissal clears pending routes only while still locked; swipe cannot replace a destination during an active biometric request. Added neutral policy regression coverage. No real device credential or access policy change.
+- [ ] Native compilation, actual Face ID transitions, background/resume and audible unlock/failure verification on iPhone 16e remain OPEN. No workflow dispatch or IPA.
