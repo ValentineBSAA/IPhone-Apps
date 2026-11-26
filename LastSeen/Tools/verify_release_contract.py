@@ -27,6 +27,20 @@ version = capture(r'^\s*MARKETING_VERSION:\s*"([^"]+)"\s*$', project, "project v
 build = capture(r'^\s*CURRENT_PROJECT_VERSION:\s*"([^"]+)"\s*$', project, "project build")
 identity = read("Tests/BuildIdentityTests.swift")
 workflow = (root.parent / ".github/workflows/last-seen-ios16.yml").read_text()
+# Validate every Python helper without executing imports or creating bytecode.
+# The workflow depends on assertions in the pinned resource importers.
+require(sys.flags.optimize == 0, "Release verification must not run with Python optimization")
+helpers = sorted((root / "Tools").rglob("*.py"))
+require(bool(helpers), "No Python build helpers found")
+for helper in helpers:
+    try:
+        compile(helper.read_bytes(), str(helper.relative_to(root)), "exec", optimize=0)
+    except (SyntaxError, ValueError) as error:
+        errors.append(f"{helper.relative_to(root)}: {error}")
+for relative in sorted(set(re.findall(r'python3\s+(Tools/[\w.-]+\.py)\b', workflow))):
+    require((root / relative).is_file(), "Workflow references missing helper: " + relative)
+require('IPHONEOS_DEPLOYMENT_TARGET: "16.0"' in project and 'iOS: "16.0"' in project,
+        "Project deployment target differs from iOS 16.0")
 require(version == capture(r'XCTAssertEqual\(marketing,\s*"([^"]+)"', identity, "version test"), "version test disagrees with project")
 require(build == capture(r'XCTAssertEqual\(build,\s*"([^"]+)"', identity, "build test"), "build test disagrees with project")
 require(version == capture(r'test "\$MARKETING_VERSION" = "([^"]+)"', workflow, "CI version gate"), "CI version gate disagrees with project")
@@ -88,4 +102,4 @@ if errors:
     for error in errors:
         print(f"::error::{error}")
     sys.exit(1)
-print(f"Release preflight passed: {version} ({build}), {total}s, one timing contract.")
+print(f"Release preflight passed: {version} ({build}), {total}s, one timing contract, {len(helpers)} Python helpers parsed.")

@@ -104,8 +104,8 @@ def main():
     parser.add_argument("--packs", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
-    require(not args.output.resolve().is_relative_to(Path(__file__).resolve().parents[1]),
-            "Keep private review output outside the LastSeen source directory.")
+    require(not args.output.resolve().is_relative_to(Path(__file__).resolve().parents[2]),
+            "Keep private review output outside the entire repository.")
     prepare(args.packs, args.output)
 
 
