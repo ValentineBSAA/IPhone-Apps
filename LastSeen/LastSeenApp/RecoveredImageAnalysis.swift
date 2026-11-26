@@ -202,6 +202,16 @@ struct RecoveredImageAnalysisView:View {
                         RegionalLightScanView(asset:asset)
                     }
                 }
+                let detailChallenges=PhotoFeatureMatch.available(world.state).filter{$0.assets.contains(asset)}
+                if !detailChallenges.isEmpty,phase == .active {
+                    Section("Compare recurring details") {
+                        ForEach(detailChallenges) { challenge in
+                            NavigationLink { PhotoFeatureMatchView(challengeID:challenge.id) } label:{
+                                Label(challenge.title,systemImage:PhotoFeatureMatch.completed(challenge,in:world.state) ? "checkmark.circle":"viewfinder")
+                            }
+                        }
+                    }
+                }
                 let modes=ImageInterpretation.modes(asset,in:world.state)
                 if modes.count > 1 {
                     Section("Analysis layers") {

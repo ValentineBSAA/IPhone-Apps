@@ -2,6 +2,46 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class RecoveredImageAnalysisTests:XCTestCase {
+    func testRecurringDetailChallengesRequireBothOpenedOriginals() throws {
+        var state=RestoredPhoneBackup.snapshot()
+        state.flags.formUnion(["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery])
+        let w=PhoneWorldStore(initial:state,persistToDisk:false)
+        XCTAssertTrue(PhotoFeatureMatch.available(w.state).isEmpty)
+        XCTAssertFalse(w.recordPhotoFeatureMatch("home-counter",first:4,second:7))
+        w.recordVeilCorrespondenceOpened()
+        w.recordVeilObservation("Nora_Archive_08")
+        w.recordVeilObservation("VEIL_Home_01")
+        XCTAssertTrue(PhotoFeatureMatch.available(w.state).isEmpty)
+        w.recordVeilObservation("VEIL_Home_03")
+        XCTAssertEqual(PhotoFeatureMatch.available(w.state).map(\.id),["home-counter"])
+        XCTAssertEqual(PhotoFeatureMatch.challenge("image:VEIL_Home_03","image:VEIL_Home_01",in:w.state)?.id,"home-counter")
+        XCTAssertNil(PhotoFeatureMatch.challenge("image:VEIL_Home_01","image:VEIL_Home_01",in:w.state))
+        XCTAssertFalse(w.recordPhotoFeatureMatch("home-counter",first:0,second:7))
+        XCTAssertFalse(w.recordPhotoFeatureMatch("home-counter",first:4,second:0))
+        XCTAssertFalse(w.recordPhotoFeatureMatch("home-counter",first:-1,second:9))
+        XCTAssertFalse(w.recordPhotoFeatureMatch("not-a-challenge",first:4,second:7))
+        XCTAssertTrue(w.recordPhotoFeatureMatch("home-counter",first:4,second:7))
+        XCTAssertTrue(w.recordPhotoFeatureMatch("home-counter",first:7,second:8))
+        XCTAssertEqual(w.connected.photoFeatureMatches,Set(["home-counter"]))
+        XCTAssertTrue(LumaAssistantEvidence.selected("image:VEIL_Home_03",in:w.state)?.excerpts.contains(where:{$0.contains("Recorded visible-detail comparison")}) ?? false)
+        w.recordVeilObservation("VEIL_Home_02")
+        XCTAssertTrue(w.completeRecoveredImageAnalysis("VEIL_Home_01",source:2,limit:0))
+        XCTAssertTrue(w.completeRecoveredImageAnalysis("VEIL_Home_02",source:2,limit:0))
+        w.recordVeilObservation("VEIL_Home_05")
+        w.recordVeilObservation("VEIL_Home_06")
+        XCTAssertEqual(PhotoFeatureMatch.available(w.state).count,3)
+        XCTAssertTrue(w.recordPhotoFeatureMatch("home-table",first:7,second:8))
+        XCTAssertTrue(w.recordPhotoFeatureMatch("home-seating",first:3,second:6))
+        var restored=try JSONDecoder().decode(PhoneWorld.self,from:JSONEncoder().encode(w.state))
+        XCTAssertEqual(PhotoFeatureMatch.available(restored).filter{PhotoFeatureMatch.completed($0,in:restored)}.count,3)
+        restored.flags.remove("veil.viewed.VEIL_Home_05")
+        XCTAssertFalse(PhotoFeatureMatch.available(restored).contains{$0.id=="home-table"})
+        XCTAssertFalse(PhotoFeatureMatch.notes("VEIL_Home_02",in:restored).contains{$0.contains("wooden coffee table")})
+        restored.flags.remove(VeilArchive.discovery)
+        XCTAssertTrue(PhotoFeatureMatch.available(restored).isEmpty)
+        XCTAssertTrue(PhotoFeatureMatch.notes("VEIL_Home_01",in:restored).isEmpty)
+    }
+
     func testRegionalLightPairValidation() {
         let sample=[10,80,220,10,110,220,40,90,160]
         XCTAssertTrue(RecoveredImageAnalysis.validLightPair(sample,dark:0,bright:2))

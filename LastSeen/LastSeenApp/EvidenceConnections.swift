@@ -265,7 +265,9 @@ enum PhotoFeatureMatch {
               note:"Both copies show beige seating beside a coffee table; similar furnishings are not unique identifiers.")
     ]
     static func available(_ world:PhoneWorld)->[Challenge] {
-        all.filter { c in c.assets.allSatisfy{RecoveredImageAnalysis.record($0,in:world) != nil} }
+        guard VeilArchive.authorized(world) else{return []}
+        let visible=Set(VeilArchive.homeMedia(world).filter{world.flags.contains("veil.viewed."+$0)})
+        return all.filter { c in c.assets.allSatisfy{visible.contains($0)} }
     }
     static func challenge(_ a:String,_ b:String,in world:PhoneWorld)->Challenge? {
         available(world).first{Set($0.assets.map{"image:"+$0}) == Set([a,b])}
