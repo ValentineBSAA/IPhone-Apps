@@ -205,6 +205,18 @@ import UIKit
         restored=w.state;restored.flags.remove(VeilArchive.discovery)
         XCTAssertFalse(HavenCrossArchiveReview.reviewed(restored))
         XCTAssertNotNil(LumaAssistantEvidence.selected("haven:"+kitchen,in:restored))
+        let rootPair=["image:VEIL_Home_01","veil:thread:ordinary-hours"].sorted().joined(separator:"|")
+        XCTAssertTrue(EvidenceConnection.revokesMilestone(rootPair,in:w.state))
+        let priorPairs=w.connected.evidenceConnections ?? []
+        w.removeEvidenceConnection(rootPair)
+        XCTAssertFalse(VeilCommunity.reconstructionOpened(w.state))
+        w.visitWebRecord("books");w.visitWebRecord("cafe")
+        XCTAssertTrue(w.saveEvidenceConnection("web:books","web:cafe",relation:.uncertainty))
+        for pair in priorPairs where pair.id != rootPair {
+            XCTAssertTrue(w.connected.evidenceConnections?.contains(pair) ?? false,pair.id)
+        }
+        XCTAssertTrue(w.saveEvidenceConnection("image:VEIL_Home_01","veil:thread:ordinary-hours",relation:.wording))
+        XCTAssertTrue(VeilCommunity.reconstructionOpened(w.state))
     }
 
     func testArchiveAndPersistentPreferences() throws {

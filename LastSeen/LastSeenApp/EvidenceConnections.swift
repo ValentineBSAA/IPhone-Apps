@@ -67,10 +67,9 @@ struct EvidenceConnection: Codable, Equatable, Identifiable {
         var values=stored(world).filter{$0.id != entry.id}
         values.insert(entry,at:0)
         if values.count<=capacity {return values}
-        // Evaluate the intended edit first; only automatic eviction must
-        // preserve currently earned dependencies. The new entry stays first.
-        // Predicates consume a bounded prefix, so put each candidate's
-        // removal into a separate full-size world before comparing.
+        // A full notebook must not silently revoke an available discovery.
+        // Predicates consume a bounded prefix, so evaluate each candidate's
+        // removal in a separate full-size world. The new entry stays first.
         let baseline=milestones(world)
         for index in values.indices.reversed() where index != 0 {
             var candidate=values

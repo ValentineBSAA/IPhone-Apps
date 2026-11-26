@@ -92,7 +92,21 @@ import XCTest
         let restored = try JSONDecoder().decode(PhoneWorld.self,from:JSONEncoder().encode(w.state))
         XCTAssertNotNil(LumaAssistantEvidence.selected("veil:home-index",in:restored))
         XCTAssertTrue(VeilCommunity.disputeReviewed(restored))
-        w.removeEvidenceConnection([image,thread].sorted().joined(separator:"|"))
+        let pairID=[image,thread].sorted().joined(separator:"|")
+        XCTAssertTrue(EvidenceConnection.revokesMilestone(pairID,in:w.state))
+        var full=w.state
+        var connected=full.connectedWorld ?? LumaConnectedState()
+        let prerequisite=try XCTUnwrap(connected.evidenceConnections?.first{$0.id==pairID})
+        // Synthetic storage-only entries exercise the capacity boundary.
+        connected.evidenceConnections=(0..<39).map{.init(first:"fixture-a-\($0)",second:"fixture-b-\($0)",relation:.uncertainty)}+[prerequisite]
+        full.connectedWorld=connected
+        let capped=PhoneWorldStore(initial:full,persistToDisk:false)
+        capped.visitWebRecord("books");capped.visitWebRecord("cafe")
+        XCTAssertTrue(capped.saveEvidenceConnection("web:books","web:cafe",relation:.source))
+        XCTAssertEqual(capped.connected.evidenceConnections?.count,EvidenceConnection.capacity)
+        XCTAssertTrue(capped.connected.evidenceConnections?.contains(prerequisite) ?? false)
+        XCTAssertTrue(VeilCommunity.disputeReviewed(capped.state))
+        w.removeEvidenceConnection(pairID)
         XCTAssertNil(VeilArchive.resolve(page.address,in:w.state))
         XCTAssertNil(LumaAssistantEvidence.selected("veil:home-index",in:w.state))
         XCTAssertFalse(VeilArchive.pageBookmarkIDs(w.state).contains(page.id))
