@@ -2,6 +2,17 @@ import XCTest
 @testable import LastSeen
 
 final class PhoneLabTests: XCTestCase {
+    func testBrowserNavigationBoundsAndRevokedPages() {
+        let raw=Array(repeating:"books",count:60).joined(separator:"|")+"|@home|missing"
+        let entries=LumaBrowserHistory.navigationEntries(raw,flags:[])
+        XCTAssertEqual(entries.count,50)
+        XCTAssertEqual(entries.last,"@home")
+        XCTAssertFalse(LumaBrowserHistory.navigationEntries(raw,flags:[],allowHome:false).contains("@home"))
+        XCTAssertFalse(LumaBrowserHistory.navigationEntries("archive|missing",flags:[]).contains("archive"))
+        XCTAssertEqual(LumaBrowserHistory.decode("",legacy:Array(repeating:"books",count:120).joined(separator:"|")).count,100)
+        XCTAssertTrue(LumaBrowserHistory.record("missing",in:[]).isEmpty)
+    }
+
     func testCalculatorAndClockBoundaries() {
         var calculator=LumaCalculator()
         func enter(_ keys:[String]) {for key in keys {calculator.press(key)}}

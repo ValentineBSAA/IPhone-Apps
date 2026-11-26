@@ -180,6 +180,20 @@ import XCTest
         XCTAssertTrue(LumaReadAloud.eligible("A local transcript."))
     }
 
+    func testMemoSearchAndPlaybackBounds() {
+        var world=RestoredPhoneBackup.snapshot()
+        XCTAssertEqual(LumaMemoCatalog.search(world,query:"  WEEKEND  ").map(\.id),["personal"])
+        XCTAssertEqual(LumaMemoCatalog.search(world,query:"Tessa Reed").map(\.id),["palette"])
+        XCTAssertTrue(LumaMemoCatalog.search(world,query:"no-match-82").isEmpty)
+        world.everydayArchiveRevision=nil
+        XCTAssertTrue(LumaMemoCatalog.search(world,query:"Nora").isEmpty)
+        XCTAssertEqual(LumaMemoPlayback.position(-10,duration:20),0)
+        XCTAssertEqual(LumaMemoPlayback.position(30,duration:20),20)
+        XCTAssertEqual(LumaMemoPlayback.position(5,duration:20),5)
+        XCTAssertEqual(LumaMemoPlayback.position(.nan,duration:20),0)
+        XCTAssertEqual(LumaMemoPlayback.position(5,duration:.infinity),0)
+    }
+
     func testMemoCatalogIsRestoredAndStable() {
         let base = PhoneWorldStore(persistToDisk: false)
         XCTAssertTrue(LumaMemoCatalog.visible(base.state).isEmpty)

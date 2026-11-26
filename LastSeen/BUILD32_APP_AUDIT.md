@@ -18,7 +18,7 @@ Mandatory release gate for 1.9.0 (32), iPhone 16e. Every LabApp is listed exactl
 | Calculator | Arithmetic, edge cases, history, layout | Targeted pass | Pending | Pending |
 | Settings | Every toggle, actual effect, persistence, reset, protected access, sound studio | Targeted pass | Pending | Pending |
 | Files | Folders, document access, previews, search, recovered references | Targeted pass | Pending | Pending |
-| Browser | History, navigation, bookmarks, offline URLs, attachments, review gates | Pending | Pending | Pending |
+| Browser | History, navigation, bookmarks, offline URLs, attachments, review gates | Targeted pass | Pending | Pending |
 | Relay | Repository refresh, package install/remove, dependencies, conflicts, restart | Pending | Pending | Pending |
 | Patchline | Safe mode, tweak status, diagnostics, respring, reboot | Pending | Pending | Pending |
 | Game Saves | Manual/automatic slots, restore, timers, preferences, stale routes | Pending | Pending | Pending |
@@ -29,7 +29,7 @@ Mandatory release gate for 1.9.0 (32), iPhone 16e. Every LabApp is listed exactl
 | HavenWatch | Fixed-camera archive, preferences, events, privacy, notifications | Pending | Pending | Pending |
 | Dayblink | Stories, local media, expiry, interactions, notifications | Pending | Pending | Pending |
 | Motionwell | Catalog, media availability, playback, saved state, notifications | Pending | Pending | Pending |
-| Voice Memos | Record catalog, transcript, playback, read-aloud, missing audio | Pending | Pending | Pending |
+| Voice Memos | Record catalog, transcript, playback, read-aloud, missing audio | Targeted pass | Pending | Pending |
 | Luma Assistant | Nora memory, trust, context, permissions, voice, image evidence | Pending | Pending | Pending |
 
 ## Mandatory cross-app audit (all open)

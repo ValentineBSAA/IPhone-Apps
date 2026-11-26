@@ -96,20 +96,26 @@ struct LumaBrowserVisit: Codable, Equatable {
     let date: Date?
 }
 enum LumaBrowserHistory {
+    static func navigationEntries(_ raw:String,flags:Set<String>,allowHome:Bool=true)->[String] {
+        Array(raw.split(separator:"|").map(String.init).filter {
+            ($0=="@home" && allowHome) || LumaWebCatalog.page($0)?.available(flags)==true
+        }.suffix(50))
+    }
     static func decode(_ raw: String, legacy: String) -> [LumaBrowserVisit] {
         if let data = raw.data(using:.utf8), let rows = try? JSONDecoder().decode([LumaBrowserVisit].self,from:data) {
             return Array(rows.suffix(100))
         }
-        return legacy.split(separator:"|").map(String.init).compactMap { id in
+        return Array(legacy.split(separator:"|").map(String.init).compactMap { id in
             LumaWebCatalog.page(id).map { LumaBrowserVisit(pageID:$0.id,date:nil) }
-        }
+        }.suffix(100))
     }
     static func encode(_ rows: [LumaBrowserVisit]) -> String {
         guard let data = try? JSONEncoder().encode(Array(rows.suffix(100))) else { return "[]" }
         return String(data:data,encoding:.utf8) ?? "[]"
     }
     static func record(_ id: String, in rows: [LumaBrowserVisit], now: Date = Date()) -> [LumaBrowserVisit] {
-        Array((rows + [LumaBrowserVisit(pageID:id,date:now)]).suffix(100))
+        guard LumaWebCatalog.page(id) != nil else{return Array(rows.suffix(100))}
+        return Array((rows + [LumaBrowserVisit(pageID:id,date:now)]).suffix(100))
     }
     static func visible(_ rows: [LumaBrowserVisit], flags: Set<String>) -> [LumaBrowserVisit] {
         rows.filter { LumaWebCatalog.page($0.pageID)?.available(flags) == true }
@@ -294,7 +300,14 @@ struct LumaWebBrowser: View {
     @State private var revealed: Set<String> = []
     private let home = "@home"
     private var page: LumaWebPage? { LumaWebCatalog.page(current).flatMap { $0.available(world.state.flags) ? $0 : nil } }
-    private func entries(_ raw:String) -> [String] { raw.split(separator:"|").map(String.init).compactMap { x in x == home ? home : LumaWebCatalog.page(x).flatMap { $0.available(world.state.flags) ? $0.id : nil } } }
+    private func entries(_ raw:String) -> [String] {LumaBrowserHistory.navigationEntries(raw,flags:world.state.flags)}
+    private var bookmarkIDs:[String] {LumaBrowserHistory.navigationEntries(bookmarks,flags:world.state.flags,allowHome:false)}
+    private func resetTransient() {revealed=[];reviewAnswer="";reviewNotice=""}
+    private func inspect(_ asset:String,reveal:Bool) {
+        guard phase == .active,let p=page,p.images.contains(asset),world.state.flags.contains("web.visited."+p.id) else{return}
+        world.inspectWebAttachment(asset)
+        if reveal,world.state.flags.contains("web.inspected."+asset){revealed.insert(asset)}
+    }
     private func encoded(_ values:[String]) -> String { values.joined(separator:"|") }
     private var matches: [LumaWebPage] { LumaWebCatalog.search(query,flags:world.state.flags) }
     private var visits: [LumaBrowserVisit] { LumaBrowserHistory.decode(visitRaw,legacy:history) }
@@ -388,7 +401,7 @@ struct LumaWebBrowser: View {
                         if p.id == InvestigationResolution.conclusionID { InvestigationResolutionPanel() }
                         ForEach(p.images,id:\.self) { asset in
                             VStack(alignment:.leading,spacing:12) {
-                                if revealed.contains(asset) && LumaWebCatalog.attachments(in:world.state.flags).contains(asset) {
+                                if phase == .active && revealed.contains(asset) && LumaWebCatalog.visitedAttachments(in:world.state.flags).contains(asset) {
                                     if let photo = PortraitImages.load(asset) {
                                         Image(uiImage: photo).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius:12)).accessibilityLabel("Recovered image")
                                     } else {
@@ -397,8 +410,8 @@ struct LumaWebBrowser: View {
                                     Button("Hide image") { revealed.remove(asset) }
                                 } else {
                                     Label("Recovered attachment",systemImage:"photo.on.rectangle")
-                                    Button("Reveal image") { revealed.insert(asset); world.inspectWebAttachment(asset) }.buttonStyle(.bordered)
-                                    Button("Inspect without image") { world.inspectWebAttachment(asset) }.font(.caption)
+                                    Button("Reveal image") { inspect(asset,reveal:true) }.buttonStyle(.bordered)
+                                    Button("Inspect without image") { inspect(asset,reveal:false) }.font(.caption)
                                     if world.state.flags.contains("web.inspected."+asset) { Label("Inspected",systemImage:"checkmark.circle").font(.caption) }
                                 }
                                 if RecoveredImageAnalysis.record(asset,in:world.state) != nil {
@@ -420,7 +433,7 @@ struct LumaWebBrowser: View {
                         }
                         if matches.isEmpty { Text("No accessible saved pages match.").foregroundColor(.secondary) }
                         if query.isEmpty {
-                            siteSection("Bookmarks",entries(bookmarks))
+                            siteSection("Bookmarks",bookmarkIDs)
                             Button { showHistory = true } label: { Label("Browsing history",systemImage:"clock.arrow.circlepath") }.buttonStyle(.bordered)
                         }
                     }
@@ -437,10 +450,10 @@ struct LumaWebBrowser: View {
                 Button { showHistory = true } label:{ Image(systemName:"clock.arrow.circlepath").accessibilityLabel("History") }
                 Spacer()
                 Button {
-                    guard let p=page else{return}; var values=entries(bookmarks)
+                    guard phase == .active,let p=page else{return}; var values=bookmarkIDs
                     if values.contains(p.id){values.removeAll{$0==p.id}} else{values.append(p.id)}
-                    bookmarks=encoded(values)
-                } label:{ Image(systemName:page.map{entries(bookmarks).contains($0.id)} == true ? "bookmark.fill":"bookmark").accessibilityLabel("Bookmark") }.disabled(page==nil)
+                    bookmarks=encoded(Array(values.suffix(50)))
+                } label:{ Image(systemName:page.map{bookmarkIDs.contains($0.id)} == true ? "bookmark.fill":"bookmark").accessibilityLabel("Bookmark") }.disabled(page==nil)
             }.font(.title3).padding(.horizontal,25).padding(.vertical,14)
             Text(wifi ? "Local browser · Offline":"Local browser · Wi-Fi off").font(.caption2).foregroundColor(.secondary).padding(.bottom,4)
         }.navigationTitle("Browser").navigationBarTitleDisplayMode(.inline)
@@ -455,18 +468,22 @@ struct LumaWebBrowser: View {
             if let p=page { current=p.id; query=p.address } else { current="" }
         }
         .onChange(of:world.state.flags) { _ in
-            if page==nil { current=""; revealed=[] }
+            if page==nil && !current.isEmpty {
+                current="";query="";resetTransient()
+            }
+            if !LumaWebCatalog.isReviewReady(world.state.flags) {reviewAnswer="";reviewNotice=""}
+            backRaw=encoded(entries(backRaw));forwardRaw=encoded(entries(forwardRaw))
             if page.map({ atmosphere(for: $0.id)?.cue == nil }) ?? true {
                 PhoneSensoryEngine.stopOptionalAtmosphere()
             }
         }
-        .onChange(of:phase) { if $0 != .active { PhoneSensoryEngine.stopOptionalAtmosphere() } }
+        .onChange(of:phase) { if $0 != .active { resetTransient();addressFocused=false;PhoneSensoryEngine.stopOptionalAtmosphere() } }
         .onChange(of:horrorEffects) { if !$0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
         .onChange(of:messageSound) { if !$0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
         .onChange(of:reduceMotion) { if $0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
         .onChange(of:atmosphereIntensity) { if $0 != LumaArchiveAtmosphere.Intensity.standard.rawValue { PhoneSensoryEngine.stopOptionalAtmosphere() } }
         .onChange(of:showHistory) { if $0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
-        .onDisappear { PhoneSensoryEngine.stopOptionalAtmosphere() }
+        .onDisappear { resetTransient();PhoneSensoryEngine.stopOptionalAtmosphere() }
         .sheet(isPresented:$showHistory) {
             NavigationStack {
                 List {
@@ -502,14 +519,15 @@ struct LumaWebBrowser: View {
         }
     }
     private func visit(_ id:String) {
-        guard let p=LumaWebCatalog.page(id),p.available(world.state.flags) else{return}
+        guard phase == .active,let p=LumaWebCatalog.page(id),p.available(world.state.flags) else{return}
         let old=page?.id ?? home
         if old != p.id { backRaw=encoded(Array((entries(backRaw)+[old]).suffix(50))); forwardRaw="" }
         apply(p.id)
     }
     private func apply(_ id:String) {
         PhoneSensoryEngine.stopOptionalAtmosphere()
-        revealed=[]
+        resetTransient()
+        guard phase == .active else{return}
         if id==home { current=""; query=""; return }
         guard let p=LumaWebCatalog.page(id),p.available(world.state.flags) else{return}
         current=p.id; query=p.address; addressFocused=false; reviewAnswer=""; reviewNotice=""
@@ -528,14 +546,15 @@ struct LumaWebBrowser: View {
         PhoneSensoryEngine.stopOptionalAtmosphere()
         let old=page?.id
         if let old { backRaw=encoded(Array((entries(backRaw)+[old]).suffix(50))); forwardRaw="" }
-        current=""; revealed=[]; if clear{query=""}
+        current=""; resetTransient(); if clear{query=""}
     }
     private func move(back:Bool) {
+        guard phase == .active else{return}
         var stack=entries(back ? backRaw:forwardRaw)
         guard let target=stack.popLast() else{return}
         let old=page?.id ?? home
-        if back{backRaw=encoded(stack);forwardRaw=encoded(entries(forwardRaw)+[old])}
-        else{forwardRaw=encoded(stack);backRaw=encoded(entries(backRaw)+[old])}
+        if back{backRaw=encoded(stack);forwardRaw=encoded(Array((entries(forwardRaw)+[old]).suffix(50)))}
+        else{forwardRaw=encoded(stack);backRaw=encoded(Array((entries(backRaw)+[old]).suffix(50)))}
         apply(target)
     }
 }

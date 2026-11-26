@@ -12,6 +12,10 @@ struct LumaMemo: Identifiable, Equatable {
     var url: URL? { Bundle.main.url(forResource: file, withExtension: "m4a") }
 }
 enum LumaMemoCatalog {
+    static func search(_ world:PhoneWorld,query:String="")->[LumaMemo] {
+        let q=query.trimmingCharacters(in:.whitespacesAndNewlines)
+        return visible(world).filter{q.isEmpty || [$0.title,$0.speaker,$0.transcript].contains{$0.localizedCaseInsensitiveContains(q)}}
+    }
     static func visible(_ world: PhoneWorld) -> [LumaMemo] {
         guard world.everydayArchiveRevision != nil else { return [] }
         let anchor = world.createdAt
@@ -27,9 +31,7 @@ struct LumaVoiceMemos: View {
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var query = ""
     private var memos: [LumaMemo] {
-        LumaMemoCatalog.visible(world.state).filter {
-            query.isEmpty || [$0.title, $0.speaker, $0.transcript].contains { $0.localizedCaseInsensitiveContains(query) }
-        }
+        LumaMemoCatalog.search(world.state,query:query)
     }
     var body: some View {
         List {
@@ -49,7 +51,7 @@ struct LumaVoiceMemos: View {
                             Text(memo.date, style: .date).font(.caption2).foregroundColor(.secondary)
                         }
                         Spacer()
-                        Text(memo.url == nil ? "Transcript" : "Audio").font(.caption).foregroundColor(.secondary)
+                        Text(memo.url == nil ? "Transcript only" : "Audio + transcript").font(.caption).foregroundColor(.secondary)
                     }.padding(.vertical, 4)
                 }
             }
@@ -78,8 +80,16 @@ struct LumaMemoDetail: View {
         elapsed = player?.currentTime ?? elapsed
         PhoneSensoryEngine.endMediaAudio(audioOwner)
     }
+    private func resetPlayback() {
+        stop();readAloud.stop();player=nil;elapsed=0;duration=0;error=""
+    }
+    private func seek(_ seconds:Double) {
+        guard phase == .active,memo != nil,let player else{return}
+        let position=LumaMemoPlayback.position(seconds,duration:duration)
+        player.currentTime=position;elapsed=position
+    }
     private func load() {
-        guard let url = memo?.url, player == nil else { return }
+        guard phase == .active,let url = memo?.url, player == nil else { return }
         do {
             let audio = try AVAudioPlayer(contentsOf: url)
             guard audio.duration.isFinite, audio.duration > 0 else {
@@ -91,12 +101,12 @@ struct LumaMemoDetail: View {
         } catch { self.error = "Recording could not be decoded." }
     }
     private func clock(_ seconds: Double) -> String {
-        let total = Int(max(0, seconds.isFinite ? seconds : 0))
+        let total = Int(LumaMemoPlayback.position(seconds,duration:86400))
         return String(format: "%d:%02d", total / 60, total % 60)
     }
     var body: some View {
         ScrollView {
-            if let memo {
+            if phase == .active,let memo {
                 VStack(alignment: .leading, spacing: 16) {
                     Text(memo.title).font(.title2.bold())
                     Text(memo.speaker).font(.headline)
@@ -104,15 +114,15 @@ struct LumaMemoDetail: View {
                     if let player {
                         VStack(spacing: 12) {
                             Image(systemName: playing ? "waveform.circle.fill" : "waveform.circle").font(.system(size: 72)).foregroundColor(.red)
-                            Slider(value: Binding(get: { min(elapsed, duration) }, set: { value in player.currentTime = value; elapsed = value }), in: 0...max(0.01, duration))
+                            Slider(value: Binding(get: { LumaMemoPlayback.position(elapsed,duration:duration) }, set: { seek($0) }), in: 0...max(0.01, duration))
                                 .accessibilityLabel("Playback position")
                             HStack { Text(clock(elapsed)); Spacer(); Text(clock(duration)) }.font(.caption.monospacedDigit())
                             HStack(spacing: 30) {
-                                Button { player.currentTime = max(0, player.currentTime - 10); elapsed = player.currentTime } label: { Image(systemName: "gobackward.10") }.accessibilityLabel("Back ten seconds")
+                                Button { seek(elapsed-10) } label: { Image(systemName: "gobackward.10") }.accessibilityLabel("Back ten seconds")
                                 Button {
                                     if playing { stop() }
                                     else {
-                                        if player.currentTime >= duration - 0.1 { player.currentTime = 0 }
+                                        if elapsed >= duration - 0.1 { seek(0) }
                                         guard phase == .active, self.memo != nil else { return }
                                         readAloud.stop()
                                         PhoneSensoryEngine.beginMediaAudio(audioOwner)
@@ -128,7 +138,7 @@ struct LumaMemoDetail: View {
                                     }
                                 } label: { Image(systemName: playing ? "pause.circle.fill" : "play.circle.fill").font(.system(size: 50)) }
                                     .accessibilityLabel(playing ? "Pause" : "Play")
-                                Button { player.currentTime = min(duration, player.currentTime + 10); elapsed = player.currentTime } label: { Image(systemName: "goforward.10") }.accessibilityLabel("Forward ten seconds")
+                                Button { seek(elapsed+10) } label: { Image(systemName: "goforward.10") }.accessibilityLabel("Forward ten seconds")
                             }.font(.title2).buttonStyle(.plain)
                         }.padding(16).lumaSurface()
                     } else {
@@ -176,10 +186,18 @@ struct LumaMemoDetail: View {
                    AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable { stop(); readAloud.stop() }
             }
             .onChange(of: memo?.id) { value in
-                if value == nil { stop(); readAloud.stop(); player = nil }
+                if value == nil { resetPlayback() }
                 else { load() }
             }
-            .onChange(of: phase) { if $0 != .active { stop(); readAloud.stop() } }
-            .onDisappear { stop(); readAloud.stop(); player = nil }
+            .onChange(of: phase) { if $0 != .active { stop(); readAloud.stop() } else {load()} }
+            .onDisappear { resetPlayback() }
+    }
+}
+
+
+enum LumaMemoPlayback {
+    static func position(_ seconds:Double,duration:Double)->Double {
+        guard seconds.isFinite,duration.isFinite,duration>0 else{return 0}
+        return min(duration,max(0,seconds))
     }
 }
