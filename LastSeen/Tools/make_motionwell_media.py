@@ -18,7 +18,8 @@ def main(out):
     recipes = json.loads((ROOT / "MotionwellMedia/recipes.json").read_text())["clips"]
     catalog = ROOT / "LastSeenApp/Assets.xcassets"
     provenance = json.loads((ROOT / "CommunityPortraits/everyday-media-manifest.json").read_text())
-    allowed = {row["asset"] for row in provenance["assets"] if row["license"] == "CC0-1.0"}
+    approved = {row["asset"]: row for row in provenance["assets"] if row["license"] == "CC0-1.0"}
+    allowed = set(approved)
     out.mkdir(parents=True, exist_ok=True)
     records = []
     with tempfile.TemporaryDirectory() as td:
@@ -32,6 +33,10 @@ def main(out):
             for i, name in enumerate(names):
                 source = catalog / (name + ".imageset") / "photo.jpg"
                 assert source.is_file()
+                original = source.read_bytes()
+                blob = hashlib.sha1(b"blob " + str(len(original)).encode("ascii") + b"\0" + original).hexdigest()
+                if blob != approved[name]["git_blob_sha"]:
+                    raise ValueError("Photo differs from the verified source blob: " + name)
                 segment = work / (recipe["id"] + str(i) + ".mp4")
                 vf = ("scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,"
                       "zoompan=z='min(1.0+on*0.0006,1.10)':x='iw/2-iw/zoom/2':y='ih/2-ih/zoom/2'"

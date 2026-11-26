@@ -77,6 +77,28 @@ struct LumaPendingSocialReply: Codable, Equatable {
     let dueAt: Date
 }
 
+/// Transient foreground presentation queue. Persisted records remain in
+/// activityJournal; suppressing a banner never removes its destination.
+struct LumaActivityBannerQueue {
+    private(set) var ids: [String] = []
+    mutating func enqueue(_ notices: [LumaActivityNotice], showing: String?) {
+        for notice in notices where notice.id != showing && !ids.contains(notice.id) {
+            ids.append(notice.id)
+        }
+        // The full history remains accessible if a large restore batch arrives.
+        ids = Array(ids.prefix(20))
+    }
+    mutating func next(in state: PhoneWorld) -> LumaActivityNotice? {
+        let visible = LumaActivityCatalog.visible(state)
+        while !ids.isEmpty {
+            let id = ids.removeFirst()
+            if let notice = visible.first(where: { $0.id == id }) { return notice }
+        }
+        return nil
+    }
+    mutating func clear() { ids.removeAll() }
+}
+
 struct LumaActivityRoute: Hashable {
     let id: String
 }

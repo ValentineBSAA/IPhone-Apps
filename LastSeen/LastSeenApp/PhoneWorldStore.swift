@@ -299,7 +299,8 @@ final class PhoneWorldStore: ObservableObject {
                 advanceTutorial(now: now.addingTimeInterval(0.1))
                 state.flags = NoraPhotoCatalog.discoveryFlags(from: state.flags)
             } else {
-                append(NeighborMessage(id: item.id, thread: item.neighbor.id, text: item.text,
+                let text = currentPendingReplyText(item)
+                append(NeighborMessage(id: item.id, thread: item.neighbor.id, text: text,
                                        fromPlayer: false, at: item.dueAt, read: false))
             }
             changed = true
@@ -309,6 +310,24 @@ final class PhoneWorldStore: ObservableObject {
             state.pendingReplies = pending.filter { !ids.contains($0.id) }
         }
         if changed { save() }
+    }
+
+    private func currentPendingReplyText(_ item: PhonePendingReply) -> String {
+        // Keep ordinary authored replies stable; only reevaluate those whose
+        // speaker's knowledge or service state has changed since composition.
+        guard let outgoing = state.threads[item.neighbor.id]?.first(where: { $0.id == item.outgoingID && $0.fromPlayer }) else { return item.text }
+        if item.neighbor == .unknown && state.flags.contains("web.visited." + InvestigationResolution.indexID) {
+            return PhoneReplyPolicy.plan(for: item.neighbor, text: outgoing.text, flags: state.flags,
+                                         tutorialStarted: tutorialStarted, tutorialFinished: tutorialFinished).text
+        }
+        if item.neighbor == .maya && state.flags.contains(InvestigationResolution.read) {
+            let words = PhoneEverydayConversation.words(outgoing.text)
+            if !words.isDisjoint(with: ["nora","missing","where","safe","disappeared","location","address"]) {
+                return PhoneReplyPolicy.plan(for: item.neighbor, text: outgoing.text, flags: state.flags,
+                                             tutorialStarted: tutorialStarted, tutorialFinished: tutorialFinished).text
+            }
+        }
+        return item.text
     }
 
     private func tutorialMessage(_ id: String, _ text: String, now: Date) {

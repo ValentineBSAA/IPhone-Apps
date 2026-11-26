@@ -12,7 +12,23 @@ struct LumaWebPage: Identifiable {
     let links: [String]
     var gate: String? = nil
     var images: [String] = []
-    func available(_ flags: Set<String>) -> Bool { gate.map { flags.contains($0) } ?? true }
+    func available(_ flags: Set<String>) -> Bool {
+        guard gate.map({ flags.contains($0) }) ?? true else { return false }
+        // Late chapter routes must not survive a temporarily replayed tutorial
+        // or an incomplete checkpoint simply because their own flag exists.
+        let reviewBase: Set<String> = ["phone-tutorial-finished","web.visited.studio","investigation.chapter2.reviewed","web.visited.archive-ledger","investigation.chapter2.ledgerAcknowledged",InvestigationReview.requested,InvestigationReview.read]
+        switch id {
+        case InvestigationReview.pageID:
+            return reviewBase.isSubset(of: flags)
+        case InvestigationResolution.indexID:
+            return reviewBase.union([InvestigationReview.finished,"web.visited."+InvestigationReview.pageID]).isSubset(of: flags)
+        case InvestigationResolution.noteID:
+            return reviewBase.union([InvestigationReview.finished,"web.visited."+InvestigationReview.pageID,"web.visited."+InvestigationResolution.indexID]).isSubset(of: flags)
+        case InvestigationResolution.conclusionID:
+            return reviewBase.union([InvestigationReview.finished,"web.visited."+InvestigationReview.pageID,"web.visited."+InvestigationResolution.indexID,"web.visited."+InvestigationResolution.noteID,InvestigationResolution.requested,InvestigationResolution.read]).isSubset(of: flags)
+        default: return true
+        }
+    }
 }
 enum LumaWebCatalog {
     static let pages: [LumaWebPage] = [

@@ -44,6 +44,7 @@ struct PhoneLabView: View {
     @State private var pendingActivityID: String?
     @State private var banner: PhoneAlert?
     @State private var activityBanner: LumaActivityNotice?
+    @State private var activityQueue = LumaActivityBannerQueue()
     @State private var observedIncoming: Set<String> = []
     @State private var observedOutgoing: Set<String> = []
     @State private var arrivalTask: Task<Void, Never>?
@@ -153,7 +154,7 @@ struct PhoneLabView: View {
                 .ignoresSafeArea().allowsHitTesting(false)
         }
         .overlay(alignment: .top) {
-            if let alert = banner, !locked, panel == nil, world.visibleThread != alert.neighbor {
+            if let alert = banner, !locked, !checkpointReboot, panel == nil, !showOwnerPasscode, world.visibleThread != alert.neighbor {
                 PhoneNotificationCard(alert: alert) {
                     banner = nil; openThread(alert.neighbor)
                 }.padding(.horizontal, 14).padding(.top, 4)
@@ -161,19 +162,19 @@ struct PhoneLabView: View {
             }
         }
         .overlay(alignment: .top) {
-            if let notice = activityBanner, banner == nil, !locked, !checkpointReboot, panel == nil, notice.canPresent(in: world.state) {
+            if let notice = activityBanner, banner == nil, !locked, !checkpointReboot, panel == nil, !showOwnerPasscode, notice.canPresent(in: world.state) {
                 LumaActivityCard(notice: notice, hidePreview: notice.hidePreview(in: world.state)) { openActivity(notice) }
                     .padding(.horizontal, 14).padding(.top, 4)
             }
         }
         .overlay(alignment: .top) {
-            if circuitBanner && !locked && !checkpointReboot && panel == nil {
+            if circuitBanner && banner == nil && activityBanner == nil && !locked && !checkpointReboot && panel == nil && !showOwnerPasscode {
                 Button { circuitBanner = false; open(.relay) } label: { CircuitNoticeCard() }
                     .buttonStyle(.plain).padding(.horizontal, 14).padding(.top, 4)
             }
         }
         .overlay(alignment: .top) {
-            if let tool = utilityNotice, !locked && !checkpointReboot && panel == nil {
+            if let tool = utilityNotice, banner == nil && activityBanner == nil && !circuitBanner && !locked && !checkpointReboot && panel == nil && !showOwnerPasscode {
                 Button { utilityNotice = nil; open(.relay) } label: { UtilityNoticeCard(tool: tool) }.buttonStyle(.plain).padding(.horizontal, 14).padding(.top, 4)
             }
         }
@@ -273,10 +274,17 @@ struct PhoneLabView: View {
                         world.recordTimerActivity(end: feedbackTimerEnd)
                     }
                     if didConfigureFeedback {
-                        for notice in LumaActivityCatalog.newEntries(world.state, previous: before) {
+                        let arrived = LumaActivityCatalog.newEntries(world.state, previous: before)
+                        for notice in arrived {
                             let cue = notice.cue.isHorror && !horrorEffects ? PhoneCue.general : notice.cue
                             PhoneSensoryEngine.play(cue, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects, hapticProfile: notice.profile)
-                            activityBanner = notice
+                        }
+                        if !locked {
+                            activityQueue.enqueue(arrived, showing: activityBanner?.id)
+                            if let current = activityBanner, !LumaActivityCatalog.visible(world.state).contains(where: { $0.id == current.id }) { activityBanner = nil }
+                            if activityBanner == nil && banner == nil && panel == nil && !showOwnerPasscode {
+                                activityBanner = activityQueue.next(in: world.state)
+                            }
                         }
                     }
                 }
@@ -285,6 +293,7 @@ struct PhoneLabView: View {
         }
         .onChange(of: locked) { value in
             guard value else { return }
+            activityBanner = nil; activityQueue.clear()
             PhoneSensoryEngine.cancelAuthentication()
             guard didConfigureFeedback, phase == .active, !checkpointReboot else { return }
             PhoneSensoryEngine.play(.lock, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
@@ -297,7 +306,7 @@ struct PhoneLabView: View {
                 arrivalTask?.cancel(); arrivalTask = nil
                 if value == .background { PhoneSensoryEngine.stop() }
                 else { PhoneSensoryEngine.stopSound(); PhoneSensoryEngine.stopHaptics() }
-                banner = nil; activityBanner = nil
+                banner = nil; activityBanner = nil; activityQueue.clear()
             }
         }
         .onChange(of: messageSound) { if !$0 { PhoneSensoryEngine.stopSound() } }
@@ -936,7 +945,7 @@ struct PhoneLabView: View {
         if saves.restore(slot, into: world) {
             observedIncoming = Set(incomingIDs)
             observedOutgoing = outgoingIDs
-            banner = nil; activityBanner = nil; pendingThread = nil; pendingActivityID = nil; circuitBanner = false; utilityNotice = nil; observedUtilityFlags = world.state.flags
+            banner = nil; activityBanner = nil; activityQueue.clear(); pendingThread = nil; pendingActivityID = nil; circuitBanner = false; utilityNotice = nil; observedUtilityFlags = world.state.flags
             authContext?.invalidate(); authContext = nil
             showOwnerPasscode = false
             panel = nil
