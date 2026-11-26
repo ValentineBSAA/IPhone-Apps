@@ -276,8 +276,8 @@ struct PhoneMediaAudioReservations {
     mutating func end(_ owner: UUID) { owners.remove(owner) }
 }
 
-/// Preview ownership is independent of the normal alert queues.
-struct PhonePreviewLease {
+/// Single-owner lease for disposable playback, independent of normal alerts.
+struct PhoneAudioLease {
     private(set) var owner: UUID?
     mutating func begin(_ token: UUID) { owner = token }
     @discardableResult mutating func end(_ token: UUID? = nil) -> Bool {
@@ -293,7 +293,7 @@ enum PhoneSensoryEngine {
     private static var engine: CHHapticEngine?
     private static var hapticPlayer: CHHapticPatternPlayer?
     private static var currentCue: PhoneCue?
-    private static var optionalAtmospherePlaying = false
+    private static var optionalAtmosphereLease = PhoneAudioLease()
     private static var deferredAuthentication: Task<Void, Never>?
     private static var queued = PhoneAudioQueue()
     private static var drainTask: Task<Void, Never>?
@@ -302,7 +302,7 @@ enum PhoneSensoryEngine {
     private static var hapticUntil: TimeInterval = 0
     private static var currentHapticProfile: PhoneHapticProfile?
     private static var mediaReservations = PhoneMediaAudioReservations()
-    private static var previewLease = PhonePreviewLease()
+    private static var previewLease = PhoneAudioLease()
     private static var previewAudio: AVAudioPlayer?
     private static var previewHapticUntil: TimeInterval = 0
     private static var previewOwnsHaptic = false
@@ -445,21 +445,20 @@ enum PhoneSensoryEngine {
     }
 
     /// A quiet, disposable first-entry effect. Never enqueue it or emit haptics.
-    static func playOptionalAtmosphere(_ cue: PhoneCue, sound: Bool, horrorEnabled: Bool) {
+    static func playOptionalAtmosphere(_ cue: PhoneCue, owner: UUID, sound: Bool, horrorEnabled: Bool) {
         guard cue == .suspense, UIApplication.shared.applicationState == .active,
               sound, horrorEnabled, preference("lastseen.lab.messageSound"),
               preference("lastseen.lab.horrorEffects"),
               PhoneAudioPriority.allowsAtmosphere(playing: audio?.isPlaying == true,
                   waiting: !queued.isEmpty, mediaReserved: mediaReservations.isReserved) else { return }
         guard previewLease.owner == nil else { return }
-        optionalAtmospherePlaying = startAudio(cue) > 0
+        if startAudio(cue, atmosphere: true) > 0 { optionalAtmosphereLease.begin(owner) }
     }
 
     /// Stop only the disposable cue; never clear a genuine alert or its queue.
-    static func stopOptionalAtmosphere() {
-        guard optionalAtmospherePlaying else { return }
+    static func stopOptionalAtmosphere(owner: UUID? = nil) {
+        guard optionalAtmosphereLease.end(owner) else { return }
         audio?.stop(); audio = nil; currentCue = nil
-        optionalAtmospherePlaying = false
     }
 
     @discardableResult
@@ -491,9 +490,9 @@ enum PhoneSensoryEngine {
     }
 
     @discardableResult
-    private static func startAudio(_ cue: PhoneCue) -> Double {
+    private static func startAudio(_ cue: PhoneCue, atmosphere: Bool = false) -> Double {
         stopPreview()
-        optionalAtmospherePlaying = false
+        optionalAtmosphereLease.end()
         audio?.stop(); audio = nil; currentCue = nil
         do {
             let session = AVAudioSession.sharedInstance()
@@ -501,7 +500,7 @@ enum PhoneSensoryEngine {
             try session.setActive(true)
             func start(_ candidate: AVAudioPlayer) -> Double? {
                 candidate.numberOfLoops = 0
-                candidate.volume = cue == .passcodeKeypress || cue == .authenticationFailed || cue == .timerCompleted ? 1.0 : 0.8
+                candidate.volume = atmosphere ? 0.35 : (cue == .passcodeKeypress || cue == .authenticationFailed || cue == .timerCompleted ? 1.0 : 0.8)
                 candidate.prepareToPlay()
                 guard candidate.play() else { return nil }
                 audio = candidate; currentCue = cue
@@ -627,7 +626,7 @@ enum PhoneSensoryEngine {
         queued.cancelHorror()
         if currentCue?.isHorror == true {
             audio?.stop(); audio = nil; currentCue = nil
-            optionalAtmospherePlaying = false
+            optionalAtmosphereLease.end()
         }
         if !queued.isEmpty { scheduleDrain() }
         hapticQueue.removeAll { $0.isHorror }
@@ -641,7 +640,7 @@ enum PhoneSensoryEngine {
 
     static func stopSound() {
         stopPreview()
-        optionalAtmospherePlaying = false
+        optionalAtmosphereLease.end()
         audio?.stop(); audio = nil; currentCue = nil
         drainTask?.cancel(); drainTask = nil; queued.removeAll()
     }

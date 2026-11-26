@@ -1,9 +1,10 @@
 import Foundation
 import AVFoundation
+import UIKit
 
 /// Tiny generated ambient soundbed, bundled in code rather than using copyrighted music.
 /// Playback is deliberately quiet and respects iPhone's silent mode.
-final class AudioAtmosphere {
+@MainActor final class AudioAtmosphere {
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
     private let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
@@ -32,13 +33,16 @@ final class AudioAtmosphere {
     }
 
     func start() {
-        guard !engine.isRunning else { return }
+        guard UIApplication.shared.applicationState == .active else { stop(); return }
+        if engine.isRunning && player.isPlaying { return }
+        stop()
         do {
             try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
             player.scheduleBuffer(buffer, at: nil, options: .loops, completionHandler: nil)
             try engine.start()
             player.play()
         } catch {
+            stop()
             #if DEBUG
             print("LAST SEEN ambient audio unavailable: \(error)")
             #endif

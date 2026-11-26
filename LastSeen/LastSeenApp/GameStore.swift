@@ -159,6 +159,8 @@ final class GameStore: ObservableObject {
         }
     }
 
+    func stopAmbience() { ambience.stop() }
+
     func suspend() {
         ambience.stop()
         deliveryTask?.cancel()

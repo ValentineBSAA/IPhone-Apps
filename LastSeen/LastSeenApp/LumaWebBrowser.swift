@@ -279,6 +279,7 @@ struct LumaWebBrowser: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("lastseen.lab.horrorEffects") private var horrorEffects = true
     @AppStorage("lastseen.lab.atmosphereIntensity") private var atmosphereIntensity = LumaArchiveAtmosphere.Intensity.standard.rawValue
+    @State private var atmosphereOwner = UUID()
     @AppStorage("lastseen.lab.messageSound") private var messageSound = true
     private func atmosphere(for id: String) -> LumaArchiveAtmosphere.Treatment? {
         LumaArchiveAtmosphere.treatment(pageID: id, flags: world.state.flags,
@@ -479,16 +480,21 @@ struct LumaWebBrowser: View {
             if !LumaWebCatalog.isReviewReady(world.state.flags) {reviewAnswer="";reviewNotice=""}
             backRaw=encoded(entries(backRaw));forwardRaw=encoded(entries(forwardRaw))
             if page.map({ atmosphere(for: $0.id)?.cue == nil }) ?? true {
-                PhoneSensoryEngine.stopOptionalAtmosphere()
+                PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner)
             }
         }
-        .onChange(of:phase) { if $0 != .active { resetTransient();addressFocused=false;PhoneSensoryEngine.stopOptionalAtmosphere() } }
-        .onChange(of:horrorEffects) { if !$0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
-        .onChange(of:messageSound) { if !$0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
-        .onChange(of:reduceMotion) { if $0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
-        .onChange(of:atmosphereIntensity) { if $0 != LumaArchiveAtmosphere.Intensity.standard.rawValue { PhoneSensoryEngine.stopOptionalAtmosphere() } }
-        .onChange(of:showHistory) { if $0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
-        .onDisappear { resetTransient();PhoneSensoryEngine.stopOptionalAtmosphere() }
+        .onChange(of:world.checkpointEpoch) { _ in
+            PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner)
+            atmosphereOwner=UUID(); resetTransient(); showHistory=false; confirmClear=false; addressFocused=false
+            if let p=page { query=p.address } else { current="";query="" }
+        }
+        .onChange(of:phase) { if $0 != .active { resetTransient();addressFocused=false;PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
+        .onChange(of:horrorEffects) { if !$0 { PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
+        .onChange(of:messageSound) { if !$0 { PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
+        .onChange(of:reduceMotion) { if $0 { PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
+        .onChange(of:atmosphereIntensity) { if $0 != LumaArchiveAtmosphere.Intensity.standard.rawValue { PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
+        .onChange(of:showHistory) { if $0 { PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
+        .onDisappear { resetTransient();PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) }
         .sheet(isPresented:$showHistory) {
             NavigationStack {
                 List {
@@ -530,7 +536,7 @@ struct LumaWebBrowser: View {
         apply(p.id)
     }
     private func apply(_ id:String) {
-        PhoneSensoryEngine.stopOptionalAtmosphere()
+        PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner)
         resetTransient()
         guard phase == .active else{return}
         if id==home { current=""; query=""; return }
@@ -544,11 +550,11 @@ struct LumaWebBrowser: View {
             active: phase == .active && !showHistory, treatment: atmosphere(for: p.id)) {
             // One optional cue on a deliberate first entry. Never queue a
             // haptic or generate a notification just for atmosphere.
-            PhoneSensoryEngine.playOptionalAtmosphere(cue, sound: messageSound, horrorEnabled: horrorEffects)
+            PhoneSensoryEngine.playOptionalAtmosphere(cue, owner: atmosphereOwner, sound: messageSound, horrorEnabled: horrorEffects)
         }
     }
     private func showResults(clear:Bool=false) {
-        PhoneSensoryEngine.stopOptionalAtmosphere()
+        PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner)
         let old=page?.id
         if let old { backRaw=encoded(Array((entries(backRaw)+[old]).suffix(50))); forwardRaw="" }
         current=""; resetTransient(); if clear{query=""}

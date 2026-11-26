@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 @main
 struct LastSeenApp: App {
@@ -75,6 +76,15 @@ private struct LegacyStoryRoot: View {
                 game.clearReminder()
                 game.beginOrResume()
             }
+            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { notice in
+                if let raw = notice.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                   AVAudioSession.InterruptionType(rawValue: raw) == .began { game.stopAmbience() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { notice in
+                if let raw = notice.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+                   AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable { game.stopAmbience() }
+            }
+            .onDisappear { game.suspend() }
             .onChange(of: phase) { newPhase in
                 switch newPhase {
                 case .active:

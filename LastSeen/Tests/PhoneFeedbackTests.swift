@@ -96,7 +96,7 @@ final class PhoneFeedbackTests: XCTestCase {
     }
 
     func testPreviewLeaseRejectsStaleCancellationAndCoversAllRecordings() {
-        var lease = PhonePreviewLease()
+        var lease = PhoneAudioLease()
         let first = UUID(), second = UUID()
         lease.begin(first)
         lease.begin(second)
@@ -113,6 +113,21 @@ final class PhoneFeedbackTests: XCTestCase {
         XCTAssertEqual(items.filter(\.isRestart).count, 4)
         XCTAssertEqual(items.filter(\.isHorror).count, 5)
         XCTAssertTrue(items.filter(\.isRestart).allSatisfy { $0.profile == nil })
+    }
+
+    func testAtmosphereAndPreviewLeasesAreIndependentAndRejectStaleOwners() {
+        let browser = UUID(), veil = UUID(), studio = UUID()
+        var atmosphere = PhoneAudioLease(), preview = PhoneAudioLease()
+        atmosphere.begin(browser)
+        preview.begin(studio)
+        atmosphere.begin(veil)
+        XCTAssertFalse(atmosphere.end(browser))
+        XCTAssertFalse(atmosphere.end(studio))
+        XCTAssertEqual(atmosphere.owner, veil)
+        XCTAssertTrue(atmosphere.end()) // real alert preemption
+        XCTAssertFalse(atmosphere.end(veil))
+        XCTAssertEqual(preview.owner, studio)
+        XCTAssertTrue(preview.end(studio))
     }
 
     func testHorrorCancellationPreservesOrdinaryQueueAndAuthentication() {

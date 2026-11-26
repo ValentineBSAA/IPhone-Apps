@@ -205,6 +205,7 @@ struct VeilBrowser: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("lastseen.lab.horrorEffects") private var horrorEffects = true
     @AppStorage("lastseen.lab.atmosphereIntensity") private var atmosphereIntensity = LumaArchiveAtmosphere.Intensity.standard.rawValue
+    @State private var atmosphereOwner = UUID()
     @AppStorage("lastseen.veil.security") private var security = "Standard"
     @AppStorage("lastseen.lab.messageSound") private var messageSound = true
     @State private var address = ""
@@ -230,11 +231,11 @@ struct VeilBrowser: View {
         if let cue=LumaArchiveAtmosphere.indexRecordingCue(previouslyRecorded:previous,
             recorded:world.state.flags.contains("veil.home-index.opened"),treatment:treatment,
             intensity:LumaArchiveAtmosphere.Intensity(rawValue:atmosphereIntensity) ?? .off,security:security) {
-            PhoneSensoryEngine.playOptionalAtmosphere(cue,sound:messageSound,horrorEnabled:horrorEffects)
+            PhoneSensoryEngine.playOptionalAtmosphere(cue, owner: atmosphereOwner,sound:messageSound,horrorEnabled:horrorEffects)
         }
     }
     private func disconnect() {
-        PhoneSensoryEngine.stopOptionalAtmosphere()
+        PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner)
         connecting=false; connected=false; connectionStep=0; address=""; history=[]; notice=""
         selected="directory";pageSession=UUID();addressFocused=false
     }
@@ -245,7 +246,7 @@ struct VeilBrowser: View {
             return
         }
         if selected != p.id {
-            PhoneSensoryEngine.stopOptionalAtmosphere()
+            PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner)
             history.append(selected); history = Array(history.suffix(30));pageSession=UUID()
         }
         selected = p.id; address = p.address; notice = "";addressFocused=false
@@ -395,6 +396,9 @@ struct VeilBrowser: View {
                     else { notice="Recovered reference unavailable." }
                 }
             }
+            .onChange(of:world.checkpointEpoch) { _ in
+                disconnect(); atmosphereOwner=UUID(); showNewIdentity=false
+            }
             .onChange(of:phase) { if $0 != .active { disconnect() } }
             .onChange(of:allowed) { if !$0 { disconnect() } }
             .onChange(of:pages.map(\.id)) { _ in
@@ -408,17 +412,17 @@ struct VeilBrowser: View {
                 }
             }
             .onChange(of:wifi) { if !$0 { disconnect(); notice="Simulated Wi-Fi is off." } }
-            .onChange(of:selected) { _ in PhoneSensoryEngine.stopOptionalAtmosphere() }
-            .onChange(of:showNewIdentity) { if $0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
-            .onChange(of:security) { _ in PhoneSensoryEngine.stopOptionalAtmosphere() }
-            .onChange(of:messageSound) { if !$0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
-            .onChange(of:treatment) { if $0 == nil { PhoneSensoryEngine.stopOptionalAtmosphere() } }
-            .onChange(of:atmosphereIntensity) { if $0 != LumaArchiveAtmosphere.Intensity.standard.rawValue { PhoneSensoryEngine.stopOptionalAtmosphere() } }
+            .onChange(of:selected) { _ in PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) }
+            .onChange(of:showNewIdentity) { if $0 { PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
+            .onChange(of:security) { _ in PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) }
+            .onChange(of:messageSound) { if !$0 { PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
+            .onChange(of:treatment) { if $0 == nil { PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
+            .onChange(of:atmosphereIntensity) { if $0 != LumaArchiveAtmosphere.Intensity.standard.rawValue { PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
             // A push into a board, correspondence or image workspace is
             // still part of this local session. The parent state is discarded
             // when its navigation entry is removed; cancel unfinished connects.
             .onDisappear {
-                PhoneSensoryEngine.stopOptionalAtmosphere()
+                PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner)
                 if connecting { disconnect() }
             }
     }
