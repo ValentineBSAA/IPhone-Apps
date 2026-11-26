@@ -46,10 +46,19 @@ enum RestoredPhoneBackup {
         return restored
     }
 
+    enum ExistingStatus:Equatable {case absent,readable,unreadable}
+    static func existingStatus(at destination:URL=url)->ExistingStatus {
+        guard FileManager.default.fileExists(atPath:destination.path) else{return .absent}
+        guard let data=try? Data(contentsOf:destination),
+              let world=try? JSONDecoder().decode(PhoneWorld.self,from:data),
+              world.version==1 else{return .unreadable}
+        return .readable
+    }
+
     /// Atomic and idempotent: never overwrite a player's already-restored world.
     static func restore(to destination: URL = url, now: Date = Date()) throws {
         if FileManager.default.fileExists(atPath: destination.path) {
-            _ = try JSONDecoder().decode(PhoneWorld.self, from: Data(contentsOf: destination))
+            guard existingStatus(at:destination) == .readable else{throw CocoaError(.fileReadCorruptFile)}
             return
         }
         let data = try JSONEncoder().encode(snapshot(now: now))

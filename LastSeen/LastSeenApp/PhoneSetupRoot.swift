@@ -26,9 +26,14 @@ struct PhoneSetupRoot: View {
         }
         .preferredColorScheme(.dark)
         .alert("Unable to finish restore", isPresented: $restoreFailed) {
+            if RestoredPhoneBackup.existingStatus() == .unreadable {
+                Button("Open phone recovery") {justRestored=false;stage=5}
+            }
             Button("OK", role: .cancel) { }
         } message: {
-            Text("The local backup could not be saved. Your existing data has not been erased. Try again.")
+            Text(RestoredPhoneBackup.existingStatus() == .unreadable
+                 ? "The existing phone save is unreadable. Open recovery to select a checkpoint. Your original file will be preserved."
+                 : "The local backup could not be saved. Your existing data has not been erased. Try again.")
         }
         .onAppear {
             if replay && !didHandleReplay { didHandleReplay = true; stage = 0; progress = 0 }
@@ -91,8 +96,12 @@ struct PhoneSetupRoot: View {
                 if stage < 4 || progress >= 100 {
                     Button {
                         if stage == 4 {
-                            do { try RestoredPhoneBackup.restore(); justRestored = true }
-                            catch { restoreFailed = true; return }
+                            let prior=RestoredPhoneBackup.existingStatus()
+                            if prior == .unreadable {
+                                justRestored=false;restoreFailed=true;return
+                            }
+                            do {try RestoredPhoneBackup.restore();justRestored = prior == .absent}
+                            catch {restoreFailed=true;return}
                         }
                         if stage == 1 && device.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { device = "My phone" }
                         if stage == 3 { progress = 0 }

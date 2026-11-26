@@ -4,8 +4,9 @@ import AVFoundation
 @main
 struct LastSeenApp: App {
     @UIApplicationDelegateAdaptor(LastSeenAppDelegate.self) private var appDelegate
+    @State private var relayRecoveryRequired=false
     init() {
-        _ = RelayTransactionReceipt.recover()
+        _relayRecoveryRequired=State(initialValue:!RelayTransactionReceipt.recover())
         #if DEBUG && targetEnvironment(simulator)
         if ProcessInfo.processInfo.arguments.contains("--luma-relay-clean-test") {
             for key in ["installed","versions","history","safeMode","sources","compactIcons","tealTheme"] {
@@ -20,6 +21,11 @@ struct LastSeenApp: App {
         }
     }
     @ViewBuilder private var root: some View {
+        if relayRecoveryRequired {
+            RelayStartupRecoveryView {relayRecoveryRequired=false}
+        } else { normalOrFixtureRoot }
+    }
+    @ViewBuilder private var normalOrFixtureRoot:some View {
         #if DEBUG && targetEnvironment(simulator)
         if ProcessInfo.processInfo.arguments.contains("--luma-ui-test") {
             PhoneLabView(startUnlocked: true, uiFixture: true)
@@ -39,12 +45,51 @@ struct LastSeenApp: App {
     }
 }
 
+private struct RelayStartupRecoveryView:View {
+    let onRecovered:()->Void
+    @State private var malformed=RelayTransactionReceipt.malformed()
+    @State private var confirm=false
+    @State private var notice=""
+    @Environment(\.scenePhase) private var phase
+    var body:some View {
+        VStack(alignment:.leading,spacing:16) {
+            Label("Package recovery required",systemImage:"exclamationmark.shield").font(.title2.bold())
+            Text("An unfinished package commit needs attention before the phone opens. Your records and checkpoints are retained.")
+            Button("Retry recovery") {
+                guard phase == .active else{return}
+                if RelayTransactionReceipt.recover(){onRecovered()}
+                else {malformed=RelayTransactionReceipt.malformed();notice="Recovery could not finish."}
+            }.buttonStyle(.borderedProminent)
+            if malformed {
+                Button("Preserve receipt and enter Safe Mode"){confirm=true}.buttonStyle(.bordered)
+            }
+            Text(notice).font(.caption).foregroundColor(.secondary)
+        }.padding(24).preferredColorScheme(.dark)
+            .confirmationDialog("Preserve the unreadable transaction?",isPresented:$confirm,titleVisibility:.visible) {
+                Button("Continue in Safe Mode",role:.destructive) {
+                    guard phase == .active else{return}
+                    do {try RelayTransactionReceipt.quarantineMalformed();onRecovered()}
+                    catch {notice="Could not preserve the receipt. No new package transaction was started."}
+                }
+                Button("Cancel",role:.cancel){}
+            } message:{Text("The original receipt will be archived. Installed package records may still require review in Patchline. Optional tweaks will be paused; no checkpoint will be replaced.")}
+    }
+}
+
 private struct LegacyStoryRoot: View {
     @StateObject private var game = GameStore()
     @StateObject private var world = PhoneWorldStore()
     @Environment(\.scenePhase) private var phase
 
     var body: some View {
+        if world.recoveryRequired {
+            VStack(spacing:16) {
+                Label("Legacy save unavailable",systemImage:"externaldrive.badge.exclamationmark").font(.title2.bold())
+                Text("The unreadable legacy world is preserved. This mode does not share the main phone's checkpoints.")
+            }.padding(24)
+        } else { legacyBody }
+    }
+    private var legacyBody:some View {
             NavigationStack {
                 PhoneHomeView()
                     .navigationDestination(for: Contact.self) { contact in

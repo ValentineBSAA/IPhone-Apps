@@ -3,6 +3,26 @@ import XCTest
 
 final class RelayCatalogTests: XCTestCase {
     @MainActor
+    func testMalformedReceiptQuarantinePreservesBytesAndPausesTweaks() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite="relay-quarantine-"+UUID().uuidString
+        let defaults=try XCTUnwrap(UserDefaults(suiteName:suite))
+        defer {defaults.removePersistentDomain(forName:suite);try? FileManager.default.removeItem(at:root)}
+        let bytes=Data("unreadable fixture".utf8)
+        defaults.set(bytes,forKey:RelayTransactionReceipt.key)
+        defaults.set("compact",forKey:"lastseen.relay.installed")
+        XCTAssertTrue(RelayTransactionReceipt.malformed(defaults:defaults))
+        try RelayTransactionReceipt.quarantineMalformed(defaults:defaults,root:root)
+        XCTAssertNil(defaults.object(forKey:RelayTransactionReceipt.key))
+        XCTAssertTrue(defaults.bool(forKey:"lastseen.relay.safeMode"))
+        XCTAssertEqual(defaults.string(forKey:"lastseen.relay.installed"),"compact")
+        let archived=try XCTUnwrap(FileManager.default.contentsOfDirectory(at:root,includingPropertiesForKeys:nil).first)
+        let plist=try PropertyListSerialization.propertyList(from:Data(contentsOf:archived),format:nil) as? [String:Any]
+        XCTAssertEqual(plist?["receipt"] as? Data,bytes)
+        XCTAssertThrowsError(try RelayTransactionReceipt.quarantineMalformed(defaults:defaults,root:root))
+    }
+
+    @MainActor
     func testPackageCommitReceiptRecoversPartialFieldsWithoutDuplicateHistory() throws {
         let suite="relay-receipt-"+UUID().uuidString
         let defaults=try XCTUnwrap(UserDefaults(suiteName:suite))

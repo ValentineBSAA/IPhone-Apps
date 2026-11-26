@@ -259,6 +259,28 @@ enum RelayTransactionReceipt {
         _ = defaults.synchronize()
         return true
     }
+    static func malformed(defaults:UserDefaults = .standard)->Bool {
+        guard defaults.object(forKey:key) != nil else{return false}
+        guard let bytes=defaults.data(forKey:key),
+              let envelope=try? JSONDecoder().decode(Envelope.self,from:bytes) else{return true}
+        return envelope.version != 1
+    }
+    /// Explicit recovery only. Preserve the invalid receipt before removing
+    /// it, keep package records untouched and disable optional tweaks.
+    static func quarantineMalformed(defaults:UserDefaults = .standard,root:URL?=nil)throws {
+        guard malformed(defaults:defaults),let object=defaults.object(forKey:key) else{throw CocoaError(.fileReadCorruptFile)}
+        let data=try PropertyListSerialization.data(fromPropertyList:["receipt":object],format:.binary,options:0)
+        let directory=root ?? FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0].appendingPathComponent("LastSeenRecovery",isDirectory:true)
+        try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
+        try data.write(to:directory.appendingPathComponent("relay-receipt-"+UUID().uuidString+".plist"),options:.atomic)
+        defaults.set(true,forKey:"lastseen.relay.safeMode")
+        guard defaults.synchronize() else{throw CocoaError(.fileWriteUnknown)}
+        defaults.removeObject(forKey:key)
+        guard defaults.synchronize() else {
+            defaults.set(object,forKey:key)
+            throw CocoaError(.fileWriteUnknown)
+        }
+    }
     static func commit(_ target:Snapshot,defaults:UserDefaults = .standard)->Bool {
         guard defaults.object(forKey:key)==nil else{return false}
         do {try stage(target,defaults:defaults)}

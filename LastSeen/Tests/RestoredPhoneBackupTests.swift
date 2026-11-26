@@ -2,6 +2,20 @@ import XCTest
 @testable import LastSeen
 
 final class RestoredPhoneBackupTests: XCTestCase {
+    func testOpeningBackupStatusRejectsUnreadableAndUnsupportedWorld() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer{try? FileManager.default.removeItem(at:root)}
+        let url=root.appendingPathComponent("opening.json")
+        XCTAssertEqual(RestoredPhoneBackup.existingStatus(at:url),.absent)
+        try RestoredPhoneBackup.restore(to:url)
+        XCTAssertEqual(RestoredPhoneBackup.existingStatus(at:url),.readable)
+        let bytes=Data("unreadable fixture".utf8)
+        try bytes.write(to:url)
+        XCTAssertEqual(RestoredPhoneBackup.existingStatus(at:url),.unreadable)
+        XCTAssertThrowsError(try RestoredPhoneBackup.restore(to:url))
+        XCTAssertEqual(try Data(contentsOf:url),bytes)
+    }
+
     @MainActor
     func testDamagedLiveWorldIsPreservedUntilExplicitRecovery() throws {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
