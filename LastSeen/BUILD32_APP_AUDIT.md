@@ -19,8 +19,8 @@ Mandatory release gate for 1.9.0 (32), iPhone 16e. Every LabApp is listed exactl
 | Settings | Every toggle, actual effect, persistence, reset, protected access, sound studio | Targeted pass | Pending | Pending |
 | Files | Folders, document access, previews, search, recovered references | Targeted pass | Pending | Pending |
 | Browser | History, navigation, bookmarks, offline URLs, attachments, review gates | Targeted pass | Pending | Pending |
-| Relay | Repository refresh, package install/remove, dependencies, conflicts, restart | Pending | Pending | Pending |
-| Patchline | Safe mode, tweak status, diagnostics, respring, reboot | Pending | Pending | Pending |
+| Relay | Repository refresh, package install/remove, dependencies, conflicts, restart | Targeted pass | Pending | Pending |
+| Patchline | Safe mode, tweak status, diagnostics, respring, reboot | Targeted pass | Pending | Pending |
 | Game Saves | Manual/automatic slots, restore, timers, preferences, stale routes | Pending | Pending | Pending |
 | Afterframe | Photo feed, profiles, drafts, privacy, social actions | Targeted pass | Pending | Pending |
 | Connective | Studio feed, profiles, social actions, account settings | Targeted pass | Pending | Pending |

@@ -132,6 +132,26 @@ extension RelayCatalogTests {
         XCTAssertEqual(PatchlinePackageHealth.status(slate, installed: next, flags: [], safeMode: true), .safeMode)
         XCTAssertEqual(PatchlinePackageHealth.status(slate, installed: [ghost.id,slate.id], flags: [], safeMode: false), .conflict)
     }
+    func testPackageHealthMatchesLauncherAndSupportException() throws {
+        for p in RelayCatalog.packages where !p.essential {
+            XCTAssertEqual(PatchlinePackageHealth.status(p,installed:[],flags:[],safeMode:false),.notInstalled)
+            for safe in [false,true] {
+                let installed:Set<String>=[p.id]
+                let active = p.id == "relay-support"
+                    ? RelaySupportAccess.available(installed:p.id,flags:[])
+                    : RelayCatalog.tweakActive(p.id,installed:p.id,safeMode:safe,flags:[])
+                XCTAssertEqual(PatchlinePackageHealth.status(p,installed:installed,flags:[],safeMode:safe) == .active,active,p.id)
+            }
+        }
+        let support=try XCTUnwrap(RelayCatalog.package("relay-support"))
+        XCTAssertEqual(PatchlinePackageHealth.status(support,installed:[support.id],flags:[],safeMode:true),.active)
+        let teal=try XCTUnwrap(RelayCatalog.package("teal"))
+        let plan=[RelayChange(package:teal,action:.install)]
+        XCTAssertTrue(RelayPlan.valid(plan,sources:["studio"],installed:[]))
+        XCTAssertFalse(RelayPlan.valid(plan,sources:["core"],installed:[]))
+        XCTAssertFalse(RelayPlan.valid(plan,sources:["studio"],installed:["teal"]))
+    }
+
     func testStaleUpgradeAndGatedRuntime() throws {
         let p = try XCTUnwrap(RelayCatalog.package("teal"))
         let upgrade = RelayChange(package: p, action: .upgrade)
