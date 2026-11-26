@@ -21,6 +21,9 @@ enum LumaRestoreJournal {
         let version:Int
         let targetDigest:Data
         let settings:Settings
+        // Optional for compatibility with original version-one receipts.
+        // Restored atomically if the superseding world commit never lands.
+        var previousReceipt:Data? = nil
     }
     static func url(for worldURL:URL)->URL {
         worldURL.appendingPathExtension("restore-pending")
@@ -28,20 +31,32 @@ enum LumaRestoreJournal {
     static func pending(worldURL:URL)->Bool {
         FileManager.default.fileExists(atPath:url(for:worldURL).path)
     }
-    /// Preserve an unresolved receipt before an explicitly selected replacement.
-    static func archivePending(worldURL:URL)throws {
-        let source=url(for:worldURL)
-        guard pending(worldURL:worldURL) else{return}
-        let destination=source.appendingPathExtension("preserved-"+UUID().uuidString)
-        try Data(contentsOf:source).write(to:destination,options:.atomic)
-        try FileManager.default.removeItem(at:source)
-    }
-    static func prepare(worldURL:URL,target:Data,settings:Settings)throws {
+    /// Preserve the unresolved receipt without removing the active file.
+    /// A superseding receipt carries the exact prior bytes until commit.
+    static func prepare(worldURL:URL,target:Data,settings:Settings,replacingPending:Bool=false)throws {
         _ = try LumaSaveStore.validatedPreferences(settings.preferences)
         guard settings.playSeconds>=0 else{throw CocoaError(.fileReadCorruptFile)}
-        guard !pending(worldURL:worldURL) else{throw CocoaError(.fileWriteUnknown)}
-        let receipt=Receipt(version:1,targetDigest:Data(SHA256.hash(data:target)),settings:settings)
-        try JSONEncoder().encode(receipt).write(to:url(for:worldURL),options:.atomic)
+        let source=url(for:worldURL)
+        var previous:Data?
+        if pending(worldURL:worldURL) {
+            guard replacingPending else{throw CocoaError(.fileWriteUnknown)}
+            let bytes=try Data(contentsOf:source)
+            // Bound nested receipt growth. Never discard an oversized prior
+            // receipt or mutate the world to work around this failure.
+            guard bytes.count<=2_000_000 else{throw CocoaError(.fileWriteUnknown)}
+            let destination=source.appendingPathExtension("preserved-"+UUID().uuidString)
+            try bytes.write(to:destination,options:.atomic)
+            previous=bytes
+        }
+        let receipt=Receipt(version:1,targetDigest:Data(SHA256.hash(data:target)),settings:settings,previousReceipt:previous)
+        try JSONEncoder().encode(receipt).write(to:source,options:.atomic)
+    }
+    private static func abandon(_ receipt:Receipt,at receiptURL:URL)throws {
+        if let previous=receipt.previousReceipt {
+            try previous.write(to:receiptURL,options:.atomic)
+        } else {
+            try FileManager.default.removeItem(at:receiptURL)
+        }
     }
     @discardableResult
     static func apply(_ settings:Settings,defaults:UserDefaults)throws->Bool {
@@ -64,11 +79,11 @@ enum LumaRestoreJournal {
         let receipt=try JSONDecoder().decode(Receipt.self,from:Data(contentsOf:receiptURL))
         guard receipt.version==1,receipt.targetDigest.count==32 else{throw CocoaError(.fileReadCorruptFile)}
         guard FileManager.default.fileExists(atPath:worldURL.path) else {
-            try FileManager.default.removeItem(at:receiptURL);return false
+            try abandon(receipt,at:receiptURL);return false
         }
         let worldBytes=try Data(contentsOf:worldURL)
         guard Data(SHA256.hash(data:worldBytes))==receipt.targetDigest else {
-            try FileManager.default.removeItem(at:receiptURL);return false
+            try abandon(receipt,at:receiptURL);return false
         }
         guard try apply(receipt.settings,defaults:defaults) else{return false}
         try FileManager.default.removeItem(at:receiptURL)

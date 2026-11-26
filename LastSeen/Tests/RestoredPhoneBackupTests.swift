@@ -94,6 +94,45 @@ final class RestoredPhoneBackupTests: XCTestCase {
     }
 
     @MainActor
+    func testInterruptedReplacementRestoresPriorUnresolvedReceipt() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite="interrupted-replacement-"+UUID().uuidString
+        let defaults=try XCTUnwrap(UserDefaults(suiteName:suite))
+        defer{defaults.removePersistentDomain(forName:suite);try? FileManager.default.removeItem(at:root)}
+        try FileManager.default.createDirectory(at:root,withIntermediateDirectories:true)
+        let url=root.appendingPathComponent("world.json")
+        let original=try JSONEncoder().encode(RestoredPhoneBackup.snapshot())
+        try original.write(to:url)
+        let prior=Data("unresolved malformed fixture".utf8)
+        let receipt=LumaRestoreJournal.url(for:url)
+        try prior.write(to:receipt)
+        var next=RestoredPhoneBackup.snapshot()
+        next.flags.insert("replacement-fixture")
+        let target=try JSONEncoder().encode(next)
+        let key="lastseen.lab.messageSound"
+        defaults.set(true,forKey:key)
+        let prefs=try PropertyListSerialization.data(fromPropertyList:[key:false],format:.binary,options:0)
+        let settings=LumaRestoreJournal.Settings(preferences:prefs,playSeconds:7)
+        XCTAssertThrowsError(try LumaRestoreJournal.prepare(worldURL:url,target:target,settings:settings))
+        XCTAssertEqual(try Data(contentsOf:receipt),prior)
+        try LumaRestoreJournal.prepare(worldURL:url,target:target,settings:settings,replacingPending:true)
+        XCTAssertTrue(LumaRestoreJournal.pending(worldURL:url))
+        // Simulate termination after preparing the receipt but before world write.
+        XCTAssertFalse(try LumaRestoreJournal.recover(worldURL:url,defaults:defaults))
+        XCTAssertEqual(try Data(contentsOf:receipt),prior)
+        XCTAssertEqual(try Data(contentsOf:url),original)
+        XCTAssertTrue(defaults.bool(forKey:key))
+        XCTAssertThrowsError(try LumaRestoreJournal.recover(worldURL:url,defaults:defaults))
+        try LumaRestoreJournal.prepare(worldURL:url,target:target,settings:settings,replacingPending:true)
+        try target.write(to:url,options:.atomic)
+        XCTAssertTrue(try LumaRestoreJournal.recover(worldURL:url,defaults:defaults))
+        XCTAssertFalse(LumaRestoreJournal.pending(worldURL:url))
+        XCTAssertFalse(defaults.bool(forKey:key))
+        XCTAssertEqual(defaults.integer(forKey:"lastseen.saves.playSeconds"),7)
+        XCTAssertEqual(try Data(contentsOf:url),target)
+    }
+
+    @MainActor
     func testRestoreReceiptOnlyAppliesToCommittedWorldBytes() throws {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let suite="restore-receipt-"+UUID().uuidString

@@ -802,15 +802,14 @@ final class PhoneWorldStore: ObservableObject {
                 let archive=storageURL.appendingPathExtension("damaged-"+UUID().uuidString)
                 try damagedBytes.write(to:archive,options:.atomic)
             }
-            if LumaRestoreJournal.pending(worldURL:storageURL) {
-                // Only a user-selected replacement with matching settings may
-                // supersede an unresolved receipt.
-                guard settings != nil else{throw CocoaError(.fileWriteUnknown)}
-                try LumaRestoreJournal.archivePending(worldURL:storageURL)
-            }
+            let replacingPending=LumaRestoreJournal.pending(worldURL:storageURL)
+            // Only a user-selected replacement with matching settings may
+            // supersede an unresolved receipt. Prepare atomically and retain
+            // the prior receipt until the replacement world is committed.
+            if replacingPending && settings==nil {throw CocoaError(.fileWriteUnknown)}
             if let settings {
                 recoveryDefaults=defaults
-                try LumaRestoreJournal.prepare(worldURL:storageURL,target:bytes,settings:settings)
+                try LumaRestoreJournal.prepare(worldURL:storageURL,target:bytes,settings:settings,replacingPending:replacingPending)
             }
             do {try bytes.write(to:storageURL,options:.atomic)}
             catch {
