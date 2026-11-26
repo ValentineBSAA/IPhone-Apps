@@ -70,6 +70,26 @@ import UIKit
         w.recordNoraFriendArchiveOpened()
         w.recordNoraFriendArchiveOpened()
         XCTAssertTrue(NoraFriendArchive.opened(w.state))
+        func atmosphere(_ state:PhoneWorld,active:Bool=true,enabled:Bool=true,
+                        intensity:LumaArchiveAtmosphere.Intensity = .standard,
+                        reduceMotion:Bool=false,security:String="Standard")->LumaArchiveAtmosphere.Treatment? {
+            LumaArchiveAtmosphere.friendTreatment(world:state,active:active,enabled:enabled,
+                intensity:intensity,reduceMotion:reduceMotion,security:security)
+        }
+        let normal=try XCTUnwrap(atmosphere(w.state))
+        XCTAssertNil(normal.cue)
+        XCTAssertGreaterThan(normal.edgeOpacity,atmosphere(w.state,intensity:.restrained)?.edgeOpacity ?? 1)
+        XCTAssertNil(atmosphere(w.state,active:false))
+        XCTAssertNil(atmosphere(w.state,enabled:false))
+        XCTAssertNil(atmosphere(w.state,intensity:.off))
+        XCTAssertNil(atmosphere(w.state,reduceMotion:true))
+        XCTAssertNil(atmosphere(w.state,security:"Safest"))
+        var revokedAtmosphere=w.state
+        revokedAtmosphere.flags.remove("veil.correspondence.opened")
+        XCTAssertNil(atmosphere(revokedAtmosphere))
+        revokedAtmosphere=w.state
+        revokedAtmosphere.flags.insert(InvestigationResolution.completed)
+        XCTAssertNil(atmosphere(revokedAtmosphere))
         XCTAssertEqual(NoraFriendArchive.lines.count,6)
         XCTAssertEqual(LumaAssistantEvidence.selected(NoraFriendArchive.recordID,in:w.state)?.excerpts.count,6)
         XCTAssertEqual(w.messages(.maya).map(\.id),messagesBefore.map(\.id))

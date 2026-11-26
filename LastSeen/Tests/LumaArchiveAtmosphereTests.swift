@@ -40,6 +40,27 @@ final class LumaArchiveAtmosphereTests: XCTestCase {
         XCTAssertNil(treatment())
     }
 
+    func testIndexRecordingCueIsDisposableAndNeverRepeats() {
+        let treatment = LumaArchiveAtmosphere.Treatment(edgeOpacity:0.19,cue:nil)
+        func cue(_ previous:Bool=false,_ recorded:Bool=true,
+                 _ surface:LumaArchiveAtmosphere.Treatment?=nil,
+                 intensity:LumaArchiveAtmosphere.Intensity = .standard,
+                 security:String = "Standard")->PhoneCue? {
+            LumaArchiveAtmosphere.indexRecordingCue(previouslyRecorded:previous,recorded:recorded,
+                treatment:surface,intensity:intensity,security:security)
+        }
+        XCTAssertEqual(cue(false,true,treatment),.suspense)
+        XCTAssertNil(cue(true,true,treatment))
+        XCTAssertNil(cue(false,false,treatment))
+        XCTAssertNil(cue())
+        XCTAssertNil(cue(false,true,treatment,intensity:.restrained))
+        XCTAssertNil(cue(false,true,treatment,intensity:.off))
+        XCTAssertNil(cue(false,true,treatment,security:"Safer"))
+        XCTAssertNil(cue(false,true,treatment,security:"Safest"))
+        XCTAssertNil(LumaArchiveAtmosphere.friendTreatment(world:RestoredPhoneBackup.snapshot(),
+            active:true,enabled:true,intensity:.standard,reduceMotion:false,security:"Standard"))
+    }
+
     func testAuthorizedFirstEntryAndIntensity() {
         let flags: Set<String> = ["phone-tutorial-finished", "web.visited.studio", "investigation.contact.received",
                                   "web.visited.archive", "web.visited.archive-records"]
