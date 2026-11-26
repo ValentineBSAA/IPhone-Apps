@@ -10,14 +10,31 @@ enum VeilReferences {
         let gate:String
         let note:String
     }
+    static let homeIndexID = "home-index-reference"
+    // Check raw saved stable IDs against independent gates. Do not call
+    // EvidenceConnection.visible here: assistant evidence also reads VEIL.
+    static func homeIndexReady(_ world:PhoneWorld)->Bool {
+        guard VeilArchive.homeMedia(world).count == 6,
+              VeilCommunity.opened(world).contains(where:{$0.id == "ordinary-hours"}) else { return false }
+        let reviewed = world.connectedWorld?.recoveredImageReviews ?? []
+        let images = Set(VeilArchive.homeMedia(world).filter {
+            world.flags.contains("veil.viewed."+$0) && reviewed.contains($0)
+        }.map { "image:"+$0 })
+        return (world.connectedWorld?.evidenceConnections ?? []).prefix(40).contains { pair in
+            let ids = Set([pair.first,pair.second])
+            return ids.contains("veil:thread:ordinary-hours") && ids.count == 2 &&
+                !ids.isDisjoint(with:images) && pair.relation == .wording
+        }
+    }
     private static let all:[Reference] = [
         .init(id:"directory-reference",filename:"directory.onion",pageID:"directory",gate:VeilArchive.discovery,note:"Recovered local directory bookmark."),
         .init(id:"board-reference",filename:"discussion-cache.onion",pageID:"boards",gate:"veil.correspondence.opened",note:"Archived discussion reference. The directory may be incomplete."),
-        .init(id:"private-index-reference",filename:"fragment-04.onion",pageID:"fragment-04",gate:"web.visited.archive-ledger",note:"Partial saved reference. Its source has not been authenticated.")
+        .init(id:"private-index-reference",filename:"fragment-04.onion",pageID:"fragment-04",gate:"web.visited.archive-ledger",note:"Partial saved reference. Its source has not been authenticated."),
+        .init(id:homeIndexID,filename:"revision-cache.onion",pageID:"home-index",gate:"veil.correspondence.opened",note:"A secondary index associated with the recovered home copies. The original labels are disputed.")
     ]
     static func visible(_ world:PhoneWorld)->[Reference] {
         guard VeilArchive.authorized(world) else { return [] }
-        return all.filter{world.flags.contains($0.gate)}
+        return all.filter{world.flags.contains($0.gate) && ($0.id != homeIndexID || homeIndexReady(world))}
     }
     static func marker(_ id:String)->String { "veil.reference.inspected."+id }
     static func inspected(_ id:String,in world:PhoneWorld)->Reference? {

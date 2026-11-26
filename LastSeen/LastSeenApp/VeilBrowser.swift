@@ -50,7 +50,8 @@ enum VeilArchive {
                 "boards":"b4q7s2j5m6z3v4n7w2r5k6x3g4c7t2h5p6d3y4f7b2q5s6j3m4z",
                 "records":"p6h3r7c2f5d4y6g3s7k2q5m4v6j3n7x2b5t4w6z3r7h2p5c4f6d",
                 "media":"t2w5z6r3h4p7c2f5d6y3g4s7k2q5m6v3j4n7x2b5t6w3z4r7h",
-                "fragment-04":"f4k7m2x5c6v3r4p7y2b5t6j3w4q7n2s5g6h3z4d7f2k5m6x3c4v"
+                "fragment-04":"f4k7m2x5c6v3r4p7y2b5t6j3w4q7n2s5g6h3z4d7f2k5m6x3c4v",
+                "home-index":"m4x7q2v5b6t3h4r7p2z5k6s3w4n7c2f5d6j3g4y7q2v5m6x3b4t7"
             ]
             return "veil://"+(hosts[id] ?? "unavailable")+".invalid/"+id
         }
@@ -67,12 +68,16 @@ enum VeilArchive {
         if VeilReferences.inspected("private-index-reference",in:world) != nil {
             result.append(.init(id:"fragment-04",title:"Recovered index fragment",text:"Partial index. The original source is disputed. Compare the available record with the restored browser's review ledger rather than assume the archive is a complete account."))
         }
+        if VeilReferences.inspected(VeilReferences.homeIndexID,in:world) != nil {
+            result.append(.init(id:"home-index",title:"Secondary revision cache",text:"Two labels appear on the recovered index: an earlier personal collection label and a later reference-copy label. The revision note says the images were regrouped, not newly captured. The original author field is blank. A later annotation uses familiar language, but no signature survives. Compare the correspondence and archive ledger before drawing conclusions."))
+        }
         return result
     }
-    static func directoryPages(_ world:PhoneWorld)->[Page] { pages(world).filter{$0.id != "fragment-04" || pageBookmarkIDs(world).contains($0.id)} }
+    static func isHidden(_ id:String)->Bool { ["fragment-04","home-index"].contains(id) }
+    static func directoryPages(_ world:PhoneWorld)->[Page] { pages(world).filter{!isHidden($0.id) || pageBookmarkIDs(world).contains($0.id)} }
     static func resolve(_ raw:String,in world:PhoneWorld)->Page? {
         let value=raw.trimmingCharacters(in:.whitespacesAndNewlines)
-        return pages(world).first { $0.address == value || ($0.id != "fragment-04" && ($0.id == value || "veil://"+$0.id == value)) }
+        return pages(world).first { $0.address == value || (!isHidden($0.id) && ($0.id == value || "veil://"+$0.id == value)) }
     }
     static func pageBookmarkIDs(_ world:PhoneWorld)->Set<String> {
         (world.connectedWorld?.veilPageBookmarks ?? []).intersection(Set(pages(world).map(\.id)))
@@ -258,7 +263,23 @@ struct VeilBrowser: View {
                             if page.id == "records" {
                                 NavigationLink { VeilHistoricalConversation() } label: { Label("Open recovered correspondence",systemImage:"message") }
                             }
+                            if page.id == "home-index" {
+                                Button("Record recovered index") { world.recordVeilHomeIndexOpened() }
+                                    .buttonStyle(.borderedProminent)
+                                    .disabled(world.state.flags.contains("veil.home-index.opened"))
+                                if world.state.flags.contains("veil.home-index.opened") {
+                                    NavigationLink { EvidenceComparisonView(initialRecordID:"veil:home-index") } label: {
+                                        Label("Compare index with opened records",systemImage:"rectangle.split.2x1")
+                                    }
+                                }
+                            }
                             if page.id == "media" {
+                                if !VeilArchive.homeMedia(world.state).isEmpty {
+                                    NavigationLink { EvidenceComparisonView() } label: {
+                                        Label("Compare opened archive records",systemImage:"rectangle.split.2x1")
+                                    }
+                                    Text(VeilReferences.homeIndexReady(world.state) ? "A secondary reference is available in Files." : "Review the home copies and compare their descriptions with the archived discussions.").font(.caption)
+                                }
                                 if security == "Safest" {
                                     Label("Images hidden at this security level",systemImage:"shield").font(.caption)
                                     ForEach(VeilArchive.media(world.state),id:\.self){asset in VeilRecoveredImage(asset:asset).padding(10).lumaSurface()}
@@ -309,7 +330,7 @@ struct VeilBrowser: View {
             }
             .onChange(of:phase) { if $0 != .active { disconnect() } }
             .onChange(of:allowed) { if !$0 { disconnect() } }
-            .onChange(of:world.state.flags) { _ in
+            .onChange(of:pages.map(\.id)) { _ in
                 guard allowed,connected else{return}
                 let valid=Set(pages.map(\.id))
                 history=history.filter{valid.contains($0)}

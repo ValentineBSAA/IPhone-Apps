@@ -63,6 +63,10 @@ enum LumaAssistantEvidence {
                 let passages = [thread.author+": "+thread.text] + thread.replies.map{$0.author+": "+$0.text}
                 result.append(.init(id:"veil:thread:"+thread.id,title:thread.title,kind:.web,excerpts:passages))
             }
+            if world.flags.contains("veil.home-index.opened"),
+               let page = VeilArchive.pages(world).first(where:{$0.id == "home-index"}) {
+                result.append(.init(id:"veil:home-index",title:page.title,kind:.web,excerpts:[page.text]))
+            }
             let read = world.flags.contains("veil.correspondence.opened")
             let messages = VeilArchive.messages(world)
             for (i,asset) in VeilArchive.media(world).enumerated() where world.flags.contains("veil.viewed."+asset) {
