@@ -31,10 +31,16 @@ enum CharacterCheckIns {
     static func delivered(_ event:Event,in world:PhoneWorld)->Bool {
         (world.threads[event.contact.id] ?? []).contains{$0.id==event.id}
     }
+    /// Due player-requested replies and unread tutorial instructions have
+    /// priority across contacts, not merely inside the optional event's thread.
+    static func foregroundPriority(in world:PhoneWorld,now:Date)->Bool {
+        (world.pendingReplies ?? []).contains{$0.dueAt<=now} ||
+        world.threads.values.contains { messages in
+            messages.contains{ !$0.fromPlayer && !$0.read && $0.id.hasPrefix("phone-tutorial-") }
+        }
+    }
     static func blocked(_ event:Event,in world:PhoneWorld)->Bool {
-        (world.pendingReplies ?? []).contains{$0.neighbor==event.contact} ||
-        (world.threads[event.contact.id] ?? []).contains{ !$0.fromPlayer && !$0.read &&
-            $0.id.hasPrefix("phone-tutorial-") }
+        (world.pendingReplies ?? []).contains{$0.neighbor==event.contact}
     }
     static func scheduled(in world:PhoneWorld,now:Date)->[Pending] {
         let existing=world.connectedWorld?.characterCheckIns ?? []

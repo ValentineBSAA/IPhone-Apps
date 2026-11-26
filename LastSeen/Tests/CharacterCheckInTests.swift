@@ -2,6 +2,41 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class CharacterCheckInTests:XCTestCase {
+    func testCrossContactReplyAndUnreadTutorialTakePriority() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        var state = RestoredPhoneBackup.snapshot(now: now)
+        state.flags.insert("phone-tutorial-finished")
+        state.threads[Neighbor.denise.id, default: []].append(.init(id: "denise-checkin-outgoing",
+            thread: Neighbor.denise.id, text: "Thank you.", fromPlayer: true, at: now, read: true))
+        let initial = PhoneWorldStore(initial: state, persistToDisk: false)
+        initial.markRead(.maya)
+        initial.markRead(.denise)
+        initial.advanceCharacterCheckIns(now: now)
+        let due = now.addingTimeInterval(190)
+        state = initial.state
+        state.threads[Neighbor.maya.id, default: []].append(.init(id: "priority-outgoing",
+            thread: Neighbor.maya.id, text: "Thanks.", fromPlayer: true, at: now, read: true))
+        state.pendingReplies = [.init(id: "priority-reply", outgoingID: "priority-outgoing",
+            neighbor: .maya, text: "You're welcome.", readAt: due, dueAt: due, startsTutorial: false)]
+        let store = PhoneWorldStore(initial: state, persistToDisk: false)
+        XCTAssertTrue(CharacterCheckIns.foregroundPriority(in: store.state, now: due))
+        store.advancePendingReplies(now: due)
+        XCTAssertTrue(store.messages(.maya).contains { $0.id == "priority-reply" })
+        XCTAssertFalse(store.messages(.denise).contains { $0.id == "b32-denise-check-in" })
+        XCTAssertEqual(store.connected.characterCheckIns?.first?.dueAt, due.addingTimeInterval(15))
+        state = store.state
+        state.threads[Neighbor.maya.id, default: []].append(.init(id: "phone-tutorial-priority-test",
+            thread: Neighbor.maya.id, text: "Please read this first.", fromPlayer: false, at: due, read: false))
+        let unread = PhoneWorldStore(initial: state, persistToDisk: false)
+        unread.advanceCharacterCheckIns(now: due.addingTimeInterval(15))
+        XCTAssertFalse(unread.messages(.denise).contains { $0.id == "b32-denise-check-in" })
+        unread.markRead(.maya)
+        unread.advanceCharacterCheckIns(now: due.addingTimeInterval(29))
+        XCTAssertFalse(unread.messages(.denise).contains { $0.id == "b32-denise-check-in" })
+        unread.advanceCharacterCheckIns(now: due.addingTimeInterval(30))
+        XCTAssertEqual(unread.messages(.denise).filter { $0.id == "b32-denise-check-in" }.count, 1)
+    }
+
     func testOverdueCheckInsAreStaggeredRatherThanDeliveredInABurst() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         var state = RestoredPhoneBackup.snapshot(now: now)

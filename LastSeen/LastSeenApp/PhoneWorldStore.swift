@@ -342,7 +342,11 @@ final class PhoneWorldStore: ObservableObject {
         var c=connected
         var pending=CharacterCheckIns.scheduled(in:state,now:now)
         let due=pending.filter{$0.dueAt<=now}.sorted{($0.dueAt,$0.id)<($1.dueAt,$1.id)}
-        if let entry=due.first,
+        if !due.isEmpty, CharacterCheckIns.foregroundPriority(in:state,now:now) {
+            // Keep every overdue optional event out of the regular-reply tick.
+            // Preserve future deadlines, and do not save again until a retry is due.
+            pending=pending.map{$0.dueAt<=now ? .init(id:$0.id,dueAt:now.addingTimeInterval(15)):$0}
+        } else if let entry=due.first,
            let event=CharacterCheckIns.events.first(where:{$0.id==entry.id}),
            CharacterCheckIns.eligible(event,in:state),
            !CharacterCheckIns.blocked(event,in:state) {
