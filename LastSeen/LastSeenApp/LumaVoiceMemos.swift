@@ -69,6 +69,7 @@ struct LumaMemoDetail: View {
     @State private var playing = false
     @State private var error = ""
     @State private var audioOwner = UUID()
+    @StateObject private var readAloud = LumaReadAloud()
     private let timer = Timer.publish(every: 0.2, on: .main, in: .common).autoconnect()
     private var memo: LumaMemo? { LumaMemoCatalog.visible(world.state).first { $0.id == id } }
     private func stop() {
@@ -113,6 +114,7 @@ struct LumaMemoDetail: View {
                                     else {
                                         if player.currentTime >= duration - 0.1 { player.currentTime = 0 }
                                         guard phase == .active, self.memo != nil else { return }
+                                        readAloud.stop()
                                         PhoneSensoryEngine.beginMediaAudio(audioOwner)
                                         do {
                                             let session = AVAudioSession.sharedInstance()
@@ -136,12 +138,21 @@ struct LumaMemoDetail: View {
                     if !error.isEmpty { Text(error).font(.caption).foregroundColor(.secondary) }
                     Text("Transcript").font(.headline)
                     Text(memo.transcript).textSelection(.enabled)
+                    Button {
+                        if readAloud.active { readAloud.stop() }
+                        else if phase == .active { stop(); readAloud.speak(memo.transcript) }
+                    } label: {
+                        Label(readAloud.active ? "Stop read-aloud" : "Read transcript aloud", systemImage: readAloud.active ? "stop.circle" : "speaker.wave.2")
+                    }.buttonStyle(.bordered)
+                    Text("Uses the iPhone's system voice. This is not the original character recording.").font(.caption).foregroundColor(.secondary)
+                    if !readAloud.notice.isEmpty { Text(readAloud.notice).font(.caption).foregroundColor(.secondary) }
                     Text("Restored local record").font(.caption).foregroundColor(.secondary)
                 }.frame(maxWidth: .infinity, alignment: .leading).padding(20)
             } else { Text("Recording unavailable").padding() }
         }.navigationTitle("Recording").navigationBarTitleDisplayMode(.inline)
             .onAppear { load() }
-            .onReceive(timer) { _ in
+            .onReceive(timer) { now in
+                readAloud.tick(now: now)
                 guard let player else { return }
                 if playing && !player.isPlaying {
                     // AVAudioPlayer may reset its clock when it ends. A halt
@@ -158,17 +169,17 @@ struct LumaMemoDetail: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { notification in
                 if let raw = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
-                   AVAudioSession.InterruptionType(rawValue: raw) == .began { stop() }
+                   AVAudioSession.InterruptionType(rawValue: raw) == .began { stop(); readAloud.stop() }
             }
             .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { notification in
                 if let raw = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
-                   AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable { stop() }
+                   AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable { stop(); readAloud.stop() }
             }
             .onChange(of: memo?.id) { value in
-                if value == nil { stop(); player = nil }
+                if value == nil { stop(); readAloud.stop(); player = nil }
                 else { load() }
             }
-            .onChange(of: phase) { if $0 != .active { stop() } }
-            .onDisappear { stop(); player = nil }
+            .onChange(of: phase) { if $0 != .active { stop(); readAloud.stop() } }
+            .onDisappear { stop(); readAloud.stop(); player = nil }
     }
 }

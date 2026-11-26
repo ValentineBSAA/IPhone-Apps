@@ -1,5 +1,6 @@
 import SwiftUI
 import AVFoundation
+import Combine
 
 struct LumaAssistantContext {
     let world: PhoneWorld
@@ -78,21 +79,37 @@ struct LumaAssistantView: View {
     @State private var input = ""
     @State private var answer = LumaAssistantAnswer(text: "What can I help you with?", clipID: "greeting")
     @State private var player: AVAudioPlayer?
+    @StateObject private var readAloud = LumaReadAloud()
+    @State private var audioOwner = UUID()
+    @AppStorage("lastseen.assistant.readAloud") private var spokenResponses = false
+    private let timer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
+    private func stopAudio() {
+        player?.stop(); player = nil
+        PhoneSensoryEngine.endMediaAudio(audioOwner)
+        readAloud.stop()
+    }
     @State private var glow = false
     @FocusState private var focused: Bool
     private func submit(_ text: String) {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, text.count <= 300 else { return }
-        player?.stop(); player = nil
+        stopAudio()
         answer = LumaAssistantPolicy.answer(text, context: context())
         input = ""; focused = false
-        // Fixed clips are optional. Dynamic values remain text, never substitute
-        // an invented spoken value or a different transcript.
-        if sound, ["help","denied","unavailable","hint","progress","clarify"].contains(answer.clipID),
+        // Opt-in spoken responses read the exact current answer. Fixed approved
+        // recordings may replace system speech only for matching static replies.
+        if sound, spokenResponses, phase == .active, ["help","denied","unavailable","hint","progress","clarify"].contains(answer.clipID),
            let url = Bundle.main.url(forResource: "LumaAssistant_" + answer.clipID, withExtension: "m4a"),
            let audio = try? AVAudioPlayer(contentsOf: url) {
-            PhoneSensoryEngine.stopSound()
-            try? AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
-            player = audio; audio.play()
+            do {
+                let session = AVAudioSession.sharedInstance()
+                try session.setCategory(.ambient, mode: .default)
+                try session.setActive(true)
+                PhoneSensoryEngine.beginMediaAudio(audioOwner)
+                player = audio
+                if !audio.play() { stopAudio(); readAloud.speak(answer.text) }
+            } catch { stopAudio() }
+        } else if sound, spokenResponses, phase == .active {
+            readAloud.speak(answer.text)
         }
     }
     var body: some View {
@@ -109,7 +126,7 @@ struct LumaAssistantView: View {
                 if let app = answer.app {
                     Button("Open " + app.rawValue) {
                         guard context().availableApps.contains(app) else { return }
-                        player?.stop(); openApp(app)
+                        stopAudio(); openApp(app)
                     }.buttonStyle(.borderedProminent).tint(.teal)
                 }
                 HStack {
@@ -126,13 +143,25 @@ struct LumaAssistantView: View {
                         }.buttonStyle(.plain)
                     }
                 }
+                Toggle("Speak responses", isOn: $spokenResponses)
+                Text("Optional iPhone system read-aloud or approved fixed recordings. No microphone listening.").font(.caption).foregroundColor(.secondary)
+                if !readAloud.notice.isEmpty { Text(readAloud.notice).font(.caption).foregroundColor(.secondary) }
                 Text("Local text commands · No microphone listening or real-device actions.").font(.caption).foregroundColor(.secondary).multilineTextAlignment(.center)
             }.padding(20)
         }.navigationTitle("Assistant").navigationBarTitleDisplayMode(.inline)
             .onAppear { if !reduceMotion { withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { glow = true } } }
-            .onChange(of: phase) { if $0 != .active { player?.stop(); player = nil } }
-            .onChange(of: sound) { if !$0 { player?.stop(); player = nil } }
-            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { _ in player?.stop(); player = nil }
-            .onDisappear { player?.stop(); player = nil; focused = false }
+            .onChange(of: phase) { if $0 != .active { stopAudio() } }
+            .onChange(of: sound) { if !$0 { stopAudio() } }
+            .onChange(of: spokenResponses) { if !$0 { stopAudio() } }
+            .onReceive(timer) { now in
+                readAloud.tick(now: now)
+                if let player, !player.isPlaying { stopAudio() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { _ in stopAudio() }
+            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { notification in
+                if let raw = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+                   AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable { stopAudio() }
+            }
+            .onDisappear { stopAudio(); focused = false }
     }
 }

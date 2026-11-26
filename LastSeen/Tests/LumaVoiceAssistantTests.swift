@@ -2,6 +2,12 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class LumaVoiceAssistantTests: XCTestCase {
+    func testReadAloudBounds() {
+        XCTAssertFalse(LumaReadAloud.eligible("   "))
+        XCTAssertFalse(LumaReadAloud.eligible(String(repeating: "x", count: 4001)))
+        XCTAssertTrue(LumaReadAloud.eligible("A local transcript."))
+    }
+
     func testMemoCatalogIsRestoredAndStable() {
         let base = PhoneWorldStore(persistToDisk: false)
         XCTAssertTrue(LumaMemoCatalog.visible(base.state).isEmpty)
