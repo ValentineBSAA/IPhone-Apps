@@ -2,6 +2,28 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class RecoveredImageAnalysisTests:XCTestCase {
+    func testInspectionSessionRejectsInactiveRevokedAndSameRecordRestore() throws {
+        let w=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
+        let asset="Nora_Photo_01"
+        w.recordCameraAnalysisOpened(asset)
+        let epoch=w.checkpointEpoch
+        func current(_ source:RecoveredImageAnalysis.Source? = .cameraRoll,_ active:Bool=true)->Bool {
+            RecoveredImageAnalysis.inspectionCurrent(asset,source:source,epoch:epoch,
+                currentEpoch:w.checkpointEpoch,active:active,in:w.state)
+        }
+        XCTAssertTrue(current())
+        XCTAssertFalse(current(.browser))
+        XCTAssertFalse(current(nil))
+        XCTAssertFalse(current(.cameraRoll,false))
+        var revoked=w.state
+        revoked.flags.remove(RecoveredImageAnalysis.cameraMarker(asset))
+        XCTAssertFalse(RecoveredImageAnalysis.inspectionCurrent(asset,source:.cameraRoll,epoch:epoch,currentEpoch:epoch,active:true,in:revoked))
+        try w.restoreCheckpoint(w.state)
+        XCTAssertNotNil(RecoveredImageAnalysis.record(asset,in:w.state))
+        XCTAssertFalse(current())
+        XCTAssertTrue(RecoveredImageAnalysis.inspectionCurrent(asset,source:.cameraRoll,epoch:w.checkpointEpoch,currentEpoch:w.checkpointEpoch,active:true,in:w.state))
+    }
+
     func testImageReviewOverviewAndContextualResponses() throws {
         var initial=RestoredPhoneBackup.snapshot()
         initial.flags.formUnion(["phone-tutorial-finished","investigation.contact.received","web.visited.archive",VeilArchive.discovery])

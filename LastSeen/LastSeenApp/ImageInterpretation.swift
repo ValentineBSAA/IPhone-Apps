@@ -172,10 +172,11 @@ struct SendImageToLumaButton:View {
     let asset:String
     @EnvironmentObject private var world:PhoneWorldStore
     @Environment(\.sendImageToLuma) private var send
+    @Environment(\.scenePhase) private var phase
     var body:some View {
-        if let send,RecoveredImageAnalysis.record(asset,in:world.state) != nil {
+        if let send,phase == .active,RecoveredImageAnalysis.record(asset,in:world.state) != nil {
             Button {
-                guard RecoveredImageAnalysis.record(asset,in:world.state) != nil else{return}
+                guard phase == .active,RecoveredImageAnalysis.record(asset,in:world.state) != nil else{return}
                 send(asset)
             } label: {Label("Send to Luma for analysis",systemImage:"waveform.circle.fill")}
                 .buttonStyle(.borderedProminent)
@@ -196,6 +197,7 @@ struct ReconstructionComparisonView:View {
     @State private var textOnly=false
     @State private var reveal=false
     @State private var layer=false
+    @State private var inspectionEpoch:UUID?
     @State private var seenOriginal=false
     @State private var seenLayer=false
     @State private var strength=0.8
@@ -206,7 +208,7 @@ struct ReconstructionComparisonView:View {
         return horrorEffects && !textOnly && (record.source != .veil || VeilArchive.allowsImages(security))
     }
     private func reset() {
-        reveal=false;layer=false;seenOriginal=false;seenLayer=false;strength=0.8;region=nil;notice=""
+        reveal=false;layer=false;seenOriginal=false;seenLayer=false;strength=0.8;region=nil;notice="";inspectionEpoch=nil
     }
     var body:some View {
         List {
@@ -239,6 +241,8 @@ struct ReconstructionComparisonView:View {
                                 .font(.subheadline)
                         }
                         Button(layer ? "Mark reconstruction inspected":"Mark original inspected") {
+                            guard phase == .active,ImageInterpretation.available(asset,mode:mode,in:world.state) != nil else{return}
+                            if inspectionEpoch != world.checkpointEpoch {seenOriginal=false;seenLayer=false;region=nil;inspectionEpoch=world.checkpointEpoch}
                             if layer {seenLayer=true} else {seenOriginal=true}
                         }.buttonStyle(.bordered)
                         Label(seenOriginal ? "Original inspected":"Original not yet inspected",systemImage:seenOriginal ? "checkmark.circle":"circle")
@@ -255,7 +259,7 @@ struct ReconstructionComparisonView:View {
                             }
                         }
                         Button("Record comparison") {
-                            guard phase == .active,let region else{return}
+                            guard phase == .active,inspectionEpoch == world.checkpointEpoch,let region else{return}
                             guard ImageInterpretation.comparisonAccepts(asset,mode:mode,region:region,
                                 inspectedOriginal:seenOriginal,inspectedLayer:seenLayer,in:world.state) else {
                                 notice="Revisit both views and locate the introduced detail.";return
@@ -271,6 +275,8 @@ struct ReconstructionComparisonView:View {
                 }
             } else { Text("Comparison unavailable.") }
         }.navigationTitle("Reconstruction comparison")
+        .onChange(of:world.checkpointEpoch){_ in reset()}
+        .onChange(of:ImageInterpretation.available(asset,mode:mode,in:world.state)?.id){_ in reset()}
         .onChange(of:phase){if $0 != .active {reset()}}
         .onChange(of:security){_ in reset()}
         .onChange(of:horrorEffects){_ in reset()}

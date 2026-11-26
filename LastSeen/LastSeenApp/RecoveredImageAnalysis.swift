@@ -15,7 +15,7 @@ enum RecoveredImageAnalysis {
             }
         }
     }
-    struct Record:Identifiable {
+    struct Record:Identifiable,Equatable {
         let id:String
         let source:Source
         var title:String {source.title+" · "+String(id.suffix(2))}
@@ -42,6 +42,10 @@ enum RecoveredImageAnalysis {
         return records
     }
     static func record(_ id:String,in world:PhoneWorld)->Record? {visible(world).first{$0.id==id}}
+    static func inspectionCurrent(_ asset:String,source:Source?,epoch:UUID?,currentEpoch:UUID,active:Bool,in world:PhoneWorld)->Bool {
+        guard active,epoch == currentEpoch,let source else{return false}
+        return record(asset,in:world)?.source == source
+    }
     static func completed(_ id:String,in world:PhoneWorld)->Bool {
         record(id,in:world) != nil && world.connectedWorld?.recoveredImageReviews?.contains(id)==true
     }
@@ -139,12 +143,18 @@ struct RecoveredImageAnalysisView:View {
     @State private var strength=0.7
     @State private var region:Int?
     @State private var interpretationFeedback=""
+    @State private var inspectionEpoch:UUID?
+    @State private var inspectionSource:RecoveredImageAnalysis.Source?
     @AppStorage("lastseen.lab.horrorEffects") private var horrorEffects=true
     private let bandNames=["Dark","Midtones","Light"]
-    private func resetPreview(){reveal=false;brightness=0;contrast=1;zoom=1;bins=nil;binChoice=nil;binFeedback="";mode = .original;compareOriginal=false;region=nil;interpretationFeedback=""}
+    private var item:RecoveredImageAnalysis.Record? {RecoveredImageAnalysis.record(asset,in:world.state)}
+    private var currentInspection:Bool {RecoveredImageAnalysis.inspectionCurrent(asset,source:inspectionSource,epoch:inspectionEpoch,currentEpoch:world.checkpointEpoch,active:phase == .active,in:world.state)}
+    private func resetPreview(){reveal=false;brightness=0;contrast=1;zoom=1;bins=nil;binChoice=nil;binFeedback="";mode = .original;compareOriginal=false;strength=0.7;region=nil;interpretationFeedback=""}
+    private func resetInspection(){resetPreview();source=nil;limit=nil;feedback="";inspectionEpoch=nil;inspectionSource=nil}
+    private func refreshInspection(){resetInspection();if phase == .active,let item {inspectionEpoch=world.checkpointEpoch;inspectionSource=item.source}}
     var body:some View {
         List {
-            if let item=RecoveredImageAnalysis.record(asset,in:world.state) {
+            if let item,currentInspection {
                 Section {
                     LumaHeader(title:"Image analysis",detail:item.title,symbol:"viewfinder")
                     Text("Inspect an already recovered reference. Adjustments affect only the preview, never the original.").font(.subheadline)
@@ -263,20 +273,24 @@ struct RecoveredImageAnalysisView:View {
                             }.buttonStyle(.plain).accessibilityAddTraits(limit==i ? .isSelected:[])
                         }
                         Button("Record analysis"){
-                            guard let source,let limit,phase == .active else{return}
+                            guard let source,let limit,currentInspection else{return}
                             feedback=world.completeRecoveredImageAnalysis(asset,source:source,limit:limit) ? "Observation saved.":"Review the collection and source limitations, then try again."
                         }.buttonStyle(.borderedProminent).disabled(source==nil || limit==nil)
                         if !feedback.isEmpty{Text(feedback).font(.caption)}
                     }
                 }
-            } else {Label("This image has not been recovered or inspected.",systemImage:"lock")}
+            } else {Label("Image inspection unavailable in this session.",systemImage:"lock")}
         }.navigationTitle("Image analysis").navigationBarTitleDisplayMode(.inline)
-            .onChange(of:phase){if $0 != .active{resetPreview()}}
+            .onAppear{refreshInspection()}
+            .onChange(of:world.checkpointEpoch){_ in refreshInspection()}
+            .onChange(of:item){_ in refreshInspection()}
+            .onChange(of:ImageInterpretation.modes(asset,in:world.state)){modes in if !modes.contains(mode){resetPreview()}}
+            .onChange(of:phase){if $0 != .active{resetInspection()}else{refreshInspection()}}
             .onChange(of:security){_ in resetPreview()}
             .onChange(of:textOnly){_ in resetPreview()}
             .onChange(of:horrorEffects){_ in resetPreview()}
             .onChange(of:mode){_ in compareOriginal=false;region=nil;interpretationFeedback=""}
-            .onDisappear{resetPreview()}
+            .onDisappear{resetInspection()}
     }
 }
 
@@ -292,10 +306,11 @@ struct RegionalLightScanView:View {
     @State private var scanned:Set<Int>=[]
     @State private var dark:Int?
     @State private var bright:Int?
+    @State private var scanEpoch:UUID?
     @State private var pickingDark=true
     @State private var notice=""
     private func clear(){
-        values=nil;scanned=[];dark=nil;bright=nil;pickingDark=true;notice=""
+        values=nil;scanned=[];dark=nil;bright=nil;pickingDark=true;notice="";scanEpoch=nil
     }
     var body:some View {
         if RecoveredImageAnalysis.completed(asset,in:world.state),phase == .active {
@@ -304,7 +319,7 @@ struct RegionalLightScanView:View {
                 if let note=RecoveredImageAnalysis.lightNote(asset,in:world.state) {
                     Label(note,systemImage:"checkmark.seal").font(.caption).foregroundColor(.teal)
                 }
-                if let values,values.count == 9 {
+                if let values,values.count == 9,scanEpoch == world.checkpointEpoch {
                     if values.min()==values.max() {
                         Text("This sample is uniform; no contrast pair is available.").font(.caption)
                     } else {
@@ -337,7 +352,7 @@ struct RegionalLightScanView:View {
                         }
                         Text("First tap samples a cell. Tap it again to mark it using the selected mode. Readings range from 0 to 255.").font(.caption).foregroundColor(.secondary)
                         Button("Record contrast pair") {
-                            guard phase == .active,scanned.count==9,let dark,let bright else{return}
+                            guard phase == .active,scanEpoch == world.checkpointEpoch,scanned.count==9,let dark,let bright else{return}
                             notice=world.recordRegionalLightReview(asset,dark:dark,bright:bright) ?
                                 "Original contrast observation saved.":"Compare the measured readings and try again."
                         }.buttonStyle(.borderedProminent).disabled(scanned.count != 9 || dark==nil || bright==nil || dark==bright)
@@ -346,12 +361,15 @@ struct RegionalLightScanView:View {
                 } else {
                     Button("Start light scan") {
                         guard phase == .active,RecoveredImageAnalysis.completed(asset,in:world.state) else{return}
+                        clear()
+                        scanEpoch=world.checkpointEpoch
                         values=PortraitImages.load(asset).flatMap{RecoveredImageAnalysis.regionalLight($0)}
                         if values==nil {notice="Original sample unavailable. Other inspection tools remain accessible."}
                     }.buttonStyle(.bordered)
                 }
                 if !notice.isEmpty {Text(notice).font(.caption)}
             }
+            .onChange(of:world.checkpointEpoch){_ in clear()}
             .onChange(of:security){_ in clear()}
             .onChange(of:phase){if $0 != .active {clear()}}
             .onDisappear{clear()}
