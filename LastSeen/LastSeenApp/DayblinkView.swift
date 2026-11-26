@@ -228,6 +228,7 @@ struct DayblinkThread: View {
     let friend: DayblinkFriend
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var text = ""
+    @FocusState private var composerFocused:Bool
     @State private var feedback = ""
     @State private var openedRecordID: String?
     @State private var showingImage = false
@@ -280,6 +281,7 @@ struct DayblinkThread: View {
                 }
                 Section("Send as Repair desk") {
                     TextField("Write a local message", text: $text, axis: .vertical)
+                        .lineLimit(1...5).focused($composerFocused)
                     if let selectedPicture {
                         HStack {
                             Image(selectedPicture).resizable().scaledToFill().frame(width: 56, height: 56).clipped().clipShape(RoundedRectangle(cornerRadius: 8))
@@ -288,20 +290,24 @@ struct DayblinkThread: View {
                             Button("Remove") { self.selectedPicture = nil }.font(.caption)
                         }
                     }
-                    Button { showPictures = true } label: { Label("Add a picture", systemImage: "photo.on.rectangle") }
+                    Button { composerFocused=false;showPictures = true } label: { Label("Add a picture", systemImage: "photo.on.rectangle") }
                     Text("\(text.count) / 500").font(.caption).foregroundColor(.secondary)
                     Button("Send") {
                         guard phase == .active else{return}
                         if world.sendDayblink(friend: friend, text: text, image: selectedPicture) {
-                            text = ""; feedback = ""; selectedPicture = nil
+                            text = ""; feedback = ""; selectedPicture = nil;composerFocused=false
                         } else { feedback = "Enter a shorter message or choose an available picture." }
                     }.disabled((text.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty && selectedPicture==nil) || text.count>500 || phase != .active)
                     if !feedback.isEmpty { Text(feedback).font(.caption).foregroundColor(.secondary) }
                     Text("The restored owner account is read-only. Responses are authored and local, not live messages.").font(.caption).foregroundColor(.secondary)
                 }
             } else { Text("Conversation unavailable") }
-        }.navigationTitle(friend.name)
-            .onChange(of:phase){if $0 != .active {closeVisual();showPictures=false}}
+        }.navigationTitle(friend.name).scrollDismissesKeyboard(.interactively)
+            .toolbar {ToolbarItemGroup(placement:.keyboard){Spacer();Button("Done"){composerFocused=false}}}
+            .onChange(of:phase){if $0 != .active {composerFocused=false;closeVisual();showPictures=false}}
+            .onChange(of:world.checkpointEpoch){_ in
+                composerFocused=false;closeVisual();showPictures=false;selectedPicture=nil;text="";feedback=""
+            }
             .onChange(of:currentVisual?.id){if $0==nil {closeVisual()}}
             .onDisappear {closeVisual()}
             .sheet(isPresented: $showPictures) {
@@ -309,6 +315,7 @@ struct DayblinkThread: View {
                     List {
                         ForEach(DayblinkArchive.pictureChoices) { choice in
                             Button {
+                                guard phase == .active,world.state.everydayArchiveRevision != nil else{return}
                                 selectedPicture = choice.asset; showPictures = false
                             } label: {
                                 HStack {

@@ -46,6 +46,8 @@ struct RelaySupportView: View {
         }
     }
     @State private var draft = ""
+    private enum InputField:Hashable {case guide,composer}
+    @FocusState private var inputField:InputField?
     @AppStorage("lastseen.relay.versions") private var versions = ""
     @State private var failure = false
     @State private var selection: [LumaMessageAttachment] = []
@@ -61,7 +63,7 @@ struct RelaySupportView: View {
         guard phase == .active,available,generation == nil else{return}
         let mayGenerate = selection.isEmpty || selection.contains { $0.kind == .document }
         if world.sendRelaySupport(draft, installed: installed, sources: sources, attachments: selection) {
-            draft = ""; selection = []
+            draft = ""; selection = [];inputField=nil
             if mayGenerate && aiAvailable {
                 generation = world.relaySupportGenerationRequest(installed: installed, sources: sources)
             }
@@ -70,7 +72,7 @@ struct RelaySupportView: View {
     }
     private var available: Bool { RelaySupportAccess.available(installed: installed, flags: world.state.flags) }
     private func clearTransient() {
-        generation=nil;showAttachments=false;report=nil;selection=[]
+        generation=nil;showAttachments=false;report=nil;selection=[];inputField=nil
     }
     private var currentReport:RelaySupportDiagnostic? {
         guard phase == .active,available,let report else{return nil}
@@ -94,7 +96,7 @@ struct RelaySupportView: View {
                 case "Guides":
                     List {
                         Section {
-                            TextField("Search available guides", text: $guideSearch)
+                            TextField("Search available guides", text: $guideSearch).focused($inputField,equals:.guide).submitLabel(.search).onSubmit{inputField=nil}
                             Toggle("Received in chat", isOn: $receivedOnly)
                         }
                         Section("Technical library") {
@@ -201,10 +203,10 @@ struct RelaySupportView: View {
                         }.padding(.horizontal, 14)
                     }
                     HStack {
-                        Button { showAttachments = true } label: {
+                        Button { inputField=nil;showAttachments = true } label: {
                             Image(systemName: "plus.circle.fill").font(.title2).frame(width: 44, height: 44)
                         }.accessibilityLabel("Add support attachment")
-                        TextField("Ask Alex", text: $draft, axis: .vertical).lineLimit(1...3).textFieldStyle(.roundedBorder).submitLabel(.send).onSubmit(send)
+                        TextField("Ask Alex", text: $draft, axis: .vertical).focused($inputField,equals:.composer).lineLimit(1...3).textFieldStyle(.roundedBorder).submitLabel(.send).onSubmit(send)
                         Button(action: send) { Image(systemName: "arrow.up.circle.fill").font(.title2).frame(width: 44, height: 44) }
                             .disabled(generation != nil || draft.count>2000 || (draft.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty && selection.isEmpty))
                             .accessibilityLabel("Send support question")
@@ -213,6 +215,9 @@ struct RelaySupportView: View {
                 }
             } else {Text(available ? "Support paused.":"Relay Support is not installed.").foregroundColor(.secondary)}
         }.navigationTitle("Relay Support").navigationBarTitleDisplayMode(.inline)
+            .scrollDismissesKeyboard(.interactively)
+            .toolbar {ToolbarItemGroup(placement:.keyboard){Spacer();Button("Done"){inputField=nil}}}
+            .onChange(of:world.checkpointEpoch){_ in clearTransient();draft="";guideSearch=""}
             .onAppear {
                 world.beginRelaySupport(installed: installed)
                 if phase == .active && tab == "Chat" { world.markRelaySupportRead(installed: installed) }
@@ -241,6 +246,7 @@ struct RelaySupportView: View {
             .onChange(of:currentReport){value in if let report,value != report {self.report=nil}}
             .onChange(of: useOnDeviceAI) { if !$0 { generation = nil } }
             .onChange(of: tab) {
+                inputField=nil
                 if $0 != "Chat" { generation = nil }
                 else if phase == .active { world.markRelaySupportRead(installed: installed) }
             }

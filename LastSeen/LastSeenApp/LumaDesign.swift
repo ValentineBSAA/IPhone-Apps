@@ -32,16 +32,26 @@ struct LumaHeader: View {
     let title: String
     let detail: String
     var symbol: String = "sparkle"
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    private var artwork:some View {
+        Image(systemName:symbol).font(.system(size:26,weight:.medium))
+            .foregroundColor(LumaDesign.accent).frame(width:54,height:54).lumaSurface(radius:16)
+            .accessibilityHidden(true)
+    }
+    private var copy:some View {
+        VStack(alignment:.leading,spacing:5) {
+            Text(title).font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
+            Text(detail).font(.subheadline).foregroundColor(.secondary)
+        }.fixedSize(horizontal:false,vertical:true)
+    }
     var body: some View {
-        HStack(spacing: 14) {
-            Image(systemName: symbol).font(.system(size: 26, weight: .medium))
-                .foregroundColor(LumaDesign.accent).frame(width: 54, height: 54).lumaSurface(radius: 16)
-            VStack(alignment: .leading, spacing: 5) {
-                Text(title).font(.title2.weight(.semibold))
-                Text(detail).font(.subheadline).foregroundColor(.secondary)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment:.leading,spacing:12){artwork;copy}
+            } else {
+                HStack(spacing:14){artwork;copy;Spacer(minLength:0)}
             }
-            Spacer(minLength: 0)
-        }.padding(16).lumaSurface()
+        }.frame(maxWidth:.infinity,alignment:.leading).padding(16).lumaSurface()
     }
 }
 struct LumaWallpaperSettings: View {

@@ -158,6 +158,7 @@ private struct UtilityDetailView: View {
     @AppStorage("lastseen.utility.theme") private var theme = false
     @AppStorage("lastseen.utility.shortcuts") private var shortcuts = true
     @State private var query = ""
+    @FocusState private var searchFocused:Bool
     @State private var selected: LumaSnippet?
     @State private var output = "Ready."
     @State private var restart: RelayRestart?
@@ -186,7 +187,10 @@ private struct UtilityDetailView: View {
                         if tool == .clipglass { Button("Clear floating clip") { world.pinSnippet(nil) } }
                     }
                     Section("Choose a public record") {
-                        TextField("Filter records",text:$query)
+                        TextField("Filter records",text:$query).focused($searchFocused).submitLabel(.search).onSubmit{searchFocused=false}
+                        if LumaRecords.publicRecords(world.state).filter({query.isEmpty || $0.title.localizedCaseInsensitiveContains(query) || $0.source.localizedCaseInsensitiveContains(query)}).isEmpty {
+                            Text("No matching public records.").foregroundColor(.secondary)
+                        }
                         ForEach(LumaRecords.publicRecords(world.state).filter { query.isEmpty || $0.title.localizedCaseInsensitiveContains(query) || $0.source.localizedCaseInsensitiveContains(query) }) { record in
                             Button { selected = record } label: { VStack(alignment:.leading) { Text(record.title); Text(record.source).font(.caption).foregroundColor(.secondary) } }
                         }
@@ -207,7 +211,10 @@ private struct UtilityDetailView: View {
                     }
                 case .rootexplorer:
                     Section("On this phone") {
-                        TextField("Search documents",text:$query)
+                        TextField("Search documents",text:$query).focused($searchFocused).submitLabel(.search).onSubmit{searchFocused=false}
+                        if PhonePublicFiles.available(in:world.state).keys.filter({query.isEmpty || $0.localizedCaseInsensitiveContains(query)}).isEmpty {
+                            Text("No matching available documents.").foregroundColor(.secondary)
+                        }
                         ForEach(PhonePublicFiles.available(in:world.state).keys.sorted().filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) },id:\.self) { name in
                             NavigationLink { PhoneDocumentView(title:name) } label: { Label(name,systemImage:"doc.text") }
                         }
@@ -244,6 +251,10 @@ private struct UtilityDetailView: View {
             }
             if !output.isEmpty && tool != .pulseterminal { Text(output).font(.caption).foregroundColor(.secondary) }
         }.navigationTitle(tool.title).scrollContentBackground(.hidden).background(LumaDesign.background)
+            .scrollDismissesKeyboard(.interactively)
+            .toolbar {ToolbarItemGroup(placement:.keyboard){Spacer();Button("Done"){searchFocused=false}}}
+            .onChange(of:world.checkpointEpoch){_ in searchFocused=false;query="";selected=nil;confirmation=nil;restart=nil}
+            .onChange(of:enabled){if !$0 {searchFocused=false;selected=nil;confirmation=nil}}
             .sheet(item:$selected) { record in
                 NavigationStack {
                     ScrollView { VStack(alignment:.leading,spacing:16) {
