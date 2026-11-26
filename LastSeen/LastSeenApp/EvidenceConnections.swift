@@ -44,6 +44,10 @@ struct EvidenceConnection: Codable, Equatable, Identifiable {
     func discussion(in world:PhoneWorld)->String? {
         guard Self.make(first,second,relation:relation,in:world) != nil else{return nil}
         let ids=Set([first,second])
+        if ids == Set(VeilCommunity.disputedThreads.map { "veil:thread:"+$0 }) {
+            return VeilCommunity.disputeReviewed(world) ? VeilCommunity.disputeNote :
+                "The two writers remember the revision differently. Read their accounts and use the conflicting-accounts review to record what the disagreement supports."
+        }
         if ids == Set(["web:studio-news","web:archive-ledger"]) {
             return "Both records discuss the distinction between original capture and import. The ledger leaves the source uncertain. A shared terminology is useful context, not independent authentication."
         }
@@ -157,7 +161,7 @@ struct EvidenceComparisonView: View {
             .onChange(of:second){_ in notice=""}
             .onChange(of:relation){_ in notice=""}
             .onChange(of:phase){if $0 != .active{notice=""}}
-            .onChange(of:world.state.flags){_ in
+            .onChange(of:records.map(\.id)){_ in
                 if !records.contains(where:{$0.id==first}){first=""}
                 if !records.contains(where:{$0.id==second}){second=""}
                 notice=""

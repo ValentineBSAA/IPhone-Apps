@@ -268,6 +268,9 @@ struct VeilBrowser: View {
                                     .buttonStyle(.borderedProminent)
                                     .disabled(world.state.flags.contains("veil.home-index.opened"))
                                 if world.state.flags.contains("veil.home-index.opened") {
+                                    NavigationLink { VeilDisputeReviewView() } label: {
+                                        Label("Read related accounts",systemImage:"text.bubble")
+                                    }
                                     NavigationLink { EvidenceComparisonView(initialRecordID:"veil:home-index") } label: {
                                         Label("Compare index with opened records",systemImage:"rectangle.split.2x1")
                                     }
