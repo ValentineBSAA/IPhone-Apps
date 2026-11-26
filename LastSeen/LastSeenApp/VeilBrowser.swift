@@ -109,6 +109,9 @@ struct VeilBrowser: View {
     @AppStorage("lastseen.relay.installed") private var packages = ""
     @AppStorage("lastseen.relay.safeMode") private var safeMode = false
     @State private var connected = false
+    @State private var routeGeneration = 1
+    @State private var showNewIdentity = false
+    @AppStorage("lastseen.veil.security") private var security = "Standard"
     @State private var address = ""
     @State private var selected = "directory"
     @State private var notice = ""
@@ -118,7 +121,10 @@ struct VeilBrowser: View {
     private var pages: [VeilArchive.Page] { VeilArchive.pages(world.state) }
     private func visit(_ raw: String) {
         guard allowed,connected,phase == .active else { return }
-        guard let p = pages.first(where:{$0.address == raw || $0.id == raw}) else { notice = "Address unavailable in this local archive."; return }
+        guard let p = pages.first(where:{$0.address == raw || $0.id == raw}) else {
+            notice = raw.hasPrefix("veil://") ? "Service unreachable in this recovered directory." : "Invalid local service address. VEIL does not open external sites."
+            return
+        }
         if selected != p.id { history.append(selected); history = Array(history.suffix(30)) }
         selected = p.id; address = p.address; notice = ""
     }
@@ -142,6 +148,18 @@ struct VeilBrowser: View {
                         else { address = ""; history = []; notice = "" }
                     }.buttonStyle(.borderedProminent).tint(.purple)
                     if connected {
+                        DisclosureGroup("Session privacy") {
+                            LabeledContent("Local circuit",value:"Session "+String(routeGeneration))
+                            Picker("Security level",selection:$security) {
+                                ForEach(["Standard","Safer","Safest"],id: \.self) { Text($0) }
+                            }
+                            Text("Simulated security preference. Safest displays text instead of archive images; no actual encryption or network routing takes place.").font(.caption).foregroundColor(.secondary)
+                            Button("New circuit for this page") {
+                                routeGeneration = routeGeneration >= 999 ? 1 : routeGeneration+1
+                                notice = "Local circuit refreshed. Current page retained."
+                            }
+                            Button("New identity") { showNewIdentity = true }
+                        }.padding(12).lumaSurface()
                         HStack {
                             TextField("Local address",text:$address).textInputAutocapitalization(.never).autocorrectionDisabled().textFieldStyle(.roundedBorder).submitLabel(.go).onSubmit { visit(address) }
                             Button("Go") { visit(address) }
@@ -159,11 +177,18 @@ struct VeilBrowser: View {
                         if let page = pages.first(where:{$0.id == selected}) {
                             Text(page.title).font(.title2.bold())
                             Text(page.text)
+                            if page.id == "boards" {
+                                NavigationLink { VeilCommunityView() } label: { Label("Browse archived boards",systemImage:"text.bubble") }
+                            }
                             if page.id == "records" {
                                 NavigationLink { VeilHistoricalConversation() } label: { Label("Open recovered correspondence",systemImage:"message") }
                             }
                             if page.id == "media" {
-                                ForEach(VeilArchive.media(world.state),id:\.self) { asset in VeilRecoveredImage(asset:asset).padding(10).lumaSurface() }
+                                if security == "Safest" {
+                                    Label("Images hidden at this security level",systemImage:"shield").font(.caption)
+                                } else {
+                                    ForEach(VeilArchive.media(world.state),id:\.self) { asset in VeilRecoveredImage(asset:asset).padding(10).lumaSurface() }
+                                }
                             }
                         }
                         ForEach(pages) { page in
@@ -175,6 +200,13 @@ struct VeilBrowser: View {
                 }.padding(18)
             } else { Text("Application unavailable").padding() }
         }.tint(.purple).navigationTitle("VEIL").navigationBarTitleDisplayMode(.inline)
+            .confirmationDialog("Start a new local identity?",isPresented:$showNewIdentity,titleVisibility:.visible) {
+                Button("Clear session",role:.destructive) {
+                    history = []; selected = "directory"; address = "veil://directory"; notice = ""
+                    routeGeneration = routeGeneration >= 999 ? 1 : routeGeneration+1
+                }
+                Button("Cancel",role:.cancel) {}
+            } message: { Text("Clears temporary browsing history. Saved threads and investigation progress remain.") }
             .onChange(of:phase) { if $0 != .active { connected = false; address = ""; history = [] } }
             .onChange(of:allowed) { if !$0 { connected = false; address = ""; history = []; bookmarks = [] } }
             .onDisappear { connected = false; history = [] }

@@ -1,0 +1,129 @@
+import SwiftUI
+
+enum VeilCommunity {
+    struct Board: Identifiable {
+        let id:String
+        let title:String
+        let detail:String
+    }
+    struct Reply: Identifiable {
+        let id:String
+        let author:String
+        let text:String
+    }
+    struct Thread: Identifiable {
+        let id:String
+        let boardID:String
+        let title:String
+        let author:String
+        let daysAgo:Int
+        let text:String
+        let replies:[Reply]
+        let gate:String?
+    }
+    static let boards:[Board] = [
+        .init(id:"lost-media",title:"Lost media",detail:"Incomplete recordings and abandoned pages"),
+        .init(id:"after-hours",title:"After hours",detail:"Ordinary conversations and strange familiarity"),
+        .init(id:"boundaries",title:"Boundaries",detail:"Privacy and consent"),
+        .init(id:"index-room",title:"Index room",detail:"Revisions and disputed copies")
+    ]
+    static let handles:Set<String> = ["tapeghost","paperindex","moth","greyrelay","stillframe","null","lowlight","hush","cinder","inkveil","saltline"]
+    private static func make(_ board:String,_ id:String,_ title:String,_ author:String,_ days:Int,_ text:String,_ replies:[(String,String)],gate:String? = nil) -> Thread {
+        .init(id:id,boardID:board,title:title,author:author,daysAgo:days,text:text,replies:replies.enumerated().map { i,r in .init(id:id+"-"+String(i),author:r.0,text:r.1) },gate:gate)
+    }
+    private static let all:[Thread] = [
+        make("lost-media","quiet-tapes","A room with no soundtrack","tapeghost",38,"The archive entry has room tone, then nothing. I remember a different ending, but my copy is incomplete.",[("paperindex","My index lists an incomplete recording too."),("moth","The silence is the part that stays with me."),("greyrelay","Marking this as incomplete, not a confirmed alternate version.")]),
+        make("lost-media","empty-pages","Pages that outlive their sites","paperindex",31,"Sometimes an old page survives after the rest of a site is gone. Missing context can change the way a sentence reads.",[("tapeghost","Especially when the date belongs to the copy."),("stillframe","I keep those fields separate."),("greyrelay","Please label reconstructed text.")]),
+        make("lost-media","broken-title","The thumbnail without a title","stillframe",22,"There is a thumbnail in an old index with no caption. I don't recognize the scene.",[("moth","Familiarity isn't the same as remembering."),("paperindex","The index doesn't give enough context."),("null","An empty field is still a field.")]),
+        make("after-hours","night-shift","Anyone else awake?","moth",36,"The house is quiet and I have been listening to the rain. Tell me something completely ordinary.",[("lowlight","I made toast and forgot to butter it."),("hush","My plant has finally grown a new leaf."),("tapeghost","I found an old song I had forgotten about.")]),
+        make("after-hours","unfamiliar","Familiar places, unfamiliar feeling","lowlight",27,"A place can feel strange when you visit at a different time. Memory changes the atmosphere.",[("hush","Sometimes the lighting is all that changed."),("moth","And sometimes you're just tired."),("stillframe","A feeling isn't evidence.")]),
+        make("after-hours","unfinished","A page with the last sentence missing","hush",17,"I keep revisiting an unfinished entry. It is probably less interesting than whatever I imagined in its place.",[("moth","The imagined ending is usually louder."),("null","It is unfinished."),("lowlight","That is enough of an answer for me tonight.")]),
+        make("boundaries","consent","A copy isn't permission","cinder",29,"Finding something in an archive does not mean its subject agreed to share it.",[("inkveil","I wish more boards kept that distinction clear."),("greyrelay","Personal contact details and requests for private material are not accepted."),("hush","Some things are better left unshared.")]),
+        make("boundaries","unwanted","An unwanted message","inkveil",19,"Someone mentioned an unwanted message in another discussion. We don't have permission to reproduce the exchange.",[("cinder","A person can refuse contact without explaining why."),("greyrelay","No identifying details."),("lowlight","We can acknowledge something is unsettling without guessing who sent it.")]),
+        make("boundaries","recovered-correspondence","An incomplete correspondence record","cinder",3,"The restored index refers to an incomplete correspondence export. It is not an invitation to contact anyone.",[("inkveil","The original context matters more than a username."),("null","A label is not a name."),("greyrelay","No identity claim has been verified.")],gate:"veil.correspondence.opened"),
+        make("index-room","revision","Revision labels","saltline",24,"Two exports can carry different revision labels while referring to the same collection.",[("paperindex","The date on a copy is not necessarily the original date."),("stillframe","I've seen indexes where a label was missing."),("greyrelay","Unverified origin remains unverified.")]),
+        make("index-room","maintenance","Archive maintenance notice","greyrelay",13,"This is a partial snapshot. Some pages were removed before the cache was made. Empty entries are intentionally retained.",[("saltline","Please leave the blanks visible."),("paperindex","An absence shouldn't become a fabricated record."),("null","Not everything was retained.")]),
+        make("index-room","image-index","An entry without a capture date","stillframe",2,"One recovered reference has no authenticated capture date. The entry cannot establish its original source.",[("saltline","The message date and capture date are different fields."),("cinder","A photograph is not permission to identify or contact its subject."),("greyrelay","Source remains unverified.")],gate:"veil.viewed.Nora_Archive_08")
+    ]
+    static func visible(_ world:PhoneWorld) -> [Thread] {
+        guard VeilArchive.authorized(world) else { return [] }
+        return all.filter { $0.gate.map { world.flags.contains($0) } ?? true }
+    }
+    static func thread(_ id:String,in world:PhoneWorld) -> Thread? { visible(world).first{$0.id == id} }
+    static func openedMarker(_ id:String) -> String { "veil.thread.opened."+id }
+    static func opened(_ world:PhoneWorld) -> [Thread] { visible(world).filter{world.flags.contains(openedMarker($0.id))} }
+    static func date(_ thread:Thread,in world:PhoneWorld) -> Date { world.createdAt.addingTimeInterval(-Double(thread.daysAgo)*86400) }
+    static func bookmarkIDs(_ world:PhoneWorld) -> Set<String> {
+        (world.connectedWorld?.veilThreadBookmarks ?? []).intersection(Set(visible(world).map(\.id)))
+    }
+}
+
+struct VeilCommunityView:View {
+    @EnvironmentObject private var world:PhoneWorldStore
+    @AppStorage("lastseen.relay.installed") private var packages=""
+    @AppStorage("lastseen.relay.safeMode") private var safeMode=false
+    @State private var query=""
+    @State private var savedOnly=false
+    private var allowed:Bool { VeilArchive.installed(world.state,packages:packages,safeMode:safeMode) }
+    var body:some View {
+        List {
+            if allowed {
+                Section {
+                    Toggle("Saved threads",isOn:$savedOnly)
+                    Text("Archived discussions · read-only · handles unverified").font(.caption).foregroundColor(.secondary)
+                }
+                ForEach(VeilCommunity.boards) { board in
+                    let threads=VeilCommunity.visible(world.state).filter {
+                        $0.boardID == board.id && (!savedOnly || VeilCommunity.bookmarkIDs(world.state).contains($0.id)) &&
+                        (query.isEmpty || [$0.title,$0.text,$0.author].contains{$0.localizedCaseInsensitiveContains(query)})
+                    }.sorted{$0.daysAgo < $1.daysAgo}
+                    if !threads.isEmpty {
+                        Section {
+                            ForEach(threads) { thread in
+                                NavigationLink { VeilThreadView(id:thread.id) } label: {
+                                    VStack(alignment:.leading,spacing:5) {
+                                        Text(thread.title).font(.headline)
+                                        Text(thread.author+" · "+String(thread.replies.count)+" replies").font(.caption).foregroundColor(.secondary)
+                                        Text(VeilCommunity.date(thread,in:world.state),style:.date).font(.caption2).foregroundColor(.secondary)
+                                    }
+                                }
+                            }
+                        } header: { Text(board.title) } footer: { Text(board.detail) }
+                    }
+                }
+            } else { Text("Archive unavailable") }
+        }.navigationTitle("Discussion boards").searchable(text:$query).tint(.purple)
+    }
+}
+
+struct VeilThreadView:View {
+    let id:String
+    @EnvironmentObject private var world:PhoneWorldStore
+    @AppStorage("lastseen.relay.installed") private var packages=""
+    @AppStorage("lastseen.relay.safeMode") private var safeMode=false
+    private var allowed:Bool { VeilArchive.installed(world.state,packages:packages,safeMode:safeMode) }
+    var body:some View {
+        List {
+            if allowed,let thread=VeilCommunity.thread(id,in:world.state) {
+                Section {
+                    Text(thread.title).font(.title2.bold())
+                    Text(thread.author+" · archived handle").font(.caption).foregroundColor(.secondary)
+                    Text(thread.text).textSelection(.enabled)
+                    Button(VeilCommunity.bookmarkIDs(world.state).contains(id) ? "Remove bookmark" : "Save thread") {
+                        world.toggleVeilThreadBookmark(id,packages:packages,safeMode:safeMode)
+                    }
+                }
+                Section("Archived replies") {
+                    ForEach(thread.replies) { reply in
+                        VStack(alignment:.leading,spacing:8) {
+                            Text(reply.author).font(.caption.bold()).foregroundColor(.purple)
+                            Text(reply.text).textSelection(.enabled)
+                        }.padding(.vertical,4)
+                    }
+                }
+                Text("No verified identities or live posting.").font(.caption).foregroundColor(.secondary)
+            } else { Text("Thread unavailable") }
+        }.navigationTitle("Archived thread").navigationBarTitleDisplayMode(.inline)
+            .onAppear { world.recordVeilThreadOpened(id,packages:packages,safeMode:safeMode) }
+    }
+}

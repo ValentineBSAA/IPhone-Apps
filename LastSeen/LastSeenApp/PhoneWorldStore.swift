@@ -1335,6 +1335,18 @@ final class PhoneWorldStore: ObservableObject {
         guard state.everydayArchiveRevision != nil else { return }
         if state.flags.insert(LumaAssistantTrust.acknowledgement).inserted { save() }
     }
+    func recordVeilThreadOpened(_ id:String,packages:String,safeMode:Bool) {
+        guard VeilArchive.installed(state,packages:packages,safeMode:safeMode),VeilCommunity.thread(id,in:state) != nil else { return }
+        if state.flags.insert(VeilCommunity.openedMarker(id)).inserted { save() }
+    }
+    func toggleVeilThreadBookmark(_ id:String,packages:String,safeMode:Bool) {
+        guard VeilArchive.installed(state,packages:packages,safeMode:safeMode),VeilCommunity.thread(id,in:state) != nil else { return }
+        var c=connected
+        var saved=VeilCommunity.bookmarkIDs(state)
+        if saved.contains(id) { saved.remove(id) } else { saved.insert(id) }
+        c.veilThreadBookmarks=saved
+        commitConnected(c)
+    }
     func recordVeilObservation(_ asset:String) {
         guard VeilArchive.media(state).contains(asset) else { return }
         if state.flags.insert("veil.viewed."+asset).inserted { save() }

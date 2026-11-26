@@ -41,6 +41,10 @@ enum LumaAssistantEvidence {
             }
         }
         if VeilArchive.authorized(world) {
+            for thread in VeilCommunity.opened(world) {
+                let passages = [thread.author+": "+thread.text] + thread.replies.map{$0.author+": "+$0.text}
+                result.append(.init(id:"veil:thread:"+thread.id,title:thread.title,kind:.web,excerpts:passages))
+            }
             let read = world.flags.contains("veil.correspondence.opened")
             let messages = VeilArchive.messages(world)
             for (i,asset) in VeilArchive.media(world).enumerated() where world.flags.contains("veil.viewed."+asset) {
