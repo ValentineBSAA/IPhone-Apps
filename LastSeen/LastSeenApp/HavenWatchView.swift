@@ -187,7 +187,7 @@ struct HavenCameraArchive: View {
 struct HavenFrameDetail: View {
     let frame: HavenWatchFrame
     @EnvironmentObject private var world: PhoneWorldStore
-    @State private var zoom = 1.0
+    @State private var zoom:CGFloat = 1
     @Environment(\.scenePhase) private var phase
     private var available:Bool {HavenWatchArchive.frames(in:world.state).contains(frame)}
     private var prefs: HavenWatchPreferences { world.connected.havenWatch ?? HavenWatchPreferences() }
@@ -196,18 +196,20 @@ struct HavenFrameDetail: View {
             if phase == .active && available {
                 VStack(alignment: .leading, spacing: 14) {
                     ZStack(alignment: .topLeading) {
-                        GeometryReader { geometry in
-                            HavenWatchImage(asset: frame.id, infrared: prefs.infrared)
-                                .scaleEffect(zoom)
-                                .frame(width: geometry.size.width, height: geometry.size.height).clipped()
-                        }.aspectRatio(16/9, contentMode: .fit)
+                        if let image=UIImage(named:frame.id) {
+                            LumaImageViewport(image:image,scale:$zoom,infrared:prefs.infrared,label:"Archived camera snapshot")
+                                .aspectRatio(16/9,contentMode:.fit).id(world.checkpointEpoch)
+                        } else {
+                            HavenWatchImage(asset:frame.id,infrared:prefs.infrared)
+                                .aspectRatio(16/9,contentMode:.fit)
+                        }
                         Text("CAM " + frame.camera.number + "  ·  ARCHIVE").font(.caption2.monospaced()).padding(6)
                             .background(Color.black.opacity(0.72)).foregroundColor(.white)
                     }.clipShape(RoundedRectangle(cornerRadius: 10))
                     HStack {
                         Text("Zoom")
                         Slider(value:$zoom,in:1...3).accessibilityLabel("Snapshot zoom")
-                        Text(String(format:"%.1f×",zoom)).monospacedDigit()
+                        Text(String(format:"%.1f×",Double(zoom))).monospacedDigit()
                         Button("Reset"){zoom=1}.disabled(zoom==1)
                     }
                     Toggle("Infrared-style viewing",isOn:Binding(get:{prefs.infrared},set:{value in
@@ -237,6 +239,8 @@ struct HavenFrameDetail: View {
                 if value == .active {world.recordHavenSnapshotOpened(frame.id)} else {zoom=1}
             }
             .onChange(of:available){if !$0 {zoom=1}}
+            .onChange(of:world.checkpointEpoch){_ in zoom=1}
+            .onDisappear{zoom=1}
     }
 }
 

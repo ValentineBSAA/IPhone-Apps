@@ -39,6 +39,15 @@ final class HomeLayoutTests:XCTestCase {
             }
         }
     }
+    func testImageViewportClampsToFittedPixels() {
+        let viewport=CGSize(width:300,height:300)
+        let image=CGSize(width:600,height:300)
+        XCTAssertEqual(LumaImageViewportGeometry.fitted(image,in:viewport),CGSize(width:300,height:150))
+        let proposed=CGSize(width:1000,height:-1000)
+        XCTAssertEqual(LumaImageViewportGeometry.clamp(proposed,image:image,viewport:viewport,scale:1),.zero)
+        XCTAssertEqual(LumaImageViewportGeometry.clamp(proposed,image:image,viewport:viewport,scale:2),CGSize(width:150,height:0))
+        XCTAssertEqual(LumaImageViewportGeometry.clamp(proposed,image:image,viewport:viewport,scale:3),CGSize(width:300,height:-75))
+    }
     func testPersonalFoldersAndToolPage() {
         let pages=LumaHomeLayout.pages(columns:4,rows:2,fieldNotes:true)
         XCTAssertEqual(pages.count,2)

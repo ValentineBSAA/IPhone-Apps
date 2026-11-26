@@ -1564,11 +1564,12 @@ private struct LabPhotosView: View {
                 ScrollView {
                 VStack(spacing: 16) {
                     if available(photo) && photoPhase == .active && photoEpoch == world.checkpointEpoch {
-                    Image(photo.asset).resizable().scaledToFit()
-                        .scaleEffect(scale).gesture(MagnificationGesture().onChanged { scale = min(3, max(1, $0)) })
-                        .frame(maxHeight:360).clipped()
-                        .onTapGesture(count: 2) { withAnimation { scale = scale > 1 ? 1 : 2 } }
-                        .accessibilityLabel("Recovered photograph")
+                    if let image=UIImage(named:photo.asset) {
+                        LumaImageViewport(image:image,scale:$scale)
+                            .frame(height:320).clipShape(RoundedRectangle(cornerRadius:12))
+                            .id(photo.id)
+                        if scale>1 {Text("Drag the enlarged image to inspect its edges.").font(.caption).foregroundColor(.secondary)}
+                    } else {Label("Image unavailable",systemImage:"photo.badge.exclamationmark").foregroundColor(.secondary)}
                     HStack {
                         Button("Zoom out"){scale=max(1,scale-0.5)}.disabled(scale<=1)
                         Spacer()

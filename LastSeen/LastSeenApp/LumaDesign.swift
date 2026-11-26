@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum LumaDesign {
     static let accent = Color(red: 0.41, green: 0.80, blue: 0.84)
@@ -108,6 +109,78 @@ struct LumaWallpaperSettings: View {
                     }
                 }.clipShape(RoundedRectangle(cornerRadius: 20))
             Text(title).font(.caption.weight(.medium))
+        }
+    }
+}
+
+/// Pure display geometry. Never changes, samples or authenticates image pixels.
+enum LumaImageViewportGeometry {
+    static func fitted(_ image:CGSize,in viewport:CGSize)->CGSize {
+        guard image.width>0,image.height>0,viewport.width>0,viewport.height>0 else{return .zero}
+        let ratio=min(viewport.width/image.width,viewport.height/image.height)
+        return CGSize(width:image.width*ratio,height:image.height*ratio)
+    }
+    static func clamp(_ offset:CGSize,image:CGSize,viewport:CGSize,scale:CGFloat)->CGSize {
+        let fit=fitted(image,in:viewport)
+        let x=max(0,(fit.width*scale-viewport.width)/2)
+        let y=max(0,(fit.height*scale-viewport.height)/2)
+        return CGSize(width:min(x,max(-x,offset.width)),height:min(y,max(-y,offset.height)))
+    }
+}
+struct LumaImageViewport:View {
+    let image:UIImage
+    @Binding var scale:CGFloat
+    var infrared=false
+    var label="Recovered photograph"
+    @State private var offset:CGSize = .zero
+    @GestureState private var pinch:CGFloat=1
+    @GestureState private var drag:CGSize = .zero
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var body:some View {
+        GeometryReader { geometry in
+            let viewport=geometry.size
+            let fitted=LumaImageViewportGeometry.fitted(image.size,in:viewport)
+            let current=min(3,max(1,scale*pinch))
+            let position=LumaImageViewportGeometry.clamp(
+                CGSize(width:offset.width+drag.width,height:offset.height+drag.height),
+                image:image.size,viewport:viewport,scale:current)
+            ZStack {
+                Color.black.opacity(0.8)
+                Image(uiImage:image).resizable().scaledToFit()
+                    .frame(width:fitted.width,height:fitted.height)
+                    .saturation(infrared ? 0:1).contrast(infrared ? 1.22:1)
+                    .scaleEffect(current).offset(position)
+            }.frame(width:viewport.width,height:viewport.height)
+                .clipped().contentShape(Rectangle())
+                .gesture(DragGesture(minimumDistance:8).updating($drag){value,state,_ in
+                    state=value.translation
+                }.onEnded{value in
+                    offset=LumaImageViewportGeometry.clamp(
+                        CGSize(width:offset.width+value.translation.width,height:offset.height+value.translation.height),
+                        image:image.size,viewport:viewport,scale:scale)
+                },including:scale>1 ? .all:.none)
+                .simultaneousGesture(MagnificationGesture().updating($pinch){value,state,_ in state=value}
+                    .onEnded{value in scale=min(3,max(1,scale*value))})
+                .onTapGesture(count:2){
+                    withAnimation(reduceMotion ? nil:.easeInOut(duration:0.2)){scale=scale>1 ? 1:2}
+                }
+                .onChange(of:scale){value in
+                    offset=LumaImageViewportGeometry.clamp(offset,image:image.size,viewport:viewport,scale:value)
+                }
+                .onChange(of:viewport){value in
+                    offset=LumaImageViewportGeometry.clamp(offset,image:image.size,viewport:value,scale:scale)
+                }
+                .accessibilityElement(children:.ignore)
+                .accessibilityLabel(label)
+                .accessibilityValue(String(Int(current*100))+" percent")
+                .accessibilityAdjustableAction{direction in
+                    switch direction {
+                    case .increment:scale=min(3,scale+0.5)
+                    case .decrement:scale=max(1,scale-0.5)
+                    @unknown default:break
+                    }
+                }
+                .accessibilityAction(named:Text("Center image")){offset = .zero}
         }
     }
 }
