@@ -74,6 +74,6 @@ enum LumaCommunityActivity {
     static func reply(_ release: Release, post: LumaSocialPost, start: Date) -> LumaSocialComment? {
         guard post.id == release.id, let peer = person(release.replyHandle), peer.channel == post.channel else { return nil }
         return .init(id: release.id + "-peer-01", postID: post.id, author: peer.name, body: release.reply,
-                     date: start.addingTimeInterval(release.delay + release.replyDelay))
+                     date: max(post.date.addingTimeInterval(release.replyDelay), start.addingTimeInterval(release.delay + release.replyDelay)))
     }
 }

@@ -1035,9 +1035,9 @@ final class PhoneWorldStore: ObservableObject {
                         channel: authored.channel, author: authored.author), to: &value)
                 }
             }
-            if now.timeIntervalSince(activity.start) >= release.delay + release.replyDelay,
-               let stored = activity.posts.first(where: { $0.id == authored.id }),
+            if let stored = activity.posts.first(where: { $0.id == authored.id }),
                let reply = LumaCommunityActivity.reply(release, post: stored, start: activity.start),
+               reply.date <= now,
                !activity.comments.contains(where: { $0.id == reply.id }) {
                 activity.comments.append(reply)
             }
@@ -1050,20 +1050,27 @@ final class PhoneWorldStore: ObservableObject {
     func advanceSocialReplies(now: Date = Date()) {
         var value = connected
         let pending = value.pendingSocialReplies ?? []
+        guard state.everydayArchiveRevision != nil else{return}
         let due = pending.filter { $0.dueAt <= now }.sorted { ($0.dueAt, $0.reply.id) < ($1.dueAt, $1.reply.id) }
         guard !due.isEmpty else { return }
+        var processed=Set<String>()
         for event in due {
+            if value.comments.contains(where: { $0.id == event.reply.id }) {
+                processed.insert(event.reply.id);continue
+            }
+            // Keep an already promised reply if its parent is temporarily
+            // inaccessible or a legacy checkpoint filled the old capacity.
             guard value.comments.count < 300,
-                  !value.comments.contains(where: { $0.id == event.reply.id }),
                   LumaSocialCatalog.visible(event.channel, world: state).contains(where: { $0.id == event.reply.postID }) else { continue }
             value.comments.append(event.reply)
+            processed.insert(event.reply.id)
             let prefs = value.socialPreferences?[event.channel.rawValue] ?? LumaSocialPreferences()
             if prefs.notificationsEnabled && !prefs.mutedAuthors.contains(event.reply.author) {
                 addActivity(.init(id: "social-" + event.reply.id, kind: .social, date: event.dueAt, title: event.reply.author + " replied", detail: event.reply.body, targetID: event.reply.postID, channel: event.channel, author: event.reply.author), to: &value)
             }
         }
-        let delivered = Set(due.map { $0.reply.id })
-        value.pendingSocialReplies = pending.filter { !delivered.contains($0.reply.id) }
+        guard !processed.isEmpty else{return}
+        value.pendingSocialReplies = pending.filter { !processed.contains($0.reply.id) }
         commitConnected(value)
     }
     func setDayblinkNotificationSettings(enabled: Bool, previews: Bool) {
@@ -1103,7 +1110,7 @@ final class PhoneWorldStore: ObservableObject {
         let id = UUID().uuidString
         let prior = d.messages.filter { $0.friend == friend && $0.id.hasPrefix("dayblink-reply-") }
         let waiting = d.pending.contains { $0.record.friend == friend }
-        let recent = prior.contains { now.timeIntervalSince($0.date) < 45 }
+        let recent = prior.contains { (0..<45).contains(now.timeIntervalSince($0.date)) }
         d.messages.append(.init(id: id, friend: friend, sender: "Repair desk", text: clean.isEmpty ? "Shared picture" : clean, date: now, image: image))
         if !waiting, !recent, let pending = DayblinkArchive.pendingReply(friend: friend, text: clean, id: id, now: now, previousCount: prior.count, sharedImage: image) {
             d.pending.append(pending)
@@ -1396,12 +1403,15 @@ final class PhoneWorldStore: ObservableObject {
         let message=text.trimmingCharacters(in:.whitespacesAndNewlines)
         guard !message.isEmpty,message.count<=600,let post = LumaSocialCatalog.visible(channel,world:state).first(where:{$0.id==postID}) else{return false}
         var c=connected
-        guard c.comments.count<300 else{return false}
+        // Reserve a slot for every accepted pending reply before accepting
+        // another local comment.
+        let reserved=(c.pendingSocialReplies ?? []).filter{event in !c.comments.contains(where:{$0.id==event.reply.id})}.count
+        guard c.comments.count+reserved<300 else{return false}
         let id = UUID().uuidString
         let hasPriorLocalComment = c.comments.contains { $0.postID == postID && $0.author == "Repair desk" }
         c.comments.append(LumaSocialComment(id:id,postID:postID,author:"Repair desk",body:message,date:now))
         var pending = c.pendingSocialReplies ?? []
-        if !hasPriorLocalComment, pending.count < 12,
+        if !hasPriorLocalComment, pending.count < 12,c.comments.count+reserved<300,
            let reply = LumaActivityCatalog.communityReply(post: post, text: message, id: id, now: now) {
             pending.append(reply)
             c.pendingSocialReplies = pending

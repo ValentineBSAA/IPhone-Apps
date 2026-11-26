@@ -168,7 +168,7 @@ final class LumaSaveStore: ObservableObject {
                     if let start = d.storyStart { d.storyStart = start.addingTimeInterval(delta) }
                     d.stories = d.stories?.map { story in
                         .init(id: story.id, friend: story.friend, caption: story.caption, image: story.image,
-                              published: story.published.addingTimeInterval(delta), expires: story.expires.addingTimeInterval(delta), expired: story.expired || story.expires <= value.date)
+                              published: story.published, expires: max(story.published,story.expires.addingTimeInterval(delta)), expired: story.expired || story.expires <= value.date)
                     }
                     connected.dayblink = d
                 }

@@ -2,6 +2,46 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class CommunityActivityTests: XCTestCase {
+    func testRebasedCommunityReplyNeverPredatesItsParent() throws {
+        let start=Date(timeIntervalSince1970:1_800_000_000)
+        let release=try XCTUnwrap(LumaCommunityActivity.releases.first)
+        let post=try XCTUnwrap(LumaCommunityActivity.post(release,start:start))
+        let rebased=start.addingTimeInterval(-500)
+        let reply=try XCTUnwrap(LumaCommunityActivity.reply(release,post:post,start:rebased))
+        XCTAssertEqual(reply.date,post.date.addingTimeInterval(release.replyDelay))
+        var state=RestoredPhoneBackup.snapshot(now:start)
+        var connected=state.connectedWorld ?? LumaConnectedState()
+        connected.communityActivity=LumaCommunityActivityState(start:rebased,posts:[post])
+        state.connectedWorld=connected
+        let w=PhoneWorldStore(initial:state,persistToDisk:false)
+        w.advanceCommunityActivity(now:post.date)
+        XCTAssertFalse(w.connected.communityActivity?.comments.contains(where:{$0.postID==post.id}) ?? true)
+        w.advanceCommunityActivity(now:reply.date)
+        XCTAssertEqual(w.connected.communityActivity?.comments.filter{$0.postID==post.id},[reply])
+    }
+
+    func testPendingSocialReplyReservesCapacityAndSurvivesTemporaryArchiveLoss() throws {
+        let now=Date(timeIntervalSince1970:1_800_000_000)
+        var state=RestoredPhoneBackup.snapshot(now:now)
+        let post=try XCTUnwrap(LumaSocialCatalog.visible(.afterframe,world:state).first{$0.handle=="iris.vale"})
+        var connected=state.connectedWorld ?? LumaConnectedState()
+        let reply=LumaSocialComment(id:"fixture-pending",postID:post.id,author:post.author,body:"Thanks for the comment.",date:now)
+        connected.pendingSocialReplies=[.init(channel:.afterframe,reply:reply,dueAt:now)]
+        connected.comments=(0..<299).map{.init(id:"fixture-\($0)",postID:post.id,author:"Repair desk",body:"Fixture",date:now)}
+        state.connectedWorld=connected
+        let w=PhoneWorldStore(initial:state,persistToDisk:false)
+        XCTAssertFalse(w.commentSocial(postID:post.id,channel:.afterframe,text:"Another comment",now:now))
+        w.advanceSocialReplies(now:now)
+        XCTAssertEqual(w.connected.comments.count,300)
+        XCTAssertEqual(w.connected.comments.filter{$0.id==reply.id}.count,1)
+        XCTAssertTrue((w.connected.pendingSocialReplies ?? []).isEmpty)
+        var revoked=state
+        revoked.everydayArchiveRevision=nil
+        let locked=PhoneWorldStore(initial:revoked,persistToDisk:false)
+        locked.advanceSocialReplies(now:now)
+        XCTAssertEqual(locked.connected.pendingSocialReplies?.first?.reply.id,reply.id)
+    }
+
     func testHistoricalConversationsUseKnownProfiles() throws {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let w = RestoredPhoneBackup.snapshot(now: now)
