@@ -68,6 +68,7 @@ struct LumaConnectedState:Codable,Equatable {
     var motionwell: MotionwellState? = nil
     var activityJournal: [LumaActivityNotice]? = nil
     var pendingSocialReplies: [LumaPendingSocialReply]? = nil
+    var investigationReviewSelection: [String: Int]? = nil
     var diagnostics: [String: WorkbenchDiagnosticProgress]? = nil
     var workbenchConnected=false
     var workbenchSelections:[String:[String]]=[:]
@@ -101,7 +102,8 @@ enum LumaMailCatalog {
             LumaMailRecord(id:"cw-mail-team",peer:"tessa",sender:"Tessa Reed",subject:"Team working agreement",body:"Thanks for putting the availability rules in writing. I'll keep the palette exports together and send a short summary after Friday. Please don't answer this tonight.",date:date.addingTimeInterval(-210000),kind:"inbox",attachments:["WorldDoc_01_07"]),
             LumaMailRecord(id:"cw-mail-spending",peer:"adrian",sender:"Adrian Cole",subject:"Equipment approval",body:"The existing test cable can get us through the morning, but I've set aside the replacement request. I won't order extra storage until the review is complete.",date:date.addingTimeInterval(-65000),kind:"inbox",attachments:["WorldDoc_01_06"])
         ]
-        return (originals+old+work+LivingPhoneHistory.mail(anchor: date)+(world.connectedWorld?.mail ?? [])).sorted{$0.date>$1.date}
+        let delivered = (world.connectedWorld?.mail ?? []).filter { $0.id != InvestigationReview.mailID || InvestigationReview.availableMail(world) }
+        return (originals+old+work+LivingPhoneHistory.mail(anchor: date)+delivered).sorted{$0.date>$1.date}
     }
     static func response(to peer:Neighbor,subject:String,body:String)->String {
         let words=Set((subject+" "+body).lowercased().split{!$0.isLetter && !$0.isNumber}.map(String.init))
@@ -259,7 +261,10 @@ struct LumaMailDetail:View {
             }else{Text("Message unavailable").padding()}
         }.navigationTitle("Message").navigationBarTitleDisplayMode(.inline)
             .onAppear{
-                if item?.kind=="inbox" {var ids=Set(readRaw.split(separator:"|").map(String.init));ids.insert(id);readRaw=ids.sorted().joined(separator:"|")}
+                if item?.kind=="inbox" {
+                    var ids=Set(readRaw.split(separator:"|").map(String.init));ids.insert(id);readRaw=ids.sorted().joined(separator:"|")
+                    world.recordInvestigationMailRead(id)
+                }
             }
             .sheet(isPresented:$reply){NavigationStack{if let item {LumaMailComposer(recipient:Neighbor(rawValue:item.peer),initialSubject:item.subject.hasPrefix("Re:") ? item.subject : "Re: "+item.subject)}}.environmentObject(world)}
             .sheet(isPresented:$forward){NavigationStack{if let item{LumaMailComposer(initialSubject:"Fwd: "+item.subject,initialBody:"\n\nForwarded local message:\n"+item.sender+"\n"+item.body)}}.environmentObject(world)}

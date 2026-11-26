@@ -33,7 +33,8 @@ enum LumaWebCatalog {
         , .init(id:"studio-news",site:"Blue Hour Interactive",title:"Studio notebook",address:"bluehour.test/news",symbol:"newspaper",sections:["Development update · The team is separating the playable prototype from its reference library. Early builds may contain temporary names and duplicate images.","Production note · The review ledger uses two labels: capture time for the original record and import time for the copy. An imported image is not necessarily a new photograph.","Technical note · The public journal remains the stable reference. Internal review material is available only through the recovered index."],links:["studio","studio-notes","repo-postbox"])
         , .init(id:"archive-review",site:"Recovered archive",title:"Review desk",address:"archive.test/review",symbol:"lock.shield",sections:["The next folder is a restricted review collection. Its index is incomplete; entries cannot be treated as verified evidence.","Review the available record and the studio's public production note before submitting an interpretation."],links:["archive-records","studio-news","archive-collection"],gate:"web.visited.archive-records")
         , .init(id:"archive-collection",site:"Recovered archive",title:"Review collection",address:"archive.test/collection",symbol:"folder.fill",sections:["Two catalog entries refer to the same reference export. Their import labels differ; the original capture field is missing from one.","A copy can circulate without establishing where or when the original was made. The review ledger marks this entry disputed, not resolved.","The next inquiry should establish provenance rather than assume the image depicts an event."],links:["archive-review","archive-ledger"],gate:"investigation.chapter2.reviewed")
-        , .init(id:"archive-ledger",site:"Recovered archive",title:"Provenance ledger",address:"archive.test/ledger",symbol:"doc.plaintext",sections:["Review ledger · Original capture: not independently confirmed. Import: recorded in the restored index. Source: unverified.","The collection has been separated into working references and disputed copies. Keep observations distinct from conclusions.","End of the currently recovered ledger. Further records remain unavailable."],links:["archive-collection","studio-news","repo-bench"],gate:"web.visited.archive-collection")
+        , .init(id:"archive-ledger",site:"Recovered archive",title:"Provenance ledger",address:"archive.test/ledger",symbol:"doc.plaintext",sections:["Review ledger · Original capture: not independently confirmed. Import: recorded in the restored index. Source: unverified.","The collection has been separated into working references and disputed copies. Keep observations distinct from conclusions.","End of the currently recovered ledger. Further records remain unavailable."],links:["archive-collection","studio-news","repo-bench","archive-comparison"],gate:"web.visited.archive-collection")
+        , .init(id:InvestigationReview.pageID,site:"Recovered archive",title:"Record comparison",address:"archive.test/comparison",symbol:"list.bullet.rectangle",sections:["Compare the available sources without treating a copy as a verified original. The review retains supported observations separately from unresolved claims."],links:["archive-ledger","studio-news"],gate:InvestigationReview.read)
 ,
         .init(id:"repo-folio",site:"Folio Works",title:"Local tools",address:"maplebooks.test/tools",symbol:"book",sections:["Readable local web pages.","Relay repository: https://folio-tools.example/","A local index for Reader Focus. Add this address in Relay if you want the optional tool."],links:["books-events"],gate:"web.visited.books-events"),
         .init(id:"repo-postbox",site:"Postbox Labs",title:"Local tools",address:"bluehour.test/mail-tools",symbol:"paperclip",sections:["Local correspondence utilities.","Relay repository: https://postbox-tools.example/","A local index for Attachment Lens. Add this address in Relay if you want the optional tool."],links:["studio-news"],gate:"web.visited.studio-news"),
@@ -105,6 +106,8 @@ enum InvestigationProgress {
             .init(id:"records",title:"Compare recovered records",hint:"Examine an available archive attachment or use its text-only inspection option.",route:"browser",done:flags.contains(where:{$0.hasPrefix("web.inspected.Recovered_B27_") && LumaWebCatalog.page("archive-records")!.images.contains(String($0.dropFirst("web.inspected.".count)))}))
             , .init(id:"review",title:"Review the next collection",hint:"Compare the available web records and complete the review at the restricted collection.",route:"browser",done:flags.contains("investigation.chapter2.reviewed"))
             , .init(id:"ledger",title:"Establish provenance",hint:"Revisit the accessible collection and read its linked ledger.",route:"browser",done:flags.contains("web.visited.archive-ledger"))
+            , .init(id:"review3-mail",title:"Check new correspondence",hint:"Look for the next review message in Mail. It may take a little time to arrive.",route:"mail",done:flags.contains(InvestigationReview.read))
+            , .init(id:"review3-compare",title:"Compare the available sources",hint:"Return to the recovered ledger and follow the newly available review link.",route:"browser",done:flags.contains(InvestigationReview.finished))
         ]
     }
     static func summary(_ flags: Set<String>) -> String { "\(steps(flags).filter(\.done).count) completed" }
@@ -123,6 +126,7 @@ struct InvestigationProgressView: View {
     let openMessages: () -> Void
     let openNotes: () -> Void
     let openFiles: () -> Void
+    let openMail: () -> Void
     @State private var showHint = false
     private var steps: [InvestigationProgress.Step] { InvestigationProgress.steps(world.state.flags) }
     var body: some View {
@@ -146,6 +150,7 @@ struct InvestigationProgressView: View {
                             case "browser": openBrowser()
                             case "messages": openMessages()
                             case "notes": openNotes()
+                            case "mail": openMail()
                             default: openFiles()
                             }
                         }
@@ -271,6 +276,7 @@ struct LumaWebBrowser: View {
                             websiteParagraph(paragraph,index:index,page:p)
                         }
                         if p.id == "archive-review" { reviewPanel }
+                        if p.id == InvestigationReview.pageID { InvestigationComparisonPanel() }
                         ForEach(p.images,id:\.self) { asset in
                             VStack(alignment:.leading,spacing:12) {
                                 if revealed.contains(asset) && LumaWebCatalog.attachments(in:world.state.flags).contains(asset) {

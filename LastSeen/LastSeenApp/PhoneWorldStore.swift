@@ -497,6 +497,32 @@ final class PhoneWorldStore: ObservableObject {
         }
         return true
     }
+    func recordInvestigationMailRead(_ id: String) {
+        guard id == InvestigationReview.mailID, InvestigationReview.availableMail(state),
+              LumaMailCatalog.visible(state).contains(where: { $0.id == id && $0.kind == "inbox" }) else { return }
+        if state.flags.insert(InvestigationReview.read).inserted { save() }
+    }
+    func setInvestigationReviewChoice(_ id: String, value: Int) {
+        guard InvestigationReview.ready(state), !state.flags.contains(InvestigationReview.finished),
+              InvestigationReview.items.contains(where: { $0.id == id }),
+              value == -1 || InvestigationReview.classifications.indices.contains(value) else { return }
+        var c = connected
+        var choices = InvestigationReview.visibleSelection(state)
+        if value == -1 { choices.removeValue(forKey: id) } else { choices[id] = value }
+        c.investigationReviewSelection = choices
+        commitConnected(c)
+    }
+    @discardableResult
+    func completeInvestigationReview(now: Date = Date()) -> Bool {
+        guard InvestigationReview.ready(state), InvestigationReview.valid(InvestigationReview.visibleSelection(state)) else { return false }
+        if state.flags.insert(InvestigationReview.finished).inserted {
+            append(NeighborMessage(id: "local-review-followup-03", thread: Neighbor.unknown.id,
+                text: "You are being careful with what the records actually say. Keep doing that. A supported observation is not the same as an explanation.",
+                fromPlayer: false, at: now, read: false))
+            save()
+        }
+        return true
+    }
     func advanceInvestigation(now: Date = Date()) {
         guard state.everydayArchiveRevision != nil,
               state.flags.contains("phone-tutorial-finished"),
@@ -514,6 +540,16 @@ final class PhoneWorldStore: ObservableObject {
                 text:"You separated the copy from the original. Good. Keep that distinction in your notes. I still cannot tell you who made the first record.",
                 fromPlayer:false,at:now,read:false))
             save()
+        }
+        if InvestigationReview.eligible(state), !state.flags.contains(InvestigationReview.requested) {
+            var c = connected
+            if !c.mail.contains(where: { $0.id == InvestigationReview.mailID }) &&
+                !c.pendingMail.contains(where: { $0.record.id == InvestigationReview.mailID }) {
+                let due = now.addingTimeInterval(25)
+                c.pendingMail.append(.init(record: InvestigationReview.mail(at: due), dueAt: due))
+            }
+            state.flags.insert(InvestigationReview.requested)
+            commitConnected(c)
         }
     }
     func storeSnippet(_ snippet: LumaSnippet) {
@@ -599,6 +635,7 @@ final class PhoneWorldStore: ObservableObject {
         let due=c.pendingMail.filter{$0.dueAt<=now}
         guard !due.isEmpty else{return}
         for entry in due where !c.mail.contains(where:{$0.id==entry.record.id}) {
+            if entry.record.id == InvestigationReview.mailID && !InvestigationReview.availableMail(state) { continue }
             c.mail.append(entry.record)
             addActivity(.init(id: "mail-" + entry.record.id, kind: .mail, date: entry.dueAt, title: entry.record.sender, detail: entry.record.subject, targetID: entry.record.id, channel: nil, author: nil), to: &c)
         }

@@ -817,7 +817,7 @@ struct PhoneLabView: View {
                         Text(device).font(.subheadline).foregroundColor(.secondary)
                     }
                 }.padding(.vertical, 8)
-                NavigationLink { InvestigationProgressView(openBrowser: { open(.browser) }, openMessages: { open(.messages) }, openNotes: { open(.notes) }, openFiles: { open(.files) }) } label: { Label("Investigation progress", systemImage: "checklist") }
+                NavigationLink { InvestigationProgressView(openBrowser: { open(.browser) }, openMessages: { open(.messages) }, openNotes: { open(.notes) }, openFiles: { open(.files) }, openMail: { open(.mail) }) } label: { Label("Investigation progress", systemImage: "checklist") }
                 NavigationLink { LumaGameplayStatisticsView(store:saves) } label: {
                     Label("Gameplay Statistics",systemImage:"chart.bar.xaxis")
                 }

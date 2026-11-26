@@ -41,6 +41,7 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
         case .mail:
             guard let targetID else { return false }
             return (state.connectedWorld?.mail ?? []).contains { $0.id == targetID && $0.kind == "inbox" }
+                && (targetID != InvestigationReview.mailID || InvestigationReview.availableMail(state))
                 && (state.connectedWorld?.mailFolders[targetID] == nil || state.connectedWorld?.mailFolders[targetID] == "original")
         case .social:
             guard let channel, let targetID else { return false }
