@@ -34,17 +34,22 @@ struct LumaHomeLayout {
     let rowHeight:CGFloat
     let iconSize:CGFloat
     let dockIconSize:CGFloat
-    init(width:CGFloat,height:CGFloat,fiveColumns:Bool,smallIcons:Bool) {
-        let columns=fiveColumns ? 5 : 4
+    let contentHeight:CGFloat
+    let needsScroll:Bool
+    init(width:CGFloat,height:CGFloat,fiveColumns:Bool,smallIcons:Bool,accessibleLayout:Bool=false) {
+        let columns=accessibleLayout ? 4 : (fiveColumns ? 5 : 4)
         self.columns=columns
-        showWidgets=height>=540
+        showWidgets=height>=540 && !accessibleLayout
         spacing=height>=600 ? 8 : 4
         dockHeight=height>=540 ? 86 : 72
         let gapCount:CGFloat=showWidgets ? 6 : 5
         // Header, search, optional widgets, dots, shortcuts, dock, and padding.
-        let reserved:CGFloat=44+42+(showWidgets ? 74:0)+32+44+dockHeight+16+gapCount*spacing
-        gridHeight=max(48,height-reserved)
-        let rowCount=max(1,min(3,Int(gridHeight/79)))
+        let reserved:CGFloat=44+42+(showWidgets ? 74:0)+44+44+dockHeight+16+gapCount*spacing
+        let minimumGrid:CGFloat=accessibleLayout ? 96:79
+        gridHeight=max(minimumGrid,height-reserved)
+        contentHeight=reserved+gridHeight
+        needsScroll=contentHeight>height+0.5
+        let rowCount=max(1,min(3,Int(gridHeight/minimumGrid)))
         rows=rowCount
         rowHeight=gridHeight/CGFloat(rowCount)
         let cellWidth=max(28,(width-28-CGFloat(columns-1)*4)/CGFloat(columns))

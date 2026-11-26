@@ -21,6 +21,24 @@ final class HomeLayoutTests:XCTestCase {
             }
         }
     }
+    func testCompactAndAccessibleLayoutKeepsControlsReachable() {
+        for width in [320.0,390,844] {
+            for height in [220.0,300,390,470,740] {
+                for accessible in [false,true] {
+                    let layout=LumaHomeLayout(width:width,height:height,fiveColumns:true,smallIcons:false,accessibleLayout:accessible)
+                    XCTAssertGreaterThanOrEqual(layout.gridHeight,79)
+                    XCTAssertGreaterThanOrEqual(layout.rowHeight,79)
+                    XCTAssertLessThanOrEqual(layout.iconSize+21,layout.rowHeight)
+                    XCTAssertEqual(layout.needsScroll,layout.contentHeight>height+0.5)
+                    if height<=300 {XCTAssertTrue(layout.needsScroll)}
+                    if accessible {XCTAssertEqual(layout.columns,4);XCTAssertFalse(layout.showWidgets)}
+                    let apps=LumaHomeLayout.pages(columns:layout.columns,rows:layout.rows,fieldNotes:true,support:true,veil:true).flatMap{$0}.flatMap{$0.apps}+LumaHomeLayout.dock
+                    XCTAssertEqual(Set(apps),Set(LabApp.allCases))
+                    XCTAssertEqual(apps.count,Set(apps).count)
+                }
+            }
+        }
+    }
     func testPersonalFoldersAndToolPage() {
         let pages=LumaHomeLayout.pages(columns:4,rows:2,fieldNotes:true)
         XCTAssertEqual(pages.count,2)

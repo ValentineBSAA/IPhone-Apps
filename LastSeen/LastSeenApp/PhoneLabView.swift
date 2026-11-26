@@ -25,6 +25,7 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.lab.lockWallpaper") private var lockWallpaper = -1
     @AppStorage("lastseen.lab.wallpaperBlur") private var wallpaperBlur = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var locked: Bool
     init(startUnlocked: Bool = false, uiFixture: Bool = false) {
         _locked = State(initialValue: !startUnlocked)
@@ -743,10 +744,11 @@ struct PhoneLabView: View {
     private var launcher: some View {
         GeometryReader { geometry in
             let layout = LumaHomeLayout(width:geometry.size.width,height:geometry.size.height,
-                                        fiveColumns:fiveColumns,smallIcons:smallIcons)
+                                        fiveColumns:fiveColumns,smallIcons:smallIcons,accessibleLayout:dynamicTypeSize.isAccessibilitySize)
             let pages = LumaHomeLayout.pages(columns:layout.columns,rows:layout.rows,fieldNotes:fieldNotesAvailable,support:supportAvailable,veil:veilAvailable)
             let selected = min(max(0,homePage),pages.count-1)
             ZStack {
+                launcherScrollIfNeeded(layout.needsScroll) {
                 VStack(spacing:layout.spacing) {
                     homeTopBar.frame(height:44)
                     homeSearch.frame(height:42)
@@ -766,13 +768,13 @@ struct PhoneLabView: View {
                             } label:{
                                 Circle().fill(.white.opacity(selected==index ? 0.98 : 0.36))
                                     .frame(width:selected==index ? 8 : 6,height:selected==index ? 8 : 6)
-                                    .frame(width:38,height:32).contentShape(Rectangle())
+                                    .frame(width:38,height:44).contentShape(Rectangle())
                             }.buttonStyle(.plain)
                                 .accessibilityLabel("Home page \(index+1) of \(pages.count)")
                                 .accessibilityIdentifier("luma.home.page.\(index)")
                                 .accessibilityAddTraits(selected==index ? .isSelected : [])
                         }
-                    }.frame(height:32)
+                    }.frame(height:44)
                     homeActions.frame(height:44)
                     HStack(spacing:6) {
                         ForEach(LumaHomeLayout.dock) { app in
@@ -794,19 +796,29 @@ struct PhoneLabView: View {
                         }
                 }
                 .padding(.horizontal,14).padding(.vertical,8)
-                .frame(maxWidth:.infinity,maxHeight:.infinity,alignment:.top)
+                .frame(maxWidth:.infinity,alignment:.top)
+                .frame(minHeight:layout.contentHeight,alignment:.top)
+                }
                 .accessibilityHidden(homeFolder != nil)
                 .allowsHitTesting(homeFolder == nil)
                 if let folder=homeFolder {
                     Color.black.opacity(0.34).ignoresSafeArea().onTapGesture { closeHomeFolder() }
                         .accessibilityHidden(true)
-                    homeFolderView(folder,width:geometry.size.width)
+                    ScrollView {
+                        homeFolderView(folder,width:geometry.size.width)
+                            .frame(maxWidth:.infinity).padding(.vertical,12)
+                    }.frame(maxHeight:geometry.size.height)
                         .transition(reduceMotion ? .opacity : .scale(scale:0.94).combined(with:.opacity))
                 }
             }.onChange(of:pages.count) { count in
                 homePage=min(homePage,max(0,count-1))
             }
         }.buttonStyle(.plain).foregroundColor(.white)
+    }
+
+    @ViewBuilder private func launcherScrollIfNeeded<Content:View>(_ needed:Bool,@ViewBuilder content:()->Content)->some View {
+        if needed {ScrollView(.vertical){content()}}
+        else {content()}
     }
 
     private var homeTopBar: some View {
@@ -923,7 +935,7 @@ struct PhoneLabView: View {
                 if labelsVisible {
                     Text(folder.rawValue).font(.system(size:11,weight:.medium)).lineLimit(1).minimumScaleFactor(0.72)
                 }
-            }.frame(maxWidth:.infinity).contentShape(Rectangle())
+            }.frame(maxWidth:.infinity,minHeight:44).contentShape(Rectangle())
         }.accessibilityLabel(folder.rawValue+" folder")
             .accessibilityIdentifier("luma.folder."+folder.id)
     }
@@ -994,8 +1006,10 @@ struct PhoneLabView: View {
                 if labelsVisible {
                     Text(app.rawValue).font(.system(size:11,weight:.medium)).lineLimit(1).minimumScaleFactor(0.7)
                 }
-            }.frame(maxWidth:.infinity).contentShape(Rectangle())
-        }.buttonStyle(.plain).accessibilityLabel(app.rawValue).accessibilityIdentifier("luma.app."+app.rawValue)
+            }.frame(maxWidth:.infinity,minHeight:44).contentShape(Rectangle())
+        }.buttonStyle(.plain).accessibilityLabel(app.rawValue)
+            .accessibilityValue(tweak("quietbadges") ? "" : String(app == .messages ? unread : availableActivity.filter{$0.appTitle==app.rawValue}.count)+" notifications")
+            .accessibilityIdentifier("luma.app."+app.rawValue)
     }
 
     private var controls: some View {
@@ -1223,7 +1237,7 @@ struct PhoneLabView: View {
                             Text(wifi ? "On" : "Off").font(.caption)
                         }.frame(maxWidth: .infinity, alignment: .leading).padding(16)
                             .background(wifi ? Color.blue.opacity(0.65) : Color.gray.opacity(0.18), in: RoundedRectangle(cornerRadius: 20))
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(.plain).accessibilityLabel("Simulated Wi-Fi").accessibilityValue(wifi ? "On":"Off")
                     Button { hideLockPreviews.toggle() } label: {
                         VStack(alignment: .leading, spacing: 14) {
                             Image(systemName: effectiveLockPreviewsHidden ? "lock.fill" : "bell.fill").font(.title)
@@ -1233,10 +1247,15 @@ struct PhoneLabView: View {
                         }.frame(maxWidth: .infinity, alignment: .leading).padding(16)
                             .background(Color.white.opacity(0.09), in: RoundedRectangle(cornerRadius: 20))
                     }.buttonStyle(.plain)
+                        .disabled(biometricUnlock || tweak("privatepreview"))
+                        .accessibilityLabel("Lock screen previews")
+                        .accessibilityValue(effectiveLockPreviewsHidden ? "Hidden":"Visible")
+                        .accessibilityHint(biometricUnlock || tweak("privatepreview") ? "Protected by current security settings":"Toggle message previews")
                 }
                 VStack(alignment: .leading, spacing: 12) {
                     Label("Brightness", systemImage: "sun.max").font(.headline)
                     Slider(value: $brightness, in: 0.35...1)
+                        .accessibilityLabel("Simulated brightness")
                 }.padding(17).lumaSurface()
                 Button { panel = nil; open(.assistant) } label: { Label("Luma Assistant", systemImage: "waveform.circle.fill").frame(maxWidth: .infinity, alignment: .leading).padding(14).lumaSurface() }.buttonStyle(.plain)
                 if utilityActive(.quickpulse) && utilityShortcuts {
@@ -1258,7 +1277,7 @@ struct PhoneLabView: View {
         List {
             Section {
                 TextField("Search apps, messages, notes and files", text: $searchQuery)
-                    .autocorrectionDisabled()
+                    .autocorrectionDisabled().submitLabel(.search)
             }
             let q = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
             if q.isEmpty {
@@ -1288,11 +1307,13 @@ struct PhoneLabView: View {
                     }
                 }
             }
-        }.listStyle(.insetGrouped)
+        }.listStyle(.insetGrouped).scrollDismissesKeyboard(.interactively)
     }
 
     private func openSearchResult(_ result: PhoneSearchResult) {
-        guard let app = LabApp(rawValue: result.destination) else { return }
+        guard phase == .active,!locked,!checkpointReboot,
+              let app=LabApp(rawValue:result.destination),appAvailable(app),
+              PhonePublicSearch.results(query:searchQuery.trimmingCharacters(in:.whitespacesAndNewlines),world:world.state,documents:PhonePublicFiles.available(in:world.state)).contains(where:{$0.id==result.id}) else{return}
         panel = nil
         open(app)
         if let detail = result.detail {
