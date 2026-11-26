@@ -100,7 +100,7 @@ struct ImageInterpretationPreview:View {
                             p.addLine(to:CGPoint(x:x+13,y:y+8))
                             p.move(to:CGPoint(x:x-7,y:y+8));p.addLine(to:CGPoint(x:x+7,y:y+8))
                         case .interruptedBars:
-                            for dy in [-9.0,0,9] {
+                            for dy in [CGFloat(-9),CGFloat(0),CGFloat(9)] {
                                 p.move(to:CGPoint(x:x-14,y:y+dy));p.addLine(to:CGPoint(x:x-3,y:y+dy))
                                 p.move(to:CGPoint(x:x+4,y:y+dy));p.addLine(to:CGPoint(x:x+13,y:y+dy))
                             }

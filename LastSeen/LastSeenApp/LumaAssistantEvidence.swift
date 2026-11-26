@@ -85,11 +85,14 @@ enum LumaAssistantEvidence {
         }
         return matches.count == 1 ? matches[0] : nil
     }
-    static func response(_ raw:String,record:Record) -> String {
+    static func response(_ raw:String,record:Record,visual:LumaImageAnalysisReport? = nil) -> String {
         let words = LumaAssistantConversation.words(raw)
         let identity = !words.isDisjoint(with:["identity","sender","who","behind","whereabouts","location"])
         if record.kind == .image {
             if identity { return "I cannot identify the photographer or establish Nora's whereabouts from this reference. "+record.excerpts.joined(separator:" ") }
+            let scan=visual.flatMap { $0.valid && record.id=="image:"+$0.asset ? $0.description:nil }
+            let wantsVisual = !words.isDisjoint(with:["analyze","analysis","see","showing","shows","brightness","dark","light","scan","object","objects","scene","visible","picture","image","photo","photograph","detail","details","what"])
+            if wantsVisual,let scan {return scan+" "+record.excerpts.joined(separator:" ")+" What would you like to compare?"}
             return record.excerpts.joined(separator:" ")+" What detail in the image would you like to compare?"
         }
         if identity {

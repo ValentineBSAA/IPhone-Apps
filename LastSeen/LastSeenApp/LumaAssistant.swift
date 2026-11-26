@@ -83,6 +83,11 @@ struct LumaAssistantView: View {
     @AppStorage("lastseen.lab.messageSound") private var sound = true
     @State private var input = ""
     @State private var evidenceID: String?
+    @State private var imageScan:Task<Void,Never>?
+    @State private var imageScanID=UUID()
+    @State private var imageReport:LumaImageAnalysisReport?
+    @State private var imageScanNotice=""
+    @AppStorage("lastseen.veil.security") private var imageSecurity="Standard"
     @State private var showEvidence = false
     @State private var evidenceSearch = ""
     @State private var conversationTopic: LumaConversationTopic?
@@ -109,17 +114,43 @@ struct LumaAssistantView: View {
         recollectionCount = session?.recollectionCount ?? 0
         answer = .init(text:LumaAssistantSession.resumePrompt(session,world:world),clipID:"conversation")
     }
+    private func cancelImageScan() {
+        imageScan?.cancel();imageScan=nil;imageScanID=UUID()
+        imageReport=nil;imageScanNotice=""
+    }
+    private func startImageScan(_ recordID:String) {
+        guard phase == .active,recordID==evidenceID,recordID.hasPrefix("image:") else{return}
+        let asset=String(recordID.dropFirst(6))
+        guard LumaImageAnalysis.permitted(asset,world:context().world,security:imageSecurity) else{return}
+        cancelImageScan();stopAudio()
+        interpretation?.cancel();interpretation=nil;requestID=UUID()
+        let id=UUID();imageScanID=id
+        imageScan=Task { @MainActor in
+            let result=await LumaImageAnalysis.scan(asset,world:context().world,security:imageSecurity)
+            guard !Task.isCancelled,imageScanID==id,phase == .active,evidenceID==recordID else{return}
+            imageScan=nil
+            guard let result=LumaImageAnalysis.verified(result,recordID:recordID,world:context().world,security:imageSecurity),
+                  let record=LumaAssistantEvidence.selected(recordID,in:context().world) else {
+                imageScanNotice="The original could not be analyzed, or is no longer available. You can still discuss the record."
+                return
+            }
+            imageReport=result
+            accept("Analyze the original image on this device.",.init(topic:.pictures,answer:.init(text:LumaAssistantEvidence.response("Analyze the original image",record:record,visual:result),clipID:"conversation")))
+        }
+    }
     private func receiveImageHandoff() {
         guard let asset=takeImageHandoff(),
               RecoveredImageAnalysis.record(asset,in:context().world) != nil,
               let record=LumaAssistantEvidence.selected("image:"+asset,in:context().world) else{return}
         stopAudio()
+        cancelImageScan()
         interpretation?.cancel();interpretation=nil;requestID=UUID()
         evidenceID=record.id
         accept("Please analyze this image.",.init(topic:.pictures,answer:.init(text:LumaAssistantEvidence.response("Please analyze this image.",record:record),clipID:"conversation")))
     }
     private func clearSession() {
         stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID()
+        cancelImageScan()
         rememberSession(nil); evidenceID = nil; conversationTurns = []; conversationTopic = nil
         previousMemoryID = nil; recollectionCount = 0
         answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation")
@@ -132,16 +163,17 @@ struct LumaAssistantView: View {
         interpretation?.cancel(); interpretation = nil
         if LumaAssistantTrust.acknowledgesBoundaries(text) { acknowledgeBoundaries() }
         let id = UUID(); requestID = id
+        if imageScan != nil {cancelImageScan()}
         let current = context()
         let previous = conversationTopic
         let known = LumaAssistantConversation.topic(text,previous:previous)
-        let initial = LumaAssistantConversation.reply(text,context:current,previous:previous,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount,evidenceID:evidenceID)
+        let initial = LumaAssistantConversation.reply(text,context:current,previous:previous,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount,evidenceID:evidenceID,visualReport:imageReport,imageSecurity:imageSecurity)
         input = ""; focused = false
         if known == nil, initial.topic == .general, initial.answer.clipID == "conversation", interpretOnDevice, LumaIntentInterpreter.available {
             interpretation = Task { @MainActor in
                 let inferred = await LumaIntentInterpreter.interpret(text,previous:previous)
                 guard !Task.isCancelled, requestID == id, phase == .active else { return }
-                accept(text,LumaAssistantConversation.reply(text,context:context(),previous:previous,interpreted:inferred,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount,evidenceID:evidenceID))
+                accept(text,LumaAssistantConversation.reply(text,context:context(),previous:previous,interpreted:inferred,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount,evidenceID:evidenceID,visualReport:imageReport,imageSecurity:imageSecurity))
                 interpretation = nil
             }
         } else { accept(text,initial) }
@@ -208,8 +240,26 @@ struct LumaAssistantView: View {
                     HStack {
                         Label(source.title,systemImage:"doc.text.magnifyingglass").font(.caption).lineLimit(2)
                         Spacer()
-                        Button { evidenceID = nil } label: { Image(systemName:"xmark.circle.fill").accessibilityLabel("Clear selected record") }
+                        Button { cancelImageScan(); evidenceID = nil } label: { Image(systemName:"xmark.circle.fill").accessibilityLabel("Clear selected record") }
                     }.padding(10).lumaSurface(radius:12)
+                    if source.kind == .image {
+                        let asset=String(source.id.dropFirst(6))
+                        if LumaImageAnalysis.permitted(asset,world:context().world,security:imageSecurity) {
+                            if imageScan != nil {
+                                ProgressView("Analyzing original locally")
+                                Button("Cancel analysis"){cancelImageScan()}.font(.caption)
+                            } else {
+                                Button { startImageScan(source.id) } label: {
+                                    Label("Analyze original on this device",systemImage:"viewfinder")
+                                }.buttonStyle(.borderedProminent)
+                            }
+                            Text("Optional scan of original pixels only. No image leaves the device; reconstructed layers are excluded.").font(.caption).foregroundColor(.secondary)
+                            if let report=LumaImageAnalysis.verified(imageReport,recordID:source.id,world:context().world,security:imageSecurity) {
+                                DisclosureGroup("Original image scan"){Text(report.description).font(.subheadline)}
+                            }
+                        } else {Text("Image scanning is unavailable under the current security preference. Text discussion remains available.").font(.caption).foregroundColor(.secondary)}
+                        if !imageScanNotice.isEmpty {Text(imageScanNotice).font(.caption)}
+                    }
                 }
                 Button { evidenceSearch = ""; showEvidence = true } label: {
                     Label("Discuss an opened record",systemImage:"doc.text.magnifyingglass")
@@ -246,7 +296,7 @@ struct LumaAssistantView: View {
                             Button {
                                 guard LumaAssistantEvidence.selected(record.id,in:context().world) != nil else { return }
                                 interpretation?.cancel(); interpretation = nil; requestID = UUID()
-                                evidenceID = record.id; showEvidence = false
+                                cancelImageScan(); evidenceID = record.id; showEvidence = false
                             } label: { Text(record.title) }
                         }
                     }.navigationTitle("Opened records").searchable(text:$evidenceSearch)
@@ -254,7 +304,13 @@ struct LumaAssistantView: View {
                 }
             }
             .onAppear { resumeSession(); receiveImageHandoff(); if !reduceMotion { withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { glow = true } } }
-            .onChange(of: phase) { if $0 != .active { stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID(); conversationTurns = []; conversationTopic = nil; previousMemoryID = nil; recollectionCount = 0; answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation") } else { resumeSession() } }
+            .onChange(of: phase) { if $0 != .active { stopAudio(); cancelImageScan(); evidenceID=nil; interpretation?.cancel(); interpretation = nil; requestID = UUID(); conversationTurns = []; conversationTopic = nil; previousMemoryID = nil; recollectionCount = 0; answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation") } else { resumeSession() } }
+            .onChange(of:imageSecurity) { _ in
+                if let id=evidenceID,id.hasPrefix("image:") {
+                    cancelImageScan();stopAudio()
+                    conversationTurns=[];answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation")
+                }
+            }
             .onChange(of: sound) { if !$0 { stopAudio() } }
             .onChange(of: spokenResponses) { if !$0 { stopAudio() } }
             .onReceive(timer) { now in
@@ -266,6 +322,6 @@ struct LumaAssistantView: View {
                 if let raw = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
                    AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable { stopAudio() }
             }
-            .onDisappear { stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID(); focused = false; conversationTurns = []; conversationTopic = nil; previousMemoryID = nil; recollectionCount = 0 }
+            .onDisappear { stopAudio(); cancelImageScan(); evidenceID=nil; interpretation?.cancel(); interpretation = nil; requestID = UUID(); focused = false; conversationTurns = []; conversationTopic = nil; previousMemoryID = nil; recollectionCount = 0 }
     }
 }
