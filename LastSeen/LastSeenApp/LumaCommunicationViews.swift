@@ -213,8 +213,7 @@ struct LumaContactsDirectory: View {
     @State private var search = ""
     var messagePicker = false
     private var people: [Neighbor] {
-        Neighbor.visible(in: world.state).filter { $0 != .unknown && (search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) || $0.subtitle.localizedCaseInsensitiveContains(search)) }
-            .sorted { $0.name < $1.name }
+        LumaPhoneDirectoryPolicy.contacts(world.state,query:search)
     }
     var body: some View {
         List {
@@ -270,24 +269,26 @@ struct LumaPhoneDirectory: View {
     @State private var tab = 0
     @State private var search = ""
     private var people: [Neighbor] {
-        Neighbor.visible(in: world.state).filter { person in
-            person != .unknown && (tab != 0 || (world.state.favoriteContacts ?? []).contains(person.id)) &&
-            (search.isEmpty || person.name.localizedCaseInsensitiveContains(search))
-        }
+        LumaPhoneDirectoryPolicy.contacts(world.state,query:search,favoritesOnly:tab==0)
     }
     var body: some View {
         VStack(spacing: 0) {
             if tab == 3 { keypad } else {
             List {
                 if tab == 1 {
-                    if (world.state.callHistory ?? []).isEmpty { Text("No recent calls").foregroundColor(.secondary) }
-                    ForEach((world.state.callHistory ?? []).filter { search.isEmpty || $0.contact.name.localizedCaseInsensitiveContains(search) }) { call in
+                    let recents=LumaPhoneDirectoryPolicy.recents(world.state,query:search)
+                    if recents.isEmpty { Text(search.isEmpty ? "No recent calls":"No matching calls").foregroundColor(.secondary) }
+                    ForEach(recents) { call in
                         NavigationLink(value: LumaCallRoute(neighbor: call.contact)) {
                             HStack {
                                 LumaContactRow(person: call.contact)
                                 VStack(alignment: .trailing) {
-                                    Text(call.date, style: .relative).font(.caption)
-                                    Text("Outgoing").font(.caption2)
+                                    if Calendar.current.isDateInToday(call.date) {
+                                        Text(call.date,style:.time).font(.caption)
+                                    } else {
+                                        Text(call.date,style:.date).font(.caption)
+                                    }
+                                    Text(call.outcomeTitle).font(.caption2)
                                 }.foregroundColor(.secondary)
                             }
                         }
@@ -296,6 +297,13 @@ struct LumaPhoneDirectory: View {
                     if people.isEmpty { Text(tab == 0 ? "Add favorites from Contacts" : "No contacts found").foregroundColor(.secondary) }
                     ForEach(people) { person in
                         NavigationLink(value: LumaCallRoute(neighbor: person)) { LumaContactRow(person: person) }
+                            .swipeActions(edge:.trailing,allowsFullSwipe:false) {
+                                Button {
+                                    world.toggleFavoriteContact(person)
+                                } label:{
+                                    Label((world.state.favoriteContacts ?? []).contains(person.id) ? "Remove favorite":"Favorite",systemImage:"star")
+                                }.tint(.orange)
+                            }
                     }
                 }
             }.listStyle(.plain).scrollContentBackground(.hidden)
@@ -326,8 +334,12 @@ struct LumaPhoneDirectory: View {
                         }.buttonStyle(.plain)
                     }
                 }.frame(maxWidth: 310)
-                Button("Delete digit") { if !dialDigits.isEmpty { dialDigits.removeLast() } }.disabled(dialDigits.isEmpty)
-                Text("Fictional keypad only. No real number is dialed.").font(.caption).foregroundColor(.secondary)
+                HStack {
+                    Button("Delete digit") { if !dialDigits.isEmpty { dialDigits.removeLast() } }.disabled(dialDigits.isEmpty)
+                    Spacer()
+                    Button("Clear") {dialDigits=""}.disabled(dialDigits.isEmpty)
+                }.frame(maxWidth:310)
+                Text("Fictional keypad only. Use Contacts to place a simulated call. No real number is dialed.").font(.caption).foregroundColor(.secondary)
             }.padding()
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -348,8 +360,15 @@ struct LumaCallView: View {
     @Environment(\.scenePhase) private var phase
     @State private var status = "Ready to call"
     @State private var calling = false
+    @State private var attemptID:UUID?
+    private var available:Bool {LumaPhoneDirectoryPolicy.canCall(neighbor,in:world.state)}
+    private func finish(_ outcome:LumaCallRecord.Outcome) {
+        if let id=attemptID {world.finishCallAttempt(id,outcome:outcome)}
+        attemptID=nil;calling=false;status=outcome.title
+    }
     var body: some View {
         VStack(spacing: 24) {
+            if available && phase == .active {
             Spacer()
             NeighborAvatar(neighbor: neighbor, size: 132)
             Text(neighbor.name).font(.largeTitle.weight(.semibold))
@@ -360,8 +379,10 @@ struct LumaCallView: View {
                     Label("Message", systemImage: "message.fill").frame(minHeight: 44)
                 }
                 Button {
-                    if calling { calling = false; status = "Call ended" }
-                    else { world.recordCallAttempt(neighbor); status = "Calling…"; calling = true }
+                    if calling {finish(.ended)}
+                    else if phase == .active,let id=world.recordCallAttempt(neighbor) {
+                        attemptID=id;status="Calling…";calling=true
+                    }
                 } label: {
                     Image(systemName: calling ? "phone.down.fill" : "phone.fill").font(.title2)
                         .frame(width: 68, height: 68)
@@ -371,6 +392,7 @@ struct LumaCallView: View {
             }
             Text("Fictional calls only. No real dialing or connected voice call.").font(.caption)
                 .foregroundColor(.secondary).multilineTextAlignment(.center)
+            } else {Text("Contact unavailable.").foregroundColor(.secondary)}
         }.padding(24).frame(maxWidth: .infinity)
             .background(LumaDesign.background.ignoresSafeArea())
             .navigationTitle("Call").navigationBarTitleDisplayMode(.inline)
@@ -378,8 +400,15 @@ struct LumaCallView: View {
                 guard calling else { return }
                 do { try await Task.sleep(nanoseconds: 5_000_000_000) } catch { return }
                 guard !Task.isCancelled, calling else { return }
-                calling = false; status = "No answer"
+                finish(.noAnswer)
             }
-            .onChange(of: phase) { if $0 != .active && calling { calling = false; status = "Call ended" } }
+            .onChange(of:phase) {if $0 != .active && calling {finish(.ended)}}
+            .onChange(of:available) {if !$0 && calling {attemptID=nil;calling=false;status="Contact unavailable."}}
+            .onChange(of:world.state.callHistory) {records in
+                if let id=attemptID,!(records ?? []).contains(where:{$0.id==id}) {
+                    attemptID=nil;calling=false;status="Ready to call"
+                }
+            }
+            .onDisappear {if calling {finish(.ended)}}
     }
 }

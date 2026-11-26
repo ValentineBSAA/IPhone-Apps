@@ -2,6 +2,33 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class ContextualConversationTests: XCTestCase {
+    func testFictionalCallOutcomesAndContactAvailability() throws {
+        var initial=RestoredPhoneBackup.snapshot()
+        initial.threads.removeValue(forKey:Neighbor.unknown.id)
+        initial.threads.removeValue(forKey:Neighbor.lily.id)
+        let w=PhoneWorldStore(initial:initial,persistToDisk:false)
+        XCTAssertNil(w.recordCallAttempt(.unknown))
+        XCTAssertNil(w.recordCallAttempt(.lily))
+        w.toggleFavoriteContact(.unknown)
+        XCTAssertFalse((w.state.favoriteContacts ?? []).contains(Neighbor.unknown.id))
+        let now=Date(timeIntervalSince1970:1_800_000_000)
+        let id=try XCTUnwrap(w.recordCallAttempt(.maya,now:now))
+        w.finishCallAttempt(id,outcome:.noAnswer)
+        w.finishCallAttempt(id,outcome:.ended)
+        XCTAssertEqual(LumaPhoneDirectoryPolicy.recents(w.state).first?.outcome,.noAnswer)
+        XCTAssertTrue(LumaPhoneDirectoryPolicy.recents(w.state,query:"no-match-7").isEmpty)
+        XCTAssertEqual(LumaPhoneDirectoryPolicy.recents(w.state,query:" Maya ").first?.id,id)
+        w.toggleFavoriteContact(.maya)
+        XCTAssertTrue(LumaPhoneDirectoryPolicy.contacts(w.state,favoritesOnly:true).contains(.maya))
+        var restored=try JSONDecoder().decode(PhoneWorld.self,from:JSONEncoder().encode(w.state))
+        XCTAssertEqual(LumaPhoneDirectoryPolicy.recents(restored).first?.outcome,.noAnswer)
+        restored.callHistory?.append(.init(id:UUID(),contact:.lily,date:now))
+        XCTAssertFalse(LumaPhoneDirectoryPolicy.recents(restored).contains{$0.contact == .lily})
+        let legacy=LumaCallRecord(id:UUID(),contact:.maya,date:now)
+        XCTAssertEqual(legacy.outcomeTitle,"Outgoing attempt")
+        XCTAssertNil(try JSONDecoder().decode(LumaCallRecord.self,from:JSONEncoder().encode(legacy)).outcome)
+    }
+
     func testDirectorySearchUsesMatchingMessageAndProtectsUnopenedArchive() {
         var state=RestoredPhoneBackup.snapshot()
         let now=Date(timeIntervalSince1970:1_800_000_000)

@@ -83,9 +83,34 @@ struct PhoneEvent: Codable, Identifiable, Equatable {
 }
 
 struct LumaCallRecord: Codable, Identifiable, Equatable {
+    enum Outcome:String,Codable {
+        case noAnswer, ended
+        var title:String {self == .noAnswer ? "No answer":"Call ended"}
+    }
     let id: UUID
     let contact: Neighbor
     let date: Date
+    // Optional for compatibility with existing historical attempts.
+    var outcome:Outcome? = nil
+    var outcomeTitle:String {outcome?.title ?? "Outgoing attempt"}
+}
+enum LumaPhoneDirectoryPolicy {
+    static func canCall(_ contact:Neighbor,in world:PhoneWorld)->Bool {
+        contact != .unknown && Neighbor.visible(in:world).contains(contact)
+    }
+    static func contacts(_ world:PhoneWorld,query:String="",favoritesOnly:Bool=false)->[Neighbor] {
+        let q=query.trimmingCharacters(in:.whitespacesAndNewlines)
+        return Neighbor.visible(in:world).filter {
+            canCall($0,in:world) &&
+            (!favoritesOnly || (world.favoriteContacts ?? []).contains($0.id)) &&
+            (q.isEmpty || $0.name.localizedCaseInsensitiveContains(q) || $0.subtitle.localizedCaseInsensitiveContains(q))
+        }.sorted{$0.name < $1.name}
+    }
+    static func recents(_ world:PhoneWorld,query:String="")->[LumaCallRecord] {
+        let allowed=Set(contacts(world,query:query))
+        return (world.callHistory ?? []).filter{allowed.contains($0.contact)}
+            .sorted{$0.date == $1.date ? $0.id.uuidString < $1.id.uuidString : $0.date > $1.date}
+    }
 }
 
 struct PhoneWorld: Codable {
@@ -680,14 +705,29 @@ final class PhoneWorldStore: ObservableObject {
         state.pinnedSnippet = id; save()
     }
 
-    func recordCallAttempt(_ contact: Neighbor, now: Date = Date()) {
+    @discardableResult
+    func recordCallAttempt(_ contact: Neighbor, now: Date = Date()) -> UUID? {
+        guard LumaPhoneDirectoryPolicy.canCall(contact,in:state) else{return nil}
+        let id=UUID()
         var calls = state.callHistory ?? []
-        calls.insert(LumaCallRecord(id: UUID(), contact: contact, date: now), at: 0)
+        calls.insert(LumaCallRecord(id:id,contact:contact,date:now), at:0)
         state.callHistory = Array(calls.prefix(100))
+        save()
+        return id
+    }
+
+    func finishCallAttempt(_ id:UUID,outcome:LumaCallRecord.Outcome) {
+        guard var calls=state.callHistory,
+              let index=calls.firstIndex(where:{$0.id==id}),
+              calls[index].outcome==nil,
+              LumaPhoneDirectoryPolicy.canCall(calls[index].contact,in:state) else{return}
+        calls[index].outcome=outcome
+        state.callHistory=calls
         save()
     }
 
     func toggleFavoriteContact(_ contact: Neighbor) {
+        guard LumaPhoneDirectoryPolicy.canCall(contact,in:state) else{return}
         var ids = state.favoriteContacts ?? []
         if ids.contains(contact.id) { ids.removeAll { $0 == contact.id } }
         else { ids.append(contact.id) }
