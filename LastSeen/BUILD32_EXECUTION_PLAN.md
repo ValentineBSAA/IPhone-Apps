@@ -702,3 +702,7 @@ Master checklist stays truthful: approved artwork is not integrated, initial sou
 
 ## B32 tranche 161: visible containment acceptance fixture
 - [x] Added debug/simulator-only incident fixture and stable accessibility IDs; UI test exercises navigation, wrong choices, incorrect recovery order and successful recovery. No player-facing mechanic added; existing full-story unit test covers actual trigger. Tests written, not run. Commit skips CI so in-flight native run 45770243683 is not cancelled. Subsequent exact-revision native validation must include the new UI test.
+
+## B32 tranche 164: simulator test compiler fix
+- Native run 45770243683 at c79b98ed passed release app compilation and device resource/compatibility verification. Failed compiling simulator test target, before test execution, on CharacterCheckInTests.swift:83 Swift exclusive access. Split the read/rebase and assignment into separate statements, retaining the original assertions. No runtime gameplay change or test removal.
+- New validation-only push includes Passes 161–162 containment UI coverage. No IPA packaging or voice approval.

@@ -80,7 +80,8 @@ import XCTest
         XCTAssertFalse(store.messages(.maya).contains{$0.id=="b32-maya-check-in"})
         let encoded=try JSONEncoder().encode(store.state)
         var restored=try JSONDecoder().decode(PhoneWorld.self,from:encoded)
-        restored.connectedWorld?.characterCheckIns=CharacterCheckIns.rebase(restored.connectedWorld?.characterCheckIns,by:500)
+        let rebasedCheckIns=CharacterCheckIns.rebase(restored.connectedWorld?.characterCheckIns,by:500)
+        restored.connectedWorld?.characterCheckIns=rebasedCheckIns
         let resume=PhoneWorldStore(initial:restored,persistToDisk:false)
         resume.advanceCharacterCheckIns(now:now.addingTimeInterval(604))
         XCTAssertFalse(resume.messages(.maya).contains{$0.id=="b32-maya-check-in"})
