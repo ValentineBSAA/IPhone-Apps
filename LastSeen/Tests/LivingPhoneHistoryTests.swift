@@ -6,7 +6,7 @@ import XCTest
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let world = RestoredPhoneBackup.snapshot(now: now)
         let posts = LumaSocialChannel.allCases.flatMap { LumaSocialCatalog.visible($0, world: world) }
-        XCTAssertEqual(posts.count, 246)
+        XCTAssertEqual(posts.count, 258)
         XCTAssertEqual(Set(posts.map(\.id)).count, posts.count)
         XCTAssertTrue(posts.allSatisfy { $0.date < now })
         let comments = posts.flatMap { LumaSocialCatalog.comments($0.id, channel: $0.channel, world: world) }
@@ -14,8 +14,8 @@ import XCTest
         XCTAssertEqual(Set(comments.map(\.id)).count, comments.count)
         XCTAssertTrue(comments.allSatisfy { $0.date < now })
         let mail = LumaMailCatalog.visible(world)
-        XCTAssertEqual(mail.count, 37)
-        XCTAssertEqual(mail.filter { $0.kind == "sent" }.count, 14)
+        XCTAssertEqual(mail.count, 53)
+        XCTAssertEqual(mail.filter { $0.kind == "sent" }.count, 22)
         XCTAssertTrue(mail.allSatisfy { $0.date < now })
         let decoded = try JSONDecoder().decode(PhoneWorld.self, from: JSONEncoder().encode(world))
         XCTAssertEqual(LumaMailCatalog.visible(decoded), mail)

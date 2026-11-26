@@ -37,7 +37,7 @@ enum LivingPhoneHistory {
             item("readinggroup", .commonGround, "Maple Street Bookshop", "maplebooks", "Thank you to everyone who has joined a reading group lately. Suggestions for future genres are welcome.", nil, 3),
             item("cafe-work", .commonGround, "Nora Bennett", "nora.b", "thank you to the cafe staff for putting up with my laptop and the world's slowest coffee drinking.", "Nora_Profile", 7),
             item("sketch", .commonGround, "Tessa Reed", "tessa.r", "For anyone learning digital art: the little thumbnail sketch is allowed to be ugly. It is doing its job.", "Contact_B27_07", 22)
-        ]
+        ] + PhoneYearsArchive.posts(anchor:anchor)
     }
     static func comments(for post: LumaSocialPost) -> [LumaSocialComment] {
         let entries: [(String, String, String)] = [
@@ -106,6 +106,6 @@ enum LivingPhoneHistory {
             pair("b33-palette", .tessa, 12, "Palette decision notes", "I left myself a short voice reminder about the lilac palette. Can we compare the original exports on the same phone? Check small labels, disabled controls and both appearances before we decide.", "Yes. I’ll bring the originals and a contrast sheet. Pearl still looks good but it needs a darker text treatment. Let’s record the decision in one place."),
             pair("b33-weekend", .maya, 9, "Bookshop and a real weekend", "I’m trying to get out of the studio for more than ten minutes. Coffee and the bookshop if you have time?", "Absolutely. I’ll find the book I promised you. No release dates, no laptop, and definitely no meeting disguised as coffee."),
             pair("profile", .adrian, 3, "Public profile", "I've refreshed my profile to explain what we do. The studio page is for progress; my page can stay a mix of work and life.", "Makes sense. I'll point people to the studio page. Let's keep internal documents where they belong.")
-        ].flatMap { $0 }
+        ].flatMap { $0 } + PhoneYearsArchive.mail(anchor:anchor)
     }
 }

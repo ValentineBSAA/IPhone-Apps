@@ -51,7 +51,7 @@ enum LumaWebCatalog {
         .init(id:"studio-projects",site:"Blue Hour Interactive",title:"Current projects",address:"bluehour.test/projects",symbol:"gamecontroller.fill",sections:["A work-in-progress psychological horror prototype explores memory, familiar places and unreliable observations.","Development material is not a statement of real events. The team keeps experimental references separate from ordinary project notes."],links:["studio","studio-notes","studio-reference-gallery"],images:["Recovered_B27_27","Recovered_B27_29"]),
         .init(id:"studio-notes",site:"Blue Hour Interactive",title:"Development journal",address:"bluehour.test/journal",symbol:"doc.text.fill",sections:["The current build review focuses on accessibility, persistence and visual consistency.","Some older reference records are missing from the current index. A recovered local index may be available after the phone's restoration investigation."],links:["studio","archive","studio-workbench-gallery"],images:["Recovered_B27_26"]),
         .init(id:"archive",site:"Recovered archive",title:"Local archive index",address:"archive.test",symbol:"archivebox.fill",sections:["This is a cached, incomplete collection. Source claims have not been verified.","Some records may be inaccurate, altered or fictional. Compare them with material already available on the phone."],links:["archive-records","studio-notes","veil-guide"],gate:"investigation.contact.received"),
-        .init(id:"archive-records",site:"Recovered archive",title:"Recovered attachments",address:"archive.test/records",symbol:"photo.stack",sections:["Local recovered records. Dates and provenance may be unreliable.","Choose whether to reveal individual images. The text-only inspection option records the same discovery."],links:["archive","archive-review"],gate:"web.visited.archive",images:["Recovered_B27_02","Recovered_B27_03","Recovered_B27_13","Recovered_B27_18"])
+        .init(id:"archive-records",site:"Recovered archive",title:"Recovered attachments",address:"archive.test/records",symbol:"photo.stack",sections:["Local recovered records. Dates and provenance may be unreliable.","Review the record metadata here. Original restricted material is not served by this browser."],links:["archive","archive-review"],gate:"web.visited.archive",images:["Recovered_B27_02","Recovered_B27_03","Recovered_B27_13","Recovered_B27_18"])
         , .init(id:"books-reservations",site:"Maple Street Bookshop",title:"Reservations & collections",address:"maplebooks.test/reservations",symbol:"bookmark",sections:["Pick up reserved books at the front counter. Bring the confirmation from your order.","Special orders are collected separately from reading-club stock. The shop does not publish customer details."],links:["books","books-events","repo-leaf"])
         , .init(id:"cafe-journal",site:"Maple Cafe",title:"From the counter",address:"maplecafe.test/journal",symbol:"newspaper",sections:["Our window seats are popular with people who bring laptops. Please keep the aisle clear when the reading group arrives.","This week's staff pick: a warm cinnamon pastry with a small coffee. Bring a reusable cup if you have one."],links:["cafe-menu","books-events","repo-chronicle"])
         , .init(id:"studio-news",site:"Blue Hour Interactive",title:"Studio notebook",address:"bluehour.test/news",symbol:"newspaper",sections:["Development update · The team is separating the playable prototype from its reference library. Early builds may contain temporary names and duplicate images.","Production note · The review ledger uses two labels: capture time for the original record and import time for the copy. An imported image is not necessarily a new photograph.","Technical note · The public journal remains the stable reference. Internal review material is available only through the recovered index."],links:["studio","studio-notes","repo-postbox"])
@@ -69,10 +69,10 @@ enum LumaWebCatalog {
         .init(id:"repo-chronicle",site:"Chronicle Works",title:"Local tools",address:"maplecafe.test/timeline-tools",symbol:"clock",sections:["Local timeline and activity display.","Relay repository: https://chronicle-tools.example/","A local index for Post Timestamp. Add this address in Relay if you want the optional tool."],links:["cafe-journal"],gate:"web.visited.cafe-journal"),
         .init(id:"veil-guide",site:"Recovered archive",title:"Local anonymous browser index",address:"archive.test/local-browser",symbol:"eye.slash",sections:["The recovered catalog references a bundled local browser called VEIL. Its package becomes available in Relay after this page is reviewed. It is a local simulation, not a real network service."],links:["archive"],gate:"web.visited.archive"),
         .init(id:"repo-bench",site:"Benchcraft",title:"Local tools",address:"archive.test/bench-tools",symbol:"desktopcomputer",sections:["Repair console extensions.","Relay repository: https://benchcraft-tools.example/","A local index for Diagnostics Strip. Add this address in Relay if you want the optional tool."],links:["archive-ledger"],gate:"web.visited.archive-ledger"),
-        .init(id:"studio-reference-gallery",site:"Blue Hour Interactive",title:"Lighting reference gallery",address:"bluehour.test/projects/lighting",symbol:"photo.stack",sections:["Prototype mood references: deteriorated interiors, artificial lighting and layered screen imagery. These are development references, not authenticated photographs of an actual event.","Inspect each original or its description, then compare the untouched image with any optional reconstruction."],links:["studio-projects","studio-news","studio-environment-gallery","studio-environment-variants"],gate:"web.visited.studio-projects",images:["Recovered_B27_01","Recovered_B27_14"]),
+        .init(id:"studio-reference-gallery",site:"Blue Hour Interactive",title:"Lighting reference gallery",address:"bluehour.test/projects/lighting",symbol:"photo.stack",sections:["Prototype mood references: deteriorated interiors, artificial lighting and layered screen imagery. These are development references, not authenticated photographs of an actual event.","The public index retains reference labels and written production notes."],links:["studio-projects","studio-news","studio-environment-gallery","studio-environment-variants"],gate:"web.visited.studio-projects",images:["Recovered_B27_01","Recovered_B27_14"]),
         .init(id:"archive-copy-pair",site:"Recovered archive",title:"Unsorted comparison copies",address:"archive.test/ledger/copies",symbol:"rectangle.split.2x1",sections:["Two unsorted exports were retained beside the provenance ledger. Their original capture dates, order and location are unverified.","Inspect both copies and compare recurring visible details. A small change within a familiar-looking frame is not independent proof of a new event."],links:["archive-ledger","studio-news"],gate:"web.visited.archive-ledger",images:["Recovered_B27_23","Recovered_B27_25"]),
         .init(id:"studio-workbench-gallery",site:"Blue Hour Interactive",title:"Workbench review exports",address:"bluehour.test/journal/workbench",symbol:"desktopcomputer",sections:["Saved development reference exports show the studio workbench and images on its displays. The source is a local project collection, not an authenticated record of the owner's whereabouts.","Compare the visible studio markings and screen content. Numbers embedded in the reference are part of the image, not an independently established capture time."],links:["studio-notes","studio-reference-gallery"],gate:"web.visited.studio-notes",images:["Recovered_B27_07","Recovered_B27_09","Recovered_B27_22"]),
-        .init(id:"studio-environment-gallery",site:"Blue Hour Interactive",title:"Environment study · interiors",address:"bluehour.test/projects/interiors",symbol:"lightbulb",sections:["Horror prototype environment studies. These development references contain unsettling imagery, distressed interiors and uncertain silhouettes. Reveal only if you want to inspect them.","Compare the original lighting, furnishings and framing. The studies are not evidence that an event occurred in the depicted space."],links:["studio-reference-gallery","studio-environment-variants"],gate:"web.visited.studio-reference-gallery",images:["Recovered_B27_10","Recovered_B27_11","Recovered_B27_12","Recovered_B27_15"]),
+        .init(id:"studio-environment-gallery",site:"Blue Hour Interactive",title:"Environment study · interiors",address:"bluehour.test/projects/interiors",symbol:"lightbulb",sections:["Production notes on environment composition, lighting and readability. The public portfolio contains written project context rather than restricted reference media.","The team compares lighting, readable silhouettes and framing during ordinary production reviews."],links:["studio-reference-gallery","studio-environment-variants"],gate:"web.visited.studio-reference-gallery",images:["Recovered_B27_10","Recovered_B27_11","Recovered_B27_12","Recovered_B27_15"]),
         .init(id:"studio-environment-variants",site:"Blue Hour Interactive",title:"Environment study · variations",address:"bluehour.test/projects/variants",symbol:"square.on.square",sections:["Additional prototype atmosphere references with different framing and lighting. No original camera or capture date is established.","The original image may already contain stylized visual artifacts. Compare it against the separately labeled synthetic analysis layer rather than treating every distortion as a new observation."],links:["studio-reference-gallery","studio-environment-gallery","studio-scene-studies"],gate:"web.visited.studio-reference-gallery",images:["Recovered_B27_16","Recovered_B27_17","Recovered_B27_19"]),
         .init(id:"studio-scene-studies",site:"Blue Hour Interactive",title:"Prototype scene and prop studies",address:"bluehour.test/projects/scenes",symbol:"film",sections:["Staged visual development references explore unease in familiar spaces. The depicted people and props are not authenticated as records of the owner's life.","Printed apartment labels, dates and handwritten notes are visible artwork elements, not corroborated addresses or events. Keep the scene studies separate from the restored correspondence."],links:["studio-environment-variants","studio-reference-gallery"],gate:"web.visited.studio-reference-gallery",images:["Recovered_B27_04","Recovered_B27_05","Recovered_B27_08","Recovered_B27_20"])
     ]
@@ -324,6 +324,12 @@ struct InvestigationProgressView: View {
     }
 }
 /// A bounded local tab snapshot, never a network destination.
+enum LumaPublicWebPhotography {
+    // Explicit ordinary illustration allowlist. No recovered or private assets.
+    static func hero(_ pageID:String)->String? {
+        ["cafe":"CommunityMedia_Coffee","cafe-menu":"CommunityMedia_Udon"][pageID]
+    }
+}
 struct LumaBrowserTab: Codable, Identifiable, Equatable {
     var id = UUID()
     var page = ""
@@ -350,9 +356,8 @@ struct LumaWebBrowser: View {
     @State private var atmosphereOwner = UUID()
     @AppStorage("lastseen.lab.messageSound") private var messageSound = true
     private func atmosphere(for id: String) -> LumaArchiveAtmosphere.Treatment? {
-        LumaArchiveAtmosphere.treatment(pageID: id, flags: world.state.flags,
-            intensity: LumaArchiveAtmosphere.Intensity(rawValue: atmosphereIntensity) ?? .off,
-            enabled: horrorEffects, reduceMotion: reduceMotion)
+        // Ordinary browser is not the horror-effects surface.
+        nil
     }
     @AppStorage("lastseen.relay.installed") private var relayInstalled=""
     @AppStorage("lastseen.relay.safeMode") private var safeMode=false
@@ -366,6 +371,11 @@ struct LumaWebBrowser: View {
     @State private var showHistory = false
     @AppStorage("lastseen.lab.browserTabs") private var tabsRaw = ""
     @State private var showTabs = false
+    @AppStorage("lastseen.lab.browserProfile") private var browserProfile = "nora"
+    @State private var showProfile = false
+    @State private var showSignOut = false
+    @State private var loadingPage = false
+    @State private var pageTransition = UUID()
     @State private var confirmClear = false
     @State private var reviewAnswer = ""
     @State private var reviewNotice = ""
@@ -471,19 +481,24 @@ struct LumaWebBrowser: View {
     var body: some View {
         VStack(spacing:0) {
             HStack {
-                Image(systemName:"magnifyingglass").foregroundColor(.secondary)
+                Image(systemName:page == nil ? "magnifyingglass" : "globe").foregroundColor(.secondary)
                 TextField("Search or enter address",text:$query).textInputAutocapitalization(.never).autocorrectionDisabled().submitLabel(.go)
                     .focused($addressFocused).onSubmit { submitAddress() }.accessibilityIdentifier("luma.browser.address")
                 if !query.isEmpty { Button { query=""; showResults() } label:{ Image(systemName:"xmark.circle.fill").accessibilityLabel("Clear address") } }
                 Button("Go") { submitAddress() }
                 Button { if let p=page { apply(p.id) } else { submitAddress() } } label:{ Image(systemName:"arrow.clockwise").accessibilityLabel("Reload page") }
+                Button {showProfile=true} label:{Image(systemName:browserProfile=="nora" ? "person.crop.circle.fill" : "person.crop.circle").font(.title2).accessibilityLabel("Browser account")}
             }.padding(12).background(.thinMaterial,in:RoundedRectangle(cornerRadius:16)).padding(10)
+            if loadingPage { ProgressView().progressViewStyle(.linear).tint(LumaDesign.accent).accessibilityLabel("Loading saved webpage") }
             ScrollView {
                 VStack(alignment:.leading,spacing:18) {
                     if let p=page {
                         websiteHeader(p)
                         if p.site == "Maple Cafe" || p.site == "Maple Street Bookshop" {
                             Label(p.site == "Maple Cafe" ? "Coffee · Food · Community" : "Books · Events · Reservations",systemImage:p.symbol).font(.subheadline).foregroundColor(.secondary)
+                        }
+                        if let photo = LumaPublicWebPhotography.hero(p.id), let image=PortraitImages.load(photo) {
+                            Image(uiImage:image).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius:14)).accessibilityLabel("Public website illustration")
                         }
                         ForEach(Array(p.sections.enumerated()),id:\.offset) { index,paragraph in
                             websiteParagraph(paragraph,index:index,page:p)
@@ -501,7 +516,7 @@ struct LumaWebBrowser: View {
                                     }
                                     Button("Hide image") { revealed.remove(asset) }
                                 } else {
-                                    Label("Recovered attachment",systemImage:"photo.on.rectangle")
+                                    Label("Catalog record",systemImage:"doc.text")
                                     if LumaWebCatalog.allowsPublicImage(asset) {
                                         Button("Reveal image") { inspect(asset,reveal:true) }.buttonStyle(.bordered)
                                     }
@@ -531,6 +546,7 @@ struct LumaWebBrowser: View {
                         }
                         if matches.isEmpty { Text("No accessible saved pages match.").foregroundColor(.secondary) }
                         if query.isEmpty {
+                            siteSection("Favorites",["studio","books","cafe","residents"])
                             siteSection("Bookmarks",bookmarkIDs)
                             Button { showHistory = true } label: { Label("Browsing history",systemImage:"clock.arrow.circlepath") }.buttonStyle(.bordered)
                         }
@@ -562,9 +578,17 @@ struct LumaWebBrowser: View {
                 LumaArchiveEdgeTreatment(opacity: treatment.edgeOpacity)
             }
         }
+        .task(id:pageTransition) {
+            guard loadingPage else{return}
+            try? await Task.sleep(nanoseconds:220_000_000)
+            guard !Task.isCancelled else{return};loadingPage=false
+        }
         .onAppear {
             if !seeded { if history.isEmpty { history="cafe|books" }; if bookmarks.isEmpty{bookmarks="books"}; seeded=true }
-            if visitRaw.isEmpty { visitRaw=LumaBrowserHistory.encode(visits) }
+            if visitRaw.isEmpty {
+                let restored = [("books",940.0),("cafe",820),("residents",710),("studio",560),("books-events",415),("cafe-menu",300),("studio-team",180),("books",75),("cafe",12)]
+                visitRaw=LumaBrowserHistory.encode(restored.map{LumaBrowserVisit(pageID:$0.0,date:world.state.createdAt.addingTimeInterval(-$0.1*86400))})
+            }
             if let p=page { current=p.id; query=p.address } else { current="" }
         }
         .onChange(of:world.state.flags) { _ in
@@ -579,7 +603,7 @@ struct LumaWebBrowser: View {
         }
         .onChange(of:world.checkpointEpoch) { _ in
             PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner)
-            atmosphereOwner=UUID(); resetTransient(); showHistory=false; showTabs=false; confirmClear=false; addressFocused=false
+            atmosphereOwner=UUID(); resetTransient(); showHistory=false; showTabs=false; showProfile=false;showSignOut=false;loadingPage=false; confirmClear=false; addressFocused=false
             if let p=page { query=p.address } else { current="";query="" }
         }
         .onChange(of:phase) { if $0 != .active { resetTransient();addressFocused=false;PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
@@ -589,6 +613,19 @@ struct LumaWebBrowser: View {
         .onChange(of:atmosphereIntensity) { if $0 != LumaArchiveAtmosphere.Intensity.standard.rawValue { PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
         .onChange(of:showHistory) { if $0 { PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
         .onDisappear { resetTransient();PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) }
+        .sheet(isPresented:$showProfile) {
+            NavigationStack {
+                List {
+                    Section("Browser profile") {
+                        HStack(spacing:12){Image(systemName:"person.crop.circle.fill").font(.largeTitle);VStack(alignment:.leading){Text(browserProfile=="nora" ? "Nora Bennett" : "Guest").font(.headline);Text(browserProfile=="nora" ? "Restored personal profile" : "Local browsing without a profile").font(.caption).foregroundColor(.secondary)}}
+                        if browserProfile=="nora" {Button("Sign out",role:.destructive){showSignOut=true}}
+                        else {Button("Sign in to restored Nora profile"){browserProfile="nora"}}
+                    }
+                    Section("On this phone") {LabeledContent("Bookmarks",value:String(bookmarkIDs.count));LabeledContent("Open tabs",value:String(parkedTabs.count+1));Text("This fictional profile restores public-browser preferences only. No real account, password or network is involved.").font(.footnote).foregroundColor(.secondary)}
+                }.navigationTitle("Browser account").toolbar{ToolbarItem(placement:.cancellationAction){Button("Done"){showProfile=false}}}
+                    .confirmationDialog("Sign out of the browser profile?",isPresented:$showSignOut,titleVisibility:.visible){Button("Sign out",role:.destructive){browserProfile="guest"};Button("Cancel",role:.cancel){}} message:{Text("Existing local browsing records are retained.")}
+            }
+        }
         .sheet(isPresented:$showTabs) {
             NavigationStack {
                 List {
@@ -671,6 +708,7 @@ struct LumaWebBrowser: View {
         if id==home { current=""; query=""; return }
         guard let p=LumaWebCatalog.page(id),p.available(world.state.flags) else{return}
         current=p.id; query=p.address; addressFocused=false; reviewAnswer=""; reviewNotice=""
+        if !reduceMotion {loadingPage=true;pageTransition=UUID()}
         visitRaw=LumaBrowserHistory.encode(LumaBrowserHistory.record(p.id,in:visits))
         history=encoded(Array((entries(history).filter{$0 != p.id}+[p.id]).suffix(100)))
         let previouslyVisited = world.state.flags.contains("web.visited." + p.id)

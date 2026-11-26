@@ -44,6 +44,7 @@ enum VeilArchive {
         let id: String
         let title: String
         let text: String
+        var displayAddress: String { address.replacingOccurrences(of:"veil://",with:"").replacingOccurrences(of:".invalid/",with:".onion/") }
         var address: String {
             let hosts = [
                 "directory":"k7v3m2q5j6w4n7xb3t2p5h6r4z7c2f5d6y3g4s7k2q5m6v3j4n7x",
@@ -77,7 +78,7 @@ enum VeilArchive {
     static func directoryPages(_ world:PhoneWorld)->[Page] { pages(world).filter{!isHidden($0.id) || pageBookmarkIDs(world).contains($0.id)} }
     static func resolve(_ raw:String,in world:PhoneWorld)->Page? {
         let value=raw.trimmingCharacters(in:.whitespacesAndNewlines)
-        return pages(world).first { $0.address == value || (!isHidden($0.id) && ($0.id == value || "veil://"+$0.id == value)) }
+        return pages(world).first { $0.address == value || $0.displayAddress == value || "http://"+$0.displayAddress == value || "https://"+$0.displayAddress == value || (!isHidden($0.id) && ($0.id == value || "veil://"+$0.id == value)) }
     }
     static func pageBookmarkIDs(_ world:PhoneWorld)->Set<String> {
         (world.connectedWorld?.veilPageBookmarks ?? []).intersection(Set(pages(world).map(\.id)))
@@ -223,6 +224,10 @@ struct VeilBrowser: View {
     @State private var didOpenInitial = false
     @AppStorage("lastseen.lab.wifi") private var wifi = true
     @State private var routeGeneration = 1
+    @State private var anonymousAlias = ""
+    @State private var aliasSheet = false
+    @State private var aliasDraft = ""
+    private func newAlias()->String { "reader-"+UUID().uuidString.prefix(6).lowercased() }
     @State private var showNewIdentity = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("lastseen.lab.horrorEffects") private var horrorEffects = true
@@ -258,7 +263,7 @@ struct VeilBrowser: View {
     }
     private func disconnect() {
         PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner)
-        connecting=false; connected=false; connectionStep=0; address=""; history=[]; notice=""
+        connecting=false; connected=false; connectionStep=0; address=""; history=[]; notice="";anonymousAlias="";aliasDraft="";aliasSheet=false
         selected="directory";pageSession=UUID();addressFocused=false
     }
     private func visit(_ raw: String) {
@@ -271,7 +276,7 @@ struct VeilBrowser: View {
             PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner)
             history.append(selected); history = Array(history.suffix(30));pageSession=UUID()
         }
-        selected = p.id; address = p.address; notice = "";addressFocused=false
+        selected = p.id; address = p.displayAddress; notice = "";addressFocused=false
     }
     @ViewBuilder private var mediaPage:some View {
         if !VeilArchive.homeMedia(world.state).isEmpty {
@@ -333,7 +338,10 @@ struct VeilBrowser: View {
         if page.id == "media" {mediaPage}
     }
     @ViewBuilder private var sessionControls:some View {
-        DisclosureGroup("Session privacy") {
+        DisclosureGroup("Anonymous session") {
+            LabeledContent("Session alias",value:anonymousAlias)
+            Button("Change local alias"){aliasDraft=anonymousAlias;aliasSheet=true}
+            Text("This alias is temporary and unrelated to Nora’s public accounts.").font(.caption).foregroundColor(.secondary)
             LabeledContent("Local circuit",value:"Session "+String(routeGeneration))
             Picker("Security level",selection:$security) {
                 ForEach(["Standard","Safer","Safest"],id: \.self) { Text($0) }
@@ -346,14 +354,14 @@ struct VeilBrowser: View {
             Button("New identity") { showNewIdentity = true }
         }.padding(12).lumaSurface()
         HStack {
-            TextField("Local address",text:$address).textInputAutocapitalization(.never).autocorrectionDisabled().textFieldStyle(.roundedBorder).submitLabel(.go).focused($addressFocused).onSubmit { visit(address) }
+            TextField("Fictional .onion address",text:$address).textInputAutocapitalization(.never).autocorrectionDisabled().textFieldStyle(.roundedBorder).submitLabel(.go).focused($addressFocused).onSubmit { visit(address) }
             Button("Go") { visit(address) }
         }
         HStack {
             Button("Back") {
                 let (target,remaining)=VeilArchive.backTarget(history,in:world.state)
                 history=remaining
-                if let p=target {selected=p.id;address=p.address;notice="";pageSession=UUID();addressFocused=false}
+                if let p=target {selected=p.id;address=p.displayAddress;notice="";pageSession=UUID();addressFocused=false}
             }.disabled(history.isEmpty)
             Spacer()
             Button(bookmarks.contains(selected) ? "Remove bookmark" : "Bookmark") {
@@ -378,20 +386,21 @@ struct VeilBrowser: View {
                         else { Image(systemName:"eye.slash").font(.largeTitle) }
                         VStack(alignment:.leading) {
                             Text("V E I L").font(.title.bold())
-                            Text(connected ? "Local session connected" : connecting ? "Establishing local session" : "Local session disconnected").font(.caption).foregroundColor(.secondary)
+                            Text(connected ? "Anonymous session · "+anonymousAlias : connecting ? "Establishing local session" : "Local session disconnected").font(.caption).foregroundColor(.secondary)
                         }
                         Spacer()
                     }
                     Text("Fictional anonymous browser. All pages are bundled offline.").font(.caption).foregroundColor(.secondary)
-                    Button(connected ? "Disconnect session" : connecting ? "Cancel connection" : "Connect local session") {
+                    Button(connected ? "Disconnect session" : connecting ? "Cancel connection" : "Open anonymous session") {
                         if connected || connecting { disconnect(); return }
                         guard wifi else { notice="Simulated Wi-Fi is off."; return }
                         guard phase == .active else { return }
                         notice=""; connectionStep=0; connecting=true
                     }.buttonStyle(.borderedProminent).tint(.purple)
                     if connecting {
-                        ProgressView(value:Double(connectionStep),total:3)
-                        Text(["Preparing local session","Checking cached directory","Opening local route","Ready"][min(3,connectionStep)]).font(.caption)
+                        HStack(spacing:14){ForEach(1...3,id:\.self){node in Image(systemName:connectionStep>=node ? "checkmark.shield.fill" : "shield").font(.title2).foregroundColor(connectionStep>=node ? .purple : .secondary);if node<3 {Rectangle().fill(Color.purple.opacity(connectionStep>=node ? 0.65:0.15)).frame(height:2)}}}
+                        ProgressView(value:Double(connectionStep),total:3).tint(.purple)
+                        Text(["Preparing local session","Checking cached directory","Opening local route","Ready"][min(3,connectionStep)]).font(.system(.caption,design:.monospaced))
                     }
                     if !connected && !notice.isEmpty { Text(notice).font(.caption).foregroundColor(.secondary) }
                     if connected && wifi && phase == .active {
@@ -401,29 +410,31 @@ struct VeilBrowser: View {
                     }
                 }.padding(18)
             } else { Text("Application unavailable").padding() }
-        }.tint(.purple).navigationTitle("VEIL").navigationBarTitleDisplayMode(.inline)
+        }.background(Color(red:0.045,green:0.04,blue:0.075)).preferredColorScheme(.dark).tint(.purple).navigationTitle("VEIL").navigationBarTitleDisplayMode(.inline)
             .overlay {
                 if let treatment {
                     LumaArchiveEdgeTreatment(opacity: treatment.edgeOpacity)
                 }
             }
+            .sheet(isPresented:$aliasSheet){NavigationStack{Form{Section("Temporary local alias"){TextField("Alias",text:$aliasDraft).textInputAutocapitalization(.never).autocorrectionDisabled();Text("No real registration or credentials.").font(.caption)};Button("Use alias"){guard connected,allowed,phase == .active else{return};let clean=String(aliasDraft.lowercased().filter{$0.isASCII && ($0.isLetter || $0.isNumber || $0=="-" || $0=="_")}.prefix(24));anonymousAlias=clean.isEmpty ? newAlias():clean;aliasSheet=false}.disabled(aliasDraft.isEmpty)}.navigationTitle("Session identity").toolbar{ToolbarItem(placement:.cancellationAction){Button("Cancel"){aliasSheet=false}}}}}
             .confirmationDialog("Start a new local identity?",isPresented:$showNewIdentity,titleVisibility:.visible) {
                 Button("Clear session",role:.destructive) {
                     guard allowed,connected,wifi,phase == .active else{return}
-                    history=[];selected="directory";address=VeilArchive.resolve("directory",in:world.state)?.address ?? "";notice="";pageSession=UUID();addressFocused=false
+                    history=[];selected="directory";address=VeilArchive.resolve("directory",in:world.state)?.displayAddress ?? "";notice="";pageSession=UUID();addressFocused=false
                     routeGeneration = routeGeneration >= 999 ? 1 : routeGeneration+1
+                    anonymousAlias=newAlias();aliasDraft="";aliasSheet=false
                 }
                 Button("Cancel",role:.cancel) {}
             } message: { Text("Clears temporary browsing history. Saved threads and investigation progress remain.") }
             .task(id:connecting) {
                 guard connecting else { return }
                 for step in 1...3 {
-                    do { try await Task.sleep(nanoseconds:250_000_000) } catch { return }
+                    do { try await Task.sleep(nanoseconds:reduceMotion ? 80_000_000 : 500_000_000) } catch { return }
                     guard !Task.isCancelled,connecting,allowed,wifi,phase == .active else { return }
                     connectionStep=step
                 }
-                connected=true; connecting=false
-                selected="directory"; address=VeilArchive.resolve("directory",in:world.state)?.address ?? ""
+                anonymousAlias=newAlias();connected=true; connecting=false
+                selected="directory"; address=VeilArchive.resolve("directory",in:world.state)?.displayAddress ?? ""
                 if !didOpenInitial,let initialReference {
                     didOpenInitial=true
                     if let target=VeilReferences.target(initialReference,in:world.state) { visit(target.address) }
@@ -441,7 +452,7 @@ struct VeilBrowser: View {
                 history=history.filter{valid.contains($0)}
                 if !valid.contains(selected) {
                     selected="directory";pageSession=UUID()
-                    address=VeilArchive.resolve("directory",in:world.state)?.address ?? ""
+                    address=VeilArchive.resolve("directory",in:world.state)?.displayAddress ?? ""
                     notice="This recovered service is no longer available."
                 }
             }
