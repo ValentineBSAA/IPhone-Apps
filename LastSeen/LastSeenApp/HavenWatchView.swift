@@ -284,7 +284,10 @@ struct HavenCrossArchiveReviewView:View {
                     }
                 }
                 if HavenCrossArchiveReview.reviewed(world.state) {
-                    Section("Recorded observation") { Text(HavenCrossArchiveReview.note) }
+                    Section("Recorded observation") {
+                        Text(HavenCrossArchiveReview.note)
+                        NavigationLink { SocialArchiveReviewView() } label:{ Label("Review social account records",systemImage:"person.crop.circle") }
+                    }
                 } else if HavenCrossArchiveReview.ready(world.state) {
                     Section("What can be established?") {
                         ForEach(HavenCrossArchiveReview.choices.indices,id:\.self) { i in

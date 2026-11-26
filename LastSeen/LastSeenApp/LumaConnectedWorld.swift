@@ -327,6 +327,75 @@ struct LumaMailComposer:View {
     }
 }
 
+/// A separate restored draft, never inserted in the public feed or posted as Nora.
+enum SocialArchiveReview {
+    static let marker = "social.archive-draft.opened"
+    static let recordID = "social-draft:afterframe"
+    static let title = "Unsent personal draft"
+    static let text = "I keep wanting to explain why I've stopped sharing little things. I don't owe anyone an explanation. I've kept the original messages apart from the pictures people sent back to me. If I need to ask for help again, I want to be able to show the difference between what I actually shared and what someone else claims I shared."
+    static var readingID:String { "social:"+LumaSocialChannel.afterframe.rawValue+":af-04" }
+    static var datesID:String { "social:"+LumaSocialChannel.commonGround.rawValue+":cg-04" }
+    static func ready(_ world:PhoneWorld)->Bool {
+        guard HavenCrossArchiveReview.reviewed(world),
+              VeilCommunity.revisionAvailable(world),
+              world.flags.contains(LumaAssistantEvidence.socialMarker(.afterframe,"af-04")),
+              world.flags.contains(LumaAssistantEvidence.socialMarker(.commonGround,"cg-04")),
+              LumaSocialCatalog.visible(.afterframe,world:world).contains(where:{$0.id=="af-04"}),
+              LumaSocialCatalog.visible(.commonGround,world:world).contains(where:{$0.id=="cg-04"}),
+              VeilArchive.homeMedia(world).contains("VEIL_Home_03"),
+              world.flags.contains("veil.viewed.VEIL_Home_03") else { return false }
+        let links=(world.connectedWorld?.evidenceConnections ?? []).prefix(40)
+        func has(_ a:String,_ b:String,_ relation:EvidenceConnection.Relation)->Bool {
+            links.contains { Set([$0.first,$0.second]) == Set([a,b]) && $0.relation == relation }
+        }
+        return has(readingID,"image:VEIL_Home_03",.wording) &&
+               has(datesID,"veil:home-index",.chronology)
+    }
+    static func opened(_ world:PhoneWorld)->Bool { ready(world) && world.flags.contains(marker) }
+}
+
+struct SocialArchiveReviewView:View {
+    @EnvironmentObject private var world:PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
+    var body:some View {
+        List {
+            if HavenCrossArchiveReview.reviewed(world.state),phase == .active {
+                Section("Revisit public records") {
+                    Text("Compare Nora's reading post with the recovered home copy, and the discussion about dates with the secondary index. Separate public descriptions from claims about private activity.")
+                    NavigationLink { LumaSocialDiscussion(channel:.afterframe,postID:"af-04") } label:{ Text("Afterframe · saved post") }
+                    NavigationLink { LumaSocialDiscussion(channel:.commonGround,postID:"cg-04") } label:{ Text("CommonGround · record discussion") }
+                    NavigationLink { EvidenceComparisonView() } label:{ Label("Compare opened records",systemImage:"rectangle.split.2x1") }
+                }
+                if SocialArchiveReview.ready(world.state) {
+                    Section("Recovered account material") {
+                        NavigationLink { SocialArchiveDraftView() } label:{ Label(SocialArchiveReview.title,systemImage:"doc.text") }
+                    }
+                } else { Text("Save the two relevant comparisons to locate additional restored account material.").font(.caption).foregroundColor(.secondary) }
+            } else { Text("Review unavailable.") }
+        }.navigationTitle("Account record review")
+    }
+}
+struct SocialArchiveDraftView:View {
+    @EnvironmentObject private var world:PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
+    var body:some View {
+        List {
+            if SocialArchiveReview.ready(world.state),phase == .active {
+                Section {
+                    Text(SocialArchiveReview.title).font(.title2.bold())
+                    Text("Restored local draft · Nora Bennett · Not published").font(.caption).foregroundColor(.secondary)
+                    Text(SocialArchiveReview.text).textSelection(.enabled)
+                    if SocialArchiveReview.opened(world.state) {
+                        NavigationLink { EvidenceComparisonView(initialRecordID:SocialArchiveReview.recordID) } label:{ Label("Compare draft with opened records",systemImage:"rectangle.split.2x1") }
+                    }
+                }
+            } else { Text("Draft unavailable.") }
+        }.navigationTitle("Recovered draft")
+        .onAppear { if phase == .active { world.recordSocialArchiveDraftOpened() } }
+        .onChange(of:phase) { if $0 == .active { world.recordSocialArchiveDraftOpened() } }
+    }
+}
+
 struct LumaSocialView:View {
     let channel:LumaSocialChannel
     @EnvironmentObject private var world:PhoneWorldStore
@@ -353,6 +422,11 @@ struct LumaSocialView:View {
                     Image(channel.icon).resizable().scaledToFit().frame(width:56,height:56).clipShape(RoundedRectangle(cornerRadius:15))
                     VStack(alignment:.leading,spacing:4){Text(channel.rawValue).font(.largeTitle.bold());Text(channel.tagline).font(.caption).foregroundColor(.secondary)}
                     Spacer()
+                }
+                if channel == .afterframe,HavenCrossArchiveReview.reviewed(world.state) {
+                    NavigationLink { SocialArchiveReviewView() } label:{
+                        Label("Review restored account records",systemImage:"doc.text.magnifyingglass")
+                    }.buttonStyle(.bordered)
                 }
                 Picker("View",selection:$filter){ForEach(["Feed","Following","Saved"],id:\.self){Text($0).tag($0)}}.pickerStyle(.segmented)
                 if posts.isEmpty{Text("Nothing to display").foregroundColor(.secondary).padding()}
@@ -438,6 +512,9 @@ struct LumaSocialProfile:View{
                         }
                     }
                 }
+                if channel == .afterframe,author == "Nora Bennett",SocialArchiveReview.ready(world.state) {
+                    Section("Restored drafts") { NavigationLink { SocialArchiveDraftView() } label:{ Text(SocialArchiveReview.title) } }
+                }
                 Section("Posts"){ForEach(posts){post in NavigationLink{LumaSocialDiscussion(channel:channel,postID:post.id)}label:{VStack(alignment:.leading){Text(post.body);Text(post.date,style:.date).font(.caption).foregroundColor(.secondary)}}}}
             }else{Text("Profile unavailable")}
         }.navigationTitle("Profile")
@@ -458,6 +535,9 @@ struct LumaSocialDiscussion:View{
                     if let photo = LumaSocialCatalog.visiblePhoto(post, world: world.state) {
                         Image(photo).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius: 10))
                     }
+                }
+                if HavenCrossArchiveReview.reviewed(world.state) {
+                    NavigationLink { EvidenceComparisonView(initialRecordID:"social:"+channel.rawValue+":"+postID) } label:{ Label("Compare with opened records",systemImage:"rectangle.split.2x1") }
                 }
                 Section("Comments"){
                     let comments=LumaSocialCatalog.comments(postID,channel:channel,world:world.state)

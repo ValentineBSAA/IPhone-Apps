@@ -1367,6 +1367,10 @@ final class PhoneWorldStore: ObservableObject {
         guard WorldDocumentCatalog.document(id,world:state) != nil else { return }
         if state.flags.insert(LumaAssistantEvidence.documentMarker(id)).inserted { save() }
     }
+    func recordSocialArchiveDraftOpened() {
+        guard SocialArchiveReview.ready(state) else { return }
+        if state.flags.insert(SocialArchiveReview.marker).inserted { save() }
+    }
     func recordLumaSocialOpened(_ channel:LumaSocialChannel,postID:String) {
         guard LumaSocialCatalog.visible(channel,world:state).contains(where:{$0.id == postID}) else { return }
         if state.flags.insert(LumaAssistantEvidence.socialMarker(channel,postID)).inserted { save() }
