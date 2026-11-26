@@ -1050,6 +1050,7 @@ struct PhoneLabView: View {
         guard !checkpointReboot else { return }
         checkpointReboot = true
         if saves.restore(slot, into: world) {
+            cancelTestAlert()
             observedIncoming = Set(incomingIDs)
             observedOutgoing = outgoingIDs
             banner = nil; activityBanner = nil; activityQueue.clear(); pendingThread = nil; pendingActivityID = nil; circuitBanner = false; utilityNotice = nil; observedUtilityFlags = world.state.flags

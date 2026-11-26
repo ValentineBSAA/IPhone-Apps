@@ -85,7 +85,10 @@ final class LumaSaveStore: ObservableObject {
     private func preferences(_ value: LumaCheckpoint) throws -> [String: Any] {
         guard let result = try PropertyListSerialization.propertyList(from: value.preferences, format: nil) as? [String: Any],
               Set(result.keys).isSubset(of: Set(Self.keys)),
-              result.values.allSatisfy({ $0 is String || $0 is NSNumber }) else { throw CocoaError(.fileReadCorruptFile) }
+              result.values.allSatisfy({ value in
+                  if let number=value as? NSNumber {return number.doubleValue.isFinite}
+                  return value is String
+              }) else { throw CocoaError(.fileReadCorruptFile) }
         return result
     }
     func refresh() {
@@ -132,18 +135,25 @@ final class LumaSaveStore: ObservableObject {
         sinceAutomatic += 1
         if sinceAutomatic >= minutes * 60 { automatic(world: world, now:now) }
     }
+    static func rebasedEvent(_ event:HavenWatchEvent?,by delta:TimeInterval)->HavenWatchEvent? {
+        guard let event,!event.delivered,delta.isFinite else{return event}
+        return HavenWatchEvent(id:event.id,due:event.due.addingTimeInterval(delta),delivered:false)
+    }
     func restore(_ slot: String, into world: PhoneWorldStore, now: Date = Date()) -> Bool {
         do {
             var value = try read(slot)
             var prefs = try preferences(value)
             // Preserve time remaining in fictional timers and pending conversations.
             let delta = now.timeIntervalSince(value.date)
+            guard delta.isFinite else{throw CocoaError(.fileReadCorruptFile)}
             value.world.pendingReplies = value.world.pendingReplies?.map {
                 PhonePendingReply(id: $0.id, outgoingID: $0.outgoingID, neighbor: $0.neighbor, text: $0.text,
                     readAt: $0.readAt.addingTimeInterval(delta), dueAt: $0.dueAt.addingTimeInterval(delta), startsTutorial: $0.startsTutorial, typingAt: $0.typingAt?.addingTimeInterval(delta))
             }
             if var connected=value.world.connectedWorld {
                 connected.characterCheckIns=CharacterCheckIns.rebase(connected.characterCheckIns,by:delta)
+                connected.havenEvent=Self.rebasedEvent(connected.havenEvent,by:delta)
+                connected.havenFollowupEvent=Self.rebasedEvent(connected.havenFollowupEvent,by:delta)
                 connected.pendingMail=connected.pendingMail.map { pending in
                     let r=pending.record
                     let date=pending.dueAt.addingTimeInterval(delta)
@@ -224,6 +234,10 @@ struct LumaSaveView: View {
     @State private var action: String?
     @State private var slot = ""
     @State private var confirm = false
+    @State private var selectedDate:Date?
+    @State private var selectedInvalid=false
+    @State private var selectionNotice=""
+    @Environment(\.scenePhase) private var phase
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -246,11 +260,19 @@ struct LumaSaveView: View {
                 }.pickerStyle(.segmented)
                 Text("Automatic checkpoints are created only at the chosen active-play interval. Off creates none. Your live progress is still preserved. Manual saves share a one-minute cooldown.").font(.caption).foregroundColor(.secondary)
                 ForEach(LumaSaveStore.automatic, id: \.self) { row($0, manual: false) }
+                if !selectionNotice.isEmpty {Text(selectionNotice).font(.caption).foregroundColor(.secondary)}
                 if !store.notice.isEmpty { Text(store.notice).font(.subheadline).foregroundColor(LumaDesign.accent).accessibilityAddTraits(.updatesFrequently) }
             }.padding(18)
         }.navigationTitle("Game Saves").navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Confirm \(action ?? "action")", isPresented: $confirm, titleVisibility: .visible) {
             Button(action ?? "Continue", role: action == "Delete" ? .destructive : nil) {
+                guard phase == .active else{return}
+                store.refresh()
+                guard store.slots[slot]?.date == selectedDate,store.invalid.contains(slot)==selectedInvalid else {
+                    selectionNotice="This checkpoint changed. Review the updated slot and try again."
+                    return
+                }
+                selectionNotice=""
                 switch action {
                 case "Save": _ = store.writeManual(slot, world: world.state)
                 case "Load": onLoad(slot)
@@ -263,8 +285,13 @@ struct LumaSaveView: View {
             Text(action == "Load" ? "Return to this checkpoint? Later discoveries may be lost from the active game. Manual saves and personal Field Notes are kept." : "Only the selected checkpoint is affected.")
         }
         .onAppear { store.refresh() }
+        .onChange(of:phase){if $0 != .active {confirm=false;action=nil;slot=""} else {store.refresh()}}
     }
-    private func choose(_ operation: String, _ id: String) { action = operation; slot = id; confirm = true }
+    private func choose(_ operation:String,_ id:String) {
+        guard phase == .active else{return}
+        action=operation;slot=id;selectedDate=store.slots[id]?.date;selectedInvalid=store.invalid.contains(id)
+        selectionNotice="";confirm=true
+    }
     private func row(_ id: String, manual: Bool) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -279,6 +306,7 @@ struct LumaSaveView: View {
             HStack {
                 if manual {
                     Button("Save Now") {
+                        guard phase == .active else{return}
                         if store.slots[id] != nil || store.invalid.contains(id) { choose("Save", id) }
                         else { _ = store.writeManual(id, world: world.state) }
                     }.buttonStyle(.borderedProminent).frame(minHeight: 44)

@@ -39,6 +39,13 @@ enum LumaAssistantEvidence {
     static func documentMarker(_ id:String) -> String { "luma.opened.document."+id }
     static func socialMarker(_ channel:LumaSocialChannel,_ id:String) -> String { "luma.opened.social."+channel.rawValue+"."+id }
 
+    static func search(_ query:String,in world:PhoneWorld)->[Record] {
+        let term=query.trimmingCharacters(in:.whitespacesAndNewlines)
+        return visible(world).filter{record in
+            term.isEmpty || record.title.localizedCaseInsensitiveContains(term) ||
+            record.excerpts.contains{$0.localizedCaseInsensitiveContains(term)}
+        }
+    }
     static func visible(_ world:PhoneWorld) -> [Record] {
         guard world.everydayArchiveRevision != nil else { return [] }
         var result:[Record] = []
