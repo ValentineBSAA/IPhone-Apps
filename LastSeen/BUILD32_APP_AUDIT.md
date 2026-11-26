@@ -11,13 +11,13 @@ Mandatory release gate for 1.9.0 (32), iPhone 16e. Every LabApp is listed exactl
 | Messages | Search, typing, delivery, attachments, context, historical records | Targeted pass | Pending | Pending |
 | Contacts | Directory, profile links, favorites, availability | Targeted pass | Pending | Pending |
 | Photos | Library filters, zoom, private recovery, Luma handoff | Targeted pass | Pending | Pending |
-| Notes | Search, editing, pinning, keyboard, private routes | Pending | Pending | Pending |
-| Calendar | Dates, event details, ordinary chronology, navigation | Pending | Pending | Pending |
+| Notes | Search, editing, pinning, keyboard, private routes | Targeted pass | Pending | Pending |
+| Calendar | Dates, event details, ordinary chronology, navigation | Targeted pass | Pending | Pending |
 | Mail | Folders, drafts, recipients, unread, search, attachments, notifications | Targeted pass | Pending | Pending |
 | Clock | Timer, stopwatch, persistence, audio, accessibility | Pending | Pending | Pending |
 | Calculator | Arithmetic, edge cases, history, layout | Pending | Pending | Pending |
 | Settings | Every toggle, actual effect, persistence, reset, protected access, sound studio | Targeted pass | Pending | Pending |
-| Files | Folders, document access, previews, search, recovered references | Pending | Pending | Pending |
+| Files | Folders, document access, previews, search, recovered references | Targeted pass | Pending | Pending |
 | Browser | History, navigation, bookmarks, offline URLs, attachments, review gates | Pending | Pending | Pending |
 | Relay | Repository refresh, package install/remove, dependencies, conflicts, restart | Pending | Pending | Pending |
 | Patchline | Safe mode, tweak status, diagnostics, respring, reboot | Pending | Pending | Pending |

@@ -145,22 +145,38 @@ struct PhonePhotoDetailView: View {
     }
 }
 
+enum PhoneRecordBrowsing {
+    static func notes(_ world:PhoneWorld,query:String="",pinnedOnly:Bool=false)->[PhoneNote] {
+        let q=query.trimmingCharacters(in:.whitespacesAndNewlines)
+        return world.notes.filter {
+            (!pinnedOnly || $0.pinned) && (q.isEmpty || $0.title.localizedCaseInsensitiveContains(q) || $0.body.localizedCaseInsensitiveContains(q))
+        }.sorted {
+            if $0.pinned != $1.pinned {return $0.pinned}
+            return $0.modifiedAt == $1.modifiedAt ? $0.id < $1.id : $0.modifiedAt > $1.modifiedAt
+        }
+    }
+    static func events(_ world:PhoneWorld,on day:Date,calendar:Calendar = .current)->[PhoneEvent] {
+        guard let interval=calendar.dateInterval(of:.day,for:day) else{return []}
+        return world.events.filter {
+            $0.endsAt >= $0.startsAt && $0.startsAt < interval.end &&
+            ($0.endsAt > interval.start || ($0.startsAt == $0.endsAt && $0.startsAt >= interval.start))
+        }.sorted { $0.startsAt == $1.startsAt ? $0.id < $1.id : $0.startsAt < $1.startsAt }
+    }
+    static func upcoming(_ world:PhoneWorld,now:Date)->[PhoneEvent] {
+        world.events.filter{$0.endsAt >= now && $0.endsAt >= $0.startsAt}
+            .sorted{$0.startsAt == $1.startsAt ? $0.id < $1.id : $0.startsAt < $1.startsAt}
+    }
+}
 struct PhoneNotesView: View {
     var lab = false
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var search = ""
     @State private var newNoteID: String?
     @State private var showingNewNote = false
-
+    @State private var pinnedOnly=false
+    @State private var pendingDeletion:PhoneNote?
     private var notes: [PhoneNote] {
-        world.state.notes.filter {
-            search.isEmpty ||
-            $0.title.localizedCaseInsensitiveContains(search) ||
-            $0.body.localizedCaseInsensitiveContains(search)
-        }.sorted {
-            if $0.pinned != $1.pinned { return $0.pinned }
-            return $0.modifiedAt > $1.modifiedAt
-        }
+        PhoneRecordBrowsing.notes(world.state,query:search,pinnedOnly:pinnedOnly)
     }
 
     var body: some View {
@@ -169,7 +185,9 @@ struct PhoneNotesView: View {
                 LumaHeader(title: "Your notes", detail: "\(notes.count) notes on this phone", symbol: "note.text").listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
                 NavigationLink { ProtectedAreaView(area: .notes, onOpened: { world.recordTutorialVisit("journal") }) } label: { Label("Locked notes", systemImage: "lock.fill") }
             }
+            Toggle("Pinned only",isOn:$pinnedOnly)
             Section {
+                if notes.isEmpty {Text(search.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty ? "No notes in this view":"No matching notes").foregroundColor(.secondary)}
                 ForEach(notes) { note in
                     NavigationLink(value: AppPage.note(note.id)) {
                         VStack(alignment: .leading, spacing: 6) {
@@ -192,9 +210,9 @@ struct PhoneNotesView: View {
                         }
                         .padding(.vertical, 5)
                     }
-                    .swipeActions(edge: .trailing) {
+                    .swipeActions(edge: .trailing,allowsFullSwipe:false) {
                         if note.id != PhoneWorldStore.tutorialNoteID {
-                            Button(role: .destructive) { world.removeNote(note.id) } label: {
+                            Button(role: .destructive) { pendingDeletion=note } label: {
                                 Label("Delete", systemImage: "trash")
                             }
                         }
@@ -227,6 +245,10 @@ struct PhoneNotesView: View {
         .navigationDestination(isPresented: $showingNewNote) {
             if let id = newNoteID { PhoneNoteEditorView(noteID: id) }
         }
+        .alert("Delete note?",isPresented:Binding(get:{pendingDeletion != nil},set:{if !$0 {pendingDeletion=nil}}),presenting:pendingDeletion){note in
+            Button("Delete",role:.destructive){world.removeNote(note.id);pendingDeletion=nil}
+            Button("Cancel",role:.cancel){pendingDeletion=nil}
+        } message:{_ in Text("This removes the note from the current phone save.")}
     }
 }
 
@@ -236,10 +258,15 @@ struct PhoneNoteEditorView: View {
     @State private var title = ""
     @State private var bodyText = ""
     @State private var loaded = false
+    @FocusState private var editing:Bool
+    @Environment(\.scenePhase) private var phase
+    private var existing:PhoneNote? {world.state.notes.first{$0.id==noteID}}
 
     var body: some View {
         Group {
-            if noteID == PhoneWorldStore.tutorialNoteID {
+            if existing == nil || phase != .active {
+                Text("Note unavailable").foregroundColor(.secondary)
+            } else if noteID == PhoneWorldStore.tutorialNoteID {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 17) {
                         Text(PhoneWorldStore.tutorialNoteTitle).font(.largeTitle.bold())
@@ -247,15 +274,17 @@ struct PhoneNoteEditorView: View {
                         Divider()
                         Text(PhoneWorldStore.tutorialNoteBody).font(.body).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
                     }.frame(maxWidth: .infinity, alignment: .leading).padding(22)
-                }.onAppear { world.recordTutorialVisit("note") }
+                }.onAppear { if phase == .active {world.recordTutorialVisit("note")} }
             } else {
                 VStack(spacing: 0) {
                     TextField("Title", text: $title)
+                        .focused($editing)
                         .font(.system(size: 25, weight: .semibold))
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
                     Divider().padding(.vertical, 14)
                     TextEditor(text: $bodyText)
+                        .focused($editing)
                         .scrollContentBackground(.hidden)
                         .font(.system(size: 16))
                         .padding(.horizontal, 13)
@@ -273,11 +302,18 @@ struct PhoneNoteEditorView: View {
             }
             loaded = true
         }
+        .toolbar {
+            ToolbarItemGroup(placement:.keyboard) {
+                Spacer()
+                Button("Done"){editing=false}
+            }
+        }
+        .onChange(of: phase){if $0 != .active {editing=false}}
         .onChange(of: title) { _ in persistChanges() }
         .onChange(of: bodyText) { _ in persistChanges() }
     }
     private func persistChanges() {
-        guard loaded, noteID != PhoneWorldStore.tutorialNoteID,
+        guard loaded, phase == .active, noteID != PhoneWorldStore.tutorialNoteID,
               let note = world.state.notes.first(where: { $0.id == noteID }),
               note.title != title || note.body != bodyText else { return }
         world.updateNote(noteID, title: title, body: bodyText)
@@ -290,9 +326,7 @@ struct PhoneCalendarView: View {
     init(initialDay: Date = Date()) { _selectedDay = State(initialValue: initialDay) }
 
     private var matching: [PhoneEvent] {
-        world.state.events
-            .filter { Calendar.current.isDate($0.startsAt, inSameDayAs: selectedDay) }
-            .sorted { $0.startsAt < $1.startsAt }
+        PhoneRecordBrowsing.events(world.state,on:selectedDay)
     }
 
     var body: some View {
@@ -305,7 +339,13 @@ struct PhoneCalendarView: View {
                     .padding(10)
                     .lumaSurface()
 
-                Button("Today") { selectedDay = Date() }.buttonStyle(.bordered)
+                HStack {
+                    Button {if let date=Calendar.current.date(byAdding:.day,value:-1,to:selectedDay){selectedDay=date}} label:{Label("Previous day",systemImage:"chevron.left").labelStyle(.iconOnly).frame(minWidth:44,minHeight:44)}
+                    Spacer()
+                    Button("Today") { selectedDay = Date() }.buttonStyle(.bordered)
+                    Spacer()
+                    Button {if let date=Calendar.current.date(byAdding:.day,value:1,to:selectedDay){selectedDay=date}} label:{Label("Next day",systemImage:"chevron.right").labelStyle(.iconOnly).frame(minWidth:44,minHeight:44)}
+                }
                 Text("Scheduled")
                     .font(.system(size: 19, weight: .semibold))
                 if matching.isEmpty {
@@ -320,7 +360,7 @@ struct PhoneCalendarView: View {
                         VStack(alignment: .leading, spacing: 9) {
                             Text(event.title)
                                 .font(.system(size: 16, weight: .semibold))
-                            Text(event.startsAt, format: .dateTime.hour().minute())
+                            Text(event.startsAt.formatted(.dateTime.month().day().hour().minute())+" – "+event.endsAt.formatted(.dateTime.month().day().hour().minute()))
                                 .font(.system(size: 12))
                                 .foregroundColor(Night.accent)
                             Text(event.detail)
@@ -334,7 +374,9 @@ struct PhoneCalendarView: View {
                 }
 
                 Text("Upcoming events").font(.headline).padding(.top, 6)
-                ForEach(world.state.events.filter { $0.endsAt >= Date() }.sorted { $0.startsAt < $1.startsAt }) { event in
+                let upcoming=PhoneRecordBrowsing.upcoming(world.state,now:Date())
+                if upcoming.isEmpty {Text("No upcoming events").font(.caption).foregroundColor(.secondary)}
+                ForEach(upcoming) { event in
                     Button { selectedDay = event.startsAt } label: {
                         HStack {
                             Image(systemName: "calendar").foregroundColor(Night.accent)

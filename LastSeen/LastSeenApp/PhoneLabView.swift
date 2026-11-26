@@ -1638,11 +1638,12 @@ private struct LabFilesView: View {
     @EnvironmentObject private var world: PhoneWorldStore
     private var documents: [String: String] { PhonePublicFiles.available(in: world.state) }
     @State private var search = ""
+    private var query:String {search.trimmingCharacters(in:.whitespacesAndNewlines)}
     var body: some View {
         List {
             LumaHeader(title: "On this phone", detail: "\(documents.count + WorldDocumentCatalog.visible(world.state).count) restored documents", symbol: "folder.fill").listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
             NavigationLink { ProtectedAreaView(area: .files) } label: { Label("Protected files", systemImage: "lock.doc") }
-            let references = VeilReferences.visible(world.state).filter { search.isEmpty || $0.filename.localizedCaseInsensitiveContains(search) }
+            let references = VeilReferences.visible(world.state).filter { query.isEmpty || $0.filename.localizedCaseInsensitiveContains(query) }
             if !references.isEmpty {
                 Section("Recovered bookmarks") {
                     ForEach(references) { ref in
@@ -1652,7 +1653,7 @@ private struct LabFilesView: View {
                     }
                 }
             }
-            let records = WorldDocumentCatalog.search(search,world:world.state)
+            let records = WorldDocumentCatalog.search(query,world:world.state)
             if !records.isEmpty {
                 Section("Restored records") {
                     ForEach(records) { document in
@@ -1665,7 +1666,12 @@ private struct LabFilesView: View {
                     }
                 }
             }
-            ForEach(documents.keys.sorted().filter { search.isEmpty || $0.localizedCaseInsensitiveContains(search) }, id: \.self) { name in
+            let publicNames=documents.keys.sorted().filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) || (documents[$0]?.localizedCaseInsensitiveContains(query) ?? false) }
+            if references.isEmpty && records.isEmpty && publicNames.isEmpty {
+                Text("No matching documents").foregroundColor(.secondary)
+            }
+            Section("Public files") {
+            ForEach(publicNames, id: \.self) { name in
                 NavigationLink(value: PhoneFileRoute(title: name)) {
                     HStack(spacing: 13) {
                         Image(systemName: "doc.text.fill").font(.title2).foregroundColor(.blue)
@@ -1676,7 +1682,8 @@ private struct LabFilesView: View {
                     }.padding(.vertical, 6)
                 }
             }
-        }.scrollContentBackground(.hidden).background(Night.background.ignoresSafeArea()).navigationTitle("Files").searchable(text: $search)
+            }
+        }.scrollContentBackground(.hidden).background(Night.background.ignoresSafeArea()).navigationTitle("Files").searchable(text: $search,prompt:"Search accessible files")
     }
 }
 

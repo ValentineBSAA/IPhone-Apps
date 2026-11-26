@@ -52,10 +52,11 @@ struct WorldDocumentReader: View {
     @AppStorage("lastseen.relay.installed") private var installed=""
     @AppStorage("lastseen.relay.safeMode") private var safeMode=false
     @State private var largeText=false
+    @Environment(\.scenePhase) private var phase
     private var zoomAvailable:Bool {RelayCatalog.tweakActive("documentzoom",installed:installed,safeMode:safeMode,flags:world.state.flags)}
     var body: some View {
         ScrollView {
-            if let doc = WorldDocumentCatalog.document(id,world:world.state) {
+            if phase == .active,let doc = WorldDocumentCatalog.document(id,world:world.state) {
                 VStack(alignment:.leading,spacing:18) {
                     Label("RESTORED DOCUMENT",systemImage:"doc.richtext").font(.caption.weight(.semibold)).foregroundColor(LumaDesign.accent)
                     Text(doc.title).font(.largeTitle.bold()).fixedSize(horizontal:false,vertical:true)
