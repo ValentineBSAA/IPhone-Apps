@@ -43,11 +43,18 @@ import XCTest
         XCTAssertEqual(VeilCommunity.visible(world).count,11)
         XCTAssertNotNil(VeilArchive.resolve("boards",in:world))
         XCTAssertNil(VeilCommunity.thread("image-index",in:world))
+        for id in ["ordinary-hours","favorite-frame","not-a-relationship"] {
+            XCTAssertNil(VeilCommunity.thread(id,in:world))
+        }
         world.flags.insert("veil.viewed.Nora_Archive_08")
         let threads=VeilCommunity.visible(world)
-        XCTAssertEqual(threads.count,12)
-        XCTAssertEqual(Set(threads.map(\.id)).count,12)
-        XCTAssertEqual(threads.flatMap(\.replies).count,36)
+        XCTAssertEqual(threads.count,15)
+        XCTAssertEqual(Set(threads.map(\.id)).count,15)
+        XCTAssertEqual(threads.flatMap(\.replies).count,45)
+        for id in ["ordinary-hours","favorite-frame","not-a-relationship"] {
+            XCTAssertNotNil(VeilCommunity.thread(id,in:world))
+            XCTAssertNil(LumaAssistantEvidence.selected("veil:thread:"+id,in:world))
+        }
         XCTAssertTrue(threads.allSatisfy{VeilCommunity.handles.contains($0.author) && $0.replies.allSatisfy{VeilCommunity.handles.contains($0.author)}})
         let store=PhoneWorldStore(initial:world,persistToDisk:false)
         store.recordVeilThreadOpened("quiet-tapes",packages:"",safeMode:false)
@@ -63,5 +70,8 @@ import XCTest
         revoked.flags.remove(VeilArchive.discovery)
         XCTAssertTrue(VeilCommunity.bookmarkIDs(revoked).isEmpty)
         XCTAssertNil(LumaAssistantEvidence.selected("veil:thread:quiet-tapes",in:revoked))
+        for id in ["ordinary-hours","favorite-frame","not-a-relationship"] {
+            XCTAssertNil(VeilCommunity.thread(id,in:revoked))
+        }
     }
 }
