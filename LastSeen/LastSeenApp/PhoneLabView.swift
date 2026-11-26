@@ -282,6 +282,7 @@ struct PhoneLabView: View {
                 if !checkpointReboot {
                     let before = LumaActivityCatalog.allIDs(world.state)
                     world.advancePendingReplies()
+                    world.advanceRelaySupportActivity(installed: relayInstalled)
                     if timerBaselineReady { settleTimer(now: Date().timeIntervalSince1970, present: false) }
                     if didConfigureFeedback {
                         let arrived = LumaActivityCatalog.newEntries(world.state, previous: before)
@@ -525,6 +526,10 @@ struct PhoneLabView: View {
         guard !locked, notice.canPresent(in: world.state) else { return }
         panel = nil; activityBanner = nil
         if notice.kind == .timer { open(.clock) }
+        else if notice.kind == .support {
+            guard supportAvailable else { return }
+            open(.relaySupport)
+        }
         else {
             if let app = LabApp(rawValue: notice.appTitle) {
                 open(app)

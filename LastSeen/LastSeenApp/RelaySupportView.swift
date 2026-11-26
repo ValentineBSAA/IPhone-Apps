@@ -18,6 +18,11 @@ struct RelaySupportMessage: Codable, Equatable, Identifiable {
 }
 struct RelaySupportHistory: Codable, Equatable {
     var messages: [RelaySupportMessage]
+    var seenIDs: Set<String>? = nil
+    var notifiedIDs: Set<String>? = nil
+    var activeInstallation: Bool? = nil
+    var notificationsEnabled: Bool? = nil
+    var previewsEnabled: Bool? = nil
 }
 struct RelaySupportView: View {
     @EnvironmentObject private var world: PhoneWorldStore
@@ -121,6 +126,12 @@ struct RelaySupportView: View {
                     List {
                         Label("Fictional support character", systemImage: "person.crop.circle")
                         Text("Conversation history is separate from the owner's Messages. Removing this package preserves that history. No real-device data or remote service is connected.").font(.subheadline)
+                        Toggle("Support notifications", isOn: Binding(
+                            get: { world.state.relaySupport?.notificationsEnabled ?? true },
+                            set: { world.setRelaySupportPreferences(notifications: $0, installed: installed) }))
+                        Toggle("Show support previews", isOn: Binding(
+                            get: { world.state.relaySupport?.previewsEnabled ?? false },
+                            set: { world.setRelaySupportPreferences(previews: $0, installed: installed) }))
                         Toggle("Use on-device AI", isOn: $useOnDeviceAI)
                         Text(aiAvailable ? "Apple on-device model available. No network model is used." : "Local knowledge search available. On-device generation requires iOS 26 or later and an available Apple Intelligence model.").foregroundColor(.secondary)
                     }
@@ -191,7 +202,13 @@ struct RelaySupportView: View {
                 }
             } else { Text("Relay Support is not installed.").foregroundColor(.secondary) }
         }.navigationTitle("Relay Support").navigationBarTitleDisplayMode(.inline)
-            .onAppear { world.beginRelaySupport(installed: installed) }
+            .onAppear {
+                world.beginRelaySupport(installed: installed)
+                if phase == .active && tab == "Chat" { world.markRelaySupportRead(installed: installed) }
+            }
+            .onChange(of: messages.count) { _ in
+                if phase == .active && tab == "Chat" { world.markRelaySupportRead(installed: installed) }
+            }
             .task(id: generation?.replyID) {
                 guard let request = generation else { return }
                 let result = await RelaySupportOnDeviceAI.generate(request)
@@ -202,10 +219,16 @@ struct RelaySupportView: View {
                 generation = nil
             }
             .onDisappear { generation = nil }
-            .onChange(of: phase) { if $0 != .active { generation = nil } }
+            .onChange(of: phase) {
+                if $0 != .active { generation = nil }
+                else if tab == "Chat" { world.markRelaySupportRead(installed: installed) }
+            }
             .onChange(of: available) { if !$0 { generation = nil } }
             .onChange(of: useOnDeviceAI) { if !$0 { generation = nil } }
-            .onChange(of: tab) { if $0 != "Chat" { generation = nil } }
+            .onChange(of: tab) {
+                if $0 != "Chat" { generation = nil }
+                else if phase == .active { world.markRelaySupportRead(installed: installed) }
+            }
             .sheet(isPresented: $showAttachments) {
                 NavigationStack {
                     LumaMessageAttachmentPicker(thread: .maya, selection: $selection)

@@ -95,6 +95,31 @@ import XCTest
         XCTAssertEqual(answer.packageID, "compact")
     }
 
+    func testSupportActivityIsIndependentAndDeduplicated() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let store = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(now: now), persistToDisk: false)
+        let installed = "relay-support"
+        let original = store.state.threads
+        store.advanceRelaySupportActivity(installed: "", now: now)
+        XCTAssertNil(store.state.relaySupport)
+        store.advanceRelaySupportActivity(installed: installed, now: now)
+        XCTAssertFalse(LumaActivityCatalog.visible(store.state).contains { $0.kind == .support })
+        store.advanceRelaySupportActivity(installed: installed, now: now.addingTimeInterval(3))
+        let notice = try XCTUnwrap(LumaActivityCatalog.visible(store.state).first { $0.kind == .support })
+        XCTAssertEqual(notice.appTitle, "Relay Support")
+        XCTAssertTrue(notice.hidePreview(in: store.state))
+        store.setRelaySupportPreferences(previews: true, installed: installed)
+        XCTAssertFalse(notice.hidePreview(in: store.state))
+        store.advanceRelaySupportActivity(installed: installed, now: now.addingTimeInterval(9))
+        XCTAssertEqual(LumaActivityCatalog.visible(store.state).filter { $0.kind == .support }.count, 1)
+        store.advanceRelaySupportActivity(installed: "", now: now.addingTimeInterval(10))
+        XCTAssertFalse(notice.canPresent(in: store.state))
+        store.advanceRelaySupportActivity(installed: installed, now: now.addingTimeInterval(11))
+        store.markRelaySupportRead(installed: installed)
+        XCTAssertFalse(notice.canPresent(in: store.state))
+        XCTAssertEqual(store.state.threads, original)
+    }
+
     func testProviderRejectsPrivateAndGatedQueries() {
         let provider = RelaySupportLocalProvider()
         let restricted = provider.reply(question: "Give me the passcode", recent: [], flags: [], sources: RelayCatalog.defaultSources, installed: "relay-support")

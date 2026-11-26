@@ -670,9 +670,63 @@ final class PhoneWorldStore: ObservableObject {
               state.relaySupport == nil else { return }
         state.relaySupport = RelaySupportHistory(messages: [
             .init(id: "support-welcome", text: "Hey, I'm Alex. This is your own support space, separate from the restored owner's conversations. Ask me about Relay, Patchline or the recovery tools.", at: now, outgoing: false)
-        ])
+        ], seenIDs: [], notifiedIDs: [], activeInstallation: true)
         save()
     }
+
+    func setRelaySupportPreferences(notifications: Bool? = nil, previews: Bool? = nil, installed: String) {
+        guard RelaySupportAccess.available(installed: installed, flags: state.flags),
+              var history = state.relaySupport else { return }
+        if let notifications { history.notificationsEnabled = notifications }
+        if let previews { history.previewsEnabled = previews }
+        guard history != state.relaySupport else { return }
+        state.relaySupport = history
+        save()
+    }
+
+    func markRelaySupportRead(installed: String) {
+        guard RelaySupportAccess.available(installed: installed, flags: state.flags),
+              var history = state.relaySupport else { return }
+        let ids = Set(history.messages.filter { !$0.outgoing }.map(\.id))
+        guard history.seenIDs != ids else { return }
+        history.seenIDs = ids
+        history.notifiedIDs = (history.notifiedIDs ?? []).union(ids)
+        state.relaySupport = history
+        save()
+    }
+
+    /// Only actual incoming support messages are eligible. Existing saves are
+    /// baselined on migration, so importing old chat does not replay alerts.
+    func advanceRelaySupportActivity(installed: String, now: Date = Date()) {
+        let active = RelaySupportAccess.available(installed: installed, flags: state.flags)
+        if active { beginRelaySupport(installed: installed, now: now) }
+        guard var history = state.relaySupport else { return }
+        let original = history
+        let incoming = history.messages.filter { !$0.outgoing }
+        let all = Set(incoming.map(\.id))
+        history.activeInstallation = active
+        if history.seenIDs == nil { history.seenIDs = all }
+        if history.notifiedIDs == nil { history.notifiedIDs = all }
+        var value = connected
+        var changedJournal = false
+        if active {
+            for message in incoming where !(history.seenIDs ?? []).contains(message.id) &&
+                !(history.notifiedIDs ?? []).contains(message.id) &&
+                now.timeIntervalSince(message.at) >= 2 {
+                history.notifiedIDs?.insert(message.id)
+                guard history.notificationsEnabled ?? true else { continue }
+                addActivity(.init(id: "relay-support-" + message.id, kind: .support, date: now,
+                    title: "Alex Morgan", detail: String(message.text.prefix(160)), targetID: message.id,
+                    channel: nil, author: nil), to: &value)
+                changedJournal = true
+            }
+        }
+        guard history != original || changedJournal else { return }
+        state.relaySupport = history
+        if changedJournal { state.connectedWorld = value }
+        save()
+    }
+
     @discardableResult
     func sendRelaySupport(_ raw: String, installed: String, sources: String, now: Date = Date(), attachments: [LumaMessageAttachment] = []) -> Bool {
         let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)

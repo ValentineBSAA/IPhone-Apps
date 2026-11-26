@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Fictional local activity. No real push messages, network or OS notification access.
 struct LumaActivityNotice: Codable, Equatable, Identifiable {
-    enum Kind: String, Codable { case mail, social, timer, dayblink, security }
+    enum Kind: String, Codable { case mail, social, timer, dayblink, security, support }
     let id: String
     let kind: Kind
     let date: Date
@@ -19,6 +19,7 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
         case .timer: return "Clock"
         case .dayblink: return "Dayblink"
         case .security: return "HavenWatch"
+        case .support: return "Relay Support"
         }
     }
     var symbol: String {
@@ -28,13 +29,14 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
         case .timer: return "timer"
         case .dayblink: return "camera.fill"
         case .security: return "shield.lefthalf.filled"
+        case .support: return "headset"
         }
     }
     var cue: PhoneCue { kind == .timer ? .timerCompleted : kind == .security ? .corrupted : .general }
     var profile: PhoneHapticProfile {
         switch kind {
         case .mail: return .mail
-        case .social, .dayblink: return .social
+        case .social, .dayblink, .support: return .social
         case .timer: return .cue(.timerCompleted)
         case .security: return .security
         }
@@ -53,6 +55,11 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
             return prefs.notificationsEnabled && !(author.map { prefs.mutedAuthors.contains($0) } ?? false)
                 && LumaSocialCatalog.visible(channel, world: state).contains { $0.id == targetID }
         case .timer: return true
+        case .support:
+            guard let targetID, let history = state.relaySupport,
+                  history.activeInstallation == true, history.notificationsEnabled ?? true,
+                  !(history.seenIDs ?? []).contains(targetID) else { return false }
+            return history.messages.contains { !$0.outgoing && $0.id == targetID }
         case .security:
             return (state.connectedWorld?.havenWatch?.alertsEnabled ?? true) && HavenWatchEvents.visible(state).map { $0.id == targetID } == true
         case .dayblink:
@@ -65,6 +72,7 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
     }
     func hidePreview(in state: PhoneWorld) -> Bool {
         if kind == .security { return true }
+        if kind == .support { return !(state.relaySupport?.previewsEnabled ?? false) }
         if kind == .dayblink { return !(state.connectedWorld?.dayblink?.previewsEnabled ?? false) }
         guard let channel else { return false }
         return !(state.connectedWorld?.socialPreferences?[channel.rawValue]?.showPreviews ?? true)
@@ -188,6 +196,8 @@ struct LumaActivityDetail: View {
                 Text("Your timer has finished.").padding().navigationTitle("Clock")
             case .security:
                 HavenWatchEventDetail()
+            case .support:
+                RelaySupportView()
             case .dayblink:
                 if let author = notice.author, let friend = DayblinkFriend(rawValue: author) {
                     DayblinkThread(friend: friend)
