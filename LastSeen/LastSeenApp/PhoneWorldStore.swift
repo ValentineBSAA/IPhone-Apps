@@ -1438,6 +1438,13 @@ final class PhoneWorldStore: ObservableObject {
         guard VeilArchive.media(state).contains(asset) else { return }
         if state.flags.insert("veil.viewed."+asset).inserted { save() }
     }
+    @discardableResult
+    func recordVeilDispute(_ answer:Int,packages:String,safeMode:Bool)->Bool {
+        guard VeilArchive.installed(state,packages:packages,safeMode:safeMode),
+              VeilCommunity.acceptsDispute(answer,in:state) else { return false }
+        if state.flags.insert(VeilCommunity.disputeMarker).inserted { save() }
+        return true
+    }
     func recordVeilHomeIndexOpened() {
         guard VeilArchive.pages(state).contains(where:{$0.id == "home-index"}) else { return }
         if state.flags.insert("veil.home-index.opened").inserted { save() }

@@ -65,7 +65,9 @@ enum LumaAssistantEvidence {
             }
             if world.flags.contains("veil.home-index.opened"),
                let page = VeilArchive.pages(world).first(where:{$0.id == "home-index"}) {
-                result.append(.init(id:"veil:home-index",title:page.title,kind:.web,excerpts:[page.text]))
+                var excerpts=[page.text]
+                if VeilCommunity.disputeReviewed(world) { excerpts.append(VeilCommunity.disputeNote) }
+                result.append(.init(id:"veil:home-index",title:page.title,kind:.web,excerpts:excerpts))
             }
             let read = world.flags.contains("veil.correspondence.opened")
             let messages = VeilArchive.messages(world)

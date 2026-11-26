@@ -15,7 +15,9 @@ enum VeilReferences {
     // EvidenceConnection.visible here: assistant evidence also reads VEIL.
     static func homeIndexReady(_ world:PhoneWorld)->Bool {
         guard VeilArchive.homeMedia(world).count == 6,
-              VeilCommunity.opened(world).contains(where:{$0.id == "ordinary-hours"}) else { return false }
+              world.flags.contains("veil.correspondence.opened"),
+              world.flags.contains(marker("board-reference")),
+              world.flags.contains(VeilCommunity.openedMarker("ordinary-hours")) else { return false }
         let reviewed = world.connectedWorld?.recoveredImageReviews ?? []
         let images = Set(VeilArchive.homeMedia(world).filter {
             world.flags.contains("veil.viewed."+$0) && reviewed.contains($0)
