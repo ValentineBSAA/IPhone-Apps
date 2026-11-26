@@ -104,8 +104,14 @@ enum LumaWebCatalog {
         Array(Set(pages.flatMap(\.images))).sorted()
     }
     static func restrictedAddress(_ raw: String) -> Bool {
-        let value = (raw.removingPercentEncoding ?? raw).lowercased()
-        return value.contains(".onion") || value.contains("veil://")
+        var value=raw.lowercased()
+        // Reject encoded aliases before catalog search; never hand them off.
+        for _ in 0..<3 {
+            guard let decoded=value.removingPercentEncoding,decoded != value else{break}
+            value=decoded.lowercased()
+        }
+        value=value.replacingOccurrences(of:"\\",with:"/")
+        return value.contains(".onion") || value.contains("veil:") || value.contains(".invalid")
     }
     static func page(_ id: String) -> LumaWebPage? {
         guard !restrictedAddress(id) else { return nil }
@@ -586,8 +592,10 @@ struct LumaWebBrowser: View {
         .onAppear {
             if !seeded { if history.isEmpty { history="cafe|books" }; if bookmarks.isEmpty{bookmarks="books"}; seeded=true }
             if visitRaw.isEmpty {
-                let restored = [("books",940.0),("cafe",820),("residents",710),("studio",560),("books-events",415),("cafe-menu",300),("studio-team",180),("books",75),("cafe",12)]
-                visitRaw=LumaBrowserHistory.encode(restored.map{LumaBrowserVisit(pageID:$0.0,date:world.state.createdAt.addingTimeInterval(-$0.1*86400))})
+                let restored:[(String,Double)] = [("books",940),("cafe",820),("residents",710),("studio",560),("books-events",415),("cafe-menu",300),("studio-team",180),("books",75),("cafe",12)]
+                // Preserve legacy history when it exists, and add no discovery flags.
+                let historical=restored.map{LumaBrowserVisit(pageID:$0.0,date:world.state.createdAt.addingTimeInterval(-$0.1*86400))}
+                visitRaw=LumaBrowserHistory.encode(historical+visits)
             }
             if let p=page { current=p.id; query=p.address } else { current="" }
         }

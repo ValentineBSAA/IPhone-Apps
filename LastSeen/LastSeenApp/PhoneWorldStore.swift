@@ -1477,6 +1477,11 @@ final class PhoneWorldStore: ObservableObject {
     func socialPreferences(_ channel: LumaSocialChannel) -> LumaSocialPreferences {
         connected.socialPreferences?[channel.rawValue] ?? LumaSocialPreferences()
     }
+    func setSocialSignedIn(_ signedIn:Bool,channel:LumaSocialChannel) {
+        var prefs=socialPreferences(channel)
+        prefs.signedOut = !signedIn
+        setSocialPreferences(prefs,channel:channel)
+    }
     func setSocialPreferences(_ value: LumaSocialPreferences, channel: LumaSocialChannel) {
         guard state.everydayArchiveRevision != nil else { return }
         var c = connected
@@ -1485,7 +1490,7 @@ final class PhoneWorldStore: ObservableObject {
         c.socialPreferences = values
         for i in (c.activityJournal ?? []).indices {
             guard let notice = c.activityJournal?[i], notice.kind == .social, notice.channel == channel else { continue }
-            if !value.notificationsEnabled || (notice.author.map { value.mutedAuthors.contains($0) } ?? false) ||
+            if !value.signedIn || !value.notificationsEnabled || (notice.author.map { value.mutedAuthors.contains($0) } ?? false) ||
                 (notice.id.hasPrefix("community-post-") && value.followedPostAlerts == false) {
                 c.activityJournal?[i].dismissed = true
             }
@@ -1493,14 +1498,14 @@ final class PhoneWorldStore: ObservableObject {
         commitConnected(c)
     }
     func toggleSocialMute(_ author: String, channel: LumaSocialChannel) {
-        guard author != "Nora Bennett", author != "Repair desk",
+        guard socialPreferences(channel).signedIn,author != "Nora Bennett", author != "Repair desk",
               LumaSocialCatalog.visible(channel, world: state).contains(where: { $0.author == author }) else { return }
         var value = socialPreferences(channel)
         if !value.mutedAuthors.insert(author).inserted { value.mutedAuthors.remove(author) }
         setSocialPreferences(value, channel: channel)
     }
     func toggleSocial(_ action:LumaSocialAction,postID:String,channel:LumaSocialChannel) {
-        guard let post=LumaSocialCatalog.visible(channel,world:state).first(where:{$0.id==postID}) else{return}
+        guard socialPreferences(channel).signedIn,let post=LumaSocialCatalog.visible(channel,world:state).first(where:{$0.id==postID}) else{return}
         var c=connected
         switch action {
         case .like: if !c.likes.insert(postID).inserted {c.likes.remove(postID)}
@@ -1521,7 +1526,7 @@ final class PhoneWorldStore: ObservableObject {
     @discardableResult
     func commentSocial(postID:String,channel:LumaSocialChannel,text:String,now:Date=Date())->Bool {
         let message=text.trimmingCharacters(in:.whitespacesAndNewlines)
-        guard !message.isEmpty,message.count<=600,let post = LumaSocialCatalog.visible(channel,world:state).first(where:{$0.id==postID}) else{return false}
+        guard socialPreferences(channel).signedIn,!message.isEmpty,message.count<=600,let post = LumaSocialCatalog.visible(channel,world:state).first(where:{$0.id==postID}) else{return false}
         var c=connected
         // Reserve a slot for every accepted pending reply before accepting
         // another local comment.
@@ -1541,7 +1546,7 @@ final class PhoneWorldStore: ObservableObject {
     @discardableResult
     func publishSocial(channel:LumaSocialChannel,text:String,now:Date=Date())->Bool {
         let message=text.trimmingCharacters(in:.whitespacesAndNewlines)
-        guard state.everydayArchiveRevision != nil,!message.isEmpty,message.count<=1000 else{return false}
+        guard socialPreferences(channel).signedIn,state.everydayArchiveRevision != nil,!message.isEmpty,message.count<=1000 else{return false}
         var c=connected
         guard c.posts.count<60 else{return false}
         c.posts.append(LumaSocialPost(id:UUID().uuidString,channel:channel,author:RestoredPhoneBackup.ownerName,handle:"nora.b",body:message,date:now,portrait:RestoredPhoneBackup.ownerPortrait,photo:nil,gate:nil))

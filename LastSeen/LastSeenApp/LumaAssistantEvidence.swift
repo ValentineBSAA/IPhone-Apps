@@ -153,13 +153,22 @@ enum LumaAssistantEvidence {
         let stop:Set<String>=["the","a","an","i","me","you","it","what","where","who","is","was","were","are","can","could","would","please","tell","about","found","find","look","help","record","message","photo","image","think","nora","that","this","with","and","for","from","have","does","did","do","of","to","in"]
         let terms=LumaAssistantConversation.words(raw).subtracting(stop).filter{$0.count>=4}
         guard !terms.isEmpty else{return nil}
-        let ranked=visible(world).map { item -> (Record,Int) in
+        var ranked:[(record:Record,score:Int)]=[]
+        for item in visible(world) {
             let title=LumaAssistantConversation.words(item.title)
             let contents=LumaAssistantConversation.words(item.excerpts.joined(separator:" "))
-            return (item,title.intersection(terms).count*3+contents.intersection(terms).count)
-        }.filter{$0.1>=2}.sorted{$0.1==$1.1 ? $0.0.id<$1.0.id : $0.1>$1.1}
-        guard let best=ranked.first,ranked.count==1 || best.1>ranked[1].1 else{return nil}
-        return best.0
+            let titleScore=title.intersection(terms).count * 3
+            let bodyScore=contents.intersection(terms).count
+            let score=titleScore+bodyScore
+            if score>=2 {ranked.append((item,score))}
+        }
+        ranked.sort { left,right in
+            if left.score==right.score {return left.record.id<right.record.id}
+            return left.score>right.score
+        }
+        guard let best=ranked.first else{return nil}
+        if ranked.count>1 && best.score==ranked[1].score {return nil}
+        return best.record
     }
     /// These categories describe saved observations, not new visual inference.
     static func imageResponse(_ words:Set<String>,record:Record,visual:LumaImageAnalysisReport?)->String {

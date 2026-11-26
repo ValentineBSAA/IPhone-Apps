@@ -227,7 +227,29 @@ struct VeilBrowser: View {
     @State private var anonymousAlias = ""
     @State private var aliasSheet = false
     @State private var aliasDraft = ""
-    private func newAlias()->String { "reader-"+UUID().uuidString.prefix(6).lowercased() }
+    private func newAlias()->String { "reader-"+String(UUID().uuidString.prefix(6)).lowercased() }
+    private func applyAlias() {
+        guard connected,allowed,phase == .active else{return}
+        let allowedCharacters=aliasDraft.lowercased().filter{character in
+            character.isASCII && (character.isLetter || character.isNumber || character=="-" || character=="_")
+        }
+        let clean=String(allowedCharacters.prefix(24))
+        anonymousAlias=clean.isEmpty ? newAlias():clean
+        aliasSheet=false
+    }
+    private var aliasEditor:some View {
+        NavigationStack {
+            Form {
+                Section("Temporary local alias"){
+                    TextField("Alias",text:$aliasDraft).textInputAutocapitalization(.never).autocorrectionDisabled()
+                    Text("No real registration or credentials.").font(.caption)
+                }
+                Button("Use alias"){applyAlias()}.disabled(aliasDraft.isEmpty)
+            }.navigationTitle("Session identity").toolbar{
+                ToolbarItem(placement:.cancellationAction){Button("Cancel"){aliasSheet=false}}
+            }
+        }
+    }
     @State private var showNewIdentity = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("lastseen.lab.horrorEffects") private var horrorEffects = true
@@ -416,7 +438,7 @@ struct VeilBrowser: View {
                     LumaArchiveEdgeTreatment(opacity: treatment.edgeOpacity)
                 }
             }
-            .sheet(isPresented:$aliasSheet){NavigationStack{Form{Section("Temporary local alias"){TextField("Alias",text:$aliasDraft).textInputAutocapitalization(.never).autocorrectionDisabled();Text("No real registration or credentials.").font(.caption)};Button("Use alias"){guard connected,allowed,phase == .active else{return};let clean=String(aliasDraft.lowercased().filter{$0.isASCII && ($0.isLetter || $0.isNumber || $0=="-" || $0=="_")}.prefix(24));anonymousAlias=clean.isEmpty ? newAlias():clean;aliasSheet=false}.disabled(aliasDraft.isEmpty)}.navigationTitle("Session identity").toolbar{ToolbarItem(placement:.cancellationAction){Button("Cancel"){aliasSheet=false}}}}}
+            .sheet(isPresented:$aliasSheet){aliasEditor}
             .confirmationDialog("Start a new local identity?",isPresented:$showNewIdentity,titleVisibility:.visible) {
                 Button("Clear session",role:.destructive) {
                     guard allowed,connected,wifi,phase == .active else{return}

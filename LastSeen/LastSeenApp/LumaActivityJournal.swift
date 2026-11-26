@@ -80,7 +80,7 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
         case .social:
             guard let channel, let targetID else { return false }
             let prefs = state.connectedWorld?.socialPreferences?[channel.rawValue] ?? LumaSocialPreferences()
-            guard prefs.notificationsEnabled, !(author.map { prefs.mutedAuthors.contains($0) } ?? false),
+            guard prefs.signedIn,prefs.notificationsEnabled, !(author.map { prefs.mutedAuthors.contains($0) } ?? false),
                   LumaSocialCatalog.visible(channel, world: state).contains(where: { $0.id == targetID }) else { return false }
             if id.hasPrefix("community-post-") {
                 guard prefs.followedPostAlerts ?? true, let author,

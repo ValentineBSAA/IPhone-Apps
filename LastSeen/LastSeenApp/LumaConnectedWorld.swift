@@ -139,7 +139,20 @@ enum LumaMailCatalog {
         return (originals+old+work+LivingPhoneHistory.mail(anchor: date)+delivered).sorted{$0.date>$1.date}
     }
     static func isUnread(_ item:LumaMailRecord,read:Set<String>)->Bool {
-        item.kind=="inbox" && !item.id.hasPrefix("b32-mail-") && !read.contains(item.id)
+        item.kind=="inbox" && !item.id.hasPrefix("b32-mail-") && !item.id.hasPrefix("years-mail-") && !read.contains(item.id)
+    }
+    static func thread(_ item:LumaMailRecord,in world:PhoneWorld)->[LumaMailRecord] {
+        func subjectKey(_ subject:String)->String {
+            var key=subject.trimmingCharacters(in:.whitespacesAndNewlines).lowercased()
+            while key.hasPrefix("re:") {key=String(key.dropFirst(3)).trimmingCharacters(in:.whitespacesAndNewlines)}
+            return key
+        }
+        guard !item.peer.isEmpty,!subjectKey(item.subject).isEmpty else{return [item]}
+        let key=subjectKey(item.subject)
+        return visible(world).filter { candidate in
+            candidate.peer==item.peer && subjectKey(candidate.subject)==key &&
+            candidate.kind != "draft" && (candidate.id==item.id || world.connectedWorld?.mailFolders[candidate.id] != "trash")
+        }.sorted{($0.date,$0.id)<($1.date,$1.id)}
     }
     static func mailbox(_ world:PhoneWorld,folder:String,query:String="",read:Set<String>=[],unreadOnly:Bool=false,attachmentsAvailable:Bool=false)->[LumaMailRecord] {
         let q=query.trimmingCharacters(in:.whitespacesAndNewlines)
@@ -278,6 +291,7 @@ struct LumaConnectedMailView:View {
     @AppStorage("lastseen.restored.mail.read") private var readRaw=""
     @State private var folder="inbox"
     @State private var unreadOnly=false
+    @State private var selectedYear:Int?=nil
     @State private var query=""
     @State private var compose=false
     @Environment(\.scenePhase) private var phase
@@ -289,6 +303,11 @@ struct LumaConnectedMailView:View {
     private var items:[LumaMailRecord]{
         LumaMailCatalog.mailbox(world.state,folder:folder,query:query,read:read,unreadOnly:unreadOnly && folder=="inbox",attachmentsAvailable:attachmentsAvailable)
     }
+    private var years:[Int] {Array(Set(items.map{Calendar.current.component(.year,from:$0.date)})).sorted(by:>)}
+    private var shownItems:[LumaMailRecord] {
+        guard let selectedYear else{return items}
+        return items.filter{Calendar.current.component(.year,from:$0.date)==selectedYear}
+    }
     var body:some View {
         List {
             HStack { Image("Nora_Profile").resizable().scaledToFill().frame(width:40,height:40).clipShape(Circle()); VStack(alignment:.leading){Text("Nora Bennett").font(.headline); Text("Restored mail account").font(.caption).foregroundColor(.secondary)}; Spacer() }
@@ -296,8 +315,14 @@ struct LumaConnectedMailView:View {
             if folder=="inbox" {
                 Toggle("Unread only",isOn:$unreadOnly)
             }
-            if items.isEmpty {Text(query.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty ? "No messages in this mailbox":"No matching messages").foregroundColor(.secondary)}
-            ForEach(items){item in
+            if years.count>1 {
+                Picker("Year",selection:$selectedYear) {
+                    Text("All years").tag(Optional<Int>.none)
+                    ForEach(years,id:\.self){year in Text(String(year)).tag(Optional(year))}
+                }.pickerStyle(.menu)
+            }
+            if shownItems.isEmpty {Text(query.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty ? "No messages in this mailbox":"No matching messages").foregroundColor(.secondary)}
+            ForEach(shownItems){item in
                 NavigationLink {
                     if item.kind=="draft" {
                         LumaMailComposer(existing:item)
@@ -321,7 +346,10 @@ struct LumaConnectedMailView:View {
             if !world.connected.pendingMail.isEmpty {Label("Correspondence pending",systemImage:"clock").font(.caption).foregroundColor(.secondary)}
         }.navigationTitle("Mail").searchable(text:$query,prompt:"Search mail")
             .onChange(of:attachmentsAvailable){if !$0 && folder=="attachments" {folder="inbox"}}
-            .onChange(of:world.checkpointEpoch){_ in compose=false;folder="inbox";query="";unreadOnly=false}
+            .onChange(of:world.checkpointEpoch){_ in compose=false;folder="inbox";query="";unreadOnly=false;selectedYear=nil}
+            .onChange(of:folder){_ in selectedYear=nil}
+            .onChange(of:query){_ in selectedYear=nil}
+            .onChange(of:unreadOnly){_ in selectedYear=nil}
             .toolbar{ToolbarItem(placement:.navigationBarTrailing){Button{compose=true}label:{Image(systemName:"square.and.pencil").accessibilityLabel("Compose mail")}.disabled(phase != .active || world.state.everydayArchiveRevision == nil)}}
             .sheet(isPresented:$compose){NavigationStack{LumaMailComposer()}.environmentObject(world)}
     }
@@ -360,6 +388,16 @@ struct LumaMailDetail:View {
                     ForEach(item.attachments,id:\.self){id in
                         if let doc=WorldDocumentCatalog.document(id,world:world.state) {
                             NavigationLink {WorldDocumentReader(id:doc.id)}label:{Label(doc.title,systemImage:"paperclip").padding(10).lumaSurface(radius:12)}
+                        }
+                    }
+                    let related=LumaMailCatalog.thread(item,in:world.state).filter{$0.id != item.id}
+                    if !related.isEmpty {
+                        Divider()
+                        Text("Related correspondence").font(.headline)
+                        ForEach(related){record in
+                            NavigationLink{LumaMailDetail(id:record.id)}label:{
+                                HStack{VStack(alignment:.leading,spacing:4){Text(record.sender).font(.subheadline.weight(.medium));Text(record.subject).font(.subheadline);Text(record.body).font(.caption).foregroundColor(.secondary).lineLimit(2)};Spacer();Text(record.date,style:.date).font(.caption2).foregroundColor(.secondary)}
+                            }.buttonStyle(.plain)
                         }
                     }
                     HStack{
@@ -590,7 +628,7 @@ struct LumaSocialView:View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink { LumaSocialAccountView(channel: channel) } label: { Image(systemName: "person.crop.circle").accessibilityLabel("Account and settings") }
                 }
-                ToolbarItem(placement:.navigationBarTrailing){Button{compose=true}label:{Image(systemName:"square.and.pencil").accessibilityLabel("Compose post")}}
+                ToolbarItem(placement:.navigationBarTrailing){Button{compose=true}label:{Image(systemName:"square.and.pencil").accessibilityLabel("Compose post")}.disabled(!world.socialPreferences(channel).signedIn)}
             }
             .sheet(isPresented:$compose){
                 NavigationStack{
@@ -623,6 +661,8 @@ struct LumaSocialProfile:View{
                     }
                     if let bio = LumaSocialCommunity.bio(author: author, channel: channel) { Text(bio) }
                     LabeledContent("Posts", value: String(posts.count))
+                    if let oldest=posts.map(\.date).min(){LabeledContent("On this app since",value:oldest.formatted(.dateTime.month(.wide).year()))}
+                    if author==RestoredPhoneBackup.ownerName {Label("Your restored profile",systemImage:"checkmark.circle").font(.caption).foregroundColor(.secondary)}
                 }
                 if author != "Nora Bennett" && author != "Repair desk" {
                     Button(world.socialPreferences(channel).mutedAuthors.contains(author) ? "Unmute profile" : "Mute profile") { world.toggleSocialMute(author, channel: channel) }
@@ -678,9 +718,10 @@ struct LumaSocialDiscussion:View{
                     if comments.isEmpty{Text("No restored comments").foregroundColor(.secondary)}
                     ForEach(comments){c in VStack(alignment:.leading){Text(c.author).font(.headline);Text(c.body);Text(c.date,format:.dateTime.month().day().hour().minute()).font(.caption).foregroundColor(.secondary)}}
                 }
-                Section("Repair desk"){
-                    TextField("Write a local comment",text:$text,axis:.vertical)
-                    Button("Post comment"){if world.commentSocial(postID:postID,channel:channel,text:text){text="";error=""}else{error="Comment not saved."}}.disabled(text.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty)
+                Section("Nora’s account"){
+                    if !world.socialPreferences(channel).signedIn {Text("Sign in from the app’s account settings to comment.").font(.caption).foregroundColor(.secondary)}
+                    TextField("Write a local comment",text:$text,axis:.vertical).disabled(!world.socialPreferences(channel).signedIn)
+                    Button("Post comment"){if world.commentSocial(postID:postID,channel:channel,text:text){text="";error=""}else{error="Comment not saved."}}.disabled(text.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty || !world.socialPreferences(channel).signedIn)
                     if !error.isEmpty{Text(error).foregroundColor(.secondary)}
                 }
             }else{Text("Post unavailable")}

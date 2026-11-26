@@ -181,11 +181,13 @@ enum LumaAssistantConversation {
         let world = c.world
         let recentQuestion=recentTurns.reversed().first(where:{$0.hasPrefix("You: ")}).map{String($0.dropFirst(5))} ?? ""
         let followUp = !forbidden.isDisjoint(with:["that","it","more","why","those","them"]) && forbidden.count<=9
-        let reference = LumaAssistantEvidence.selected(evidenceID,in:world) ?? LumaAssistantEvidence.mentions(raw,in:world) ?? LumaAssistantEvidence.relevant(raw,in:world) ?? (followUp ? LumaAssistantEvidence.relevant(recentQuestion,in:world):nil)
+        let directReference=LumaAssistantEvidence.selected(evidenceID,in:world) ?? LumaAssistantEvidence.mentions(raw,in:world)
+        let matchedReference=directReference ?? LumaAssistantEvidence.relevant(raw,in:world)
+        let reference=matchedReference ?? (followUp ? LumaAssistantEvidence.relevant(recentQuestion,in:world):nil)
         // Never let a selected record override credential/action denials,
         // explicit controls, or ordinary questions about Nora's life.
         if let reference, !LumaOwnerMemory.topics.contains(selected), selected != .nextStep,
-           (evidenceID != nil || LumaAssistantEvidence.mentions(raw,in:world) != nil || LumaAssistantEvidence.relevant(raw,in:world) != nil || followUp) {
+           (matchedReference != nil || followUp) {
             let report=LumaImageAnalysis.verified(visualReport,recordID:reference.id,world:world,security:imageSecurity)
             return .init(topic:reference.topic,answer:.init(text:LumaAssistantEvidence.response(raw,record:reference,visual:report),clipID:"conversation"))
         }

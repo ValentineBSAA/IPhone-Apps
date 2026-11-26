@@ -5,6 +5,8 @@ struct LumaSocialPreferences: Codable, Equatable {
     var notificationsEnabled = true
     var showPreviews = true
     var followedPostAlerts: Bool? = nil
+    var signedOut: Bool? = nil
+    var signedIn: Bool {signedOut != true}
 }
 
 enum LumaSocialCommunity {
@@ -299,6 +301,7 @@ struct LumaSocialAccountView: View {
     let channel: LumaSocialChannel
     @EnvironmentObject private var world: PhoneWorldStore
     private var prefs: LumaSocialPreferences { world.socialPreferences(channel) }
+    @State private var confirmSignOut=false
     var body: some View {
         List {
             Section("Restored account") {
@@ -311,8 +314,10 @@ struct LumaSocialAccountView: View {
                 if channel == .connective {
                     NavigationLink("Blue Hour Interactive · Company page") { LumaSocialProfile(channel: channel, author: "Blue Hour Interactive") }
                 }
-                LabeledContent("Account", value: "Signed in")
-                Text("New posts and comments use this restored account. Original posts remain unchanged.").font(.caption).foregroundColor(.secondary)
+                LabeledContent("Account", value: prefs.signedIn ? "Signed in" : "Signed out")
+                Text(prefs.signedIn ? "New posts and comments use this restored account. Original posts remain unchanged." : "You can browse the local archive. Sign in again to publish or interact.").font(.caption).foregroundColor(.secondary)
+                if prefs.signedIn {Button("Sign out",role:.destructive){confirmSignOut=true}}
+                else {Button("Restore Nora’s session"){world.setSocialSignedIn(true,channel:channel)}}
             }
             Section("Local viewing preferences") {
                 Toggle("App notifications", isOn: Binding(get: { prefs.notificationsEnabled }, set: { value in var next = prefs; next.notificationsEnabled = value; world.setSocialPreferences(next, channel: channel) }))
@@ -335,6 +340,10 @@ struct LumaSocialAccountView: View {
                 LabeledContent("Following", value: String(world.connected.follows.filter { $0.hasPrefix(channel.rawValue + "|") }.count))
             }
         }.navigationTitle("Account & settings")
+            .confirmationDialog("Sign out of "+channel.rawValue+"?",isPresented:$confirmSignOut,titleVisibility:.visible){
+                Button("Sign out",role:.destructive){world.setSocialSignedIn(false,channel:channel)}
+                Button("Cancel",role:.cancel){}
+            } message:{Text("This closes only the fictional app session. Your restored posts and investigation progress remain.")}
     }
 }
 
