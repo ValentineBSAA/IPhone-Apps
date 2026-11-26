@@ -249,6 +249,7 @@ enum LumaSocialCatalog {
     static func visiblePhoto(_ post:LumaSocialPost,world:PhoneWorld)->String? {
         guard world.everydayArchiveRevision != nil, post.gate.map({ world.flags.contains($0) }) ?? true else { return nil }
         if let media = LumaSocialCommunity.publicPhoto(post) { return media }
+        if post.channel == .afterframe, let clip=MotionwellArchive.clips.first(where:{"b33-essay-"+$0.id==post.id && $0.creator==post.author && $0.handle==post.handle && $0.poster==post.photo}) {return clip.poster}
         guard let id=post.photo,let record=NoraPhotoCatalog.photos.first(where:{$0.id==id}),!record.privateAlbum,
               record.available(flags:NoraPhotoCatalog.discoveryFlags(from:world.flags)) else{return nil}
         return id

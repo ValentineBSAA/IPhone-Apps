@@ -6,7 +6,7 @@ import XCTest
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let world = RestoredPhoneBackup.snapshot(now: now)
         let posts = LumaSocialChannel.allCases.flatMap { LumaSocialCatalog.visible($0, world: world) }
-        XCTAssertEqual(posts.count, 242)
+        XCTAssertEqual(posts.count, 246)
         XCTAssertEqual(Set(posts.map(\.id)).count, posts.count)
         XCTAssertTrue(posts.allSatisfy { $0.date < now })
         let comments = posts.flatMap { LumaSocialCatalog.comments($0.id, channel: $0.channel, world: world) }
@@ -33,7 +33,7 @@ import XCTest
         XCTAssertTrue(w.commentSocial(postID: post.id, channel: .connective, text: "Thanks for the update"))
         let after = LumaSocialCatalog.comments(post.id, channel: .connective, world: w.state)
         XCTAssertEqual(after.count, before.count + 1)
-        XCTAssertEqual(after.last?.author, "Repair desk")
+        XCTAssertEqual(after.last?.author, RestoredPhoneBackup.ownerName)
         XCTAssertTrue(w.state.flags.isEmpty)
     }
     func testDistinctEverydayReplies() {

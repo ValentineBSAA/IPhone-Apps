@@ -28,3 +28,7 @@ User authorized comprehensive audit then build. The version identity is staged; 
 - Luma can retrieve uniquely relevant already opened records and use recent question context for follow-ups. Optional on-device classifier receives bounded recent turns. No unearned facts, external calls, or invented permissions. This is contextual retrieval, not unrestricted generative dialogue; richer NPC intelligence remains open.
 - Removed Motionwell from available apps/folder and stopped automatic upload ticks; retain legacy data and redirect legacy app route to Afterframe. Migrated ordinary photo-essay titles to static social posts. Original media remains archived in repo and current build inputs until resource contract review.
 - Added memo context labels, preserved original recorded audio, fixed overly broad unlock question matching. Native validation remains required.
+
+## Pass 6: migration and native validation entry
+- Historical migration bookkeeping is separate from story flags. Static photo essays use exact author/handle/asset mapping; old video alerts are excluded from live presentation. Launcher regression tests now require no video app.
+- Added explicit no-premature-contact interval assertion; baseline catalog tests account for ordinary content and restored Nora identity. Existing tests still must run on native CI. No packaging authorization at this commit. All 26 active apps plus retired legacy route remain in the acceptance register.

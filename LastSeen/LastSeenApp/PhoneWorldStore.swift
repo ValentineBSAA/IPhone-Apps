@@ -126,6 +126,7 @@ struct PhoneWorld: Codable {
     var callHistory: [LumaCallRecord]? = nil
     var favoriteContacts: [String]? = nil
     var everydayArchiveRevision: Int? = nil
+    var everydayDepthRevision: Int? = nil
     var utilitySnippets: [LumaSnippet]? = nil
     var pinnedSnippet: String? = nil
     var connectedWorld: LumaConnectedState? = nil

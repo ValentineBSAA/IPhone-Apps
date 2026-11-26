@@ -28,7 +28,7 @@ Mandatory release gate for 1.9.0 (32), iPhone 16e. Every LabApp is listed exactl
 | Workstation | Connection, diagnostics, image tools, progression | Targeted pass | Pending | Pending |
 | HavenWatch | Fixed-camera archive, preferences, events, privacy, notifications | Targeted pass | Pending | Pending |
 | Dayblink | Stories, local media, expiry, interactions, notifications | Targeted pass | Pending | Pending |
-| Motionwell | Catalog, media availability, playback, saved state, notifications | Targeted pass | Pending | Pending |
+| Motionwell | Retired in 1.9.1; legacy state decode, no launcher or live notifications, photo-essay migration | Targeted pass | Pending | Pending |
 | Voice Memos | Record catalog, transcript, playback, read-aloud, missing audio | Targeted pass | Pending | Pending |
 | Luma Assistant | Nora memory, trust, context, permissions, voice, image evidence | Targeted pass | Pending | Pending |
 

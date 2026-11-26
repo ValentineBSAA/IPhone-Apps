@@ -165,7 +165,7 @@ struct LumaActivityRoute: Hashable {
 
 enum LumaActivityCatalog {
     static func visible(_ state: PhoneWorld) -> [LumaActivityNotice] {
-        (state.connectedWorld?.activityJournal ?? []).filter { !$0.dismissed && $0.canPresent(in: state) }
+        (state.connectedWorld?.activityJournal ?? []).filter { $0.kind != .motionwell && !$0.dismissed && $0.canPresent(in: state) }
             .sorted { ($0.date, $0.id) > ($1.date, $1.id) }
     }
     /// The visible timer must use current persisted eligibility rather than

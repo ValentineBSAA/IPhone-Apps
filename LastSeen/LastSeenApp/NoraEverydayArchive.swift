@@ -15,9 +15,10 @@ enum NoraEverydayArchive {
         "Weekend list":"Sunday lunch at Mum's. Pick up a small dessert if Lily hasn't already. Bring the book back to Maya."
     ]
     static func expand(_ world: inout PhoneWorld) {
-        if !world.flags.contains("b33.everyday.depth") {
+        if world.everydayDepthRevision != 1 {
             addStudioHistory(&world)
-            world.flags.insert("b33.everyday.depth")
+            world.everydayDepthRevision=1
+            world.flags.remove("b33.everyday.depth")
         }
         guard (world.everydayArchiveRevision ?? 0) < revision else { return }
         let conversations: [(Neighbor, [(Bool, String)])] = [
