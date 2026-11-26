@@ -31,6 +31,27 @@ import XCTest
         XCTAssertFalse(alex.contains("1,024"))
         XCTAssertTrue(luma.contains("1,024"))
     }
+    func testAssistantAccessSnapshotDetectsRevocationWithoutSelectedRecord() {
+        var world = RestoredPhoneBackup.snapshot()
+        world.flags.formUnion(["phone-tutorial-finished", "web.visited.archive", VeilArchive.discovery,
+                              "veil.viewed.Nora_Archive_08", LumaAssistantTrust.acknowledgement])
+        let before = LumaAssistantAccessSnapshot(world)
+        XCTAssertTrue(before.recordIDs.contains("image:Nora_Archive_08"))
+        world.flags.insert("veil.viewed.Nora_Archive_09")
+        let expanded = LumaAssistantAccessSnapshot(world)
+        XCTAssertFalse(expanded.revokes(before))
+        world.flags.remove(VeilArchive.discovery)
+        let revoked = LumaAssistantAccessSnapshot(world)
+        XCTAssertTrue(revoked.revokes(expanded))
+        XCTAssertFalse(revoked.recordIDs.contains("image:Nora_Archive_08"))
+        world.flags.insert(VeilArchive.discovery)
+        let restored = LumaAssistantAccessSnapshot(world)
+        XCTAssertFalse(restored.revokes(revoked))
+        world.flags.remove(LumaAssistantTrust.acknowledgement)
+        XCTAssertTrue(LumaAssistantAccessSnapshot(world).revokes(restored))
+        XCTAssertTrue(LumaAssistantAccessSnapshot(PhoneWorldStore(persistToDisk: false).state).revokes(restored))
+    }
+
     func testReportValidationAndAuthorization() throws {
         var state=RestoredPhoneBackup.snapshot()
         let asset="Nora_Archive_08"

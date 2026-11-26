@@ -2,6 +2,24 @@ import Foundation
 
 /// References to actually opened fictional records. Catalog availability is
 /// checked again on every request. No source is opened by assistant inference.
+/// Transient access snapshot, not a saved permission or conversation record.
+/// A rollback can revoke a source discussed by name even without a selection.
+struct LumaAssistantAccessSnapshot: Equatable {
+    let hasArchive: Bool
+    let flags: Set<String>
+    let recordIDs: Set<String>
+    init(_ world: PhoneWorld) {
+        hasArchive = world.everydayArchiveRevision != nil
+        flags = world.flags
+        recordIDs = Set(LumaAssistantEvidence.visible(world).map(\.id))
+    }
+    func revokes(_ previous: Self) -> Bool {
+        (previous.hasArchive && !hasArchive) ||
+        !previous.flags.isSubset(of: flags) ||
+        !previous.recordIDs.isSubset(of: recordIDs)
+    }
+}
+
 enum LumaAssistantEvidence {
     struct Record: Identifiable {
         let id:String

@@ -99,6 +99,8 @@ struct LumaAssistantView: View {
     @AppStorage("lastseen.lab.messageSound") private var sound = true
     @State private var input = ""
     @State private var evidenceID: String?
+    @State private var lastAccess: LumaAssistantAccessSnapshot?
+    private var accessSnapshot: LumaAssistantAccessSnapshot { .init(context().world) }
     @State private var imageScan:Task<Void,Never>?
     @State private var imageScanID=UUID()
     @State private var imageReport:LumaImageAnalysisReport?
@@ -193,6 +195,17 @@ struct LumaAssistantView: View {
         evidenceID=record.id
         accept("Please analyze this image.",.init(topic:.pictures,answer:.init(text:LumaAssistantEvidence.response("Please analyze this image.",record:record),clipID:"conversation")))
     }
+    /// Discard transient conversation and queued work without mutating the
+    /// newly restored checkpoint or granting any new access.
+    private func clearTransientContext() {
+        stopAudio()
+        cancelImageScan()
+        interpretation?.cancel(); interpretation = nil; requestID = UUID()
+        evidenceID = nil; conversationTurns = []; conversationTopic = nil
+        previousMemoryID = nil; recollectionCount = 0
+        input = ""; focused = false; showEvidence = false
+        answer = .init(text: LumaAssistantTrust.greeting(context().world), clipID: "conversation")
+    }
     private func clearSession() {
         stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID()
         cancelImageScan()
@@ -204,6 +217,9 @@ struct LumaAssistantView: View {
     @FocusState private var focused: Bool
     private func submit(_ text: String) {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, text.count <= 600 else { return }
+        let access = accessSnapshot
+        if let lastAccess, access.revokes(lastAccess) { clearTransientContext() }
+        lastAccess = access
         stopAudio()
         interpretation?.cancel(); interpretation = nil
         if LumaAssistantTrust.acknowledgesBoundaries(text) { acknowledgeBoundaries() }
@@ -270,7 +286,11 @@ struct LumaAssistantView: View {
                     HStack {
                         Label(source.title,systemImage:"doc.text.magnifyingglass").font(.caption).lineLimit(2)
                         Spacer()
-                        Button { stopAudio(); cancelImageScan(); evidenceID = nil } label: { Image(systemName:"xmark.circle.fill").accessibilityLabel("Clear selected record") }
+                        Button {
+                            stopAudio(); cancelImageScan()
+                            interpretation?.cancel(); interpretation = nil; requestID = UUID()
+                            evidenceID = nil
+                        } label: { Image(systemName:"xmark.circle.fill").accessibilityLabel("Clear selected record") }
                     }.padding(10).lumaSurface(radius:12)
                     if source.kind == .image {
                         let asset=String(source.id.dropFirst(6))
@@ -345,25 +365,19 @@ struct LumaAssistantView: View {
                         .toolbar { ToolbarItem(placement:.cancellationAction) { Button("Cancel") { showEvidence = false } } }
                 }
             }
-            .onAppear { resumeSession(); receiveImageHandoff(); if !reduceMotion { withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { glow = true } } }
+            .onAppear { lastAccess = accessSnapshot; resumeSession(); receiveImageHandoff(); if !reduceMotion { withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { glow = true } } }
             .onChange(of: phase) { if $0 != .active { stopAudio(); cancelImageScan(); evidenceID=nil; interpretation?.cancel(); interpretation = nil; requestID = UUID(); conversationTurns = []; conversationTopic = nil; previousMemoryID = nil; recollectionCount = 0; answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation") } else { resumeSession() } }
             .onChange(of:imageSecurity) { _ in
-                if let id=evidenceID,id.hasPrefix("image:") {
-                    cancelImageScan();stopAudio()
-                    conversationTurns=[];answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation")
-                }
+                // Earlier turns may contain scan results even when the player
+                // subsequently cleared the selection or opened another record.
+                clearTransientContext()
             }
             .onChange(of:interpretOnDevice) { enabled in
                 if !enabled {interpretation?.cancel();interpretation=nil;requestID=UUID()}
             }
-            .onChange(of:context().world.flags) { _ in
-                if let id=evidenceID,LumaAssistantEvidence.selected(id,in:context().world)==nil {
-                    cancelImageScan();stopAudio()
-                    interpretation?.cancel();interpretation=nil;requestID=UUID()
-                    evidenceID=nil;conversationTurns=[];conversationTopic=nil
-                    previousMemoryID=nil;recollectionCount=0
-                    answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation")
-                }
+            .onChange(of:accessSnapshot) { current in
+                if let lastAccess, current.revokes(lastAccess) { clearTransientContext() }
+                lastAccess = current
             }
             .onChange(of: sound) { if !$0 { stopAudio() } }
             .onChange(of: spokenResponses) { if !$0 { stopAudio() } }
