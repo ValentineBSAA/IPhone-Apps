@@ -119,7 +119,12 @@ struct EvidenceComparisonView: View {
                         Text("Local record comparison. No new access or identity verification.").font(.caption).foregroundColor(.secondary)
                         Button("Save connection") {
                             guard phase == .active else{return}
-                            notice=world.saveEvidenceConnection(first,second,relation:relation) ? "Connection saved to the current checkpoint.":"Connection could not be saved."
+                            let readyBefore=VeilReferences.homeIndexReady(world.state)
+                            if world.saveEvidenceConnection(first,second,relation:relation) {
+                                notice = !readyBefore && VeilReferences.homeIndexReady(world.state)
+                                    ? "Connection saved. A new recovered reference is available in Files."
+                                    : "Connection saved to the current checkpoint."
+                            } else { notice="Connection could not be saved." }
                         }.buttonStyle(.borderedProminent)
                         if !notice.isEmpty {Text(notice).font(.caption)}
                     }
