@@ -442,3 +442,7 @@ Master checklist stays truthful: approved artwork is not integrated, initial sou
 - [ ] Native testing and device keyboard, calendar layout, document preview and checkpoint behavior remain open. No IPA or native workflow dispatched.
 
 - [x] SOURCE regression follow-up: distinct title/body keyboard focus identifiers; test trimmed note search, pinned ordering, empty matches, cross-midnight event overlap, exact day boundaries, zero-length events, invalid date ranges and upcoming selection. Tests authored, not executed.
+
+## B32 tranche 97: Clock and Calculator
+- [x] SOURCE: reviewed timer/stopwatch state and checkpoint rebasing; bounded finite timer display and configured duration, guarded stopwatch arithmetic and invalid stored values. Extracted calculator state machine with repeat equals, operator replacement, divide-by-zero recovery, contextual percentage, digit deletion, decimal validation, adaptive keys and confirmed history clearing. Existing local history and timer identity retained. Added arithmetic/time boundary tests and updated app register. Initial tree creation rejected due to incorrect base identifier; corrected retry committed.
+- [ ] Native tests, device timer completion, stopwatch rebase, calculator layout and all other acceptance remain open. No IPA or native workflow dispatched.

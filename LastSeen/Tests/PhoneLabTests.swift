@@ -2,6 +2,30 @@ import XCTest
 @testable import LastSeen
 
 final class PhoneLabTests: XCTestCase {
+    func testCalculatorAndClockBoundaries() {
+        var calculator=LumaCalculator()
+        func enter(_ keys:[String]) {for key in keys {calculator.press(key)}}
+        enter(["2","+","3","=","="])
+        XCTAssertEqual(calculator.display,"8")
+        enter(["C","8","+","×","2","="])
+        XCTAssertEqual(calculator.display,"16")
+        enter(["C","9","÷","0","=","+"])
+        XCTAssertEqual(calculator.display,"Error")
+        enter(["4","2","⌫"])
+        XCTAssertEqual(calculator.display,"4")
+        enter(["C","2","0","0","+","1","0","%","="])
+        XCTAssertEqual(calculator.display,"220")
+        enter(["C",".","5",".","0"])
+        XCTAssertEqual(calculator.display,"0.50")
+        XCTAssertEqual(LumaClockPolicy.remaining(end:102.1,now:100,minutes:5),3)
+        XCTAssertEqual(LumaClockPolicy.remaining(end:99,now:100,minutes:5),0)
+        XCTAssertEqual(LumaClockPolicy.remaining(end:.infinity,now:100,minutes:999),3600)
+        XCTAssertEqual(LumaClockPolicy.remaining(end:Double.greatestFiniteMagnitude,now:100,minutes:5),3600)
+        XCTAssertEqual(LumaClockPolicy.stopwatch(start:90,elapsed:5,now:100),15)
+        XCTAssertEqual(LumaClockPolicy.stopwatch(start:110,elapsed:5,now:100),5)
+        XCTAssertEqual(LumaClockPolicy.stopwatch(start:.nan,elapsed:-1,now:100),0)
+    }
+
     func testNotesAndCalendarBrowsingBoundaries() {
         var state=RestoredPhoneBackup.snapshot()
         let date=Date(timeIntervalSince1970:1_800_000_000)

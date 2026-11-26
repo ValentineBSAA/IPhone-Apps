@@ -1508,6 +1508,19 @@ private struct LabPhotosView: View {
     }
 }
 
+enum LumaClockPolicy {
+    static func duration(_ minutes:Int)->Int {min(60,max(1,minutes))*60}
+    static func remaining(end:Double,now:Double,minutes:Int)->Int {
+        guard end.isFinite,end>0,now.isFinite else{return duration(minutes)}
+        return Int(ceil(min(3600,max(0,end-now))))
+    }
+    static func stopwatch(start:Double,elapsed:Double,now:Double)->Double {
+        let base=elapsed.isFinite ? max(0,elapsed):0
+        guard start.isFinite,start>0,now.isFinite else{return base}
+        let total=base+max(0,now-start)
+        return total.isFinite ? total:base
+    }
+}
 private struct LabClockView: View {
     let onFinish: (Double) -> Void
     @State private var tab = 0
@@ -1531,7 +1544,7 @@ private struct LabClockView: View {
                         Text(context.date, style: .time).font(.system(size: 60, weight: .thin)).monospacedDigit()
                         Text(context.date, format: .dateTime.weekday(.wide).month(.wide).day())
                     } else if tab == 1 {
-                        Text(String(format: "%.1f", elapsed + (started > 0 ? max(0, timestamp - started) : 0)))
+                        Text(String(format: "%.1f", LumaClockPolicy.stopwatch(start:started,elapsed:elapsed,now:timestamp)))
                             .font(.system(size: 56, weight: .thin)).monospacedDigit()
                         Text("Seconds").font(.caption).foregroundColor(.secondary)
                         HStack {
@@ -1539,22 +1552,22 @@ private struct LabClockView: View {
                             Spacer()
                             Button(started > 0 ? "Stop" : "Start") {
                                 let now = Date().timeIntervalSince1970
-                                if started > 0 { elapsed += max(0, now - started); started = 0 }
+                                if started > 0 { elapsed = LumaClockPolicy.stopwatch(start:started,elapsed:elapsed,now:now); started = 0 }
                                 else { started = now }
                             }.buttonStyle(.borderedProminent)
                         }
                     } else {
-                        let remaining = timerEnd > 0 ? max(0, Int(ceil(timerEnd - timestamp))) : minutes * 60
+                        let remaining = LumaClockPolicy.remaining(end:timerEnd,now:timestamp,minutes:minutes)
                         ZStack {
                             Circle().stroke(.white.opacity(0.12), lineWidth: 7)
-                            Circle().trim(from: 0, to: min(1, Double(remaining) / Double(max(1, minutes * 60))))
+                            Circle().trim(from: 0, to: min(1, Double(remaining) / Double(LumaClockPolicy.duration(minutes))))
                                 .stroke(Color.teal, style: StrokeStyle(lineWidth: 7, lineCap: .round)).rotationEffect(.degrees(-90))
                             Text(String(format: "%02d:%02d", remaining / 60, remaining % 60))
                                 .font(.system(size: 47, weight: .light)).monospacedDigit()
                         }.frame(width: 210, height: 210)
                         if timerEnd == 0 {
                             Stepper("\(minutes) minutes", value: $minutes, in: 1...60)
-                            Button("Start timer") { timerEnd = Date().timeIntervalSince1970 + Double(minutes * 60) }.buttonStyle(.borderedProminent)
+                            Button("Start timer") { timerEnd = Date().timeIntervalSince1970 + Double(LumaClockPolicy.duration(minutes)) }.buttonStyle(.borderedProminent)
                         } else {
                             if remaining == 0 { Text("Timer finished").font(.headline).foregroundColor(.teal) }
                             Button(remaining == 0 ? "Done" : "Cancel timer") {
@@ -1569,62 +1582,141 @@ private struct LabClockView: View {
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }.padding(20).background(Night.background.ignoresSafeArea()).navigationTitle("Clock")
+        .onAppear {
+            minutes=min(60,max(1,minutes))
+            if !timerEnd.isFinite || timerEnd<0 {timerEnd=0}
+            if !started.isFinite || started<0 {started=0}
+            if !elapsed.isFinite || elapsed<0 {elapsed=0}
+        }
     }
 }
 
-private struct LabCalculatorView: View {
-    @State private var display = "0"
-    @State private var first: Double?
-    @State private var operation: String?
-    @State private var replace = true
-    let keys = ["C","±","%","÷","7","8","9","×","4","5","6","−","1","2","3","+","0",".","="]
-    @AppStorage("lastseen.lab.calculatorHistory") private var storedHistory = ""
-    private var history: [String] { storedHistory.split(separator: "\n").map(String.init) }
-    @State private var showHistory = false
-    var body: some View {
-        VStack(spacing: 12) {
-            Spacer()
-            if let op = operation, let left = first { Text("\(String(format: "%.10g", left)) \(op)").font(.title3).foregroundColor(.secondary).frame(maxWidth: .infinity, alignment: .trailing) }
-            Text(display).font(.system(size: 52, weight: .light)).lineLimit(1).minimumScaleFactor(0.3)
-                .frame(maxWidth: .infinity, alignment: .trailing).padding()
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 10) {
-                ForEach(keys, id: \.self) { key in
-                    Button { press(key) } label: {
-                        Text(key).font(.system(size: 27, weight: .medium)).frame(maxWidth: .infinity).frame(height: 65)
-                            .background(["÷","×","−","+","="].contains(key) ? Color.orange : Color.gray.opacity(0.24), in: Capsule())
-                    }.buttonStyle(.plain)
-                }
-            }
-        }.padding().background(Night.background.ignoresSafeArea()).navigationTitle("Calculator")
-        .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button { showHistory = true } label: { Image(systemName: "clock.arrow.circlepath").accessibilityLabel("Calculation history") } } }
-        .sheet(isPresented: $showHistory) { NavigationStack { List { ForEach(Array(history.enumerated()), id: \.offset) { item in Text(item.element) }; if history.isEmpty { Text("No calculations yet").foregroundColor(.secondary) } }.navigationTitle("History").toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { showHistory = false } } } } }
+/// Immediate-execution pocket calculator.
+struct LumaCalculator {
+    private(set) var display="0"
+    private(set) var first:Double?
+    private(set) var operation:String?
+    private var replace=true
+    private var repeatedOperation:String?
+    private var repeatedOperand:Double?
+    private static let operators=["÷","×","−","+"]
+    private static func format(_ value:Double)->String {
+        value == 0 ? "0":String(format:"%.10g",value)
     }
-    private func press(_ key: String) {
-        if key == "C" { display = "0"; first = nil; operation = nil; replace = true; return }
-        if ["÷","×","−","+","="].contains(key) {
-            let right = Double(display) ?? 0
-            if let left = first, let op = operation, !replace || key == "=" {
-                let result: Double
-                switch op {
-                case "+": result = left + right
-                case "−": result = left - right
-                case "×": result = left * right
-                default: result = right == 0 ? .nan : left / right
-                }
-                display = result.isFinite ? String(format: "%.10g", result) : "Error"
-                let record = "\(String(format: "%.10g", left)) \(op) \(String(format: "%.10g", right)) = \(display)"
-                storedHistory = ([record] + history).prefix(30).joined(separator: "\n")
+    private mutating func clear() {self=LumaCalculator()}
+    private mutating func calculate(_ left:Double,_ op:String,_ right:Double)->String? {
+        let result:Double
+        switch op {
+        case "+":result=left+right
+        case "−":result=left-right
+        case "×":result=left*right
+        case "÷":result=right==0 ? .nan:left/right
+        default:return nil
+        }
+        display=result.isFinite ? Self.format(result):"Error"
+        let record=Self.format(left)+" "+op+" "+Self.format(right)+" = "+display
+        if !result.isFinite {first=nil;operation=nil;repeatedOperation=nil;repeatedOperand=nil}
+        replace=true
+        return record
+    }
+    @discardableResult mutating func press(_ key:String)->String? {
+        if key=="C" {clear();return nil}
+        if display=="Error" {
+            guard key=="." || (key.count==1 && "0123456789".contains(key)) else{return nil}
+            clear()
+        }
+        if Self.operators.contains(key) {
+            var record:String?
+            if let first,let operation,!replace,let right=Double(display) {
+                record=calculate(first,operation,right)
             }
-            first = key == "=" ? nil : Double(display)
-            operation = key == "=" ? nil : key
-            replace = true
-        } else if key == "±" || key == "%" {
-            let value = Double(display) ?? 0
-            display = String(format: "%.10g", key == "±" ? -value : value / 100)
-        } else {
-            if replace || display == "Error" { display = key == "." ? "0." : key; replace = false }
-            else if key != "." || !display.contains(".") {
-                if display.count < 16 { display = display == "0" && key != "." ? key : display + key }
+            guard let value=Double(display),value.isFinite else{return record}
+            first=value;operation=key;replace=true;repeatedOperation=nil;repeatedOperand=nil
+            return record
+        }
+        if key=="=" {
+            if let first,let operation,let right=Double(display) {
+                let record=calculate(first,operation,right)
+                if display != "Error" {repeatedOperation=operation;repeatedOperand=right}
+                self.first=nil;self.operation=nil
+                return record
+            }
+            if let left=Double(display),let op=repeatedOperation,let right=repeatedOperand {
+                return calculate(left,op,right)
+            }
+            return nil
+        }
+        if key=="±" || key=="%" {
+            guard let value=Double(display) else{return nil}
+            let adjusted:Double
+            if key=="±" {adjusted = -value}
+            else if let first,let operation,["+", "−"].contains(operation),!replace {adjusted=first*(value/100)}
+            else {adjusted=value/100}
+            guard adjusted.isFinite else {clear();display="Error";return nil}
+            display=Self.format(adjusted);replace=false
+            repeatedOperation=nil;repeatedOperand=nil
+            return nil
+        }
+        if key=="⌫" {
+            guard !replace else{return nil}
+            if display.contains("e") || display.contains("E") {display="0"}
+            else {display.removeLast();if display.isEmpty || display=="-" {display="0"}}
+            return nil
+        }
+        guard key=="." || (key.count==1 && "0123456789".contains(key)) else{return nil}
+        if replace || display.contains("e") || display.contains("E") {
+            display=key=="." ? "0.":key;replace=false
+        } else if key != "." || !display.contains(".") {
+            if display.count<16 {display=display=="0" && key != "." ? key:display+key}
+        }
+        repeatedOperation=nil;repeatedOperand=nil
+        return nil
+    }
+}
+private struct LabCalculatorView: View {
+    @State private var calculator=LumaCalculator()
+    let keys=["C","±","%","÷","7","8","9","×","4","5","6","−","1","2","3","+","0",".","⌫","="]
+    @AppStorage("lastseen.lab.calculatorHistory") private var storedHistory=""
+    private var history:[String]{storedHistory.split(separator:"\n").map(String.init)}
+    @State private var showHistory=false
+    @State private var confirmClear=false
+    var body:some View {
+        GeometryReader { geometry in
+            VStack(spacing:10) {
+                Spacer(minLength:0)
+                if let op=calculator.operation,let left=calculator.first {
+                    Text(String(format:"%.10g",left)+" "+op).font(.title3).foregroundColor(.secondary)
+                        .frame(maxWidth:.infinity,alignment:.trailing)
+                }
+                Text(calculator.display).font(.system(size:52,weight:.light)).lineLimit(1).minimumScaleFactor(0.3)
+                    .frame(maxWidth:.infinity,alignment:.trailing).padding(8).accessibilityLabel("Result "+calculator.display)
+                LazyVGrid(columns:Array(repeating:GridItem(.flexible()),count:4),spacing:8) {
+                    ForEach(keys,id:\.self) {key in
+                        Button {
+                            if let record=calculator.press(key) {
+                                storedHistory=([record]+history).prefix(30).joined(separator:"\n")
+                            }
+                        } label:{
+                            Text(key).font(.system(size:27,weight:.medium)).frame(maxWidth:.infinity)
+                                .frame(height:max(44,min(65,(geometry.size.height-105)/5-8)))
+                                .background(["÷","×","−","+","="].contains(key) ? Color.orange:Color.gray.opacity(0.24),in:Capsule())
+                        }.buttonStyle(.plain).accessibilityLabel(key=="⌫" ? "Delete digit":key)
+                    }
+                }
+            }.padding()
+        }.background(Night.background.ignoresSafeArea()).navigationTitle("Calculator")
+        .toolbar {ToolbarItem(placement:.navigationBarTrailing){Button{showHistory=true}label:{Image(systemName:"clock.arrow.circlepath").accessibilityLabel("Calculation history")}}}
+        .sheet(isPresented:$showHistory) {
+            NavigationStack {
+                List {
+                    ForEach(Array(history.enumerated()),id:\.offset){item in Text(item.element).textSelection(.enabled)}
+                    if history.isEmpty {Text("No calculations yet").foregroundColor(.secondary)}
+                }.navigationTitle("History").toolbar {
+                    ToolbarItem(placement:.cancellationAction){Button("Done"){showHistory=false}}
+                    ToolbarItem(placement:.navigationBarTrailing){Button("Clear",role:.destructive){confirmClear=true}.disabled(history.isEmpty)}
+                }.confirmationDialog("Clear calculation history?",isPresented:$confirmClear){
+                    Button("Clear history",role:.destructive){storedHistory=""}
+                }
             }
         }
     }
