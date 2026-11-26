@@ -546,19 +546,14 @@ struct PhoneLabView: View {
         } else if let neighbor = pendingThread { pendingThread = nil; openThread(neighbor) }
     }
 
-    private func openActivity(_ notice: LumaActivityNotice) {
-        guard !locked, notice.canPresent(in: world.state) else { return }
-        panel = nil; activityBanner = nil
-        if notice.kind == .timer { open(.clock) }
-        else if notice.kind == .support {
-            guard supportAvailable else { return }
-            open(.relaySupport)
-        }
-        else {
-            if let app = LabApp(rawValue: notice.appTitle) {
-                open(app)
-                path.append(LumaActivityRoute(id: notice.id))
-            }
+    private func openActivity(_ snapshot:LumaActivityNotice) {
+        guard phase == .active,!locked,!checkpointReboot,
+              let notice=LumaActivityCatalog.visible(world.state).first(where:{$0.id==snapshot.id}),
+              let app=LabApp(rawValue:notice.appTitle),appAvailable(app) else{return}
+        panel=nil;activityBanner=nil
+        open(app)
+        if notice.kind != .timer && notice.kind != .support {
+            path.append(LumaActivityRoute(id:notice.id))
         }
         world.dismissActivity(notice.id)
     }

@@ -43,7 +43,33 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
         case .security: return .security
         }
     }
+    /// Destination access is independent of alert delivery, muting or dismissal.
+    /// An existing navigation entry is not authority to expose a revoked record.
+    func canOpenRecord(in state:PhoneWorld)->Bool {
+        if kind == .timer {return true}
+        guard state.everydayArchiveRevision != nil,let targetID else{return false}
+        switch kind {
+        case .mail:
+            return LumaMailCatalog.visible(state).contains{$0.id==targetID && $0.kind=="inbox"}
+                && state.connectedWorld?.mailFolders[targetID] != "trash"
+        case .social:
+            guard let channel else{return false}
+            return LumaSocialCatalog.visible(channel,world:state).contains{$0.id==targetID}
+        case .motionwell:
+            return MotionwellArchive.visible(state).contains{$0.id==targetID}
+        case .support:
+            return state.relaySupport?.activeInstallation == true &&
+                (state.relaySupport?.messages.contains{!$0.outgoing && $0.id==targetID} ?? false)
+        case .security:
+            return HavenWatchEvents.event(targetID,in:state) != nil
+        case .dayblink:
+            guard let author,let friend=DayblinkFriend(rawValue:author) else{return false}
+            return DayblinkArchive.records(state,friend:friend).contains{$0.id==targetID}
+        case .timer:return true
+        }
+    }
     func canPresent(in state: PhoneWorld) -> Bool {
+        guard canOpenRecord(in:state) else{return false}
         switch kind {
         case .mail:
             guard let targetID else { return false }
@@ -192,13 +218,13 @@ struct LumaActivityCard: View {
 struct LumaActivityDetail: View {
     let id: String
     @EnvironmentObject private var world: PhoneWorldStore
-    private var notice: LumaActivityNotice? {
-        (world.connected.activityJournal ?? []).first { notice in
-            guard notice.id == id else { return false }
-            if notice.kind == .motionwell {
-                return MotionwellArchive.visible(world.state).contains { $0.id == notice.targetID }
-            }
-            return notice.canPresent(in: world.state)
+    @Environment(\.scenePhase) private var phase
+    @AppStorage("lastseen.relay.installed") private var packages=""
+    private var notice:LumaActivityNotice? {
+        guard phase == .active else{return nil}
+        return (world.connected.activityJournal ?? []).first { notice in
+            guard notice.id == id,notice.canOpenRecord(in:world.state) else{return false}
+            return notice.kind != .support || RelaySupportAccess.available(installed:packages,flags:world.state.flags)
         }
     }
     var body: some View {
