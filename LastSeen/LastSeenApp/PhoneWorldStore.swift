@@ -142,6 +142,8 @@ final class PhoneWorldStore: ObservableObject {
     @Published private(set) var checkpointEpoch=UUID()
     private let persistToDisk: Bool
     private let storageURL: URL
+    @Published private(set) var recoveryRequired=false
+    @Published private(set) var persistenceFailed=false
 
     static var saveURL: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -162,12 +164,12 @@ final class PhoneWorldStore: ObservableObject {
                 #endif
             }
         }
+        let existingFile=persistToDisk && FileManager.default.fileExists(atPath:resolvedURL.path)
+        let decoded=existingFile ? (try? JSONDecoder().decode(PhoneWorld.self,from:Data(contentsOf:resolvedURL))) : nil
+        let damaged=existingFile && decoded?.version != 1
         if let initial {
             state = initial
-        } else if persistToDisk,
-            let data = try? Data(contentsOf: resolvedURL),
-            let previous = try? JSONDecoder().decode(PhoneWorld.self, from: data),
-            previous.version == 1 {
+        } else if let previous=decoded,previous.version == 1 {
             state = previous
         } else {
             let calendar = Calendar.current
@@ -208,8 +210,11 @@ final class PhoneWorldStore: ObservableObject {
                 ]
             )
         }
+        recoveryRequired=damaged
         if resolvedURL == RestoredPhoneBackup.url || state.everydayArchiveRevision != nil { NoraEverydayArchive.expand(&state) }
-        save()
+        // Do not rewrite a loaded file on launch: the restore receipt may
+        // still need its exact bytes, and an unreadable file must survive.
+        if !existingFile {save()}
     }
 
     func messages(_ neighbor: Neighbor) -> [NeighborMessage] {
@@ -762,6 +767,11 @@ final class PhoneWorldStore: ObservableObject {
         if persistToDisk {
             try FileManager.default.createDirectory(at: storageURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             let bytes=try JSONEncoder().encode(replacement)
+            if recoveryRequired {
+                let damagedBytes=try Data(contentsOf:storageURL)
+                let archive=storageURL.appendingPathExtension("damaged-"+UUID().uuidString)
+                try damagedBytes.write(to:archive,options:.atomic)
+            }
             if let settings {try LumaRestoreJournal.prepare(worldURL:storageURL,target:bytes,settings:settings)}
             try bytes.write(to:storageURL,options:.atomic)
         }
@@ -782,6 +792,8 @@ final class PhoneWorldStore: ObservableObject {
         supportGenerationEpoch = UUID()
         checkpointEpoch=UUID()
         state = replacement
+        recoveryRequired=false
+        persistenceFailed=false
     }
 
     // All connected-app changes use the same world persistence and checkpoint path.
@@ -1658,12 +1670,14 @@ final class PhoneWorldStore: ObservableObject {
         if state.flags.insert("veil.correspondence.opened").inserted { save() }
     }
     private func save() {
-        guard persistToDisk else { return }
+        guard persistToDisk,!recoveryRequired else { return }
         do {
             let dir = storageURL.deletingLastPathComponent()
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
             try JSONEncoder().encode(state).write(to: storageURL, options: .atomic)
+            persistenceFailed=false
         } catch {
+            persistenceFailed=true
             #if DEBUG
             print("LAST SEEN fictional world save error: \(error)")
             #endif

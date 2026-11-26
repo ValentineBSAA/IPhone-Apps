@@ -163,6 +163,8 @@ final class LumaSaveStore: ObservableObject {
         do {
             let prefs = Dictionary(uniqueKeysWithValues: Self.keys.compactMap { key in defaults.object(forKey: key).map { (key, $0) } })
             let bytes = try PropertyListSerialization.data(fromPropertyList: prefs, format: .binary, options: 0)
+            guard world.version==1,playSeconds>=0,now.timeIntervalSinceReferenceDate.isFinite else{throw CocoaError(.fileWriteUnknown)}
+            _ = try Self.validatedPreferences(bytes)
             let value = LumaCheckpoint(version: 1, date: now, playSeconds: playSeconds, world: world, preferences: bytes)
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
             try JSONEncoder().encode(value).write(to: url(slot), options: .atomic)
@@ -175,8 +177,12 @@ final class LumaSaveStore: ObservableObject {
     func automatic(world: PhoneWorld, now: Date = Date(), force: Bool = false) {
         guard force || (now.timeIntervalSince(lastAutomatic) >= 30 && now.timeIntervalSince(lastAutoAttempt) >= 5) else { return }
         lastAutoAttempt = now
-        let slot = Self.automatic.first(where: { slots[$0] == nil }) ??
-            Self.automatic.min(by: { (slots[$0]?.date ?? .distantPast) < (slots[$1]?.date ?? .distantPast) })!
+        refresh()
+        let available=Self.automatic.filter{!invalid.contains($0)}
+        guard let slot=available.first(where:{slots[$0]==nil}) ??
+            available.min(by:{(slots[$0]?.date ?? .distantPast,$0)<(slots[$1]?.date ?? .distantPast,$1)}) else {
+            automaticFailed=true;notice="Automatic checkpoints are unreadable. Review them in Game Saves.";return
+        }
         if write(slot, world: world, now: now, quiet: true) {
             lastAutomatic = now; sinceAutomatic = 0
             lastSuccessfulAutomatic = now

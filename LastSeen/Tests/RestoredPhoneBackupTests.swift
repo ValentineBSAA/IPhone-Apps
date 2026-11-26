@@ -3,6 +3,47 @@ import XCTest
 
 final class RestoredPhoneBackupTests: XCTestCase {
     @MainActor
+    func testDamagedLiveWorldIsPreservedUntilExplicitRecovery() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer {try? FileManager.default.removeItem(at:root)}
+        try FileManager.default.createDirectory(at:root,withIntermediateDirectories:true)
+        let url=root.appendingPathComponent("world.json")
+        let damaged=Data("unreadable fixture".utf8)
+        try damaged.write(to:url)
+        let store=PhoneWorldStore(storageURL:url)
+        XCTAssertTrue(store.recoveryRequired)
+        _ = store.addNote(title:"Transient fixture")
+        XCTAssertEqual(try Data(contentsOf:url),damaged)
+        try store.restoreCheckpoint(RestoredPhoneBackup.snapshot())
+        XCTAssertFalse(store.recoveryRequired)
+        let archives=try FileManager.default.contentsOfDirectory(at:root,includingPropertiesForKeys:nil)
+            .filter{$0.lastPathComponent.hasPrefix("world.json.damaged-")}
+        XCTAssertEqual(archives.count,1)
+        XCTAssertEqual(try Data(contentsOf:XCTUnwrap(archives.first)),damaged)
+        XCTAssertEqual(try JSONDecoder().decode(PhoneWorld.self,from:Data(contentsOf:url)).version,1)
+    }
+
+    @MainActor
+    func testAutomaticRotationNeverOverwritesUnreadableSlots() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite="rotation-fixture-"+UUID().uuidString
+        let defaults=try XCTUnwrap(UserDefaults(suiteName:suite))
+        defer{defaults.removePersistentDomain(forName:suite);try? FileManager.default.removeItem(at:root)}
+        try FileManager.default.createDirectory(at:root,withIntermediateDirectories:true)
+        let damaged=Data("unreadable fixture".utf8)
+        for slot in LumaSaveStore.automatic {try damaged.write(to:root.appendingPathComponent(slot+".json"))}
+        let saves=LumaSaveStore(root:root,defaults:defaults)
+        saves.automatic(world:RestoredPhoneBackup.snapshot(),force:true)
+        XCTAssertTrue(saves.automaticFailed)
+        for slot in LumaSaveStore.automatic {XCTAssertEqual(try Data(contentsOf:root.appendingPathComponent(slot+".json")),damaged)}
+        saves.remove("auto-2")
+        saves.automatic(world:RestoredPhoneBackup.snapshot(),force:true)
+        XCTAssertFalse(saves.automaticFailed)
+        XCTAssertNotNil(saves.slots["auto-2"])
+        XCTAssertEqual(saves.invalid,Set(["auto-1","auto-3"]))
+    }
+
+    @MainActor
     func testRestoreReceiptOnlyAppliesToCommittedWorldBytes() throws {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let suite="restore-receipt-"+UUID().uuidString

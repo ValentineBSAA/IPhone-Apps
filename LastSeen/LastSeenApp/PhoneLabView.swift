@@ -118,6 +118,38 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.lab.deferSystemEdges") private var deferSystemEdges = true
 
     var body: some View {
+        if world.recoveryRequired {
+            VStack(alignment:.leading,spacing:16) {
+                Label("Phone recovery required",systemImage:"externaldrive.badge.exclamationmark").font(.title2.bold())
+                Text("The live phone save could not be read. Its original file is preserved. Choose a readable checkpoint to recover your phone. No automatic save will replace it.")
+                ForEach(LumaSaveStore.manual+LumaSaveStore.automatic,id:\.self) { slot in
+                    if let saved=saves.slots[slot] {
+                        Button {
+                            guard phase == .active else{return}
+                            recoverySlot=slot
+                            confirmDamagedRestore=true
+                        } label:{
+                            HStack { Text(slot.hasPrefix("manual") ? "Manual save "+String(slot.suffix(1)) : "Automatic checkpoint "+String(slot.suffix(1))); Spacer(); Text(saved.date,format:.dateTime.month().day().hour().minute()).font(.caption) }
+                        }.buttonStyle(.bordered)
+                    }
+                }
+                if saves.slots.isEmpty {Text("No readable checkpoint is available. The damaged file has not been overwritten.").foregroundColor(.secondary)}
+                Button("Refresh checkpoints"){saves.refresh()}
+                Text(saves.notice).font(.caption)
+            }.padding(24)
+                .confirmationDialog("Recover from selected checkpoint?",isPresented:$confirmDamagedRestore,titleVisibility:.visible) {
+                    Button("Restore checkpoint",role:.destructive) {
+                        guard phase == .active,let slot=recoverySlot else{return}
+                        if saves.restore(slot,into:world) {locked=true;navigationGeneration=UUID()}
+                        recoverySlot=nil
+                    }
+                    Button("Cancel",role:.cancel){recoverySlot=nil}
+                } message:{Text("A copy of the unreadable live save will be retained before replacement. Later progress may not be present in this checkpoint.")}
+        } else { phoneBody }
+    }
+    @State private var recoverySlot:String?
+    @State private var confirmDamagedRestore=false
+    private var phoneBody:some View {
         NavigationStack(path: $path) {
             ZStack {
                 backdrop
@@ -180,6 +212,13 @@ struct PhoneLabView: View {
         .overlay {
             Color.black.opacity(LumaSettingsPolicy.displayDimming(brightness))
                 .ignoresSafeArea().allowsHitTesting(false)
+        }
+        .overlay(alignment:.bottom) {
+            if world.persistenceFailed {
+                Label("Live save unavailable. Progress may not survive restart.",systemImage:"exclamationmark.triangle")
+                    .font(.caption).padding(8).background(.regularMaterial,in:RoundedRectangle(cornerRadius:10))
+                    .padding(.bottom,48).allowsHitTesting(false)
+            }
         }
         .overlay(alignment: .top) {
             if let alert = banner, !locked, !checkpointReboot, panel == nil, !showOwnerPasscode, world.visibleThread != alert.neighbor {
