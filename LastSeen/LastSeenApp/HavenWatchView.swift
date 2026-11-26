@@ -33,6 +33,10 @@ struct HavenWatchFrame: Identifiable, Equatable {
 }
 
 enum HavenWatchArchive {
+    static func marker(_ id:String)->String { "haven.snapshot.opened."+id }
+    static func opened(_ world:PhoneWorld)->[HavenWatchFrame] {
+        frames(in:world).filter { world.flags.contains(marker($0.id)) }
+    }
     static func frames(in world: PhoneWorld) -> [HavenWatchFrame] {
         guard world.everydayArchiveRevision != nil else { return [] }
         return HavenCamera.allCases.flatMap { camera in
@@ -88,6 +92,14 @@ struct HavenWatchView: View {
                                 Label(HavenWatchEvents.title(event), systemImage: "archivebox").font(.headline)
                                 Text("Index activity · " + event.due.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundColor(.secondary)
                             }.frame(maxWidth: .infinity, alignment: .leading).padding(12).lumaSurface()
+                        }.buttonStyle(.plain)
+                    }
+                    if VeilCommunity.disputeReviewed(world.state) {
+                        NavigationLink { HavenCrossArchiveReviewView() } label: {
+                            VStack(alignment:.leading,spacing:5) {
+                                Label("Review archive origins",systemImage:"rectangle.split.2x1").font(.headline)
+                                Text("Compare recovered copies against the saved camera archive.").font(.caption).foregroundColor(.secondary)
+                            }.frame(maxWidth:.infinity,alignment:.leading).padding(12).lumaSurface()
                         }.buttonStyle(.plain)
                     }
                     Toggle("Show saved snapshots only", isOn: $favoritesOnly)
@@ -156,6 +168,7 @@ struct HavenFrameDetail: View {
     let frame: HavenWatchFrame
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var zoom = 1.0
+    @Environment(\.scenePhase) private var phase
     private var prefs: HavenWatchPreferences { world.connected.havenWatch ?? HavenWatchPreferences() }
     var body: some View {
         ScrollView {
@@ -180,9 +193,18 @@ struct HavenFrameDetail: View {
                     LabeledContent("Captured", value: "Date unavailable")
                     LabeledContent("Source", value: "Restored still")
                     Text("This archive contains still images, not playable video. Infrared is a viewing filter.").font(.caption).foregroundColor(.secondary)
+                    if VeilCommunity.disputeReviewed(world.state) {
+                        NavigationLink { EvidenceComparisonView(initialRecordID:"haven:"+frame.id) } label: {
+                            Label("Compare with opened records",systemImage:"rectangle.split.2x1")
+                        }
+                    }
                 }.padding(16)
             } else { Text("Snapshot unavailable").padding() }
         }.navigationTitle(frame.camera.rawValue)
+            .onAppear { if phase == .active { world.recordHavenSnapshotOpened(frame.id) } }
+            .onChange(of:phase) { value in
+                if value == .active { world.recordHavenSnapshotOpened(frame.id) }
+            }
     }
 }
 
@@ -203,5 +225,83 @@ struct HavenWatchSettings: View {
                 Text("Controls alerts for local archive updates. No live camera events are received.").font(.caption).foregroundColor(.secondary)
             }
         }.navigationTitle("HavenWatch settings")
+    }
+}
+
+
+/// The home archive and VEIL copies remain distinct sources. This optional
+/// review is based on their visible scenes, not a claim of matched cameras.
+enum HavenCrossArchiveReview {
+    static let marker = "haven.cross-archive.reviewed"
+    static let note = "The home security archive contains saved stills with camera labels, while the anonymous copies have no authenticated camera identifier. Similar rooms are not sufficient to establish a shared capture source."
+    static let choices = ["Every recovered copy came from a confirmed HavenWatch camera.",
+                          "The two collections have different source labels; a shared capture source is unverified.",
+                          "The original capture dates establish the order of both collections."]
+    static func matchingPair(_ pair:EvidenceConnection,in world:PhoneWorld)->Bool {
+        guard pair.relation == .source, pair.first != pair.second else { return false }
+        let ids=[pair.first,pair.second]
+        guard let haven=ids.first(where:{$0.hasPrefix("haven:")}),
+              let image=ids.first(where:{$0.hasPrefix("image:VEIL_Home_")}),
+              let frame=HavenWatchArchive.opened(world).first(where:{"haven:"+$0.id == haven}) else { return false }
+        let asset=String(image.dropFirst(6))
+        guard VeilArchive.homeMedia(world).contains(asset),
+              world.flags.contains("veil.viewed."+asset),
+              (world.connectedWorld?.recoveredImageReviews ?? []).contains(asset) else { return false }
+        switch frame.camera {
+        case .kitchen: return ["VEIL_Home_01","VEIL_Home_03"].contains(asset)
+        case .living: return ["VEIL_Home_02","VEIL_Home_05","VEIL_Home_06"].contains(asset)
+        case .balcony: return asset == "VEIL_Home_04"
+        default: return false
+        }
+    }
+    static func ready(_ world:PhoneWorld)->Bool {
+        VeilCommunity.disputeReviewed(world) &&
+        (world.connectedWorld?.evidenceConnections ?? []).prefix(40).contains { matchingPair($0,in:world) }
+    }
+    static func reviewed(_ world:PhoneWorld)->Bool {
+        ready(world) && world.flags.contains(marker)
+    }
+    static func accepts(_ answer:Int,in world:PhoneWorld)->Bool { ready(world) && answer == 1 }
+}
+
+struct HavenCrossArchiveReviewView:View {
+    @EnvironmentObject private var world:PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
+    @State private var choice:Int?
+    @State private var notice=""
+    var body:some View {
+        List {
+            if VeilCommunity.disputeReviewed(world.state),phase == .active {
+                Section {
+                    Text("Review a saved camera snapshot and a recovered home photograph showing a comparable room. Save an origins comparison before recording your conclusion.")
+                    NavigationLink { EvidenceComparisonView() } label: {
+                        Label("Open comparison workspace",systemImage:"rectangle.split.2x1")
+                    }
+                }
+                Section("Saved cameras") {
+                    ForEach(HavenCamera.allCases) { camera in
+                        NavigationLink { HavenCameraArchive(camera:camera) } label: { Text(camera.rawValue) }
+                    }
+                }
+                if HavenCrossArchiveReview.reviewed(world.state) {
+                    Section("Recorded observation") { Text(HavenCrossArchiveReview.note) }
+                } else if HavenCrossArchiveReview.ready(world.state) {
+                    Section("What can be established?") {
+                        ForEach(HavenCrossArchiveReview.choices.indices,id:\.self) { i in
+                            Button { choice=i;notice="" } label: {
+                                Label(HavenCrossArchiveReview.choices[i],systemImage:choice==i ? "largecircle.fill.circle":"circle")
+                            }.buttonStyle(.plain)
+                        }
+                        Button("Record conclusion") {
+                            guard let choice,phase == .active else { return }
+                            notice=world.recordHavenCrossArchiveReview(choice) ? "Observation saved." : "Review the source labels again."
+                        }.buttonStyle(.borderedProminent).disabled(choice==nil)
+                        if !notice.isEmpty { Text(notice).font(.caption) }
+                    }
+                } else { Text("A matching saved origins comparison is needed.").font(.caption).foregroundColor(.secondary) }
+            } else { Text("Review unavailable.") }
+        }.navigationTitle("Archive origins")
+        .onChange(of:phase){if $0 != .active {choice=nil;notice=""}}
+        .onChange(of:HavenCrossArchiveReview.ready(world.state)){if !$0 {choice=nil;notice=""}}
     }
 }

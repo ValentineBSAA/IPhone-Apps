@@ -1203,6 +1203,16 @@ final class PhoneWorldStore: ObservableObject {
         }
         commitConnected(c)
     }
+    func recordHavenSnapshotOpened(_ id:String) {
+        guard HavenWatchArchive.frames(in:state).contains(where:{$0.id == id}) else { return }
+        if state.flags.insert(HavenWatchArchive.marker(id)).inserted { save() }
+    }
+    @discardableResult
+    func recordHavenCrossArchiveReview(_ answer:Int)->Bool {
+        guard HavenCrossArchiveReview.accepts(answer,in:state) else { return false }
+        if state.flags.insert(HavenCrossArchiveReview.marker).inserted { save() }
+        return true
+    }
     func setHavenWatch(_ preferences: HavenWatchPreferences) {
         guard state.everydayArchiveRevision != nil else { return }
         var value = connected

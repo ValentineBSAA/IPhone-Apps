@@ -58,6 +58,15 @@ enum LumaAssistantEvidence {
                 result.append(.init(id:"social:"+channel.rawValue+":"+post.id,title:post.author+" · "+String(post.body.prefix(48)),kind:.social,excerpts:[post.body]))
             }
         }
+        for frame in HavenWatchArchive.opened(world) {
+            result.append(.init(id:"haven:"+frame.id,title:"HavenWatch · "+frame.camera.rawValue+" · "+frame.label,
+                kind:.document,excerpts:["Camera label: CAM "+frame.camera.number+". "+frame.camera.rawValue+".",
+                    "Restored still: "+frame.label+". Original capture date unavailable. No live connection."]))
+        }
+        if HavenCrossArchiveReview.reviewed(world) {
+            result.append(.init(id:"haven:cross-archive",title:"Home archive origins review",kind:.document,
+                excerpts:[HavenCrossArchiveReview.note]))
+        }
         if VeilArchive.authorized(world) {
             for thread in VeilCommunity.opened(world) {
                 let passages = [thread.author+": "+thread.text] + thread.replies.map{$0.author+": "+$0.text}

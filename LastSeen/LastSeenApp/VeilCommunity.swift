@@ -182,7 +182,11 @@ struct VeilDisputeReviewView:View {
                     }
                 }
                 if VeilCommunity.disputeReviewed(world.state) {
-                    Section("Recorded observation"){Text(VeilCommunity.disputeNote)}
+                    Section("Recorded observation"){
+                        Text(VeilCommunity.disputeNote)
+                        Text("Revisit the saved home security archive and compare its source labels with the recovered copies.").font(.caption).foregroundColor(.secondary)
+                        NavigationLink { HavenWatchView() } label: { Label("Open HavenWatch",systemImage:"shield.lefthalf.filled") }
+                    }
                 } else if VeilCommunity.disputeAvailable(world.state) {
                     Section("What do the accounts establish?") {
                         ForEach(VeilCommunity.disputeOptions.indices,id:\.self) { i in
