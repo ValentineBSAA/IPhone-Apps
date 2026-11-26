@@ -185,7 +185,7 @@ struct EvidenceComparisonView: View {
     @State private var removing:EvidenceConnection?
     @State private var confirmRemoval=false
     @AppStorage("lastseen.veil.security") private var security="Standard"
-    private var records:[LumaAssistantEvidence.Record] { LumaAssistantEvidence.visible(world.state) }
+    private var records:[LumaAssistantEvidence.Record] { phase == .active ? LumaAssistantEvidence.visible(world.state):[] }
     private var selection:EvidenceConnection? { EvidenceConnection.make(first,second,relation:relation,in:world.state) }
     var body: some View {
         List {
@@ -306,7 +306,7 @@ struct EvidenceComparisonView: View {
                      ? "Related discoveries may become unavailable. Restoring this comparison can recover access."
                      : "This removes your saved observation from the current checkpoint.")
             }
-            .onChange(of:world.checkpointEpoch){_ in first="";second="";notice="";revealOriginals=false;removing=nil;confirmRemoval=false}
+            .onChange(of:world.checkpointEpoch){_ in first="";second="";relation = .uncertainty;notice="";revealOriginals=false;removing=nil;confirmRemoval=false}
             .onAppear{
                 if let initialRecordID,records.contains(where:{$0.id==initialRecordID}),first.isEmpty{first=initialRecordID}
             }
@@ -366,6 +366,9 @@ enum PhotoFeatureMatch {
               c.regions[0].contains(first),c.regions[1].contains(second) else{return nil}
         return c
     }
+    static func selectionCurrent(_ id:String,epoch:UUID?,currentEpoch:UUID,active:Bool,in world:PhoneWorld)->Bool {
+        active && epoch==currentEpoch && available(world).contains{$0.id==id}
+    }
     static func completed(_ c:Challenge,in world:PhoneWorld)->Bool {
         available(world).contains{$0.id==c.id} &&
         world.connectedWorld?.photoFeatureMatches?.contains(c.id)==true
@@ -384,8 +387,12 @@ struct PhotoFeatureMatchView:View {
     @State private var textOnly=false
     @State private var first:Int?
     @State private var second:Int?
+    @State private var selectionEpoch:UUID?
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var notice=""
-    private func reset(){reveal=false;first=nil;second=nil;notice=""}
+    private var canSelect:Bool {phase == .active && (reveal || textOnly || !VeilArchive.allowsImages(security))}
+    private var currentSelection:Bool {PhotoFeatureMatch.selectionCurrent(challengeID,epoch:selectionEpoch,currentEpoch:world.checkpointEpoch,active:canSelect,in:world.state)}
+    private func reset(){reveal=false;first=nil;second=nil;notice="";selectionEpoch=nil}
     var body:some View {
         List {
             if let c=PhotoFeatureMatch.available(world.state).first(where:{$0.id==challengeID}),phase == .active {
@@ -427,9 +434,11 @@ struct PhotoFeatureMatchView:View {
                             Text("Reveal the original or choose text-only comparison.").font(.caption)
                         }
                         if reveal || textOnly || !VeilArchive.allowsImages(security) {
-                            LazyVGrid(columns:Array(repeating:GridItem(.flexible()),count:3),spacing:6) {
+                            LazyVGrid(columns:Array(repeating:GridItem(.flexible()),count:dynamicTypeSize.isAccessibilitySize ? 1:3),spacing:6) {
                                 ForEach(0..<9,id:\.self) { cell in
                                     Button {
+                                        guard canSelect,PhotoFeatureMatch.available(world.state).contains(where:{$0.id==challengeID}) else{return}
+                                        if selectionEpoch != world.checkpointEpoch {first=nil;second=nil;selectionEpoch=world.checkpointEpoch}
                                         if i==0 {first=cell} else {second=cell}
                                         notice=""
                                     } label:{
@@ -444,10 +453,10 @@ struct PhotoFeatureMatchView:View {
                 }
                 Section {
                     Button("Record matched detail") {
-                        guard phase == .active,let first,let second else{return}
+                        guard currentSelection,let first,let second else{return}
                         notice=world.recordPhotoFeatureMatch(c.id,first:first,second:second) ?
                             "Visible detail recorded.":"Revisit both frames and locate the described feature."
-                    }.buttonStyle(.borderedProminent).disabled(first==nil || second==nil)
+                    }.buttonStyle(.borderedProminent).disabled(!currentSelection || first==nil || second==nil)
                     if !notice.isEmpty {Text(notice).font(.caption)}
                     if PhotoFeatureMatch.completed(c,in:world.state) {
                         Label(c.note,systemImage:"checkmark.seal").foregroundColor(.teal)
@@ -461,7 +470,7 @@ struct PhotoFeatureMatchView:View {
         .onChange(of:phase){if $0 != .active {reset()}}
         .onChange(of:security){_ in reset()}
         .onChange(of:textOnly){_ in reset()}
-        .onChange(of:reveal){if !$0 {first=nil;second=nil;notice=""}}
+        .onChange(of:reveal){if !$0 {first=nil;second=nil;notice="";selectionEpoch=nil}}
         .onDisappear{reset()}
     }
 }

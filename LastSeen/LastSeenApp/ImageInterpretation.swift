@@ -198,6 +198,7 @@ struct ReconstructionComparisonView:View {
     @State private var reveal=false
     @State private var layer=false
     @State private var inspectionEpoch:UUID?
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var seenOriginal=false
     @State private var seenLayer=false
     @State private var strength=0.8
@@ -249,13 +250,17 @@ struct ReconstructionComparisonView:View {
                         Label(seenLayer ? "Reconstruction inspected":"Reconstruction not yet inspected",systemImage:seenLayer ? "checkmark.circle":"circle")
                     }
                     Section("Locate the introduced detail") {
-                        LazyVGrid(columns:Array(repeating:GridItem(.flexible()),count:3),spacing:6) {
+                        LazyVGrid(columns:Array(repeating:GridItem(.flexible()),count:dynamicTypeSize.isAccessibilitySize ? 1:3),spacing:6) {
                             ForEach(0..<9,id:\.self) { i in
-                                Button {region=i;notice=""} label:{
+                                Button {
+                                    guard phase == .active,inspectionEpoch==world.checkpointEpoch,seenOriginal,seenLayer else{return}
+                                    region=i;notice=""
+                                } label:{
                                     Text(ImageInterpretation.regions[i]).font(.caption)
                                         .frame(maxWidth:.infinity,minHeight:44)
                                 }.buttonStyle(.bordered).tint(region==i ? .purple:.secondary)
                                     .accessibilityAddTraits(region==i ? .isSelected:[])
+                                    .disabled(!seenOriginal || !seenLayer || inspectionEpoch != world.checkpointEpoch)
                             }
                         }
                         Button("Record comparison") {
@@ -281,7 +286,7 @@ struct ReconstructionComparisonView:View {
         .onChange(of:security){_ in reset()}
         .onChange(of:horrorEffects){_ in reset()}
         .onChange(of:textOnly){_ in reset()}
-        .onChange(of:reveal){if !$0 {seenOriginal=false;seenLayer=false;region=nil;notice=""}}
+        .onChange(of:reveal){if !$0 {seenOriginal=false;seenLayer=false;region=nil;notice="";inspectionEpoch=nil}}
         .onDisappear{reset()}
     }
 }

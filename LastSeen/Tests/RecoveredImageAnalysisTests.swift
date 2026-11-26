@@ -105,6 +105,14 @@ import XCTest
         XCTAssertTrue(PhotoFeatureMatch.notes("VEIL_Home_01",in:restored).isEmpty)
     }
 
+    func testFeatureSelectionRejectsStaleEpochAndUnavailableChallenge() {
+        let world=RestoredPhoneBackup.snapshot()
+        let epoch=UUID()
+        XCTAssertFalse(PhotoFeatureMatch.selectionCurrent("home-counter",epoch:nil,currentEpoch:epoch,active:true,in:world))
+        XCTAssertFalse(PhotoFeatureMatch.selectionCurrent("home-counter",epoch:UUID(),currentEpoch:epoch,active:true,in:world))
+        XCTAssertFalse(PhotoFeatureMatch.selectionCurrent("home-counter",epoch:epoch,currentEpoch:epoch,active:false,in:world))
+        XCTAssertFalse(PhotoFeatureMatch.selectionCurrent("missing-challenge",epoch:epoch,currentEpoch:epoch,active:true,in:world))
+    }
     func testRegionalLightPairValidation() {
         let sample=[10,80,220,10,110,220,40,90,160]
         XCTAssertTrue(RecoveredImageAnalysis.validLightPair(sample,dark:0,bright:2))

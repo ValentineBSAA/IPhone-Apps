@@ -307,6 +307,7 @@ struct RegionalLightScanView:View {
     @State private var dark:Int?
     @State private var bright:Int?
     @State private var scanEpoch:UUID?
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var pickingDark=true
     @State private var notice=""
     private func clear(){
@@ -328,9 +329,10 @@ struct RegionalLightScanView:View {
                             Text("Darkest").tag(true)
                             Text("Brightest").tag(false)
                         }.pickerStyle(.segmented)
-                        LazyVGrid(columns:Array(repeating:GridItem(.flexible()),count:3),spacing:8) {
+                        LazyVGrid(columns:Array(repeating:GridItem(.flexible()),count:dynamicTypeSize.isAccessibilitySize ? 1:3),spacing:8) {
                             ForEach(0..<9,id:\.self) { i in
                                 Button {
+                                    guard phase == .active,scanEpoch==world.checkpointEpoch,RecoveredImageAnalysis.completed(asset,in:world.state) else{return}
                                     if scanned.insert(i).inserted {
                                         notice=""
                                     } else {
@@ -355,7 +357,7 @@ struct RegionalLightScanView:View {
                             guard phase == .active,scanEpoch == world.checkpointEpoch,scanned.count==9,let dark,let bright else{return}
                             notice=world.recordRegionalLightReview(asset,dark:dark,bright:bright) ?
                                 "Original contrast observation saved.":"Compare the measured readings and try again."
-                        }.buttonStyle(.borderedProminent).disabled(scanned.count != 9 || dark==nil || bright==nil || dark==bright)
+                        }.buttonStyle(.borderedProminent).disabled(scanEpoch != world.checkpointEpoch || scanned.count != 9 || dark==nil || bright==nil || dark==bright)
                     }
                     Button("Reset scan"){clear()}.font(.caption)
                 } else {
@@ -370,6 +372,7 @@ struct RegionalLightScanView:View {
                 if !notice.isEmpty {Text(notice).font(.caption)}
             }
             .onChange(of:world.checkpointEpoch){_ in clear()}
+            .onChange(of:RecoveredImageAnalysis.completed(asset,in:world.state)){if !$0 {clear()}}
             .onChange(of:security){_ in clear()}
             .onChange(of:phase){if $0 != .active {clear()}}
             .onDisappear{clear()}
