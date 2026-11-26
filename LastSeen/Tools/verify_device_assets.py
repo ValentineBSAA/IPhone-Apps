@@ -69,6 +69,7 @@ for credit in pathlib.Path("LastSeenApp/CommunityReserveCredits").iterdir():
 assert len([name for name in expected if name.startswith("CommunityReserve")]) == 4
 if a.app:
     reject_unapproved_voice(a.app.rglob("*"))
+    assert not any(a.app.rglob("WorldPhoto_E01_*")), "Held world artwork in device bundle"
     car=(a.app/"Assets.car").read_bytes()
     assert car.startswith(b"BOMStore") and len(car)>1024, "Malformed compiled asset catalog"
     print("Device Assets.car:",len(car),"bytes SHA-256",digest(car))
@@ -95,6 +96,7 @@ if a.catalog:
     # Their exact bytes are already verified against the pinned manifest in
     # both the device bundle and the final IPA.
     assert all(f"Recovered_B27_{i:02d}.png" in expected for i in range(1,30))
+    assert not any(isinstance(name,str) and name.startswith("WorldPhoto_E01_") for name in names), "Held world artwork in compiled catalog"
     missing=required-names
     assert not missing, f"Device catalog missing required renditions: {sorted(missing)}"
     print("Required device catalog renditions verified")
@@ -106,6 +108,7 @@ if a.ipa:
         names=z.namelist()
         assert len(names)==len(set(names)), "Duplicate ZIP paths"
         reject_unapproved_voice(names)
+        assert not any(pathlib.PurePosixPath(name).name.startswith("WorldPhoto_E01_") for name in names), "Held world artwork in final IPA"
         info=plistlib.loads(z.read(prefix+"Info.plist"))
         assert info["CFBundleVersion"]=="32" and info["CFBundleShortVersionString"]=="1.9.0", "IPA identity disagrees with release contract"
         assert info["MinimumOSVersion"]=="16.0" and info["CFBundleIdentifier"]=="com.valentinebsaa.lastseen.horror"

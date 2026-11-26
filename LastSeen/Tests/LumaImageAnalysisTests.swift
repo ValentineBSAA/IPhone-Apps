@@ -2,6 +2,33 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class LumaImageAnalysisTests:XCTestCase {
+    func testArtworkExposureAndPrivateDisplayContract() {
+        let assigned:Set<String>=["Recovered_B27_02","Recovered_B27_03","Recovered_B27_13","Recovered_B27_18","Recovered_B27_26","Recovered_B27_27","Recovered_B27_29"]
+        let all=Set((1...29).map{String(format:"Recovered_B27_%02d",$0)})
+        XCTAssertEqual(Set(LumaWebCatalog.pages.flatMap(\.images)),assigned)
+        XCTAssertEqual(all.subtracting(assigned).count,22)
+        var state=RestoredPhoneBackup.snapshot()
+        state.flags.formUnion(["phone-tutorial-finished","investigation.contact.received","web.visited.archive","web.visited.archive-records"])
+        // Forged/stale inspection markers cannot expose unused or held art.
+        for id in all.subtracting(assigned).union(["WorldPhoto_E01_01","Nora_Photo_10","Nora_Collage_01"]) {
+            state.flags.insert("web.inspected."+id)
+            XCTAssertNil(RecoveredImageAnalysis.record(id,in:state))
+            XCTAssertNil(LumaAssistantEvidence.selected("image:"+id,in:state))
+        }
+        state.flags.insert("web.inspected.Recovered_B27_02")
+        XCTAssertNotNil(RecoveredImageAnalysis.record("Recovered_B27_02",in:state))
+        state.flags.remove("web.visited.archive-records")
+        XCTAssertNil(RecoveredImageAnalysis.record("Recovered_B27_02",in:state))
+        let privateID="Nora_Photo_10"
+        var flags:Set<String>=["phone-tutorial-finished","nora-photo-journal","nora-photo-unlocked-"+privateID]
+        XCTAssertTrue(NoraPhotoCatalog.privateDisplayAllowed(privateID,flags:flags,authenticated:true,active:true))
+        XCTAssertFalse(NoraPhotoCatalog.privateDisplayAllowed(privateID,flags:flags,authenticated:false,active:true))
+        XCTAssertFalse(NoraPhotoCatalog.privateDisplayAllowed(privateID,flags:flags,authenticated:true,active:false))
+        flags.remove("nora-photo-journal")
+        XCTAssertFalse(NoraPhotoCatalog.privateDisplayAllowed(privateID,flags:flags,authenticated:true,active:true))
+        XCTAssertFalse(NoraPhotoCatalog.privateDisplayAllowed("Nora_Photo_01",flags:flags,authenticated:true,active:true))
+    }
+
     func testApprovedPhotoCollectionsDecodeAndProduceSamples() throws {
         let originals=(1...29).map{String(format:"Recovered_B27_%02d",$0)}
         let archive=(1...11).map{String(format:"Nora_Archive_%02d",$0)}

@@ -61,6 +61,12 @@ enum NoraPhotoCatalog {
         default:return false
         }
     }
+    static func privateDisplayAllowed(_ id:String,flags:Set<String>,authenticated:Bool,active:Bool)->Bool {
+        guard active,authenticated,
+              let photo=photos.first(where:{$0.id==id && $0.privateAlbum}),
+              privateRecoveryEligible(id,flags:flags) else{return false}
+        return photo.available(flags:flags,authenticated:authenticated)
+    }
     static func discoveryFlags(from flags: Set<String>) -> Set<String> {
         var result = flags
         if flags.contains("phone-tutorial-visited-note") && flags.contains("phone-tutorial-replied") {
@@ -99,7 +105,7 @@ struct NoraPrivateAlbum: View {
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 110))], spacing: 6) {
             ForEach(NoraPhotoCatalog.photos.filter(\.privateAlbum)) { photo in
-                if photo.available(flags: world.state.flags, authenticated: true) {
+                if NoraPhotoCatalog.privateDisplayAllowed(photo.id,flags:world.state.flags,authenticated:true,active:phase == .active) {
                     Image(photo.id).resizable().scaledToFit().accessibilityLabel("Recovered photograph")
                 } else {
                     VStack(spacing:6) {
