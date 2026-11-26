@@ -236,6 +236,20 @@ import XCTest
         XCTAssertTrue(restored.state.flags.contains("phone-tutorial-replied"))
         XCTAssertFalse(restored.hasPendingReply(.maya))
     }
+    func testTutorialStartIsIdempotentAcrossCheckpointAndGuideUpdates() throws {
+        let now=Date(timeIntervalSince1970:1800000000)
+        let store=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(now:now),persistToDisk:false)
+        store.startPhoneTutorial(now:now)
+        let first=store.messages(.maya).map(\.id)
+        store.startPhoneTutorial(now:now.addingTimeInterval(5))
+        XCTAssertEqual(store.messages(.maya).map(\.id),first)
+        let saved=try JSONDecoder().decode(PhoneWorld.self,from:JSONEncoder().encode(store.state))
+        let restored=PhoneWorldStore(initial:saved,persistToDisk:false)
+        restored.startPhoneTutorial(now:now.addingTimeInterval(20))
+        XCTAssertEqual(restored.messages(.maya).map(\.id),first)
+        XCTAssertEqual(restored.state.notes.filter{$0.id==PhoneWorldStore.tutorialNoteID}.count,1)
+        XCTAssertTrue(restored.tutorialStarted)
+    }
     func testLegacyPendingReplyDecodesWithoutTypingTime() throws {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let original = PhonePendingReply(id: "old", outgoingID: "old-out", neighbor: .adrian, text: "Hi", readAt: now, dueAt: now.addingTimeInterval(5), startsTutorial: false)

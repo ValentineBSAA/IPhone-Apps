@@ -84,7 +84,7 @@ struct PhoneLabView: View {
     @State private var timerBaselineReady = false
     @State private var tutorialReplay = 0
     @State private var confirmTutorialReplay = false
-    private var tutorialDeliveryID: String { "\(didConfigureFeedback)-\(phase == .active)-\(tutorialReplay)-\(checkpointReboot)" }
+    private var tutorialDeliveryID: String { "\(didConfigureFeedback)-\(phase == .active)-\(tutorialReplay)-\(checkpointReboot)-\(world.checkpointEpoch)-\(world.recoveryRequired)-\(world.settingsRecoveryRequired)" }
     @State private var searchQuery = ""
     @AppStorage("lastseen.lab.hideLockPreviews") private var hideLockPreviews = false
     private var alerts: [PhoneAlert] { PhoneAlertCatalog.alerts(in: world.state, unreadOnly: true) }
@@ -443,9 +443,12 @@ struct PhoneLabView: View {
             PhoneSensoryEngine.stop()
         }
         .task(id: tutorialDeliveryID) {
-            guard didConfigureFeedback, phase == .active, !checkpointReboot, !world.tutorialStarted else { return }
+            guard didConfigureFeedback,phase == .active,!checkpointReboot,!world.tutorialStarted,
+                  !world.recoveryRequired,!world.settingsRecoveryRequired else {return}
+            let epoch=world.checkpointEpoch
             do { try await Task.sleep(nanoseconds: 1_500_000_000) } catch { return }
-            guard !Task.isCancelled, phase == .active, !checkpointReboot, !world.tutorialStarted else { return }
+            guard !Task.isCancelled,phase == .active,!checkpointReboot,!world.tutorialStarted,
+                  epoch == world.checkpointEpoch,!world.recoveryRequired,!world.settingsRecoveryRequired else {return}
             world.startPhoneTutorial()
         }
         .fullScreenCover(isPresented: $checkpointReboot) {
@@ -504,8 +507,9 @@ struct PhoneLabView: View {
         .onAppear {
             if !didConfigureFeedback {
                 if feedbackRevision < 3 {
-                    // One-time Build 21 migration so the owner can hear the new incoming alerts.
-                    if world.tutorialStarted { world.resetPhoneTutorial() }
+                    // Upgrade the feedback baseline without deleting any existing
+                    // tutorial messages or revoking an earned package discovery.
+                    // An intentional replay remains available in Settings.
                     feedbackRevision = 3
                 }
                 observedIncoming = Set(incomingIDs)

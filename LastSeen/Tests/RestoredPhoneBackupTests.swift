@@ -108,6 +108,16 @@ final class RestoredPhoneBackupTests: XCTestCase {
         let store=PhoneWorldStore(storageURL:url)
         XCTAssertTrue(store.settingsRecoveryRequired)
         let epoch=store.checkpointEpoch
+        let tutorialBefore=store.tutorialStarted
+        let flagsBefore=store.state.flags
+        let messagesBefore=store.messages(.maya).map(\.id)
+        store.startPhoneTutorial()
+        store.resetPhoneTutorial()
+        store.recordTutorialVisit("note")
+        store.advanceRelaySupportActivity(installed:"relay-support")
+        XCTAssertEqual(store.tutorialStarted,tutorialBefore)
+        XCTAssertEqual(store.state.flags,flagsBefore)
+        XCTAssertEqual(store.messages(.maya).map(\.id),messagesBefore)
         let transient=store.addNote(title:"Transient recovery fixture")
         store.visibleThread = .maya
         XCTAssertEqual(try Data(contentsOf:url),original)

@@ -418,7 +418,13 @@ struct RecoveryPrologue: View {
             if elapsed == OpeningPace.recognition && stage == 1 { OpeningQA.record("Device recognition completed") }
             if elapsed == OpeningPace.preparation && stage == 2 { OpeningQA.record("Environment preparation completed") }
         }
-        guard !Task.isCancelled, stage == activeStage, elapsed >= seconds else { return }
+        // A completed stage may have been persisted just before interruption.
+        // Wait for foreground before advancing or starting the next restart.
+        while !Task.isCancelled,stage == activeStage,elapsed >= seconds,
+              phase != .active || showQA {
+            do {try await Task.sleep(nanoseconds:250_000_000)} catch {return}
+        }
+        guard !Task.isCancelled,stage == activeStage,elapsed >= seconds,phase == .active,!showQA else { return }
         finishTimedStage()
     }
 }

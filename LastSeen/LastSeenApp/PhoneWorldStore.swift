@@ -244,7 +244,7 @@ final class PhoneWorldStore: ObservableObject {
     var tutorialFinished: Bool { state.flags.contains("phone-tutorial-finished") }
 
     func startPhoneTutorial(now: Date = Date()) {
-        guard !tutorialStarted else { return }
+        guard !recoveryRequired,!settingsRecoveryRequired,!tutorialStarted else { return }
         state.flags.insert("phone-tutorial-started")
         if !state.notes.contains(where: { $0.id == Self.tutorialNoteID }) {
             state.notes.insert(PhoneNote(id: Self.tutorialNoteID, title: Self.tutorialNoteTitle,
@@ -269,6 +269,7 @@ final class PhoneWorldStore: ObservableObject {
     }
 
     func resetPhoneTutorial() {
+        guard !recoveryRequired,!settingsRecoveryRequired else{return}
         state.flags = NoraPhotoCatalog.discoveryFlags(from: state.flags)
         state.flags = Set(state.flags.filter { !$0.hasPrefix("phone-tutorial-") })
         state.pendingReplies = state.pendingReplies?.filter { !$0.outgoingID.hasPrefix("phone-tutorial-") }
@@ -279,7 +280,7 @@ final class PhoneWorldStore: ObservableObject {
     }
 
     func recordTutorialVisit(_ id: String, now: Date = Date()) {
-        guard tutorialStarted, !tutorialFinished,
+        guard !recoveryRequired,!settingsRecoveryRequired,tutorialStarted, !tutorialFinished,
               ["note", "desk", "reservation", "journal"].contains(id) else { return }
         if state.flags.insert("phone-tutorial-visited-" + id).inserted {
             advanceTutorial(now: now)
@@ -892,6 +893,7 @@ final class PhoneWorldStore: ObservableObject {
     /// Only actual incoming support messages are eligible. Existing saves are
     /// baselined on migration, so importing old chat does not replay alerts.
     func advanceRelaySupportActivity(installed: String, now: Date = Date()) {
+        guard !recoveryRequired,!settingsRecoveryRequired else{return}
         let active = RelaySupportAccess.available(installed: installed, flags: state.flags)
         if active { beginRelaySupport(installed: installed, now: now) }
         guard var history = state.relaySupport else { return }

@@ -9,6 +9,7 @@ struct PhoneSetupRoot: View {
     @AppStorage("lastseen.security.ownerVerified") private var ownerVerified = false
     @AppStorage("lastseen.security.appearanceEnrolled") private var appearanceEnrolled = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var phase
 
     private let restoreLabels = ["Preparing your phone", "Restoring contacts", "Restoring messages", "Restoring photos", "Preparing applications", "Finishing setup"]
     @State private var didHandleReplay = false
@@ -27,7 +28,7 @@ struct PhoneSetupRoot: View {
         .preferredColorScheme(.dark)
         .alert("Unable to finish restore", isPresented: $restoreFailed) {
             if RestoredPhoneBackup.existingStatus() == .unreadable {
-                Button("Open phone recovery") {justRestored=false;stage=5}
+                Button("Open phone recovery") {guard phase == .active else{return};justRestored=false;stage=5}
             }
             Button("OK", role: .cancel) { }
         } message: {
@@ -89,7 +90,7 @@ struct PhoneSetupRoot: View {
                             Text(progress >= 100 ? "Ready to use" : restoreLabels[min(progress * restoreLabels.count / 100, restoreLabels.count - 1)])
                                 .foregroundColor(.secondary)
                             if progress < 100 {
-                                Button("Skip animation") { progress = 100 }
+                                Button("Skip animation") { if phase == .active && stage == 4 {progress = 100} }
                                     .buttonStyle(.bordered)
                             }
                         }
@@ -97,6 +98,7 @@ struct PhoneSetupRoot: View {
                 }.scrollIndicators(.hidden)
                 if stage < 4 || progress >= 100 {
                     Button {
+                        guard phase == .active,stage < 5,stage != 4 || progress >= 100 else{return}
                         if stage == 4 {
                             let prior=RestoredPhoneBackup.existingStatus()
                             if prior == .unreadable {
@@ -115,17 +117,17 @@ struct PhoneSetupRoot: View {
                     }.buttonStyle(.borderedProminent).tint(.teal)
                 }
                 if stage > 0 && stage < 4 {
-                    Button("Back") { stage -= 1 }.font(.subheadline)
+                    Button("Back") { if phase == .active && stage > 0 && stage < 4 {stage -= 1} }.font(.subheadline)
                 }
                 Text("Device setup").font(.caption2).foregroundColor(.white.opacity(0.5))
             }.padding(24)
         }
-        .task(id: stage) {
-            guard stage == 4 else { return }
+        .task(id: "\(stage)-\(phase == .active)") {
+            guard stage == 4,phase == .active else { return }
             if reduceMotion { progress = 100; return }
             while progress < 100 && !Task.isCancelled {
                 do { try await Task.sleep(nanoseconds: 200_000_000) } catch { return }
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled,stage == 4,phase == .active else { return }
                 progress = min(100, progress + 2)
             }
         }
