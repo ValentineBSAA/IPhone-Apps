@@ -60,19 +60,20 @@ enum InvestigationResolution {
 
 struct InvestigationResolutionPanel: View {
     @EnvironmentObject private var world: PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
     @State private var selected: InvestigationResolution.Choice?
     @State private var confirming = false
     @State private var feedback = ""
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if let ending = InvestigationResolution.ending(world.state) {
+            if phase == .active,let ending=InvestigationResolution.ending(world.state) {
                 Label("Review complete", systemImage: "checkmark.seal.fill").font(.title2.bold()).foregroundColor(.teal)
                 Text(ending == .minimal ? "A minimal repair summary was handed off." : "The verified review remains local.").font(.subheadline)
                 Divider()
                 Text("LAST SEEN").font(.system(.largeTitle, design: .serif).weight(.light)).tracking(5).frame(maxWidth: .infinity)
                 Text("Some things belong to the person who lived them.").font(.callout).italic().frame(maxWidth: .infinity)
                 Text("You can continue exploring the restored phone. Load an earlier checkpoint to revisit the investigation and its decision.").font(.caption).foregroundColor(.secondary)
-            } else if InvestigationResolution.ready(world.state) {
+            } else if phase == .active,InvestigationResolution.ready(world.state) {
                 Text("Close the review").font(.title2.bold())
                 Text("The service record establishes the origin of the repeated archive activity. The new correspondence reports a separate contact with the owner; it is not independently verified location data. You can finish the repair without exposing her private records.").font(.subheadline)
                 ForEach(InvestigationResolution.Choice.allCases) { choice in
@@ -98,9 +99,12 @@ struct InvestigationResolutionPanel: View {
         }.frame(maxWidth: .infinity, alignment: .leading).padding(15).lumaSurface()
             .confirmationDialog("Finish the investigation?", isPresented: $confirming, titleVisibility: .visible) {
                 Button("Confirm") {
+                    guard phase == .active else{return}
                     if let selected, !world.finishInvestigation(selected) { feedback = "The review is no longer available in this save." }
                 }
                 Button("Cancel", role: .cancel) {}
             } message: { Text("Your decision is retained in this save. An earlier checkpoint can be used to revisit it.") }
+            .onChange(of:world.checkpointEpoch){_ in selected=nil;confirming=false;feedback=""}
+            .onChange(of:phase){if $0 != .active {selected=nil;confirming=false;feedback=""}}
     }
 }

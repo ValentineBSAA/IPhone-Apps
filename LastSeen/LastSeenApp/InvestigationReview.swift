@@ -54,19 +54,21 @@ enum InvestigationReview {
 
 struct InvestigationComparisonPanel: View {
     @EnvironmentObject private var world: PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
     @State private var feedback = ""
     @State private var hint = false
     private var selected: [String: Int] { InvestigationReview.visibleSelection(world.state) }
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Record comparison").font(.title2.bold())
-            if InvestigationReview.ready(world.state) {
+            if phase == .active,InvestigationReview.ready(world.state) {
                 Text("Classify each statement according to what its source actually establishes. This review does not identify a person or establish a location.").font(.subheadline)
                 ForEach(InvestigationReview.items) { item in
                     VStack(alignment: .leading, spacing: 8) {
                         Text(item.source).font(.caption.bold()).foregroundColor(.secondary)
                         Text(item.statement).font(.subheadline)
                         Picker("Classification", selection: Binding(get: { selected[item.id] ?? -1 }, set: { value in
+                            guard phase == .active else{return}
                             world.setInvestigationReviewChoice(item.id, value: value)
                             feedback = ""
                         })) {
@@ -81,6 +83,7 @@ struct InvestigationComparisonPanel: View {
                     Label("Review accepted", systemImage: "checkmark.seal.fill").foregroundColor(.teal)
                 } else {
                     Button("Submit comparison") {
+                        guard phase == .active else{return}
                         feedback = world.completeInvestigationReview() ? "Review accepted." : "Compare what each source establishes. Your selections are retained."
                     }.buttonStyle(.borderedProminent).disabled(selected.count != InvestigationReview.items.count)
                     Button(hint ? "Hide hint" : "Show hint") { hint.toggle() }
@@ -90,6 +93,8 @@ struct InvestigationComparisonPanel: View {
             } else {
                 Label("The necessary records have not yet been reviewed.", systemImage: "lock.fill").font(.subheadline).foregroundColor(.secondary)
             }
-        }.frame(maxWidth: .infinity, alignment: .leading).padding(15).lumaSurface()
+        }.frame(maxWidth:.infinity,alignment:.leading).padding(15).lumaSurface()
+            .onChange(of:world.checkpointEpoch){_ in feedback="";hint=false}
+            .onChange(of:phase){if $0 != .active {feedback="";hint=false}}
     }
 }

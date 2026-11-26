@@ -136,7 +136,7 @@ enum InvestigationProgress {
             .init(id:"recovery",title:"Complete the initial recovery",hint:"Return to the protected records once you have found the necessary information. Revisit Files if needed.",route:"files",done:flags.contains("phone-tutorial-finished")),
             .init(id:"studio",title:"Explore the restored web records",hint:"The studio's saved website is a useful place to start.",route:"browser",done:flags.contains("web.visited.studio")),
             .init(id:"followup",title:"Review new correspondence",hint:"Check recent messages and the pages they point toward.",route:"messages",done:flags.contains("web.visited.archive")),
-            .init(id:"records",title:"Compare recovered records",hint:"Examine an available archive attachment or use its text-only inspection option.",route:"browser",done:flags.contains(where:{$0.hasPrefix("web.inspected.Recovered_B27_") && LumaWebCatalog.page("archive-records")!.images.contains(String($0.dropFirst("web.inspected.".count)))}))
+            .init(id:"records",title:"Compare recovered records",hint:"Examine an available archive attachment or use its text-only inspection option.",route:"browser",done:(LumaWebCatalog.page("archive-records")?.images.contains{asset in LumaWebCatalog.visitedAttachments(in:flags).contains(asset) && flags.contains("web.inspected."+asset)} ?? false))
             , .init(id:"review",title:"Review the next collection",hint:"Compare the available web records and complete the review at the restricted collection.",route:"browser",done:flags.contains("investigation.chapter2.reviewed"))
             , .init(id:"ledger",title:"Establish provenance",hint:"Revisit the accessible collection and read its linked ledger.",route:"browser",done:flags.contains("web.visited.archive-ledger"))
             , .init(id:"review3-mail",title:"Check new correspondence",hint:"Look for the next review message in Mail. It may take a little time to arrive.",route:"mail",done:flags.contains(InvestigationReview.read))
@@ -179,7 +179,9 @@ enum InvestigationProgress {
         func mail(_ id: String) -> Guidance {
             let delivered = LumaMailCatalog.visible(world).contains { $0.id == id && $0.kind == "inbox" }
             if delivered {
-                return .init(text: "The expected message is available in Mail. Check Inbox, Archive or Trash if you moved it earlier.", route: "mail")
+                let folder=world.connectedWorld?.mailFolders[id]
+                let label=folder == "archive" ? "Archive":folder == "trash" ? "Trash":"Inbox"
+                return .init(text:"The expected message is available in Mail. Look in "+label+". Open the message itself to continue.",route:"mail")
             }
             return .init(text: "The next message has not arrived yet. You can explore other available apps while the local activity continues.", route: "mail", waiting: true)
         }
@@ -194,6 +196,9 @@ enum InvestigationProgress {
         case "records": return page("archive-records", "Inspect one available attachment. The text-only option counts equally.")
         case "review":
             if !flags.contains("web.visited.studio-news") { return page("studio-news", "Read the production note before attempting the comparison.") }
+            if !LumaWebCatalog.visitedAttachments(in:flags).contains(where:{ asset in
+                (LumaWebCatalog.page("archive-records")?.images.contains(asset) ?? false) && flags.contains("web.inspected."+asset)
+            }) {return page("archive-records","Inspect one recovered attachment or use its text-only option before attempting the comparison.")}
             return page("archive-review", "Compare the sources you have already inspected and submit your own interpretation.")
         case "ledger":
             if !flags.contains("web.visited.archive-collection") { return page("archive-collection", "Read the newly available collection and follow its links.") }

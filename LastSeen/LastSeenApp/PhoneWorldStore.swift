@@ -647,7 +647,8 @@ final class PhoneWorldStore: ObservableObject {
         guard state.everydayArchiveRevision != nil,
               state.flags.contains("phone-tutorial-finished"),
               state.flags.contains("web.visited.studio") else { return }
-        if state.flags.insert("investigation.contact.received").inserted {
+        if state.flags.insert("investigation.contact.received").inserted ||
+           !(state.threads[Neighbor.unknown.id] ?? []).contains(where:{$0.id=="unknown-intro-v1"}) {
             append(NeighborMessage(id: "unknown-intro-v1", thread: Neighbor.unknown.id,
                 text: "Is this number working again? Before you trust anything on that phone, look at the studio's saved pages. Some of the records are not what they seem.",
                 fromPlayer: false, at: now, read: false))
@@ -655,7 +656,8 @@ final class PhoneWorldStore: ObservableObject {
         }
         if state.flags.contains("investigation.chapter2.reviewed"),
            state.flags.contains("web.visited.archive-ledger"),
-           state.flags.insert("investigation.chapter2.ledgerAcknowledged").inserted {
+           (state.flags.insert("investigation.chapter2.ledgerAcknowledged").inserted ||
+            !(state.threads[Neighbor.unknown.id] ?? []).contains(where:{$0.id=="unknown-review-v2"})) {
             append(NeighborMessage(id:"unknown-review-v2",thread:Neighbor.unknown.id,
                 text:"You separated the copy from the original. Good. Keep that distinction in your notes. I still cannot tell you who made the first record.",
                 fromPlayer:false,at:now,read:false))
