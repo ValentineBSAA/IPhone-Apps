@@ -1321,45 +1321,62 @@ private struct LabPhotosView: View {
     @State private var pendingModalHandoff:String?
     @State private var selection: LabPhoto?
     @AppStorage("lastseen.lab.favoritePhotos") private var favorites = ""
-    @State private var onlyFavorites = false
+    @Environment(\.scenePhase) private var photoPhase
+    @State private var libraryFilter:NoraPhotoCatalog.LibraryFilter = .library
     @State private var scale: CGFloat = 1
+    @State private var gridColumns=3
+    private func makePhoto(_ record:NoraPhoto)->LabPhoto {
+        LabPhoto(id:record.id,title:record.title,asset:record.id,caption:"Recovered photograph · Capture date unavailable",record:record)
+    }
     private var photos: [LabPhoto] {
-        NoraPhotoCatalog.photos.filter { !$0.privateAlbum }.map {
-            LabPhoto(id: $0.id, title: $0.title, asset: $0.id, caption: "Recovered photograph", record: $0)
-        }
+        NoraPhotoCatalog.library(world.state.flags,filter:.library).map(makePhoto)
+    }
+    private var favoriteIDs:Set<String> {RelayCatalog.ids(favorites)}
+    private func adjacent(_ id:String,_ offset:Int)->LabPhoto? {
+        NoraPhotoCatalog.adjacent(id,offset:offset,flags:world.state.flags,filter:libraryFilter,favorites:favoriteIDs).map(makePhoto)
+    }
+    private func openPhoto(_ photo:LabPhoto) {
+        guard photoPhase == .active else{return}
+        scale=1
+        selection=photo
+        if available(photo){world.recordCameraAnalysisOpened(photo.asset)}
     }
     private func available(_ photo: LabPhoto) -> Bool {
         photo.record?.available(flags: NoraPhotoCatalog.discoveryFlags(from: world.state.flags)) ?? true
     }
-    private var shown: [LabPhoto] { photos.filter { !onlyFavorites || (available($0) && isFavorite($0.id)) } }
+    private var shown:[LabPhoto] {
+        NoraPhotoCatalog.library(world.state.flags,filter:libraryFilter,favorites:favoriteIDs).map(makePhoto)
+    }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Picker("Library", selection: $onlyFavorites) {
-                    Text("Library").tag(false)
-                    Text("Favorites").tag(true)
+                Picker("Library", selection:$libraryFilter) {
+                    ForEach(NoraPhotoCatalog.LibraryFilter.allCases){filter in Text(filter.rawValue).tag(filter)}
                 }.pickerStyle(.segmented)
                 HStack {
-                    Text(onlyFavorites ? "Favorites" : "Camera roll").font(.title2.bold())
+                    Text(libraryFilter == .library ? "Camera roll":libraryFilter.rawValue).font(.title2.bold())
                     Spacer()
                     Text("\(shown.filter { available($0) }.count) recovered").font(.caption).foregroundColor(.secondary)
+                    Menu {
+                        Button("Larger thumbnails"){gridColumns=2}
+                        Button("Standard thumbnails"){gridColumns=3}
+                    } label: {Image(systemName:"square.grid.2x2").frame(minWidth:44,minHeight:44).accessibilityLabel("Thumbnail size")}
                 }
-                if !onlyFavorites {
+                if libraryFilter == .library {
                     VStack(alignment: .leading, spacing: 8) {
                         Label("Photo recovery", systemImage: "photo.stack").font(.headline)
                         ProgressView(value: Double(photos.filter { available($0) }.count), total: Double(max(1, photos.count))).tint(LumaDesign.accent)
                         Text("Unrecovered photos appear as you investigate. Private access is separate.").font(.caption).foregroundColor(.secondary)
                     }.padding(14).lumaSurface()
                 }
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 3), spacing: 4) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count:gridColumns), spacing: 4) {
                     ForEach(shown) { photo in
                         Button {
-                            scale = 1; selection = photo
-                            if available(photo){world.recordCameraAnalysisOpened(photo.asset)}
+                            openPhoto(photo)
                         } label: {
                             GeometryReader { geo in
                                 Group {
-                                    if available(photo) { Image(photo.asset).resizable().scaledToFill() }
+                                    if available(photo) && photoPhase == .active { Image(photo.asset).resizable().scaledToFill() }
                                     else { LockedPhotoSurface() }
                                 }.frame(width: geo.size.width, height: geo.size.height).clipped()
                                     .overlay(alignment: .bottomTrailing) {
@@ -1370,7 +1387,12 @@ private struct LabPhotosView: View {
                         }.buttonStyle(.plain).accessibilityLabel(available(photo) ? photo.title : "Locked photograph")
                     }
                 }
-                if shown.isEmpty { Text("Favorite a photo to see it here.").foregroundColor(.secondary).padding(.vertical, 25) }
+                if shown.isEmpty { Text(libraryFilter == .favorites ? "Favorite a photo to see it here.":"No recovered photos available.").foregroundColor(.secondary).padding(.vertical, 25) }
+                if !RecoveredImageAnalysis.visible(world.state).isEmpty {
+                    NavigationLink { ImageReviewOverviewView() } label:{
+                        Label("Image investigation",systemImage:"viewfinder").padding(12).lumaSurface()
+                    }.buttonStyle(.plain)
+                }
                 Text("Albums").font(.title2.bold()).padding(.top, 10)
                 NavigationLink { ProtectedAreaView(area: .photos) } label: {
                     HStack(spacing: 14) {
@@ -1387,15 +1409,16 @@ private struct LabPhotosView: View {
             }.padding()
         }.navigationTitle("Photos")
         .onAppear { world.recoverPhotoDiscovery() }
+        .onChange(of:photoPhase){if $0 != .active {pendingModalHandoff=nil;selection=nil;scale=1}}
         .sheet(item: $selection,onDismiss:{
             let asset=pendingModalHandoff
             pendingModalHandoff=nil
-            if let asset,RecoveredImageAnalysis.record(asset,in:world.state) != nil {sendImageToLuma?(asset)}
+            if photoPhase == .active,let asset,RecoveredImageAnalysis.record(asset,in:world.state) != nil {sendImageToLuma?(asset)}
         }) { photo in
             NavigationStack {
                 VStack(spacing: 16) {
                     Spacer()
-                    if available(photo) {
+                    if available(photo) && photoPhase == .active {
                     Image(photo.asset).resizable().scaledToFit()
                         .scaleEffect(scale).gesture(MagnificationGesture().onChanged { scale = min(3, max(1, $0)) })
                         .clipped().onTapGesture(count: 2) { withAnimation { scale = scale > 1 ? 1 : 2 } }
@@ -1416,10 +1439,23 @@ private struct LabPhotosView: View {
                         Text(photo.record?.lockedHint ?? "Discovery required").font(.subheadline).foregroundColor(.secondary)
                         Spacer()
                     }
-                }.padding().navigationTitle(available(photo) ? photo.title : "Locked photograph").navigationBarTitleDisplayMode(.inline)
+                    HStack {
+                        Button {if let previous=adjacent(photo.id,-1){openPhoto(previous)}} label:{
+                            Label("Previous",systemImage:"chevron.left").frame(minHeight:44)
+                        }.disabled(adjacent(photo.id,-1)==nil || photoPhase != .active)
+                        Spacer()
+                        if let index=shown.firstIndex(where:{$0.id==photo.id}) {
+                            Text("\(index+1) of \(shown.count)").font(.caption).foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Button {if let next=adjacent(photo.id,1){openPhoto(next)}} label:{
+                            Label("Next",systemImage:"chevron.right").frame(minHeight:44)
+                        }.disabled(adjacent(photo.id,1)==nil || photoPhase != .active)
+                    }
+                }.padding().navigationTitle(available(photo) && photoPhase == .active ? photo.title : "Locked photograph").navigationBarTitleDisplayMode(.inline)
                     .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { selection = nil } } }
             }.environment(\.sendImageToLuma,{ asset in
-                guard RecoveredImageAnalysis.record(asset,in:world.state) != nil else{return}
+                guard photoPhase == .active,RecoveredImageAnalysis.record(asset,in:world.state) != nil else{return}
                 pendingModalHandoff=asset
                 selection=nil
             }).preferredColorScheme(.dark)
@@ -1427,6 +1463,7 @@ private struct LabPhotosView: View {
     }
     private func isFavorite(_ id: String) -> Bool { favorites.split(separator: "|").contains(Substring(id)) }
     private func toggle(_ id: String) {
+        guard photoPhase == .active,NoraPhotoCatalog.library(world.state.flags,filter:.recovered).contains(where:{$0.id==id}) else{return}
         var ids = RelayCatalog.ids(favorites)
         if ids.contains(id) { ids.remove(id) } else { ids.insert(id) }
         favorites = RelayCatalog.encoded(ids)

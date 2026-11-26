@@ -2,6 +2,22 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class LumaImageAnalysisTests:XCTestCase {
+    func testPhotoLibraryFiltersAndAdjacentNavigation() {
+        let favorites:Set<String>=["Nora_Photo_01","Nora_Photo_04","Nora_Photo_10","Nora_Collage_01"]
+        XCTAssertEqual(NoraPhotoCatalog.library([],filter:.library).count,9)
+        XCTAssertEqual(NoraPhotoCatalog.library([],filter:.recovered).count,3)
+        XCTAssertEqual(NoraPhotoCatalog.library([],filter:.favorites,favorites:favorites).map(\.id),["Nora_Photo_01"])
+        let flags:Set<String>=["nora-photo-notes","nora-photo-unlocked-Nora_Photo_10","nora-photo-unlocked-Nora_Collage_01"]
+        XCTAssertEqual(NoraPhotoCatalog.library(flags,filter:.recovered).count,5)
+        XCTAssertEqual(NoraPhotoCatalog.library(flags,filter:.favorites,favorites:favorites).map(\.id),["Nora_Photo_01","Nora_Photo_04"])
+        XCTAssertEqual(NoraPhotoCatalog.adjacent("Nora_Photo_01",offset:1,flags:flags,filter:.favorites,favorites:favorites)?.id,"Nora_Photo_04")
+        XCTAssertNil(NoraPhotoCatalog.adjacent("Nora_Photo_01",offset:-1,flags:flags,filter:.library))
+        XCTAssertNil(NoraPhotoCatalog.adjacent("Nora_Photo_05",offset:1,flags:flags,filter:.recovered))
+        XCTAssertNil(NoraPhotoCatalog.adjacent("Nora_Photo_10",offset:-1,flags:flags,filter:.library))
+        XCTAssertNil(NoraPhotoCatalog.adjacent("Nora_Photo_01",offset:99,flags:flags,filter:.library))
+        XCTAssertEqual(NoraPhotoCatalog.library([],filter:.favorites,favorites:favorites).count,1)
+    }
+
     func testArtworkExposureAndPrivateDisplayContract() {
         let assigned:Set<String>=["Recovered_B27_02","Recovered_B27_03","Recovered_B27_13","Recovered_B27_18","Recovered_B27_26","Recovered_B27_27","Recovered_B27_29"]
         let all=Set((1...29).map{String(format:"Recovered_B27_%02d",$0)})

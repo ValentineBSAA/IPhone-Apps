@@ -40,6 +40,27 @@ enum NoraPhotoCatalog {
         }
         return NoraPhoto(id: String(format: "Nora_Photo_%02d", i), gate: gate)
     } + [NoraPhoto(id: "Nora_Collage_01", gate: .future), NoraPhoto(id: "Nora_Collage_02", gate: .future)]
+    enum LibraryFilter:String,CaseIterable,Identifiable {
+        case library="Library", recovered="Recovered", favorites="Favorites"
+        var id:String {rawValue}
+    }
+    static func library(_ flags:Set<String>,filter:LibraryFilter,favorites:Set<String> = [])->[NoraPhoto] {
+        let earned=discoveryFlags(from:flags)
+        return photos.filter { photo in
+            guard !photo.privateAlbum else{return false}
+            switch filter {
+            case .library:return true
+            case .recovered:return photo.available(flags:earned)
+            case .favorites:return photo.available(flags:earned) && favorites.contains(photo.id)
+            }
+        }
+    }
+    static func adjacent(_ id:String,offset:Int,flags:Set<String>,filter:LibraryFilter,favorites:Set<String> = [])->NoraPhoto? {
+        let records=library(flags,filter:filter,favorites:favorites)
+        guard let index=records.firstIndex(where:{$0.id==id}),offset == -1 || offset == 1,
+              records.indices.contains(index+offset) else{return nil}
+        return records[index+offset]
+    }
     /// Existing approved private records recover in a separate authenticated
     /// album session. No narrative claims about the individual pixels are made.
     static func privateRecoveryEligible(_ id:String,flags:Set<String>)->Bool {
