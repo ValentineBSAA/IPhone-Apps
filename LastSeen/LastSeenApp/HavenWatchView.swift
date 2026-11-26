@@ -86,8 +86,8 @@ struct HavenWatchView: View {
                             }.padding(12).lumaSurface()
                         }.buttonStyle(.plain)
                     }
-                    if let event = HavenWatchEvents.visible(world.state) {
-                        NavigationLink { HavenWatchEventDetail() } label: {
+                    ForEach([HavenWatchEvents.visible(world.state),HavenWatchEvents.followup(world.state)].compactMap{$0}) { event in
+                        NavigationLink { HavenWatchEventDetail(eventID:event.id) } label: {
                             VStack(alignment: .leading, spacing: 5) {
                                 Label(HavenWatchEvents.title(event), systemImage: "archivebox").font(.headline)
                                 Text("Index activity · " + event.due.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundColor(.secondary)

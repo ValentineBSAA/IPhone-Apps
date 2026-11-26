@@ -72,7 +72,7 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
                   !(history.seenIDs ?? []).contains(targetID) else { return false }
             return history.messages.contains { !$0.outgoing && $0.id == targetID }
         case .security:
-            return (state.connectedWorld?.havenWatch?.alertsEnabled ?? true) && HavenWatchEvents.visible(state).map { $0.id == targetID } == true
+            return (state.connectedWorld?.havenWatch?.alertsEnabled ?? true) && HavenWatchEvents.event(targetID,in:state) != nil
         case .dayblink:
             guard state.everydayArchiveRevision != nil, let targetID, let d = state.connectedWorld?.dayblink,
                   d.notificationsEnabled,
@@ -213,7 +213,8 @@ struct LumaActivityDetail: View {
             case .timer:
                 Text("Your timer has finished.").padding().navigationTitle("Clock")
             case .security:
-                HavenWatchEventDetail()
+                if let target=notice.targetID { HavenWatchEventDetail(eventID:target) }
+                else { Text("Archive activity unavailable") }
             case .support:
                 RelaySupportView()
             case .motionwell:

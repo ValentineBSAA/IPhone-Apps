@@ -302,6 +302,7 @@ final class PhoneWorldStore: ObservableObject {
         advanceCommunityActivity(now: now)
         advanceDayblink(now: now)
         advanceHavenWatch(now: now)
+        advanceHavenFollowup(now: now)
         advanceMotionwell(now: now)
         advanceCharacterCheckIns(now:now)
         let pending = state.pendingReplies ?? []
@@ -1202,6 +1203,30 @@ final class PhoneWorldStore: ObservableObject {
                               targetID: event.id, channel: nil, author: nil), to: &c)
         }
         commitConnected(c)
+    }
+    func advanceHavenFollowup(now:Date=Date()) {
+        guard HavenWatchEvents.followupEligible(state),!state.flags.contains(InvestigationResolution.completed) else { return }
+        var c=connected
+        if c.havenFollowupEvent == nil {
+            c.havenFollowupEvent=HavenWatchEvent(id:HavenWatchEvents.followupID,due:now.addingTimeInterval(45))
+            commitConnected(c)
+            return
+        }
+        guard var event=c.havenFollowupEvent,event.id == HavenWatchEvents.followupID,
+              !event.delivered,event.due <= now else{return}
+        // Avoid a second security arrival immediately after the first.
+        if let prior=c.havenEvent,prior.delivered,now.timeIntervalSince(prior.due)<15 { return }
+        event.delivered=true
+        c.havenFollowupEvent=event
+        if c.havenWatch?.alertsEnabled ?? true {
+            addActivity(.init(id:event.id,kind:.security,date:now,title:HavenWatchEvents.title(event),
+                detail:HavenWatchEvents.detail(event),targetID:event.id,channel:nil,author:nil),to:&c)
+        }
+        commitConnected(c)
+    }
+    func recordHavenFollowupOpened() {
+        guard HavenWatchEvents.followup(state) != nil else{return}
+        if state.flags.insert(HavenWatchEvents.followupOpened).inserted { save() }
     }
     func recordHavenSnapshotOpened(_ id:String) {
         guard HavenWatchArchive.frames(in:state).contains(where:{$0.id == id}) else { return }
