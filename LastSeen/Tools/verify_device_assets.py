@@ -1,5 +1,6 @@
 """Validate physical-device build resources and final IPA bytes, not just simulator assets."""
 import argparse, hashlib, json, pathlib, plistlib, zipfile, wave
+from verify_ipa_payload import verify_payload
 from import_phone_sounds import TRACKS as ORIGINAL_TRACKS
 from import_extra_phone_sounds import TRACKS as CORRECTIVE_TRACKS
 p=argparse.ArgumentParser()
@@ -104,6 +105,8 @@ if a.ipa:
     assert a.app is not None
     with zipfile.ZipFile(a.ipa) as z:
         assert z.testzip() is None, "IPA CRC failed"
+        file_count=verify_payload(z,a.app)
+        print("Verified exact compiled app payload:",file_count,"files")
         prefix="Payload/LastSeen.app/"
         names=z.namelist()
         assert len(names)==len(set(names)), "Duplicate ZIP paths"
