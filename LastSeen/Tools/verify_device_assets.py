@@ -1,5 +1,7 @@
 """Validate physical-device build resources and final IPA bytes, not just simulator assets."""
-import argparse, hashlib, json, pathlib, plistlib, zipfile
+import argparse, hashlib, json, pathlib, plistlib, zipfile, wave
+from import_phone_sounds import TRACKS as ORIGINAL_TRACKS
+from import_extra_phone_sounds import TRACKS as CORRECTIVE_TRACKS
 p=argparse.ArgumentParser()
 p.add_argument("--app",type=pathlib.Path)
 p.add_argument("--ipa",type=pathlib.Path)
@@ -14,6 +16,29 @@ for name in packs:
             assert record["filename"] not in expected
             expected[record["filename"]]=record["sha256"]
 assert len(expected)==53
+# Use the same pinned originals as the importers, not hashes of potentially
+# corrupted output. Restart WAVs are deterministic local generated resources.
+assert len(ORIGINAL_TRACKS)==11 and len(CORRECTIVE_TRACKS)==4
+assert not set(ORIGINAL_TRACKS).intersection(CORRECTIVE_TRACKS)
+for name, (_, sha) in {**ORIGINAL_TRACKS, **CORRECTIVE_TRACKS}.items():
+    assert name+".mp3" not in expected
+    expected[name+".mp3"]=sha
+for name in ("RespringDown", "RespringUp", "UserspaceDown", "UserspaceUp"):
+    source=pathlib.Path("LastSeenApp/Resources")/(name+".wav")
+    with wave.open(str(source),"rb") as wav:
+        assert (wav.getnchannels(),wav.getsampwidth(),wav.getframerate(),wav.getnframes())==(1,2,44100,int(44100*0.78)), name
+        assert len(wav.readframes(wav.getnframes()))==wav.getnframes()*2, name
+    expected[name+".wav"]=digest(source.read_bytes())
+scripts=json.loads(pathlib.Path("VoiceAssets/initial_scripts.json").read_text())
+voice_names={r["file"] for r in scripts["memos"]+scripts["assistant"]}
+assert len(voice_names)==10
+# No approved voice pack is pinned/imported in this release configuration.
+# An approved future intake must explicitly update this contract.
+def reject_unapproved_voice(names):
+    for path in names:
+        name=pathlib.PurePosixPath(str(path)).name
+        assert name not in voice_names and name!="LumaVoiceManifest.json" and not name.startswith("LastSeen_B32_VoiceCandidates"), "Unapproved voice resource: "+str(path)
+reject_unapproved_voice(pathlib.Path("LastSeenApp").rglob("*"))
 expected["ConnectedWorldDocuments.json"]=digest(pathlib.Path("LastSeenApp/ConnectedWorldDocuments.json").read_bytes())
 support_root=pathlib.Path("LastSeenApp/RelaySupportResources")
 with zipfile.ZipFile("LastSeen_Build32_RelaySupport_ContentPack_v1.zip") as support:
@@ -43,6 +68,7 @@ for credit in pathlib.Path("LastSeenApp/CommunityReserveCredits").iterdir():
         expected[credit.name]=digest(credit.read_bytes())
 assert len([name for name in expected if name.startswith("CommunityReserve")]) == 4
 if a.app:
+    reject_unapproved_voice(a.app.rglob("*"))
     car=(a.app/"Assets.car").read_bytes()
     assert car.startswith(b"BOMStore") and len(car)>1024, "Malformed compiled asset catalog"
     print("Device Assets.car:",len(car),"bytes SHA-256",digest(car))
@@ -79,6 +105,7 @@ if a.ipa:
         prefix="Payload/LastSeen.app/"
         names=z.namelist()
         assert len(names)==len(set(names)), "Duplicate ZIP paths"
+        reject_unapproved_voice(names)
         info=plistlib.loads(z.read(prefix+"Info.plist"))
         assert info["CFBundleVersion"]=="32" and info["CFBundleShortVersionString"]=="1.9.0", "IPA identity disagrees with release contract"
         assert info["MinimumOSVersion"]=="16.0" and info["CFBundleIdentifier"]=="com.valentinebsaa.lastseen.horror"

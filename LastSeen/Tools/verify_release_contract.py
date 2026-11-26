@@ -37,6 +37,24 @@ device_verifier = read("Tools/verify_device_assets.py")
 require(build == capture(r'info\["CFBundleVersion"\]\s*==\s*"([^"]+)"', device_verifier, "IPA verifier build gate"), "IPA verifier build disagrees with project")
 require(version == capture(r'info\["CFBundleShortVersionString"\]\s*==\s*"([^"]+)"', device_verifier, "IPA verifier version gate"), "IPA verifier version disagrees with project")
 
+# Runtime cue names and the two pinned MP3 manifests must be a bijection.
+# Parse literal names only; never execute Swift or import sound bytes here.
+import ast
+def track_names(relative):
+    tree=ast.parse(read(relative))
+    nodes=[n.value for n in tree.body if isinstance(n,ast.Assign)
+           and any(isinstance(t,ast.Name) and t.id=="TRACKS" for t in n.targets)]
+    require(len(nodes)==1, relative+": missing unique TRACKS manifest")
+    return set(ast.literal_eval(nodes[0])) if len(nodes)==1 else set()
+original=track_names("Tools/import_phone_sounds.py")
+corrective=track_names("Tools/import_extra_phone_sounds.py")
+require(len(original)==11 and len(corrective)==4 and not original.intersection(corrective),
+        "Approved MP3 manifest count or overlap changed")
+cue_source=read("LastSeenApp/PhoneSensoryEngine.swift")
+asset_switch=cue_source.split("var assetName: String {",1)[1].split("var title: String {",1)[0]
+cue_names=re.findall(r'return "([^"]+)"',asset_switch)
+require(len(cue_names)==15 and len(set(cue_names))==15 and set(cue_names)==original|corrective,
+        "PhoneCue assets disagree with pinned MP3 manifests")
 source = read("LastSeenApp/RecoveryPrologue.swift")
 pace = source.split("enum OpeningPace {", 1)[1].split("    static func duration", 1)[0]
 constants = {name: int(value) for name, value in re.findall(r"static let (\w+) = (\d+)\s*$", pace, re.M)}

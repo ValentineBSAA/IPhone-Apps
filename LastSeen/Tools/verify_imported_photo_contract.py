@@ -71,7 +71,7 @@ def verify():
             "Held world expansion artwork must remain outside runtime")
     require(not any(APP.rglob("LastSeen_B32_VoiceCandidates*")),
             "Unapproved candidate archive must remain outside runtime")
-    print("Photo preflight: 29 standalone originals, 16 Nora assets, four canonical aliases and 12 VEIL assets verified; held artwork excluded.")
+    print("Photo preflight: 29 standalone originals, 16 Nora assets, four canonical aliases, 12 VEIL assets and six additional VEIL home originals verified; held artwork excluded.")
 
 if __name__ == "__main__":
     verify()
