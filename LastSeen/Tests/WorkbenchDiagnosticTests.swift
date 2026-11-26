@@ -34,6 +34,31 @@ import XCTest
         XCTAssertFalse(resumed.verifyDiagnostic(.signal))
         XCTAssertEqual(WorkbenchDiagnosticCatalog.verifiedCount(resumed.state),1)
     }
+    func testAppliedReviewRequiresVisitedSourceAndVerifiedExercise() throws {
+        let w = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(), persistToDisk: false)
+        XCTAssertTrue(WorkbenchAppliedReview.visible(w.state).isEmpty)
+        w.setWorkbenchConnection(true)
+        w.updateDiagnostic(.configuration, values: [0,1,0])
+        XCTAssertTrue(w.verifyDiagnostic(.configuration))
+        XCTAssertFalse(w.completeAppliedReview(.configuration, choice: 1))
+        w.visitWebRecord("studio-news")
+        XCTAssertTrue(WorkbenchAppliedReview.visible(w.state).contains(.configuration))
+        XCTAssertFalse(WorkbenchAppliedReview.visible(w.state).contains(.sequence))
+        let flags = w.state.flags
+        XCTAssertFalse(w.completeAppliedReview(.configuration, choice: 0))
+        XCTAssertTrue(w.completeAppliedReview(.configuration, choice: 1))
+        XCTAssertTrue(w.completeAppliedReview(.configuration, choice: 1))
+        XCTAssertEqual(w.connected.workbenchAppliedReviews, Set(["configuration"]))
+        XCTAssertEqual(w.state.flags, flags)
+        let restored = try JSONDecoder().decode(PhoneWorld.self, from: JSONEncoder().encode(w.state))
+        let resumed = PhoneWorldStore(initial: restored, persistToDisk: false)
+        XCTAssertTrue(WorkbenchAppliedReview.configuration.completed(in: resumed.state))
+        resumed.setWorkbenchConnection(false)
+        XCTAssertTrue(WorkbenchAppliedReview.visible(resumed.state).isEmpty)
+        XCTAssertFalse(resumed.completeAppliedReview(.configuration, choice: 1))
+        XCTAssertTrue(WorkbenchAppliedReview.configuration.completed(in: resumed.state))
+    }
+
     func testValidatorsAndMultipleValidOrders() {
         XCTAssertTrue(WorkbenchDiagnostic.configuration.valid([0,1,0]))
         XCTAssertFalse(WorkbenchDiagnostic.configuration.valid([1,1,0]))

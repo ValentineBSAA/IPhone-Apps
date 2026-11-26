@@ -73,6 +73,7 @@ struct LumaConnectedState:Codable,Equatable {
     var investigationReviewSelection: [String: Int]? = nil
     var investigationDisposition: InvestigationResolution.Choice? = nil
     var diagnostics: [String: WorkbenchDiagnosticProgress]? = nil
+    var workbenchAppliedReviews: Set<String>? = nil
     var workbenchConnected=false
     var workbenchSelections:[String:[String]]=[:]
     var workbenchVerified:Set<String>=[]
@@ -499,6 +500,19 @@ struct LumaWorkbenchView:View{
                         NavigationLink { WorkbenchDiagnosticView(challenge: challenge) } label: {
                             LumaHeader(title: challenge.title, detail: WorkbenchDiagnosticCatalog.progress(challenge, in: world.state).verified ? "Verified" : "Ready for inspection", symbol: challenge.symbol)
                         }.buttonStyle(.plain)
+                    }
+                    if !WorkbenchAppliedReview.visible(world.state).isEmpty {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Applied record reviews").font(.headline)
+                            Text("Optional observations based on records you have already visited.").font(.caption).foregroundColor(.secondary)
+                            ForEach(WorkbenchAppliedReview.visible(world.state)) { review in
+                                NavigationLink {
+                                    WorkbenchAppliedReviewView(review: review)
+                                } label: {
+                                    LumaHeader(title: review.title, detail: review.completed(in: world.state) ? "Recorded" : "Ready for review", symbol: "doc.text.magnifyingglass")
+                                }.buttonStyle(.plain)
+                            }
+                        }
                     }
                     NavigationLink{RecoveryCircuitView()}label:{LumaHeader(title:"Recovery Circuit",detail:"Existing Patchline service verification",symbol:"cpu")}.buttonStyle(.plain)
                     Button(action:openRelay){LumaHeader(title:"Package preparation",detail:"Review authorized packages in Relay",symbol:"shippingbox.fill")}.buttonStyle(.plain)

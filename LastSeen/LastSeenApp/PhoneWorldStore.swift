@@ -1304,6 +1304,18 @@ final class PhoneWorldStore: ObservableObject {
         return true
     }
 
+    @discardableResult
+    func completeAppliedReview(_ review: WorkbenchAppliedReview, choice: Int) -> Bool {
+        guard review.available(in: state), review.accepts(choice) else { return false }
+        var c = connected
+        var completed = c.workbenchAppliedReviews ?? []
+        if completed.insert(review.rawValue).inserted {
+            c.workbenchAppliedReviews = completed
+            commitConnected(c)
+        }
+        return true
+    }
+
     private func save() {
         guard persistToDisk else { return }
         do {
