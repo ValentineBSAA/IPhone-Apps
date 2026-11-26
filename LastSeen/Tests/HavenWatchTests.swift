@@ -3,6 +3,54 @@ import UIKit
 @testable import LastSeen
 
 @MainActor final class HavenWatchTests: XCTestCase {
+    func testCrossArchiveReviewRequiresOpenedMatchingSources() throws {
+        var state=RestoredPhoneBackup.snapshot()
+        state.flags.formUnion(["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery])
+        let w=PhoneWorldStore(initial:state,persistToDisk:false)
+        let kitchen=HavenCamera.kitchen.asset(occupied:false)
+        let living=HavenCamera.living.asset(occupied:false)
+        let image="image:VEIL_Home_01"
+        XCTAssertNil(LumaAssistantEvidence.selected("haven:"+kitchen,in:w.state))
+        w.recordHavenSnapshotOpened("invalid")
+        XCTAssertFalse(w.state.flags.contains(HavenWatchArchive.marker("invalid")))
+        w.recordHavenSnapshotOpened(kitchen)
+        w.recordHavenSnapshotOpened(living)
+        XCTAssertNotNil(LumaAssistantEvidence.selected("haven:"+kitchen,in:w.state))
+        XCTAssertFalse(w.recordHavenCrossArchiveReview(1))
+        w.recordVeilCorrespondenceOpened()
+        w.inspectVeilReference("board-reference")
+        w.recordVeilObservation("Nora_Archive_08")
+        for asset in VeilArchive.homeAssets.prefix(2) {
+            w.recordVeilObservation(asset)
+            XCTAssertTrue(w.completeRecoveredImageAnalysis(asset,source:2,limit:0))
+        }
+        w.recordVeilThreadOpened("ordinary-hours",packages:"veil",safeMode:false)
+        XCTAssertTrue(w.saveEvidenceConnection(image,"veil:thread:ordinary-hours",relation:.wording))
+        w.inspectVeilReference(VeilReferences.homeIndexID)
+        w.recordVeilHomeIndexOpened()
+        for id in VeilCommunity.disputedThreads { w.recordVeilThreadOpened(id,packages:"veil",safeMode:false) }
+        XCTAssertTrue(w.recordVeilDispute(0,packages:"veil",safeMode:false))
+        XCTAssertTrue(w.saveEvidenceConnection(image,"haven:"+living,relation:.source))
+        XCTAssertFalse(HavenCrossArchiveReview.ready(w.state))
+        XCTAssertTrue(w.saveEvidenceConnection(image,"haven:"+kitchen,relation:.wording))
+        XCTAssertFalse(HavenCrossArchiveReview.ready(w.state))
+        XCTAssertTrue(w.saveEvidenceConnection(image,"haven:"+kitchen,relation:.source))
+        XCTAssertTrue(HavenCrossArchiveReview.ready(w.state))
+        XCTAssertFalse(w.recordHavenCrossArchiveReview(0))
+        XCTAssertFalse(w.recordHavenCrossArchiveReview(2))
+        XCTAssertTrue(w.recordHavenCrossArchiveReview(1))
+        XCTAssertTrue(w.recordHavenCrossArchiveReview(1))
+        XCTAssertNotNil(LumaAssistantEvidence.selected("haven:cross-archive",in:w.state))
+        var restored=try JSONDecoder().decode(PhoneWorld.self,from:JSONEncoder().encode(w.state))
+        XCTAssertTrue(HavenCrossArchiveReview.reviewed(restored))
+        restored.flags.remove(HavenWatchArchive.marker(kitchen))
+        XCTAssertFalse(HavenCrossArchiveReview.reviewed(restored))
+        XCTAssertNil(LumaAssistantEvidence.selected("haven:cross-archive",in:restored))
+        restored=w.state;restored.flags.remove(VeilArchive.discovery)
+        XCTAssertFalse(HavenCrossArchiveReview.reviewed(restored))
+        XCTAssertNotNil(LumaAssistantEvidence.selected("haven:"+kitchen,in:restored))
+    }
+
     func testArchiveAndPersistentPreferences() throws {
         let base = PhoneWorldStore(persistToDisk: false)
         XCTAssertTrue(HavenWatchArchive.frames(in: base.state).isEmpty)

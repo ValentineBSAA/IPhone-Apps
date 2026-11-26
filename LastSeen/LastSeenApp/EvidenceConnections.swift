@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import UIKit
 
 /// Optional player-authored links between already opened records. Store only
 /// stable references and a bounded observation type, never copied private text.
@@ -44,6 +45,9 @@ struct EvidenceConnection: Codable, Equatable, Identifiable {
     func discussion(in world:PhoneWorld)->String? {
         guard Self.make(first,second,relation:relation,in:world) != nil else{return nil}
         let ids=Set([first,second])
+        if HavenCrossArchiveReview.matchingPair(self,in:world) {
+            return "These two records describe comparable rooms but belong to different collections. Examine their source labels; neither collection supplies a verified original capture date."
+        }
         if ids == Set(VeilCommunity.disputedThreads.map { "veil:thread:"+$0 }) {
             return VeilCommunity.disputeReviewed(world) ? VeilCommunity.disputeNote :
                 "The two writers remember the revision differently. Read their accounts and use the conflicting-accounts review to record what the disagreement supports."
@@ -89,6 +93,8 @@ struct EvidenceComparisonView: View {
     @State private var second=""
     @State private var relation=EvidenceConnection.Relation.uncertainty
     @State private var notice=""
+    @State private var revealOriginals=false
+    @AppStorage("lastseen.veil.security") private var security="Standard"
     private var records:[LumaAssistantEvidence.Record] { LumaAssistantEvidence.visible(world.state) }
     private var selection:EvidenceConnection? { EvidenceConnection.make(first,second,relation:relation,in:world.state) }
     var body: some View {
@@ -108,6 +114,25 @@ struct EvidenceComparisonView: View {
                 }
             }
             if let selection,phase == .active {
+                if let cameraID=[selection.first,selection.second].first(where:{$0.hasPrefix("haven:HavenWatch_")}),
+                   let photoID=[selection.first,selection.second].first(where:{$0.hasPrefix("image:VEIL_Home_")}) {
+                    Section("Original image comparison") {
+                        if VeilArchive.allowsImages(security) {
+                            Toggle("Reveal both originals",isOn:$revealOriginals)
+                            if revealOriginals {
+                                ForEach([cameraID,photoID],id:\.self) { id in
+                                    VStack(alignment:.leading,spacing:6) {
+                                        Text(id.hasPrefix("haven:") ? "HavenWatch saved still" : "VEIL recovered copy").font(.caption.bold())
+                                        if let image=UIImage(named:String(id.dropFirst(6))) {
+                                            Image(uiImage:image).resizable().scaledToFit()
+                                        } else { Text("Original unavailable").font(.caption) }
+                                    }
+                                }
+                            }
+                        } else { Text("Image previews hidden by security preference. Text comparison remains available.").font(.caption) }
+                        Text("Unmodified originals. Similar rooms do not establish a shared camera.").font(.caption).foregroundColor(.secondary)
+                    }
+                }
                 ForEach(selection.records(in:world.state)){record in
                     Section(record.title) {
                         // Bounded local source excerpts, not generated summaries.
@@ -157,11 +182,14 @@ struct EvidenceComparisonView: View {
             .onAppear{
                 if let initialRecordID,records.contains(where:{$0.id==initialRecordID}),first.isEmpty{first=initialRecordID}
             }
-            .onChange(of:first){value in if value==second{second=""};notice=""}
-            .onChange(of:second){_ in notice=""}
+            .onChange(of:first){value in if value==second{second=""};notice="";revealOriginals=false}
+            .onChange(of:second){_ in notice="";revealOriginals=false}
+            .onChange(of:security){_ in revealOriginals=false}
+            .onDisappear{revealOriginals=false}
             .onChange(of:relation){_ in notice=""}
-            .onChange(of:phase){if $0 != .active{notice=""}}
+            .onChange(of:phase){if $0 != .active{notice="";revealOriginals=false}}
             .onChange(of:records.map(\.id)){_ in
+                revealOriginals=false
                 if !records.contains(where:{$0.id==first}){first=""}
                 if !records.contains(where:{$0.id==second}){second=""}
                 notice=""
