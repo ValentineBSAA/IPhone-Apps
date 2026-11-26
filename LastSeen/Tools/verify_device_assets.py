@@ -62,6 +62,7 @@ if a.catalog:
     required.update(f"HavenWatch_CAM{i:02d}_{suffix}" for i in range(1,6) for suffix in ("empty","occupied"))
     required.add("Icon_Veil")
     required.update(f"Nora_Archive_{i:02d}" for i in range(1,12))
+    required.update(f"VEIL_Home_{i:02d}" for i in range(1,7))
     required.update(f"Nora_Photo_{i:02d}" for i in range(1,13))
     required.update(["Nora_Collage_01","Nora_Collage_02"])
     # Build27 originals are standalone PNGs, not CoreUI renditions.

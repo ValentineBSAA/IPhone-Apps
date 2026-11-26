@@ -211,6 +211,8 @@ jobs:
           set -euo pipefail
           gh release download L1 --repo ValentineBSAA/IPhone-Apps --pattern 'LAST_SEEN_VEIL_Nora_Approved_Assets_v1.zip' --dir . --clobber
           python3 Tools/import_veil_assets.py --zip LAST_SEEN_VEIL_Nora_Approved_Assets_v1.zip
+          gh release download L1 --repo ValentineBSAA/IPhone-Apps --pattern 'LAST_SEEN_VEIL_Home_Selection_v1.zip' --dir . --clobber
+          python3 Tools/import_veil_home.py --zip LAST_SEEN_VEIL_Home_Selection_v1.zip
 
       - name: Import verified community reserve portraits and hobby avatars
         run: |

@@ -60,6 +60,13 @@ def verify():
                 "VEIL inventory differs")
         for r in records:
             verify_catalog(r["asset"], "photo.png", r["sha256"])
+    with ZipFile(ROOT / "LAST_SEEN_VEIL_Home_Selection_v1.zip") as z:
+        records = json.loads(z.read("manifest.json"))["assets"]
+        require(len(records) == 6 and {r["id"] for r in records} == {f"VEIL_Home_{i:02d}" for i in range(1,7)},
+                "VEIL home inventory differs")
+        for r in records:
+            verify_catalog(r["id"], "photo.png", r["sha256"])
+    print("Six additional VEIL home originals verified.")
     require(not any(APP.rglob("WorldPhoto_E01_*")),
             "Held world expansion artwork must remain outside runtime")
     require(not any(APP.rglob("LastSeen_B32_VoiceCandidates*")),
