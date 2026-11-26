@@ -74,6 +74,7 @@ struct LumaAssistantView: View {
     let context: () -> LumaAssistantContext
     let openApp: (LabApp) -> Void
     let acknowledgeBoundaries: () -> Void
+    let rememberSession: (LumaAssistantSession?) -> Void
     @State private var previousMemoryID: String?
     @State private var recollectionCount = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -95,6 +96,20 @@ struct LumaAssistantView: View {
         player?.stop(); player = nil
         PhoneSensoryEngine.endMediaAudio(audioOwner)
         readAloud.stop()
+    }
+    private func resumeSession() {
+        let world = context().world
+        let session = LumaAssistantSession.validated(world.connectedWorld?.assistantSession,in:world)
+        conversationTopic = session?.topic
+        previousMemoryID = session?.memoryID
+        recollectionCount = session?.recollectionCount ?? 0
+        answer = .init(text:LumaAssistantSession.resumePrompt(session,world:world),clipID:"conversation")
+    }
+    private func clearSession() {
+        stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID()
+        rememberSession(nil); conversationTurns = []; conversationTopic = nil
+        previousMemoryID = nil; recollectionCount = 0
+        answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation")
     }
     @State private var glow = false
     @FocusState private var focused: Bool
@@ -122,6 +137,9 @@ struct LumaAssistantView: View {
         conversationTopic = reply.topic
         previousMemoryID = reply.memoryID
         recollectionCount = reply.recollectionCount
+        if reply.answer.clipID == "conversation" && reply.topic != .general {
+            rememberSession(LumaAssistantSession.from(reply,in:context().world))
+        }
         conversationTurns.append("You: " + question)
         conversationTurns.append("Luma: " + reply.answer.text)
         conversationTurns = Array(conversationTurns.suffix(12))
@@ -187,6 +205,7 @@ struct LumaAssistantView: View {
                         }.buttonStyle(.plain)
                     }
                 }
+                Button("Start a new conversation") { clearSession() }.font(.footnote)
                 Toggle("Speak responses", isOn: $spokenResponses)
                 Toggle("On-device question interpretation",isOn:$interpretOnDevice)
                 Text("When supported, the device model interprets unfamiliar wording. Answers remain limited to available records. No external AI requests.").font(.caption).foregroundColor(.secondary)
@@ -195,8 +214,8 @@ struct LumaAssistantView: View {
                 Text("Local text commands · No microphone listening or real-device actions.").font(.caption).foregroundColor(.secondary).multilineTextAlignment(.center)
             }.padding(20)
         }.navigationTitle("Assistant").navigationBarTitleDisplayMode(.inline)
-            .onAppear { answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation"); if !reduceMotion { withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { glow = true } } }
-            .onChange(of: phase) { if $0 != .active { stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID(); conversationTurns = []; conversationTopic = nil; previousMemoryID = nil; recollectionCount = 0; answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation") } }
+            .onAppear { resumeSession(); if !reduceMotion { withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { glow = true } } }
+            .onChange(of: phase) { if $0 != .active { stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID(); conversationTurns = []; conversationTopic = nil; previousMemoryID = nil; recollectionCount = 0; answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation") } else { resumeSession() } }
             .onChange(of: sound) { if !$0 { stopAudio() } }
             .onChange(of: spokenResponses) { if !$0 { stopAudio() } }
             .onReceive(timer) { now in

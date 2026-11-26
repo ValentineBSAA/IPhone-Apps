@@ -1191,7 +1191,7 @@ struct PhoneLabView: View {
         case .dayblink: DayblinkView()
         case .motionwell: MotionwellView()
         case .voiceMemos: LumaVoiceMemos()
-        case .assistant: LumaAssistantView(context: { LumaAssistantContext(world: world.state, availableApps: Set(LabApp.allCases.filter { appAvailable($0) }), wifi: wifi, sound: messageSound, haptics: messageHaptics, safeMode: safeMode, installedCount: RelayCatalog.ids(relayInstalled).count, timerEnd: feedbackTimerEnd, now: Date()) }, openApp: { open($0) }, acknowledgeBoundaries: { world.acknowledgeLumaBoundaries() })
+        case .assistant: LumaAssistantView(context: { LumaAssistantContext(world: world.state, availableApps: Set(LabApp.allCases.filter { appAvailable($0) }), wifi: wifi, sound: messageSound, haptics: messageHaptics, safeMode: safeMode, installedCount: RelayCatalog.ids(relayInstalled).count, timerEnd: feedbackTimerEnd, now: Date()) }, openApp: { open($0) }, acknowledgeBoundaries: { world.acknowledgeLumaBoundaries() }, rememberSession: { world.rememberLumaSession($0) })
         case .workstation: LumaWorkbenchView(openRelay:{open(.relay)},openFiles:{open(.files)})
         case .photos: LabPhotosView()
         case .clock: LabClockView(onFinish: { settleTimer(now: $0, present: true) })

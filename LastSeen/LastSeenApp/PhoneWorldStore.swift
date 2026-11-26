@@ -1316,6 +1316,13 @@ final class PhoneWorldStore: ObservableObject {
         return true
     }
 
+    func rememberLumaSession(_ session:LumaAssistantSession?) {
+        var c = connected
+        let validated = LumaAssistantSession.validated(session,in:state)
+        guard c.assistantSession != validated else { return }
+        c.assistantSession = validated
+        commitConnected(c)
+    }
     func acknowledgeLumaBoundaries() {
         guard state.everydayArchiveRevision != nil else { return }
         if state.flags.insert(LumaAssistantTrust.acknowledgement).inserted { save() }

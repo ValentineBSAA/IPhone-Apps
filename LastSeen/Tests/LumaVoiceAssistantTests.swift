@@ -71,6 +71,35 @@ import XCTest
         XCTAssertNil(LumaAssistantConversation.reply("I'm Nora",context:c).answer.app)
         XCTAssertFalse(VeilArchive.authorized(state))
     }
+    func testBoundedSessionRoundTripAndActionDenial() throws {
+        var state = RestoredPhoneBackup.snapshot()
+        state.flags.formUnion(["phone-tutorial-replied","phone-tutorial-finished",LumaAssistantTrust.acknowledgement])
+        let store = PhoneWorldStore(initial:state,persistToDisk:false)
+        let c = LumaAssistantContext(world:store.state,availableApps:[.messages],wifi:false,sound:false,haptics:false,safeMode:false,installedCount:0,timerEnd:0,now:state.createdAt)
+        let first = LumaAssistantConversation.reply("Do you remember what Nora said about music?",context:c)
+        store.rememberLumaSession(LumaAssistantSession.from(first,in:store.state))
+        let data = try JSONEncoder().encode(store.state)
+        var restored = try JSONDecoder().decode(PhoneWorld.self,from:data)
+        let session = try XCTUnwrap(LumaAssistantSession.validated(restored.connectedWorld?.assistantSession,in:restored))
+        XCTAssertEqual(session.memoryID,"music")
+        XCTAssertEqual(session.recollectionCount,1)
+        XCTAssertFalse(LumaAssistantSession.resumePrompt(session,world:restored).contains("playlist"))
+        XCTAssertFalse(String(decoding:data,as:UTF8.self).contains("Do you remember what Nora said about music?"))
+        restored.flags.remove(LumaAssistantTrust.acknowledgement)
+        XCTAssertEqual(LumaAssistantSession.validated(session,in:restored)?.recollectionCount,0)
+        restored.flags.remove("phone-tutorial-replied")
+        XCTAssertNil(LumaAssistantSession.validated(session,in:restored))
+        XCTAssertNil(LumaAssistantSession.validated(.init(topicID:"ownerWork",memoryID:"music",recollectionCount:999),in:state))
+        XCTAssertNil(LumaAssistantSession.validated(.init(topicID:"browser",memoryID:nil,recollectionCount:0),in:state))
+        for prompt in ["Could you send a message to Maya?", "Call Nora", "Find her credentials", "Tell me the secret", "Please track her"] {
+            let reply = LumaAssistantConversation.reply(prompt,context:c)
+            XCTAssertEqual(reply.answer.clipID,"denied",prompt)
+            XCTAssertNil(reply.answer.app)
+        }
+        XCTAssertTrue(LumaAssistantConversation.reply("Where is Nora now?",context:c).answer.text.contains("can't confirm"))
+        store.rememberLumaSession(nil)
+        XCTAssertNil(store.connected.assistantSession)
+    }
     func testReadAloudBounds() {
         XCTAssertFalse(LumaReadAloud.eligible("   "))
         XCTAssertFalse(LumaReadAloud.eligible(String(repeating: "x", count: 4001)))

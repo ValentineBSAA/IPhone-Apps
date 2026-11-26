@@ -26,6 +26,7 @@ enum LumaAssistantConversation {
         if has(["veil","tor","darknet","anonymous"]) || (has(["dark"]) && has(["web"])) { return .browser }
         if let owner = LumaOwnerMemory.match(w,previous:previous) { return owner }
         if has(["who","identity","person","sender"]) && has(["who","identity","sender","behind","really"]) { return .identity }
+        if has(["where","location","whereabouts","missing","disappeared"]) { return .identity }
         if has(["real","fake","edited","proof","authentic","original","prove","trust","verified"]) { return .provenance }
         if has(["days","weeks","dates","date","when","timeline","order","sequence","earlier","later"]) { return .chronology }
         if has(["personal","private","intimate","privacy","permission","consent","intrusive"]) { return .privacy }
@@ -50,11 +51,16 @@ enum LumaAssistantConversation {
         // requests are read-only, not a way around existing action checks.
         let normalized = LumaAssistantPolicy.normalize(raw)
         let forbidden = words(raw)
-        let hardDenied: Set<String> = ["password","passcode","pin","credentials","exploit","bypass","spoiler","ending","delete","erase","reset","uninstall","install","unlock","microphone"]
-        if !forbidden.isDisjoint(with:hardDenied) || normalized.hasPrefix("open ") || normalized.hasPrefix("show ") ||
+        let hardDenied: Set<String> = ["password","passcode","pin","credentials","exploit","bypass","spoiler","ending","delete","erase","reset","uninstall","install","unlock","microphone","secret","secrets"]
+        let actionPrefixes = ["send ", "call ", "dial ", "track ", "contact ", "record ", "take a photo", "turn on ", "turn off ", "change ", "share ", "forward "]
+        let actionRequested = actionPrefixes.contains { normalized.hasPrefix($0) || normalized.hasPrefix("please "+$0) || normalized.hasPrefix("can you "+$0) || normalized.hasPrefix("could you "+$0) }
+        if !forbidden.isDisjoint(with:hardDenied) || actionRequested {
+            return .init(topic:.general,answer:.init(text:"I can help with visible records and ordinary phone controls, but I can't do that.",clipID:"denied"))
+        }
+        if normalized.hasPrefix("open ") || normalized.hasPrefix("show ") ||
             ["help","hello","hi","hey","hint","progress","investigation progress"].contains(normalized) ||
             (literal.clipID != "clarify" && literal.clipID != "denied") {
-            return .init(topic:previous ?? .general,answer:literal)
+            return .init(topic:previous ?? .general,answer:literal,memoryID:previousMemoryID,recollectionCount:recollectionCount)
         }
         let selected = topic(raw,previous:previous) ?? interpreted ?? .general
         let world = c.world
@@ -84,6 +90,9 @@ enum LumaAssistantConversation {
             if read { return result("The recovered correspondence is historical. A sender label and the associated attachments don't confirm an identity. We can compare the messages without contacting the sender.",app:.messages) }
             return result("What did the message actually say? I can help you separate its claims from what the phone's available records support.")
         case .identity:
+            if !forbidden.isDisjoint(with:["where","location","whereabouts","missing","disappeared"]) {
+                return result("I can't confirm Nora's current whereabouts. Old plans and recovered messages don't establish where she is now. What record are you comparing?")
+            }
             return result("A display name, message or photograph isn't enough to establish someone's identity. Which observation is leading you to that theory?")
         case .chronology:
             if read { return result("The recovered conversation has historical dates. Compare the order of messages with their attachments, and distinguish recorded dates from independently verified capture dates.") }
