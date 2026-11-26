@@ -144,7 +144,7 @@ if a.ipa:
         reject_held(names)
         reject_held_recovered(names)
         info=plistlib.loads(z.read(prefix+"Info.plist"))
-        assert info["CFBundleVersion"]=="32" and info["CFBundleShortVersionString"]=="1.9.0", "IPA identity disagrees with release contract"
+        assert info["CFBundleVersion"]=="33" and info["CFBundleShortVersionString"]=="1.9.1", "IPA identity disagrees with release contract"
         assert info["MinimumOSVersion"]=="16.0" and info["CFBundleIdentifier"]=="com.valentinebsaa.lastseen.horror"
         for name in ["Assets.car","Info.plist",info["CFBundleExecutable"]]:
             assert digest(z.read(prefix+name))==digest((a.app/name).read_bytes()), name

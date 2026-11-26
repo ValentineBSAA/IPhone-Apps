@@ -14,6 +14,8 @@ struct LastSeenApp: App {
             }
         }
         #endif
+        // Complete an interrupted world/settings reset before choosing the opening route.
+        _ = try? LumaRestoreJournal.recover(worldURL:RestoredPhoneBackup.url,defaults:.standard)
         _relayRecoveryRequired=State(initialValue:!RelayTransactionReceipt.recover())
     }
     var body: some Scene {

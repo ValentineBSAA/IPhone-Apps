@@ -576,7 +576,7 @@ struct LumaSocialView:View {
             .sheet(isPresented:$compose){
                 NavigationStack{
                     Form{
-                        Text("Posting locally as Repair desk, not as Nora.").font(.subheadline)
+                        Text("Posting from Nora’s restored account. This stays within the fictional phone.").font(.subheadline)
                         Section(channel.composePrompt) {
                             TextEditor(text:$draft).frame(minHeight:180)
                             Text("\(draft.count) / 1000").font(.caption).foregroundColor(.secondary)

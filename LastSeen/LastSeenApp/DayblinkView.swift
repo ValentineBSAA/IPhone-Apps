@@ -279,7 +279,7 @@ struct DayblinkThread: View {
                         }.padding(.vertical, 5)
                     }
                 }
-                Section("Send as Repair desk") {
+                Section("Send from Nora’s account") {
                     TextField("Write a local message", text: $text, axis: .vertical)
                         .lineLimit(1...5).focused($composerFocused)
                     if let selectedPicture {

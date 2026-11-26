@@ -16,6 +16,7 @@ enum LumaRestoreJournal {
     struct Settings:Codable {
         let preferences:Data
         let playSeconds:Int
+        var newGameStartedAt: Date? = nil
     }
     private struct Receipt:Codable {
         let version:Int
@@ -68,6 +69,22 @@ enum LumaRestoreJournal {
         defaults.set(false,forKey:"lastseen.security.ownerVerified")
         defaults.set(false,forKey:"lastseen.security.appearanceEnrolled")
         defaults.set(settings.playSeconds,forKey:"lastseen.saves.playSeconds")
+        if let start = settings.newGameStartedAt {
+            // Only fictional state; keep native permission review and alert consent.
+            for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("lastseen.") {
+                if key.hasPrefix("lastseen.permissions.") || key == "lastseen.lab.nativeAlerts" { continue }
+                defaults.removeObject(forKey:key)
+            }
+            defaults.set(start,forKey:"lastseen.saves.newGameStartedAt")
+            defaults.set(0,forKey:"lastseen.setup.stage")
+            defaults.set(0,forKey:"lastseen.recovery.stage")
+            defaults.set(0,forKey:"lastseen.setup.progress")
+            defaults.set(0,forKey:"lastseen.recovery.progress")
+            defaults.set(false,forKey:"lastseen.recovery.simulated")
+            defaults.set(WelcomeRevision.current,forKey:"lastseen.recovery.openingRevision")
+            defaults.set(false,forKey:"lastseen.security.ownerVerified")
+            defaults.set(false,forKey:"lastseen.security.appearanceEnrolled")
+        }
         return defaults.synchronize()
     }
     /// Roll forward settings only if the atomic world write actually landed.
@@ -165,12 +182,27 @@ final class LumaSaveStore: ObservableObject {
         if let last = lastSuccessfulAutomatic { lastAutomatic = last }
         persistPlayTime()
     }
+    /// Old checkpoint files are retained as inaccessible recovery archives; new saves can overwrite them.
+    func startNewGame(into world: PhoneWorldStore, now: Date = Date()) -> Bool {
+        do {
+            let empty = try PropertyListSerialization.data(fromPropertyList: [String:Any](), format: .binary, options: 0)
+            let settings = LumaRestoreJournal.Settings(preferences: empty, playSeconds: 0, newGameStartedAt: now)
+            try world.restoreCheckpoint(RestoredPhoneBackup.snapshot(now: now), settings: settings, defaults: defaults)
+            guard !world.settingsRecoveryRequired else { notice = "New game settings need recovery."; return false }
+            playSeconds=0; lifetimeSeconds=0; sessionSeconds=0; sinceAutomatic=0
+            lastAutomatic=now; lastAutoAttempt=now; lastSuccessfulAutomatic=nil; automaticFailed=false
+            refresh()
+            notice="New game started."
+            return true
+        } catch { notice="New game could not be started."; return false }
+    }
     private func url(_ slot: String) -> URL { root.appendingPathComponent(slot + ".json") }
     private func validSlot(_ slot: String) -> Bool { (Self.manual + Self.automatic).contains(slot) }
     func read(_ slot: String) throws -> LumaCheckpoint {
         guard validSlot(slot) else { throw CocoaError(.fileReadCorruptFile) }
         let value = try JSONDecoder().decode(LumaCheckpoint.self, from: Data(contentsOf: url(slot)))
-        guard value.version == 1, value.world.version == 1, value.playSeconds >= 0 else { throw CocoaError(.fileReadCorruptFile) }
+        guard value.version == 1, value.world.version == 1, value.playSeconds >= 0,
+              value.date >= (defaults.object(forKey:"lastseen.saves.newGameStartedAt") as? Date ?? .distantPast) else { throw CocoaError(.fileReadCorruptFile) }
         _ = try preferences(value)
         return value
     }

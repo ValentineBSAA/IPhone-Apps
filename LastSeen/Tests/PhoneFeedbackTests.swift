@@ -54,7 +54,7 @@ final class PhoneFeedbackTests: XCTestCase {
         XCTAssertEqual(PhoneAudioPriority.decision(for: .outgoing, playing: nil, waiting: true), .drop)
         XCTAssertEqual(PhoneAudioPriority.decision(for: .message, playing: .passcodeKeypress, waiting: false), .start)
         XCTAssertEqual(PhoneAudioPriority.decision(for: .general, playing: nil, waiting: true), .enqueue)
-        XCTAssertEqual(PhoneAudioPriority.decision(for: .unlock, playing: .message, waiting: false), .enqueue)
+        XCTAssertEqual(PhoneAudioPriority.decision(for: .unlock, playing: .message, waiting: false), .start)
         XCTAssertEqual(PhoneAudioPriority.decision(for: .unlock, playing: .passcodeKeypress, waiting: true), .start)
         XCTAssertEqual(PhoneAudioPriority.decision(for: .unlock, playing: nil, waiting: true), .start)
     }

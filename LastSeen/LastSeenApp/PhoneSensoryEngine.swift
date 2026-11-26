@@ -236,7 +236,7 @@ enum PhoneAudioPriority {
         }
         if let playing {
             if interaction(playing) && (!waiting || cue.isAuthentication) { return .start }
-            if cue.isAuthentication && playing.isAuthentication { return .start }
+            if cue.isAuthentication { return .start }
             return .enqueue
         }
         return waiting && !cue.isAuthentication ? .enqueue : .start
@@ -388,6 +388,10 @@ enum PhoneSensoryEngine {
     static func authentication(_ cue: PhoneCue, sound: Bool, haptics: Bool) {
         guard cue.isAuthentication else { return }
         cancelAuthentication()
+        if UIApplication.shared.applicationState == .active {
+            _ = play(cue, sound: sound, haptics: haptics, horrorEnabled: false)
+            return
+        }
         deferredAuthentication = Task { @MainActor in
             for _ in 0..<50 {
                 guard !Task.isCancelled else { return }

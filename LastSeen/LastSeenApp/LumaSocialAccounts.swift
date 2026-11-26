@@ -311,8 +311,8 @@ struct LumaSocialAccountView: View {
                 if channel == .connective {
                     NavigationLink("Blue Hour Interactive · Company page") { LumaSocialProfile(channel: channel, author: "Blue Hour Interactive") }
                 }
-                LabeledContent("Access", value: "Restored snapshot")
-                Text("Owner profile is read-only. New local posts use the Repair desk identity.").font(.caption).foregroundColor(.secondary)
+                LabeledContent("Account", value: "Signed in")
+                Text("New posts and comments use this restored account. Original posts remain unchanged.").font(.caption).foregroundColor(.secondary)
             }
             Section("Local viewing preferences") {
                 Toggle("App notifications", isOn: Binding(get: { prefs.notificationsEnabled }, set: { value in var next = prefs; next.notificationsEnabled = value; world.setSocialPreferences(next, channel: channel) }))

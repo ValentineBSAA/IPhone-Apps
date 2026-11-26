@@ -137,6 +137,8 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.setup.progress") private var setupProgress = 100
     @State private var testNotice = ""
     @State private var confirmSetupReplay = false
+    @State private var confirmNewGame = false
+    @State private var newGameNotice = ""
     @State private var showOpeningQA = false
     @AppStorage("lastseen.lab.deferSystemEdges") private var deferSystemEdges = true
 
@@ -1141,10 +1143,12 @@ struct PhoneLabView: View {
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
             }
             Section("About") {
-                LabeledContent("Software", value: "1.9.0 (32)")
+                LabeledContent("Software", value: "1.9.1 (33)")
                 Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay message tutorial") { confirmTutorialReplay = true }
-                Button("Replay phone setup") { confirmSetupReplay = true }
+                Button("Customize phone setup") { confirmSetupReplay = true }
+                Button("Start New Game", role: .destructive) { confirmNewGame = true }.accessibilityIdentifier("luma.settings.newGame")
+                if !newGameNotice.isEmpty { Text(newGameNotice).font(.caption).foregroundColor(.secondary) }
             }
         }
         .scrollContentBackground(.hidden)
@@ -1167,7 +1171,20 @@ struct PhoneLabView: View {
         } message: {
             Text("Only the introductory messages and their tutorial progress restart. Packages, other conversations, settings, notes and owner security stay intact.")
         }
-        .confirmationDialog("Replay phone setup?", isPresented: $confirmSetupReplay) {
+        .confirmationDialog("Erase fictional progress and start over?", isPresented: $confirmNewGame, titleVisibility: .visible) {
+            Button("Erase and start new game", role: .destructive) {
+                guard phase == .active else{return}
+                cancelLockAuthentication(); arrivalTask?.cancel(); arrivalTask=nil
+                PhoneSensoryEngine.stop(); RestartAudio.stop()
+                if saves.startNewGame(into:world) {
+                    resetRecoveredNavigation()
+                    ownerVerified=false;appearanceEnrolled=false
+                    setupProgress=0;setupStage=0;recoveryProgress=0;recoverySimulated=false;recoveryStage=0
+                } else { newGameNotice=saves.notice }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { Text("Start from the computer connection and jailbreak opening. Existing fictional progress and checkpoint access will be cleared. Your real iPhone and native permissions are unchanged.") }
+        .confirmationDialog("Customize phone setup?", isPresented: $confirmSetupReplay) {
             Button("Replay setup") { OpeningQA.record("Phone setup replay requested"); panel = nil; setupProgress = 0; setupStage = 0 }
             Button("Replay entire introduction") { OpeningQA.record("Introduction replay requested"); panel = nil; setupProgress = 0; setupStage = 0; recoveryProgress = 0; recoverySimulated = false; recoveryStage = 0 }
             Button("Cancel", role: .cancel) { }

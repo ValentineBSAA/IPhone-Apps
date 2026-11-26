@@ -1216,7 +1216,7 @@ final class PhoneWorldStore: ObservableObject {
         let prior = d.messages.filter { $0.friend == friend && $0.id.hasPrefix("dayblink-reply-") }
         let waiting = d.pending.contains { $0.record.friend == friend }
         let recent = prior.contains { (0..<45).contains(now.timeIntervalSince($0.date)) }
-        d.messages.append(.init(id: id, friend: friend, sender: "Repair desk", text: clean.isEmpty ? "Shared picture" : clean, date: now, image: image))
+        d.messages.append(.init(id: id, friend: friend, sender: RestoredPhoneBackup.ownerName, text: clean.isEmpty ? "Shared picture" : clean, date: now, image: image))
         if !waiting, !recent, let pending = DayblinkArchive.pendingReply(friend: friend, text: clean, id: id, now: now, previousCount: prior.count, sharedImage: image) {
             d.pending.append(pending)
         }
@@ -1513,8 +1513,8 @@ final class PhoneWorldStore: ObservableObject {
         let reserved=(c.pendingSocialReplies ?? []).filter{event in !c.comments.contains(where:{$0.id==event.reply.id})}.count
         guard c.comments.count+reserved<300 else{return false}
         let id = UUID().uuidString
-        let hasPriorLocalComment = c.comments.contains { $0.postID == postID && $0.author == "Repair desk" }
-        c.comments.append(LumaSocialComment(id:id,postID:postID,author:"Repair desk",body:message,date:now))
+        let hasPriorLocalComment = c.comments.contains { $0.postID == postID && ($0.author == RestoredPhoneBackup.ownerName || $0.author == "Repair desk") }
+        c.comments.append(LumaSocialComment(id:id,postID:postID,author:RestoredPhoneBackup.ownerName,body:message,date:now))
         var pending = c.pendingSocialReplies ?? []
         if !hasPriorLocalComment, pending.count < 12,c.comments.count+reserved<300,
            let reply = LumaActivityCatalog.communityReply(post: post, text: message, id: id, now: now) {
@@ -1529,7 +1529,7 @@ final class PhoneWorldStore: ObservableObject {
         guard state.everydayArchiveRevision != nil,!message.isEmpty,message.count<=1000 else{return false}
         var c=connected
         guard c.posts.count<60 else{return false}
-        c.posts.append(LumaSocialPost(id:UUID().uuidString,channel:channel,author:"Repair desk",handle:"repair-desk",body:message,date:now,portrait:nil,photo:nil,gate:nil))
+        c.posts.append(LumaSocialPost(id:UUID().uuidString,channel:channel,author:RestoredPhoneBackup.ownerName,handle:"nora.b",body:message,date:now,portrait:RestoredPhoneBackup.ownerPortrait,photo:nil,gate:nil))
         commitConnected(c);return true
     }
     func setWorkbenchConnection(_ connected:Bool) {
