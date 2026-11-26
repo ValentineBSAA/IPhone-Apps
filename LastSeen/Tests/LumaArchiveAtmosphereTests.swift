@@ -2,6 +2,44 @@ import XCTest
 @testable import LastSeen
 
 final class LumaArchiveAtmosphereTests: XCTestCase {
+    func testVEILPresentationRequiresActiveAuthorizedSession() {
+        var world = RestoredPhoneBackup.snapshot()
+        world.flags.formUnion(["phone-tutorial-finished", "web.visited.archive", VeilArchive.discovery])
+        func treatment(_ page: String = "records", security: String = "Standard",
+                       intensity: LumaArchiveAtmosphere.Intensity = .standard,
+                       enabled: Bool = true, reduceMotion: Bool = false,
+                       connected: Bool = true, active: Bool = true, wifi: Bool = true,
+                       packages: String = "veil", safeMode: Bool = false) -> LumaArchiveAtmosphere.Treatment? {
+            LumaArchiveAtmosphere.veilTreatment(pageID: page, world: world, installed: packages,
+                safeMode: safeMode, connected: connected, active: active, wifi: wifi,
+                security: security, intensity: intensity, enabled: enabled, reduceMotion: reduceMotion)
+        }
+        let normal = treatment()
+        XCTAssertNotNil(normal)
+        XCTAssertNil(normal?.cue)
+        XCTAssertGreaterThan(treatment("media")?.edgeOpacity ?? 0, normal?.edgeOpacity ?? 1)
+        XCTAssertLessThan(treatment(security: "Safer")?.edgeOpacity ?? 1, normal?.edgeOpacity ?? 0)
+        XCTAssertLessThan(treatment(intensity: .restrained)?.edgeOpacity ?? 1, normal?.edgeOpacity ?? 0)
+        XCTAssertNil(treatment("directory"))
+        XCTAssertNil(treatment("boards"))
+        XCTAssertNil(treatment("fragment-04"))
+        XCTAssertNil(treatment(security: "Safest"))
+        XCTAssertNil(treatment(security: "invalid"))
+        XCTAssertNil(treatment(intensity: .off))
+        XCTAssertNil(treatment(enabled: false))
+        XCTAssertNil(treatment(reduceMotion: true))
+        XCTAssertNil(treatment(connected: false))
+        XCTAssertNil(treatment(active: false))
+        XCTAssertNil(treatment(wifi: false))
+        XCTAssertNil(treatment(packages: ""))
+        XCTAssertNil(treatment(safeMode: true))
+        world.flags.insert(InvestigationResolution.completed)
+        XCTAssertNil(treatment())
+        world.flags.remove(InvestigationResolution.completed)
+        world.flags.remove(VeilArchive.discovery)
+        XCTAssertNil(treatment())
+    }
+
     func testAuthorizedFirstEntryAndIntensity() {
         let flags: Set<String> = ["phone-tutorial-finished", "web.visited.studio", "investigation.contact.received",
                                   "web.visited.archive", "web.visited.archive-records"]

@@ -153,6 +153,9 @@ struct VeilBrowser: View {
     @AppStorage("lastseen.lab.wifi") private var wifi = true
     @State private var routeGeneration = 1
     @State private var showNewIdentity = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("lastseen.lab.horrorEffects") private var horrorEffects = true
+    @AppStorage("lastseen.lab.atmosphereIntensity") private var atmosphereIntensity = LumaArchiveAtmosphere.Intensity.standard.rawValue
     @AppStorage("lastseen.veil.security") private var security = "Standard"
     @State private var address = ""
     @State private var selected = "directory"
@@ -252,6 +255,15 @@ struct VeilBrowser: View {
                 }.padding(18)
             } else { Text("Application unavailable").padding() }
         }.tint(.purple).navigationTitle("VEIL").navigationBarTitleDisplayMode(.inline)
+            .overlay {
+                if !showNewIdentity, let treatment = LumaArchiveAtmosphere.veilTreatment(
+                    pageID: selected, world: world.state, installed: packages, safeMode: safeMode,
+                    connected: connected, active: phase == .active, wifi: wifi,
+                    security: security, intensity: LumaArchiveAtmosphere.Intensity(rawValue: atmosphereIntensity) ?? .off,
+                    enabled: horrorEffects, reduceMotion: reduceMotion) {
+                    LumaArchiveEdgeTreatment(opacity: treatment.edgeOpacity)
+                }
+            }
             .confirmationDialog("Start a new local identity?",isPresented:$showNewIdentity,titleVisibility:.visible) {
                 Button("Clear session",role:.destructive) {
                     history = []; selected = "directory"; address = VeilArchive.resolve("directory",in:world.state)?.address ?? ""; notice = ""

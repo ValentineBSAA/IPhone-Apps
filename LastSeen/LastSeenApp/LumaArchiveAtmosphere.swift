@@ -38,6 +38,31 @@ enum LumaArchiveAtmosphere {
         return .init(edgeOpacity: opacity, cue: intensity == .standard && !reduceMotion && pageID == "archive-records" ? .suspense : nil)
     }
 
+    /// VEIL is a separate local presentation surface. Its directory and
+    /// ordinary session chrome stay neutral; only authorized records gain a
+    /// static peripheral tint. No synthetic evidence or audio is generated.
+    static func veilTreatment(pageID: String, world: PhoneWorld,
+                              installed: String, safeMode: Bool,
+                              connected: Bool, active: Bool, wifi: Bool,
+                              security: String, intensity: Intensity,
+                              enabled: Bool, reduceMotion: Bool) -> Treatment? {
+        guard enabled, intensity != .off, !reduceMotion, active, connected, wifi,
+              VeilArchive.installed(world, packages: installed, safeMode: safeMode),
+              VeilArchive.pages(world).contains(where: { $0.id == pageID }),
+              !world.flags.contains(InvestigationResolution.completed),
+              VeilArchive.allowsImages(security) else { return nil }
+        let weight: Double
+        switch pageID {
+        case "records": weight = 0.55
+        case "media": weight = 0.8
+        case "fragment-04": weight = 1
+        default: return nil
+        }
+        let securityWeight = security == "Safer" ? 0.5 : 1.0
+        let opacity = weight * securityWeight * (intensity == .standard ? 0.19 : 0.08)
+        return .init(edgeOpacity: opacity, cue: nil)
+    }
+
     static func entryCue(pageID: String, previouslyVisited: Bool, active: Bool,
                          treatment: Treatment?) -> PhoneCue? {
         guard active, !previouslyVisited else { return nil }
