@@ -38,6 +38,10 @@ for record in motion_records:
     assert digest((motion_root/record["filename"]).read_bytes())==record["sha256"]
     expected[record["filename"]]=record["sha256"]
 expected[motion_manifest.name]=digest(motion_manifest.read_bytes())
+for credit in pathlib.Path("LastSeenApp/CommunityReserveCredits").iterdir():
+    if credit.is_file():
+        expected[credit.name]=digest(credit.read_bytes())
+assert len([name for name in expected if name.startswith("CommunityReserve")]) == 4
 if a.app:
     car=(a.app/"Assets.car").read_bytes()
     assert car.startswith(b"BOMStore") and len(car)>1024, "Malformed compiled asset catalog"
@@ -53,6 +57,7 @@ if a.catalog:
     required.update(["Contact_Maya","Contact_Denise","Nora_Profile","Icon_Messages","Icon_Save","Photo_Locked_Texture"])
     required.update(["Icon_Afterframe","Icon_Connective","Icon_CommonGround","Icon_VoiceMemos"])
     required.update(f"CommunityPortrait_{i:02d}" for i in range(1,19))
+    required.update(r["asset"] for r in json.loads(pathlib.Path("CommunityPortraits/runtime-reserves.json").read_text())["assets"])
     required.update(["Icon_HavenWatch","Icon_Dayblink","Icon_Motionwell","Icon_RelaySupport","Support_AlexMorgan"])
     required.update(f"HavenWatch_CAM{i:02d}_{suffix}" for i in range(1,6) for suffix in ("empty","occupied"))
     missing=required-names

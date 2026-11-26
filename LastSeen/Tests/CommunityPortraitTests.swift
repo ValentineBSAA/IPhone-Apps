@@ -11,8 +11,13 @@ import UIKit
             XCTAssertGreaterThanOrEqual(art.size.height, 128)
         }
         let posts = LumaSocialCommunity.posts(anchor: Date(timeIntervalSince1970: 1_800_000_000))
-        XCTAssertEqual(Set(posts.compactMap(\.portrait)).count, 18)
+        XCTAssertEqual(Set(posts.compactMap(\.portrait)).count, 36)
+        for name in Set(posts.compactMap(\.portrait)) {
+            let art = try XCTUnwrap(UIImage(named: name, in: Bundle(for: PhoneWorldStore.self), compatibleWith: nil), name)
+            XCTAssertGreaterThanOrEqual(art.size.width, 128)
+            XCTAssertGreaterThanOrEqual(art.size.height, 128)
+        }
         XCTAssertTrue(posts.allSatisfy { $0.portrait != nil })
-        XCTAssertEqual(LumaSocialCommunity.portraits.count, 18)
+        XCTAssertEqual(LumaSocialCommunity.portraits.count, 36)
     }
 }

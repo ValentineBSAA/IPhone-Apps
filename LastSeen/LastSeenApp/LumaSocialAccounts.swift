@@ -34,6 +34,25 @@ enum LumaSocialCommunity {
         .init(name: "Nina Wells", handle: "nina.wild", bio: "Wildlife photos • quiet walks", channel: .commonGround, first: "Sharing a fox photograph for the wildlife thread. Please give wild animals plenty of distance.", second: "Any recommendations for a beginner-friendly field guide? I keep mixing up the local birds."),
         .init(name: "Owen Reed", handle: "owen.noodles", bio: "Home cooking • recipe swaps", channel: .commonGround, first: "A bowl of udon is a pretty convincing argument for a noodle night. Sharing this as dinner inspiration.", second: "I finally learned to prepare ingredients before turning the stove on. It only took several very chaotic dinners."),
         .init(name: "Avery Quinn", handle: "avery.green", bio: "Plants • books • outdoor photography", channel: .commonGround, first: "Saving this woodland photograph as inspiration for a tiny fern corner at home.", second: "If anyone has tips for keeping a houseplant alive through winter, I'm listening.")
+,
+        .init(name: "Morgan Hale", handle: "morgan.stitches", bio: "Sewing • repairs • slow weekends", channel: .afterframe, first: "Mended the pocket on my favorite jacket instead of replacing it. Very satisfying.", second: "The fabric shop had an entire shelf of odd buttons. I resisted almost all of them."),
+        .init(name: "Riley Shaw", handle: "riley.runs", bio: "Early walks • running journals", channel: .afterframe, first: "Took the shorter route this morning and still felt better for getting outside.", second: "The rain sounded lovely once I was home with dry socks."),
+        .init(name: "Taylor Brooks", handle: "taylor.clay", bio: "Pottery • sketchbooks", channel: .afterframe, first: "My clay bowl finally holds water. A tiny but very welcome milestone.", second: "Trying a pale green glaze next. The test tiles are drying on the windowsill."),
+        .init(name: "Casey Flynn", handle: "casey.kitchen", bio: "Weekend baker • meal planning", channel: .afterframe, first: "Made enough soup for the next few lunches. Future me is going to be delighted.", second: "I think the secret to my bread is leaving it alone for longer than I want to."),
+        .init(name: "Drew Carter", handle: "drew.paper", bio: "Stationery • handwritten letters", channel: .afterframe, first: "Found a notebook with paper that doesn't bleed through. Small victory.", second: "Writing a few thank-you cards tonight before I forget again."),
+        .init(name: "Jamie Patel", handle: "jamie.maps", bio: "Transit and urban design", channel: .connective, first: "A useful map answers where to go next before it tries to show everything.", second: "Spent the morning simplifying a set of direction signs. Fewer words helped."),
+        .init(name: "Reese Kim", handle: "reese.types", bio: "Editorial design • typography", channel: .connective, first: "A readable type hierarchy is worth more than another decorative element.", second: "Checking the smallest labels in a design before approving the large screens."),
+        .init(name: "Cameron Ellis", handle: "cam.records", bio: "Independent records coordinator", channel: .connective, first: "A filing convention only works if the entire team understands it.", second: "Archived the completed folders today. The desk finally feels less crowded."),
+        .init(name: "Alexis Stone", handle: "alexis.studio", bio: "Craft teacher • workshop planning", channel: .connective, first: "Leaving a few extra minutes at the end of a class makes cleanup much less stressful.", second: "Rewriting the materials list so beginners don't have to guess what to bring."),
+        .init(name: "Blair Sutton", handle: "blair.repair", bio: "Electronics repair • tinkering", channel: .connective, first: "Labeling tiny screws before taking something apart is a very worthwhile habit.", second: "Repaired an old lamp this afternoon. Glad I kept the spare parts."),
+        .init(name: "Robin Fletcher", handle: "robin.seedlings", bio: "Retired librarian • community garden", channel: .commonGround, first: "The seedlings are ready to move into larger pots. I've got a few spares if anyone wants one.", second: "Finished sorting a box of donated books. Some lovely forgotten titles in there."),
+        .init(name: "Harper Monroe", handle: "harper.knits", bio: "Knitting • family recipes", channel: .commonGround, first: "Finally finished the scarf I started before the weather changed.", second: "Does anyone have a favorite pattern for using up small amounts of leftover yarn?"),
+        .init(name: "Parker Doyle", handle: "parker.records", bio: "Record collecting • neighborhood walks", channel: .commonGround, first: "Played an old jazz record while making breakfast. A rather nice start to the day.", second: "Sorting the record sleeves this weekend. Somehow the alphabet always gets away from me."),
+        .init(name: "Leslie Ford", handle: "leslie.mends", bio: "Woodworking • community workshops", channel: .commonGround, first: "Sanded down a little wooden shelf that has been waiting in the garage for months.", second: "The workshop has spare sandpaper if anyone is finishing a small project."),
+        .init(name: "The Cat Window", handle: "cat.window", bio: "Illustrated cat appreciation account", channel: .afterframe, first: "A reminder to give the cat the sunny chair. Apparently it was never ours.", second: "Today's tiny joy: a cat discovering a perfectly ordinary cardboard box."),
+        .init(name: "Good Dog Notes", handle: "gooddog.notes", bio: "Dog walks • pet care reminders", channel: .commonGround, first: "A slow sniff-filled walk is still a good walk.", second: "Remember the water bowl when heading out on a longer afternoon walk."),
+        .init(name: "Quiet Summit", handle: "quiet.summit", bio: "Illustrated outdoor inspiration", channel: .afterframe, first: "Collecting mountain pictures for the days when a walk isn't on the cards.", second: "The best outdoor plan is the one you can enjoy safely at your own pace."),
+        .init(name: "Little Sprout Club", handle: "little.sprout", bio: "Houseplants • gardening ideas", channel: .commonGround, first: "A small plant swap sounds lovely. Cuttings welcome, fancy pots optional.", second: "Checking the soil before watering has saved more plants than any fancy gadget.")
     ]
     static let portraits: [String: String] = [
         "iris.vale": "CommunityPortrait_11",
@@ -53,7 +72,25 @@ enum LumaSocialCommunity {
         "jasper.tools": "CommunityPortrait_05",
         "nina.wild": "CommunityPortrait_16",
         "owen.noodles": "CommunityPortrait_14",
-        "avery.green": "CommunityPortrait_18"
+        "avery.green": "CommunityPortrait_18",
+        "morgan.stitches": "CommunityReserve_01",
+        "riley.runs": "CommunityReserve_02",
+        "taylor.clay": "CommunityReserve_03",
+        "casey.kitchen": "CommunityReserve_04",
+        "drew.paper": "CommunityReserve_05",
+        "jamie.maps": "CommunityReserve_06",
+        "reese.types": "CommunityReserve_07",
+        "cam.records": "CommunityReserve_08",
+        "alexis.studio": "CommunityReserve_09",
+        "blair.repair": "CommunityReserve_10",
+        "robin.seedlings": "CommunityOlder_1",
+        "harper.knits": "CommunityOlder_2",
+        "parker.records": "CommunityOlder_3",
+        "leslie.mends": "CommunityOlder_4",
+        "cat.window": "CommunityAvatar_Cat",
+        "gooddog.notes": "CommunityAvatar_Dog",
+        "quiet.summit": "CommunityAvatar_Mountain",
+        "little.sprout": "CommunityAvatar_Gardening"
     ]
     // Exact authored record-to-media map. Never resolve arbitrary photo names
     // through the community catalog, or treat these as Nora's photographs.

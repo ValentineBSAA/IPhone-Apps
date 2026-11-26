@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "handle": "morgan.stitches",
+      "asset": "CommunityReserve_01",
+      "intake": "Intake02",
+      "filename": "ReservePortrait_01.webp"
+    },
+    {
+      "handle": "riley.runs",
+      "asset": "CommunityReserve_02",
+      "intake": "Intake02",
+      "filename": "ReservePortrait_02.webp"
+    },
+    {
+      "handle": "taylor.clay",
+      "asset": "CommunityReserve_03",
+      "intake": "Intake02",
+      "filename": "ReservePortrait_03.webp"
+    },
+    {
+      "handle": "casey.kitchen",
+      "asset": "CommunityReserve_04",
+      "intake": "Intake02",
+      "filename": "ReservePortrait_04.webp"
+    },
+    {
+      "handle": "drew.paper",
+      "asset": "CommunityReserve_05",
+      "intake": "Intake02",
+      "filename": "ReservePortrait_05.webp"
+    },
+    {
+      "handle": "jamie.maps",
+      "asset": "CommunityReserve_06",
+      "intake": "Intake02",
+      "filename": "ReservePortrait_06.webp"
+    },
+    {
+      "handle": "reese.types",
+      "asset": "CommunityReserve_07",
+      "intake": "Intake02",
+      "filename": "ReservePortrait_07.webp"
+    },
+    {
+      "handle": "cam.records",
+      "asset": "CommunityReserve_08",
+      "intake": "Intake02",
+      "filename": "ReservePortrait_08.webp"
+    },
+    {
+      "handle": "alexis.studio",
+      "asset": "CommunityReserve_09",
+      "intake": "Intake02",
+      "filename": "ReservePortrait_09.webp"
+    },
+    {
+      "handle": "blair.repair",
+      "asset": "CommunityReserve_10",
+      "intake": "Intake02",
+      "filename": "ReservePortrait_10.webp"
+    },
+    {
+      "handle": "robin.seedlings",
+      "asset": "CommunityOlder_1",
+      "intake": "Intake03",
+      "filename": "OlderAdult_1.webp"
+    },
+    {
+      "handle": "harper.knits",
+      "asset": "CommunityOlder_2",
+      "intake": "Intake03",
+      "filename": "OlderAdult_2.webp"
+    },
+    {
+      "handle": "parker.records",
+      "asset": "CommunityOlder_3",
+      "intake": "Intake03",
+      "filename": "OlderAdult_3.webp"
+    },
+    {
+      "handle": "leslie.mends",
+      "asset": "CommunityOlder_4",
+      "intake": "Intake03",
+      "filename": "OlderAdult_4.webp"
+    },
+    {
+      "handle": "cat.window",
+      "asset": "CommunityAvatar_Cat",
+      "intake": "Intake03",
+      "filename": "Avatar_Cat.png"
+    },
+    {
+      "handle": "gooddog.notes",
+      "asset": "CommunityAvatar_Dog",
+      "intake": "Intake03",
+      "filename": "Avatar_Dog.png"
+    },
+    {
+      "handle": "quiet.summit",
+      "asset": "CommunityAvatar_Mountain",
+      "intake": "Intake03",
+      "filename": "Avatar_Mountain.png"
+    },
+    {
+      "handle": "little.sprout",
+      "asset": "CommunityAvatar_Gardening",
+      "intake": "Intake03",
+      "filename": "Avatar_Gardening.png"
+    }
+  ]
+}

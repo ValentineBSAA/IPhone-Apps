@@ -6,7 +6,7 @@ import XCTest
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let world = RestoredPhoneBackup.snapshot(now: now)
         let posts = LumaSocialChannel.allCases.flatMap { LumaSocialCatalog.visible($0, world: world) }
-        XCTAssertEqual(posts.count, 78)
+        XCTAssertEqual(posts.count, 114)
         XCTAssertEqual(Set(posts.map(\.id)).count, posts.count)
         XCTAssertTrue(posts.allSatisfy { $0.date < now })
         let comments = posts.flatMap { LumaSocialCatalog.comments($0.id, channel: $0.channel, world: world) }
