@@ -2,6 +2,47 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class RecoveredImageAnalysisTests:XCTestCase {
+    func testImageReviewOverviewAndContextualResponses() throws {
+        var initial=RestoredPhoneBackup.snapshot()
+        initial.flags.formUnion(["phone-tutorial-finished","investigation.contact.received","web.visited.archive",VeilArchive.discovery])
+        let w=PhoneWorldStore(initial:initial,persistToDisk:false)
+        let asset="VEIL_Home_01"
+        func answer(_ prompt:String,_ state:PhoneWorld)->String {
+            let c=LumaAssistantContext(world:state,availableApps:[.messages,.veil],wifi:false,sound:false,haptics:false,safeMode:false,installedCount:1,timerEnd:0,now:state.createdAt)
+            return LumaAssistantConversation.reply(prompt,context:c,evidenceID:"image:"+asset).answer.text
+        }
+        XCTAssertEqual(RecoveredImageAnalysis.reviewOverview(w.state).opened,0)
+        w.recordVeilCorrespondenceOpened()
+        w.recordVeilObservation("Nora_Archive_08")
+        w.recordVeilObservation(asset)
+        XCTAssertTrue(answer("What about the shadow?",w.state).contains("haven't received"))
+        XCTAssertTrue(answer("What about the contrast?",w.state).contains("don't have a recorded light-scan"))
+        XCTAssertTrue(answer("What about the matching details?",w.state).contains("don't have a recorded visible-detail match"))
+        XCTAssertTrue(w.completeRecoveredImageAnalysis(asset,source:2,limit:0))
+        XCTAssertTrue(w.recordImageInterpretation(asset,mode:.echo,region:2))
+        XCTAssertTrue(answer("What about the shadow?",w.state).contains("vague upright shadow"))
+        XCTAssertFalse(answer("What about the contrast?",w.state).contains("vague upright shadow"))
+        w.recordVeilObservation("VEIL_Home_03")
+        XCTAssertTrue(w.recordPhotoFeatureMatch("home-counter",first:4,second:7))
+        XCTAssertTrue(answer("What about the matching details?",w.state).contains("white kitchen island"))
+        let overview=RecoveredImageAnalysis.reviewOverview(w.state)
+        XCTAssertEqual(overview.opened,3)
+        XCTAssertEqual(overview.reviewed,1)
+        XCTAssertEqual(overview.light,0)
+        XCTAssertEqual(overview.matched,1)
+        XCTAssertEqual(overview.interpretive,1)
+        XCTAssertTrue(answer("image investigation progress",w.state).contains("1 synthetic interpretations"))
+        var restored=try JSONDecoder().decode(PhoneWorld.self,from:JSONEncoder().encode(w.state))
+        XCTAssertEqual(RecoveredImageAnalysis.reviewOverview(restored).matched,1)
+        restored.flags.remove("veil.viewed.VEIL_Home_03")
+        XCTAssertEqual(RecoveredImageAnalysis.reviewOverview(restored).matched,0)
+        XCTAssertTrue(answer("What about the matching details?",restored).contains("don't have a recorded visible-detail match"))
+        restored.flags.remove(VeilArchive.discovery)
+        XCTAssertEqual(RecoveredImageAnalysis.reviewOverview(restored).opened,0)
+        XCTAssertEqual(RecoveredImageAnalysis.reviewOverview(restored).interpretive,0)
+        XCTAssertFalse(answer("What about the shadow?",restored).contains("vague upright shadow"))
+    }
+
     func testRecurringDetailChallengesRequireBothOpenedOriginals() throws {
         var state=RestoredPhoneBackup.snapshot()
         state.flags.formUnion(["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery])

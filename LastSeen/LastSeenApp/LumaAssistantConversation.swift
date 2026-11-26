@@ -115,6 +115,13 @@ enum LumaAssistantConversation {
         if !forbidden.isDisjoint(with:hardDenied) || actionRequested {
             return .init(topic:.general,answer:.init(text:"I can help with visible records and ordinary phone controls, but I can't do that.",clipID:"denied"))
         }
+        let imageOverviewRequests:Set<String> = ["image investigation progress","photo investigation progress","what have we found in the photos","what have we found in the pictures","summarize my image findings","summarize my photo findings"]
+        if imageOverviewRequests.contains(normalized) {
+            let review=RecoveredImageAnalysis.reviewOverview(c.world)
+            let text=review.opened==0 ? "You haven't opened an image for investigation yet." :
+                "You've opened "+String(review.opened)+" images and recorded "+String(review.reviewed)+" source reviews, "+String(review.light)+" original light scans, "+String(review.matched)+" visible-detail matches and "+String(review.interpretive)+" synthetic interpretations. Keep the original observations separate from reconstruction effects."
+            return .init(topic:.pictures,answer:.init(text:text,clipID:"conversation"))
+        }
         let explicitHint = ["hint","help me investigate","what should i do","what do i do now","what should i do next","where do i go next","i m stuck","im stuck"].contains(normalized)
         let followupHint = previous == .nextStep && ["tell me more","more","another hint","can you be more specific","what do you mean","give me a hint"].contains(normalized)
         if explicitHint || followupHint {
