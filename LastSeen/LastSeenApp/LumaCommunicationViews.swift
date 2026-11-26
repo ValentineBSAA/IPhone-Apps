@@ -77,27 +77,74 @@ struct NoraFriendArchiveView:View {
     }
 }
 
+/// Directory search is read-only and never marks a message or archive opened.
+enum LumaMessageDirectorySearch {
+    struct Row:Identifiable {
+        let person:Neighbor
+        let message:NeighborMessage
+        let unread:Int
+        let matchedMessage:Bool
+        let preview:String
+        let latestDate:Date
+        var id:String {person.id}
+    }
+    static func query(_ raw:String)->String {raw.trimmingCharacters(in:.whitespacesAndNewlines)}
+    static func rows(_ world:PhoneWorld,search:String="",unreadOnly:Bool=false)->[Row] {
+        let q=query(search)
+        return Neighbor.visible(in:world).compactMap { person -> Row? in
+            let messages=world.threads[person.id] ?? []
+            guard let latest=messages.last else{return nil}
+            let unread=messages.filter{!$0.fromPlayer && !$0.read}.count
+            guard !unreadOnly || unread>0 else{return nil}
+            let contactMatch=q.isEmpty || person.name.localizedCaseInsensitiveContains(q)
+            func titles(_ message:NeighborMessage)->[String] {
+                (message.attachments ?? []).compactMap {
+                    LumaMessageAttachmentCatalog.title($0,world:world)
+                }
+            }
+            let matched = q.isEmpty ? nil : messages.last(where:{
+                $0.text.localizedCaseInsensitiveContains(q) || titles($0).contains{$0.localizedCaseInsensitiveContains(q)}
+            })
+            guard contactMatch || matched != nil else{return nil}
+            let selected=matched ?? latest
+            let attachments=titles(selected)
+            let preview=selected.text.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty ?
+                (attachments.isEmpty ? "Message" : attachments.joined(separator:", ")) : selected.text
+            return Row(person:person,message:selected,unread:unread,matchedMessage:matched != nil,
+                       preview:preview,latestDate:latest.at)
+        }.sorted {
+            let a=q.isEmpty ? $0.latestDate:$0.message.at
+            let b=q.isEmpty ? $1.latestDate:$1.message.at
+            return a == b ? $0.person.id < $1.person.id : a > b
+        }
+    }
+    static func recoveredSenderMatches(_ world:PhoneWorld,search:String,unreadOnly:Bool)->Bool {
+        guard VeilArchive.authorized(world),!unreadOnly else{return false}
+        let q=query(search)
+        return q.isEmpty || VeilArchive.contactName.localizedCaseInsensitiveContains(q) ||
+            (world.flags.contains("veil.correspondence.opened") && VeilArchive.messages(world).contains{$0.text.localizedCaseInsensitiveContains(q)})
+    }
+    static func recoveredFriendMatches(_ world:PhoneWorld,search:String,unreadOnly:Bool)->Bool {
+        guard NoraFriendArchive.ready(world),!unreadOnly else{return false}
+        let q=query(search)
+        return q.isEmpty || NoraFriendArchive.title.localizedCaseInsensitiveContains(q) ||
+            (NoraFriendArchive.opened(world) && NoraFriendArchive.lines.contains{$0.text.localizedCaseInsensitiveContains(q)})
+    }
+}
+
 struct LumaMessagesDirectory: View {
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var search = ""
     @State private var unreadOnly = false
     @State private var compose = false
-    private var people: [Neighbor] {
-        Neighbor.visible(in: world.state).filter { person in
-            !world.messages(person).isEmpty &&
-            (!unreadOnly || world.countUnread(person) > 0) &&
-            (search.isEmpty || person.name.localizedCaseInsensitiveContains(search) ||
-             world.messages(person).contains { $0.text.localizedCaseInsensitiveContains(search) })
-        }.sorted { (world.messages($0).last?.at ?? .distantPast) > (world.messages($1).last?.at ?? .distantPast) }
+    private var rows:[LumaMessageDirectorySearch.Row] {
+        LumaMessageDirectorySearch.rows(world.state,search:search,unreadOnly:unreadOnly)
     }
-    private var historicalMatch: Bool {
-        VeilArchive.authorized(world.state) && !unreadOnly &&
-        (search.isEmpty || VeilArchive.contactName.localizedCaseInsensitiveContains(search))
+    private var historicalMatch:Bool {
+        LumaMessageDirectorySearch.recoveredSenderMatches(world.state,search:search,unreadOnly:unreadOnly)
     }
     private var friendMatch:Bool {
-        NoraFriendArchive.ready(world.state) && !unreadOnly &&
-        (search.isEmpty || NoraFriendArchive.title.localizedCaseInsensitiveContains(search) ||
-         NoraFriendArchive.lines.contains{$0.text.localizedCaseInsensitiveContains(search)})
+        LumaMessageDirectorySearch.recoveredFriendMatches(world.state,search:search,unreadOnly:unreadOnly)
     }
     var body: some View {
         List {
@@ -107,38 +154,48 @@ struct LumaMessagesDirectory: View {
                     Text("Unread").tag(true)
                 }.pickerStyle(.segmented)
             }.listRowBackground(Color.clear).listRowSeparator(.hidden)
-            if historicalMatch {
-                NavigationLink { VeilHistoricalConversation() } label: {
-                    Label("Unknown Number · Recovered conversation",systemImage:"person.crop.circle.badge.questionmark")
-                }
-            }
-            if friendMatch {
-                NavigationLink { NoraFriendArchiveView() } label: {
-                    Label(NoraFriendArchive.title,systemImage:"archivebox")
-                }
-            }
-            if people.isEmpty && !historicalMatch && !friendMatch {
+            if rows.isEmpty && !historicalMatch && !friendMatch {
                 Label(unreadOnly ? "No unread conversations" : "No conversations found", systemImage: "bubble.left.and.bubble.right")
                     .foregroundColor(.secondary)
             }
-            ForEach(people) { person in
-                NavigationLink(value: AppPage.worldThread(person)) {
+            ForEach(rows) { row in
+                NavigationLink(value: AppPage.worldThread(row.person)) {
                     HStack(alignment: .center, spacing: 12) {
-                        Circle().fill(world.countUnread(person) > 0 ? LumaDesign.accent : Color.clear).frame(width: 8, height: 8)
-                        NeighborAvatar(neighbor: person, size: 50)
+                        Circle().fill(row.unread > 0 ? LumaDesign.accent : Color.clear).frame(width: 8, height: 8)
+                        NeighborAvatar(neighbor: row.person, size: 50)
                         VStack(alignment: .leading, spacing: 5) {
                             HStack {
-                                Text(person.name).font(.headline)
+                                Text(row.person.name).font(.headline)
                                 Spacer(minLength: 4)
-                                if let last = world.messages(person).last {
-                                    Text(last.at, style: .time).font(.caption).foregroundColor(.secondary)
+                                if Calendar.current.isDateInToday(row.message.at) {
+                                    Text(row.message.at,style:.time).font(.caption).foregroundColor(.secondary)
+                                } else {
+                                    Text(row.message.at,style:.date).font(.caption).foregroundColor(.secondary)
                                 }
                             }
-                            Text(world.messages(person).last?.text ?? "").font(.subheadline)
-                                .foregroundColor(.secondary).lineLimit(2)
+                            if row.matchedMessage {
+                                Text("Matching message").font(.caption2).foregroundColor(LumaDesign.accent)
+                            }
+                            Text(row.preview).font(.subheadline).foregroundColor(.secondary).lineLimit(2)
                         }
                     }.padding(.vertical, 9)
                 }.listRowBackground(LumaDesign.background)
+                    .accessibilityHint(row.matchedMessage ? "Opens the matching conversation" : "Opens conversation")
+            }
+            if historicalMatch || friendMatch {
+                Section("Recovered conversations") {
+                    if historicalMatch {
+                        NavigationLink { VeilHistoricalConversation() } label: {
+                            Label("Unknown Number · Recovered conversation",systemImage:"person.crop.circle.badge.questionmark")
+                        }
+                    }
+                    if friendMatch {
+                        NavigationLink { NoraFriendArchiveView() } label: {
+                            Label(NoraFriendArchive.title,systemImage:"archivebox")
+                        }
+                    }
+                    Text("Historical records do not count as new messages.").font(.caption).foregroundColor(.secondary)
+                }
             }
         }.listStyle(.plain).scrollContentBackground(.hidden)
             .background(LumaDesign.background.ignoresSafeArea())

@@ -2,6 +2,31 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class ContextualConversationTests: XCTestCase {
+    func testDirectorySearchUsesMatchingMessageAndProtectsUnopenedArchive() {
+        var state=RestoredPhoneBackup.snapshot()
+        let now=Date(timeIntervalSince1970:1_800_000_000)
+        state.threads[Neighbor.maya.id]=[
+            .init(id:"older",thread:Neighbor.maya.id,text:"A unique coffee reminder",fromPlayer:false,at:now.addingTimeInterval(-600),read:true),
+            .init(id:"latest",thread:Neighbor.maya.id,text:"See you later",fromPlayer:true,at:now,read:false)]
+        let rows=LumaMessageDirectorySearch.rows(state,search:"  UNIQUE COFFEE  ")
+        XCTAssertEqual(rows.first?.message.id,"older")
+        XCTAssertEqual(rows.first?.preview,"A unique coffee reminder")
+        XCTAssertEqual(rows.first?.matchedMessage,true)
+        XCTAssertEqual(rows.first?.unread,0)
+        XCTAssertEqual(LumaMessageDirectorySearch.rows(state,search:"Maya").first?.message.id,"latest")
+        XCTAssertFalse(LumaMessageDirectorySearch.rows(state,unreadOnly:true).contains{$0.person == .maya})
+        XCTAssertFalse(LumaMessageDirectorySearch.rows(state,search:"not-a-match-891").contains{$0.person == .maya})
+        state.flags.formUnion(["phone-tutorial-finished","investigation.contact.received","web.visited.archive",VeilArchive.discovery])
+        let phrase="A copy for your collection"
+        XCTAssertTrue(LumaMessageDirectorySearch.recoveredSenderMatches(state,search:"",unreadOnly:false))
+        XCTAssertFalse(LumaMessageDirectorySearch.recoveredSenderMatches(state,search:phrase,unreadOnly:false))
+        state.flags.insert("veil.correspondence.opened")
+        XCTAssertTrue(LumaMessageDirectorySearch.recoveredSenderMatches(state,search:phrase,unreadOnly:false))
+        XCTAssertFalse(LumaMessageDirectorySearch.recoveredSenderMatches(state,search:phrase,unreadOnly:true))
+        state.flags.remove(VeilArchive.discovery)
+        XCTAssertFalse(LumaMessageDirectorySearch.recoveredSenderMatches(state,search:phrase,unreadOnly:false))
+    }
+
     func testContextualFollowupsAreContactLocalAndDoNotGrantAccess() {
         func plan(_ who: Neighbor, _ text: String, previous: String? = nil, recent: [String] = []) -> PhoneReplyPlan {
             PhoneReplyPolicy.plan(for: who, text: text, flags: [], tutorialStarted: false, tutorialFinished: false, previousReply: previous, recentReplies: recent)
