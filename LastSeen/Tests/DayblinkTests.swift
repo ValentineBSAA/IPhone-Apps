@@ -2,6 +2,25 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class DayblinkTests: XCTestCase {
+    func testCurrentViewingAndSavedMemoryAccess() throws {
+        let now=Date(timeIntervalSince1970:1800000000)
+        let w=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(now:now),persistToDisk:false)
+        XCTAssertEqual(DayblinkArchive.saved(w.state).count,3)
+        XCTAssertTrue(w.sendDayblink(friend:.maya,text:"Hi",now:now))
+        w.advanceDayblink(now:now.addingTimeInterval(15))
+        let id=try XCTUnwrap(w.connected.dayblink?.messages.last?.id)
+        XCTAssertNil(DayblinkArchive.viewingRecord(id,friend:.maya,world:w.state))
+        XCTAssertTrue(w.openDayblink(id,friend:.maya))
+        XCTAssertNotNil(DayblinkArchive.viewingRecord(id,friend:.maya,world:w.state))
+        XCTAssertNil(DayblinkArchive.viewingRecord(id,friend:.lily,world:w.state))
+        XCTAssertFalse(DayblinkArchive.saved(w.state).contains{$0.id==id})
+        var restored=w.state
+        restored.connectedWorld?.dayblink?.opened.remove(id)
+        XCTAssertNil(DayblinkArchive.viewingRecord(id,friend:.maya,world:restored))
+        restored.everydayArchiveRevision=nil
+        XCTAssertTrue(DayblinkArchive.saved(restored).isEmpty)
+    }
+
     func testRestoredArchiveAndOnceOnlyDelivery() throws {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let base = PhoneWorldStore(persistToDisk: false)

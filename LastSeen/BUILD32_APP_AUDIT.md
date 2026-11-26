@@ -27,8 +27,8 @@ Mandatory release gate for 1.9.0 (32), iPhone 16e. Every LabApp is listed exactl
 | CommonGround | Discussions, replies, profiles, community alerts | Targeted pass | Pending | Pending |
 | Workstation | Connection, diagnostics, image tools, progression | Pending | Pending | Pending |
 | HavenWatch | Fixed-camera archive, preferences, events, privacy, notifications | Pending | Pending | Pending |
-| Dayblink | Stories, local media, expiry, interactions, notifications | Pending | Pending | Pending |
-| Motionwell | Catalog, media availability, playback, saved state, notifications | Pending | Pending | Pending |
+| Dayblink | Stories, local media, expiry, interactions, notifications | Targeted pass | Pending | Pending |
+| Motionwell | Catalog, media availability, playback, saved state, notifications | Targeted pass | Pending | Pending |
 | Voice Memos | Record catalog, transcript, playback, read-aloud, missing audio | Targeted pass | Pending | Pending |
 | Luma Assistant | Nora memory, trust, context, permissions, voice, image evidence | Pending | Pending | Pending |
 

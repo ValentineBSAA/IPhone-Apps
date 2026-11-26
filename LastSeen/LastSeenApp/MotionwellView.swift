@@ -59,6 +59,32 @@ enum MotionwellArchive {
         let published = world.connectedWorld?.motionwell?.published ?? []
         return scheduled.reversed().filter { published.contains($0.clip.id) }.map(\.clip) + clips
     }
+    static func progress(_ seconds:Double,duration:Int)->Double {
+        guard seconds.isFinite,duration>0 else{return 0}
+        return min(Double(duration),max(0,seconds))
+    }
+    static func resume(_ seconds:Double,duration:Int)->Double {
+        let value=progress(seconds,duration:duration)
+        return value < Double(duration)-2 ? value:0
+    }
+    static func feed(_ world:PhoneWorld,filter:String,query:String="")->[MotionwellClip] {
+        let q=query.trimmingCharacters(in:.whitespacesAndNewlines)
+        let term=q.hasPrefix("@") ? String(q.dropFirst()):q
+        let state=world.connectedWorld?.motionwell ?? MotionwellState()
+        let rows=visible(world).filter { clip in
+            (term.isEmpty || [clip.title,clip.creator,clip.handle,clip.description].contains{$0.localizedCaseInsensitiveContains(term)}) &&
+            (filter != "Shorts" || clip.short) &&
+            (filter != "Following" || state.subscriptions.contains(clip.handle)) &&
+            (filter != "Saved" || state.saved.contains(clip.id)) &&
+            (filter != "History" || state.watch[clip.id] != nil)
+        }
+        if filter=="History" {
+            return rows.sorted{($0.id== $1.id) ? false :
+                (state.watch[$0.id]?.lastWatched ?? .distantPast) == (state.watch[$1.id]?.lastWatched ?? .distantPast) ? $0.id<$1.id :
+                (state.watch[$0.id]?.lastWatched ?? .distantPast) > (state.watch[$1.id]?.lastWatched ?? .distantPast)}
+        }
+        return rows
+    }
     static func canNotify(_ id: String, world: PhoneWorld) -> Bool {
         guard let state = world.connectedWorld?.motionwell,
               state.notificationsEnabled, state.published?.contains(id) == true,
@@ -76,17 +102,7 @@ struct MotionwellView: View {
     @State private var query = ""
     private var state: MotionwellState { world.connected.motionwell ?? MotionwellState() }
     private var clips: [MotionwellClip] {
-        let available = MotionwellArchive.visible(world.state).filter { clip in
-            (query.isEmpty || [clip.title, clip.creator, clip.handle, clip.description].contains { $0.localizedCaseInsensitiveContains(query) })
-            && (filter != "Shorts" || clip.short)
-            && (filter != "Following" || state.subscriptions.contains(clip.handle))
-            && (filter != "Saved" || state.saved.contains(clip.id))
-            && (filter != "History" || state.watch[clip.id] != nil)
-        }
-        if filter == "History" {
-            return available.sorted { (state.watch[$0.id]?.lastWatched ?? .distantPast) > (state.watch[$1.id]?.lastWatched ?? .distantPast) }
-        }
-        return available
+        MotionwellArchive.feed(world.state,filter:filter,query:query)
     }
     var body: some View {
         ScrollView {
@@ -135,7 +151,7 @@ struct MotionwellTile: View {
                 }.aspectRatio(16.0/9, contentMode: .fit)
                 Text(clip.url == nil ? "Unavailable" : clip.durationLabel).font(.caption2.bold()).padding(5).background(.black.opacity(0.8)).foregroundColor(.white).padding(6)
             }.clipShape(RoundedRectangle(cornerRadius: 12))
-            if let progress { ProgressView(value: min(progress, Double(clip.seconds)), total: Double(clip.seconds)).tint(.red) }
+            if let progress {ProgressView(value:MotionwellArchive.progress(progress,duration:clip.seconds),total:Double(max(1,clip.seconds))).tint(.red)}
             HStack {
                 Text(clip.title).font(.headline)
                 if isNew { Text("NEW").font(.caption2.bold()).foregroundColor(.red) }
@@ -153,11 +169,12 @@ struct MotionwellPlayerView: View {
     @State private var feedback = ""
     @State private var lastSaved = 0.0
     @State private var started = false
+    @State private var playbackError=false
     private let timer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
     private var state: MotionwellState { world.connected.motionwell ?? MotionwellState() }
     private var eligible: Bool { MotionwellArchive.visible(world.state).contains(clip) }
     private func savePosition(force: Bool = false) {
-        guard eligible, let player else { return }
+        guard eligible,!playbackError,let player,player.currentItem?.status == .readyToPlay else{return}
         let seconds = player.currentTime().seconds
         guard seconds.isFinite, seconds >= 0 else { return }
         if player.rate > 0 && seconds > 0.25 { started = true }
@@ -165,17 +182,30 @@ struct MotionwellPlayerView: View {
         world.recordMotionwellWatch(clip.id, seconds: seconds)
         lastSaved = seconds
     }
+    private func loadPlayer() {
+        guard phase == .active,eligible,let url=clip.url,player==nil else{return}
+        playbackError=false;started=false
+        let item=AVPlayer(url:url)
+        let resume=MotionwellArchive.resume(state.watch[clip.id]?.seconds ?? 0,duration:clip.seconds)
+        if resume>0 {item.seek(to:CMTime(seconds:resume,preferredTimescale:600))}
+        player=item;lastSaved=resume
+        world.markMotionwellUploadSeen(clip.id)
+    }
+    private func releasePlayer() {
+        player?.pause();player=nil;started=false;lastSaved=0;playbackError=false
+    }
     var body: some View {
         ScrollView {
-            if MotionwellArchive.visible(world.state).contains(clip) {
+            if eligible && phase == .active {
                 VStack(alignment: .leading, spacing: 15) {
-                    if let player {
-                        VideoPlayer(player: player).aspectRatio(16.0/9, contentMode: .fit)
+                    if let player,!playbackError {
+                        VideoPlayer(player:player).aspectRatio(16.0/9,contentMode:.fit)
                     } else {
                         VStack(spacing: 10) {
                             Image(systemName: "video.slash").font(.largeTitle)
                             Text("Local video unavailable").font(.headline)
-                            Text("This item cannot play until its media is bundled.").font(.caption)
+                            Text(playbackError ? "The local file could not be played.":"This item cannot play until its media is bundled.").font(.caption)
+                            if playbackError {Button("Retry"){releasePlayer();loadPlayer()}.buttonStyle(.bordered)}
                         }.frame(maxWidth: .infinity).aspectRatio(16.0/9, contentMode: .fit).lumaSurface()
                     }
                     Text(clip.title).font(.title2.bold())
@@ -209,35 +239,38 @@ struct MotionwellPlayerView: View {
                         }
                     }
                     TextField("Write a local comment", text: $draft, axis: .vertical).textFieldStyle(.roundedBorder)
+                    Text("\(draft.count) / 500").font(.caption).foregroundColor(.secondary)
                     Button("Post comment") {
+                        guard phase == .active else{return}
                         if world.addMotionwellComment(clip.id, text: draft) { draft = ""; feedback = "" }
                         else { feedback = "Enter a shorter comment." }
-                    }.disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }.disabled(draft.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty || draft.count>500 || phase != .active)
                     if !feedback.isEmpty { Text(feedback).font(.caption).foregroundColor(.secondary) }
                 }.padding(16)
             } else { Text("Video unavailable").padding() }
         }.navigationTitle("Watch").navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                guard MotionwellArchive.visible(world.state).contains(clip), let url = clip.url, player == nil else { return }
-                world.markMotionwellUploadSeen(clip.id)
-                let item = AVPlayer(url: url)
-                let resume = state.watch[clip.id]?.seconds ?? 0
-                if resume > 0 && resume < Double(clip.seconds) - 2 { item.seek(to: CMTime(seconds: resume, preferredTimescale: 600)) }
-                player = item
-                lastSaved = resume
+            .onAppear {loadPlayer()}
+            .onReceive(timer){_ in
+                guard phase == .active,eligible,let player else{return}
+                if player.currentItem?.status == .failed || player.status == .failed {
+                    player.pause();playbackError=true
+                } else {savePosition()}
             }
-            .onReceive(timer) { _ in savePosition() }
             .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { notification in
                 if let raw = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
                    AVAudioSession.InterruptionType(rawValue: raw) == .began {
                     savePosition(force: true); player?.pause()
                 }
             }
-            .onChange(of: eligible) { value in
-                if !value { player?.pause(); player = nil; started = false }
+            .onReceive(NotificationCenter.default.publisher(for:AVAudioSession.routeChangeNotification)){notification in
+                if let raw=notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+                   AVAudioSession.RouteChangeReason(rawValue:raw) == .oldDeviceUnavailable {
+                    savePosition(force:true);player?.pause()
+                }
             }
-            .onChange(of: phase) { if $0 != .active { savePosition(force: true); player?.pause() } }
-            .onDisappear { savePosition(force: true); player?.pause(); player = nil; started = false }
+            .onChange(of:eligible){if !$0 {releasePlayer()} else {loadPlayer()}}
+            .onChange(of:phase){if $0 != .active {savePosition(force:true);player?.pause()} else {loadPlayer()}}
+            .onDisappear {savePosition(force:true);releasePlayer()}
     }
 }
 struct MotionwellChannel: View {
@@ -268,6 +301,7 @@ struct MotionwellChannel: View {
 }
 struct MotionwellSettings: View {
     @EnvironmentObject private var world: PhoneWorldStore
+    @State private var confirmClear=false
     private var state: MotionwellState { world.connected.motionwell ?? MotionwellState() }
     var body: some View {
         Form {
@@ -283,7 +317,7 @@ struct MotionwellSettings: View {
                     LabeledContent("Subscriptions", value: String(state.subscriptions.count))
                     LabeledContent("Saved videos", value: String(state.saved.count))
                     LabeledContent("Watch history", value: String(state.watch.count))
-                    Button("Clear local watch history", role: .destructive) { world.clearMotionwellHistory() }.disabled(state.watch.isEmpty)
+                    Button("Clear local watch history",role:.destructive){confirmClear=true}.disabled(state.watch.isEmpty)
                 }
                 Section("Notification preferences") {
                     Toggle("Channel notifications", isOn: Binding(get: { state.notificationsEnabled }, set: { world.setMotionwellNotifications(enabled: $0, previews: state.previewsEnabled) }))
@@ -292,5 +326,8 @@ struct MotionwellSettings: View {
                 }
             } else { Text("Account unavailable") }
         }.navigationTitle("Account & settings")
+            .confirmationDialog("Clear watch history?",isPresented:$confirmClear){
+                Button("Clear history",role:.destructive){world.clearMotionwellHistory()}
+            } message:{Text("Saved videos and subscriptions are kept.")}
     }
 }

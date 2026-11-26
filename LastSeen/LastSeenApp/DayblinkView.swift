@@ -124,6 +124,20 @@ enum DayblinkArchive {
               let image = record.image, publicImages.contains(image) else { return nil }
         return image
     }
+    /// Only an explicitly consumed message can remain in the current viewer.
+    static func viewingRecord(_ id:String,friend:DayblinkFriend,world:PhoneWorld)->DayblinkRecord? {
+        guard world.connectedWorld?.dayblink?.opened.contains(id)==true,
+              let record=records(world,friend:friend).first(where:{$0.id==id}),
+              record.temporary,!record.alreadyExpired,
+              let asset=record.image,publicImages.contains(asset) else{return nil}
+        return record
+    }
+    static func saved(_ world:PhoneWorld)->[DayblinkRecord] {
+        let state=world.connectedWorld?.dayblink ?? DayblinkState()
+        return DayblinkFriend.allCases.flatMap{records(world,friend:$0)}
+            .filter{!$0.temporary && image(for:$0,state:state) != nil}
+            .sorted{($0.date,$0.id)>($1.date,$1.id)}
+    }
     static func pendingReply(friend: DayblinkFriend, text: String, id: String, now: Date, previousCount: Int = 0, sharedImage: String? = nil) -> DayblinkPending? {
         let clean = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
         let words = Set(clean.split { !$0.isLetter }.map(String.init))
@@ -215,12 +229,17 @@ struct DayblinkThread: View {
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var text = ""
     @State private var feedback = ""
-    @State private var openedImage: String?
+    @State private var openedRecordID: String?
     @State private var showingImage = false
     @State private var selectedPicture: String? = nil
     @State private var showPictures = false
     @Environment(\.scenePhase) private var phase
     private var state: DayblinkState { world.connected.dayblink ?? DayblinkState() }
+    private var currentVisual:DayblinkRecord? {
+        guard phase == .active,let id=openedRecordID else{return nil}
+        return DayblinkArchive.viewingRecord(id,friend:friend,world:world.state)
+    }
+    private func closeVisual(){showingImage=false;openedRecordID=nil}
     var body: some View {
         List {
             if world.state.everydayArchiveRevision != nil {
@@ -240,14 +259,16 @@ struct DayblinkThread: View {
                                 Text(record.date, style: .date).font(.caption2).foregroundColor(.secondary)
                             }
                             if record.temporary {
-                                if let asset = DayblinkArchive.image(for: record, state: state) {
+                                if DayblinkArchive.image(for:record,state:state) != nil {
                                     Button {
-                                        if world.openDayblink(record.id, friend: friend) {
-                                            openedImage = asset
-                                            showingImage = true
+                                        guard phase == .active else{return}
+                                        if world.openDayblink(record.id,friend:friend) {
+                                            openedRecordID=record.id;showingImage=true
                                         }
-                                    } label: { Label("Open once", systemImage: "square.fill").foregroundColor(.yellow) }
-                                } else { Label("Visual message expired", systemImage: "square.dashed").foregroundColor(.secondary) }
+                                    } label:{Label("Open once",systemImage:"square.fill").foregroundColor(.yellow)}
+                                } else {
+                                    Label(state.opened.contains(record.id) ? "Visual message opened":"Visual message expired",systemImage:"square.dashed").foregroundColor(.secondary)
+                                }
                             } else {
                                 Text(record.text)
                                 if let asset = DayblinkArchive.image(for: record, state: state) {
@@ -268,18 +289,21 @@ struct DayblinkThread: View {
                         }
                     }
                     Button { showPictures = true } label: { Label("Add a picture", systemImage: "photo.on.rectangle") }
+                    Text("\(text.count) / 500").font(.caption).foregroundColor(.secondary)
                     Button("Send") {
+                        guard phase == .active else{return}
                         if world.sendDayblink(friend: friend, text: text, image: selectedPicture) {
                             text = ""; feedback = ""; selectedPicture = nil
                         } else { feedback = "Enter a shorter message or choose an available picture." }
-                    }.disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedPicture == nil)
+                    }.disabled((text.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty && selectedPicture==nil) || text.count>500 || phase != .active)
                     if !feedback.isEmpty { Text(feedback).font(.caption).foregroundColor(.secondary) }
                     Text("The restored owner account is read-only. Responses are authored and local, not live messages.").font(.caption).foregroundColor(.secondary)
                 }
             } else { Text("Conversation unavailable") }
         }.navigationTitle(friend.name)
-            .onChange(of: phase) { if $0 != .active { showingImage = false; openedImage = nil; showPictures = false } }
-            .onDisappear { showingImage = false; openedImage = nil }
+            .onChange(of:phase){if $0 != .active {closeVisual();showPictures=false}}
+            .onChange(of:currentVisual?.id){if $0==nil {closeVisual()}}
+            .onDisappear {closeVisual()}
             .sheet(isPresented: $showPictures) {
                 NavigationStack {
                     List {
@@ -298,15 +322,16 @@ struct DayblinkThread: View {
                         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showPictures = false } } }
                 }
             }
-            .sheet(isPresented: $showingImage, onDismiss: { openedImage = nil }) {
+            .sheet(isPresented:$showingImage,onDismiss:{openedRecordID=nil}) {
                 NavigationStack {
                     VStack(spacing: 16) {
-                        if let asset = openedImage, DayblinkArchive.publicImages.contains(asset) {
-                            Image(asset).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius: 12))
-                        }
-                        Text("Available for this viewing only.").font(.caption).foregroundColor(.secondary)
+                        if let record=currentVisual,let asset=record.image {
+                            Image(asset).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius:12))
+                            Text(record.text)
+                            Text("Available for this viewing only.").font(.caption).foregroundColor(.secondary)
+                        } else {Text("Visual message unavailable.").foregroundColor(.secondary)}
                     }.padding().navigationTitle("Visual message")
-                        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showingImage = false; openedImage = nil } } }
+                        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done"){closeVisual()} } }
                 }
             }
     }
@@ -328,7 +353,8 @@ struct DayblinkStoryView: View {
                 }.padding(16)
             } else { Text("Story unavailable").padding() }
         }.navigationTitle("Story").navigationBarTitleDisplayMode(.inline)
-            .onAppear { world.markDayblinkStoryViewed(id) }
+            .onAppear {if phase == .active {world.markDayblinkStoryViewed(id)}}
+            .onChange(of:phase){if $0 == .active {world.markDayblinkStoryViewed(id)}}
     }
 }
 struct DayblinkFriendProfile: View {
@@ -383,7 +409,9 @@ struct DayblinkSavedView: View {
     @EnvironmentObject private var world: PhoneWorldStore
     var body: some View {
         List {
-            ForEach(DayblinkFriend.allCases.flatMap { DayblinkArchive.records(world.state, friend: $0) }.filter { !$0.temporary && $0.image != nil }) { record in
+            let records=DayblinkArchive.saved(world.state)
+            if records.isEmpty {Text("No saved pictures").foregroundColor(.secondary)}
+            ForEach(records) { record in
                 if let asset = DayblinkArchive.image(for: record, state: world.connected.dayblink ?? DayblinkState()) {
                     VStack(alignment: .leading, spacing: 8) {
                         Image(asset).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius: 10))

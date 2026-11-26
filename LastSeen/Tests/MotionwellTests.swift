@@ -3,6 +3,22 @@ import AVFoundation
 @testable import LastSeen
 
 @MainActor final class MotionwellTests: XCTestCase {
+    func testFeedAndWatchPositionBounds() {
+        let w=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
+        XCTAssertEqual(MotionwellArchive.feed(w.state,filter:"Shorts").count,2)
+        XCTAssertEqual(MotionwellArchive.feed(w.state,filter:"Home",query:"  @bluehour ").map(\.id),["studio"])
+        XCTAssertTrue(MotionwellArchive.feed(w.state,filter:"Saved").isEmpty)
+        w.toggleMotionwellItem("studio",saved:true)
+        XCTAssertEqual(MotionwellArchive.feed(w.state,filter:"Saved").map(\.id),["studio"])
+        XCTAssertEqual(MotionwellArchive.progress(.nan,duration:60),0)
+        XCTAssertEqual(MotionwellArchive.progress(99,duration:60),60)
+        XCTAssertEqual(MotionwellArchive.resume(59,duration:60),0)
+        XCTAssertEqual(MotionwellArchive.resume(20,duration:60),20)
+        var revoked=w.state
+        revoked.everydayArchiveRevision=nil
+        XCTAssertTrue(MotionwellArchive.feed(revoked,filter:"Saved").isEmpty)
+    }
+
     func testScheduledUploadsAndChannelPreferences() throws {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let store = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(now: now), persistToDisk: false)
