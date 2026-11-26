@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import CryptoKit
 
 struct LumaCheckpoint: Codable {
     let version: Int
@@ -8,6 +9,61 @@ struct LumaCheckpoint: Codable {
     var world: PhoneWorld
     let preferences: Data
 }
+/// A write-ahead settings receipt, scoped to the exact world bytes being
+/// committed. A receipt alone cannot replace or roll back the live world.
+@MainActor
+enum LumaRestoreJournal {
+    struct Settings:Codable {
+        let preferences:Data
+        let playSeconds:Int
+    }
+    private struct Receipt:Codable {
+        let version:Int
+        let targetDigest:Data
+        let settings:Settings
+    }
+    static func url(for worldURL:URL)->URL {
+        worldURL.appendingPathExtension("restore-pending")
+    }
+    static func prepare(worldURL:URL,target:Data,settings:Settings)throws {
+        _ = try LumaSaveStore.validatedPreferences(settings.preferences)
+        guard settings.playSeconds>=0 else{throw CocoaError(.fileReadCorruptFile)}
+        let receipt=Receipt(version:1,targetDigest:Data(SHA256.hash(data:target)),settings:settings)
+        try JSONEncoder().encode(receipt).write(to:url(for:worldURL),options:.atomic)
+    }
+    @discardableResult
+    static func apply(_ settings:Settings,defaults:UserDefaults)throws->Bool {
+        let prefs=try LumaSaveStore.validatedPreferences(settings.preferences)
+        guard settings.playSeconds>=0 else{throw CocoaError(.fileReadCorruptFile)}
+        for key in LumaSaveStore.keys {
+            if let object=prefs[key] {defaults.set(object,forKey:key)} else {defaults.removeObject(forKey:key)}
+        }
+        defaults.set(false,forKey:"lastseen.security.ownerVerified")
+        defaults.set(false,forKey:"lastseen.security.appearanceEnrolled")
+        defaults.set(settings.playSeconds,forKey:"lastseen.saves.playSeconds")
+        return defaults.synchronize()
+    }
+    /// Roll forward settings only if the atomic world write actually landed.
+    /// A stale or pre-commit receipt never overwrites newer world data.
+    @discardableResult
+    static func recover(worldURL:URL,defaults:UserDefaults)throws->Bool {
+        let receiptURL=url(for:worldURL)
+        guard FileManager.default.fileExists(atPath:receiptURL.path) else{return false}
+        let receipt=try JSONDecoder().decode(Receipt.self,from:Data(contentsOf:receiptURL))
+        guard receipt.version==1,receipt.targetDigest.count==32 else{throw CocoaError(.fileReadCorruptFile)}
+        guard FileManager.default.fileExists(atPath:worldURL.path) else {
+            try FileManager.default.removeItem(at:receiptURL);return false
+        }
+        let worldBytes=try Data(contentsOf:worldURL)
+        guard Data(SHA256.hash(data:worldBytes))==receipt.targetDigest else {
+            try FileManager.default.removeItem(at:receiptURL);return false
+        }
+        guard try apply(receipt.settings,defaults:defaults) else{return false}
+        try FileManager.default.removeItem(at:receiptURL)
+        return true
+    }
+}
+
 @MainActor
 final class LumaSaveStore: ObservableObject {
     static let keys = [
@@ -82,8 +138,11 @@ final class LumaSaveStore: ObservableObject {
         _ = try preferences(value)
         return value
     }
-    private func preferences(_ value: LumaCheckpoint) throws -> [String: Any] {
-        guard let result = try PropertyListSerialization.propertyList(from: value.preferences, format: nil) as? [String: Any],
+    private func preferences(_ value:LumaCheckpoint)throws->[String:Any] {
+        try Self.validatedPreferences(value.preferences)
+    }
+    static func validatedPreferences(_ data:Data)throws->[String:Any] {
+        guard let result = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
               Set(result.keys).isSubset(of: Set(Self.keys)),
               result.values.allSatisfy({ value in
                   if let number=value as? NSNumber {return number.doubleValue.isFinite}
@@ -205,12 +264,10 @@ final class LumaSaveStore: ObservableObject {
                 prefs["lastseen.lab.stopwatchStart"] = old.doubleValue + delta
             }
             // Validate before touching the active world. Security enrollment is not restored.
-            try world.restoreCheckpoint(value.world)
-            for key in Self.keys {
-                if let object = prefs[key] { defaults.set(object, forKey: key) } else { defaults.removeObject(forKey: key) }
-            }
-            defaults.set(false, forKey: "lastseen.security.ownerVerified")
-            defaults.set(false, forKey: "lastseen.security.appearanceEnrolled")
+            let settings=LumaRestoreJournal.Settings(
+                preferences:try PropertyListSerialization.data(fromPropertyList:prefs,format:.binary,options:0),
+                playSeconds:value.playSeconds)
+            try world.restoreCheckpoint(value.world,settings:settings,defaults:defaults)
             playSeconds = value.playSeconds; sinceAutomatic = 0
             persistPlayTime()
             automaticFailed = false

@@ -152,6 +152,16 @@ final class PhoneWorldStore: ObservableObject {
         self.persistToDisk = persistToDisk
         let resolvedURL = storageURL ?? Self.saveURL
         self.storageURL = resolvedURL
+        // Replay before decoding or publishing the live phone world. Receipts
+        // belong to the same storage path, never another save or legacy game.
+        if persistToDisk,initial == nil {
+            do { try LumaRestoreJournal.recover(worldURL:resolvedURL,defaults:.standard) }
+            catch {
+                #if DEBUG
+                print("LAST SEEN pending restore recovery error: \(error)")
+                #endif
+            }
+        }
         if let initial {
             state = initial
         } else if persistToDisk,
@@ -741,13 +751,32 @@ final class PhoneWorldStore: ObservableObject {
         save()
     }
 
-    func restoreCheckpoint(_ replacement: PhoneWorld) throws {
+    func restoreCheckpoint(_ replacement: PhoneWorld,settings:LumaRestoreJournal.Settings?=nil,defaults:UserDefaults = .standard) throws {
         guard replacement.version == 1 else { throw CocoaError(.fileReadCorruptFile) }
         var replacement = replacement
         if storageURL == RestoredPhoneBackup.url || state.everydayArchiveRevision != nil { NoraEverydayArchive.expand(&replacement) }
+        if let settings {
+            _ = try LumaSaveStore.validatedPreferences(settings.preferences)
+            guard settings.playSeconds>=0 else{throw CocoaError(.fileReadCorruptFile)}
+        }
         if persistToDisk {
             try FileManager.default.createDirectory(at: storageURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try JSONEncoder().encode(replacement).write(to: storageURL, options: .atomic)
+            let bytes=try JSONEncoder().encode(replacement)
+            if let settings {try LumaRestoreJournal.prepare(worldURL:storageURL,target:bytes,settings:settings)}
+            try bytes.write(to:storageURL,options:.atomic)
+        }
+        // No throwing operation after the world commit: if cleanup fails,
+        // keep the receipt for startup recovery, not a false restore failure.
+        if let settings {
+            if persistToDisk {
+                do {try LumaRestoreJournal.recover(worldURL:storageURL,defaults:defaults)}
+                catch {
+                    _ = try? LumaRestoreJournal.apply(settings,defaults:defaults)
+                    #if DEBUG
+                    print("LAST SEEN restore receipt cleanup error: \(error)")
+                    #endif
+                }
+            } else { _ = try LumaRestoreJournal.apply(settings,defaults:defaults) }
         }
         visibleThread = nil
         supportGenerationEpoch = UUID()
