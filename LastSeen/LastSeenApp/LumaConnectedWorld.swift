@@ -154,13 +154,21 @@ enum LumaSocialCatalog {
             post("cg-03",.commonGround,"Maple Cafe","maplecafe","Fresh cinnamon pastries at the counter today. The window seats are open.",82000),
             post("cg-04",.commonGround,"Adrian Cole","adrian.c","Anyone else keeping a separate note for original capture dates and imported copies? It saves a surprising amount of confusion.",190000,"Contact_B27_06")
         ]
-        return (base+LivingPhoneHistory.posts(anchor: d)+LumaSocialCommunity.posts(anchor: d)+(world.connectedWorld?.communityActivity?.posts ?? [])+(world.connectedWorld?.posts ?? [])).filter{$0.channel==channel && ($0.gate.map{world.flags.contains($0)} ?? true)}.sorted{$0.date>$1.date}
+        var records = base
+        records.append(contentsOf: LivingPhoneHistory.posts(anchor: d))
+        records.append(contentsOf: LumaSocialCommunity.posts(anchor: d))
+        records.append(contentsOf: world.connectedWorld?.communityActivity?.posts ?? [])
+        records.append(contentsOf: world.connectedWorld?.posts ?? [])
+        return records.filter { $0.channel == channel && ($0.gate.map { world.flags.contains($0) } ?? true) }
+            .sorted { ($0.date, $0.id) > ($1.date, $1.id) }
     }
     static func comments(_ postID: String, channel: LumaSocialChannel, world: PhoneWorld) -> [LumaSocialComment] {
         guard let post = visible(channel, world: world).first(where: { $0.id == postID }) else { return [] }
-        return (LivingPhoneHistory.comments(for: post) + LumaCommunityActivity.historicalComments(for: post) +
-                (world.connectedWorld?.communityActivity?.comments ?? []).filter { $0.postID == postID } +
-                (world.connectedWorld?.comments ?? []).filter { $0.postID == postID }).sorted { ($0.date, $0.id) < ($1.date, $1.id) }
+        var records = LivingPhoneHistory.comments(for: post)
+        records.append(contentsOf: LumaCommunityActivity.historicalComments(for: post))
+        records.append(contentsOf: (world.connectedWorld?.communityActivity?.comments ?? []).filter { $0.postID == postID })
+        records.append(contentsOf: (world.connectedWorld?.comments ?? []).filter { $0.postID == postID })
+        return records.sorted { ($0.date, $0.id) < ($1.date, $1.id) }
     }
     static func visiblePhoto(_ post:LumaSocialPost,world:PhoneWorld)->String? {
         guard world.everydayArchiveRevision != nil, post.gate.map({ world.flags.contains($0) }) ?? true else { return nil }

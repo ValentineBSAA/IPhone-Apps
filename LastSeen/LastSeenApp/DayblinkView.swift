@@ -72,10 +72,15 @@ enum DayblinkArchive {
     // Public, licensed illustrations only. These are shared pictures, not
     // evidence, personal captures, camera access or claims of local geography.
     static let publicImages: Set<String> = ["CommunityMedia_Coffee", "CommunityMedia_Tabby", "CommunityMedia_Forest", "CommunityMedia_Udon", "CommunityMedia_Fox", "CommunityMedia_Mountains"]
-    static let pictureChoices: [(asset: String, title: String)] = [
-        ("CommunityMedia_Coffee", "Coffee"), ("CommunityMedia_Tabby", "Cat"),
-        ("CommunityMedia_Forest", "Woodland"), ("CommunityMedia_Udon", "Noodles"),
-        ("CommunityMedia_Fox", "Wildlife"), ("CommunityMedia_Mountains", "Mountains")
+    struct PictureChoice: Identifiable {
+        let asset: String
+        let title: String
+        var id: String { asset }
+    }
+    static let pictureChoices: [PictureChoice] = [
+        .init(asset: "CommunityMedia_Coffee", title: "Coffee"), .init(asset: "CommunityMedia_Tabby", title: "Cat"),
+        .init(asset: "CommunityMedia_Forest", title: "Woodland"), .init(asset: "CommunityMedia_Udon", title: "Noodles"),
+        .init(asset: "CommunityMedia_Fox", title: "Wildlife"), .init(asset: "CommunityMedia_Mountains", title: "Mountains")
     ]
     static func stories(start: Date) -> [DayblinkStory] {
         let entries: [(DayblinkFriend, String, String, TimeInterval)] = [
@@ -278,7 +283,7 @@ struct DayblinkThread: View {
             .sheet(isPresented: $showPictures) {
                 NavigationStack {
                     List {
-                        ForEach(DayblinkArchive.pictureChoices, id: \.asset) { choice in
+                        ForEach(DayblinkArchive.pictureChoices) { choice in
                             Button {
                                 selectedPicture = choice.asset; showPictures = false
                             } label: {

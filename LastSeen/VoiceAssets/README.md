@@ -9,3 +9,6 @@ A separate audio-only workflow is staged on the active development branch. It ru
 
 ## Official CLI onboarding (creator requested)
 Run from the checked-out LastSeen folder: `npx -y @elevenlabs/cli@latest onboard init`. Follow the actual CLI output and complete any browser approval. Official guide: https://elevenlabs.io/docs/eleven-api/quickstart/ . Local secrets are excluded by LastSeen/.gitignore. This ChatGPT session attempted the exact command but npm registry DNS failed (EAI_AGAIN), so initialization and sign-in are NOT complete. The next coding agent with network access should run the command in the real checkout. CLI login is local; the GitHub Actions audio workflow still needs its own authorized credential configuration. No credits spent and no native build started.
+
+## Production result
+GitHub run 45737127282 succeeded with the creator's replacement VOICES secret. Ten candidates generated and decoded; ZIP committed at 74b78c44d35ae77cd2b4d00251678c8a9f576162, artifact 15079502092. The candidate manifest is intentionally unapproved. Do not regenerate automatically; audition and confirm rights before import. The workflow now uses secrets.VOICES, and the request pins the script catalog Git blob, not a SHA-256 of the whole catalog. Each individual script and audio file still has SHA-256 metadata.

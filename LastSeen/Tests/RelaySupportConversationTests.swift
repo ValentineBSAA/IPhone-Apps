@@ -115,7 +115,13 @@ import XCTest
         store.advanceRelaySupportActivity(installed: "", now: now.addingTimeInterval(10))
         XCTAssertFalse(notice.canPresent(in: store.state))
         store.advanceRelaySupportActivity(installed: installed, now: now.addingTimeInterval(11))
+        XCTAssertFalse(LumaActivityCatalog.visible(store.state).contains { $0.kind == .support })
+        XCTAssertTrue((store.state.connectedWorld?.activityJournal ?? []).contains { $0.id == notice.id && $0.dismissed })
+        XCTAssertTrue(store.sendRelaySupport("Hello", installed: installed, sources: RelayCatalog.defaultSources, now: now.addingTimeInterval(12)))
+        store.advanceRelaySupportActivity(installed: installed, now: now.addingTimeInterval(16))
+        XCTAssertEqual(LumaActivityCatalog.visible(store.state).filter { $0.kind == .support }.count, 1)
         store.markRelaySupportRead(installed: installed)
+        XCTAssertFalse(LumaActivityCatalog.visible(store.state).contains { $0.kind == .support })
         XCTAssertFalse(notice.canPresent(in: store.state))
         XCTAssertEqual(store.state.threads, original)
     }

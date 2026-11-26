@@ -711,6 +711,18 @@ final class PhoneWorldStore: ObservableObject {
         if history.notifiedIDs == nil { history.notifiedIDs = all }
         var value = connected
         var changedJournal = false
+        if !active {
+            // Preserve the chat but retire old notification delivery on uninstall.
+            // Reinstall must not replay the previous installation's alerts.
+            history.notifiedIDs = (history.notifiedIDs ?? []).union(all)
+            if var notices = value.activityJournal {
+                for index in notices.indices where notices[index].kind == .support && !notices[index].dismissed {
+                    notices[index].dismissed = true
+                    changedJournal = true
+                }
+                if changedJournal { value.activityJournal = notices }
+            }
+        }
         if active {
             for message in incoming where !(history.seenIDs ?? []).contains(message.id) &&
                 !(history.notifiedIDs ?? []).contains(message.id) &&
