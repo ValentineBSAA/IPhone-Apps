@@ -40,6 +40,27 @@ enum NoraPhotoCatalog {
         }
         return NoraPhoto(id: String(format: "Nora_Photo_%02d", i), gate: gate)
     } + [NoraPhoto(id: "Nora_Collage_01", gate: .future), NoraPhoto(id: "Nora_Collage_02", gate: .future)]
+    /// Existing approved private records recover in a separate authenticated
+    /// album session. No narrative claims about the individual pixels are made.
+    static func privateRecoveryEligible(_ id:String,flags:Set<String>)->Bool {
+        let earned=discoveryFlags(from:flags)
+        guard photos.contains(where:{$0.id==id && $0.privateAlbum}),
+              earned.contains("phone-tutorial-finished"),
+              earned.contains("nora-photo-journal") else{return false}
+        let archiveVisited=earned.contains("web.visited.archive") && LumaWebCatalog.page("archive")?.available(earned)==true
+        let inspected=archiveVisited && earned.contains("web.visited.archive-records") &&
+            (LumaWebCatalog.page("archive-records")?.images.contains{earned.contains("web.inspected."+$0)} ?? false)
+        let ledger=inspected && earned.contains("web.visited.archive-ledger") && LumaWebCatalog.page("archive-ledger")?.available(earned)==true
+        func recovered(_ name:String)->Bool {earned.contains("nora-photo-unlocked-"+name)}
+        switch id {
+        case "Nora_Photo_10":return true
+        case "Nora_Photo_11":return inspected
+        case "Nora_Photo_12":return ledger
+        case "Nora_Collage_01":return inspected && recovered("Nora_Photo_10") && recovered("Nora_Photo_11")
+        case "Nora_Collage_02":return ledger && recovered("Nora_Photo_12") && recovered("Nora_Collage_01")
+        default:return false
+        }
+    }
     static func discoveryFlags(from flags: Set<String>) -> Set<String> {
         var result = flags
         if flags.contains("phone-tutorial-visited-note") && flags.contains("phone-tutorial-replied") {
@@ -74,17 +95,26 @@ struct LockedPhotoSurface: View {
 /// owner verification alone to authorize private photos.
 struct NoraPrivateAlbum: View {
     @EnvironmentObject private var world: PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 110))], spacing: 6) {
             ForEach(NoraPhotoCatalog.photos.filter(\.privateAlbum)) { photo in
                 if photo.available(flags: world.state.flags, authenticated: true) {
                     Image(photo.id).resizable().scaledToFit().accessibilityLabel("Recovered photograph")
                 } else {
-                    LockedPhotoSurface().aspectRatio(1, contentMode: .fit)
+                    VStack(spacing:6) {
+                        LockedPhotoSurface().aspectRatio(1, contentMode: .fit)
+                        if NoraPhotoCatalog.privateRecoveryEligible(photo.id,flags:world.state.flags) {
+                            Button("Recover record") {
+                                guard phase == .active else{return}
+                                _ = world.recoverPrivatePhoto(photo.id,authenticated:true)
+                            }.buttonStyle(.bordered).font(.caption).disabled(phase != .active)
+                        }
+                    }
                 }
             }
         }
-        Text("Access is verified. These photographs remain unrecovered until their individual discoveries are made.")
+        Text("Access is verified. Recover available records here as the investigation progresses. Private records remain inside this album.")
             .font(.caption).foregroundColor(.secondary)
     }
 }

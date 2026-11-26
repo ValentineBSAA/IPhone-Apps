@@ -212,6 +212,13 @@ final class PhoneWorldStore: ObservableObject {
 
     /// Replay only the introductory authored messages and flags. Do not touch
     /// restored documents, other messages, notes, app settings or owner security.
+    @discardableResult
+    func recoverPrivatePhoto(_ id:String,authenticated:Bool)->Bool {
+        guard authenticated,state.everydayArchiveRevision != nil,
+              NoraPhotoCatalog.privateRecoveryEligible(id,flags:state.flags) else{return false}
+        if state.flags.insert("nora-photo-unlocked-"+id).inserted {save()}
+        return true
+    }
     func recoverPhotoDiscovery() {
         let recovered = NoraPhotoCatalog.discoveryFlags(from: state.flags)
         if recovered != state.flags { state.flags = recovered; save() }
@@ -518,7 +525,7 @@ final class PhoneWorldStore: ObservableObject {
         save()
     }
     func inspectWebAttachment(_ id: String, now: Date = Date()) {
-        guard LumaWebCatalog.attachments(in: state.flags).contains(id) else { return }
+        guard LumaWebCatalog.visitedAttachments(in:state.flags).contains(id) else { return }
         if state.flags.insert("web.inspected." + id).inserted {
             advanceInvestigation(now: now); save()
         }

@@ -117,11 +117,11 @@ struct RecoveredImageAnalysisView:View {
                         Button(reveal ? "Hide preview":"Reveal preview") {
                             if reveal {resetPreview()} else if phase == .active {
                                 reveal=true
-                                if let image=UIImage(named:asset){bins=RecoveredImageAnalysis.brightnessBins(image)}
+                                if let image=PortraitImages.load(asset){bins=RecoveredImageAnalysis.brightnessBins(image)}
                             }
                         }.disabled(phase != .active)
                         if reveal && phase == .active {
-                            if let image=UIImage(named:asset) {
+                            if let image=PortraitImages.load(asset) {
                                 ScrollView([.horizontal,.vertical]) {
                                     let effective=ImageInterpretation.displayMode(mode,asset:asset,in:world.state,horrorEnabled:horrorEffects,compareOriginal:compareOriginal)
                                     let width=CGFloat(240*zoom)

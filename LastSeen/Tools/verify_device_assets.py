@@ -64,7 +64,10 @@ if a.catalog:
     required.update(f"Nora_Archive_{i:02d}" for i in range(1,12))
     required.update(f"Nora_Photo_{i:02d}" for i in range(1,13))
     required.update(["Nora_Collage_01","Nora_Collage_02"])
-    required.update(f"Recovered_B27_{i:02d}" for i in range(1,30))
+    # Build27 originals are standalone PNGs, not CoreUI renditions.
+    # Their exact bytes are already verified against the pinned manifest in
+    # both the device bundle and the final IPA.
+    assert all(f"Recovered_B27_{i:02d}.png" in expected for i in range(1,30))
     missing=required-names
     assert not missing, f"Device catalog missing required renditions: {sorted(missing)}"
     print("Required device catalog renditions verified")

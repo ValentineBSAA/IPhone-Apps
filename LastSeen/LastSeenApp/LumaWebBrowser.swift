@@ -77,6 +77,9 @@ enum LumaWebCatalog {
         }
     }
     static func attachments(in flags: Set<String>) -> [String] { visible(flags).flatMap(\.images) }
+    static func visitedAttachments(in flags:Set<String>)->[String] {
+        visible(flags).filter{flags.contains("web.visited."+$0.id)}.flatMap(\.images)
+    }
     static func normalized(_ raw: String) -> String {
         var value = raw.trimmingCharacters(in:.whitespacesAndNewlines).lowercased()
         if value.hasPrefix("https://") { value.removeFirst(8) }

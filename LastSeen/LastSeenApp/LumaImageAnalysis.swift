@@ -38,7 +38,7 @@ enum LumaImageAnalysis {
     }
     @MainActor static func scan(_ asset:String,world:PhoneWorld,security:String) async -> LumaImageAnalysisReport? {
         guard permitted(asset,world:world,security:security),
-              let original=UIImage(named:asset),original.size.width>0,original.size.height>0 else{return nil}
+              let original=PortraitImages.load(asset),original.size.width>0,original.size.height>0 else{return nil}
         // Bound decoded analysis input to 512 pixels on its longest side.
         // Use a fresh render of the original, not the interactive preview.
         let ratio=min(1,512/max(original.size.width,original.size.height))

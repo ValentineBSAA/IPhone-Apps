@@ -46,6 +46,43 @@ final class NoraVaultTests: XCTestCase {
         XCTAssertEqual(visible(), 9)
     }
 
+    func testPrivateRecoveryRequiresAuthenticatedSessionAndEarnedRecords() throws {
+        let w=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
+        XCTAssertFalse(w.recoverPrivatePhoto("Nora_Photo_10",authenticated:true))
+        w.startPhoneTutorial()
+        XCTAssertTrue(w.reply(to:.maya,text:w.tutorialChoices[0]))
+        for id in ["note","desk","reservation","journal"] {w.recordTutorialVisit(id)}
+        XCTAssertFalse(w.recoverPrivatePhoto("Nora_Photo_10",authenticated:false))
+        XCTAssertTrue(w.recoverPrivatePhoto("Nora_Photo_10",authenticated:true))
+        XCTAssertFalse(w.recoverPrivatePhoto("Nora_Photo_11",authenticated:true))
+        w.visitWebRecord("studio")
+        w.visitWebRecord("archive")
+        let asset=try XCTUnwrap(LumaWebCatalog.page("archive-records")?.images.first)
+        w.inspectWebAttachment(asset)
+        XCTAssertFalse(w.state.flags.contains("web.inspected."+asset))
+        w.visitWebRecord("archive-records")
+        w.inspectWebAttachment(asset)
+        XCTAssertTrue(w.recoverPrivatePhoto("Nora_Photo_11",authenticated:true))
+        XCTAssertTrue(w.recoverPrivatePhoto("Nora_Collage_01",authenticated:true))
+        XCTAssertFalse(w.recoverPrivatePhoto("Nora_Photo_12",authenticated:true))
+        w.visitWebRecord("archive-review")
+        w.visitWebRecord("studio-news")
+        XCTAssertTrue(w.submitWebReview("A copy may have a different import date from its original capture."))
+        w.visitWebRecord("archive-collection")
+        w.visitWebRecord("archive-ledger")
+        XCTAssertTrue(w.recoverPrivatePhoto("Nora_Photo_12",authenticated:true))
+        XCTAssertTrue(w.recoverPrivatePhoto("Nora_Collage_02",authenticated:true))
+        XCTAssertFalse(w.recoverPrivatePhoto("unknown",authenticated:true))
+        XCTAssertFalse(w.recoverPrivatePhoto("Nora_Photo_01",authenticated:true))
+        let restored=try JSONDecoder().decode(PhoneWorld.self,from:JSONEncoder().encode(w.state))
+        for item in NoraPhotoCatalog.photos.filter(\.privateAlbum) {
+            XCTAssertTrue(item.available(flags:restored.flags,authenticated:true))
+            XCTAssertFalse(item.available(flags:restored.flags,authenticated:false))
+            XCTAssertNil(RecoveredImageAnalysis.record(item.id,in:restored))
+            XCTAssertNil(LumaAssistantEvidence.selected("image:"+item.id,in:restored))
+        }
+    }
+
     func testReactiveMessagesAndReceiptPersistence() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
