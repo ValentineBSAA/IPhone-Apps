@@ -25,7 +25,7 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
       - name: Generate one take per script
         env:
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.VOICES }}
         run: python3 LastSeen/Tools/produce_voice_candidates.py
       - name: Preserve candidate files even if a later clip fails
         if: always()
