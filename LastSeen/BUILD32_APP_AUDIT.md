@@ -16,7 +16,7 @@ Mandatory release gate for 1.9.0 (32), iPhone 16e. Every LabApp is listed exactl
 | Mail | Folders, drafts, recipients, unread, search, attachments, notifications | Targeted pass | Pending | Pending |
 | Clock | Timer, stopwatch, persistence, audio, accessibility | Pending | Pending | Pending |
 | Calculator | Arithmetic, edge cases, history, layout | Pending | Pending | Pending |
-| Settings | Every toggle, actual effect, persistence, reset, protected access, sound studio | Pending | Pending | Pending |
+| Settings | Every toggle, actual effect, persistence, reset, protected access, sound studio | Targeted pass | Pending | Pending |
 | Files | Folders, document access, previews, search, recovered references | Pending | Pending | Pending |
 | Browser | History, navigation, bookmarks, offline URLs, attachments, review gates | Pending | Pending | Pending |
 | Relay | Repository refresh, package install/remove, dependencies, conflicts, restart | Pending | Pending | Pending |

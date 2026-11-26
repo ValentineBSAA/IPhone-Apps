@@ -105,6 +105,11 @@ struct PhoneLabView: View {
     @State private var authNotice = ""
     @AppStorage("lastseen.permissions.reviewed.v1") private var permissionsReviewed = true
     @AppStorage("lastseen.lab.nativeAlerts") private var nativeAlerts = false
+    @AppStorage("lastseen.recovery.effects") private var restartEffects = true
+    @State private var testAlertGeneration=UUID()
+    private var effectiveLockPreviewsHidden:Bool {
+        LumaSettingsPolicy.hidesMessagePreviews(preference:hideLockPreviews,biometrics:biometricUnlock,shield:tweak("privatepreview"))
+    }
     @AppStorage("lastseen.setup.stage") private var setupStage = 5
     @AppStorage("lastseen.setup.progress") private var setupProgress = 100
     @State private var testNotice = ""
@@ -168,7 +173,7 @@ struct PhoneLabView: View {
         .tint(LumaDesign.accent)
         .preferredColorScheme(.dark)
         .overlay {
-            Color.black.opacity(max(0, 1 - brightness) * 0.75)
+            Color.black.opacity(LumaSettingsPolicy.displayDimming(brightness))
                 .ignoresSafeArea().allowsHitTesting(false)
         }
         .overlay(alignment: .top) {
@@ -347,6 +352,8 @@ struct PhoneLabView: View {
             }
         }
         .onChange(of: horrorEffects) { if !$0 { PhoneSensoryEngine.stopHorrorEffects() } }
+        .onChange(of: restartEffects){if !$0 {RestartAudio.stop()}}
+        .onChange(of: nativeAlerts){if !$0 {cancelTestAlert()}}
         .onDisappear {
             arrivalTask?.cancel(); arrivalTask = nil
             cancelLockAuthentication()
@@ -464,7 +471,7 @@ struct PhoneLabView: View {
                             Text("\(unread) unread").font(.caption).foregroundColor(.white.opacity(0.72))
                         }.padding(.horizontal, 4)
                         ForEach(alerts) { alert in
-                            PhoneNotificationCard(alert: alert, hidePreview: biometricUnlock || hideLockPreviews || tweak("privatepreview")) {
+                            PhoneNotificationCard(alert: alert, hidePreview: effectiveLockPreviewsHidden) {
                                 guard authContext == nil else { return }
                                 pendingActivityID = nil; pendingThread = alert.neighbor
                                 requestUnlock()
@@ -937,13 +944,14 @@ struct PhoneLabView: View {
                 VStack(alignment: .leading) {
                     Text("Display brightness")
                     Slider(value: $brightness, in: 0.35...1)
+                    Text("Game display only · "+String(Int(LumaSettingsPolicy.clampedBrightness(brightness)*100))+"%").font(.caption).foregroundColor(.secondary)
                 }
             }
             Section("Security & privacy") {
                 NavigationLink { ProtectedAreaView(area: .security) } label: {
                     Label("Biometrics & Passcode", systemImage: "lock.shield")
                 }
-                LabeledContent("Appearance", value: biometricUnlock ? "Registered" : "Locked")
+                LabeledContent("Biometric unlock", value: biometricUnlock ? "Registered" : "Not registered")
             }
             Section("Jailbreak") {
                 LabeledContent("Environment", value: safeMode ? "Safe Mode" : "Rootless")
@@ -958,6 +966,7 @@ struct PhoneLabView: View {
                 Toggle(isOn: $messageSound) { Label("Phone sounds", systemImage: "speaker.wave.2") }
                 Toggle(isOn: $messageHaptics) { Label("Phone vibrations", systemImage: "waveform.path") }
                 Toggle("Horror sensory effects", isOn: $horrorEffects)
+                Toggle("Restart sound effects",isOn:$restartEffects)
                 Picker("Archive atmosphere", selection: $atmosphereIntensity) {
                     ForEach(LumaArchiveAtmosphere.Intensity.allCases) { intensity in
                         Text(intensity.title).tag(intensity.rawValue)
@@ -982,11 +991,19 @@ struct PhoneLabView: View {
             }
             Section("Notifications and privacy") {
                 Toggle("Hide lock-screen message previews", isOn: $hideLockPreviews)
-                if tweak("privatepreview") { Text("Preview Shield is active. Lock-screen messages remain hidden until the tweak is disabled.").font(.caption).foregroundColor(.secondary) }
+                LabeledContent("Effective message previews",value:effectiveLockPreviewsHidden ? "Hidden":"Visible")
+                if biometricUnlock || tweak("privatepreview") {
+                    Text("Owner authentication or Preview Shield overrides the preview preference.").font(.caption).foregroundColor(.secondary)
+                }
+                Text("Other app activity is always redacted on the lock screen.").font(.caption).foregroundColor(.secondary)
                 LabeledContent("Native game alerts", value: nativeAlerts ? "Enabled in game" : "Off")
+                if nativeAlerts {
+                    Button("Turn off native game alerts"){nativeAlerts=false;cancelTestAlert()}
+                }
                 Button("Review optional permissions") { panel = nil; permissionsReviewed = false }
                 if nativeAlerts {
                     Button("Schedule test notification (7 seconds)") { scheduleTestAlert() }
+                    Button("Cancel test notification"){cancelTestAlert()}
                     if !testNotice.isEmpty { Text(testNotice).font(.caption).foregroundColor(.secondary) }
                 }
                 Text("Last Seen never reads your real contacts, messages or photos. Device controls affect only the game.").font(.footnote).foregroundColor(.secondary)
@@ -1048,21 +1065,41 @@ struct PhoneLabView: View {
         }
     }
 
+    private func cancelTestAlert() {
+        testAlertGeneration=UUID()
+        let center=UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers:["lastseen-lab-test"])
+        center.removeDeliveredNotifications(withIdentifiers:["lastseen-lab-test"])
+        testNotice="Test notification canceled."
+    }
+
     private func scheduleTestAlert() {
-        guard nativeAlerts else { return }
-        let center = UNUserNotificationCenter.current()
-        center.getNotificationSettings { settings in
+        guard nativeAlerts else{return}
+        let token=UUID()
+        testAlertGeneration=token
+        let center=UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers:["lastseen-lab-test"])
+        testNotice="Checking notification permission…"
+        Task { @MainActor in
+            let settings=await center.notificationSettings()
+            guard token==testAlertGeneration,nativeAlerts else{return}
             guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
-                DispatchQueue.main.async { testNotice = "Notifications are disabled in device settings." }
-                return
+                testNotice="Notifications are disabled in device settings.";return
             }
-            let content = UNMutableNotificationContent()
-            content.title = "Last Seen"
-            content.body = "Game notification test. No story event has been triggered."
-            content.sound = .default
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 7, repeats: false)
-            center.add(UNNotificationRequest(identifier: "lastseen-lab-test", content: content, trigger: trigger)) { error in
-                DispatchQueue.main.async { testNotice = error == nil ? "Test scheduled. Leave the app to see the device alert." : "Unable to schedule the test." }
+            let content=UNMutableNotificationContent()
+            content.title="Last Seen"
+            content.body="Game notification test. No story event has been triggered."
+            content.sound=messageSound ? .default:nil
+            let trigger=UNTimeIntervalNotificationTrigger(timeInterval:7,repeats:false)
+            do {
+                try await center.add(UNNotificationRequest(identifier:"lastseen-lab-test",content:content,trigger:trigger))
+                guard token==testAlertGeneration,nativeAlerts else {
+                    if !nativeAlerts {center.removePendingNotificationRequests(withIdentifiers:["lastseen-lab-test"])}
+                    return
+                }
+                testNotice="Test scheduled. Leave the app to see the device alert."
+            } catch {
+                if token==testAlertGeneration {testNotice="Unable to schedule the test."}
             }
         }
     }
@@ -1107,9 +1144,10 @@ struct PhoneLabView: View {
                     }.buttonStyle(.plain)
                     Button { hideLockPreviews.toggle() } label: {
                         VStack(alignment: .leading, spacing: 14) {
-                            Image(systemName: (hideLockPreviews || tweak("privatepreview")) ? "lock.fill" : "bell.fill").font(.title)
+                            Image(systemName: effectiveLockPreviewsHidden ? "lock.fill" : "bell.fill").font(.title)
                             Text("Previews").font(.headline)
-                            Text((hideLockPreviews || tweak("privatepreview")) ? "Hidden" : "Visible").font(.caption)
+                            Text(effectiveLockPreviewsHidden ? "Hidden" : "Visible").font(.caption)
+                            if biometricUnlock || tweak("privatepreview") {Text("Protected").font(.caption2)}
                         }.frame(maxWidth: .infinity, alignment: .leading).padding(16)
                             .background(Color.white.opacity(0.09), in: RoundedRectangle(cornerRadius: 20))
                     }.buttonStyle(.plain)
@@ -1639,5 +1677,19 @@ private struct LabFilesView: View {
                 }
             }
         }.scrollContentBackground(.hidden).background(Night.background.ignoresSafeArea()).navigationTitle("Files").searchable(text: $search)
+    }
+}
+
+
+enum LumaSettingsPolicy {
+    static func hidesMessagePreviews(preference:Bool,biometrics:Bool,shield:Bool)->Bool {
+        preference || biometrics || shield
+    }
+    static func clampedBrightness(_ value:Double)->Double {
+        guard value.isFinite else{return 0.9}
+        return min(1,max(0.35,value))
+    }
+    static func displayDimming(_ value:Double)->Double {
+        (1-clampedBrightness(value))*0.75
     }
 }

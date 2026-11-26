@@ -2,6 +2,28 @@ import XCTest
 @testable import LastSeen
 
 final class PhoneLabTests: XCTestCase {
+    func testSettingsEffectivePreviewAndDimming() {
+        for preference in [false,true] {
+            for biometrics in [false,true] {
+                for shield in [false,true] {
+                    XCTAssertEqual(LumaSettingsPolicy.hidesMessagePreviews(preference:preference,biometrics:biometrics,shield:shield),preference || biometrics || shield)
+                }
+            }
+        }
+        XCTAssertEqual(LumaSettingsPolicy.clampedBrightness(-1),0.35)
+        XCTAssertEqual(LumaSettingsPolicy.clampedBrightness(2),1)
+        XCTAssertEqual(LumaSettingsPolicy.clampedBrightness(.nan),0.9)
+        XCTAssertEqual(LumaSettingsPolicy.displayDimming(1),0)
+        XCTAssertEqual(LumaSettingsPolicy.displayDimming(0.35),0.4875,accuracy:0.0001)
+    }
+    @MainActor func testSettingsCheckpointScope() {
+        XCTAssertTrue(LumaSaveStore.keys.contains("lastseen.recovery.effects"))
+        XCTAssertTrue(LumaSaveStore.keys.contains("lastseen.lab.hideLockPreviews"))
+        XCTAssertFalse(LumaSaveStore.keys.contains("lastseen.lab.nativeAlerts"))
+        XCTAssertFalse(LumaSaveStore.keys.contains("lastseen.permissions.biometricPrepared"))
+        XCTAssertFalse(LumaSaveStore.keys.contains("lastseen.security.appearanceEnrolled"))
+    }
+
     @MainActor
     func testIndependentWorldFilesAndPersistence() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

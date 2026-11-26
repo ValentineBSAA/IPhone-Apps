@@ -12,7 +12,7 @@ struct LumaCheckpoint: Codable {
 final class LumaSaveStore: ObservableObject {
     static let keys = [
         "lastseen.lab.wallpaper","lastseen.lab.lockWallpaper","lastseen.lab.wallpaperBlur","lastseen.lab.lightAppearance",
-        "lastseen.lab.messageSound","lastseen.lab.messageHaptics","lastseen.lab.horrorEffects","lastseen.lab.atmosphereIntensity",
+        "lastseen.lab.messageSound","lastseen.lab.messageHaptics","lastseen.lab.horrorEffects","lastseen.lab.atmosphereIntensity","lastseen.recovery.effects",
         "lastseen.lab.hideLockPreviews","lastseen.lab.brightness","lastseen.lab.wifi","lastseen.lab.deferSystemEdges",
         "lastseen.lab.favoritePhotos","lastseen.lab.stopwatchStart","lastseen.lab.stopwatchElapsed","lastseen.lab.timerEnd",
         "lastseen.lab.timerMinutes","lastseen.lab.timerFeedbackDelivered","lastseen.lab.history","lastseen.lab.browserVisitLog","lastseen.lab.bookmarks","lastseen.lab.browserSeeded",
