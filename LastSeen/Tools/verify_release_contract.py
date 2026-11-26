@@ -4,6 +4,7 @@ Runs before asset downloads or simulator allocation. Does not replace XCTest.
 from pathlib import Path
 import re
 import sys
+import subprocess
 
 root = Path(__file__).resolve().parents[1]
 errors = []
@@ -97,6 +98,10 @@ for path in sorted((root / "Tests").rglob("*.swift")):
         owners.append(path.name)
         require(expected == total, f"{path.name}: stale opening total {expected}; actual {total}")
 require(owners == ["RecoverySecurityTests.swift"], f"Total timing must have one test owner, found {owners}")
+
+if not errors:
+    result = subprocess.run([sys.executable, "-B", "-m", "unittest", "-v", "test_ipa_payload"], cwd=root / "Tools")
+    require(result.returncode == 0, "Offline IPA payload fixtures failed")
 
 if errors:
     for error in errors:
