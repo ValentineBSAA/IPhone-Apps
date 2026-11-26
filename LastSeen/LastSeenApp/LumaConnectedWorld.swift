@@ -78,6 +78,7 @@ struct LumaConnectedState:Codable,Equatable {
     var veilThreadBookmarks: Set<String>? = nil
     var veilPageBookmarks: Set<String>? = nil
     var recoveredImageReviews: Set<String>? = nil
+    var imageInterpretationFindings: Set<String>? = nil
     var workbenchConnected=false
     var workbenchSelections:[String:[String]]=[:]
     var workbenchVerified:Set<String>=[]

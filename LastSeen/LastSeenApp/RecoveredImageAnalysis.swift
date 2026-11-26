@@ -91,8 +91,13 @@ struct RecoveredImageAnalysisView:View {
     @State private var source:Int?
     @State private var limit:Int?
     @State private var feedback=""
+    @State private var mode=ImageInterpretation.Mode.original
+    @State private var strength=0.7
+    @State private var region:Int?
+    @State private var interpretationFeedback=""
+    @AppStorage("lastseen.lab.horrorEffects") private var horrorEffects=true
     private let bandNames=["Dark","Midtones","Light"]
-    private func resetPreview(){reveal=false;brightness=0;contrast=1;zoom=1;bins=nil;binChoice=nil;binFeedback=""}
+    private func resetPreview(){reveal=false;brightness=0;contrast=1;zoom=1;bins=nil;binChoice=nil;binFeedback="";mode = .original;region=nil;interpretationFeedback=""}
     var body:some View {
         List {
             if let item=RecoveredImageAnalysis.record(asset,in:world.state) {
@@ -100,6 +105,7 @@ struct RecoveredImageAnalysisView:View {
                     LumaHeader(title:"Image analysis",detail:item.title,symbol:"viewfinder")
                     Text("Inspect an already recovered reference. Adjustments affect only the preview, never the original.").font(.subheadline)
                     Toggle("Text-only inspection",isOn:$textOnly)
+                    SendImageToLumaButton(asset:asset)
                 }
                 Section("Source record") {
                     Text(item.source.title)
@@ -116,8 +122,8 @@ struct RecoveredImageAnalysisView:View {
                         if reveal && phase == .active {
                             if let image=UIImage(named:asset) {
                                 ScrollView([.horizontal,.vertical]) {
-                                    Image(uiImage:image).resizable().scaledToFit().frame(width:CGFloat(240*zoom))
-                                        .brightness(brightness).contrast(contrast).accessibilityLabel("Recovered photograph preview")
+                                    ImageInterpretationPreview(image:image,mode:horrorEffects && ImageInterpretation.modes(asset,in:world.state).contains(mode) ? mode : (mode.synthetic ? .original : mode),finding:ImageInterpretation.available(asset,mode:mode,in:world.state),strength:strength)
+                                        .frame(width:CGFloat(240*zoom)).brightness(brightness).contrast(contrast)
                                 }.frame(height:240)
                                 Text("Brightness");Slider(value:$brightness,in:-0.25...0.35,step:0.05)
                                 Text("Contrast");Slider(value:$contrast,in:0.7...1.4,step:0.05)
@@ -145,6 +151,43 @@ struct RecoveredImageAnalysisView:View {
                     }
                 } else {
                     Section("Text inspection"){Text("The same source review is available without displaying any image.")}
+                }
+                let modes=ImageInterpretation.modes(asset,in:world.state)
+                if modes.count > 1 {
+                    Section("Analysis layers") {
+                        Picker("Layer",selection:$mode) {
+                            ForEach(modes){m in Text(m.title).tag(m)}
+                        }
+                        if mode.synthetic {
+                            Text("Interpretive reconstruction. This layer may introduce shapes not present in the original.").font(.caption).foregroundColor(.secondary)
+                            if !horrorEffects || textOnly || (item.source == .veil && !VeilArchive.allowsImages(security)) {
+                                Text("Visual effects hidden. Text-based inspection remains available.").font(.caption)
+                            } else {
+                                Text("Layer strength");Slider(value:$strength,in:0.3...1,step:0.05)
+                            }
+                        }
+                        if let finding=ImageInterpretation.available(asset,mode:mode,in:world.state) {
+                            if textOnly || !horrorEffects || (item.source == .veil && !VeilArchive.allowsImages(security)) {
+                                Text("The synthetic layer has a marker at "+ImageInterpretation.regions[finding.region]+". Select that region to record the observation.").font(.subheadline)
+                            } else {
+                                Text("Compare the synthetic layer with Original. Locate the interrupted marker in the preview.").font(.subheadline)
+                            }
+                            LazyVGrid(columns:Array(repeating:GridItem(.flexible()),count:3)) {
+                                ForEach(0..<9,id:\.self){i in
+                                    Button {region=i;interpretationFeedback=""} label:{
+                                        Text(ImageInterpretation.regions[i]).font(.caption).frame(maxWidth:.infinity,minHeight:44)
+                                    }.buttonStyle(.bordered).tint(region==i ? .purple:.secondary)
+                                }
+                            }
+                            Button("Record interpretation") {
+                                guard let region else{return}
+                                interpretationFeedback=world.recordImageInterpretation(asset,mode:mode,region:region) ? "Interpretive observation saved.":"Compare the layer and try again."
+                            }.buttonStyle(.borderedProminent).disabled(region==nil || (!reveal && !textOnly && horrorEffects && (item.source != .veil || VeilArchive.allowsImages(security))))
+                            if !interpretationFeedback.isEmpty{Text(interpretationFeedback).font(.caption)}
+                        }
+                        ForEach(ImageInterpretation.notes(asset,in:world.state),id:\.self){note in Text(note).font(.subheadline)}
+                        Button("Return to original"){mode = .original;brightness=0;contrast=1;zoom=1;region=nil}
+                    }
                 }
                 if let summary=RecoveredImageAnalysis.summary(asset,in:world.state) {
                     Section("Recorded observation"){Label(summary,systemImage:"checkmark.seal").foregroundColor(.teal)}
@@ -174,6 +217,8 @@ struct RecoveredImageAnalysisView:View {
             .onChange(of:phase){if $0 != .active{resetPreview()}}
             .onChange(of:security){_ in resetPreview()}
             .onChange(of:textOnly){_ in resetPreview()}
+            .onChange(of:horrorEffects){_ in resetPreview()}
+            .onChange(of:mode){_ in region=nil;interpretationFeedback=""}
             .onDisappear{resetPreview()}
     }
 }

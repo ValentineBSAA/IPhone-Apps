@@ -44,6 +44,7 @@ struct FieldEntry: Identifiable, Codable, Equatable {
     }
 }
 struct FieldNotesView: View {
+    @EnvironmentObject private var world:PhoneWorldStore
     @StateObject private var book = FieldNotebook()
     @State private var search = ""
     @State private var filter = "All"
@@ -68,7 +69,19 @@ struct FieldNotesView: View {
                 HStack { Label("\(book.entries.filter { $0.status != "Resolved" }.count) open", systemImage: "questionmark.circle"); Spacer(); Label("\(book.entries.filter { $0.pinned }.count) pinned", systemImage: "pin") }.font(.caption).foregroundColor(.secondary)
                 Picker("Status", selection: $filter) { ForEach(["All","Open","Follow up","Resolved"], id: \.self) { Text($0) } }.pickerStyle(.segmented)
             }
-            if shown.isEmpty { Text("No entries yet").foregroundColor(.secondary) }
+            let findings=ImageInterpretation.recorded(world.state).filter{search.isEmpty || $0.note.localizedCaseInsensitiveContains(search)}
+            if filter == "All" && !findings.isEmpty {
+                Section("Recovered analysis · current checkpoint") {
+                    ForEach(findings){finding in
+                        VStack(alignment:.leading,spacing:5){
+                            Text("Interpretive observation").font(.headline)
+                            Text(finding.note)
+                            Text(finding.confidence).font(.caption).foregroundColor(.secondary)
+                        }
+                    }
+                }
+            }
+            if shown.isEmpty && findings.isEmpty { Text("No entries yet").foregroundColor(.secondary) }
             ForEach(shown) { entry in
                 Button { editing = entry } label: {
                     VStack(alignment: .leading, spacing: 5) {

@@ -75,6 +75,7 @@ struct LumaAssistantView: View {
     let openApp: (LabApp) -> Void
     let acknowledgeBoundaries: () -> Void
     let rememberSession: (LumaAssistantSession?) -> Void
+    var takeImageHandoff: () -> String? = {nil}
     @State private var previousMemoryID: String?
     @State private var recollectionCount = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -107,6 +108,15 @@ struct LumaAssistantView: View {
         previousMemoryID = session?.memoryID
         recollectionCount = session?.recollectionCount ?? 0
         answer = .init(text:LumaAssistantSession.resumePrompt(session,world:world),clipID:"conversation")
+    }
+    private func receiveImageHandoff() {
+        guard let asset=takeImageHandoff(),
+              RecoveredImageAnalysis.record(asset,in:context().world) != nil,
+              let record=LumaAssistantEvidence.selected("image:"+asset,in:context().world) else{return}
+        stopAudio()
+        interpretation?.cancel();interpretation=nil;requestID=UUID()
+        evidenceID=record.id
+        accept("Please analyze this image.",.init(topic:.pictures,answer:.init(text:LumaAssistantEvidence.response("Please analyze this image.",record:record),clipID:"conversation")))
     }
     private func clearSession() {
         stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID()
@@ -243,7 +253,7 @@ struct LumaAssistantView: View {
                         .toolbar { ToolbarItem(placement:.cancellationAction) { Button("Cancel") { showEvidence = false } } }
                 }
             }
-            .onAppear { resumeSession(); if !reduceMotion { withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { glow = true } } }
+            .onAppear { resumeSession(); receiveImageHandoff(); if !reduceMotion { withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { glow = true } } }
             .onChange(of: phase) { if $0 != .active { stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID(); conversationTurns = []; conversationTopic = nil; previousMemoryID = nil; recollectionCount = 0; answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation") } else { resumeSession() } }
             .onChange(of: sound) { if !$0 { stopAudio() } }
             .onChange(of: spokenResponses) { if !$0 { stopAudio() } }

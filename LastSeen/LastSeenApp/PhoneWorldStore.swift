@@ -1359,6 +1359,14 @@ final class PhoneWorldStore: ObservableObject {
         c.veilThreadBookmarks=saved
         commitConnected(c)
     }
+    @discardableResult
+    func recordImageInterpretation(_ asset:String,mode:ImageInterpretation.Mode,region:Int)->Bool {
+        guard let finding=ImageInterpretation.accepts(asset,mode:mode,region:region,in:state) else{return false}
+        var c=connected
+        var findings=c.imageInterpretationFindings ?? []
+        if findings.insert(finding.id).inserted {c.imageInterpretationFindings=findings;commitConnected(c)}
+        return true
+    }
     func recordCameraAnalysisOpened(_ asset:String) {
         guard RecoveredImageAnalysis.cameraAvailable(asset,in:state) else{return}
         if state.flags.insert(RecoveredImageAnalysis.cameraMarker(asset)).inserted {save()}

@@ -8,6 +8,7 @@ import AVFoundation
 struct PhoneLabView: View {
     @StateObject private var world: PhoneWorldStore
     @State private var path = NavigationPath()
+    @State private var pendingLumaImage:String?
     @StateObject private var saves: LumaSaveStore
     @AppStorage("lastseen.saves.interval") private var saveInterval = 5
     @State private var checkpointReboot = false
@@ -158,6 +159,11 @@ struct PhoneLabView: View {
         }
         .id(navigationGeneration)
         .environmentObject(world)
+        .environment(\.sendImageToLuma,{ asset in
+            guard RecoveredImageAnalysis.record(asset,in:world.state) != nil,appAvailable(.assistant),!locked,!checkpointReboot else{return}
+            open(.assistant)
+            pendingLumaImage=asset
+        })
         .defersSystemGestures(on: deferSystemEdges ? [.top, .bottom] : [])
         .tint(LumaDesign.accent)
         .preferredColorScheme(.dark)
@@ -303,6 +309,7 @@ struct PhoneLabView: View {
         }
         .onChange(of: locked) { value in
             guard value else { return }
+            pendingLumaImage=nil
             activityBanner = nil; activityQueue.clear()
             PhoneSensoryEngine.cancelAuthentication()
             guard didConfigureFeedback, phase == .active, !checkpointReboot else { return }
@@ -620,6 +627,7 @@ struct PhoneLabView: View {
     }
 
     private func returnHome() {
+        pendingLumaImage=nil
         homeFolder = nil
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) { path = NavigationPath() }
         OpeningQA.record("Returned to in-game home")
@@ -851,6 +859,7 @@ struct PhoneLabView: View {
 
     private func open(_ app: LabApp) {
         guard appAvailable(app) else { return }
+        pendingLumaImage=nil
         homeFolder = nil
         OpeningQA.record("Opened in-game app: \(app.rawValue)")
         locked = false
@@ -1191,7 +1200,9 @@ struct PhoneLabView: View {
         case .dayblink: DayblinkView()
         case .motionwell: MotionwellView()
         case .voiceMemos: LumaVoiceMemos()
-        case .assistant: LumaAssistantView(context: { LumaAssistantContext(world: world.state, availableApps: Set(LabApp.allCases.filter { appAvailable($0) }), wifi: wifi, sound: messageSound, haptics: messageHaptics, safeMode: safeMode, installedCount: RelayCatalog.ids(relayInstalled).count, timerEnd: feedbackTimerEnd, now: Date()) }, openApp: { open($0) }, acknowledgeBoundaries: { world.acknowledgeLumaBoundaries() }, rememberSession: { world.rememberLumaSession($0) })
+        case .assistant: LumaAssistantView(context: { LumaAssistantContext(world: world.state, availableApps: Set(LabApp.allCases.filter { appAvailable($0) }), wifi: wifi, sound: messageSound, haptics: messageHaptics, safeMode: safeMode, installedCount: RelayCatalog.ids(relayInstalled).count, timerEnd: feedbackTimerEnd, now: Date()) }, openApp: { open($0) }, acknowledgeBoundaries: { world.acknowledgeLumaBoundaries() }, rememberSession: { world.rememberLumaSession($0) }, takeImageHandoff: {
+            let asset=pendingLumaImage;pendingLumaImage=nil;return asset
+        })
         case .workstation: LumaWorkbenchView(openRelay:{open(.relay)},openFiles:{open(.files)})
         case .photos: LabPhotosView()
         case .clock: LabClockView(onFinish: { settleTimer(now: $0, present: true) })
@@ -1381,6 +1392,7 @@ private struct LabPhotosView: View {
                             Label("Analyze image",systemImage:"viewfinder")
                         }.buttonStyle(.bordered)
                     }
+                    SendImageToLumaButton(asset:photo.asset)
                     Button { toggle(photo.id) } label: {
                         Label(isFavorite(photo.id) ? "Remove favorite" : "Favorite", systemImage: isFavorite(photo.id) ? "heart.fill" : "heart")
                             .frame(maxWidth: .infinity).padding(12)
