@@ -364,8 +364,8 @@ final class PhoneWorldStore: ObservableObject {
         guard !pending.isEmpty else { return }
         // Discard orphaned and already-delivered receipts; preserve valid
         // temporarily hidden contacts without exposing read/typing activity.
-        let discarded=Set(pending.filter{pendingParent($0)==nil ||
-            (state.threads[$0.neighbor.id]?.contains{m in m.id==$0.id} ?? false)}.map(\.id))
+        let discarded=Set(pending.filter{item in pendingParent(item)==nil ||
+            (state.threads[item.neighbor.id]?.contains{message in message.id==item.id} ?? false)}.map(\.id))
         var changed = !discarded.isEmpty
         let available=pending.filter{!discarded.contains($0.id) && pendingVisible($0)}
         for item in available where item.readAt <= now || item.dueAt <= now {

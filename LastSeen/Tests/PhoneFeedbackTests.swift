@@ -168,17 +168,20 @@ final class PhoneFeedbackTests: XCTestCase {
         XCTAssertFalse(PhoneCue.message.isAuthentication)
     }
 
-    func testHiddenContactDoesNotAppearInNotificationListsOrNewArrival() throws {
+    func testNotificationListsFollowContactThreadAvailability() throws {
         var state=RestoredPhoneBackup.snapshot()
-        state.threads[Neighbor.unknown.id]=[
-            NeighborMessage(id:"hidden-notice-fixture",thread:Neighbor.unknown.id,text:"Hidden record",fromPlayer:false,at:Date(),read:false)
-        ]
-        // Retain the record but revoke the independent availability markers.
-        state.flags.removeAll()
+        state.threads.removeValue(forKey:Neighbor.unknown.id)
+        let baseline=PhoneMessageArrival.incomingIDs(in:state)
         XCTAssertFalse(Neighbor.visible(in:state).contains(.unknown))
-        XCTAssertTrue(PhoneMessageArrival.incomingIDs(in:state).contains("hidden-notice-fixture"))
-        XCTAssertNil(PhoneMessageArrival.newest(in:state,previous:PhoneMessageArrival.incomingIDs(in:state).subtracting(["hidden-notice-fixture"])))
         XCTAssertFalse(PhoneAlertCatalog.alerts(in:state,unreadOnly:false).contains{$0.neighbor == .unknown})
+        state.threads[Neighbor.unknown.id]=[
+            NeighborMessage(id:"notice-fixture",thread:Neighbor.unknown.id,text:"Fixture message",fromPlayer:false,at:Date(),read:false)
+        ]
+        XCTAssertTrue(Neighbor.visible(in:state).contains(.unknown))
+        XCTAssertEqual(PhoneMessageArrival.newest(in:state,previous:baseline)?.message.id,"notice-fixture")
+        XCTAssertTrue(PhoneAlertCatalog.alerts(in:state,unreadOnly:true).contains{$0.neighbor == .unknown})
+        state.threads.removeValue(forKey:Neighbor.unknown.id)
+        XCTAssertNil(PhoneMessageArrival.newest(in:state,previous:baseline))
         XCTAssertFalse(PhoneAlertCatalog.alerts(in:state,unreadOnly:true).contains{$0.neighbor == .unknown})
     }
     func testIncomingDetectionDoesNotDependOnUnreadState() {

@@ -7,14 +7,14 @@ struct LastSeenApp: App {
     @UIApplicationDelegateAdaptor(LastSeenAppDelegate.self) private var appDelegate
     @State private var relayRecoveryRequired=false
     init() {
-        _relayRecoveryRequired=State(initialValue:!RelayTransactionReceipt.recover())
         #if DEBUG && targetEnvironment(simulator)
         if ProcessInfo.processInfo.arguments.contains("--luma-relay-clean-test") {
-            for key in ["installed","versions","history","safeMode","sources","compactIcons","tealTheme"] {
+            for key in ["installed","versions","history","safeMode","sources","compactIcons","tealTheme","pendingCommit"] {
                 UserDefaults.standard.removeObject(forKey: "lastseen.relay." + key)
             }
         }
         #endif
+        _relayRecoveryRequired=State(initialValue:!RelayTransactionReceipt.recover())
     }
     var body: some Scene {
         WindowGroup {
