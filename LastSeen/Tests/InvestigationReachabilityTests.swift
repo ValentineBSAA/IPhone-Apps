@@ -13,6 +13,7 @@ import XCTest
         XCTAssertFalse(w.finishInvestigation(.minimal, now: now))
         w.visitWebRecord("studio", now: now)
         w.visitWebRecord("studio-notes", now: now)
+        w.advanceInvestigation(now:now.addingTimeInterval(91))
         w.visitWebRecord("archive", now: now)
         w.visitWebRecord("archive-records", now: now)
         w.visitWebRecord("archive-review", now: now)

@@ -15,6 +15,10 @@ enum NoraEverydayArchive {
         "Weekend list":"Sunday lunch at Mum's. Pick up a small dessert if Lily hasn't already. Bring the book back to Maya."
     ]
     static func expand(_ world: inout PhoneWorld) {
+        if !world.flags.contains("b33.everyday.depth") {
+            addStudioHistory(&world)
+            world.flags.insert("b33.everyday.depth")
+        }
         guard (world.everydayArchiveRevision ?? 0) < revision else { return }
         let conversations: [(Neighbor, [(Bool, String)])] = [
             (.helen, [(false,"Are you eating properly or living on coffee again?"),(true,"i had actual lunch today, promise. very proud of myself"),(false,"Sunday lunch if you're free. No pressure."),(true,"yes please. i'll put it in my calendar"),(false,"Lovely. Bring yourself, not your laptop.")]),
@@ -43,6 +47,32 @@ enum NoraEverydayArchive {
         let sun = c.nextDate(after:world.createdAt,matching:DateComponents(hour:13,weekday:1),matchingPolicy:.nextTime) ?? world.createdAt.addingTimeInterval(172800)
         for e in [PhoneEvent(id:"b27-friday-qa",title:"Blue Hour · Friday QA",detail:"Studio review with Adrian and Tessa. Palette and persistence checks.",startsAt:fri,endsAt:fri.addingTimeInterval(5400)),PhoneEvent(id:"b27-sunday-lunch",title:"Lunch at Mum's",detail:"Family lunch. Ask about a lift if needed.",startsAt:sun,endsAt:sun.addingTimeInterval(7200))] where !world.events.contains(where: { $0.id == e.id }) { world.events.append(e) }
         world.everydayArchiveRevision = revision
+    }
+    /// Ordinary historical exchanges add texture, not unlocks.
+    private static func addStudioHistory(_ world:inout PhoneWorld) {
+        let exchanges:[(Neighbor,Double,[(Bool,String)])] = [
+            (.tessa,12,[(false,"I made a contrast sheet with lilac, pearl and midnight. The lilac looked lovely until I put white text on it."),(true,"can we try darker ink on the light version? i don’t want to choose from a mockup alone"),(false,"Yep. I'll make the controls match their states too. Selected, pressed, disabled, all the boring bits."),(true,"the boring bits are what makes it feel finished. compare the smallest text on my phone friday"),(false,"I'll bring the original exports. Can we record the decision in the review folder instead of burying it in chat?"),(true,"yes please. and leave room for changes after testing"),(false,"Good. Coffee first. Then we can have our extremely serious argument about purple.")]),
+            (.adrian,11,[(false,"I reproduced the resume problem by switching apps during an animation. The save was fine; the view was rebuilding with the wrong state."),(true,"can you separate that in the report? a broken animation isn't the same as lost progress"),(false,"Exactly. I'm writing two cases: background during transition, and a clean launch from a saved checkpoint."),(true,"add a third for restarting after an update. people shouldn't have to restart their game every time we fix something"),(false,"Added. I'll keep the build on my test phone overnight rather than call it fixed after one run."),(true,"thank you. no launch date until we've done the boring test passes"),(false,"I'll update the team before lunch. No need to reply tonight.")]),
+            (.maya,10,[(false,"Did your meeting eat your entire afternoon again?"),(true,"almost. tessa saved me with coffee and a pastry"),(false,"You're allowed to have a life outside a screen you know."),(true,"rude but fair. bookshop this weekend?"),(false,"Yes! I'll find the book I promised you. No laptops."),(true,"deal. if i start talking about release dates you have permission to change the subject")]),
+            (.helen,9,[(false,"I found the big blue serving dish. Do you still like the lemon cake?"),(true,"yes!! don't make anything extra just for me"),(false,"Well, I already bought the lemons. You'll have to help me eat it."),(true,"i will make that sacrifice"),(false,"Bring Lily if she's free. We can sit outside if it's nice.")]),
+            (.lily,7,[(false,"I found a notebook with actual decent paper. I am trying not to buy six."),(true,"buy one and actually use it this time"),(false,"I hate that you know me so well"),(true,"send me the shop name. i need somewhere to put ideas that isn't a work document"),(false,"Maple Street! I'll show you when we go. Also I have a playlist for you.")])
+        ]
+        for (person,days,lines) in exchanges {
+            var thread=world.threads[person.id] ?? []
+            for (i,line) in lines.enumerated() {
+                let id="b33-depth-"+person.id+"-"+String(i)
+                if !thread.contains(where:{$0.id==id}) {
+                    thread.append(.init(id:id,thread:person.id,text:line.1,fromPlayer:line.0,at:world.createdAt.addingTimeInterval(-days*86400+Double(i*125)),read:true))
+                }
+            }
+            world.threads[person.id]=thread.sorted{($0.at,$0.id)<($1.at,$1.id)}
+        }
+        let notes:[PhoneNote] = [
+            .init(id:"b33-note-art",title:"Palette review",body:"Tessa has the originals in the review folder. Voice memo is my quick reminder for our meeting, not the final art decision. Compare small labels, selected and disabled controls, and the same screen at the same brightness.",modifiedAt:world.createdAt.addingTimeInterval(-145000),pinned:false),
+            .init(id:"b33-note-qa",title:"Release review questions",body:"Can someone resume after a phone interruption? Is a saved game still usable after an update? Can new players find their way without reading a manual? Ask Adrian for the actual reproduction steps, not just a green check mark. No rush.",modifiedAt:world.createdAt.addingTimeInterval(-98000),pinned:false),
+            .init(id:"b33-note-weekend",title:"A day without work",body:"Return the book. Find a notebook with good paper. Coffee with Maya. Leave the laptop at home for lunch. Maybe take a picture of something lovely just because.",modifiedAt:world.createdAt.addingTimeInterval(-185000),pinned:false)
+        ]
+        for note in notes where !world.notes.contains(where:{$0.id==note.id}) {world.notes.append(note)}
     }
     static func response(_ neighbor: Neighbor, words: Set<String>) -> String {
         if !words.isDisjoint(with:["password","passcode","pin","unlock"]) { return "I can't help with private access to her phone." }

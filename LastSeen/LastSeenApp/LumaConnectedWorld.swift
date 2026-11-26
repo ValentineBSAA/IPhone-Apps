@@ -98,6 +98,7 @@ struct LumaConnectedState:Codable,Equatable {
     var imageInterpretationFindings: Set<String>? = nil
     var evidenceConnections: [EvidenceConnection]? = nil
     var characterCheckIns: [CharacterCheckIns.Pending]? = nil
+    var firstContactDue: Date? = nil
     var workbenchConnected=false
     var workbenchSelections:[String:[String]]=[:]
     var workbenchVerified:Set<String>=[]
@@ -285,7 +286,7 @@ struct LumaConnectedMailView:View {
     }
     var body:some View {
         List {
-            LumaHeader(title:"Mail",detail:"Restored correspondence",symbol:"envelope.fill").listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
+            HStack { Image("Nora_Profile").resizable().scaledToFill().frame(width:40,height:40).clipShape(Circle()); VStack(alignment:.leading){Text("Nora Bennett").font(.headline); Text("Restored mail account").font(.caption).foregroundColor(.secondary)}; Spacer() }
             Picker("Mailbox",selection:$folder){ForEach(folders,id:\.self){Text($0=="draft" ? "Drafts" : $0.capitalized).tag($0)}}.pickerStyle(.menu)
             if folder=="inbox" {
                 Toggle("Unread only",isOn:$unreadOnly)
@@ -307,7 +308,8 @@ struct LumaConnectedMailView:View {
                             Text(item.date,style:.date).font(.caption2).foregroundColor(.secondary)
                         }
                         Text(item.subject.isEmpty ? "(No subject)" : item.subject).font(.subheadline.weight(.medium))
-                        Text(item.body).lineLimit(2).font(.caption).foregroundColor(.secondary)
+                        Text(item.body).lineLimit(2).font(.subheadline).foregroundColor(.secondary)
+                        if !item.attachments.isEmpty { Label(String(item.attachments.count),systemImage:"paperclip").font(.caption2).foregroundColor(.secondary) }
                     }.padding(.vertical,5)
                 }
             }
@@ -339,7 +341,14 @@ struct LumaMailDetail:View {
             if phase == .active,let item {
                 VStack(alignment:.leading,spacing:16){
                     Text(item.subject).font(.largeTitle.bold()).fixedSize(horizontal:false,vertical:true)
-                    Text("From: "+item.sender).font(.headline)
+                    HStack(alignment:.top,spacing:12) {
+                        Image(systemName:"person.crop.circle.fill").font(.system(size:42)).foregroundColor(.secondary)
+                        VStack(alignment:.leading,spacing:5) {
+                            Text(item.sender).font(.headline)
+                            Text("To: "+(item.kind=="inbox" ? RestoredPhoneBackup.ownerName : (Neighbor(rawValue:item.peer)?.name ?? item.peer))).font(.subheadline).foregroundColor(.secondary)
+                        }
+                        Spacer()
+                    }
                     Text(item.date,format:.dateTime.month().day().hour().minute()).font(.caption).foregroundColor(.secondary)
                     Divider()
                     Text(item.body).textSelection(.enabled).fixedSize(horizontal:false,vertical:true)
@@ -393,7 +402,7 @@ struct LumaMailComposer:View {
     }
     var body:some View {
         Form{
-            Section("From"){Text("Repair desk · Local correspondence").font(.subheadline)}
+            Section("From"){Text("Nora Bennett · Restored mail account").font(.subheadline)}
             Section("To"){Picker("Recipient",selection:$peer){Text("Choose contact").tag(Optional<Neighbor>.none);ForEach(LumaMailCatalog.recipients(world.state)){contact in Text(contact.name).tag(Optional(contact))}}}
             Section("Subject"){TextField("Subject",text:$subject).focused($focused,equals:.subject).submitLabel(.next).onSubmit{focused = .message}}
             Section("Message"){TextEditor(text:$message).focused($focused,equals:.message).frame(minHeight:180).accessibilityLabel("Message body")}
@@ -407,7 +416,7 @@ struct LumaMailComposer:View {
                     if let peer,world.saveMailDraft(id:draftID,peer:peer,subject:subject,body:message) != nil{focused=nil;dismiss()}else{notice="Could not save draft."}
                 }.disabled(!eligible)
                 if !notice.isEmpty{Text(notice).foregroundColor(.secondary)}
-                Text("Messages are fictional, local to Last Seen, and sent as the repair desk, not as Nora.").font(.footnote).foregroundColor(.secondary)
+                Text("Mail is sent from Nora’s fictional restored account. No external email is sent.").font(.footnote).foregroundColor(.secondary)
             }
         }.navigationTitle("Compose").scrollDismissesKeyboard(.interactively)
             .toolbar{
@@ -526,7 +535,6 @@ struct LumaSocialView:View {
                         Label("Review restored account records",systemImage:"doc.text.magnifyingglass")
                     }.buttonStyle(.bordered)
                 }
-                Picker("View",selection:$filter){ForEach(["Feed",channel.discoveryFilter,"Following","Saved"],id:\.self){Text($0).tag($0)}}.pickerStyle(.segmented)
                 if rows.isEmpty {
                     Text(query.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty ?
                          (filter=="Saved" ? "Save posts to revisit them here.":filter=="Following" ? "Follow profiles to build your feed.":"No posts available in this view.") :
@@ -566,6 +574,12 @@ struct LumaSocialView:View {
                     }.padding(16).lumaSurface(radius:18)
                 }
             }.padding(16)
+        }.safeAreaInset(edge:.bottom) {
+            HStack(spacing:0) {
+                ForEach(["Feed",channel.discoveryFilter,"Following","Saved"],id:\.self) { tab in
+                    Button {filter=tab} label:{VStack(spacing:4){Image(systemName:tab=="Feed" ? "house" : tab=="Following" ? "person.2" : tab=="Saved" ? "bookmark" : "magnifyingglass").font(.title3);Text(tab).font(.caption2).lineLimit(1)}.frame(maxWidth:.infinity).foregroundColor(filter==tab ? LumaDesign.accent : .secondary)}.buttonStyle(.plain).accessibilityAddTraits(filter==tab ? .isSelected : [])
+                }
+            }.padding(.vertical,10).padding(.horizontal,12).background(.thinMaterial,in:Capsule()).padding(.horizontal,12).padding(.bottom,4)
         }.navigationTitle(channel.rawValue).navigationBarTitleDisplayMode(.inline).searchable(text:$query)
             .toolbar{
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -608,7 +622,7 @@ struct LumaSocialProfile:View{
                 if author != "Nora Bennett" && author != "Repair desk" {
                     Button(world.socialPreferences(channel).mutedAuthors.contains(author) ? "Unmute profile" : "Mute profile") { world.toggleSocialMute(author, channel: channel) }
                 }
-                Button(world.connected.follows.contains(channel.rawValue+"|"+author) ? "Unfollow":"Follow"){world.toggleSocial(.follow,postID:first.id,channel:channel)}
+                if author != RestoredPhoneBackup.ownerName { Button(world.connected.follows.contains(channel.rawValue+"|"+author) ? "Unfollow":"Follow"){world.toggleSocial(.follow,postID:first.id,channel:channel)} }
                 let media = posts.filter { LumaSocialCatalog.visiblePhoto($0, world: world.state) != nil }
                 if !media.isEmpty {
                     Section("Photos") {

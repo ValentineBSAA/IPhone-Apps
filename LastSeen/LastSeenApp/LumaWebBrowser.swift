@@ -239,6 +239,7 @@ enum InvestigationProgress {
             return .init(text: "Open both of the documents mentioned in the conversation. Reading only the file list is not enough.", route: "files")
         case "recovery": return .init(text: "Return to the protected record mentioned in Messages. Use information you have already found, or revisit the conversation for context.", route: "files")
         case "studio":
+            if flags.contains("web.visited.studio-notes") { return .init(text:"You’ve read the available studio journal. There is no need to rush. You can look through ordinary messages, Mail, Notes and the other apps while waiting for new activity.",route:"messages",waiting:true) }
             if flags.contains("web.visited.studio") { return page("studio-notes", "Read the development journal linked from the studio website.") }
             return page("studio", "Read the available studio website.")
         case "followup": return page("archive", "Follow the newly available local index.")

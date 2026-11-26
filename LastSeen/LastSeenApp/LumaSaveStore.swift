@@ -290,6 +290,7 @@ final class LumaSaveStore: ObservableObject {
             }
             if var connected=value.world.connectedWorld {
                 connected.characterCheckIns=CharacterCheckIns.rebase(connected.characterCheckIns,by:delta)
+                connected.firstContactDue=connected.firstContactDue?.addingTimeInterval(delta)
                 connected.havenEvent=Self.rebasedEvent(connected.havenEvent,by:delta)
                 connected.havenFollowupEvent=Self.rebasedEvent(connected.havenFollowupEvent,by:delta)
                 connected.pendingMail=connected.pendingMail.map { pending in

@@ -16,6 +16,7 @@ import XCTest
         world.visitWebRecord("studio")
         XCTAssertTrue(world.messages(.unknown).isEmpty)
         world.visitWebRecord("studio-notes")
+        world.advanceInvestigation(now:Date().addingTimeInterval(91))
         XCTAssertEqual(world.messages(.unknown).count,1)
         world.advanceInvestigation()
         XCTAssertEqual(world.messages(.unknown).count,1)

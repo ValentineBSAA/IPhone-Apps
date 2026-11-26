@@ -319,6 +319,7 @@ import XCTest
         XCTAssertFalse(RelayPlan.valid([install],sources:RelayCatalog.requiredSourceIDs,installed:[],flags:w.state.flags))
         w.visitWebRecord("studio")
         w.visitWebRecord("studio-notes")
+        w.advanceInvestigation(now:Date().addingTimeInterval(91))
         w.visitWebRecord("archive")
         w.visitWebRecord("veil-guide")
         XCTAssertTrue(VeilArchive.authorized(w.state))

@@ -694,6 +694,18 @@ final class PhoneWorldStore: ObservableObject {
         let hasContact = state.flags.contains("investigation.contact.received")
         let earnedContact = state.flags.contains("web.visited.studio-notes")
         guard hasContact || earnedContact else { return }
+        if !hasContact {
+            var next=connected
+            guard let due=next.firstContactDue else {
+                next.firstContactDue=now.addingTimeInterval(90)
+                commitConnected(next)
+                return
+            }
+            guard now>=due else{return}
+            guard !CharacterCheckIns.foregroundPriority(in:state,now:now) else{return}
+            next.firstContactDue=nil
+            commitConnected(next)
+        }
         if state.flags.insert("investigation.contact.received").inserted ||
            !(state.threads[Neighbor.unknown.id] ?? []).contains(where:{$0.id=="unknown-intro-v1"}) {
             append(NeighborMessage(id: "unknown-intro-v1", thread: Neighbor.unknown.id,
@@ -1050,7 +1062,7 @@ final class PhoneWorldStore: ObservableObject {
         guard c.mail.count < 250 || c.mail.contains(where:{$0.id==key}) else { return nil }
         c.mail.removeAll{$0.id==key}
         c.mailFolders.removeValue(forKey:key)
-        c.mail.append(LumaMailRecord(id:key,peer:peer.id,sender:"Repair desk",subject:subject,body:body,date:now,kind:"draft"))
+        c.mail.append(LumaMailRecord(id:key,peer:peer.id,sender:RestoredPhoneBackup.ownerName,subject:subject,body:body,date:now,kind:"draft"))
         commitConnected(c); return key
     }
     @discardableResult
@@ -1067,7 +1079,7 @@ final class PhoneWorldStore: ObservableObject {
             c.mailFolders.removeValue(forKey:draftID)
         }
         let id=UUID().uuidString
-        c.mail.append(LumaMailRecord(id:id,peer:peer.id,sender:"Repair desk",subject:subject,body:body,date:now,kind:"sent"))
+        c.mail.append(LumaMailRecord(id:id,peer:peer.id,sender:RestoredPhoneBackup.ownerName,subject:subject,body:body,date:now,kind:"sent"))
         let due=now.addingTimeInterval(peer == .denise ? 45 : 30)
         let answer=LumaMailCatalog.response(to:peer,subject:subject,body:body,flags:state.flags)
         let reply=LumaMailRecord(id:"reply-"+id,peer:peer.id,sender:peer.name,subject:subject.hasPrefix("Re:") ? subject : "Re: "+subject,body:answer,date:due,kind:"inbox")
