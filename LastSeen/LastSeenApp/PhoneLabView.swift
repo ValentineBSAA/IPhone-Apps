@@ -338,7 +338,15 @@ struct PhoneLabView: View {
         }
         .onChange(of: messageSound) { if !$0 { PhoneSensoryEngine.stopSound() } }
         .onChange(of: messageHaptics) { if !$0 { PhoneSensoryEngine.stopHaptics() } }
-        .onChange(of: horrorEffects) { if !$0 { PhoneSensoryEngine.stop() } }
+        .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { notification in
+            if let raw = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+               AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable {
+                // Do not spill an in-progress alert onto a newly selected speaker.
+                PhoneSensoryEngine.stopSound()
+                RestartAudio.stop()
+            }
+        }
+        .onChange(of: horrorEffects) { if !$0 { PhoneSensoryEngine.stopHorrorEffects() } }
         .onDisappear {
             arrivalTask?.cancel(); arrivalTask = nil
             cancelLockAuthentication()

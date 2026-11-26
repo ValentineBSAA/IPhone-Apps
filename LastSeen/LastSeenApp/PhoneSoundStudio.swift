@@ -32,7 +32,14 @@ struct PhoneSoundStudio: View {
         .onChange(of: phase) { if $0 != .active { stop() } }
         .onChange(of: sound) { if !$0 { PhoneSensoryEngine.stopSound() } }
         .onChange(of: haptics) { if !$0 { PhoneSensoryEngine.stopHaptics() } }
-        .onChange(of: horrorEnabled) { if !$0 && playing?.isHorror == true { stop() } }
+        .onChange(of: horrorEnabled) {
+            if !$0 {
+                PhoneSensoryEngine.stopHorrorEffects()
+                if playing?.isHorror == true {
+                    previewTask?.cancel(); previewTask = nil; playing = nil
+                }
+            }
+        }
     }
     private func row(_ cue: PhoneCue) -> some View {
         Button {

@@ -76,6 +76,19 @@ final class PhoneFeedbackTests: XCTestCase {
         XCTAssertEqual(queue.next()?.cue, .unlock)
     }
 
+    func testHorrorCancellationPreservesOrdinaryQueueAndAuthentication() {
+        var queue = PhoneAudioQueue()
+        for cue in [PhoneCue.suspense, .message, .phantom, .timerCompleted, .unlock] {
+            queue.append(.init(cue: cue, horrorEnabled: true))
+        }
+        queue.cancelHorror()
+        XCTAssertEqual(queue.entries.map(\.cue), [.unlock, .message, .timerCompleted])
+        XCTAssertTrue(PhoneHapticProfile.cue(.suspense).isHorror)
+        XCTAssertFalse(PhoneHapticProfile.cue(.unlock).isHorror)
+        XCTAssertFalse(PhoneHapticProfile.mail.isHorror)
+        XCTAssertFalse(PhoneHapticProfile.security.isHorror)
+    }
+
     func testMediaReservationsAreIndependentAndIdempotent() {
         var reservations = PhoneMediaAudioReservations()
         let first = UUID(), second = UUID()

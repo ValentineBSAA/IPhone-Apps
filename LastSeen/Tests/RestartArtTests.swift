@@ -1,5 +1,6 @@
 import XCTest
 import UIKit
+import AVFoundation
 @testable import LastSeen
 
 @MainActor
@@ -18,6 +19,18 @@ final class RestartArtTests: XCTestCase {
             XCTAssertNotNil(bundle.url(forResource: name, withExtension: "wav"), name)
         }
     }
+    func testFourRestartRecordingsDecodeAsFiniteOneShotAudio() throws {
+        let bundle = Bundle(for: GameStore.self)
+        XCTAssertEqual(Set(RestartAudio.assetNames).count, 4)
+        for name in RestartAudio.assetNames {
+            let url = try XCTUnwrap(bundle.url(forResource: name, withExtension: "wav"), name)
+            let audio = try AVAudioPlayer(contentsOf: url)
+            XCTAssertTrue(audio.duration.isFinite, name)
+            XCTAssertGreaterThan(audio.duration, 0, name)
+            XCTAssertEqual(audio.numberOfLoops, 0, name)
+        }
+    }
+
     func testOpeningRestartSequence() {
         // OpeningPace total is owned by RecoverySecurityTests; this suite tests restart art only.
         XCTAssertEqual(OpeningPace.duration(4), OpeningPace.reboot)

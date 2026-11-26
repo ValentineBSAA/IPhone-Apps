@@ -187,6 +187,10 @@ enum PhoneHapticProfile: Equatable {
         default: return false
         }
     }
+    var isHorror: Bool {
+        if case .cue(let cue) = self { return cue.isHorror }
+        return false
+    }
     var name: String {
         switch self {
         case .cue(let cue): return cue.rawValue
@@ -255,6 +259,7 @@ struct PhoneAudioQueue {
         entries.isEmpty ? nil : entries.removeFirst()
     }
     mutating func cancelAuthentication() { entries.removeAll { $0.cue.isAuthentication } }
+    mutating func cancelHorror() { entries.removeAll { $0.cue.isHorror } }
     mutating func removeAll() { entries.removeAll() }
 }
 
@@ -280,6 +285,7 @@ enum PhoneSensoryEngine {
     private static var hapticQueue: [PhoneHapticProfile] = []
     private static var hapticDrain: Task<Void, Never>?
     private static var hapticUntil: TimeInterval = 0
+    private static var currentHapticProfile: PhoneHapticProfile?
     private static var mediaReservations = PhoneMediaAudioReservations()
 
     static func beginMediaAudio(_ owner: UUID) {
@@ -464,6 +470,7 @@ enum PhoneSensoryEngine {
     }
 
     private static func playHaptics(_ profile: PhoneHapticProfile) {
+        currentHapticProfile = profile
         hapticUntil = ProcessInfo.processInfo.systemUptime + profile.duration + 0.035
         if CHHapticEngine.capabilitiesForHardware().supportsHaptics {
             do {
@@ -520,6 +527,23 @@ enum PhoneSensoryEngine {
         OpeningQA.record("UIKit haptic requested: " + profile.name)
     }
 
+    /// Turning off horror is not a global mute or an authentication cancellation.
+    static func stopHorrorEffects() {
+        queued.cancelHorror()
+        if currentCue?.isHorror == true {
+            audio?.stop(); audio = nil; currentCue = nil
+            optionalAtmospherePlaying = false
+        }
+        if !queued.isEmpty { scheduleDrain() }
+        hapticQueue.removeAll { $0.isHorror }
+        if currentHapticProfile?.isHorror == true {
+            try? hapticPlayer?.stop(atTime: CHHapticTimeImmediate)
+            hapticPlayer = nil
+            currentHapticProfile = nil
+            hapticUntil = 0
+        }
+    }
+
     static func stopSound() {
         optionalAtmospherePlaying = false
         audio?.stop(); audio = nil; currentCue = nil
@@ -527,6 +551,7 @@ enum PhoneSensoryEngine {
     }
     static func stopHaptics() {
         hapticDrain?.cancel(); hapticDrain = nil; hapticQueue.removeAll(); hapticUntil = 0
+        currentHapticProfile = nil
         try? hapticPlayer?.stop(atTime: CHHapticTimeImmediate)
         hapticPlayer = nil
         engine?.stop(completionHandler: nil)

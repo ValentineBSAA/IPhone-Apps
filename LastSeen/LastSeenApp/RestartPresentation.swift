@@ -24,16 +24,29 @@ struct OpeningArt: View {
 
 /// Original short, bundled effects. Ambient mode respects the silent switch and other audio.
 @MainActor enum RestartAudio {
+    static let assetNames = ["RespringDown", "RespringUp", "UserspaceDown", "UserspaceUp"]
     private static var player: AVAudioPlayer?
     static func play(_ name: String, enabled: Bool) {
-        guard enabled, let url = Bundle.main.url(forResource: name, withExtension: "wav") else { return }
+        stop()
+        guard enabled, UIApplication.shared.applicationState == .active,
+              assetNames.contains(name) else { return }
+        guard let url = Bundle.main.url(forResource: name, withExtension: "wav") else {
+            OpeningQA.record("Missing restart audio: " + name); return
+        }
         do {
-            try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
-            player = try AVAudioPlayer(contentsOf: url)
-            player?.volume = 0.82
-            player?.play()
-            OpeningQA.record("Restart audio requested: " + name)
-        } catch { OpeningQA.record("Restart audio unavailable") }
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.ambient, mode: .default)
+            try session.setActive(true)
+            let candidate = try AVAudioPlayer(contentsOf: url)
+            candidate.volume = 0.82
+            candidate.numberOfLoops = 0
+            candidate.prepareToPlay()
+            guard candidate.play() else {
+                OpeningQA.record("Restart audio failed to start: " + name); return
+            }
+            player = candidate
+            OpeningQA.record("Restart audio started: " + name)
+        } catch { OpeningQA.record("Restart audio unavailable: " + name) }
     }
     static func stop() { player?.stop(); player = nil }
 }
@@ -133,7 +146,8 @@ struct ThemeRespringView: View {
                     onComplete()
                 }
             }
-            .onChange(of: scenePhase) { value in if value == .background { RestartAudio.stop() } }
+            .onChange(of: scenePhase) { value in if value != .active { RestartAudio.stop() } }
+            .onChange(of: effects) { if !$0 { RestartAudio.stop() } }
             .onDisappear { RestartAudio.stop() }
     }
 }
@@ -173,7 +187,8 @@ struct RelayUserspaceView: View {
                     onComplete()
                 }
             }
-            .onChange(of: scenePhase) { value in if value == .background { RestartAudio.stop() } }
+            .onChange(of: scenePhase) { value in if value != .active { RestartAudio.stop() } }
+            .onChange(of: effects) { if !$0 { RestartAudio.stop() } }
             .onDisappear { RestartAudio.stop() }
     }
 }
