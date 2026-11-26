@@ -39,10 +39,10 @@ struct RelaySupportView: View {
     private var messages: [RelaySupportMessage] { world.state.relaySupport?.messages ?? [] }
     private func send() {
         guard generation == nil else { return }
-        let wasTextOnly = selection.isEmpty
+        let mayGenerate = selection.isEmpty || selection.contains { $0.kind == .document }
         if world.sendRelaySupport(draft, installed: installed, sources: sources, attachments: selection) {
             draft = ""; selection = []
-            if wasTextOnly && aiAvailable {
+            if mayGenerate && aiAvailable {
                 generation = world.relaySupportGenerationRequest(installed: installed, sources: sources)
             }
         }

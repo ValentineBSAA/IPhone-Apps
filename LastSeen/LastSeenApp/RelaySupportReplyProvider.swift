@@ -49,11 +49,18 @@ struct RelaySupportLocalProvider: RelaySupportReplyProvider {
         let mentioned = accessible.filter { q.contains(" " + normalized($0.title) + " ") || (normalized($0.id).count >= 5 && q.contains(" " + normalized($0.id) + " ")) }
         var tokens = raw.subtracting(Self.stop)
         for token in raw { tokens.formUnion(Self.expansions[token] ?? []) }
-        let followup = !raw.isDisjoint(with: ["it","that","this","more","again","why"]) && tokens.count <= 4
+        let followup = !raw.isDisjoint(with: ["it","that","this","more","again","why"]) && tokens.count <= 6
         let previous = recent.last(where: { !$0.outgoing })
         let matched = mentioned.count == 1 ? mentioned.first : (mentioned.isEmpty && followup ? accessible.first { $0.id == previous?.packageID } : nil)
         if mentioned.count > 1 {
             return .init(text: "Which of those packages would you like to troubleshoot first?")
+        }
+        if let package = matched,
+           let report = recent.reversed().compactMap(\.diagnostic).first(where: { $0.packageID == package.id }),
+           !raw.isDisjoint(with: ["report","status","paused","conflict","fix","working","why","now","still","diagnostic"]) {
+            return .init(text: "From the report you shared earlier (not a live check): " + report.advice +
+                "\n\nIf you have changed anything since then, please share a fresh report from Diagnostics.",
+                guideID: RelaySupportKnowledge.generalGuide("patchline-recovery")?.id, packageID: package.id)
         }
         if let package = matched, let help = RelaySupportKnowledge.packageHelp(package.id, flags: flags) {
             let instructions = !raw.isDisjoint(with: ["restart","reboot","respring"]) ? help.restart : help.use + "\n\n" + help.limits

@@ -63,6 +63,38 @@ import XCTest
         XCTAssertNil(store.relaySupportGenerationRequest(installed: installed, sources: sources))
     }
 
+    func testSharedDocumentExcerptsAndPhotoLimits() throws {
+        let store = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(), persistToDisk: false)
+        let items = LumaMessageAttachmentCatalog.shareable(store.state)
+        let document = try XCTUnwrap(items.first { $0.kind == .document })
+        let photo = try XCTUnwrap(items.first { $0.kind == .photo })
+        let denied = LumaMessageAttachment(kind: .document, recordID: "WorldDoc_01_05")
+        XCTAssertTrue(RelaySupportDocumentContext.excerpts(items: [denied], question: "read this", world: store.state).isEmpty)
+        XCTAssertTrue(RelaySupportDocumentContext.excerpts(items: [photo], question: "read this", world: store.state).isEmpty)
+        let excerpts = RelaySupportDocumentContext.excerpts(items: [document, photo], question: "summarize this", world: store.state)
+        XCTAssertEqual(excerpts.map(\.recordID), [document.recordID])
+        XCTAssertLessThanOrEqual(try XCTUnwrap(excerpts.first).excerpt.count, 900)
+        XCTAssertTrue(store.sendRelaySupport("Summarize this document", installed: "relay-support", sources: RelayCatalog.defaultSources, attachments: [document, photo]))
+        XCTAssertTrue(store.state.relaySupport?.messages.last?.text.contains("can't analyze") == true)
+        let request = try XCTUnwrap(store.relaySupportGenerationRequest(installed: "relay-support", sources: RelayCatalog.defaultSources))
+        XCTAssertTrue(request.prompt.contains("Explicitly shared document excerpts"))
+        XCTAssertTrue(request.prompt.contains("No image pixels"))
+        XCTAssertFalse(request.prompt.contains("WorldDoc_01_05"))
+    }
+
+    func testDiagnosticFollowupIsHistorical() throws {
+        let store = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(), persistToDisk: false)
+        let installed = "relay-support|compact"
+        let sources = RelayCatalog.defaultSources
+        let report = try XCTUnwrap(RelaySupportDiagnostic.capture(packageID: "compact", installed: installed, versions: "", sources: sources, safeMode: true, flags: []))
+        XCTAssertTrue(store.shareRelaySupportDiagnostic(report, installed: installed, versions: "", sources: sources, safeMode: true))
+        XCTAssertTrue(store.sendRelaySupport("Why is it still paused?", installed: installed, sources: sources))
+        let answer = try XCTUnwrap(store.state.relaySupport?.messages.last)
+        XCTAssertTrue(answer.text.contains("not a live check"))
+        XCTAssertTrue(answer.text.contains("fresh report"))
+        XCTAssertEqual(answer.packageID, "compact")
+    }
+
     func testProviderRejectsPrivateAndGatedQueries() {
         let provider = RelaySupportLocalProvider()
         let restricted = provider.reply(question: "Give me the passcode", recent: [], flags: [], sources: RelayCatalog.defaultSources, installed: "relay-support")

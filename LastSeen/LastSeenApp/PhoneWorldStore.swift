@@ -684,8 +684,7 @@ final class PhoneWorldStore: ObservableObject {
         let provider = RelaySupportLocalProvider()
         let answer: RelaySupportAnswer
         if !attachments.isEmpty {
-            answer = .init(text: "I've received your selected attachments. I can see their file labels, but I can't inspect the image or document contents in this mode. Tell me which technical problem you'd like help with.",
-                           guideID: RelaySupportKnowledge.generalGuide("attachments")?.id)
+            answer = RelaySupportDocumentContext.localAnswer(items: attachments, question: text, world: state)
         } else {
             answer = provider.reply(question: text, recent: Array(history.messages.suffix(12)), flags: state.flags, sources: sources, installed: installed)
         }
@@ -706,7 +705,8 @@ final class PhoneWorldStore: ObservableObject {
         let reply = messages[messages.count - 1], question = messages[messages.count - 2]
         return RelaySupportGenerationRequest.prepare(question: question, fallback: reply,
             recent: Array(messages.dropLast(2).suffix(8)), flags: state.flags, installed: installed,
-            sources: sources, epoch: supportGenerationEpoch)
+            sources: sources, epoch: supportGenerationEpoch,
+            sharedDocuments: RelaySupportDocumentContext.excerpts(items: question.attachments ?? [], question: question.text, world: state))
     }
 
     @discardableResult
