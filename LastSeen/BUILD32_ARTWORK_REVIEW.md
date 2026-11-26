@@ -23,3 +23,6 @@ Reviewed 05 and 08 (05 inspected at a 1200-pixel preview, 08 at full size). Appr
 
 ## Pass 148 secondary archive reflections
 Full-size visual review of recovered 21, 24 and 28. These are unverified copied references, not verified Nora identity/capture/location claims. Reveal after the earned secondary index is explicitly opened and still accessible; existing home-copy milestones unchanged. One optional hardware comparison and two synthetic-layer findings; text equivalents and Luma handoff. Standalone original loading now works in VEIL. Remaining 31 (15 recovered,16 expansion). Original expansion pack revalidated locally (18 hashes, PNG decoding and dimensions; selected 05/08 confirmed noncomposite). No native testing yet.
+
+## Pass 149 studio reference integration
+Reviewed enlarged previews of ten recovered originals 07,09,10,11,12,15,16,17,19,22. Three gated studio pages (workbench exports and two environment-study galleries), source descriptions, one optional brand-region match and two synthetic findings. Studio imagery is explicitly prototype reference material, not authenticated events. No capture date inferred from embedded numbers. Remaining 21 originals (five recovered, sixteen expansion). Earlier assignments remain. Native visual and runtime validation pending.

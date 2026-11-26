@@ -359,7 +359,11 @@ enum PhotoFeatureMatch {
         .init(id:"veil-reflection-case",title:"A recurring circular marking",assets:["Recovered_B27_24","Recovered_B27_28"],
               target:"Locate the circular marking on the back of the dark phone in both copies.",
               regions:[[4],[4]],textClues:["The circular marking is on the phone in the center cell.","The circular marking is near the center of the frame, on the back of the phone."],
-              note:"Both images show a dark phone with a circular case marking. Similar hardware is not a unique identifier and does not establish the relationship between the copies.")
+              note:"Both images show a dark phone with a circular case marking. Similar hardware is not a unique identifier and does not establish the relationship between the copies."),
+        .init(id:"studio-sign-review",title:"Studio marking comparison",assets:["Recovered_B27_07","Recovered_B27_09"],
+              target:"Find the illuminated Blue Hour Interactive wall sign in each development reference.",
+              regions:[[2],[0]],textClues:["The sign is above the workstation in the upper-right cell.","The illuminated sign is above the monitors in the upper-left cell."],
+              note:"Both development references display Blue Hour Interactive branding, in different areas of the frame. The visible label does not authenticate either capture.")
     ]
     static func available(_ world:PhoneWorld)->[Challenge] {
         let home=VeilArchive.authorized(world) ? Set(VeilArchive.homeMedia(world).filter{world.flags.contains("veil.viewed."+$0)}) : []
@@ -368,7 +372,7 @@ enum PhotoFeatureMatch {
         return all.filter { c in
             let visible:Set<String>
             switch c.id {
-            case "archive-door-locks":visible=browser
+            case "archive-door-locks","studio-sign-review":visible=browser
             case "veil-reflection-case":visible=reflection
             default:visible=home
             }

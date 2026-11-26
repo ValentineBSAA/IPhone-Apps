@@ -154,6 +154,34 @@ import XCTest
         XCTAssertFalse(NoraPhotoCatalog.photos.contains{$0.id=="WorldPhoto_E01_11"})
         XCTAssertEqual(NoraPhotoCatalog.library(store.state.flags,filter:.favorites,favorites:Set(ids)).map(\.id),ids)
     }
+    func testStudioReferenceGalleriesAndBrandComparison() throws {
+        let store=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
+        let ids=["studio-workbench-gallery","studio-environment-gallery","studio-environment-variants"]
+        XCTAssertTrue(ids.allSatisfy{LumaWebCatalog.page($0)?.available(store.state.flags)==false})
+        store.visitWebRecord("studio-projects")
+        store.visitWebRecord("studio-notes")
+        store.visitWebRecord("studio-reference-gallery")
+        XCTAssertTrue(ids.allSatisfy{LumaWebCatalog.page($0)?.available(store.state.flags)==true})
+        let assets=ids.flatMap{LumaWebCatalog.page($0)?.images ?? []}
+        XCTAssertEqual(assets.count,10)
+        XCTAssertEqual(Set(assets).count,10)
+        XCTAssertTrue(assets.allSatisfy{PortraitImages.load($0) != nil && LumaWebCatalog.referenceDescriptions[$0] != nil})
+        store.inspectWebAttachment("Recovered_B27_07")
+        XCTAssertNil(RecoveredImageAnalysis.record("Recovered_B27_07",in:store.state))
+        for id in ids {
+            store.visitWebRecord(id)
+            for asset in LumaWebCatalog.page(id)?.images ?? [] {store.inspectWebAttachment(asset)}
+        }
+        XCTAssertFalse(store.recordPhotoFeatureMatch("studio-sign-review",first:0,second:2))
+        XCTAssertTrue(store.recordPhotoFeatureMatch("studio-sign-review",first:2,second:0))
+        XCTAssertEqual(RecoveredImageAnalysis.visible(store.state).filter{assets.contains($0.id)}.count,10)
+        XCTAssertTrue(LumaAssistantEvidence.selected("image:Recovered_B27_09",in:store.state)?.excerpts.contains{$0.contains("Recorded visible-detail comparison")} ?? false)
+        var revoked=store.state
+        revoked.flags.remove("web.visited.studio-notes")
+        XCTAssertFalse(PhotoFeatureMatch.available(revoked).contains{$0.id=="studio-sign-review"})
+        XCTAssertNil(LumaAssistantEvidence.selected("image:Recovered_B27_07",in:revoked))
+        XCTAssertNotNil(RecoveredImageAnalysis.record("Recovered_B27_19",in:revoked))
+    }
     func testRegionalLightPairValidation() {
         let sample=[10,80,220,10,110,220,40,90,160]
         XCTAssertTrue(RecoveredImageAnalysis.validLightPair(sample,dark:0,bright:2))

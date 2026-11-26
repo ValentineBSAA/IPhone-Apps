@@ -650,3 +650,7 @@ Master checklist stays truthful: approved artwork is not integrated, initial sou
 ## B32 tranche 148: optional VEIL reflection cache
 - [x] SOURCE: three full-size reviewed originals assigned to an earned secondary VEIL media collection; no extra required story gate. Compare visible phone case marking, optional reconstruction findings, source descriptions, text-only security mode, Luma access and rollback revocation. Changed VEIL media renderer to standalone-aware PortraitImages loader. Extended end-to-end source regression. Remaining 31 artwork assignments. Independently reverified expansion ZIP hash/CRC, all 18 per-file hashes and decoded dimensions, including selected 05/08 noncomposite status.
 - [ ] Latest native compilation/tests, remaining art and voice acceptance. No IPA or native workflow dispatched.
+
+## B32 tranche 149: studio workbench and environment reference expansion
+- [x] SOURCE: ten additional inspected artwork previews assigned to three optional local Browser galleries. Explicit authored source context, discoverable links, unique assets, accessible descriptions, Luma handoff via existing image inspection, studio-sign region puzzle, two synthetic findings, access-revocation regression. Reused existing verified standalone PNGs, no changes to originals, no mandatory new puzzle gate. 26/47 assigned; 21 remain (5 recovered,16 expansion).
+- [ ] Latest native compile/tests and creative voice acceptance remain open. No native build or IPA dispatched.

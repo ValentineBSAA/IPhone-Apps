@@ -57,7 +57,9 @@ enum ImageInterpretation {
         .init(id:"interpretation-13",asset:"Recovered_B27_01",mode:.echo,region:6,note:"A displaced contour is added by the echo layer. It is not another object authenticated in the original.",pattern:.displacedCorners),
         .init(id:"interpretation-14",asset:"Recovered_B27_25",mode:.scanlines,region:8,note:"An incomplete rectangular mark appears only in the reconstruction. It cannot establish a hidden opening or camera.",pattern:.brokenFrame),
         .init(id:"interpretation-15",asset:"Recovered_B27_21",mode:.echo,region:5,note:"A synthetic reflective contour appears in the echo layer. The added contour is not an authenticated second reflection.",pattern:.reflectionFragment),
-        .init(id:"interpretation-16",asset:"Recovered_B27_28",mode:.scanlines,region:1,note:"The added scanline rings interrupt the lighting pattern. The marks are reconstruction content, not an original camera artifact.",pattern:.rings)
+        .init(id:"interpretation-16",asset:"Recovered_B27_28",mode:.scanlines,region:1,note:"The added scanline rings interrupt the lighting pattern. The marks are reconstruction content, not an original camera artifact.",pattern:.rings),
+        .init(id:"interpretation-17",asset:"Recovered_B27_12",mode:.echo,region:5,note:"A fractured contour is added to the echo preview. Compare it with the existing window outline; the added trace is not a recovered subject.",pattern:.reflectionFragment),
+        .init(id:"interpretation-18",asset:"Recovered_B27_19",mode:.scanlines,region:7,note:"The synthetic bands add an interrupted mark over the foreground. The original shadows and the added mark are separate observations.",pattern:.interruptedBars)
     ]
     static let regions=["Upper left","Upper middle","Upper right","Middle left","Center","Middle right","Lower left","Lower middle","Lower right"]
     static func modes(_ asset:String,in world:PhoneWorld)->[Mode] {
