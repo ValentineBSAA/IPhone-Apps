@@ -1334,6 +1334,7 @@ private struct LabPhotosView: View {
                     ForEach(shown) { photo in
                         Button {
                             scale = 1; selection = photo
+                            if available(photo){world.recordCameraAnalysisOpened(photo.asset)}
                         } label: {
                             GeometryReader { geo in
                                 Group {
@@ -1375,6 +1376,11 @@ private struct LabPhotosView: View {
                         .clipped().onTapGesture(count: 2) { withAnimation { scale = scale > 1 ? 1 : 2 } }
                     Spacer()
                     Text(photo.caption).font(.caption).foregroundColor(.secondary)
+                    if RecoveredImageAnalysis.record(photo.asset,in:world.state) != nil {
+                        NavigationLink { RecoveredImageAnalysisView(asset:photo.asset) } label:{
+                            Label("Analyze image",systemImage:"viewfinder")
+                        }.buttonStyle(.bordered)
+                    }
                     Button { toggle(photo.id) } label: {
                         Label(isFavorite(photo.id) ? "Remove favorite" : "Favorite", systemImage: isFavorite(photo.id) ? "heart.fill" : "heart")
                             .frame(maxWidth: .infinity).padding(12)

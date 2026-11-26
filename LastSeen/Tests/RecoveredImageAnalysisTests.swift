@@ -1,0 +1,50 @@
+import XCTest
+@testable import LastSeen
+
+@MainActor final class RecoveredImageAnalysisTests:XCTestCase {
+    func testMultiCollectionAndUnlockRoute() throws {
+        let store=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
+        XCTAssertTrue(RecoveredImageAnalysis.visible(store.state).isEmpty)
+        store.recordCameraAnalysisOpened("Nora_Photo_01")
+        store.recordCameraAnalysisOpened("Nora_Photo_12")
+        XCTAssertNotNil(RecoveredImageAnalysis.record("Nora_Photo_01",in:store.state))
+        XCTAssertNil(RecoveredImageAnalysis.record("Nora_Photo_12",in:store.state))
+        XCTAssertFalse(store.completeRecoveredImageAnalysis("Nora_Photo_01",source:2,limit:0))
+        XCTAssertTrue(store.completeRecoveredImageAnalysis("Nora_Photo_01",source:0,limit:0))
+        XCTAssertTrue(store.completeRecoveredImageAnalysis("Nora_Photo_01",source:0,limit:0))
+        XCTAssertEqual(store.connected.recoveredImageReviews?.count,1)
+        var initial=store.state
+        initial.flags.insert("phone-tutorial-finished")
+        let w=PhoneWorldStore(initial:initial,persistToDisk:false)
+        let package=try XCTUnwrap(RelayCatalog.package("veil"))
+        let install=RelayChange(package:package,action:.install)
+        XCTAssertFalse(RelayPlan.valid([install],sources:RelayCatalog.requiredSourceIDs,installed:[],flags:w.state.flags))
+        w.visitWebRecord("studio")
+        w.visitWebRecord("archive")
+        w.visitWebRecord("veil-guide")
+        XCTAssertTrue(VeilArchive.authorized(w.state))
+        XCTAssertTrue(RelayPlan.valid([install],sources:RelayCatalog.requiredSourceIDs,installed:[],flags:w.state.flags))
+        w.inspectVeilReference("directory-reference")
+        XCTAssertNotNil(VeilReferences.target("directory-reference",in:w.state))
+        XCTAssertNil(VeilArchive.resolve("boards",in:w.state))
+        w.recordVeilCorrespondenceOpened()
+        w.inspectVeilReference("board-reference")
+        XCTAssertNotNil(VeilReferences.target("board-reference",in:w.state))
+        XCTAssertEqual(VeilCommunity.visible(w.state).count,10)
+        w.recordVeilObservation("Nora_Archive_08")
+        XCTAssertNotNil(RecoveredImageAnalysis.record("Nora_Archive_08",in:w.state))
+        XCTAssertTrue(w.completeRecoveredImageAnalysis("Nora_Archive_08",source:2,limit:0))
+        XCTAssertNotNil(RecoveredImageAnalysis.summary("Nora_Archive_08",in:w.state))
+        w.visitWebRecord("archive-records")
+        let image=try XCTUnwrap(LumaWebCatalog.page("archive-records")?.images.first)
+        w.inspectWebAttachment(image)
+        XCTAssertNotNil(RecoveredImageAnalysis.record(image,in:w.state))
+        XCTAssertTrue(w.completeRecoveredImageAnalysis(image,source:1,limit:0))
+        let saved=try JSONDecoder().decode(PhoneWorld.self,from:JSONEncoder().encode(w.state))
+        XCTAssertEqual(saved.connectedWorld?.recoveredImageReviews?.count,3)
+        var revoked=saved
+        revoked.flags.remove(VeilArchive.discovery)
+        XCTAssertNil(RecoveredImageAnalysis.summary("Nora_Archive_08",in:revoked))
+        XCTAssertNil(VeilReferences.target("board-reference",in:revoked))
+    }
+}

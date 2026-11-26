@@ -63,7 +63,7 @@ enum VeilArchive {
     ]
     static func pages(_ world: PhoneWorld) -> [Page] {
         guard authorized(world) else { return [] }
-        var result=catalog
+        var result=catalog.filter{$0.id != "boards" || VeilReferences.inspected("board-reference",in:world) != nil}
         if VeilReferences.inspected("private-index-reference",in:world) != nil {
             result.append(.init(id:"fragment-04",title:"Recovered index fragment",text:"Partial index. The original source is disputed. Compare the available record with the restored browser's review ledger rather than assume the archive is a complete account."))
         }
@@ -104,6 +104,13 @@ struct VeilRecoveredImage: View {
                     }.buttonStyle(.bordered)
                 } else { Label("Image hidden by security preference",systemImage:"shield").font(.caption) }
                 Text("Unverified reference image").font(.caption2).foregroundColor(.secondary)
+                if RecoveredImageAnalysis.record(asset,in:world.state) != nil {
+                    NavigationLink { RecoveredImageAnalysisView(asset:asset) } label:{
+                        Label("Analyze image",systemImage:"viewfinder")
+                    }.buttonStyle(.bordered)
+                } else {
+                    Button("Inspect text only"){world.recordVeilObservation(asset)}.font(.caption)
+                }
             }.onChange(of:phase) { if $0 != .active { revealed = false } }.onChange(of:security) { _ in revealed = false }.onDisappear { revealed = false }
         }
     }
@@ -229,6 +236,7 @@ struct VeilBrowser: View {
                             if page.id == "media" {
                                 if security == "Safest" {
                                     Label("Images hidden at this security level",systemImage:"shield").font(.caption)
+                                    ForEach(VeilArchive.media(world.state),id:\.self){asset in VeilRecoveredImage(asset:asset).padding(10).lumaSurface()}
                                 } else {
                                     ForEach(VeilArchive.media(world.state),id:\.self) { asset in VeilRecoveredImage(asset:asset).padding(10).lumaSurface() }
                                 }

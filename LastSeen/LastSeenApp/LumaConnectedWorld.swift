@@ -77,6 +77,7 @@ struct LumaConnectedState:Codable,Equatable {
     var assistantSession: LumaAssistantSession? = nil
     var veilThreadBookmarks: Set<String>? = nil
     var veilPageBookmarks: Set<String>? = nil
+    var recoveredImageReviews: Set<String>? = nil
     var workbenchConnected=false
     var workbenchSelections:[String:[String]]=[:]
     var workbenchVerified:Set<String>=[]
@@ -504,6 +505,16 @@ struct LumaWorkbenchView:View{
                         NavigationLink { WorkbenchDiagnosticView(challenge: challenge) } label: {
                             LumaHeader(title: challenge.title, detail: WorkbenchDiagnosticCatalog.progress(challenge, in: world.state).verified ? "Verified" : "Ready for inspection", symbol: challenge.symbol)
                         }.buttonStyle(.plain)
+                    }
+                    if !RecoveredImageAnalysis.visible(world.state).isEmpty {
+                        VStack(alignment:.leading,spacing:10) {
+                            Text("Image analysis").font(.headline)
+                            ForEach(RecoveredImageAnalysis.visible(world.state)){item in
+                                NavigationLink { RecoveredImageAnalysisView(asset:item.id) } label:{
+                                    LumaHeader(title:item.title,detail:RecoveredImageAnalysis.completed(item.id,in:world.state) ? "Recorded":"Ready for review",symbol:"viewfinder")
+                                }.buttonStyle(.plain)
+                            }
+                        }
                     }
                     if !WorkbenchAppliedReview.visible(world.state).isEmpty {
                         VStack(alignment: .leading, spacing: 10) {

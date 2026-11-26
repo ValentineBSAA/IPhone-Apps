@@ -53,6 +53,7 @@ enum LumaAssistantEvidence {
                     let date = VeilArchive.date(message,in:world).formatted(date:.abbreviated,time:.omitted)
                     facts.append("The historical conversation includes a copy of this attachment under the date "+date+". That is a message date, not a verified capture date.")
                 }
+                if let summary=RecoveredImageAnalysis.summary(asset,in:world){facts.append(summary)}
                 result.append(.init(id:"image:"+asset,title:"Recovered photograph "+String(i+1),kind:.image,excerpts:facts))
             }
             if read {
@@ -61,6 +62,11 @@ enum LumaAssistantEvidence {
                 let excerpts = messages.map { ($0.fromNora ? "Nora: " : "Unknown Number: ")+$0.text }
                 result.append(.init(id:"veil:conversation",title:"Recovered unknown-number conversation",kind:.correspondence,excerpts:excerpts))
             }
+        }
+        for item in RecoveredImageAnalysis.visible(world) where item.source != .veil {
+            var facts=["This is a recovered local reference in the "+item.source.title+". Original capture and photographer are not independently established."]
+            if let summary=RecoveredImageAnalysis.summary(item.id,in:world){facts.append(summary)}
+            result.append(.init(id:"image:"+item.id,title:item.title,kind:.image,excerpts:facts))
         }
         return result
     }

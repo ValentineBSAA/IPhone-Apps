@@ -46,7 +46,7 @@ enum VeilCommunity {
         make("index-room","image-index","An entry without a capture date","stillframe",2,"One recovered reference has no authenticated capture date. The entry cannot establish its original source.",[("saltline","The message date and capture date are different fields."),("cinder","A photograph is not permission to identify or contact its subject."),("greyrelay","Source remains unverified.")],gate:"veil.viewed.Nora_Archive_08")
     ]
     static func visible(_ world:PhoneWorld) -> [Thread] {
-        guard VeilArchive.authorized(world) else { return [] }
+        guard VeilArchive.authorized(world),VeilReferences.inspected("board-reference",in:world) != nil else { return [] }
         return all.filter { $0.gate.map { world.flags.contains($0) } ?? true }
     }
     static func thread(_ id:String,in world:PhoneWorld) -> Thread? { visible(world).first{$0.id == id} }

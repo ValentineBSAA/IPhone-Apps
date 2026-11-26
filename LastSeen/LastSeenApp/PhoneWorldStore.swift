@@ -1359,6 +1359,18 @@ final class PhoneWorldStore: ObservableObject {
         c.veilThreadBookmarks=saved
         commitConnected(c)
     }
+    func recordCameraAnalysisOpened(_ asset:String) {
+        guard RecoveredImageAnalysis.cameraAvailable(asset,in:state) else{return}
+        if state.flags.insert(RecoveredImageAnalysis.cameraMarker(asset)).inserted {save()}
+    }
+    @discardableResult
+    func completeRecoveredImageAnalysis(_ asset:String,source:Int,limit:Int)->Bool {
+        guard RecoveredImageAnalysis.accepts(asset,source:source,limit:limit,in:state) else{return false}
+        var c=connected
+        var reviewed=c.recoveredImageReviews ?? []
+        if reviewed.insert(asset).inserted {c.recoveredImageReviews=reviewed;commitConnected(c)}
+        return true
+    }
     func recordVeilObservation(_ asset:String) {
         guard VeilArchive.media(state).contains(asset) else { return }
         if state.flags.insert("veil.viewed."+asset).inserted { save() }

@@ -394,6 +394,11 @@ struct LumaWebBrowser: View {
                                     Button("Inspect without image") { world.inspectWebAttachment(asset) }.font(.caption)
                                     if world.state.flags.contains("web.inspected."+asset) { Label("Inspected",systemImage:"checkmark.circle").font(.caption) }
                                 }
+                                if RecoveredImageAnalysis.record(asset,in:world.state) != nil {
+                                    NavigationLink { RecoveredImageAnalysisView(asset:asset) } label:{
+                                        Label("Analyze image",systemImage:"viewfinder")
+                                    }.buttonStyle(.bordered)
+                                }
                             }.frame(maxWidth:.infinity,alignment:.leading).padding(14).lumaSurface()
                         }
                         ForEach(p.links.compactMap { LumaWebCatalog.page($0) }.filter { $0.available(world.state.flags) }) { link in
