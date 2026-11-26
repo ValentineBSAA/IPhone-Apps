@@ -191,6 +191,14 @@ jobs:
           gh release download L1 --repo ValentineBSAA/IPhone-Apps --pattern 'LAST_SEEN_Social_Icons_Approved.zip' --dir . --clobber
           python3 Tools/import_social_icons.py --zip LAST_SEEN_Social_Icons_Approved.zip
 
+      - name: Import approved Relay Support knowledge and artwork
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download L1 --repo ValentineBSAA/IPhone-Apps --pattern 'LastSeen_Build32_RelaySupport_ContentPack_v1.zip' --dir . --clobber
+          python3 Tools/import_relay_support.py --zip LastSeen_Build32_RelaySupport_ContentPack_v1.zip
+
       - name: Encode and verify original Motionwell photo essays
         run: |
           set -euo pipefail

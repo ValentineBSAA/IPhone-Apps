@@ -371,6 +371,13 @@ struct RelayPackagesView: View {
                     Button("Queue Removal", role: .destructive) { enqueue(p, .remove); selected = nil }
                 } else { Button("Queue Install") { enqueue(p, .install); selected = nil }.disabled(!sourceIDs.contains(p.source) || !RelayCatalog.available(p.id, flags: earnedFlags)) }
             }
+            if let help = RelaySupportKnowledge.packageHelp(p.id, flags: earnedFlags) {
+                Section("How to use this package") {
+                    Text(help.use)
+                    Text(help.limits).font(.subheadline).foregroundColor(.secondary)
+                    Text(help.restart).font(.caption).foregroundColor(.secondary)
+                }
+            }
             Section("Package information") {
                 LabeledContent("Version", value: p.version)
                 if RelayCatalog.installed(p.id, userIDs: ids) { LabeledContent("Installed", value: RelayCatalog.installedVersion(p, versions: versionMap)) }
