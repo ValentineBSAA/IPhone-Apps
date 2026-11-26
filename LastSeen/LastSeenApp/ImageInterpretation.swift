@@ -27,7 +27,7 @@ enum ImageInterpretation {
         var pattern:Pattern = .outline
         var confidence:String {"Uncertain · interpretive"}
     }
-    enum Pattern {
+    enum Pattern: Equatable {
         case outline, interruptedBars, displacedCorners, rings, shadowFigure, reflectionFragment, brokenFrame
         var description:String {
             switch self {

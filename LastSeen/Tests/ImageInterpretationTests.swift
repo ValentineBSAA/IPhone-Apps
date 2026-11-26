@@ -2,6 +2,46 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class ImageInterpretationTests:XCTestCase {
+    func testHomeReconstructionComparisonRequiresBothViews() throws {
+        var state=RestoredPhoneBackup.snapshot()
+        state.flags.formUnion(["phone-tutorial-finished","investigation.contact.received","web.visited.archive",VeilArchive.discovery])
+        let w=PhoneWorldStore(initial:state,persistToDisk:false)
+        let asset="VEIL_Home_01"
+        XCTAssertNil(ImageInterpretation.available(asset,mode:.echo,in:w.state))
+        w.recordVeilCorrespondenceOpened()
+        w.recordVeilObservation("Nora_Archive_08")
+        w.recordVeilObservation(asset)
+        XCTAssertNil(ImageInterpretation.available(asset,mode:.echo,in:w.state))
+        XCTAssertTrue(w.completeRecoveredImageAnalysis(asset,source:2,limit:0))
+        let finding=try XCTUnwrap(ImageInterpretation.available(asset,mode:.echo,in:w.state))
+        XCTAssertEqual(finding.id,"interpretation-10")
+        XCTAssertEqual(finding.pattern,.shadowFigure)
+        XCTAssertFalse(ImageInterpretation.comparisonAccepts(asset,mode:.echo,region:2,inspectedOriginal:false,inspectedLayer:true,in:w.state))
+        XCTAssertFalse(ImageInterpretation.comparisonAccepts(asset,mode:.echo,region:2,inspectedOriginal:true,inspectedLayer:false,in:w.state))
+        XCTAssertFalse(ImageInterpretation.comparisonAccepts(asset,mode:.echo,region:0,inspectedOriginal:true,inspectedLayer:true,in:w.state))
+        XCTAssertTrue(ImageInterpretation.comparisonAccepts(asset,mode:.echo,region:2,inspectedOriginal:true,inspectedLayer:true,in:w.state))
+        XCTAssertEqual(ImageInterpretation.displayMode(.echo,asset:asset,in:w.state,horrorEnabled:false,compareOriginal:false),.original)
+        XCTAssertEqual(ImageInterpretation.displayMode(.echo,asset:asset,in:w.state,horrorEnabled:true,compareOriginal:true),.original)
+        XCTAssertTrue(w.recordImageInterpretation(asset,mode:.echo,region:2))
+        w.recordVeilObservation("VEIL_Home_02")
+        XCTAssertTrue(w.completeRecoveredImageAnalysis("VEIL_Home_02",source:2,limit:0))
+        w.recordVeilObservation("VEIL_Home_03")
+        w.recordVeilObservation("VEIL_Home_05")
+        XCTAssertTrue(w.completeRecoveredImageAnalysis("VEIL_Home_03",source:2,limit:0))
+        XCTAssertTrue(w.completeRecoveredImageAnalysis("VEIL_Home_05",source:2,limit:0))
+        XCTAssertEqual(ImageInterpretation.available("VEIL_Home_03",mode:.scanlines,in:w.state)?.pattern,.reflectionFragment)
+        XCTAssertEqual(ImageInterpretation.available("VEIL_Home_05",mode:.echo,in:w.state)?.pattern,.brokenFrame)
+        XCTAssertTrue(w.recordImageInterpretation("VEIL_Home_03",mode:.scanlines,region:3))
+        XCTAssertTrue(w.recordImageInterpretation("VEIL_Home_05",mode:.echo,region:1))
+        XCTAssertEqual(ImageInterpretation.recorded(w.state).count,3)
+        XCTAssertTrue(LumaAssistantEvidence.selected("image:"+asset,in:w.state)?.excerpts.contains(where:{$0.contains("authored echo")}) ?? false)
+        var restored=try JSONDecoder().decode(PhoneWorld.self,from:JSONEncoder().encode(w.state))
+        XCTAssertEqual(ImageInterpretation.recorded(restored).count,3)
+        restored.flags.remove(VeilArchive.discovery)
+        XCTAssertTrue(ImageInterpretation.recorded(restored).isEmpty)
+        XCTAssertFalse(ImageInterpretation.comparisonAccepts(asset,mode:.echo,region:2,inspectedOriginal:true,inspectedLayer:true,in:restored))
+    }
+
     func testDisplayPolicyAndAdditionalFinding() {
         var state=RestoredPhoneBackup.snapshot()
         let asset="Nora_Archive_09"
