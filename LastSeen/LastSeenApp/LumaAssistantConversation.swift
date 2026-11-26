@@ -144,6 +144,19 @@ enum LumaAssistantConversation {
         if EntityEcho.active(c.world.flags),EntityEcho.asksForHelp(raw) {
             return .init(topic:.nextStep,answer:.init(text:EntityEcho.assistance(technical:false),clipID:"conversation",app:c.availableApps.contains(.patchline) ? .patchline:nil),guidanceTrack:.main)
         }
+        // Read-only practical assistance with visible applications. This is not
+        // authorization to open protected records, install software, or send messages.
+        let asksHow = !forbidden.isDisjoint(with:["how","where","find","use","access","navigate"])
+        let ordinaryBrowser = forbidden.contains("browser") && forbidden.isDisjoint(with:["veil","tor","anonymous","dark","onion","darknet"])
+        if asksHow && ordinaryBrowser && c.availableApps.contains(.browser) {
+            return .init(topic:.browser,answer:.init(text:"Open Browser and tap the address field to search the saved local websites. The bottom bar has Back, Forward, Start page, History, Bookmarks and Tabs. You can explore ordinary sites without following a lead. The anonymous browser is separate.",clipID:"conversation",app:.browser))
+        }
+        if asksHow && !forbidden.isDisjoint(with:["emails","email","mail","inbox"]) && c.availableApps.contains(.mail) && forbidden.isDisjoint(with:["whereabouts","missing","identity","sender","private"]) {
+            return .init(topic:.correspondence,answer:.init(text:"Open Mail. You can choose a mailbox, search for a sender or subject, and filter older correspondence by year. Open a message to read it and see related correspondence. You don't need to reply to old mail.",clipID:"conversation",app:.mail))
+        }
+        if asksHow && !forbidden.isDisjoint(with:["appointments","calendar","schedule"]) && c.availableApps.contains(.calendar) {
+            return .init(topic:.general,answer:.init(text:"Open Calendar to browse Nora's ordinary appointments. Older plans are context, not proof that a meeting happened. Take your time looking through the history.",clipID:"conversation",app:.calendar))
+        }
         let imageOverviewRequests:Set<String> = ["image investigation progress","photo investigation progress","what have we found in the photos","what have we found in the pictures","summarize my image findings","summarize my photo findings"]
         if imageOverviewRequests.contains(normalized) {
             let review=RecoveredImageAnalysis.reviewOverview(c.world)
@@ -205,8 +218,13 @@ enum LumaAssistantConversation {
             let recalling = LumaOwnerHistory.requestsRecollection(forbidden) && LumaAssistantTrust.level(world) == .established
             return .init(topic:selected,answer:.init(text:LumaOwnerMemory.answer(selected,question:raw,previous:previous,world:world,previousMemoryID:previousMemoryID,recollectionIndex:index),clipID:"conversation"),memoryID:entry?.id,recollectionCount:recalling ? min(2,index+1) : index)
         case .browser:
-            guard browser else { return result("I can discuss the local browser only when it is available on this phone. What are you looking at right now?") }
-            return result("VEIL opens a simulated offline session. Its archived pages and labels aren't independent proof. You can revisit the available directory or review a specific record.",app:.veil)
+            guard browser else {
+                if c.availableApps.contains(.browser) {
+                    return result("The ordinary Browser is available. Start with familiar websites and saved bookmarks. I can't open or provide access to a separate anonymous service until it's available in this phone's environment.",app:.browser)
+                }
+                return result("That browser isn't available in the current phone environment. I can help with the records you have already opened.")
+            }
+            return result("VEIL is a separate local session. Open it, connect the anonymous session and use its own directory, address field and temporary alias. Nora's ordinary browser account is not used here. You can revisit available records without treating their claims as verified.",app:.veil)
         case .pictures:
             if viewed { return result("You've opened a recovered image. It may look candid or unsettling, but the image alone cannot establish who took it or when. What detail caught your attention?") }
             return result("Tell me what you noticed in the picture. I can't see it through your eyes, and I won't assume its source from appearance alone.")

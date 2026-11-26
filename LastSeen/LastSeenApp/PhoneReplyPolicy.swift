@@ -25,7 +25,19 @@ enum PhoneReplyPolicy {
         !PhoneEverydayConversation.words(text).isDisjoint(with:["nora","missing","where","safe","disappeared","location","address"])
     }
     static func privateAccessQuestion(_ text:String)->Bool {
-        !PhoneEverydayConversation.words(text).isDisjoint(with:["password","passcode","credentials","pin","unlock","code"])
+        let words=PhoneEverydayConversation.words(text)
+        if !words.isDisjoint(with:["password","passcode","credentials","pin"]) {return true}
+        let normalized=LumaAssistantPolicy.normalize(text)
+        if !words.isDisjoint(with:["unlock","code"]) {
+            return ["how","what","give","tell","need","can","could","know"].contains{words.contains($0)}
+                && !confirmedUnlock(normalized)
+        }
+        return false
+    }
+    private static func confirmedUnlock(_ normalized:String)->Bool {
+        let negative=["couldn t unlock","could not unlock","can t unlock","cannot unlock","haven t unlocked","have not unlocked","didn t unlock","did not unlock","not unlocked","trying to unlock","need to unlock"]
+        guard !negative.contains(where:{normalized.contains($0)}) else{return false}
+        return ["figured out how to unlock","managed to unlock","already unlocked","unlocked it","got it unlocked","unlocked the phone","unlocked her phone","got into her phone","got into the phone","phone is unlocked","phone s unlocked","got past the lock screen"].contains{normalized.contains($0)}
     }
     static func mayaStatusReply(_ text:String,flags:Set<String>)->String? {
         guard flags.contains(InvestigationResolution.read),ownerStatusQuestion(text),!privateAccessQuestion(text) else{return nil}
@@ -46,6 +58,22 @@ enum PhoneReplyPolicy {
             return PhoneReplyPlan(text:status)
         }
         if !Neighbor.original.contains(neighbor) {
+            // Familiar contacts can provide grounded ordinary context without
+            // claiming to know why the phone was found or exposing private material.
+            let help = mentions("help","start","next","stuck","look","check","investigate")
+            if tutorialFinished && help && !privateAccessQuestion(text) &&
+                !mentions("address","location","whereabouts","secret","private","disappeared") {
+                let response:String
+                switch neighbor {
+                case .tessa: response="If you want to understand Nora's work, try the studio's public journal and the older review emails. My palette reminder makes more sense beside those conversations."
+                case .adrian: response="I'd start with the ordinary studio correspondence and public project notes. Keep the original records separate from any conclusions you draw."
+                case .helen: response="I can tell you about our family plans, but I can't tell you what's happened. Her calendar and old messages may help you understand what she normally did."
+                case .lily: response="We used to share little things in our messages. Maybe start there, rather than assuming everything on her phone is important."
+                case .daniel: response="I'd check her ordinary plans and speak to someone who knows the situation. I don't want to guess just because I haven't heard from her."
+                default: response="Take your time with the records you already have. I don't know anything beyond our own conversation."
+                }
+                if response != previousReply {return PhoneReplyPlan(text:response,everyday:true)}
+            }
             if let everyday = PhoneEverydayConversation.reply(neighbor: neighbor, text: text, previousMessage: previousMessage, previousReply: previousReply, recentReplies: recentReplies) {
                 return PhoneReplyPlan(text: everyday == previousReply ? "I don't have much else to add right now." : everyday, everyday: true)
             }
@@ -57,10 +85,10 @@ enum PhoneReplyPolicy {
                 ? "Wait, what do you mean by jailbreak? Is that how you got her phone working?"
                 : "I'm not familiar with that. Are you trying to reach someone in the building?")
         }
-        let reportedUnlock = ["figured out how to unlock","managed to unlock","already unlocked","unlocked it","got it unlocked"].contains { normalized.contains($0) }
-        let asksForAccess = ["how do i unlock","how can i unlock","can you unlock","what is her passcode","what’s her passcode","what's her passcode","don't know how to unlock","couldn't unlock","could not unlock","haven't unlocked","have not unlocked","didn't unlock","not unlocked"].contains { normalized.contains($0) }
+        let reportedUnlock = confirmedUnlock(LumaAssistantPolicy.normalize(text))
+        let asksForAccess = privateAccessQuestion(text) || ["how do i unlock","how can i unlock","can you unlock","don't know how to unlock","couldn't unlock","could not unlock","haven't unlocked","have not unlocked","didn't unlock","not unlocked"].contains { normalized.contains($0) }
         if neighbor == .maya && reportedUnlock && !asksForAccess {
-            if intro && PhoneEverydayConversation.confirmsRepair(text) {
+            if intro && (PhoneEverydayConversation.confirmsRepair(text) || !text.contains("?") && !text.contains("\"") && !text.contains("“") && !text.contains("”")) {
                 return PhoneReplyPlan(text: "Thanks for getting her phone working. I’m Maya, a friend of Nora’s. Could you check her Notes for the plans she mentioned?", startsTutorial: true)
             }
             return PhoneReplyPlan(text: mentions("nora","missing","where","safe")
