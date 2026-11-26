@@ -20,7 +20,7 @@ def config():
     assert len(set(voices.values())) == 3
     assert all(re.fullmatch(r"[A-Za-z0-9]{20}", v) for v in voices.values())
     script_bytes = (ASSETS / "initial_scripts.json").read_bytes()
-    assert sha(script_bytes) == request["script_catalog_sha256"], "Scripts changed since authorization"
+    assert hashlib.sha1(b"blob " + str(len(script_bytes)).encode() + b"\0" + script_bytes).hexdigest() == request["script_catalog_git_blob"], "Scripts changed since authorization"
     scripts = json.loads(script_bytes)
     rows = scripts["memos"] + [{**r, "speaker":"Luma Assistant"} for r in scripts["assistant"]]
     assert len(rows) == 10 and sum(len(r["text"]) for r in rows) == 1001
