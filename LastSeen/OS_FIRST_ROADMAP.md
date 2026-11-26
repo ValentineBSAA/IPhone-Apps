@@ -1,4 +1,7 @@
 # LAST SEEN — master roadmap / spoiler-free status
+
+**CURRENT STATUS — November 26 physical QA (supersedes previous release gates):** Build 32 v1.9.0 (32) voice-inclusive IPA delivered from 793ba7bc3ba219ab25a36204157d1b5c51f36814; CI 45780361828 passed 249 tests and final 119-resource hash verification. First iPhone 16e playthrough reports reset, timeline, identity, audio synchronization, app authenticity, Luma and pacing deficiencies. Creator requests retiring Motionwell in favor of photographic storytelling. Read [BUILD32_PHYSICAL_QA.md](BUILD32_PHYSICAL_QA.md) first for the current prioritized corrective milestone and acceptance gates. Physical acceptance remains OPEN. Documentation only; no new build/version tonight. Historical instructions below retained for traceability, not authoritative over this gate.
+
 Updated November 25, 2026. Start here. All previous requirements and specialist documents remain active; historical gates are superseded by the following current release contract.
 
 ## 1. Release gate and next milestone
