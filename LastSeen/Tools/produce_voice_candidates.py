@@ -34,7 +34,7 @@ def main(check_only):
     if check_only:
         print("Authorized one-take request: 10 clips, 1001 characters; no generation in check mode.")
         return
-    key = os.environ.get("ELEVENLABS_API_KEY")
+    key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
     if not key:
         raise SystemExit("ELEVENLABS_API_KEY is not configured. No credits spent.")
     WORK.mkdir(exist_ok=False)
@@ -49,7 +49,23 @@ def main(check_only):
             with urllib.request.urlopen(request, timeout=120) as response:
                 audio = response.read()
         except urllib.error.HTTPError as error:
-            raise SystemExit(f"Generation stopped at {filename}: HTTP {error.code}. No automatic retry.")
+            # Log only known, non-sensitive error codes, never response bodies.
+            reason = "unrecognized_error"
+            known = {"invalid_api_key", "missing_api_key", "missing_permissions", "authentication_error",
+                     "authorization_error", "quota_exceeded", "insufficient_credits", "model_access_denied",
+                     "feature_not_available", "unusual_activity", "detected_unusual_activity", "voice_not_found",
+                     "api_key_expired", "invalid_request", "rate_limit_exceeded", "permission_denied",
+                     "unauthorized", "forbidden", "ip_not_allowed", "invalid_model_id"}
+            try:
+                detail = json.loads(error.read(65536)).get("detail", {})
+                if isinstance(detail, dict):
+                    for candidate in (detail.get("status"), detail.get("code"), detail.get("type")):
+                        if isinstance(candidate, str) and candidate in known:
+                            reason = candidate
+                            break
+            except (ValueError, TypeError, AttributeError):
+                pass
+            raise SystemExit(f"Generation stopped at {filename}: HTTP {error.code}; reason={reason}. No automatic retry.")
         assert len(audio) > 1000, filename
         mp3 = WORK / (filename + ".mp3")
         target = WORK / filename
