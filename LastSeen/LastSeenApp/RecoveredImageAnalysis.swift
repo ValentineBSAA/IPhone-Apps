@@ -166,7 +166,7 @@ struct RecoveredImageAnalysisView:View {
                 }
                 Section("Source record") {
                     Text(item.source.title)
-                    if item.source == .veil,let description=VeilArchive.homeDescriptions[asset] {
+                    if item.source == .veil,let description=VeilArchive.mediaDescription(asset) {
                         Text(description).font(.subheadline)
                     } else if item.source == .browser,let description=LumaWebCatalog.referenceDescriptions[asset] {
                         Text(description).font(.subheadline)

@@ -355,13 +355,23 @@ enum PhotoFeatureMatch {
         .init(id:"archive-door-locks",title:"Recurring hardware",assets:["Recovered_B27_23","Recovered_B27_25"],
               target:"Locate the two round dark door locks on both originals.",
               regions:[[4],[4]],textClues:["The locks sit one above the other on the door frame, in the central cell.","The corresponding pair of round locks is again in the central cell."],
-              note:"Both frames show the same arrangement of two round locks. The dark outline differs, but this does not establish capture order or identity.")
+              note:"Both frames show the same arrangement of two round locks. The dark outline differs, but this does not establish capture order or identity."),
+        .init(id:"veil-reflection-case",title:"A recurring circular marking",assets:["Recovered_B27_24","Recovered_B27_28"],
+              target:"Locate the circular marking on the back of the dark phone in both copies.",
+              regions:[[4],[4]],textClues:["The circular marking is on the phone in the center cell.","The circular marking is near the center of the frame, on the back of the phone."],
+              note:"Both images show a dark phone with a circular case marking. Similar hardware is not a unique identifier and does not establish the relationship between the copies.")
     ]
     static func available(_ world:PhoneWorld)->[Challenge] {
         let home=VeilArchive.authorized(world) ? Set(VeilArchive.homeMedia(world).filter{world.flags.contains("veil.viewed."+$0)}) : []
         let browser=Set(RecoveredImageAnalysis.visible(world).filter{$0.source == .browser}.map(\.id))
+        let reflection=Set(VeilArchive.reflectionMedia(world).filter{world.flags.contains("veil.viewed."+$0)})
         return all.filter { c in
-            let visible=c.id=="archive-door-locks" ? browser:home
+            let visible:Set<String>
+            switch c.id {
+            case "archive-door-locks":visible=browser
+            case "veil-reflection-case":visible=reflection
+            default:visible=home
+            }
             return c.assets.allSatisfy{visible.contains($0)}
         }
     }

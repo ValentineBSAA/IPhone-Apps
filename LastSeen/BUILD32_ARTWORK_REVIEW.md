@@ -20,3 +20,6 @@ Run 45764610342 succeeded at 785e0d3; both source/asset jobs passed. Downloaded 
 
 ## Pass 147 ordinary camera-roll expansion
 Reviewed 05 and 08 (05 inspected at a 1200-pixel preview, 08 at full size). Approved as ordinary restored camera-roll context, no date, location or new identity claims. Stable distinct IDs and descriptions, no mystery gate or forced clue. Import exactly those two unchanged PNGs from pinned archive; all other expansion assets held; standalone files verified against originals in device and IPA. Existing compiled catalog alias prohibition retained. Remaining 34 assignments (18 recovered,16 expansion). Source and native validation pending.
+
+## Pass 148 secondary archive reflections
+Full-size visual review of recovered 21, 24 and 28. These are unverified copied references, not verified Nora identity/capture/location claims. Reveal after the earned secondary index is explicitly opened and still accessible; existing home-copy milestones unchanged. One optional hardware comparison and two synthetic-layer findings; text equivalents and Luma handoff. Standalone original loading now works in VEIL. Remaining 31 (15 recovered,16 expansion). Original expansion pack revalidated locally (18 hashes, PNG decoding and dimensions; selected 05/08 confirmed noncomposite). No native testing yet.

@@ -646,3 +646,7 @@ Master checklist stays truthful: approved artwork is not integrated, initial sou
 ## B32 tranche 147: curated everyday photographs
 - [x] SOURCE: two reviewed everyday expansion originals added to public restored camera roll, with stable titles, captions, Favorites, zoom, optional image review and Luma source descriptions only after opening. Pinned importer validates all 18 expansion originals and imports just two byte-preserved PNGs; photo preflight/device/IPA check approved hashes and reject held assets, catalog aliases remain prohibited. Updated review tool and regression fixture. Remaining 34 artwork assignments; no new narrative dependency.
 - [ ] Current native tests and full resolution review of remaining originals, ten creative voice decisions. No native build dispatched.
+
+## B32 tranche 148: optional VEIL reflection cache
+- [x] SOURCE: three full-size reviewed originals assigned to an earned secondary VEIL media collection; no extra required story gate. Compare visible phone case marking, optional reconstruction findings, source descriptions, text-only security mode, Luma access and rollback revocation. Changed VEIL media renderer to standalone-aware PortraitImages loader. Extended end-to-end source regression. Remaining 31 artwork assignments. Independently reverified expansion ZIP hash/CRC, all 18 per-file hashes and decoded dimensions, including selected 05/08 noncomposite status.
+- [ ] Latest native compilation/tests, remaining art and voice acceptance. No IPA or native workflow dispatched.

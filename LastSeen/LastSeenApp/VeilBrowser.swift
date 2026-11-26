@@ -109,13 +109,27 @@ enum VeilArchive {
         }
         return advanced ? homeAssets : first
     }
+    static let reflectionAssets=["Recovered_B27_21","Recovered_B27_24","Recovered_B27_28"]
+    static let reflectionDescriptions=[
+        "Recovered_B27_21":"A person holding a phone beside a dark mirror. A towel hangs near the mirror, and a red pendant is visible. The reflected pose alone cannot establish a second subject.",
+        "Recovered_B27_24":"A person holding a dark phone with a circular case marking beside a framed mirror. A plant is visible near its lower edge. The copy has no verified capture date.",
+        "Recovered_B27_28":"A phone with a circular case marking, reflected ceiling lights and an elevator panel. A taped reference image contains a forest scene. The displayed floor label is not a verified location."
+    ]
+    static func reflectionMedia(_ world:PhoneWorld)->[String] {
+        guard authorized(world),world.flags.contains("veil.home-index.opened"),
+              VeilReferences.inspected(VeilReferences.homeIndexID,in:world) != nil else{return []}
+        return reflectionAssets
+    }
+    static func mediaDescription(_ asset:String)->String? {
+        homeDescriptions[asset] ?? reflectionDescriptions[asset]
+    }
     static func mediaTitle(_ asset:String,in world:PhoneWorld)->String? {
         guard let index=media(world).firstIndex(of:asset) else{return nil}
         return "Recovered photograph "+String(index+1)
     }
     static func media(_ world: PhoneWorld) -> [String] {
         guard authorized(world) else { return [] }
-        return (1...11).map { String(format:"Nora_Archive_%02d",$0) } + homeMedia(world)
+        return (1...11).map { String(format:"Nora_Archive_%02d",$0) } + homeMedia(world) + reflectionMedia(world)
     }
 }
 struct VeilRecoveredImage: View {
@@ -131,7 +145,7 @@ struct VeilRecoveredImage: View {
             VStack(alignment:.leading,spacing:8) {
                 Text(VeilArchive.mediaTitle(asset,in:world.state) ?? "Recovered photograph").font(.headline)
                 if currentReveal && phase == .active && VeilArchive.allowsImages(security) {
-                    if let image = UIImage(named:asset) {
+                    if let image = PortraitImages.load(asset) {
                         Image(uiImage:image).resizable().scaledToFit().accessibilityLabel("Recovered fictional photograph, origin unverified")
                     } else { Text("Image unavailable. Text remains accessible.").font(.caption) }
                 }
@@ -141,12 +155,12 @@ struct VeilRecoveredImage: View {
                               VeilArchive.media(world.state).contains(asset) else { return }
                         revealed = !currentReveal
                         revealEpoch = revealed ? world.checkpointEpoch : nil
-                        if revealed, UIImage(named:asset) != nil { world.recordVeilObservation(asset) }
+                        if revealed, PortraitImages.load(asset) != nil { world.recordVeilObservation(asset) }
                     }.buttonStyle(.bordered)
                 } else { Label("Image hidden by security preference",systemImage:"shield").font(.caption) }
                 Text("Unverified reference image").font(.caption2).foregroundColor(.secondary)
                 if RecoveredImageAnalysis.record(asset,in:world.state) != nil {
-                    if let description=VeilArchive.homeDescriptions[asset] {
+                    if let description=VeilArchive.mediaDescription(asset) {
                         Text(description).font(.caption).foregroundColor(.secondary)
                     }
                     if RecoveredImageAnalysis.completed(asset,in:world.state) {

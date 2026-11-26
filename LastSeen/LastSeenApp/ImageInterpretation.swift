@@ -55,7 +55,9 @@ enum ImageInterpretation {
         .init(id:"interpretation-11",asset:"VEIL_Home_03",mode:.scanlines,region:3,note:"A fractured reflective contour is introduced by the reconstruction. It is not an authenticated reflection in the photograph.",pattern:.reflectionFragment),
         .init(id:"interpretation-12",asset:"VEIL_Home_05",mode:.echo,region:1,note:"An incomplete frame-like shape is added by the interpretive layer. It cannot establish a hidden opening or object.",pattern:.brokenFrame),
         .init(id:"interpretation-13",asset:"Recovered_B27_01",mode:.echo,region:6,note:"A displaced contour is added by the echo layer. It is not another object authenticated in the original.",pattern:.displacedCorners),
-        .init(id:"interpretation-14",asset:"Recovered_B27_25",mode:.scanlines,region:8,note:"An incomplete rectangular mark appears only in the reconstruction. It cannot establish a hidden opening or camera.",pattern:.brokenFrame)
+        .init(id:"interpretation-14",asset:"Recovered_B27_25",mode:.scanlines,region:8,note:"An incomplete rectangular mark appears only in the reconstruction. It cannot establish a hidden opening or camera.",pattern:.brokenFrame),
+        .init(id:"interpretation-15",asset:"Recovered_B27_21",mode:.echo,region:5,note:"A synthetic reflective contour appears in the echo layer. The added contour is not an authenticated second reflection.",pattern:.reflectionFragment),
+        .init(id:"interpretation-16",asset:"Recovered_B27_28",mode:.scanlines,region:1,note:"The added scanline rings interrupt the lighting pattern. The marks are reconstruction content, not an original camera artifact.",pattern:.rings)
     ]
     static let regions=["Upper left","Upper middle","Upper right","Middle left","Center","Middle right","Lower left","Lower middle","Lower right"]
     static func modes(_ asset:String,in world:PhoneWorld)->[Mode] {
