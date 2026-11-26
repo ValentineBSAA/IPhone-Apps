@@ -274,6 +274,7 @@ struct LumaConnectedMailView:View {
     @State private var unreadOnly=false
     @State private var query=""
     @State private var compose=false
+    @Environment(\.scenePhase) private var phase
     @AppStorage("lastseen.relay.installed") private var relayInstalled=""
     @AppStorage("lastseen.relay.safeMode") private var safeMode=false
     private var attachmentsAvailable:Bool {RelayCatalog.tweakActive("mailattach",installed:relayInstalled,safeMode:safeMode,flags:world.state.flags)}
@@ -313,7 +314,8 @@ struct LumaConnectedMailView:View {
             if !world.connected.pendingMail.isEmpty {Label("Correspondence pending",systemImage:"clock").font(.caption).foregroundColor(.secondary)}
         }.navigationTitle("Mail").searchable(text:$query,prompt:"Search mail")
             .onChange(of:attachmentsAvailable){if !$0 && folder=="attachments" {folder="inbox"}}
-            .toolbar{ToolbarItem(placement:.navigationBarTrailing){Button{compose=true}label:{Image(systemName:"square.and.pencil").accessibilityLabel("Compose mail")}}}
+            .onChange(of:world.checkpointEpoch){_ in compose=false;folder="inbox";query="";unreadOnly=false}
+            .toolbar{ToolbarItem(placement:.navigationBarTrailing){Button{compose=true}label:{Image(systemName:"square.and.pencil").accessibilityLabel("Compose mail")}.disabled(phase != .active || world.state.everydayArchiveRevision == nil)}}
             .sheet(isPresented:$compose){NavigationStack{LumaMailComposer()}.environmentObject(world)}
     }
 }
@@ -334,7 +336,7 @@ struct LumaMailDetail:View {
     private var item:LumaMailRecord?{LumaMailCatalog.visible(world.state).first{$0.id==id}}
     var body:some View {
         ScrollView{
-            if let item {
+            if phase == .active,let item {
                 VStack(alignment:.leading,spacing:16){
                     Text(item.subject).font(.largeTitle.bold()).fixedSize(horizontal:false,vertical:true)
                     Text("From: "+item.sender).font(.headline)
@@ -360,6 +362,8 @@ struct LumaMailDetail:View {
         }.navigationTitle("Message").navigationBarTitleDisplayMode(.inline)
             .onAppear{markRead()}
             .onChange(of:phase){if $0 == .active {markRead()}}
+            .onChange(of:world.checkpointEpoch){_ in reply=false;forward=false}
+            .onChange(of:item?.id){if $0==nil {reply=false;forward=false}}
             .sheet(isPresented:$reply){NavigationStack{if let item {LumaMailComposer(recipient:Neighbor(rawValue:item.peer),initialSubject:item.subject.hasPrefix("Re:") ? item.subject : "Re: "+item.subject)}}.environmentObject(world)}
             .sheet(isPresented:$forward){NavigationStack{if let item{LumaMailComposer(initialSubject:"Fwd: "+item.subject,initialBody:"\n\nForwarded local message:\n"+item.sender+"\n"+item.body)}}.environmentObject(world)}
     }
@@ -371,6 +375,15 @@ struct LumaMailComposer:View {
     @State private var subject:String
     @State private var message:String
     @State private var notice=""
+    @State private var editingEpoch:UUID?
+    @Environment(\.scenePhase) private var phase
+    private enum Field:Hashable {case subject,message}
+    @FocusState private var focused:Field?
+    private var eligible:Bool {
+        guard phase == .active,editingEpoch==world.checkpointEpoch,
+              let peer,LumaMailCatalog.recipients(world.state).contains(peer) else{return false}
+        return draftID.map{id in LumaMailCatalog.visible(world.state).contains{$0.id==id && $0.kind=="draft"}} ?? true
+    }
     private let draftID:String?
     init(existing:LumaMailRecord?=nil,recipient:Neighbor?=nil,initialSubject:String="",initialBody:String=""){
         draftID=existing?.id
@@ -382,17 +395,28 @@ struct LumaMailComposer:View {
         Form{
             Section("From"){Text("Repair desk · Local correspondence").font(.subheadline)}
             Section("To"){Picker("Recipient",selection:$peer){Text("Choose contact").tag(Optional<Neighbor>.none);ForEach(LumaMailCatalog.recipients(world.state)){contact in Text(contact.name).tag(Optional(contact))}}}
-            Section("Subject"){TextField("Subject",text:$subject)}
-            Section("Message"){TextEditor(text:$message).frame(minHeight:180)}
+            Section("Subject"){TextField("Subject",text:$subject).focused($focused,equals:.subject).submitLabel(.next).onSubmit{focused = .message}}
+            Section("Message"){TextEditor(text:$message).focused($focused,equals:.message).frame(minHeight:180).accessibilityLabel("Message body")}
             Section{
                 Button("Send local message"){
-                    if let peer,world.sendConnectedMail(draftID:draftID,peer:peer,subject:subject,body:message){dismiss()}else{notice="Could not send. Check recipient, subject and message."}
-                }.disabled(peer==nil || subject.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty || message.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty)
-                Button("Save draft"){if let peer,world.saveMailDraft(id:draftID,peer:peer,subject:subject,body:message) != nil{dismiss()}else{notice="Could not save draft."}}.disabled(peer==nil)
+                    guard eligible else{return}
+                    if let peer,world.sendConnectedMail(draftID:draftID,peer:peer,subject:subject,body:message){focused=nil;dismiss()}else{notice="Could not send. Check recipient, subject and message."}
+                }.disabled(!eligible || subject.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty || message.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty)
+                Button("Save draft"){
+                    guard eligible else{return}
+                    if let peer,world.saveMailDraft(id:draftID,peer:peer,subject:subject,body:message) != nil{focused=nil;dismiss()}else{notice="Could not save draft."}
+                }.disabled(!eligible)
                 if !notice.isEmpty{Text(notice).foregroundColor(.secondary)}
                 Text("Messages are fictional, local to Last Seen, and sent as the repair desk, not as Nora.").font(.footnote).foregroundColor(.secondary)
             }
-        }.navigationTitle("Compose").toolbar{ToolbarItem(placement:.cancellationAction){Button("Cancel"){dismiss()}}}
+        }.navigationTitle("Compose").scrollDismissesKeyboard(.interactively)
+            .toolbar{
+                ToolbarItem(placement:.cancellationAction){Button("Cancel"){focused=nil;dismiss()}}
+                ToolbarItemGroup(placement:.keyboard){Spacer();Button("Done"){focused=nil}}
+            }
+            .onAppear{if editingEpoch==nil {editingEpoch=world.checkpointEpoch}}
+            .onChange(of:phase){if $0 != .active {focused=nil}}
+            .onChange(of:world.checkpointEpoch){_ in focused=nil;subject="";message="";peer=nil;dismiss()}
     }
 }
 

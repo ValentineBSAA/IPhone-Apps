@@ -167,6 +167,8 @@ struct MotionwellPlayerView: View {
     @EnvironmentObject private var world: PhoneWorldStore
     @Environment(\.scenePhase) private var phase
     @State private var player: AVPlayer?
+    @State private var playbackEpoch:UUID?
+    @FocusState private var commentFocused:Bool
     @State private var draft = ""
     @State private var feedback = ""
     @State private var lastSaved = 0.0
@@ -176,7 +178,7 @@ struct MotionwellPlayerView: View {
     private var state: MotionwellState { world.connected.motionwell ?? MotionwellState() }
     private var eligible: Bool { MotionwellArchive.visible(world.state).contains(clip) }
     private func savePosition(force: Bool = false) {
-        guard eligible,!playbackError,let player,player.currentItem?.status == .readyToPlay else{return}
+        guard eligible,playbackEpoch==world.checkpointEpoch,!playbackError,let player,player.currentItem?.status == .readyToPlay else{return}
         let seconds = player.currentTime().seconds
         guard seconds.isFinite, seconds >= 0 else { return }
         if player.rate > 0 && seconds > 0.25 { started = true }
@@ -190,17 +192,17 @@ struct MotionwellPlayerView: View {
         let item=AVPlayer(url:url)
         let resume=MotionwellArchive.resume(state.watch[clip.id]?.seconds ?? 0,duration:clip.seconds)
         if resume>0 {item.seek(to:CMTime(seconds:resume,preferredTimescale:600))}
-        player=item;lastSaved=resume
+        player=item;lastSaved=resume;playbackEpoch=world.checkpointEpoch
         world.markMotionwellUploadSeen(clip.id)
     }
     private func releasePlayer() {
-        player?.pause();player=nil;started=false;lastSaved=0;playbackError=false
+        player?.pause();player=nil;started=false;lastSaved=0;playbackError=false;playbackEpoch=nil
     }
     var body: some View {
         ScrollView {
             if eligible && phase == .active {
                 VStack(alignment: .leading, spacing: 15) {
-                    if let player,!playbackError {
+                    if let player,!playbackError,playbackEpoch==world.checkpointEpoch {
                         VideoPlayer(player:player).aspectRatio(16.0/9,contentMode:.fit)
                     } else {
                         VStack(spacing: 10) {
@@ -240,20 +242,25 @@ struct MotionwellPlayerView: View {
                             Text(comment.date, style: .relative).font(.caption2).foregroundColor(.secondary)
                         }
                     }
-                    TextField("Write a local comment", text: $draft, axis: .vertical).textFieldStyle(.roundedBorder)
+                    TextField("Write a local comment", text: $draft, axis: .vertical).textFieldStyle(.roundedBorder).focused($commentFocused).lineLimit(1...5)
                     Text("\(draft.count) / 500").font(.caption).foregroundColor(.secondary)
                     Button("Post comment") {
                         guard phase == .active else{return}
-                        if world.addMotionwellComment(clip.id, text: draft) { draft = ""; feedback = "" }
+                        if world.addMotionwellComment(clip.id, text: draft) { draft = ""; feedback = "";commentFocused=false }
                         else { feedback = "Enter a shorter comment." }
                     }.disabled(draft.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty || draft.count>500 || phase != .active)
                     if !feedback.isEmpty { Text(feedback).font(.caption).foregroundColor(.secondary) }
                 }.padding(16)
             } else { Text("Video unavailable").padding() }
         }.navigationTitle("Watch").navigationBarTitleDisplayMode(.inline)
+            .scrollDismissesKeyboard(.interactively)
+            .toolbar {ToolbarItemGroup(placement:.keyboard){Spacer();Button("Done"){commentFocused=false}}}
+            .onChange(of:world.checkpointEpoch){_ in
+                releasePlayer();draft="";feedback="";commentFocused=false;loadPlayer()
+            }
             .onAppear {loadPlayer()}
             .onReceive(timer){_ in
-                guard phase == .active,eligible,let player else{return}
+                guard phase == .active,eligible,playbackEpoch==world.checkpointEpoch,let player else{return}
                 if player.currentItem?.status == .failed || player.status == .failed {
                     player.pause();playbackError=true
                 } else {savePosition()}
@@ -271,7 +278,7 @@ struct MotionwellPlayerView: View {
                 }
             }
             .onChange(of:eligible){if !$0 {releasePlayer()} else {loadPlayer()}}
-            .onChange(of:phase){if $0 != .active {savePosition(force:true);player?.pause()} else {loadPlayer()}}
+            .onChange(of:phase){if $0 != .active {commentFocused=false;savePosition(force:true);player?.pause()} else {loadPlayer()}}
             .onDisappear {savePosition(force:true);releasePlayer()}
     }
 }

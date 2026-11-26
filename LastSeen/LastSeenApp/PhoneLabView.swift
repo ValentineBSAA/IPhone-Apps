@@ -1561,13 +1561,21 @@ private struct LabPhotosView: View {
             if photoPhase == .active,let asset=handoff?.resolve(epoch:world.checkpointEpoch,in:world.state) {sendImageToLuma?(asset)}
         }) { photo in
             NavigationStack {
+                ScrollView {
                 VStack(spacing: 16) {
-                    Spacer()
                     if available(photo) && photoPhase == .active && photoEpoch == world.checkpointEpoch {
                     Image(photo.asset).resizable().scaledToFit()
                         .scaleEffect(scale).gesture(MagnificationGesture().onChanged { scale = min(3, max(1, $0)) })
-                        .clipped().onTapGesture(count: 2) { withAnimation { scale = scale > 1 ? 1 : 2 } }
-                    Spacer()
+                        .frame(maxHeight:360).clipped()
+                        .onTapGesture(count: 2) { withAnimation { scale = scale > 1 ? 1 : 2 } }
+                        .accessibilityLabel("Recovered photograph")
+                    HStack {
+                        Button("Zoom out"){scale=max(1,scale-0.5)}.disabled(scale<=1)
+                        Spacer()
+                        Text("\(Int(scale*100))%").font(.caption).monospacedDigit()
+                        Spacer()
+                        Button("Zoom in"){scale=min(3,scale+0.5)}.disabled(scale>=3)
+                    }.buttonStyle(.bordered)
                     Text(photo.caption).font(.caption).foregroundColor(.secondary)
                     if RecoveredImageAnalysis.record(photo.asset,in:world.state) != nil {
                         NavigationLink { RecoveredImageAnalysisView(asset:photo.asset) } label:{
@@ -1597,7 +1605,8 @@ private struct LabPhotosView: View {
                             Label("Next",systemImage:"chevron.right").frame(minHeight:44)
                         }.disabled(adjacent(photo.id,1)==nil || photoPhase != .active)
                     }
-                }.padding().navigationTitle(available(photo) && photoPhase == .active ? photo.title : "Locked photograph").navigationBarTitleDisplayMode(.inline)
+                }.padding()
+                }.navigationTitle(available(photo) && photoPhase == .active && photoEpoch==world.checkpointEpoch ? photo.title : "Locked photograph").navigationBarTitleDisplayMode(.inline)
                     .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { selection = nil } } }
             }.environment(\.sendImageToLuma,{ asset in
                 guard photoPhase == .active,photoEpoch == world.checkpointEpoch,

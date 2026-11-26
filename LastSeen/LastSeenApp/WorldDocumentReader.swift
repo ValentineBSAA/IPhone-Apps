@@ -53,6 +53,10 @@ struct WorldDocumentReader: View {
     @AppStorage("lastseen.relay.safeMode") private var safeMode=false
     @State private var largeText=false
     @Environment(\.scenePhase) private var phase
+    private func recordOpened(){
+        guard phase == .active,WorldDocumentCatalog.document(id,world:world.state) != nil else{return}
+        world.recordLumaDocumentOpened(id)
+    }
     private var zoomAvailable:Bool {RelayCatalog.tweakActive("documentzoom",installed:installed,safeMode:safeMode,flags:world.state.flags)}
     var body: some View {
         ScrollView {
@@ -95,6 +99,9 @@ struct WorldDocumentReader: View {
                 }.padding(30)
             }
         }.navigationTitle("Document").navigationBarTitleDisplayMode(.inline)
-            .onAppear { world.recordLumaDocumentOpened(id) }
+            .onAppear {recordOpened()}
+            .onChange(of:phase){if $0 == .active {recordOpened()}}
+            .onChange(of:world.checkpointEpoch){_ in largeText=false;recordOpened()}
+            .onChange(of:zoomAvailable){if !$0 {largeText=false}}
     }
 }
