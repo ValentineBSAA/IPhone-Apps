@@ -76,6 +76,26 @@ final class PhoneFeedbackTests: XCTestCase {
         XCTAssertEqual(queue.next()?.cue, .unlock)
     }
 
+    func testPreviewLeaseRejectsStaleCancellationAndCoversAllRecordings() {
+        var lease = PhonePreviewLease()
+        let first = UUID(), second = UUID()
+        lease.begin(first)
+        lease.begin(second)
+        XCTAssertFalse(lease.end(first))
+        XCTAssertEqual(lease.owner, second)
+        XCTAssertTrue(lease.end(second))
+        XCTAssertFalse(lease.end(second))
+        lease.begin(first)
+        XCTAssertTrue(lease.end())
+        XCTAssertNil(lease.owner)
+        let items = PhoneCue.allCases.map(PhoneSoundPreview.phone) +
+            RestartAudio.assetNames.map(PhoneSoundPreview.restart)
+        XCTAssertEqual(Set(items).count, 19)
+        XCTAssertEqual(items.filter(\.isRestart).count, 4)
+        XCTAssertEqual(items.filter(\.isHorror).count, 5)
+        XCTAssertTrue(items.filter(\.isRestart).allSatisfy { $0.profile == nil })
+    }
+
     func testHorrorCancellationPreservesOrdinaryQueueAndAuthentication() {
         var queue = PhoneAudioQueue()
         for cue in [PhoneCue.suspense, .message, .phantom, .timerCompleted, .unlock] {

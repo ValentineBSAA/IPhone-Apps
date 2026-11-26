@@ -966,7 +966,7 @@ struct PhoneLabView: View {
                 Text("Atmosphere changes presentation only. Restrained uses a static edge tint; Off removes the additional effects. Neither changes the investigation.").font(.footnote).foregroundColor(.secondary)
                 NavigationLink {
                     PhoneSoundStudio(sound: $messageSound, haptics: $messageHaptics, horrorEnabled: $horrorEffects)
-                } label: { Label("Sound Library · 15 effects", systemImage: "waveform") }
+                } label: { Label("Sound Library · 19 effects", systemImage: "waveform") }
                 Button {
                     PhoneSensoryEngine.play(.message, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
                 } label: { Label("Preview message alert", systemImage: "bell.badge") }

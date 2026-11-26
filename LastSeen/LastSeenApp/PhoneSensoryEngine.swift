@@ -272,6 +272,17 @@ struct PhoneMediaAudioReservations {
     mutating func end(_ owner: UUID) { owners.remove(owner) }
 }
 
+/// Preview ownership is independent of the normal alert queues.
+struct PhonePreviewLease {
+    private(set) var owner: UUID?
+    mutating func begin(_ token: UUID) { owner = token }
+    @discardableResult mutating func end(_ token: UUID? = nil) -> Bool {
+        guard let owner, token == nil || token == owner else { return false }
+        self.owner = nil
+        return true
+    }
+}
+
 @MainActor
 enum PhoneSensoryEngine {
     private static var audio: AVAudioPlayer?
@@ -287,6 +298,73 @@ enum PhoneSensoryEngine {
     private static var hapticUntil: TimeInterval = 0
     private static var currentHapticProfile: PhoneHapticProfile?
     private static var mediaReservations = PhoneMediaAudioReservations()
+    private static var previewLease = PhonePreviewLease()
+    private static var previewAudio: AVAudioPlayer?
+    private static var previewHapticUntil: TimeInterval = 0
+    private static var previewOwnsHaptic = false
+    private static var previewHorror = false
+
+    /// Play the exact original recording, or its optional tactile profile.
+    /// Previews are admitted only when their selected channels are idle.
+    /// They never enqueue, synthesize substitute audio, or reserve media.
+    static func preview(owner: UUID, url: URL?, profile: PhoneHapticProfile?,
+                        sound: Bool, haptics: Bool, horror: Bool) -> Bool {
+        guard UIApplication.shared.applicationState == .active,
+              !horror || preference("lastseen.lab.horrorEffects") else { return false }
+        stopPreview()
+        let tactile = haptics && preference("lastseen.lab.messageHaptics") ? profile : nil
+        guard sound || tactile != nil else { return false }
+        if sound {
+            guard PhoneAudioPriority.allowsAtmosphere(playing: audio?.isPlaying == true,
+                waiting: !queued.isEmpty, mediaReserved: mediaReservations.isReserved),
+                let url else { return false }
+        }
+        if tactile != nil {
+            guard ProcessInfo.processInfo.systemUptime >= hapticUntil, hapticQueue.isEmpty else { return false }
+        }
+        if sound, let url {
+            do {
+                let session = AVAudioSession.sharedInstance()
+                try session.setCategory(.ambient, mode: .default)
+                try session.setActive(true)
+                let candidate = try AVAudioPlayer(contentsOf: url)
+                candidate.numberOfLoops = 0
+                candidate.prepareToPlay()
+                guard candidate.play() else { return false }
+                previewAudio = candidate
+            } catch { return false }
+        }
+        previewLease.begin(owner)
+        previewHorror = horror
+        if let tactile {
+            playHaptics(tactile)
+            previewOwnsHaptic = true
+            previewHapticUntil = hapticUntil
+        }
+        return true
+    }
+
+    static func previewIsActive(_ owner: UUID) -> Bool {
+        guard previewLease.owner == owner else { return false }
+        if previewAudio?.isPlaying == true ||
+            (previewOwnsHaptic && ProcessInfo.processInfo.systemUptime < previewHapticUntil) { return true }
+        stopPreview(owner: owner)
+        return false
+    }
+
+    static func stopPreview(owner: UUID? = nil) {
+        guard previewLease.end(owner) else { return }
+        previewAudio?.stop(); previewAudio = nil
+        if previewOwnsHaptic {
+            try? hapticPlayer?.stop(atTime: CHHapticTimeImmediate)
+            hapticPlayer = nil
+            currentHapticProfile = nil
+            hapticUntil = 0
+        }
+        previewOwnsHaptic = false
+        previewHapticUntil = 0
+        previewHorror = false
+    }
 
     static func beginMediaAudio(_ owner: UUID) {
         mediaReservations.begin(owner)
@@ -361,6 +439,7 @@ enum PhoneSensoryEngine {
               preference("lastseen.lab.horrorEffects"),
               PhoneAudioPriority.allowsAtmosphere(playing: audio?.isPlaying == true,
                   waiting: !queued.isEmpty, mediaReserved: mediaReservations.isReserved) else { return }
+        guard previewLease.owner == nil else { return }
         optionalAtmospherePlaying = startAudio(cue) > 0
     }
 
@@ -400,6 +479,7 @@ enum PhoneSensoryEngine {
 
     @discardableResult
     private static func startAudio(_ cue: PhoneCue) -> Double {
+        stopPreview()
         optionalAtmospherePlaying = false
         audio?.stop(); audio = nil; currentCue = nil
         do {
@@ -436,6 +516,7 @@ enum PhoneSensoryEngine {
     }
 
     private static func requestHaptics(_ profile: PhoneHapticProfile) {
+        stopPreview()
         let now = ProcessInfo.processInfo.systemUptime
         if now < hapticUntil || !hapticQueue.isEmpty {
             // Keypresses never interrupt an incoming alert. Alert bursts retain
@@ -529,6 +610,7 @@ enum PhoneSensoryEngine {
 
     /// Turning off horror is not a global mute or an authentication cancellation.
     static func stopHorrorEffects() {
+        if previewHorror { stopPreview() }
         queued.cancelHorror()
         if currentCue?.isHorror == true {
             audio?.stop(); audio = nil; currentCue = nil
@@ -545,11 +627,13 @@ enum PhoneSensoryEngine {
     }
 
     static func stopSound() {
+        stopPreview()
         optionalAtmospherePlaying = false
         audio?.stop(); audio = nil; currentCue = nil
         drainTask?.cancel(); drainTask = nil; queued.removeAll()
     }
     static func stopHaptics() {
+        stopPreview()
         hapticDrain?.cancel(); hapticDrain = nil; hapticQueue.removeAll(); hapticUntil = 0
         currentHapticProfile = nil
         try? hapticPlayer?.stop(atTime: CHHapticTimeImmediate)

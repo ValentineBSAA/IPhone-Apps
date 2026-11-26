@@ -27,6 +27,7 @@ struct OpeningArt: View {
     static let assetNames = ["RespringDown", "RespringUp", "UserspaceDown", "UserspaceUp"]
     private static var player: AVAudioPlayer?
     static func play(_ name: String, enabled: Bool) {
+        PhoneSensoryEngine.stopPreview()
         stop()
         guard enabled, UIApplication.shared.applicationState == .active,
               assetNames.contains(name) else { return }
