@@ -70,7 +70,10 @@ struct VeilRecoveredImage: View {
                         Image(uiImage:image).resizable().scaledToFit().accessibilityLabel("Recovered fictional photograph, origin unverified")
                     } else { Text("Image unavailable. Text remains accessible.").font(.caption) }
                 }
-                Button(revealed ? "Hide image" : "Reveal recovered image") { revealed.toggle() }.buttonStyle(.bordered)
+                Button(revealed ? "Hide image" : "Reveal recovered image") {
+                    revealed.toggle()
+                    if revealed, UIImage(named:asset) != nil { world.recordVeilObservation(asset) }
+                }.buttonStyle(.bordered)
                 Text("Unverified reference image").font(.caption2).foregroundColor(.secondary)
             }.onChange(of:phase) { if $0 != .active { revealed = false } }.onDisappear { revealed = false }
         }
@@ -97,6 +100,7 @@ struct VeilHistoricalConversation: View {
                 }.padding(18)
             } else { Text("Conversation unavailable").padding() }
         }.navigationTitle("Recovered conversation").navigationBarTitleDisplayMode(.inline)
+            .onAppear { world.recordVeilCorrespondenceOpened() }
     }
 }
 struct VeilBrowser: View {

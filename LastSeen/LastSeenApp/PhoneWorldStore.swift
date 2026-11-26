@@ -1316,6 +1316,14 @@ final class PhoneWorldStore: ObservableObject {
         return true
     }
 
+    func recordVeilObservation(_ asset:String) {
+        guard VeilArchive.media(state).contains(asset) else { return }
+        if state.flags.insert("veil.viewed."+asset).inserted { save() }
+    }
+    func recordVeilCorrespondenceOpened() {
+        guard VeilArchive.authorized(state) else { return }
+        if state.flags.insert("veil.correspondence.opened").inserted { save() }
+    }
     private func save() {
         guard persistToDisk else { return }
         do {

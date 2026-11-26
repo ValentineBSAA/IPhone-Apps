@@ -31,7 +31,7 @@ enum LumaAssistantPolicy {
         }
         if text.hasPrefix("open ") || text.hasPrefix("show ") {
             let name = String(text.dropFirst(5))
-            let aliases: [String: LabApp] = ["texts": .messages, "email": .mail, "emails": .mail, "pictures": .photos, "memos": .voiceMemos, "recordings": .voiceMemos, "videos": .motionwell, "security cameras": .havenWatch]
+            let aliases: [String: LabApp] = ["texts": .messages, "email": .mail, "emails": .mail, "pictures": .photos, "memos": .voiceMemos, "recordings": .voiceMemos, "videos": .motionwell, "security cameras": .havenWatch, "dark web": .veil, "anonymous browser": .veil, "tor browser": .veil]
             if let app = aliases[name] ?? LabApp.allCases.first(where: { normalize($0.rawValue) == name }) {
                 guard c.availableApps.contains(app), app != .assistant else {
                     return .init(text: "That application isn't available in the current phone environment.", clipID: "unavailable")
@@ -77,6 +77,11 @@ struct LumaAssistantView: View {
     @Environment(\.scenePhase) private var phase
     @AppStorage("lastseen.lab.messageSound") private var sound = true
     @State private var input = ""
+    @State private var conversationTopic: LumaConversationTopic?
+    @State private var conversationTurns: [String] = []
+    @State private var interpretation: Task<Void,Never>?
+    @State private var requestID = UUID()
+    @AppStorage("lastseen.assistant.interpretOnDevice") private var interpretOnDevice = true
     @State private var answer = LumaAssistantAnswer(text: "What can I help you with?", clipID: "greeting")
     @State private var player: AVAudioPlayer?
     @StateObject private var readAloud = LumaReadAloud()
@@ -91,10 +96,30 @@ struct LumaAssistantView: View {
     @State private var glow = false
     @FocusState private var focused: Bool
     private func submit(_ text: String) {
-        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, text.count <= 300 else { return }
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, text.count <= 600 else { return }
         stopAudio()
-        answer = LumaAssistantPolicy.answer(text, context: context())
+        interpretation?.cancel()
+        let id = UUID(); requestID = id
+        let current = context()
+        let previous = conversationTopic
+        let known = LumaAssistantConversation.topic(text,previous:previous)
+        let initial = LumaAssistantConversation.reply(text,context:current,previous:previous)
         input = ""; focused = false
+        if known == nil, initial.topic == .general, initial.answer.clipID == "conversation", interpretOnDevice, LumaIntentInterpreter.available {
+            interpretation = Task { @MainActor in
+                let inferred = await LumaIntentInterpreter.interpret(text,previous:previous)
+                guard !Task.isCancelled, requestID == id, phase == .active else { return }
+                accept(text,LumaAssistantConversation.reply(text,context:context(),previous:previous,interpreted:inferred))
+                interpretation = nil
+            }
+        } else { accept(text,initial) }
+    }
+    private func accept(_ question:String,_ reply:LumaConversationReply) {
+        conversationTopic = reply.topic
+        conversationTurns.append("You: " + question)
+        conversationTurns.append("Luma: " + reply.answer.text)
+        conversationTurns = Array(conversationTurns.suffix(12))
+        answer = reply.answer
         // Opt-in spoken responses read the exact current answer. Fixed approved
         // recordings may replace system speech only for matching static replies.
         if sound, spokenResponses, phase == .active, ["help","denied","unavailable","hint","progress","clarify"].contains(answer.clipID),
@@ -123,6 +148,14 @@ struct LumaAssistantView: View {
                 Text("Luma Assistant").font(.title.bold())
                 Text(answer.text).font(.title3).multilineTextAlignment(.center).accessibilityIdentifier("luma.assistant.answer")
                     .frame(maxWidth: .infinity).padding(18).lumaSurface()
+                if conversationTurns.count > 2 {
+                    DisclosureGroup("Recent conversation") {
+                        ForEach(conversationTurns.indices.dropLast(2),id: \.self) { i in
+                            Text(conversationTurns[i]).font(.subheadline).frame(maxWidth:.infinity,alignment:.leading).padding(.vertical,4)
+                        }
+                    }
+                }
+                if interpretation != nil { ProgressView("Considering your question").font(.caption) }
                 if let app = answer.app {
                     Button("Open " + app.rawValue) {
                         guard context().availableApps.contains(app) else { return }
@@ -130,7 +163,7 @@ struct LumaAssistantView: View {
                     }.buttonStyle(.borderedProminent).tint(.teal)
                 }
                 HStack {
-                    TextField("Ask Luma", text: $input).textFieldStyle(.roundedBorder).focused($focused)
+                    TextField("Ask Luma about what you found", text: $input).textFieldStyle(.roundedBorder).focused($focused)
                         .submitLabel(.go).onSubmit { submit(input) }
                     Button { submit(input) } label: { Image(systemName: "arrow.up.circle.fill").font(.title2) }
                         .accessibilityLabel("Ask").disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -144,13 +177,15 @@ struct LumaAssistantView: View {
                     }
                 }
                 Toggle("Speak responses", isOn: $spokenResponses)
+                Toggle("On-device question interpretation",isOn:$interpretOnDevice)
+                Text("When supported, the device model interprets unfamiliar wording. Answers remain limited to available records. No external AI requests.").font(.caption).foregroundColor(.secondary)
                 Text("Optional iPhone system read-aloud or approved fixed recordings. No microphone listening.").font(.caption).foregroundColor(.secondary)
                 if !readAloud.notice.isEmpty { Text(readAloud.notice).font(.caption).foregroundColor(.secondary) }
                 Text("Local text commands · No microphone listening or real-device actions.").font(.caption).foregroundColor(.secondary).multilineTextAlignment(.center)
             }.padding(20)
         }.navigationTitle("Assistant").navigationBarTitleDisplayMode(.inline)
             .onAppear { if !reduceMotion { withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { glow = true } } }
-            .onChange(of: phase) { if $0 != .active { stopAudio() } }
+            .onChange(of: phase) { if $0 != .active { stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID(); conversationTurns = []; conversationTopic = nil; answer = .init(text:"What can I help you with?",clipID:"greeting") } }
             .onChange(of: sound) { if !$0 { stopAudio() } }
             .onChange(of: spokenResponses) { if !$0 { stopAudio() } }
             .onReceive(timer) { now in
@@ -162,6 +197,6 @@ struct LumaAssistantView: View {
                 if let raw = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
                    AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable { stopAudio() }
             }
-            .onDisappear { stopAudio(); focused = false }
+            .onDisappear { stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID(); focused = false; conversationTurns = []; conversationTopic = nil }
     }
 }

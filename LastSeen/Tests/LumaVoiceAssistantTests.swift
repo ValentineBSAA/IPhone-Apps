@@ -2,6 +2,25 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class LumaVoiceAssistantTests: XCTestCase {
+    func testNaturalQuestionsAndObservedRecordGates() {
+        var world = RestoredPhoneBackup.snapshot()
+        func context() -> LumaAssistantContext {
+            .init(world:world,availableApps:[.messages,.veil],wifi:false,sound:false,haptics:false,safeMode:false,installedCount:1,timerEnd:0,now:world.createdAt)
+        }
+        let question = "Hey, I found some of these pictures. They seem personal."
+        let before = LumaAssistantConversation.reply(question,context:context())
+        XCTAssertEqual(before.topic,.privacy)
+        XCTAssertFalse(before.answer.text.contains("those pictures feel personal"))
+        world.flags.formUnion(["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery,"veil.viewed.Nora_Archive_01"])
+        let after = LumaAssistantConversation.reply(question,context:context())
+        XCTAssertEqual(after.topic,.privacy)
+        XCTAssertTrue(after.answer.text.contains("those pictures feel personal"))
+        XCTAssertEqual(LumaAssistantConversation.reply("What do you think about them?",context:context(),previous:after.topic).topic,.privacy)
+        XCTAssertEqual(LumaAssistantConversation.reply("Could you explain the dark web?",context:context()).answer.app,.veil)
+        XCTAssertEqual(LumaAssistantConversation.reply("Tell me the password",context:context()).answer.clipID,"denied")
+        world.flags.remove(VeilArchive.discovery)
+        XCTAssertFalse(LumaAssistantConversation.reply(question,context:context()).answer.text.contains("those pictures feel personal"))
+    }
     func testReadAloudBounds() {
         XCTAssertFalse(LumaReadAloud.eligible("   "))
         XCTAssertFalse(LumaReadAloud.eligible(String(repeating: "x", count: 4001)))
