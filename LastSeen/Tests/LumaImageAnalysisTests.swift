@@ -2,6 +2,26 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class LumaImageAnalysisTests:XCTestCase {
+    func testImageHandoffRequiresCurrentCheckpointEvenWhenRecordSurvives() throws {
+        var state=RestoredPhoneBackup.snapshot()
+        state.flags.formUnion(["phone-tutorial-finished","investigation.contact.received","web.visited.archive","web.visited.archive-records","web.inspected.Recovered_B27_02"])
+        let w=PhoneWorldStore(initial:state,persistToDisk:false)
+        let asset="Recovered_B27_02"
+        let oldEpoch=w.checkpointEpoch
+        let handoff=try XCTUnwrap(LumaImageHandoff.make(asset,epoch:oldEpoch,in:w.state))
+        XCTAssertEqual(handoff.resolve(epoch:oldEpoch,in:w.state),asset)
+        XCTAssertNil(LumaImageHandoff.make("Nora_Photo_10",epoch:oldEpoch,in:w.state))
+        XCTAssertNil(LumaImageHandoff.make("WorldPhoto_E01_01",epoch:oldEpoch,in:w.state))
+        var revoked=w.state
+        revoked.flags.remove("web.visited.archive-records")
+        XCTAssertNil(handoff.resolve(epoch:oldEpoch,in:revoked))
+        try w.restoreCheckpoint(w.state)
+        XCTAssertNotEqual(w.checkpointEpoch,oldEpoch)
+        XCTAssertNotNil(RecoveredImageAnalysis.record(asset,in:w.state))
+        XCTAssertNil(handoff.resolve(epoch:w.checkpointEpoch,in:w.state))
+        XCTAssertEqual(LumaImageHandoff.make(asset,epoch:w.checkpointEpoch,in:w.state)?.resolve(epoch:w.checkpointEpoch,in:w.state),asset)
+    }
+
     func testPhotoLibraryFiltersAndAdjacentNavigation() {
         let favorites:Set<String>=["Nora_Photo_01","Nora_Photo_04","Nora_Photo_10","Nora_Collage_01"]
         XCTAssertEqual(NoraPhotoCatalog.library([],filter:.library).count,9)
