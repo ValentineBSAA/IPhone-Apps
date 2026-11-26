@@ -26,6 +26,20 @@ enum LumaSocialChannel:String,CaseIterable,Codable,Identifiable {
         case .commonGround:return "A place for conversation"
         }
     }
+    var discoveryFilter:String {
+        switch self {
+        case .afterframe:return "Photos"
+        case .connective:return "Studio"
+        case .commonGround:return "Discussions"
+        }
+    }
+    var composePrompt:String {
+        switch self {
+        case .afterframe:return "Share a moment or a caption"
+        case .connective:return "Share a work or project update"
+        case .commonGround:return "Start a conversation"
+        }
+    }
     var accent:Color {
         switch self {
         case .afterframe:return .purple
@@ -175,11 +189,41 @@ enum LumaSocialCatalog {
     }
     static func comments(_ postID: String, channel: LumaSocialChannel, world: PhoneWorld) -> [LumaSocialComment] {
         guard let post = visible(channel, world: world).first(where: { $0.id == postID }) else { return [] }
+        return commentsForVisiblePost(post,world:world)
+    }
+    // Callers must obtain the post from the current visible catalog first.
+    private static func commentsForVisiblePost(_ post:LumaSocialPost,world:PhoneWorld)->[LumaSocialComment] {
         var records = LivingPhoneHistory.comments(for: post)
         records.append(contentsOf: LumaCommunityActivity.historicalComments(for: post))
-        records.append(contentsOf: (world.connectedWorld?.communityActivity?.comments ?? []).filter { $0.postID == postID })
-        records.append(contentsOf: (world.connectedWorld?.comments ?? []).filter { $0.postID == postID })
+        records.append(contentsOf: (world.connectedWorld?.communityActivity?.comments ?? []).filter { $0.postID == post.id })
+        records.append(contentsOf: (world.connectedWorld?.comments ?? []).filter { $0.postID == post.id })
         return records.sorted { ($0.date, $0.id) < ($1.date, $1.id) }
+    }
+    struct FeedRow:Identifiable {
+        let post:LumaSocialPost
+        let commentCount:Int
+        var id:String {post.id}
+    }
+    static func feed(_ channel:LumaSocialChannel,world:PhoneWorld,filter:String="Feed",query:String="")->[FeedRow] {
+        let q=query.trimmingCharacters(in:.whitespacesAndNewlines)
+        let search=q.hasPrefix("@") ? String(q.dropFirst()):q
+        let c=world.connectedWorld ?? LumaConnectedState()
+        let muted=c.socialPreferences?[channel.rawValue]?.mutedAuthors ?? []
+        return visible(channel,world:world).compactMap { post in
+            guard filter=="Saved" || !muted.contains(post.author),
+                  filter != "Saved" || c.savedPosts.contains(post.id),
+                  filter != "Following" || c.follows.contains(channel.rawValue+"|"+post.author),
+                  search.isEmpty || [post.author,post.handle,post.body].contains(where:{$0.localizedCaseInsensitiveContains(search)}) else{return nil}
+            let count=commentsForVisiblePost(post,world:world).count
+            if filter==channel.discoveryFilter {
+                switch channel {
+                case .afterframe:guard visiblePhoto(post,world:world) != nil else{return nil}
+                case .connective:guard ["Blue Hour Interactive","Nora Bennett","Adrian Cole","Tessa Reed"].contains(post.author) else{return nil}
+                case .commonGround:guard count>0 else{return nil}
+                }
+            }
+            return FeedRow(post:post,commentCount:count)
+        }
     }
     static func visiblePhoto(_ post:LumaSocialPost,world:PhoneWorld)->String? {
         guard world.everydayArchiveRevision != nil, post.gate.map({ world.flags.contains($0) }) ?? true else { return nil }
@@ -419,13 +463,9 @@ struct LumaSocialView:View {
     @State private var compose=false
     @State private var draft=""
     @State private var feedback=""
-    private var posts:[LumaSocialPost]{
-        LumaSocialCatalog.visible(channel,world:world.state).filter{p in
-            (filter == "Saved" || !world.socialPreferences(channel).mutedAuthors.contains(p.author)) &&
-            (filter != "Saved" || world.connected.savedPosts.contains(p.id)) &&
-            (filter != "Following" || world.connected.follows.contains(channel.rawValue+"|"+p.author)) &&
-            (query.isEmpty || [p.author,p.handle,p.body].contains{$0.localizedCaseInsensitiveContains(query)})
-        }
+    @Environment(\.scenePhase) private var phase
+    private var rows:[LumaSocialCatalog.FeedRow]{
+        LumaSocialCatalog.feed(channel,world:world.state,filter:filter,query:query)
     }
     var body:some View{
         ScrollView{
@@ -440,9 +480,14 @@ struct LumaSocialView:View {
                         Label("Review restored account records",systemImage:"doc.text.magnifyingglass")
                     }.buttonStyle(.bordered)
                 }
-                Picker("View",selection:$filter){ForEach(["Feed","Following","Saved"],id:\.self){Text($0).tag($0)}}.pickerStyle(.segmented)
-                if posts.isEmpty{Text("Nothing to display").foregroundColor(.secondary).padding()}
-                ForEach(posts){post in
+                Picker("View",selection:$filter){ForEach(["Feed",channel.discoveryFilter,"Following","Saved"],id:\.self){Text($0).tag($0)}}.pickerStyle(.segmented)
+                if rows.isEmpty {
+                    Text(query.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty ?
+                         (filter=="Saved" ? "Save posts to revisit them here.":filter=="Following" ? "Follow profiles to build your feed.":"No posts available in this view.") :
+                         "No matching posts.").foregroundColor(.secondary).padding()
+                }
+                ForEach(rows){row in
+                    let post=row.post
                     VStack(alignment:.leading,spacing:12){
                         HStack(spacing:9){
                             LumaSocialAvatar(post: post, size: 42)
@@ -453,15 +498,22 @@ struct LumaSocialView:View {
                             if timestamps {Text(post.date,format:.dateTime.month().day().hour().minute()).font(.caption2).foregroundColor(.secondary)}
                             else {Text(post.date,style:.date).font(.caption2).foregroundColor(.secondary)}
                         }
+                        if channel == .afterframe,phase == .active,let photo=LumaSocialCatalog.visiblePhoto(post,world:world.state) {
+                            NavigationLink {LumaSocialDiscussion(channel:channel,postID:post.id)} label:{
+                                Image(photo).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius:12))
+                            }.buttonStyle(.plain).accessibilityLabel("Open photo post")
+                        }
                         Text(post.body).font(.body).textSelection(.enabled)
-                        if let photo=LumaSocialCatalog.visiblePhoto(post,world:world.state){
-                            Image(photo).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius:12))
+                        if channel != .afterframe,phase == .active,let photo=LumaSocialCatalog.visiblePhoto(post,world:world.state){
+                            NavigationLink {LumaSocialDiscussion(channel:channel,postID:post.id)} label:{
+                                Image(photo).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius:12))
+                            }.buttonStyle(.plain).accessibilityLabel("Open attached photo")
                         }
                         Divider()
                         HStack{
                             Button{world.toggleSocial(.like,postID:post.id,channel:channel)}label:{Label("Like",systemImage:world.connected.likes.contains(post.id) ? "heart.fill":"heart")}.foregroundColor(world.connected.likes.contains(post.id) ? .pink:.secondary)
                             Spacer()
-                            NavigationLink{LumaSocialDiscussion(channel:channel,postID:post.id)}label:{Label("Comments (\(LumaSocialCatalog.comments(post.id, channel: channel, world: world.state).count))",systemImage:"bubble.left")}
+                            NavigationLink{LumaSocialDiscussion(channel:channel,postID:post.id)}label:{Label((channel == .commonGround ? "Replies":"Comments")+" ("+String(row.commentCount)+")",systemImage:"bubble.left")}
                             Spacer()
                             Button{world.toggleSocial(.save,postID:post.id,channel:channel)}label:{Image(systemName:world.connected.savedPosts.contains(post.id) ? "bookmark.fill":"bookmark").accessibilityLabel("Save post")}
                         }.font(.subheadline).buttonStyle(.plain)
@@ -479,8 +531,12 @@ struct LumaSocialView:View {
                 NavigationStack{
                     Form{
                         Text("Posting locally as Repair desk, not as Nora.").font(.subheadline)
-                        TextEditor(text:$draft).frame(minHeight:180)
-                        Button("Publish local post"){if world.publishSocial(channel:channel,text:draft){draft="";compose=false;feedback=""}else{feedback="Enter a shorter message."}}
+                        Section(channel.composePrompt) {
+                            TextEditor(text:$draft).frame(minHeight:180)
+                            Text("\(draft.count) / 1000").font(.caption).foregroundColor(.secondary)
+                        }
+                        Button("Publish local post"){guard phase == .active else{return};if world.publishSocial(channel:channel,text:draft){draft="";compose=false;feedback=""}else{feedback="Post not saved. The local post limit may have been reached."}}
+                            .disabled(draft.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty || draft.count>1000 || phase != .active)
                         if !feedback.isEmpty{Text(feedback).foregroundColor(.secondary)}
                     }.navigationTitle("New post").toolbar{ToolbarItem(placement:.cancellationAction){Button("Cancel"){compose=false}}}
                 }.environmentObject(world)
@@ -538,9 +594,10 @@ struct LumaSocialDiscussion:View{
     @EnvironmentObject private var world:PhoneWorldStore
     @State private var text=""
     @State private var error=""
+    @Environment(\.scenePhase) private var phase
     var body:some View{
         List{
-            if let post=LumaSocialCatalog.visible(channel,world:world.state).first(where:{$0.id==postID}){
+            if phase == .active,let post=LumaSocialCatalog.visible(channel,world:world.state).first(where:{$0.id==postID}){
                 Section {
                     HStack(spacing: 10) { LumaSocialAvatar(post: post, size: 42); Text(post.author).font(.headline) }
                     Text(post.body)
@@ -551,10 +608,10 @@ struct LumaSocialDiscussion:View{
                 if HavenCrossArchiveReview.reviewed(world.state) {
                     NavigationLink { EvidenceComparisonView(initialRecordID:"social:"+channel.rawValue+":"+postID) } label:{ Label("Compare with opened records",systemImage:"rectangle.split.2x1") }
                 }
-                Section("Comments"){
+                Section(channel == .commonGround ? "Replies":"Comments"){
                     let comments=LumaSocialCatalog.comments(postID,channel:channel,world:world.state)
                     if comments.isEmpty{Text("No restored comments").foregroundColor(.secondary)}
-                    ForEach(comments){c in VStack(alignment:.leading){Text(c.author).font(.headline);Text(c.body);Text(c.date,style:.time).font(.caption).foregroundColor(.secondary)}}
+                    ForEach(comments){c in VStack(alignment:.leading){Text(c.author).font(.headline);Text(c.body);Text(c.date,format:.dateTime.month().day().hour().minute()).font(.caption).foregroundColor(.secondary)}}
                 }
                 Section("Repair desk"){
                     TextField("Write a local comment",text:$text,axis:.vertical)
@@ -563,7 +620,8 @@ struct LumaSocialDiscussion:View{
                 }
             }else{Text("Post unavailable")}
         }.navigationTitle("Discussion")
-            .onAppear { world.recordLumaSocialOpened(channel,postID:postID) }
+            .onAppear {if phase == .active {world.recordLumaSocialOpened(channel,postID:postID)}}
+            .onChange(of:phase){if $0 == .active {world.recordLumaSocialOpened(channel,postID:postID)}}
     }
 }
 
