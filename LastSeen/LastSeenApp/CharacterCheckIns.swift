@@ -24,7 +24,7 @@ enum CharacterCheckIns {
               world.flags.contains("phone-tutorial-finished"),
               !world.flags.contains(InvestigationResolution.read),
               !world.flags.contains(InvestigationResolution.completed),
-              (world.threads[event.contact.id] ?? []).contains(where:{$0.fromPlayer})
+              (world.threads[event.contact.id] ?? []).contains(where:{$0.fromPlayer && $0.at >= world.createdAt})
               else{return false}
         return true
     }

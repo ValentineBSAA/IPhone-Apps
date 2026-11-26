@@ -71,7 +71,7 @@ struct PatchlineControlView: View {
             }
             Section("Diagnostics") {
                 NavigationLink { PatchlineLoaderDiagnostics(flags: earnedFlags) } label: { Label("Tweak loader diagnostics", systemImage: "cpu") }
-                NavigationLink { RecoveryCircuitView() } label: { Label("Recovery Circuit", systemImage: "point.3.connected.trianglepath.dotted") }
+                NavigationLink { RecoveryCircuitView() } label: { Label("Recovery Circuit", systemImage: "point.3.connected.trianglepath.dotted") }.accessibilityIdentifier("patchline.recovery.circuit")
                 NavigationLink { UtilityProgressView(openRelay: openRelay, onRestart: onRestart) } label: { Label("Local services", systemImage: "square.grid.2x2") }
             }
             Section("Maintenance") {

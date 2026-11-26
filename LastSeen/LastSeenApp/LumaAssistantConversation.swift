@@ -153,7 +153,7 @@ enum LumaAssistantConversation {
         }
         let mainRequest=["main investigation hint","main story hint","main investigation guidance","more specific main investigation hint"].contains(normalized)
         let archiveRequest=["archive investigation hint","veil investigation hint","more specific archive investigation hint"].contains(normalized)
-        let explicitHint = ["hint","help me investigate","what should i do","what do i do now","what should i do next","where do i go next","i m stuck","im stuck","give me a hint"].contains(normalized)
+        let explicitHint = ["hint","help me investigate","what should i do","what should i do now","what do i do now","what should i do next","where do i go next","i m stuck","im stuck","give me a hint"].contains(normalized)
         let followupHint = previous == .nextStep && ["tell me more","more","another hint","can you be more specific","what do you mean","give me a hint"].contains(normalized)
         if mainRequest {
             return .init(topic:.nextStep,answer:mainGuidance(c,detailed:normalized.hasPrefix("more specific")),guidanceTrack:.main)

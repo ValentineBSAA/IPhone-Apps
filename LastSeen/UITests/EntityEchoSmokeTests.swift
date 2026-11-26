@@ -29,9 +29,28 @@ final class EntityEchoSmokeTests:XCTestCase {
         }
         let warning=app.buttons["echo.containment.open"]
         XCTAssertTrue(warning.waitForExistence(timeout:12))
-        warning.tap()
+        // Exercise the actual accessible launcher route even if the
+        // status-bar icon is outside the simulator's hittable safe area.
+        let patchline=app.buttons["luma.app.Patchline"]
+        if !patchline.isHittable {
+            for index in 0..<8 {
+                let dot=app.buttons["luma.home.page."+String(index)]
+                guard dot.exists else{break}
+                dot.tap()
+                let ready=XCTNSPredicateExpectation(predicate:NSPredicate(format:"hittable == true"),object:patchline)
+                if XCTWaiter.wait(for:[ready],timeout:2) == .completed {break}
+            }
+        }
+        XCTAssertTrue(patchline.isHittable)
+        patchline.tap()
         XCTAssertTrue(app.navigationBars["Patchline"].waitForExistence(timeout:8))
-        tapReachable("echo.containment.route")
+        let route=app.descendants(matching:.any)["echo.containment.route"].firstMatch
+        for _ in 0..<8 {
+            if route.exists && route.isHittable {break}
+            app.swipeUp()
+        }
+        XCTAssertTrue(route.exists && route.isHittable)
+        route.tap()
         XCTAssertTrue(app.navigationBars["Echo containment"].waitForExistence(timeout:8))
         tapReachable("echo.trace.Wallpaper")
         XCTAssertTrue(app.staticTexts["That hook is legitimate. Review the trace and try another."].exists)

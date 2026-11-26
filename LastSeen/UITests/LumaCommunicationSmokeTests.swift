@@ -72,8 +72,12 @@ final class LumaCommunicationSmokeTests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.buttons["luma.home.page.0"].waitForExistence(timeout:12))
         homeIcon("Patchline",in:app).tap()
-        let challenge = app.buttons.containing(.staticText, identifier: "Recovery Circuit").firstMatch
-        XCTAssertTrue(challenge.waitForExistence(timeout: 10))
+        let challenge = app.descendants(matching:.any)["patchline.recovery.circuit"].firstMatch
+        for _ in 0..<8 {
+            if challenge.exists && challenge.isHittable {break}
+            app.swipeUp()
+        }
+        XCTAssertTrue(challenge.exists && challenge.isHittable)
         challenge.tap()
         let verify = app.buttons["Verify sequence"]
         for stage in [["Index","Verify","Mount"],["Scan","Repair","Reload"],["Prepare","Link","Activate"]] {

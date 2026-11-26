@@ -24,25 +24,31 @@ import XCTest
 
     func testPhotoLibraryFiltersAndAdjacentNavigation() {
         let favorites:Set<String>=["Nora_Photo_01","Nora_Photo_04","Nora_Photo_10","Nora_Collage_01"]
-        XCTAssertEqual(NoraPhotoCatalog.library([],filter:.library).count,9)
-        XCTAssertEqual(NoraPhotoCatalog.library([],filter:.recovered).count,3)
+        XCTAssertEqual(NoraPhotoCatalog.library([],filter:.library).count,19)
+        XCTAssertEqual(NoraPhotoCatalog.library([],filter:.recovered).count,13)
         XCTAssertEqual(NoraPhotoCatalog.library([],filter:.favorites,favorites:favorites).map(\.id),["Nora_Photo_01"])
         let flags:Set<String>=["nora-photo-notes","nora-photo-unlocked-Nora_Photo_10","nora-photo-unlocked-Nora_Collage_01"]
-        XCTAssertEqual(NoraPhotoCatalog.library(flags,filter:.recovered).count,5)
+        XCTAssertEqual(NoraPhotoCatalog.library(flags,filter:.recovered).count,15)
         XCTAssertEqual(NoraPhotoCatalog.library(flags,filter:.favorites,favorites:favorites).map(\.id),["Nora_Photo_01","Nora_Photo_04"])
         XCTAssertEqual(NoraPhotoCatalog.adjacent("Nora_Photo_01",offset:1,flags:flags,filter:.favorites,favorites:favorites)?.id,"Nora_Photo_04")
         XCTAssertNil(NoraPhotoCatalog.adjacent("Nora_Photo_01",offset:-1,flags:flags,filter:.library))
-        XCTAssertNil(NoraPhotoCatalog.adjacent("Nora_Photo_05",offset:1,flags:flags,filter:.recovered))
+        XCTAssertEqual(NoraPhotoCatalog.adjacent("Nora_Photo_05",offset:1,flags:flags,filter:.recovered)?.id,"WorldPhoto_E01_01")
+        XCTAssertNil(NoraPhotoCatalog.adjacent("WorldPhoto_E01_10",offset:1,flags:flags,filter:.recovered))
         XCTAssertNil(NoraPhotoCatalog.adjacent("Nora_Photo_10",offset:-1,flags:flags,filter:.library))
         XCTAssertNil(NoraPhotoCatalog.adjacent("Nora_Photo_01",offset:99,flags:flags,filter:.library))
         XCTAssertEqual(NoraPhotoCatalog.library([],filter:.favorites,favorites:favorites).count,1)
     }
 
     func testArtworkExposureAndPrivateDisplayContract() {
-        let assigned:Set<String>=["Recovered_B27_02","Recovered_B27_03","Recovered_B27_13","Recovered_B27_18","Recovered_B27_26","Recovered_B27_27","Recovered_B27_29"]
         let all=Set((1...29).map{String(format:"Recovered_B27_%02d",$0)})
+        let held:Set<String>=["Recovered_B27_06"]
+        let reflection:Set<String>=["Recovered_B27_21","Recovered_B27_24","Recovered_B27_28"]
+        let assigned=all.subtracting(held.union(reflection))
+        XCTAssertEqual(Set(VeilArchive.reflectionAssets),reflection)
+        XCTAssertEqual(assigned.count,25)
         XCTAssertEqual(Set(LumaWebCatalog.pages.flatMap(\.images)),assigned)
-        XCTAssertEqual(all.subtracting(assigned).count,22)
+        XCTAssertEqual(all.subtracting(assigned).count,4)
+        XCTAssertNil(PortraitImages.load("Recovered_B27_06"))
         var state=RestoredPhoneBackup.snapshot()
         state.flags.formUnion(["phone-tutorial-finished","investigation.contact.received","web.visited.archive","web.visited.archive-records"])
         // Forged/stale inspection markers cannot expose unused or held art.
@@ -66,11 +72,13 @@ import XCTest
     }
 
     func testApprovedPhotoCollectionsDecodeAndProduceSamples() throws {
-        let originals=(1...29).map{String(format:"Recovered_B27_%02d",$0)}
+        let originals=(1...29).filter{$0 != 6}.map{String(format:"Recovered_B27_%02d",$0)}
         let archive=(1...11).map{String(format:"Nora_Archive_%02d",$0)}
         let camera=NoraPhotoCatalog.photos.map(\.id)
         let all=originals+archive+camera+VeilArchive.homeAssets
-        XCTAssertEqual(Set(all).count,60)
+        XCTAssertEqual(Set(all).count,69)
+        XCTAssertEqual(all.count,69)
+        XCTAssertNil(PortraitImages.load("Recovered_B27_06"))
         for asset in all {
             let image=try XCTUnwrap(PortraitImages.load(asset),asset)
             XCTAssertGreaterThan(image.size.width,200,asset)

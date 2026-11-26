@@ -6,7 +6,8 @@ import UIKit
 final class NoraVaultTests: XCTestCase {
     func testApprovedMediaAndLegacyAliasesLoad() throws {
         let names = NoraPhotoCatalog.photos.map(\.id) + ["Nora_Profile", "Photo_Locked_Texture"]
-        XCTAssertEqual(Set(names).count, 16)
+        XCTAssertEqual(Set(names).count, 26)
+        XCTAssertEqual(NoraPhotoCatalog.photos.filter{$0.id.hasPrefix("WorldPhoto_E01_")}.count,10)
         for name in names {
             let photo = try XCTUnwrap(PortraitImages.load(name), name)
             XCTAssertGreaterThan(photo.size.width, 200)
@@ -24,16 +25,16 @@ final class NoraVaultTests: XCTestCase {
         func visible() -> Int {
             NoraPhotoCatalog.photos.filter { $0.available(flags: world.state.flags) }.count
         }
-        XCTAssertEqual(visible(), 3)
+        XCTAssertEqual(visible(), 13)
         XCTAssertTrue(world.reply(to: .maya, text: world.tutorialChoices[0]))
         world.recordTutorialVisit("note")
-        XCTAssertEqual(visible(), 5)
+        XCTAssertEqual(visible(), 15)
         world.recordTutorialVisit("desk")
-        XCTAssertEqual(visible(), 5)
+        XCTAssertEqual(visible(), 15)
         world.recordTutorialVisit("reservation")
-        XCTAssertEqual(visible(), 7)
+        XCTAssertEqual(visible(), 17)
         world.recordTutorialVisit("journal")
-        XCTAssertEqual(visible(), 9)
+        XCTAssertEqual(visible(), 19)
         let privatePhotos = NoraPhotoCatalog.photos.filter(\.privateAlbum)
         XCTAssertEqual(privatePhotos.count, 5)
         XCTAssertTrue(privatePhotos.allSatisfy { !$0.available(flags: world.state.flags, authenticated: true) })
@@ -43,7 +44,7 @@ final class NoraVaultTests: XCTestCase {
         XCTAssertTrue(one.available(flags: flags, authenticated: true))
         XCTAssertTrue(privatePhotos.dropFirst().allSatisfy { !$0.available(flags: flags, authenticated: true) })
         world.resetPhoneTutorial()
-        XCTAssertEqual(visible(), 9)
+        XCTAssertEqual(visible(), 19)
     }
 
     func testPrivateRecoveryRequiresAuthenticatedSessionAndEarnedRecords() throws {

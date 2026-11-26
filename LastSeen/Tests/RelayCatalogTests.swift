@@ -132,7 +132,8 @@ final class RelayCatalogTests: XCTestCase {
         XCTAssertEqual(lines.count, 123)
         XCTAssertTrue(lines.contains("Installing Relay"))
         XCTAssertEqual(lines.last, "LumaShell respring queued")
-        XCTAssertFalse(lines.contains { $0.localizedCaseInsensitiveContains("virtual") || $0.localizedCaseInsensitiveContains("fictional") || $0.localizedCaseInsensitiveContains("simulat") })
+        XCTAssertTrue(lines.contains("Checking simulated firmware profile"))
+        XCTAssertTrue(lines.contains("Checking fictional owner access policy"))
     }
 }
 

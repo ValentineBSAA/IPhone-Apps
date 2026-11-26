@@ -861,7 +861,7 @@ struct PhoneLabView: View {
             Spacer(minLength:0)
             if EntityEcho.active(world.state.flags) {
                 Button {open(.patchline)} label:{
-                    Image(systemName:"exclamationmark.shield.fill").foregroundColor(.orange).frame(width:44,height:44)
+                    Image(systemName:"exclamationmark.shield.fill").foregroundColor(.orange).frame(width:44,height:44).contentShape(Rectangle())
                 }.accessibilityLabel("Foreign extension detected, open Patchline").accessibilityIdentifier("echo.containment.open")
             }
             if safeMode {

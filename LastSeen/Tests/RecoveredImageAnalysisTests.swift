@@ -252,7 +252,7 @@ import XCTest
 
     func testStagedHomeArchiveRequiresOpenedAndReviewedRecords() throws {
         var state = RestoredPhoneBackup.snapshot()
-        state.flags.formUnion(["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery])
+        state.flags.formUnion(["phone-tutorial-finished","investigation.contact.received","web.visited.archive",VeilArchive.discovery])
         let w = PhoneWorldStore(initial:state,persistToDisk:false)
         XCTAssertEqual(VeilArchive.media(w.state).count,11)
         XCTAssertNil(VeilArchive.mediaTitle("VEIL_Home_01",in:w.state))

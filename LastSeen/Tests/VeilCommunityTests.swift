@@ -43,7 +43,7 @@ import XCTest
     }
     func testSecondaryIndexRequiresMeaningfulSavedComparisonAndExplicitInspection() throws {
         var state = RestoredPhoneBackup.snapshot()
-        state.flags.formUnion(["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery])
+        state.flags.formUnion(["investigation.contact.received","phone-tutorial-finished","web.visited.archive",VeilArchive.discovery])
         let w = PhoneWorldStore(initial:state,persistToDisk:false)
         w.recordVeilCorrespondenceOpened()
         w.inspectVeilReference("board-reference")
