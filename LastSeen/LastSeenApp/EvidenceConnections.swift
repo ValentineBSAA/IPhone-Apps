@@ -62,8 +62,26 @@ struct EvidenceConnection: Codable, Equatable, Identifiable {
         let after=milestones(replacing(stored(world).filter{$0.id != id},in:world))
         return zip(before,after).contains{$0.0 && !$0.1}
     }
+    /// Potential dependencies are protected from implicit edits even while
+    /// prerequisites are dormant. This classification never grants access.
+    static func supportsAuthoredDependency(_ entry:Self)->Bool {
+        let ids=Set([entry.first,entry.second])
+        guard ids.count == 2 else{return false}
+        if entry.relation == .wording {
+            if ids.contains("veil:thread:ordinary-hours") && (1...6).contains(where:{ids.contains(String(format:"image:VEIL_Home_%02d",$0))}) {return true}
+            if ids == Set([SocialArchiveReview.readingID,"image:VEIL_Home_03"]) ||
+               ids == Set([SocialArchiveReview.recordID,"veil:conversation"]) ||
+               ids == Set([HavenWatchEvents.followupRecordID,"veil:thread:last-annotation"]) {return true}
+        }
+        if entry.relation == .chronology && ids == Set([SocialArchiveReview.datesID,"veil:home-index"]) {return true}
+        return HavenCrossArchiveReview.potentialPair(entry)
+    }
+    static func requiresExplicitRemoval(_ entry:Self,in world:PhoneWorld)->Bool {
+        stored(world).contains{$0.id == entry.id && $0.relation != entry.relation && supportsAuthoredDependency($0)}
+    }
     static func saving(_ entry:Self,in world:PhoneWorld)->[Self]? {
         guard make(entry.first,entry.second,relation:entry.relation,in:world)==entry else{return nil}
+        guard !requiresExplicitRemoval(entry,in:world) else{return nil}
         var values=stored(world).filter{$0.id != entry.id}
         values.insert(entry,at:0)
         if values.count<=capacity {return values}
@@ -71,7 +89,7 @@ struct EvidenceConnection: Codable, Equatable, Identifiable {
         // Predicates consume a bounded prefix, so evaluate each candidate's
         // removal in a separate full-size world. The new entry stays first.
         let baseline=milestones(world)
-        for index in values.indices.reversed() where index != 0 {
+        for index in values.indices.reversed() where index != 0 && !supportsAuthoredDependency(values[index]) {
             var candidate=values
             candidate.remove(at:index)
             let after=milestones(replacing(candidate,in:world))
@@ -242,7 +260,9 @@ struct EvidenceComparisonView: View {
                                 } else if !annotationBefore && VeilCommunity.reconstructionReady(world.state) {
                                     notice="Connection saved. The annotation review is available in VEIL."
                                 } else { notice="Connection saved to the current checkpoint." }
-                            } else { notice="Connection could not be saved without losing an available discovery. Review existing comparisons." }
+                            } else if EvidenceConnection.requiresExplicitRemoval(selection,in:world.state) {
+                                notice="Remove the existing saved comparison explicitly before changing its type. Related discoveries may become unavailable."
+                            } else { notice="Connection could not be saved without losing a protected comparison. Review existing comparisons." }
                         }.buttonStyle(.borderedProminent)
                         if !notice.isEmpty {Text(notice).font(.caption)}
                     }
@@ -259,6 +279,8 @@ struct EvidenceComparisonView: View {
                             Text(entry.relation.title).font(.caption).foregroundColor(.secondary)
                             if EvidenceConnection.revokesMilestone(entry.id,in:world.state) {
                                 Label("Supports a current discovery",systemImage:"link").font(.caption).foregroundColor(.secondary)
+                            } else if EvidenceConnection.supportsAuthoredDependency(entry) {
+                                Label("Protected comparison",systemImage:"link").font(.caption).foregroundColor(.secondary)
                             }
                             Button("Review connection"){
                                 first=entry.first;second=entry.second;relation=entry.relation;notice=""
@@ -278,7 +300,7 @@ struct EvidenceComparisonView: View {
                 }
                 Button("Cancel",role:.cancel){removing=nil}
             } message:{
-                Text(removing.map{EvidenceConnection.revokesMilestone($0.id,in:world.state)} == true
+                Text(removing.map{EvidenceConnection.supportsAuthoredDependency($0) || EvidenceConnection.revokesMilestone($0.id,in:world.state)} == true
                      ? "Related discoveries may become unavailable. Restoring this comparison can recover access."
                      : "This removes your saved observation from the current checkpoint.")
             }
@@ -432,6 +454,8 @@ struct PhotoFeatureMatchView:View {
                 }
             } else { Text("Comparison unavailable.") }
         }.navigationTitle("Match visible details")
+        .onChange(of:world.checkpointEpoch){_ in reset()}
+        .onChange(of:PhotoFeatureMatch.available(world.state).contains{$0.id==challengeID}){if !$0 {reset()}}
         .onChange(of:phase){if $0 != .active {reset()}}
         .onChange(of:security){_ in reset()}
         .onChange(of:textOnly){_ in reset()}

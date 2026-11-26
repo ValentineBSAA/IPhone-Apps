@@ -269,22 +269,32 @@ enum HavenCrossArchiveReview {
     static let choices = ["Every recovered copy came from a confirmed HavenWatch camera.",
                           "The two collections have different source labels; a shared capture source is unverified.",
                           "The original capture dates establish the order of both collections."]
-    static func matchingPair(_ pair:EvidenceConnection,in world:PhoneWorld)->Bool {
+    /// Stable authored pairing, independent of temporary archive access.
+    static func potentialPair(_ pair:EvidenceConnection)->Bool {
         guard pair.relation == .source, pair.first != pair.second else { return false }
         let ids=[pair.first,pair.second]
         guard let haven=ids.first(where:{$0.hasPrefix("haven:")}),
               let image=ids.first(where:{$0.hasPrefix("image:VEIL_Home_")}),
-              let frame=HavenWatchArchive.opened(world).first(where:{"haven:"+$0.id == haven}) else { return false }
+              let camera=HavenCamera.allCases.first(where:{
+                  ["haven:"+$0.asset(occupied:false),"haven:"+$0.asset(occupied:true)].contains(haven)
+              }) else { return false }
         let asset=String(image.dropFirst(6))
-        guard VeilArchive.homeMedia(world).contains(asset),
-              world.flags.contains("veil.viewed."+asset),
-              (world.connectedWorld?.recoveredImageReviews ?? []).contains(asset) else { return false }
-        switch frame.camera {
+        switch camera {
         case .kitchen: return ["VEIL_Home_01","VEIL_Home_03"].contains(asset)
         case .living: return ["VEIL_Home_02","VEIL_Home_05","VEIL_Home_06"].contains(asset)
         case .balcony: return asset == "VEIL_Home_04"
         default: return false
         }
+    }
+    static func matchingPair(_ pair:EvidenceConnection,in world:PhoneWorld)->Bool {
+        guard potentialPair(pair),
+              let haven=[pair.first,pair.second].first(where:{$0.hasPrefix("haven:")}),
+              let image=[pair.first,pair.second].first(where:{$0.hasPrefix("image:VEIL_Home_")}),
+              HavenWatchArchive.opened(world).contains(where:{"haven:"+$0.id == haven}) else { return false }
+        let asset=String(image.dropFirst(6))
+        return VeilArchive.homeMedia(world).contains(asset) &&
+              world.flags.contains("veil.viewed."+asset) &&
+              (world.connectedWorld?.recoveredImageReviews ?? []).contains(asset)
     }
     static func ready(_ world:PhoneWorld)->Bool {
         VeilCommunity.disputeReviewed(world) &&
