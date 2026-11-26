@@ -83,7 +83,7 @@ struct RelaySupportAttachmentPreview: View {
                 if eligible {
                     switch item.kind {
                     case .photo:
-                        ScrollView { Image(item.recordID).resizable().scaledToFit().padding() }
+                        RelaySupportPhotoDetail(item: item)
                     case .document:
                         WorldDocumentReader(id: item.recordID)
                     case .supportGuide:

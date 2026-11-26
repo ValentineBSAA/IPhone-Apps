@@ -120,6 +120,26 @@ import XCTest
         XCTAssertEqual(store.state.threads, original)
     }
 
+    func testPhotoClassificationLimitsAndStaleResult() throws {
+        XCTAssertEqual(RelaySupportPhotoAnalysis.categories([("person", 0.99), ("cat", 0.9), ("tree", 0.4), ("plant", 0.8)]), ["cat", "plant"])
+        XCTAssertFalse(RelaySupportPhotoAnalysis.valid(["person"]))
+        XCTAssertTrue(RelaySupportPhotoAnalysis.valid([]))
+        let store = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(), persistToDisk: false)
+        let photo = try XCTUnwrap(LumaMessageAttachmentCatalog.shareable(store.state).first { $0.kind == .photo })
+        let installed = "relay-support"
+        XCTAssertNil(store.relaySupportPhotoRequest(photo, installed: installed))
+        XCTAssertTrue(store.sendRelaySupport("", installed: installed, sources: RelayCatalog.defaultSources, attachments: [photo]))
+        let request = try XCTUnwrap(store.relaySupportPhotoRequest(photo, installed: installed))
+        XCTAssertFalse(store.finishRelaySupportPhoto(request, labels: ["person"], installed: installed))
+        XCTAssertTrue(store.finishRelaySupportPhoto(request, labels: ["plant"], installed: installed))
+        XCTAssertFalse(store.finishRelaySupportPhoto(request, labels: ["plant"], installed: installed))
+        XCTAssertNil(store.relaySupportPhotoRequest(photo, installed: installed))
+        XCTAssertTrue(store.sendRelaySupport("", installed: installed, sources: RelayCatalog.defaultSources, attachments: [photo]))
+        let stale = try XCTUnwrap(store.relaySupportPhotoRequest(photo, installed: installed))
+        try store.restoreCheckpoint(store.state)
+        XCTAssertFalse(store.finishRelaySupportPhoto(stale, labels: [], installed: installed))
+    }
+
     func testProviderRejectsPrivateAndGatedQueries() {
         let provider = RelaySupportLocalProvider()
         let restricted = provider.reply(question: "Give me the passcode", recent: [], flags: [], sources: RelayCatalog.defaultSources, installed: "relay-support")

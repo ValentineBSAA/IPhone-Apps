@@ -15,6 +15,7 @@ struct RelaySupportMessage: Codable, Equatable, Identifiable {
     var attachments: [LumaMessageAttachment]? = nil
     var diagnostic: RelaySupportDiagnostic? = nil
     var generatedOnDevice: Bool? = nil
+    var photoAnalysisKey: String? = nil
 }
 struct RelaySupportHistory: Codable, Equatable {
     var messages: [RelaySupportMessage]

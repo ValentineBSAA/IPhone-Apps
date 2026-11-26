@@ -753,6 +753,31 @@ final class PhoneWorldStore: ObservableObject {
         return true
     }
 
+    func relaySupportPhotoRequest(_ item: LumaMessageAttachment, installed: String) -> RelaySupportPhotoRequest? {
+        guard item.kind == .photo, RelaySupportAccess.available(installed: installed, flags: state.flags),
+              RelaySupportAttachmentPolicy.canRead(item, world: state),
+              let message = state.relaySupport?.messages.last(where: { $0.outgoing && ($0.attachments ?? []).contains(item) }) else { return nil }
+        let request = RelaySupportPhotoRequest(epoch: supportGenerationEpoch, messageID: message.id, item: item)
+        guard !(state.relaySupport?.messages ?? []).contains(where: { $0.photoAnalysisKey == request.key }) else { return nil }
+        return request
+    }
+
+    @discardableResult
+    func finishRelaySupportPhoto(_ request: RelaySupportPhotoRequest, labels: [String], installed: String, now: Date = Date()) -> Bool {
+        guard request.epoch == supportGenerationEpoch,
+              RelaySupportAccess.available(installed: installed, flags: state.flags),
+              request.item.kind == .photo, RelaySupportAttachmentPolicy.canRead(request.item, world: state),
+              RelaySupportPhotoAnalysis.valid(labels),
+              var history = state.relaySupport,
+              history.messages.contains(where: { $0.outgoing && $0.id == request.messageID && ($0.attachments ?? []).contains(request.item) }),
+              !history.messages.contains(where: { $0.photoAnalysisKey == request.key }) else { return false }
+        history.messages.append(.init(id: UUID().uuidString, text: RelaySupportPhotoAnalysis.reply(labels), at: now,
+                                      outgoing: false, photoAnalysisKey: request.key))
+        state.relaySupport = history
+        save()
+        return true
+    }
+
     func relaySupportGenerationRequest(installed: String, sources: String) -> RelaySupportGenerationRequest? {
         guard RelaySupportAccess.available(installed: installed, flags: state.flags),
               let messages = state.relaySupport?.messages, messages.count >= 2 else { return nil }
