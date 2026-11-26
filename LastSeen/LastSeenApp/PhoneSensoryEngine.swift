@@ -143,7 +143,7 @@ enum PhoneMessageArrival {
     }
     static func newest(in world: PhoneWorld, previous: Set<String>) -> PhoneAlert? {
         let added = incomingIDs(in: world).subtracting(previous)
-        return Neighbor.allCases.compactMap { neighbor -> PhoneAlert? in
+        return Neighbor.visible(in:world).compactMap { neighbor -> PhoneAlert? in
             let messages = world.threads[neighbor.id] ?? []
             guard let newest = messages.filter({ !$0.fromPlayer && added.contains($0.id) })
                 .max(by: { $0.at < $1.at }) else { return nil }

@@ -10,7 +10,7 @@ struct PhoneAlert: Identifiable, Equatable {
 
 enum PhoneAlertCatalog {
     static func alerts(in world: PhoneWorld, unreadOnly: Bool) -> [PhoneAlert] {
-        Neighbor.allCases.compactMap { neighbor in
+        Neighbor.visible(in:world).compactMap { neighbor in
             let incoming = (world.threads[neighbor.id] ?? []).filter { !$0.fromPlayer }
             let unread = incoming.filter { !$0.read }
             guard let latest = (unreadOnly ? unread : incoming).max(by: { $0.at < $1.at }) else { return nil }

@@ -170,6 +170,9 @@ enum LumaActivityCatalog {
     }
     /// The visible timer must use current persisted eligibility rather than
     /// the original banner snapshot, including dismissal and privacy changes.
+    static func available(_ state:PhoneWorld,appAvailable:(String)->Bool)->[LumaActivityNotice] {
+        visible(state).filter{appAvailable($0.appTitle)}
+    }
     static func presentedID(_ notice: LumaActivityNotice?, in state: PhoneWorld, unobstructed: Bool) -> String? {
         guard unobstructed, let id = notice?.id,
               visible(state).contains(where: { $0.id == id }) else { return nil }

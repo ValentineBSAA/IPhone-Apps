@@ -24,6 +24,16 @@ import XCTest
         XCTAssertEqual(LumaActivityCatalog.allIDs(decoded), baseline)
         XCTAssertTrue(LumaActivityCatalog.visible(decoded).isEmpty)
     }
+    func testUnavailableAppDoesNotEraseJournalOrPresentAlert() throws {
+        let now=Date(timeIntervalSince1970:1800000000)
+        let w=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(now:now),persistToDisk:false)
+        w.recordTimerActivity(end:now.timeIntervalSince1970)
+        let notice=try XCTUnwrap(LumaActivityCatalog.visible(w.state).first)
+        XCTAssertEqual(notice.appTitle,"Clock")
+        XCTAssertTrue(LumaActivityCatalog.available(w.state){_ in false}.isEmpty)
+        XCTAssertEqual(LumaActivityCatalog.available(w.state){$0=="Clock"}.map(\.id),[notice.id])
+        XCTAssertTrue(LumaActivityCatalog.allIDs(w.state).contains(notice.id))
+    }
     func testMailAndTimerDeduplication() throws {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let w = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(now: now), persistToDisk: false)

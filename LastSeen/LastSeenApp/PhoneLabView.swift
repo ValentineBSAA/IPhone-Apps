@@ -48,9 +48,20 @@ struct PhoneLabView: View {
     @State private var banner: PhoneAlert?
     @State private var activityBanner: LumaActivityNotice?
     @State private var activityQueue = LumaActivityBannerQueue()
+    private var availableActivity:[LumaActivityNotice] {
+        LumaActivityCatalog.available(world.state){ title in
+            LabApp(rawValue:title).map(appAvailable) ?? false
+        }
+    }
+    private var currentMessageBanner:PhoneAlert? {
+        guard let banner,phase == .active,!locked,!checkpointReboot,panel == nil,!showOwnerPasscode,
+              world.visibleThread != banner.neighbor else{return nil}
+        return alerts.first{$0.id==banner.id}
+    }
     private var presentedActivityID: String? {
-        LumaActivityCatalog.presentedID(activityBanner, in: world.state,
-            unobstructed: phase == .active && banner == nil && !locked && !checkpointReboot && panel == nil && !showOwnerPasscode)
+        guard let activityBanner,availableActivity.contains(where:{$0.id==activityBanner.id}) else{return nil}
+        return LumaActivityCatalog.presentedID(activityBanner, in: world.state,
+            unobstructed: phase == .active && currentMessageBanner == nil && !locked && !checkpointReboot && panel == nil && !showOwnerPasscode)
     }
     @State private var observedIncoming: Set<String> = []
     @State private var observedOutgoing: Set<String> = []
@@ -238,7 +249,7 @@ struct PhoneLabView: View {
             }
         }
         .overlay(alignment: .top) {
-            if let alert = banner, !locked, !checkpointReboot, panel == nil, !showOwnerPasscode, world.visibleThread != alert.neighbor {
+            if let alert = currentMessageBanner {
                 PhoneNotificationCard(alert: alert) {
                     banner = nil; openThread(alert.neighbor)
                 }.padding(.horizontal, 14).padding(.top, 4)
@@ -302,10 +313,10 @@ struct PhoneLabView: View {
             do { try await Task.sleep(nanoseconds: 6_000_000_000) } catch { return }
             circuitBanner = false
         }
-        .task(id: banner?.id) {
-            guard let id = banner?.id else { return }
+        .task(id: currentMessageBanner?.id) {
+            guard let id = currentMessageBanner?.id else { return }
             do { try await Task.sleep(nanoseconds: 5_000_000_000) } catch { return }
-            if banner?.id == id { withAnimation { banner = nil } }
+            if currentMessageBanner?.id == id { withAnimation { banner = nil } }
         }
         // Count a continuous visible interval, not time spent behind another overlay.
         // SwiftUI cancels this task on preemption; resuming starts a fresh interval.
@@ -333,7 +344,7 @@ struct PhoneLabView: View {
                 PhoneSensoryEngine.play(.message, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects)
                 if PhoneConversationPresentation.shouldShowBanner(for: newest.neighbor, visible: world.visibleThread, locked: locked, covered: panel != nil || showOwnerPasscode) {
                     withAnimation(.easeOut(duration: 0.25)) { banner = newest }
-                } else if !locked && panel == nil && world.visibleThread == newest.neighbor {
+                } else if !locked && panel == nil && !showOwnerPasscode && world.visibleThread == newest.neighbor {
                     world.markRead(newest.neighbor)
                     banner = nil
                 }
@@ -359,13 +370,15 @@ struct PhoneLabView: View {
                     world.advanceRelaySupportActivity(installed: relayInstalled)
                     if timerBaselineReady { settleTimer(now: Date().timeIntervalSince1970, present: false) }
                     if didConfigureFeedback {
-                        let arrived = LumaActivityCatalog.newEntries(world.state, previous: before)
-                        playActivityFeedback(arrived)
+                        let arrived = availableActivity.filter{!before.contains($0.id)}.reversed()
+                        playActivityFeedback(Array(arrived))
                         if !locked {
-                            activityQueue.enqueue(arrived, showing: activityBanner?.id)
-                            if let current = activityBanner, !LumaActivityCatalog.visible(world.state).contains(where: { $0.id == current.id }) { activityBanner = nil }
-                            if activityBanner == nil && banner == nil && panel == nil && !showOwnerPasscode {
-                                activityBanner = activityQueue.next(in: world.state)
+                            activityQueue.enqueue(Array(arrived), showing: activityBanner?.id)
+                            if let current = activityBanner, !availableActivity.contains(where: { $0.id == current.id }) { activityBanner = nil }
+                            if activityBanner == nil && currentMessageBanner == nil && panel == nil && !showOwnerPasscode {
+                                while let next=activityQueue.next(in:world.state) {
+                                    if availableActivity.contains(where:{$0.id==next.id}) {activityBanner=next;break}
+                                }
                             }
                         }
                     }
@@ -506,7 +519,7 @@ struct PhoneLabView: View {
             .ignoresSafeArea()
     }
 
-    private var unread: Int { Neighbor.allCases.reduce(0) { $0 + world.countUnread($1) } }
+    private var unread: Int { Neighbor.visible(in:world.state).reduce(0) { $0 + world.countUnread($1) } }
 
     private var lockScreen: some View {
         VStack(spacing: 12) {
@@ -528,7 +541,7 @@ struct PhoneLabView: View {
             }
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
-                    if !alerts.isEmpty || !LumaActivityCatalog.visible(world.state).isEmpty {
+                    if !alerts.isEmpty || !availableActivity.isEmpty {
                         HStack {
                             Text("Notifications").font(.headline)
                             Spacer()
@@ -536,14 +549,14 @@ struct PhoneLabView: View {
                         }.padding(.horizontal, 4)
                         ForEach(alerts) { alert in
                             PhoneNotificationCard(alert: alert, hidePreview: effectiveLockPreviewsHidden) {
-                                guard authContext == nil else { return }
+                                guard phase == .active,authContext == nil,alerts.contains(where:{$0.id==alert.id}) else { return }
                                 pendingActivityID = nil; pendingThread = alert.neighbor
                                 requestUnlock()
                             }
                         }
-                        ForEach(LumaActivityCatalog.visible(world.state)) { notice in
+                        ForEach(availableActivity) { notice in
                             LumaActivityCard(notice: notice, hidePreview: true) {
-                                guard authContext == nil else { return }
+                                guard phase == .active,authContext == nil,availableActivity.contains(where:{$0.id==notice.id}) else { return }
                                 pendingThread = nil; pendingActivityID = notice.id; requestUnlock()
                             }
                         }
@@ -612,13 +625,13 @@ struct PhoneLabView: View {
         let neighbor=pendingThread
         pendingActivityID=nil;pendingThread=nil
         if let activityID {
-            if let notice=LumaActivityCatalog.visible(world.state).first(where:{$0.id==activityID}) {openActivity(notice)}
+            if let notice=availableActivity.first(where:{$0.id==activityID}) {openActivity(notice)}
         } else if let neighbor {openThread(neighbor)}
     }
 
     private func openActivity(_ snapshot:LumaActivityNotice) {
         guard phase == .active,!locked,!checkpointReboot,
-              let notice=LumaActivityCatalog.visible(world.state).first(where:{$0.id==snapshot.id}),
+              let notice=availableActivity.first(where:{$0.id==snapshot.id}),
               let app=LabApp(rawValue:notice.appTitle),appAvailable(app) else{return}
         panel=nil;activityBanner=nil
         open(app)
@@ -972,7 +985,7 @@ struct PhoneLabView: View {
             VStack(spacing:5) {
                 ZStack(alignment:.topTrailing) {
                     appArtwork(app,size:size)
-                    let count = app == .messages ? unread : LumaActivityCatalog.visible(world.state).filter { $0.appTitle == app.rawValue }.count
+                    let count = app == .messages ? unread : availableActivity.filter { $0.appTitle == app.rawValue }.count
                     if count > 0 && !tweak("quietbadges") {
                         Text("\(count)").font(.caption2.bold()).padding(5)
                             .background(.red,in:Capsule()).offset(x:5,y:-5)
@@ -1181,7 +1194,7 @@ struct PhoneLabView: View {
                 ForEach(LumaUtility.allCases.filter { world.state.flags.contains($0.flag) }) { tool in UtilityNoticeCard(tool: tool) }
                 Button { panel = nil; open(.settings) } label: { Label("Investigation progress · " + InvestigationProgress.summary(world.state.flags), systemImage: "checklist").frame(maxWidth: .infinity, alignment: .leading).padding(12).lumaSurface() }.buttonStyle(.plain)
                 Text("Recent app activity").font(.subheadline).foregroundColor(.secondary)
-                ForEach(LumaActivityCatalog.visible(world.state)) { notice in
+                ForEach(availableActivity) { notice in
                     VStack(alignment: .trailing, spacing: 4) {
                         LumaActivityCard(notice: notice, hidePreview: notice.hidePreview(in: world.state)) { openActivity(notice) }
                         Button("Dismiss") { world.dismissActivity(notice.id) }.font(.caption)
@@ -1191,7 +1204,7 @@ struct PhoneLabView: View {
                 ForEach(PhoneAlertCatalog.alerts(in: world.state, unreadOnly: false)) { alert in
                     PhoneNotificationCard(alert: alert) { openThread(alert.neighbor) }
                 }
-                if PhoneAlertCatalog.alerts(in: world.state, unreadOnly: false).isEmpty && LumaActivityCatalog.visible(world.state).isEmpty {
+                if PhoneAlertCatalog.alerts(in: world.state, unreadOnly: false).isEmpty && availableActivity.isEmpty {
                     Text("You're all caught up.").foregroundColor(.secondary)
                 }
             }.padding(16)
