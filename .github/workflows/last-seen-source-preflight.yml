@@ -28,7 +28,7 @@ jobs:
           set -euo pipefail
           swift --version
           find LastSeenApp Tests UITests -name '*.swift' -print0 | xargs -0 swiftc -frontend -parse
-          echo "Swift source parse completed; no native typecheck or build performed." >> "$GITHUB_STEP_SUMMARY"
+          echo "Swift source parse completed at $GITHUB_SHA; no native typecheck or build performed." >> "$GITHUB_STEP_SUMMARY"
 
   artwork:
     name: Retrieve exact artwork originals for private review
@@ -50,7 +50,7 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/lastseen-review-venv"
           "$RUNNER_TEMP/lastseen-review-venv/bin/python" -m pip install --disable-pip-version-check Pillow
           "$RUNNER_TEMP/lastseen-review-venv/bin/python" LastSeen/Tools/prepare_artwork_review.py --packs "$RUNNER_TEMP/lastseen-packs" --output "$RUNNER_TEMP/lastseen-review"
-          echo "Outstanding originals verified for review; no narrative assignment or runtime import." >> "$GITHUB_STEP_SUMMARY"
+          echo "Pinned original archives verified at $GITHUB_SHA; no native build or runtime package." >> "$GITHUB_STEP_SUMMARY"
       - name: Exercise approved expansion importer in isolated scratch directory
         run: |
           set -euo pipefail
@@ -96,6 +96,23 @@ jobs:
           assert ledger["review_complete"] and not ledger["assets"] and len(ledger["assigned"])==38 and len(ledger["held"])==9
           print("Final disposition: 38 assigned, 9 held, exact originals verified.")
           PY
+      - name: Reject a stale held recovered resource before writing approved files
+        run: |
+          set -euo pipefail
+          scratch="$RUNNER_TEMP/lastseen-held-rejection"
+          mkdir -p "$scratch/LastSeenApp"
+          cp "$RUNNER_TEMP/lastseen-packs/Last-Seen-Build27-Recovered-Images.zip" "$scratch/"
+          cp LastSeen/Tools/import_recovered_art.py "$scratch/"
+          cd "$scratch"
+          printf 'stale held resource' > LastSeenApp/Recovered_B27_06.png
+          if python3 import_recovered_art.py > importer.log 2>&1; then
+            echo "::error::Importer accepted a stale held recovered original"
+            exit 1
+          fi
+          grep -F 'Held recovered original must be removed' importer.log
+          test "$(find LastSeenApp -type f | wc -l | tr -d ' ')" = "1"
+          test "$(cat LastSeenApp/Recovered_B27_06.png)" = "stale held resource"
+          echo "Held recovered resource rejected before any approved resource was written." >> "$GITHUB_STEP_SUMMARY"
       - name: Preserve exact recovered artwork archive
         uses: actions/upload-artifact@v4
         with:
