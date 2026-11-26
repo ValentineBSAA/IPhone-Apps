@@ -1,0 +1,12 @@
+{
+  "authorization": "one-take-1001-characters",
+  "model": "eleven_v4",
+  "takes": 1,
+  "max_estimated_credits": 1100,
+  "script_catalog_git_blob": "4d5e778076b6562f95b5393e68b3eebbad9e55e2",
+  "voices": {
+    "Nora Bennett": "EXAVITQu4vr4xnSDxMaL",
+    "Tessa Reed": "cgSgspJ2msm6clMCkdW9",
+    "Luma Assistant": "XrExE9yKIg1WjnnlVkGX"
+  }
+}
