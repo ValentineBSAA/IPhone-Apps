@@ -67,8 +67,12 @@ enum LumaWebCatalog {
     }
     static func visible(_ flags: Set<String>) -> [LumaWebPage] { pages.filter { $0.available(flags) } }
     static func isReviewReady(_ flags: Set<String>) -> Bool {
-        flags.contains("web.visited.archive-review") && flags.contains("web.visited.studio-news") &&
-        (page("archive-records")?.images.contains { flags.contains("web.inspected." + $0) } ?? false)
+        let required:Set<String> = ["phone-tutorial-finished","web.visited.studio","web.visited.archive","web.visited.archive-records","web.visited.archive-review","web.visited.studio-news"]
+        guard required.isSubset(of:flags),
+              let source=page("archive-records"),source.available(flags),
+              page("archive-review")?.available(flags)==true,
+              page("studio-news")?.available(flags)==true else{return false}
+        return source.images.contains { flags.contains("web.inspected."+$0) }
     }
     static func search(_ raw: String, flags: Set<String>) -> [LumaWebPage] {
         let q = normalized(raw)

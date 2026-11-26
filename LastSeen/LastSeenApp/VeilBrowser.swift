@@ -276,7 +276,20 @@ struct VeilBrowser: View {
             }
             .onChange(of:phase) { if $0 != .active { disconnect() } }
             .onChange(of:allowed) { if !$0 { disconnect() } }
+            .onChange(of:world.state.flags) { _ in
+                guard allowed,connected else{return}
+                let valid=Set(pages.map(\.id))
+                history=history.filter{valid.contains($0)}
+                if !valid.contains(selected) {
+                    selected="directory"
+                    address=VeilArchive.resolve("directory",in:world.state)?.address ?? ""
+                    notice="This recovered service is no longer available."
+                }
+            }
             .onChange(of:wifi) { if !$0 { disconnect(); notice="Simulated Wi-Fi is off." } }
-            .onDisappear { disconnect() }
+            // A push into a board, correspondence or image workspace is
+            // still part of this local session. The parent state is discarded
+            // when its navigation entry is removed; cancel unfinished connects.
+            .onDisappear { if connecting { disconnect() } }
     }
 }

@@ -68,6 +68,17 @@ import XCTest
         XCTAssertEqual(defaults.double(forKey: deliveredKey), 0)
     }
 
+    func testReviewRequiresVisitedSourceAndActiveRecovery() throws {
+        let asset=try XCTUnwrap(LumaWebCatalog.page("archive-records")?.images.first)
+        var flags:Set<String>=["phone-tutorial-finished","web.visited.studio","web.visited.archive","web.visited.archive-review","web.visited.studio-news","web.inspected."+asset]
+        XCTAssertFalse(LumaWebCatalog.isReviewReady(flags))
+        flags.insert("web.visited.archive-records")
+        XCTAssertTrue(LumaWebCatalog.isReviewReady(flags))
+        for missing in ["phone-tutorial-finished","web.visited.studio","web.visited.archive","web.visited.archive-records","web.visited.archive-review","web.visited.studio-news","web.inspected."+asset] {
+            XCTAssertFalse(LumaWebCatalog.isReviewReady(flags.subtracting([missing])),missing)
+        }
+    }
+
     func testLatePageRejectsMissingPrerequisite() {
         var flags: Set<String> = ["phone-tutorial-finished","web.visited.studio","investigation.chapter2.reviewed","web.visited.archive-ledger","investigation.chapter2.ledgerAcknowledged",InvestigationReview.requested,InvestigationReview.read,InvestigationReview.finished,"web.visited."+InvestigationReview.pageID,"web.visited."+InvestigationResolution.indexID,"web.visited."+InvestigationResolution.noteID,InvestigationResolution.requested,InvestigationResolution.read]
         XCTAssertTrue(LumaWebCatalog.visible(flags).contains { $0.id == InvestigationResolution.conclusionID })

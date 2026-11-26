@@ -19,3 +19,9 @@ Source-level review only; no native test execution.
 - Regular browser inspection now requires the containing page to have been visited; premature direct inspection cannot satisfy the archive review.
 - Fixed standalone Build27 PNG loader for analysis and Luma; the IPA verifier checks all 29 originals by manifest hash rather than falsely requiring them inside Assets.car.
 - Older recovered-image release ZIP metadata is visible but direct binary retrieval was unavailable in this environment. No visual continuity claims or new public assignments for the 22 remaining images, and no exposure of the staged 18. Native/device tests remain outstanding.
+
+## Tranche 61 follow-up
+- Preserve connected VEIL state across internal navigation; still cancel pending connection on departure and disconnect on background, Wi-Fi off or authorization loss. Revalidate history/current page when flags change.
+- Archive review requires the active tutorial milestone, studio and archive visits, an accessible inspected source page, and both required review visits. Reject stale or orphaned inspection flags.
+- Correct two stale community test counts: the inspected discussion reference already requires opened correspondence, so eleven threads are eligible before the separately gated image thread (twelve total).
+- Luma cancels optional intent interpretation when disabled, and clears selected evidence plus transient answers when its authorization is revoked. Native execution still pending; no image reassignment or mandatory plot addition.

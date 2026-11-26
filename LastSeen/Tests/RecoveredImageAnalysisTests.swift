@@ -30,7 +30,7 @@ import XCTest
         w.recordVeilCorrespondenceOpened()
         w.inspectVeilReference("board-reference")
         XCTAssertNotNil(VeilReferences.target("board-reference",in:w.state))
-        XCTAssertEqual(VeilCommunity.visible(w.state).count,10)
+        XCTAssertEqual(VeilCommunity.visible(w.state).count,11)
         w.recordVeilObservation("Nora_Archive_08")
         XCTAssertNotNil(RecoveredImageAnalysis.record("Nora_Archive_08",in:w.state))
         XCTAssertTrue(w.completeRecoveredImageAnalysis("Nora_Archive_08",source:2,limit:0))

@@ -40,7 +40,7 @@ import XCTest
         let discover=PhoneWorldStore(initial:world,persistToDisk:false)
         discover.inspectVeilReference("board-reference")
         world=discover.state
-        XCTAssertEqual(VeilCommunity.visible(world).count,10)
+        XCTAssertEqual(VeilCommunity.visible(world).count,11)
         XCTAssertNotNil(VeilArchive.resolve("boards",in:world))
         XCTAssertNil(VeilCommunity.thread("image-index",in:world))
         world.flags.insert("veil.viewed.Nora_Archive_08")

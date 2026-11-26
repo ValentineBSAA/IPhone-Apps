@@ -311,6 +311,18 @@ struct LumaAssistantView: View {
                     conversationTurns=[];answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation")
                 }
             }
+            .onChange(of:interpretOnDevice) { enabled in
+                if !enabled {interpretation?.cancel();interpretation=nil;requestID=UUID()}
+            }
+            .onChange(of:context().world.flags) { _ in
+                if let id=evidenceID,LumaAssistantEvidence.selected(id,in:context().world)==nil {
+                    cancelImageScan();stopAudio()
+                    interpretation?.cancel();interpretation=nil;requestID=UUID()
+                    evidenceID=nil;conversationTurns=[];conversationTopic=nil
+                    previousMemoryID=nil;recollectionCount=0
+                    answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation")
+                }
+            }
             .onChange(of: sound) { if !$0 { stopAudio() } }
             .onChange(of: spokenResponses) { if !$0 { stopAudio() } }
             .onReceive(timer) { now in
