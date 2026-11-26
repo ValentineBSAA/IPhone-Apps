@@ -1230,6 +1230,11 @@ final class PhoneWorldStore: ObservableObject {
         }
         commitConnected(c)
     }
+    func recordVeilAnnotationReview(packages:String,safeMode:Bool) {
+        guard VeilArchive.installed(state,packages:packages,safeMode:safeMode),
+              VeilCommunity.reconstructionReady(state) else{return}
+        if state.flags.insert(VeilCommunity.reconstructionMarker).inserted { save() }
+    }
     func recordHavenFollowupOpened() {
         guard HavenWatchEvents.followup(state) != nil else{return}
         if state.flags.insert(HavenWatchEvents.followupOpened).inserted { save() }

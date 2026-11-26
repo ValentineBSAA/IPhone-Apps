@@ -72,6 +72,9 @@ struct HavenWatchEventDetail: View {
                             NavigationLink { EvidenceComparisonView(initialRecordID:HavenWatchEvents.followupRecordID) } label:{
                                 Label("Compare the retained record",systemImage:"rectangle.split.2x1")
                             }
+                            NavigationLink { VeilBrowser(initialReference:"board-reference") } label:{
+                                Label("Revisit related VEIL discussions",systemImage:"eye.slash")
+                            }
                         }
                     }
                 }

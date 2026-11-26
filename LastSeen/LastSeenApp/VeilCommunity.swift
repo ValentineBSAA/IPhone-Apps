@@ -53,6 +53,28 @@ enum VeilCommunity {
         disputeAvailable(world) && answer == 0
     }
     static let disputeNote = "The accounts assign different revision stages to the same label. Neither establishes the original capture date or author. The disagreement remains useful evidence of an unreliable archive."
+    static let lateThreads:Set<String> = ["borrowed-caption","wrong-room","last-annotation"]
+    static let reconstructionID = "veil:annotation-review"
+    static let reconstructionMarker = "veil.annotation-review.opened"
+    static let reconstructionTitle = "Recovered annotation review"
+    static let reconstructionText = "The surviving records distinguish a personal description from a label attached to a copy. Nora's own correspondence rejects the idea that the collection was hers. The matching wording connects the records, but cannot tell us which anonymous handle wrote the label. The apparent intimacy belongs to the person describing the collection, not to a relationship established by Nora."
+    static func reconstructionReady(_ world:PhoneWorld)->Bool {
+        guard HavenWatchEvents.openedFollowup(world),
+              world.flags.contains(openedMarker("last-annotation")),
+              world.flags.contains(openedMarker("borrowed-caption")) else { return false }
+        return (world.connectedWorld?.evidenceConnections ?? []).prefix(40).contains {
+            Set([$0.first,$0.second]) == Set([HavenWatchEvents.followupRecordID,"veil:thread:last-annotation"]) &&
+                $0.relation == .wording
+        }
+    }
+    static func reconstructionOpened(_ world:PhoneWorld)->Bool {
+        reconstructionReady(world) && world.flags.contains(reconstructionMarker)
+    }
+    static func history(_ handle:String,in world:PhoneWorld)->[Thread] {
+        guard handles.contains(handle) else{return []}
+        return visible(world).filter{$0.author == handle || $0.replies.contains{$0.author == handle}}
+            .sorted{$0.daysAgo > $1.daysAgo}
+    }
     private static let all:[Thread] = [
         make("lost-media","quiet-tapes","A room with no soundtrack","tapeghost",38,"The archive entry has room tone, then nothing. I remember a different ending, but my copy is incomplete.",[("paperindex","My index lists an incomplete recording too."),("moth","The silence is the part that stays with me."),("greyrelay","Marking this as incomplete, not a confirmed alternate version.")]),
         make("lost-media","empty-pages","Pages that outlive their sites","paperindex",31,"Sometimes an old page survives after the rest of a site is gone. Missing context can change the way a sentence reads.",[("tapeghost","Especially when the date belongs to the copy."),("stillframe","I keep those fields separate."),("greyrelay","Please label reconstructed text.")]),
@@ -70,13 +92,17 @@ enum VeilCommunity {
         make("after-hours","favorite-frame","A favorite frame?","moth",5,"Somebody keeps talking about the woman in the recovered pictures as though they know her. I can't tell whether it's a joke anymore.",[("lowlight","I have a favorite. She looks comfortable, like she wouldn't expect anyone to be looking."),("stillframe","You're talking about a person, not a character in a collection."),("hush","That reply made this whole thread feel different.")],gate:"veil.viewed.Nora_Archive_08"),
         make("boundaries","not-a-relationship","That isn't familiarity","inkveil",4,"Reading the same archive over and over doesn't mean the person in it knows you. Stop calling the photographs a relationship.",[("lowlight","I never said she knew me. I just like the idea that I know a side of her other people don't."),("cinder","That's entitlement, not affection."),("greyrelay","Thread retained as a historical copy. No contact requests or additional private material.")],gate:"veil.viewed.Nora_Archive_08"),
         make("index-room","first-copy","Before the label changed","paperindex",8,"My saved index already called it a personal collection before the revision. I remember the label changing afterward.",[("saltline","My copy doesn't agree with that order."),("lowlight","The old label felt more honest to me."),("null","A remembered label is not the original file.")],gate:"veil.home-index.opened"),
-        make("index-room","second-copy","The other revision","saltline",7,"The earlier index I retained says reference copies. The personal collection label appears later in my notes, not earlier.",[("paperindex","Then one of us retained a different revision."),("stillframe","Neither copy contains a confirmed capture date."),("greyrelay","The original author field is missing in both accounts.")],gate:"veil.home-index.opened")
+        make("index-room","second-copy","The other revision","saltline",7,"The earlier index I retained says reference copies. The personal collection label appears later in my notes, not earlier.",[("paperindex","Then one of us retained a different revision."),("stillframe","Neither copy contains a confirmed capture date."),("greyrelay","The original author field is missing in both accounts.")],gate:"veil.home-index.opened"),
+        make("after-hours","borrowed-caption","Someone else's words","lowlight",4,"The caption was better when it felt like it was meant for me. I kept calling it a personal collection. She never called it that.",[("moth","You sound as though you're remembering a conversation that never happened."),("lowlight","Maybe I liked the idea better than the conversation."),("hush","That is a very lonely thing to say about somebody else's life.")],gate:HavenWatchEvents.followupOpened),
+        make("lost-media","wrong-room","A familiar corner","tapeghost",3,"I thought I recognized the room in a thumbnail. Then I opened the other copy. I had remembered the wrong picture.",[("stillframe","There is no confirmed link between those two stills."),("null","The thumbnail is not the room."),("paperindex","Keeping the two entries separate.")],gate:HavenWatchEvents.followupOpened),
+        make("index-room","last-annotation","The retained collection label","saltline",2,"The surviving index retains the personal collection label as an annotation, not as the original camera field. There is no author attached to it.",[("paperindex","That explains why the label and the directory disagree."),("inkveil","It also means the label was not necessarily the subject's own description."),("greyrelay","Keep the annotation with its original uncertainty.")],gate:HavenWatchEvents.followupOpened)
     ]
     static func visible(_ world:PhoneWorld) -> [Thread] {
         guard VeilArchive.authorized(world),VeilReferences.inspected("board-reference",in:world) != nil else { return [] }
         return all.filter { thread in
             (thread.gate.map { world.flags.contains($0) } ?? true) &&
-            (!disputedThreads.contains(thread.id) || revisionAvailable(world))
+            (!disputedThreads.contains(thread.id) || revisionAvailable(world)) &&
+            (!lateThreads.contains(thread.id) || HavenWatchEvents.openedFollowup(world))
         }
     }
     static func thread(_ id:String,in world:PhoneWorld) -> Thread? { visible(world).first{$0.id == id} }
@@ -100,12 +126,17 @@ struct VeilCommunityView:View {
             if allowed {
                 Section {
                     Toggle("Saved threads",isOn:$savedOnly)
+                    if HavenWatchEvents.openedFollowup(world.state) {
+                        NavigationLink { VeilAnnotationReviewView() } label:{
+                            Label("Review retained annotation",systemImage:"doc.text.magnifyingglass")
+                        }
+                    }
                     Text("Archived discussions · read-only · handles unverified").font(.caption).foregroundColor(.secondary)
                 }
                 ForEach(VeilCommunity.boards) { board in
                     let threads=VeilCommunity.visible(world.state).filter {
                         $0.boardID == board.id && (!savedOnly || VeilCommunity.bookmarkIDs(world.state).contains($0.id)) &&
-                        (query.isEmpty || [$0.title,$0.text,$0.author].contains{$0.localizedCaseInsensitiveContains(query)})
+                        (query.isEmpty || ([$0.title,$0.text,$0.author]+$0.replies.flatMap{[$0.author,$0.text]}).contains{$0.localizedCaseInsensitiveContains(query)})
                     }.sorted{$0.daysAgo < $1.daysAgo}
                     if !threads.isEmpty {
                         Section {
@@ -137,7 +168,9 @@ struct VeilThreadView:View {
             if allowed,let thread=VeilCommunity.thread(id,in:world.state) {
                 Section {
                     Text(thread.title).font(.title2.bold())
-                    Text(thread.author+" · archived handle").font(.caption).foregroundColor(.secondary)
+                    NavigationLink { VeilHandleHistoryView(handle:thread.author) } label:{
+                        Text(thread.author+" · archived handle").font(.caption).foregroundColor(.secondary)
+                    }
                     Text(thread.text).textSelection(.enabled)
                     Button(VeilCommunity.bookmarkIDs(world.state).contains(id) ? "Remove bookmark" : "Save thread") {
                         world.toggleVeilThreadBookmark(id,packages:packages,safeMode:safeMode)
@@ -146,7 +179,9 @@ struct VeilThreadView:View {
                 Section("Archived replies") {
                     ForEach(thread.replies) { reply in
                         VStack(alignment:.leading,spacing:8) {
-                            Text(reply.author).font(.caption.bold()).foregroundColor(.purple)
+                            NavigationLink { VeilHandleHistoryView(handle:reply.author) } label:{
+                                Text(reply.author).font(.caption.bold()).foregroundColor(.purple)
+                            }
                             Text(reply.text).textSelection(.enabled)
                         }.padding(.vertical,4)
                     }
@@ -154,6 +189,11 @@ struct VeilThreadView:View {
                 if VeilCommunity.disputedThreads.contains(id) {
                     NavigationLink { VeilDisputeReviewView() } label: {
                         Label("Review conflicting accounts",systemImage:"arrow.left.arrow.right")
+                    }
+                }
+                if VeilCommunity.lateThreads.contains(id) {
+                    NavigationLink { VeilAnnotationReviewView() } label:{
+                        Label("Review retained annotation",systemImage:"doc.text.magnifyingglass")
                     }
                 }
                 Text("No verified identities or live posting.").font(.caption).foregroundColor(.secondary)
@@ -205,5 +245,70 @@ struct VeilDisputeReviewView:View {
         }.navigationTitle("Conflicting accounts")
         .onChange(of:phase){if $0 != .active {choice=nil;notice=""}}
         .onChange(of:VeilCommunity.disputeAvailable(world.state)){if !$0 {choice=nil;notice=""}}
+    }
+}
+
+
+struct VeilHandleHistoryView:View {
+    let handle:String
+    @EnvironmentObject private var world:PhoneWorldStore
+    @AppStorage("lastseen.relay.installed") private var packages=""
+    @AppStorage("lastseen.relay.safeMode") private var safeMode=false
+    var body:some View {
+        List {
+            if VeilArchive.installed(world.state,packages:packages,safeMode:safeMode),
+               VeilCommunity.handles.contains(handle) {
+                Section {
+                    Text(handle).font(.title2.monospaced())
+                    Text("Archived appearances · handle only").font(.caption).foregroundColor(.secondary)
+                }
+                ForEach(VeilCommunity.history(handle,in:world.state)) { thread in
+                    NavigationLink { VeilThreadView(id:thread.id) } label:{
+                        VStack(alignment:.leading,spacing:5) {
+                            Text(thread.title)
+                            Text(VeilCommunity.date(thread,in:world.state),style:.date).font(.caption).foregroundColor(.secondary)
+                            Text(thread.author == handle ? "Original post":"Reply").font(.caption)
+                        }
+                    }
+                }
+            } else { Text("Handle unavailable") }
+        }.navigationTitle("Archived activity")
+    }
+}
+
+struct VeilAnnotationReviewView:View {
+    @EnvironmentObject private var world:PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
+    @AppStorage("lastseen.relay.installed") private var packages=""
+    @AppStorage("lastseen.relay.safeMode") private var safeMode=false
+    var body:some View {
+        List {
+            if VeilArchive.installed(world.state,packages:packages,safeMode:safeMode),
+               HavenWatchEvents.openedFollowup(world.state),phase == .active {
+                Section {
+                    Text("Read the related discussions and compare the annotation wording with the retained HavenWatch record.")
+                    ForEach(["borrowed-caption","wrong-room","last-annotation"],id:\.self) { id in
+                        if let thread=VeilCommunity.thread(id,in:world.state) {
+                            NavigationLink { VeilThreadView(id:id) } label:{
+                                Label(thread.title,systemImage:world.state.flags.contains(VeilCommunity.openedMarker(id)) ? "checkmark.circle":"circle")
+                            }
+                        }
+                    }
+                    NavigationLink { EvidenceComparisonView(initialRecordID:HavenWatchEvents.followupRecordID) } label:{
+                        Label("Compare opened records",systemImage:"rectangle.split.2x1")
+                    }
+                }
+                if VeilCommunity.reconstructionOpened(world.state) {
+                    Section(VeilCommunity.reconstructionTitle) {
+                        Text(VeilCommunity.reconstructionText).textSelection(.enabled)
+                        NavigationLink { NoraFriendArchiveView() } label:{Label("Return to personal correspondence",systemImage:"message")}
+                    }
+                } else if VeilCommunity.reconstructionReady(world.state) {
+                    Button("Read recovered annotation review") {
+                        world.recordVeilAnnotationReview(packages:packages,safeMode:safeMode)
+                    }.buttonStyle(.borderedProminent)
+                }
+            } else { Text("Review unavailable.") }
+        }.navigationTitle("Annotation review")
     }
 }

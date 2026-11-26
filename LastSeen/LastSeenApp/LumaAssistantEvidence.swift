@@ -80,6 +80,10 @@ enum LumaAssistantEvidence {
                 excerpts:[HavenCrossArchiveReview.note]))
         }
         if VeilArchive.authorized(world) {
+            if VeilCommunity.reconstructionOpened(world) {
+                result.append(.init(id:VeilCommunity.reconstructionID,title:VeilCommunity.reconstructionTitle,
+                    kind:.document,excerpts:[VeilCommunity.reconstructionText]))
+            }
             for thread in VeilCommunity.opened(world) {
                 let passages = [thread.author+": "+thread.text] + thread.replies.map{$0.author+": "+$0.text}
                 result.append(.init(id:"veil:thread:"+thread.id,title:thread.title,kind:.web,excerpts:passages))
