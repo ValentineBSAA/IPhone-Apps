@@ -1,0 +1,78 @@
+name: LAST SEEN - source and artwork preflight (no IPA)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/last-seen-build27-noras-world
+    paths:
+      - '.github/workflows/last-seen-source-preflight.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    name: Static source checks only
+    runs-on: macos-15
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: LastSeen
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify source metadata and offline fixture tests
+        run: python3 Tools/verify_release_contract.py
+      - name: Parse Swift files without compilation or linking
+        run: |
+          set -euo pipefail
+          swift --version
+          find LastSeenApp Tests UITests -name '*.swift' -print0 | xargs -0 swiftc -frontend -parse
+          echo "Swift source parse completed; no native typecheck or build performed." >> "$GITHUB_STEP_SUMMARY"
+
+  artwork:
+    name: Retrieve exact artwork originals for private review
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve both existing pinned release archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/lastseen-packs"
+          gh release download L1 --repo "$GITHUB_REPOSITORY" --pattern 'Last-Seen-Build27-Recovered-Images.zip' --dir "$RUNNER_TEMP/lastseen-packs"
+          gh release download L1 --repo "$GITHUB_REPOSITORY" --pattern 'Last-Seen-World-Photos-Expansion-01.zip' --dir "$RUNNER_TEMP/lastseen-packs"
+      - name: Verify original bytes and prepare review sheets
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/lastseen-review-venv"
+          "$RUNNER_TEMP/lastseen-review-venv/bin/python" -m pip install --disable-pip-version-check Pillow
+          "$RUNNER_TEMP/lastseen-review-venv/bin/python" LastSeen/Tools/prepare_artwork_review.py --packs "$RUNNER_TEMP/lastseen-packs" --output "$RUNNER_TEMP/lastseen-review"
+          echo "Forty pending originals verified for review; no narrative assignment or runtime import." >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve exact recovered artwork archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: LastSeen-B32-Recovered-Originals
+          path: ${{ runner.temp }}/lastseen-packs/Last-Seen-Build27-Recovered-Images.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+      - name: Preserve exact expansion artwork archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: LastSeen-B32-Expansion-Originals
+          path: ${{ runner.temp }}/lastseen-packs/Last-Seen-World-Photos-Expansion-01.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+      - name: Preserve visual review sheets and blank ledger
+        uses: actions/upload-artifact@v4
+        with:
+          name: LastSeen-B32-Artwork-Review-Sheets
+          path: |
+            ${{ runner.temp }}/lastseen-review/review-*.png
+            ${{ runner.temp }}/lastseen-review/review-ledger.json
+          if-no-files-found: error
+          retention-days: 14
