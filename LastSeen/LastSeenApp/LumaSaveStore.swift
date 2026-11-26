@@ -129,6 +129,15 @@ final class LumaSaveStore: ObservableObject {
         defaults.set(playSeconds, forKey: "lastseen.saves.playSeconds")
         defaults.set(lifetimeSeconds, forKey: "lastseen.saves.lifetimeSeconds")
     }
+    /// Called only after the live-world recovery gate has closed.
+    func synchronizeRecoveredSettings(now:Date=Date()) {
+        playSeconds=max(0,defaults.integer(forKey:"lastseen.saves.playSeconds"))
+        lifetimeSeconds=max(lifetimeSeconds,playSeconds,defaults.integer(forKey:"lastseen.saves.lifetimeSeconds"))
+        sinceAutomatic=0;previousInterval=nil;lastAutomatic=now;lastAutoAttempt=now
+        automaticFailed=false
+        refresh()
+        persistPlayTime()
+    }
     func nextAutomaticSeconds(interval: Int) -> Int? {
         guard [1,3,5,10].contains(interval) else { return nil }
         return max(0, interval * 60 - (previousInterval == interval ? sinceAutomatic : 0))

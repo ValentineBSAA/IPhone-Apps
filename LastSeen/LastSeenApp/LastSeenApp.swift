@@ -90,7 +90,7 @@ private struct LegacyStoryRoot: View {
                 Label("Legacy save unavailable",systemImage:"externaldrive.badge.exclamationmark").font(.title2.bold())
                 Text("The legacy world and any unresolved settings receipt are preserved. This mode does not share the main phone's checkpoints.")
                 if world.settingsRecoveryRequired {
-                    Button("Retry settings recovery"){world.retrySettingsRecovery()}.buttonStyle(.bordered)
+                    Button("Retry settings recovery"){guard phase == .active else{return};world.retrySettingsRecovery()}.buttonStyle(.bordered).disabled(phase != .active)
                 }
             }.padding(24)
         } else { legacyBody }

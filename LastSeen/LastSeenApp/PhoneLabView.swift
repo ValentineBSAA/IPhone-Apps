@@ -143,7 +143,7 @@ struct PhoneLabView: View {
                 if world.settingsRecoveryRequired {
                     Button("Retry settings recovery") {
                         guard phase == .active else{return}
-                        if world.retrySettingsRecovery(){saves.refresh();locked=true;navigationGeneration=UUID()}
+                        if world.retrySettingsRecovery(){saves.synchronizeRecoveredSettings();resetRecoveredNavigation()}
                     }.buttonStyle(.borderedProminent)
                 }
                 ForEach(LumaSaveStore.manual+LumaSaveStore.automatic,id:\.self) { slot in
@@ -170,7 +170,7 @@ struct PhoneLabView: View {
                         guard saves.slots[slot]?.date == recoveryDate,saves.slots[slot] != nil else {
                             recoverySlot=nil;return
                         }
-                        if saves.restore(slot,into:world) {locked=true;navigationGeneration=UUID()}
+                        if saves.restore(slot,into:world) {resetRecoveredNavigation()}
                         recoverySlot=nil
                     }
                     Button("Cancel",role:.cancel){recoverySlot=nil}
@@ -1143,6 +1143,19 @@ struct PhoneLabView: View {
         } message: {
             Text("Your restored phone records, Field Notes and story saves will not be erased.")
         }
+    }
+
+    private func resetRecoveredNavigation() {
+        arrivalTask?.cancel();arrivalTask=nil
+        PhoneSensoryEngine.stop();RestartAudio.stop()
+        cancelTestAlert();cancelLockAuthentication()
+        observedIncoming=Set(incomingIDs);observedOutgoing=outgoingIDs
+        banner=nil;activityBanner=nil;activityQueue.clear()
+        circuitBanner=false;utilityNotice=nil;observedUtilityFlags=world.state.flags
+        pendingLumaImage=nil;panel=nil;recent.removeAll();searchQuery=""
+        homeFolder=nil;homePage=0;path=NavigationPath()
+        checkpointReboot=false;timerBaselineReady=false
+        locked=true;navigationGeneration=UUID()
     }
 
     private func loadCheckpoint(_ slot: String) {

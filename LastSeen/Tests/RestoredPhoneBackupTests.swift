@@ -94,6 +94,42 @@ final class RestoredPhoneBackupTests: XCTestCase {
     }
 
     @MainActor
+    func testRecoveryRetryReloadsCommittedWorldAndResetsTransientState() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite="retry-world-"+UUID().uuidString
+        let defaults=try XCTUnwrap(UserDefaults(suiteName:suite))
+        defer{defaults.removePersistentDomain(forName:suite);try? FileManager.default.removeItem(at:root)}
+        try FileManager.default.createDirectory(at:root,withIntermediateDirectories:true)
+        let url=root.appendingPathComponent("world.json")
+        try RestoredPhoneBackup.restore(to:url)
+        let original=try Data(contentsOf:url)
+        let receipt=LumaRestoreJournal.url(for:url)
+        try Data("malformed fixture".utf8).write(to:receipt)
+        let store=PhoneWorldStore(storageURL:url)
+        XCTAssertTrue(store.settingsRecoveryRequired)
+        let epoch=store.checkpointEpoch
+        let transient=store.addNote(title:"Transient recovery fixture")
+        store.visibleThread = .maya
+        XCTAssertEqual(try Data(contentsOf:url),original)
+        // Simulate an externally repaired receipt with an uncommitted target;
+        // retry abandons it, but must not expose the transient mutation.
+        try FileManager.default.removeItem(at:receipt)
+        let prefs=try PropertyListSerialization.data(fromPropertyList:[:],format:.binary,options:0)
+        try LumaRestoreJournal.prepare(worldURL:url,target:Data("different target".utf8),settings:.init(preferences:prefs,playSeconds:7))
+        XCTAssertTrue(store.retrySettingsRecovery())
+        XCTAssertFalse(store.settingsRecoveryRequired)
+        XCTAssertNotEqual(store.checkpointEpoch,epoch)
+        XCTAssertNil(store.visibleThread)
+        XCTAssertFalse(store.state.notes.contains{$0.id==transient})
+        XCTAssertEqual(try Data(contentsOf:url),original)
+        let saves=LumaSaveStore(root:root.appendingPathComponent("slots"),defaults:defaults)
+        defaults.set(42,forKey:"lastseen.saves.playSeconds")
+        saves.synchronizeRecoveredSettings()
+        XCTAssertEqual(saves.playSeconds,42)
+        XCTAssertEqual(defaults.integer(forKey:"lastseen.saves.playSeconds"),42)
+    }
+
+    @MainActor
     func testInterruptedReplacementRestoresPriorUnresolvedReceipt() throws {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let suite="interrupted-replacement-"+UUID().uuidString

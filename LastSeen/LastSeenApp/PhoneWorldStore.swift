@@ -779,11 +779,24 @@ final class PhoneWorldStore: ObservableObject {
     /// Retry without changing the world or choosing a different checkpoint.
     @discardableResult
     func retrySettingsRecovery()->Bool {
-        guard persistToDisk else{return true}
+        guard persistToDisk,settingsRecoveryRequired else{return !settingsRecoveryRequired}
         do {try LumaRestoreJournal.recover(worldURL:storageURL,defaults:recoveryDefaults)}
         catch { /* Keep the receipt and recovery screen. */ }
-        settingsRecoveryRequired=LumaRestoreJournal.pending(worldURL:storageURL)
-        return !settingsRecoveryRequired
+        guard !LumaRestoreJournal.pending(worldURL:storageURL) else{return false}
+        // Recovery can follow an unsuccessful write. Discard transient
+        // in-memory mutations and publish only the committed world bytes.
+        guard var committed=try? JSONDecoder().decode(PhoneWorld.self,from:Data(contentsOf:storageURL)),
+              committed.version==1 else {
+            recoveryRequired=true;settingsRecoveryRequired=false
+            return false
+        }
+        if storageURL==RestoredPhoneBackup.url || committed.everydayArchiveRevision != nil {
+            NoraEverydayArchive.expand(&committed)
+        }
+        visibleThread=nil;supportGenerationEpoch=UUID();checkpointEpoch=UUID()
+        state=committed
+        recoveryRequired=false;persistenceFailed=false;settingsRecoveryRequired=false
+        return true
     }
 
     func restoreCheckpoint(_ replacement: PhoneWorld,settings:LumaRestoreJournal.Settings?=nil,defaults:UserDefaults = .standard) throws {
