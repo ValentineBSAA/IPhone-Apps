@@ -227,23 +227,9 @@ struct RecoveredImageAnalysisView:View {
                             }
                         }
                         if let finding=ImageInterpretation.available(asset,mode:mode,in:world.state) {
-                            if textOnly || !horrorEffects || (item.source == .veil && !VeilArchive.allowsImages(security)) {
-                                Text("The synthetic layer has a marker at "+ImageInterpretation.regions[finding.region]+". Select that region to record the observation.").font(.subheadline)
-                            } else {
-                                Text("Compare the synthetic layer with Original. Locate the interrupted marker in the preview.").font(.subheadline)
+                            NavigationLink { ReconstructionComparisonView(asset:asset,mode:finding.mode) } label:{
+                                Label("Compare original and reconstruction",systemImage:"rectangle.split.2x1")
                             }
-                            LazyVGrid(columns:Array(repeating:GridItem(.flexible()),count:3)) {
-                                ForEach(0..<9,id:\.self){i in
-                                    Button {region=i;interpretationFeedback=""} label:{
-                                        Text(ImageInterpretation.regions[i]).font(.caption).frame(maxWidth:.infinity,minHeight:44)
-                                    }.buttonStyle(.bordered).tint(region==i ? .purple:.secondary)
-                                }
-                            }
-                            Button("Record interpretation") {
-                                guard let region,phase == .active else{return}
-                                interpretationFeedback=world.recordImageInterpretation(asset,mode:mode,region:region) ? "Interpretive observation saved.":"Compare the layer and try again."
-                            }.buttonStyle(.borderedProminent).disabled(region==nil || phase != .active || ((!reveal || compareOriginal) && !textOnly && horrorEffects && (item.source != .veil || VeilArchive.allowsImages(security))))
-                            if !interpretationFeedback.isEmpty{Text(interpretationFeedback).font(.caption)}
                         }
                         ForEach(ImageInterpretation.notes(asset,in:world.state),id:\.self){note in Text(note).font(.subheadline)}
                         Button("Return to original"){mode = .original;compareOriginal=false;brightness=0;contrast=1;zoom=1;region=nil}
