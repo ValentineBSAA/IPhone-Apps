@@ -26,6 +26,9 @@ enum LumaArchiveGuidance {
         guard c.availableApps.contains(.veil),!c.safeMode else {
             return hint("The local anonymous browser is not available in this session. You can continue exploring ordinary records, or check your local package environment.",.relay)
         }
+        if !c.wifi {
+            return hint("The phone's simulated Wi-Fi is off. You can review records already recovered, or return to Settings to reconnect the local browser.",.settings)
+        }
         if VeilCommunity.reconstructionOpened(w) {
             return hint("You've read the recovered annotation review. You can revisit Nora's own account or keep your remaining questions open; you don't need to force an identity or a theory.",.messages)
         }
@@ -73,6 +76,22 @@ enum LumaArchiveGuidance {
 }
 
 enum LumaAssistantConversation {
+    /// Main-story guidance uses the same access-checked lead as Settings.
+    /// An explicit main/optional request lets players choose their investigation.
+    static func mainGuidance(_ c:LumaAssistantContext,detailed:Bool)->LumaAssistantAnswer {
+        guard c.world.everydayArchiveRevision != nil else {
+            return LumaAssistantPolicy.answer("hint",context:c)
+        }
+        guard let guide=InvestigationProgress.guidance(c.world,detailed:detailed) else {
+            return .init(text:"You've completed the documented main leads. You can revisit your discoveries or explore other available records.",clipID:"conversation")
+        }
+        let routes:[String:LabApp]=["messages":.messages,"notes":.notes,"files":.files,"browser":.browser,"mail":.mail]
+        let target=routes[guide.route]
+        if target == .browser && !c.wifi {
+            return .init(text:"The next available lead uses Browser, but simulated Wi-Fi is off. Reconnect in Settings before continuing.",clipID:"conversation",app:c.availableApps.contains(.settings) ? .settings:nil)
+        }
+        return .init(text:guide.text,clipID:"conversation",app:target.flatMap{c.availableApps.contains($0) ? $0:nil})
+    }
     static func words(_ text: String) -> Set<String> {
         Set(LumaAssistantPolicy.normalize(text).split(separator:" ").map(String.init))
     }
@@ -122,12 +141,21 @@ enum LumaAssistantConversation {
                 "You've opened "+String(review.opened)+" images and recorded "+String(review.reviewed)+" source reviews, "+String(review.light)+" original light scans, "+String(review.matched)+" visible-detail matches and "+String(review.interpretive)+" synthetic interpretations. Keep the original observations separate from reconstruction effects."
             return .init(topic:.pictures,answer:.init(text:text,clipID:"conversation"))
         }
-        let explicitHint = ["hint","help me investigate","what should i do","what do i do now","what should i do next","where do i go next","i m stuck","im stuck"].contains(normalized)
+        let mainRequest=["main investigation hint","main story hint","main investigation guidance","more specific main investigation hint"].contains(normalized)
+        let archiveRequest=["archive investigation hint","veil investigation hint","more specific archive investigation hint"].contains(normalized)
+        let explicitHint = ["hint","help me investigate","what should i do","what do i do now","what should i do next","where do i go next","i m stuck","im stuck","give me a hint"].contains(normalized)
         let followupHint = previous == .nextStep && ["tell me more","more","another hint","can you be more specific","what do you mean","give me a hint"].contains(normalized)
+        if mainRequest {
+            return .init(topic:.nextStep,answer:mainGuidance(c,detailed:normalized.hasPrefix("more specific")))
+        }
+        if archiveRequest {
+            let guidance=LumaArchiveGuidance.answer(c,detailed:normalized.hasPrefix("more specific"))
+                ?? .init(text:"There is no separate archive lead available to review yet. Continue with the records you already have.",clipID:"conversation")
+            return .init(topic:.nextStep,answer:guidance)
+        }
         if explicitHint || followupHint {
-            if let guidance=LumaArchiveGuidance.answer(c,detailed:followupHint) {
-                return .init(topic:.nextStep,answer:guidance)
-            }
+            let guidance=LumaArchiveGuidance.answer(c,detailed:followupHint) ?? mainGuidance(c,detailed:followupHint)
+            return .init(topic:.nextStep,answer:guidance)
         }
         if normalized.hasPrefix("open ") || normalized.hasPrefix("show ") ||
             ["help","hello","hi","hey","hint","progress","investigation progress"].contains(normalized) ||
@@ -185,8 +213,7 @@ enum LumaAssistantConversation {
             if let guidance=LumaArchiveGuidance.answer(c,detailed:previous == .nextStep) {
                 return .init(topic:.nextStep,answer:guidance)
             }
-            if let g = InvestigationProgress.guidance(world,detailed:false) { return result(g.text) }
-            return result("You can continue exploring the records you've already uncovered. There is no need to force a conclusion.")
+            return .init(topic:.nextStep,answer:mainGuidance(c,detailed:previous == .nextStep))
         case .general:
             return result("Tell me a little more about what you found. Was it a message, picture, document, or something you noticed while using an app?")
         }

@@ -102,6 +102,13 @@ struct FieldNotesView: View {
                     }
                 }
             }
+            if filter == "All" && !pinnedOnly && !RecoveredImageAnalysis.visible(world.state).isEmpty {
+                Section("Image investigation · current checkpoint") {
+                    NavigationLink { ImageReviewOverviewView() } label:{
+                        Label("Review opened images",systemImage:"viewfinder")
+                    }
+                }
+            }
             let findings=ImageInterpretation.recorded(world.state).filter{term.isEmpty || $0.note.localizedCaseInsensitiveContains(term)}
             if filter == "All" && !pinnedOnly && !findings.isEmpty {
                 Section("Recovered analysis · current checkpoint") {

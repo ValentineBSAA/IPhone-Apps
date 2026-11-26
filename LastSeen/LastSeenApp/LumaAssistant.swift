@@ -340,7 +340,7 @@ struct LumaAssistantView: View {
                 if !input.isEmpty {Text("\(input.count) / 600").font(.caption2).foregroundColor(.secondary)}
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Try asking").font(.headline)
-                    ForEach(["What was Nora like?", "What did she do for work?", "Open Messages", "Unread messages", "Next event", "Timer status", "Package status", "Hint"], id: \.self) { item in
+                    ForEach(["What was Nora like?", "What did she do for work?", "Open Messages", "Unread messages", "Next event", "Timer status", "Package status", "Hint", "Main investigation hint", "Archive investigation hint"], id: \.self) { item in
                         Button { submit(item) } label: {
                             HStack { Text(item); Spacer(); Image(systemName: "chevron.right").font(.caption) }.padding(12).lumaSurface(radius: 12)
                         }.buttonStyle(.plain)

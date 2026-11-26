@@ -270,6 +270,7 @@ struct InvestigationProgressView: View {
             }
         }.navigationTitle("Investigation progress").scrollContentBackground(.hidden).background(LumaDesign.background)
             .onChange(of: lead?.id) { _ in hintLevel = 0 }
+            .onChange(of:world.checkpointEpoch){_ in hintLevel=0}
     }
 }
 struct LumaWebBrowser: View {
