@@ -54,7 +54,10 @@ enum RelayCatalog {
         return sources.first { $0.address.lowercased()==normalized && sourceAuthorized($0.id,flags:flags) }
     }
     static func tweakActive(_ id:String,installed:String,safeMode:Bool,flags:Set<String>)->Bool {
-        !safeMode && ids(installed).contains(id) && available(id,flags:flags)
+        guard !safeMode, ids(installed).contains(id), available(id,flags:flags) else { return false }
+        let optional = ids(installed)
+        let effective = optional.union(packages.filter(\.essential).map(\.id))
+        return requirements(id).isSubset(of: effective) && conflicts(id).isDisjoint(with: optional)
     }
     static let packages = [
         RelayPackage("bootstrap", "Patchline Bootstrap", "2.0.0", "core", "System", "shippingbox.fill", "Essential rootless environment", "Core package catalog and services for this phone.", essential: true),
@@ -65,6 +68,8 @@ enum RelayCatalog {
         RelayPackage("teal", "Afterglow Glass", "1.1.0", "studio", "Themes", "paintpalette.fill", "Ten hand-designed glass icons", "Replaces ten app icons with the approved Afterglow glass set. Calculator and Relay keep their stock artwork."),
         RelayPackage("clearlabels", "Clean Slate", "1.0.0", "studio", "Tweaks", "textformat", "Hide home-screen app labels", "Removes labels from the launcher and dock while preserving accessibility names."),
         RelayPackage("dockglass", "Ghost Dock", "1.0.0", "studio", "Tweaks", "rectangle.bottomthird.inset.filled", "Transparent dock", "Removes the material background from the dock."),
+        RelayPackage("dockcontrast", "Slate Dock", "1.0.0", "studio", "Tweaks", "rectangle.bottomthird.inset.filled", "High-contrast dock background", "Adds an opaque, high-contrast dock surface. Conflicts with Ghost Dock."),
+        RelayPackage("privatepreview", "Preview Shield", "1.0.0", "utilities", "Lock Screen", "eye.slash.fill", "Hide lock-screen message previews", "Hides message previews while the simulated phone is locked. Removing restores the previous viewing preference."),
         RelayPackage("seconds", "Second Hand", "1.0.0", "utilities", "Lock Screen", "clock", "Show seconds on the lock screen", "Adds live seconds to the lock-screen clock."),
         RelayPackage("quietbadges", "Quiet Badges", "1.0.0", "utilities", "Tweaks", "bell.slash", "Hide launcher badges", "Hides the red unread count on app icons. Messages and notification history remain intact."),
         RelayPackage("fieldnotes", "Field Notes", "1.0.0", "utilities", "Utilities", "notebook", "Personal investigation notebook", "Keep your own observations and questions, separate from the restored records."),
@@ -85,6 +90,19 @@ enum RelayCatalog {
         RelayPackage("socialtime", "Post Timestamp", "1.0.0", "chronicle", "Utilities", "clock", "Show detailed social post timestamps", "Shows time as well as date on the three local social feeds."),
         RelayPackage("workbenchmetrics", "Diagnostics Strip", "1.0.0", "bench", "Utilities", "desktopcomputer", "Additional repair console status", "Shows available document count and installed optional package count at the connected repair workstation.")
     ]
+    static func requirements(_ id: String) -> Set<String> {
+        guard let p = package(id) else { return [] }
+        if p.essential { return id == "bootstrap" ? [] : id == "loader" ? ["bootstrap"] : ["bootstrap","loader"] }
+        return ["bootstrap","loader"]
+    }
+    static func conflicts(_ id: String) -> Set<String> {
+        switch id {
+        case "dockglass": return ["dockcontrast"]
+        case "dockcontrast": return ["dockglass"]
+        default: return []
+        }
+    }
+    static func publisher(_ p: RelayPackage) -> String { source(p.source)?.name ?? "Unknown publisher" }
     static func package(_ id: String) -> RelayPackage? { packages.first { $0.id == id } }
     static func source(_ id: String) -> RelaySource? { sources.first { $0.id == id } }
     static func ids(_ value: String) -> Set<String> { Set(value.split(separator: "|").map(String.init)) }
@@ -134,15 +152,43 @@ enum RelayPlan {
         guard !change.package.essential else { return current }
         return current.filter { $0.id != change.id } + [change]
     }
-    static func valid(_ changes: [RelayChange], sources: Set<String>, installed: Set<String>, flags: Set<String> = []) -> Bool {
-        !changes.isEmpty && Set(changes.map(\.id)).count == changes.count && changes.allSatisfy { c in
-            guard let p = RelayCatalog.package(c.id), p == c.package, !p.essential, (c.action == .remove || RelayCatalog.available(c.id, flags: flags)) else { return false }
+    static func problems(_ changes: [RelayChange], sources: Set<String>, installed: Set<String>, flags: Set<String> = [], versions: [String: String]? = nil) -> [String] {
+        if changes.isEmpty { return ["The queue is empty."] }
+        if Set(changes.map(\.id)).count != changes.count { return ["The queue contains duplicate packages."] }
+        var errors: [String] = []
+        for c in changes {
+            guard let p = RelayCatalog.package(c.id), p == c.package, !p.essential else {
+                errors.append("A package is protected or no longer matches its index."); continue
+            }
+            if c.action != .remove && (!RelayCatalog.available(c.id, flags: flags) || !sources.contains(p.source)) {
+                errors.append("A queued package is no longer available from an enabled source."); continue
+            }
             switch c.action {
-            case .install: return sources.contains(p.source) && !installed.contains(p.id)
-            case .remove: return installed.contains(p.id)
-            case .upgrade: return sources.contains(p.source) && installed.contains(p.id)
+            case .install:
+                if installed.contains(p.id) { errors.append(p.title + " is already installed.") }
+            case .remove:
+                if !installed.contains(p.id) { errors.append(p.title + " is no longer installed.") }
+            case .upgrade:
+                if !installed.contains(p.id) { errors.append(p.title + " is no longer installed.") }
+                else if let versions, RelayCatalog.installedVersion(p, versions: versions) == p.version { errors.append(p.title + " is already up to date.") }
             }
         }
+        guard errors.isEmpty else { return errors }
+        let (next, _) = applying(changes, to: installed, versions: versions ?? [:])
+        let effective = next.union(RelayCatalog.packages.filter(\.essential).map(\.id))
+        // Validate the final state, allowing removal of a conflicting package
+        // in the same transaction. Do not strand existing saves with unrelated
+        // invalid records: only report conflicts introduced by this queue.
+        for c in changes where c.action != .remove {
+            if !RelayCatalog.requirements(c.id).isSubset(of: effective) { errors.append(c.package.title + " has missing requirements.") }
+            if !RelayCatalog.conflicts(c.id).isDisjoint(with: next) {
+                errors.append(c.package.title + " conflicts with an installed package. Queue its removal first.")
+            }
+        }
+        return errors
+    }
+    static func valid(_ changes: [RelayChange], sources: Set<String>, installed: Set<String>, flags: Set<String> = [], versions: [String: String]? = nil) -> Bool {
+        problems(changes, sources: sources, installed: installed, flags: flags, versions: versions).isEmpty
     }
     static func applying(_ changes: [RelayChange], to installed: Set<String>, versions: [String: String]) -> (Set<String>, [String: String]) {
         var ids = installed

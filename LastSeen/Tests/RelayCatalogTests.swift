@@ -6,7 +6,7 @@ final class RelayCatalogTests: XCTestCase {
         XCTAssertEqual(Set(RelayCatalog.packages.map(\.id)).count, RelayCatalog.packages.count)
         XCTAssertEqual(Set(RelayCatalog.sources.map(\.id)).count, RelayCatalog.sources.count)
         XCTAssertEqual(RelayCatalog.packages.filter(\.essential).count, 3)
-        XCTAssertEqual(RelayCatalog.packages.filter { !$0.essential }.count, 23)
+        XCTAssertEqual(RelayCatalog.packages.filter { !$0.essential }.count, 25)
         for p in RelayCatalog.packages {
             XCTAssertNotNil(RelayCatalog.source(p.source))
             XCTAssertFalse(p.version.isEmpty)
@@ -112,5 +112,33 @@ extension RelayCatalogTests {
             XCTAssertFalse(installed.contains(id)); XCTAssertNil(versions[id])
         }
         XCTAssertEqual(installed,["seconds"]); XCTAssertEqual(versions,["seconds":"1.0.0"])
+    }
+}
+
+extension RelayCatalogTests {
+    func testConflictReplacementAndLoaderStatus() throws {
+        let ghost = try XCTUnwrap(RelayCatalog.package("dockglass"))
+        let slate = try XCTUnwrap(RelayCatalog.package("dockcontrast"))
+        let add = RelayChange(package: slate, action: .install)
+        XCTAssertFalse(RelayPlan.valid([add], sources: ["studio"], installed: [ghost.id]))
+        XCTAssertFalse(RelayPlan.problems([add], sources: ["studio"], installed: [ghost.id]).isEmpty)
+        let replace = [RelayChange(package: ghost, action: .remove), add]
+        XCTAssertTrue(RelayPlan.valid(replace, sources: ["studio"], installed: [ghost.id]))
+        let (next, _) = RelayPlan.applying(replace, to: [ghost.id], versions: [:])
+        XCTAssertEqual(next, [slate.id])
+        XCTAssertTrue(RelayCatalog.tweakActive(slate.id, installed: slate.id, safeMode: false, flags: []))
+        XCTAssertFalse(RelayCatalog.tweakActive(slate.id, installed: slate.id, safeMode: true, flags: []))
+        XCTAssertFalse(RelayCatalog.tweakActive(slate.id, installed: "dockglass|dockcontrast", safeMode: false, flags: []))
+        XCTAssertEqual(PatchlinePackageHealth.status(slate, installed: next, flags: [], safeMode: true), .safeMode)
+        XCTAssertEqual(PatchlinePackageHealth.status(slate, installed: [ghost.id,slate.id], flags: [], safeMode: false), .conflict)
+    }
+    func testStaleUpgradeAndGatedRuntime() throws {
+        let p = try XCTUnwrap(RelayCatalog.package("teal"))
+        let upgrade = RelayChange(package: p, action: .upgrade)
+        XCTAssertFalse(RelayPlan.valid([upgrade], sources: ["studio"], installed: [p.id], versions: [p.id:p.version]))
+        XCTAssertTrue(RelayPlan.valid([upgrade], sources: ["studio"], installed: [p.id], versions: [p.id:"1.0.0"]))
+        XCTAssertFalse(RelayCatalog.tweakActive("fieldnotes", installed: "fieldnotes", safeMode: false, flags: []))
+        XCTAssertTrue(RelayCatalog.tweakActive("privatepreview", installed: "privatepreview", safeMode: false, flags: []))
+        XCTAssertFalse(RelayCatalog.tweakActive("privatepreview", installed: "privatepreview", safeMode: true, flags: []))
     }
 }

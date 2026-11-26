@@ -47,13 +47,14 @@ struct RelayPackagesView: View {
     private var sourceIDs: Set<String> { RelayCatalog.ids(RelayCatalog.recoveredSources(sources,flags:earnedFlags)) }
     private var versionMap: [String: String] { RelayCatalog.versions(versions) }
     private var visiblePackages: [RelayPackage] { RelayCatalog.packages.filter { RelayCatalog.visible($0, sources: sourceIDs, installed: ids, flags: earnedFlags) } }
-    private var updates: [RelayPackage] { visiblePackages.filter { !$0.essential && ids.contains($0.id) && sourceIDs.contains($0.source) && RelayCatalog.installedVersion($0, versions: versionMap) != $0.version } }
+    private var updates: [RelayPackage] { visiblePackages.filter { !$0.essential && ids.contains($0.id) && sourceIDs.contains($0.source) && RelayCatalog.available($0.id, flags: earnedFlags) && RelayCatalog.installedVersion($0, versions: versionMap) != $0.version } }
+    private var queueProblems: [String] { RelayPlan.problems(queue, sources: sourceIDs, installed: ids, flags: earnedFlags, versions: versionMap) }
 
     var body: some View {
         VStack(spacing: 0) {
             HStack {
                 HStack(spacing: 10) {
-                    OpeningArt(name: "Opening_Install", size: 42)
+                    OpeningArt(name: "Jailbreak_Relay", size: 42)
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Relay").font(.title2.bold())
                         Label(safeMode ? "Safe Mode" : "Rootless • Ready", systemImage: safeMode ? "exclamationmark.shield" : "checkmark.seal.fill")
@@ -145,11 +146,18 @@ struct RelayPackagesView: View {
                         }
                     }
                     if !queue.isEmpty {
+                        if !queueProblems.isEmpty {
+                            Section("Resolve before continuing") {
+                                ForEach(Array(queueProblems.enumerated()), id: \.offset) { problem in
+                                    Label(problem.element, systemImage: "exclamationmark.triangle").font(.subheadline).foregroundColor(.orange)
+                                }
+                            }
+                        }
                         Section {
                             Button("Confirm \(queue.count) changes") {
-                                guard RelayPlan.valid(queue, sources: sourceIDs, installed: ids, flags: earnedFlags) else { notice = "Queue no longer valid"; return }
+                                guard queueProblems.isEmpty else { notice = "Queue no longer valid"; return }
                                 confirmed = queue; showQueue = false
-                            }.disabled(!RelayPlan.valid(queue, sources: sourceIDs, installed: ids, flags: earnedFlags)).accessibilityIdentifier("relay.queue.confirm")
+                            }.disabled(!queueProblems.isEmpty).accessibilityIdentifier("relay.queue.confirm")
                             Button("Clear queue", role: .destructive) { queue.removeAll() }
                         } footer: { Text("Changes apply together after LumaShell restarts.") }
                     }
@@ -186,7 +194,12 @@ struct RelayPackagesView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Discover").font(.largeTitle.bold())
                     Text("Make LumaOS yours.").font(.title3.weight(.semibold))
-                    Text("\(visiblePackages.filter { !$0.essential }.count) available · \(ids.count) installed").font(.subheadline).foregroundColor(.secondary)
+                    Text("\(visiblePackages.filter { !$0.essential && RelayCatalog.available($0.id, flags: earnedFlags) && sourceIDs.contains($0.source) }.count) available · \(ids.count) installed").font(.subheadline).foregroundColor(.secondary)
+                    HStack {
+                        Label("\(updates.count) updates", systemImage: "arrow.down.circle")
+                        Spacer()
+                        Label("\(sourceIDs.count) sources", systemImage: "square.stack.3d.up")
+                    }.font(.caption).foregroundColor(.secondary)
                     HStack(spacing: 9) {
                         ForEach(Array(ApprovedArt.theme.prefix(5)), id: \.self) { name in OpeningArt(name: name, size: 42) }
                     }
@@ -362,11 +375,27 @@ struct RelayPackagesView: View {
                 LabeledContent("Version", value: p.version)
                 if RelayCatalog.installed(p.id, userIDs: ids) { LabeledContent("Installed", value: RelayCatalog.installedVersion(p, versions: versionMap)) }
                 LabeledContent("Source", value: RelayCatalog.source(p.source)?.name ?? p.source)
+                LabeledContent("Publisher", value: RelayCatalog.publisher(p))
+                LabeledContent("Compatibility", value: "LumaOS · Rootless 2.0")
                 LabeledContent("Section", value: p.category)
                 LabeledContent("Identifier", value: "com.patchline." + p.id)
                 LabeledContent("Price", value: "Free")
                 LabeledContent("Environment", value: "Rootless")
                 LabeledContent("Restart required", value: p.essential ? "No" : "Respring")
+                if RelayCatalog.installed(p.id, userIDs: ids) {
+                    LabeledContent("Loader status", value: PatchlinePackageHealth.status(p, installed: ids, flags: earnedFlags, safeMode: safeMode).rawValue)
+                }
+            }
+            Section("Requirements & compatibility") {
+                let requirements = RelayCatalog.packages.filter { RelayCatalog.requirements(p.id).contains($0.id) && visiblePackages.contains($0) }
+                if requirements.isEmpty { Text("No additional package requirements.").foregroundColor(.secondary) }
+                ForEach(requirements) { required in
+                    Label(required.title, systemImage: RelayCatalog.installed(required.id, userIDs: ids) ? "checkmark.circle" : "circle")
+                }
+                let conflicts = visiblePackages.filter { RelayCatalog.conflicts(p.id).contains($0.id) }
+                ForEach(conflicts) { conflict in
+                    Label("Conflicts with " + conflict.title, systemImage: "exclamationmark.triangle").foregroundColor(.orange)
+                }
             }
         }
     }
@@ -383,7 +412,7 @@ struct RelayPackagesView: View {
         notice = "\(p.title) queued for \(action.rawValue.lowercased())"
     }
     @discardableResult private func applyConfirmed() -> Bool {
-        guard RelayPlan.valid(confirmed, sources: sourceIDs, installed: ids, flags: earnedFlags) else {
+        guard RelayPlan.valid(confirmed, sources: sourceIDs, installed: ids, flags: earnedFlags, versions: versionMap) else {
             confirmed = []; notice = "Transaction cancelled: package state changed"; return false
         }
         let previous = ids

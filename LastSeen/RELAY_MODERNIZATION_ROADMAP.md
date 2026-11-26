@@ -24,3 +24,7 @@ Creator explicitly wants players to find and add sources as a meaningful part of
 
 ## Approved researched puzzle variety — November 25, 2026
 See [PUZZLE_DESIGN_ROADMAP.md](PUZZLE_DESIGN_ROADMAP.md) for reviewed developer interviews, escape-room research, current puzzle audit, original proposed puzzle families, meaningful progression, clearer instructions, graduated hints, accessibility, persistence and tests. OPEN implementation; preserve existing completions and story confidentiality. No runtime changes or interruption of Build 27 corrective CI in this documentation revision.
+
+## B32 tranche 11: Relay package compatibility and Patchline diagnostics
+- [x] SOURCE: two functional local packages (Slate Dock and Preview Shield), explicit core requirements and symmetric dock conflict, final-state transaction checks allow removal/replacement in one queue, queue-specific error messages, current-version upgrade rejection at confirmation and commit, gate-aware launcher tweak activation, safe-mode/conflict status, publisher/compatibility details, real loader diagnostics and orphaned-source status. Transaction animation now says pending until commit. Tests added, not compiled. Preserve three core packages and existing IDs/preferences.
+- [ ] W11 remains open for complete runtime/checkpoint audit, polished source index and per-package artwork/metadata, optional repository depth, full native tests and physical QA. No release triggered. All other B32 requirements remain mandatory.

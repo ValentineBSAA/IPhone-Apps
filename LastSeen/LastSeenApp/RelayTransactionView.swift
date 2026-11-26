@@ -19,7 +19,7 @@ struct RelayTransactionView: View {
             "\(change.action.rawValue): \(change.package.title)",
             "Processing \(change.package.id)",
             "Package metadata verified"
-        ] } + ["Refreshing package database…", "Processing LumaShell changes…", "Transaction complete"]
+        ] } + ["Refreshing package database…", "Preparing LumaShell changes…", "Ready for restart; changes pending"]
     }
     var body: some View {
         Group {
@@ -34,7 +34,7 @@ struct RelayTransactionView: View {
                     HStack(spacing: 12) {
                         OpeningArt(name: "Opening_Install", size: 58)
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(tick >= messages.count ? "Complete" : "Processing changes").font(.title2.bold())
+                            Text(tick >= messages.count ? "Ready to restart" : "Processing changes").font(.title2.bold())
                             Text("\(changes.count) " + (changes.count == 1 ? "package" : "packages")).font(.caption).foregroundColor(.secondary)
                         }
                         Spacer()

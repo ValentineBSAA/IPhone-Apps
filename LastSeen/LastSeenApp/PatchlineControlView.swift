@@ -4,6 +4,7 @@ import SwiftUI
 struct PatchlineControlView: View {
     let openRelay: () -> Void
     let onRestart: () -> Void
+    let earnedFlags: Set<String>
     @AppStorage("lastseen.relay.safeMode") private var safeMode = false
     @AppStorage("lastseen.relay.installed") private var installed = ""
     @AppStorage("lastseen.relay.versions") private var versions = ""
@@ -32,7 +33,7 @@ struct PatchlineControlView: View {
                 LabeledContent("Bootstrap", value: RelayCatalog.package("bootstrap")?.version ?? "Unavailable")
                 LabeledContent("Loader", value: RelayCatalog.package("loader")?.version ?? "Unavailable")
                 LabeledContent("Package manager", value: RelayCatalog.package("relay")?.version ?? "Unavailable")
-                LabeledContent("Registered repositories", value: String(RelayCatalog.ids(sources).count))
+                LabeledContent("Registered repositories", value: String(RelayCatalog.ids(RelayCatalog.recoveredSources(sources, flags: earnedFlags)).count))
                 LabeledContent("Essential packages", value: String(RelayCatalog.packages.filter(\.essential).count))
                 NavigationLink("Package activity") {
                     List {
@@ -50,6 +51,7 @@ struct PatchlineControlView: View {
                 }
             }
             Section("Diagnostics") {
+                NavigationLink { PatchlineLoaderDiagnostics(flags: earnedFlags) } label: { Label("Tweak loader diagnostics", systemImage: "cpu") }
                 NavigationLink { RecoveryCircuitView() } label: { Label("Recovery Circuit", systemImage: "point.3.connected.trianglepath.dotted") }
                 NavigationLink { UtilityProgressView(openRelay: openRelay, onRestart: onRestart) } label: { Label("Local services", systemImage: "square.grid.2x2") }
             }

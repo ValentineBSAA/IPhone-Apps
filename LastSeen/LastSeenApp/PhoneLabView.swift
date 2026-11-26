@@ -71,7 +71,7 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.relay.tealTheme") private var tealTheme = false
     @AppStorage("lastseen.relay.installed") private var relayInstalled = ""
     @AppStorage("lastseen.relay.safeMode") private var safeMode = false
-    private func tweak(_ id: String) -> Bool { !safeMode && RelayCatalog.ids(relayInstalled).contains(id) }
+    private func tweak(_ id: String) -> Bool { RelayCatalog.tweakActive(id, installed: relayInstalled, safeMode: safeMode, flags: world.state.flags) }
     private var fieldNotesAvailable: Bool { RecoveryCircuit.unlocked(world.state.flags) && tweak("fieldnotes") }
     private func utilityActive(_ tool: LumaUtility) -> Bool { tweak(tool.rawValue) && RelayCatalog.available(tool.rawValue, flags: world.state.flags) }
     private var fiveColumns: Bool { tweak("fivegrid") || (utilityActive(.lumaplus) && utilityFive) }
@@ -415,7 +415,7 @@ struct PhoneLabView: View {
                             Text("\(unread) unread").font(.caption).foregroundColor(.white.opacity(0.72))
                         }.padding(.horizontal, 4)
                         ForEach(alerts) { alert in
-                            PhoneNotificationCard(alert: alert, hidePreview: biometricUnlock || hideLockPreviews) {
+                            PhoneNotificationCard(alert: alert, hidePreview: biometricUnlock || hideLockPreviews || tweak("privatepreview")) {
                                 pendingThread = alert.neighbor
                                 requestUnlock()
                             }
@@ -592,7 +592,11 @@ struct PhoneLabView: View {
                     }.padding(.horizontal,9).padding(.vertical,6)
                         .frame(height:layout.dockHeight)
                         .background {
-                            if !tweak("dockglass") && (!utilityActive(.lumaplus) || utilityGlass) {
+                            if tweak("dockcontrast") {
+                                RoundedRectangle(cornerRadius: 27, style: .continuous)
+                                    .fill(Color(red: 0.09, green: 0.13, blue: 0.20))
+                                    .overlay(RoundedRectangle(cornerRadius: 27).strokeBorder(Color.white.opacity(0.42), lineWidth: 1))
+                            } else if !tweak("dockglass") && (!utilityActive(.lumaplus) || utilityGlass) {
                                 RoundedRectangle(cornerRadius:27,style:.continuous)
                                     .fill(.ultraThinMaterial)
                                     .overlay(RoundedRectangle(cornerRadius:27).strokeBorder(.white.opacity(0.12),lineWidth:1))
@@ -869,6 +873,7 @@ struct PhoneLabView: View {
             }
             Section("Notifications and privacy") {
                 Toggle("Hide lock-screen message previews", isOn: $hideLockPreviews)
+                if tweak("privatepreview") { Text("Preview Shield is active. Lock-screen messages remain hidden until the tweak is disabled.").font(.caption).foregroundColor(.secondary) }
                 LabeledContent("Native game alerts", value: nativeAlerts ? "Enabled in game" : "Off")
                 Button("Review optional permissions") { panel = nil; permissionsReviewed = false }
                 if nativeAlerts {
@@ -993,9 +998,9 @@ struct PhoneLabView: View {
                     }.buttonStyle(.plain)
                     Button { hideLockPreviews.toggle() } label: {
                         VStack(alignment: .leading, spacing: 14) {
-                            Image(systemName: hideLockPreviews ? "lock.fill" : "bell.fill").font(.title)
+                            Image(systemName: (hideLockPreviews || tweak("privatepreview")) ? "lock.fill" : "bell.fill").font(.title)
                             Text("Previews").font(.headline)
-                            Text(hideLockPreviews ? "Hidden" : "Visible").font(.caption)
+                            Text((hideLockPreviews || tweak("privatepreview")) ? "Hidden" : "Visible").font(.caption)
                         }.frame(maxWidth: .infinity, alignment: .leading).padding(16)
                             .background(Color.white.opacity(0.09), in: RoundedRectangle(cornerRadius: 20))
                     }.buttonStyle(.plain)
@@ -1102,7 +1107,7 @@ struct PhoneLabView: View {
         case .files: LabFilesView()
         case .browser: LumaWebBrowser(wifi: wifi)
         case .relay: RelayPackagesView(earnedFlags: world.state.flags, onRestart: { returnHome(); recent.removeAll(); locked = true })
-        case .patchline: PatchlineControlView(openRelay: { open(.relay) }, onRestart: { returnHome(); recent.removeAll(); locked = true })
+        case .patchline: PatchlineControlView(openRelay: { open(.relay) }, onRestart: { returnHome(); recent.removeAll(); locked = true }, earnedFlags: world.state.flags)
         }
     }
 }
