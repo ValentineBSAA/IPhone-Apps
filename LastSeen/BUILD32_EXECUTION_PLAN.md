@@ -695,3 +695,7 @@ Master checklist stays truthful: approved artwork is not integrated, initial sou
 ## B32 tranche 159: native compiler corrective decomposition
 - [x] SOURCE: extracted regional scan cell/label/grid and VEIL session controls/page/media/directory builders into smaller typed SwiftUI expressions. Preserves existing actions, access guards, text-only handling, accessibility and state. Addresses remaining reported type-check timeouts from run 45768151901 alongside Pass 158 operator fixes. No feature expansion.
 - [ ] New validation-only native workflow requested by this source push. Await actual terminal native compile and unit/UI results; no IPA packaging authorization or physical device result.
+
+## B32 tranche 160: acceptance evidence synchronization (docs only)
+- [x] Audited all 27 launcher-app acceptance rows and mapped existing targeted native regression suites. Corrected stale artwork count and voice production status. Kept every Native and Device row open. Clarified verified candidate packaging precedes physical installation acceptance, not vice versa. No runtime edits; no CI interruption.
+- [ ] Run 45770243683 at c79b98ed1892057fe728b325a79b6456a644934f was in progress at last observation; check terminal result and logs. Voice creative/rights gate remains open.
