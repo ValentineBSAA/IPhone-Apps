@@ -104,6 +104,7 @@ struct PhoneWorld: Codable {
     var utilitySnippets: [LumaSnippet]? = nil
     var pinnedSnippet: String? = nil
     var connectedWorld: LumaConnectedState? = nil
+    var relaySupport: RelaySupportHistory? = nil
 }
 
 /// This is a separate *fictional world save* while compatibility with existing
@@ -662,6 +663,14 @@ final class PhoneWorldStore: ObservableObject {
 
     // All connected-app changes use the same world persistence and checkpoint path.
     var connected: LumaConnectedState { state.connectedWorld ?? LumaConnectedState() }
+    func beginRelaySupport(installed: String, now: Date = Date()) {
+        guard RelaySupportAccess.available(installed: installed, flags: state.flags),
+              state.relaySupport == nil else { return }
+        state.relaySupport = RelaySupportHistory(messages: [
+            .init(id: "support-welcome", text: "Hey, I'm Alex. This is your own support space, separate from the restored owner's conversations. Ask me about Relay, Patchline or the recovery tools.", at: now, outgoing: false)
+        ])
+        save()
+    }
     private func commitConnected(_ value:LumaConnectedState) {
         state.connectedWorld=value; save()
     }

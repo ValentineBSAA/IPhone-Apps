@@ -51,7 +51,7 @@ struct LumaHomeLayout {
         iconSize=max(22,min(smallIcons ? 43:61,min(cellWidth-5,rowHeight-21)))
         dockIconSize=max(24,min(smallIcons ? 43:61,min((width-28-18-18)/4-4,dockHeight-30)))
     }
-    static func pages(columns:Int,rows:Int,fieldNotes:Bool)->[[LumaHomeEntry]] {
+    static func pages(columns:Int,rows:Int,fieldNotes:Bool,support:Bool = false)->[[LumaHomeEntry]] {
         let capacity=max(1,columns*rows)
         let personal:[LumaHomeEntry]=[
             .app(.contacts),.app(.photos),.app(.notes),.app(.calendar),
@@ -59,6 +59,7 @@ struct LumaHomeLayout {
         ]
         var repair:[LumaHomeEntry]=[.app(.relay),.app(.patchline),.app(.workstation),.app(.saves)]
         if fieldNotes { repair.append(.app(.fieldNotes)) }
+        if support { repair.append(.app(.relaySupport)) }
         func chunks(_ entries:[LumaHomeEntry])->[[LumaHomeEntry]] {
             stride(from:0,to:entries.count,by:capacity).map { start in
                 Array(entries[start..<min(start+capacity,entries.count)])

@@ -81,6 +81,10 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.relay.safeMode") private var safeMode = false
     private func tweak(_ id: String) -> Bool { RelayCatalog.tweakActive(id, installed: relayInstalled, safeMode: safeMode, flags: world.state.flags) }
     private var fieldNotesAvailable: Bool { RecoveryCircuit.unlocked(world.state.flags) && tweak("fieldnotes") }
+    private var supportAvailable: Bool { RelaySupportAccess.available(installed: relayInstalled, flags: world.state.flags) }
+    private func appAvailable(_ app: LabApp) -> Bool {
+        (app != .fieldNotes || fieldNotesAvailable) && (app != .relaySupport || supportAvailable)
+    }
     private func utilityActive(_ tool: LumaUtility) -> Bool { tweak(tool.rawValue) && RelayCatalog.available(tool.rawValue, flags: world.state.flags) }
     private var fiveColumns: Bool { tweak("fivegrid") || (utilityActive(.lumaplus) && utilityFive) }
     private var smallIcons: Bool { (!safeMode && compactIcons) || fiveColumns || (utilityActive(.lumaplus) && utilitySmall) }
@@ -354,7 +358,7 @@ struct PhoneLabView: View {
                     case .recent:
                         ScrollView {
                             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
-                                ForEach(recent.filter { $0 != .fieldNotes || fieldNotesAvailable }) { app in
+                                ForEach(recent.filter { appAvailable($0) }) { app in
                                     Button { panel = nil; open(app) } label: {
                                         VStack(spacing: 18) {
                                             if let art = app.foundationIcon {
@@ -629,7 +633,7 @@ struct PhoneLabView: View {
         GeometryReader { geometry in
             let layout = LumaHomeLayout(width:geometry.size.width,height:geometry.size.height,
                                         fiveColumns:fiveColumns,smallIcons:smallIcons)
-            let pages = LumaHomeLayout.pages(columns:layout.columns,rows:layout.rows,fieldNotes:fieldNotesAvailable)
+            let pages = LumaHomeLayout.pages(columns:layout.columns,rows:layout.rows,fieldNotes:fieldNotesAvailable,support:supportAvailable)
             let selected = min(max(0,homePage),pages.count-1)
             ZStack {
                 VStack(spacing:layout.spacing) {
@@ -839,7 +843,7 @@ struct PhoneLabView: View {
     }
 
     private func open(_ app: LabApp) {
-        guard app != .fieldNotes || fieldNotesAvailable else { return }
+        guard appAvailable(app) else { return }
         homeFolder = nil
         OpeningQA.record("Opened in-game app: \(app.rawValue)")
         locked = false
@@ -1110,7 +1114,7 @@ struct PhoneLabView: View {
             if q.isEmpty {
                 Text("Search restored phone contents. Protected records are not indexed.").font(.subheadline).foregroundColor(.secondary)
             } else {
-                let apps = LabApp.allCases.filter { ($0 != .fieldNotes || fieldNotesAvailable) && $0.rawValue.localizedCaseInsensitiveContains(q) }
+                let apps = LabApp.allCases.filter { appAvailable($0) && $0.rawValue.localizedCaseInsensitiveContains(q) }
                 let results = PhonePublicSearch.results(query: q, world: world.state, documents: PhonePublicFiles.available(in: world.state))
                 if apps.isEmpty && results.isEmpty { Text("No results").foregroundColor(.secondary) }
                 if !apps.isEmpty {
@@ -1157,6 +1161,7 @@ struct PhoneLabView: View {
 
     @ViewBuilder private func destination(_ app: LabApp) -> some View {
         switch app {
+        case .relaySupport: if supportAvailable { RelaySupportView() } else { Text("Package unavailable") }
         case .fieldNotes: if fieldNotesAvailable { FieldNotesView() } else { Text("Package unavailable") }
         case .saves: LumaSaveView(store: saves, onLoad: loadCheckpoint)
         case .messages: LumaMessagesDirectory()
@@ -1172,7 +1177,7 @@ struct PhoneLabView: View {
         case .dayblink: DayblinkView()
         case .motionwell: MotionwellView()
         case .voiceMemos: LumaVoiceMemos()
-        case .assistant: LumaAssistantView(context: { LumaAssistantContext(world: world.state, availableApps: Set(LabApp.allCases.filter { $0 != .fieldNotes || fieldNotesAvailable }), wifi: wifi, sound: messageSound, haptics: messageHaptics, safeMode: safeMode, installedCount: RelayCatalog.ids(relayInstalled).count, timerEnd: feedbackTimerEnd, now: Date()) }, openApp: { open($0) })
+        case .assistant: LumaAssistantView(context: { LumaAssistantContext(world: world.state, availableApps: Set(LabApp.allCases.filter { appAvailable($0) }), wifi: wifi, sound: messageSound, haptics: messageHaptics, safeMode: safeMode, installedCount: RelayCatalog.ids(relayInstalled).count, timerEnd: feedbackTimerEnd, now: Date()) }, openApp: { open($0) })
         case .workstation: LumaWorkbenchView(openRelay:{open(.relay)},openFiles:{open(.files)})
         case .photos: LabPhotosView()
         case .clock: LabClockView(onFinish: { settleTimer(now: $0, present: true) })
@@ -1193,8 +1198,9 @@ private enum LabPanel: String, Identifiable {
 }
 
 enum LabApp: String, CaseIterable, Identifiable {
-    case fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves", afterframe = "Afterframe", connective = "Connective", commonGround = "CommonGround", workstation = "Workstation", havenWatch = "HavenWatch", dayblink = "Dayblink", motionwell = "Motionwell", voiceMemos = "Voice Memos", assistant = "Luma Assistant"
+    case relaySupport = "Relay Support", fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves", afterframe = "Afterframe", connective = "Connective", commonGround = "CommonGround", workstation = "Workstation", havenWatch = "HavenWatch", dayblink = "Dayblink", motionwell = "Motionwell", voiceMemos = "Voice Memos", assistant = "Luma Assistant"
     var foundationIcon: String? {
+        if self == .relaySupport { return "Icon_RelaySupport" }
         if self == .fieldNotes { return "Jailbreak_FieldNotes" }
         if self == .voiceMemos { return "Icon_VoiceMemos" }
         if self == .assistant { return nil }
@@ -1205,6 +1211,7 @@ enum LabApp: String, CaseIterable, Identifiable {
     var inDock: Bool { [.phone, .messages, .browser, .settings].contains(self) }
     var symbol: String {
         switch self {
+        case .relaySupport: return "headset"
         case .fieldNotes: return "note.text"
         case .phone: return "phone.fill"
         case .messages: return "message.fill"
@@ -1234,6 +1241,7 @@ enum LabApp: String, CaseIterable, Identifiable {
     }
     var color: Color {
         switch self {
+        case .relaySupport: return .teal
         case .fieldNotes: return .teal
         case .phone: return .green
         case .messages: return .teal

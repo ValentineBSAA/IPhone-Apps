@@ -60,6 +60,7 @@ enum RelayCatalog {
         return requirements(id).isSubset(of: effective) && conflicts(id).isDisjoint(with: optional)
     }
     static let packages = [
+        RelayPackage("relay-support", "Relay Support", "1.0.0", "utilities", "Applications", "headset", "Personal technical support", "Install Alex Morgan's standalone support application for local technical guides. Removing the package hides the app but preserves its separate history. Available during simulated Safe Mode."),
         RelayPackage("bootstrap", "Patchline Bootstrap", "2.0.0", "core", "System", "shippingbox.fill", "Essential rootless environment", "Core package catalog and services for this phone.", essential: true),
         RelayPackage("loader", "Patchline Loader", "1.2.0", "core", "System", "cpu", "LumaShell tweak support", "Loads the phone's bundled customization settings.", essential: true),
         RelayPackage("relay", "Relay Package Manager", "1.1.0", "core", "System", "archivebox.fill", "Manage installed packages", "Browse local repositories, review changes and manage tweaks.", essential: true),

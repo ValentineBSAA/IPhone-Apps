@@ -12,7 +12,7 @@ final class HomeLayoutTests:XCTestCase {
                         XCTAssertGreaterThanOrEqual(pages.count,2)
                         XCTAssertTrue(pages.allSatisfy{!$0.isEmpty && $0.count<=layout.columns*layout.rows})
                         let apps=pages.flatMap{$0}.flatMap{$0.apps}+LumaHomeLayout.dock
-                        XCTAssertEqual(Set(apps),Set(LabApp.allCases.filter{$0 != .fieldNotes || installed}))
+                        XCTAssertEqual(Set(apps),Set(LabApp.allCases.filter{($0 != .fieldNotes || installed) && $0 != .relaySupport}))
                         XCTAssertEqual(apps.count,Set(apps).count)
                         XCTAssertEqual(Set(LumaHomeLayout.dock),Set(LabApp.allCases.filter(\.inDock)))
                         XCTAssertLessThanOrEqual(layout.iconSize+21,layout.rowHeight)

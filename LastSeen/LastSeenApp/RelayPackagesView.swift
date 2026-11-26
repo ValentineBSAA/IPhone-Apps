@@ -340,6 +340,7 @@ struct RelayPackagesView: View {
         if let tool = LumaUtility(rawValue: p.id) { OpeningArt(name: tool.art, size: 43) }
         else if p.id == "fieldnotes" { OpeningArt(name: "Jailbreak_FieldNotes", size: 43) }
         else if p.id == "teal" { OpeningArt(name: "Theme_Messages", size: 43) }
+        else if p.id == "relay-support" { OpeningArt(name: "Icon_RelaySupport", size: 43) }
         else if p.id == "relay" { OpeningArt(name: "Jailbreak_Relay", size: 43) }
         else if p.id == "bootstrap" || p.id == "loader" { OpeningArt(name: "Jailbreak_Patchline", size: 43) }
         else {

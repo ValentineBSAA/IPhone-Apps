@@ -13,7 +13,7 @@ enum PatchlinePackageHealth: String {
         let effective = installed.union(RelayCatalog.packages.filter(\.essential).map(\.id))
         if !RelayCatalog.requirements(p.id).isSubset(of: effective) { return .missingRequirement }
         if !RelayCatalog.conflicts(p.id).isDisjoint(with: installed) { return .conflict }
-        return safeMode ? .safeMode : .active
+        return safeMode && p.id != "relay-support" ? .safeMode : .active
     }
 }
 
