@@ -137,6 +137,19 @@ enum LumaMailCatalog {
         }
         return (originals+old+work+LivingPhoneHistory.mail(anchor: date)+delivered).sorted{$0.date>$1.date}
     }
+    static func isUnread(_ item:LumaMailRecord,read:Set<String>)->Bool {
+        item.kind=="inbox" && !item.id.hasPrefix("b32-mail-") && !read.contains(item.id)
+    }
+    static func mailbox(_ world:PhoneWorld,folder:String,query:String="",read:Set<String>=[],unreadOnly:Bool=false,attachmentsAvailable:Bool=false)->[LumaMailRecord] {
+        let q=query.trimmingCharacters(in:.whitespacesAndNewlines)
+        let folders=world.connectedWorld?.mailFolders ?? [:]
+        return visible(world).filter { item in
+            let matchesFolder=folder=="attachments" ? attachmentsAvailable && folders[item.id] != "trash" && item.attachments.contains{WorldDocumentCatalog.available($0,world:world)} : (folders[item.id] ?? item.kind)==folder
+            let peer=Neighbor(rawValue:item.peer)?.name ?? ""
+            return matchesFolder && (!unreadOnly || isUnread(item,read:read)) &&
+                (q.isEmpty || [item.subject,item.sender,item.body,peer].contains{$0.localizedCaseInsensitiveContains(q)})
+        }
+    }
     static func response(to peer:Neighbor,subject:String,body:String)->String {
         let words=Set((subject+" "+body).lowercased().split{!$0.isLetter && !$0.isNumber}.map(String.init))
         if !words.isDisjoint(with:["password","passcode","credentials","pin"]) {
@@ -255,6 +268,7 @@ struct LumaConnectedMailView:View {
     @EnvironmentObject private var world:PhoneWorldStore
     @AppStorage("lastseen.restored.mail.read") private var readRaw=""
     @State private var folder="inbox"
+    @State private var unreadOnly=false
     @State private var query=""
     @State private var compose=false
     @AppStorage("lastseen.relay.installed") private var relayInstalled=""
@@ -263,16 +277,16 @@ struct LumaConnectedMailView:View {
     private var folders:[String] {["inbox","sent","draft","archive","trash"]+(attachmentsAvailable ? ["attachments"]:[])}
     private var read:Set<String>{Set(readRaw.split(separator:"|").map(String.init))}
     private var items:[LumaMailRecord]{
-        LumaMailCatalog.visible(world.state).filter {
-            (folder=="attachments" ? attachmentsAvailable && world.connected.mailFolders[$0.id] != "trash" && $0.attachments.contains{WorldDocumentCatalog.available($0,world:world.state)} : (world.connected.mailFolders[$0.id] ?? $0.kind)==folder) &&
-            (query.isEmpty || [$0.subject,$0.sender,$0.body].contains{$0.localizedCaseInsensitiveContains(query)})
-        }
+        LumaMailCatalog.mailbox(world.state,folder:folder,query:query,read:read,unreadOnly:unreadOnly && folder=="inbox",attachmentsAvailable:attachmentsAvailable)
     }
     var body:some View {
         List {
             LumaHeader(title:"Mail",detail:"Restored correspondence",symbol:"envelope.fill").listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
             Picker("Mailbox",selection:$folder){ForEach(folders,id:\.self){Text($0=="draft" ? "Drafts" : $0.capitalized).tag($0)}}.pickerStyle(.menu)
-            if items.isEmpty {Text("No messages in this mailbox").foregroundColor(.secondary)}
+            if folder=="inbox" {
+                Toggle("Unread only",isOn:$unreadOnly)
+            }
+            if items.isEmpty {Text(query.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty ? "No messages in this mailbox":"No matching messages").foregroundColor(.secondary)}
             ForEach(items){item in
                 NavigationLink {
                     if item.kind=="draft" {
@@ -283,7 +297,7 @@ struct LumaConnectedMailView:View {
                 } label:{
                     VStack(alignment:.leading,spacing:5){
                         HStack {
-                            if item.kind=="inbox" && !item.id.hasPrefix("b32-mail-") && !read.contains(item.id) {Circle().fill(Color.blue).frame(width:8,height:8)}
+                            if LumaMailCatalog.isUnread(item,read:read) {Circle().fill(Color.blue).frame(width:8,height:8)}
                             Text(item.kind=="sent" || item.kind=="draft" ? "To: "+(Neighbor(rawValue:item.peer)?.name ?? item.peer) : item.sender).font(.headline)
                             Spacer()
                             Text(item.date,style:.date).font(.caption2).foregroundColor(.secondary)
@@ -295,6 +309,7 @@ struct LumaConnectedMailView:View {
             }
             if !world.connected.pendingMail.isEmpty {Label("Correspondence pending",systemImage:"clock").font(.caption).foregroundColor(.secondary)}
         }.navigationTitle("Mail").searchable(text:$query,prompt:"Search mail")
+            .onChange(of:attachmentsAvailable){if !$0 && folder=="attachments" {folder="inbox"}}
             .toolbar{ToolbarItem(placement:.navigationBarTrailing){Button{compose=true}label:{Image(systemName:"square.and.pencil").accessibilityLabel("Compose mail")}}}
             .sheet(isPresented:$compose){NavigationStack{LumaMailComposer()}.environmentObject(world)}
     }
@@ -305,6 +320,14 @@ struct LumaMailDetail:View {
     @AppStorage("lastseen.restored.mail.read") private var readRaw=""
     @State private var reply=false
     @State private var forward=false
+    @Environment(\.scenePhase) private var phase
+    private func markRead() {
+        guard phase == .active,item?.kind=="inbox" else{return}
+        var ids=Set(readRaw.split(separator:"|").map(String.init))
+        ids.insert(id);readRaw=ids.sorted().joined(separator:"|")
+        world.recordInvestigationMailRead(id)
+        world.dismissActivity("mail-"+id)
+    }
     private var item:LumaMailRecord?{LumaMailCatalog.visible(world.state).first{$0.id==id}}
     var body:some View {
         ScrollView{
@@ -332,12 +355,8 @@ struct LumaMailDetail:View {
                 }.frame(maxWidth:.infinity,alignment:.leading).padding(20)
             }else{Text("Message unavailable").padding()}
         }.navigationTitle("Message").navigationBarTitleDisplayMode(.inline)
-            .onAppear{
-                if item?.kind=="inbox" {
-                    var ids=Set(readRaw.split(separator:"|").map(String.init));ids.insert(id);readRaw=ids.sorted().joined(separator:"|")
-                    world.recordInvestigationMailRead(id)
-                }
-            }
+            .onAppear{markRead()}
+            .onChange(of:phase){if $0 == .active {markRead()}}
             .sheet(isPresented:$reply){NavigationStack{if let item {LumaMailComposer(recipient:Neighbor(rawValue:item.peer),initialSubject:item.subject.hasPrefix("Re:") ? item.subject : "Re: "+item.subject)}}.environmentObject(world)}
             .sheet(isPresented:$forward){NavigationStack{if let item{LumaMailComposer(initialSubject:"Fwd: "+item.subject,initialBody:"\n\nForwarded local message:\n"+item.sender+"\n"+item.body)}}.environmentObject(world)}
     }

@@ -928,9 +928,13 @@ final class PhoneWorldStore: ObservableObject {
               subject.count <= 200, body.count <= 4000 else { return nil }
         var c=connected
         let key=id ?? UUID().uuidString
+        if let id {
+            guard c.mail.contains(where:{$0.id==id && $0.kind=="draft"}) else{return nil}
+        }
         if let old=c.mail.first(where:{$0.id==key}), old.kind != "draft" { return nil }
         guard c.mail.count < 250 || c.mail.contains(where:{$0.id==key}) else { return nil }
         c.mail.removeAll{$0.id==key}
+        c.mailFolders.removeValue(forKey:key)
         c.mail.append(LumaMailRecord(id:key,peer:peer.id,sender:"Repair desk",subject:subject,body:body,date:now,kind:"draft"))
         commitConnected(c); return key
     }
@@ -942,7 +946,11 @@ final class PhoneWorldStore: ObservableObject {
               !subject.isEmpty,!body.isEmpty,subject.count<=200,body.count<=4000 else { return false }
         var c=connected
         guard c.mail.count+c.pendingMail.count<248,c.pendingMail.count<12 else { return false }
-        if let draftID { guard c.mail.contains(where:{$0.id==draftID && $0.kind=="draft"}) else{return false}; c.mail.removeAll{$0.id==draftID} }
+        if let draftID {
+            guard c.mail.contains(where:{$0.id==draftID && $0.kind=="draft"}) else{return false}
+            c.mail.removeAll{$0.id==draftID}
+            c.mailFolders.removeValue(forKey:draftID)
+        }
         let id=UUID().uuidString
         c.mail.append(LumaMailRecord(id:id,peer:peer.id,sender:"Repair desk",subject:subject,body:body,date:now,kind:"sent"))
         let due=now.addingTimeInterval(peer == .denise ? 45 : 30)
