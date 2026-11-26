@@ -18,6 +18,22 @@ struct LumaAssistantAnswer {
     let clipID: String
     var app: LabApp? = nil
 }
+/// Fixed recordings may only speak the exact canonical approved script.
+enum LumaAssistantVoicePolicy {
+    static let scripts: [String: String] = [
+        "help": "I can open apps, check unread messages, tell you the time, or explain the phone's current settings.",
+        "denied": "I can help with visible records and ordinary phone controls, but I can't do that.",
+        "unavailable": "That application isn't available in the current phone environment.",
+        "hint": "Review the records you already have access to, and keep track of what you've actually verified.",
+        "progress": "You can review your completed steps in Settings. I won't reveal undiscovered records or answers.",
+        "clarify": "I'm not sure what you mean. Try asking me to open an app or check unread messages."
+    ]
+    static func recordingID(for answer: LumaAssistantAnswer) -> String? {
+        guard let script = scripts[answer.clipID], script == answer.text else { return nil }
+        return answer.clipID
+    }
+}
+
 enum LumaAssistantPolicy {
     static func normalize(_ text: String) -> String {
         text.lowercased().split { !$0.isLetter && !$0.isNumber }.joined(separator: " ")
@@ -99,12 +115,41 @@ struct LumaAssistantView: View {
     @State private var player: AVAudioPlayer?
     @StateObject private var readAloud = LumaReadAloud()
     @State private var audioOwner = UUID()
+    @State private var voiceSource: String?
     @AppStorage("lastseen.assistant.readAloud") private var spokenResponses = false
     private let timer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
     private func stopAudio() {
         player?.stop(); player = nil
         PhoneSensoryEngine.endMediaAudio(audioOwner)
         readAloud.stop()
+        voiceSource = nil
+    }
+    private func speakCurrentAnswer() {
+        stopAudio()
+        guard sound, spokenResponses, phase == .active else { return }
+        if let clipID = LumaAssistantVoicePolicy.recordingID(for: answer),
+           let url = Bundle.main.url(forResource: "LumaAssistant_" + clipID, withExtension: "m4a"),
+           let audio = try? AVAudioPlayer(contentsOf: url),
+           audio.duration.isFinite, audio.duration > 0 {
+            do {
+                let session = AVAudioSession.sharedInstance()
+                try session.setCategory(.ambient, mode: .default)
+                try session.setActive(true)
+                audio.numberOfLoops = 0
+                audio.prepareToPlay()
+                PhoneSensoryEngine.beginMediaAudio(audioOwner)
+                if audio.play() {
+                    player = audio
+                    voiceSource = "Recorded Luma response"
+                    return
+                }
+                PhoneSensoryEngine.endMediaAudio(audioOwner)
+            } catch {
+                PhoneSensoryEngine.endMediaAudio(audioOwner)
+            }
+        }
+        readAloud.speak(answer.text)
+        if readAloud.active { voiceSource = "iPhone system read-aloud" }
     }
     private func resumeSession() {
         let world = context().world
@@ -189,22 +234,7 @@ struct LumaAssistantView: View {
         conversationTurns.append("Luma: " + reply.answer.text)
         conversationTurns = Array(conversationTurns.suffix(12))
         answer = reply.answer
-        // Opt-in spoken responses read the exact current answer. Fixed approved
-        // recordings may replace system speech only for matching static replies.
-        if sound, spokenResponses, phase == .active, ["help","denied","unavailable","hint","progress","clarify"].contains(answer.clipID),
-           let url = Bundle.main.url(forResource: "LumaAssistant_" + answer.clipID, withExtension: "m4a"),
-           let audio = try? AVAudioPlayer(contentsOf: url) {
-            do {
-                let session = AVAudioSession.sharedInstance()
-                try session.setCategory(.ambient, mode: .default)
-                try session.setActive(true)
-                PhoneSensoryEngine.beginMediaAudio(audioOwner)
-                player = audio
-                if !audio.play() { stopAudio(); readAloud.speak(answer.text) }
-            } catch { stopAudio() }
-        } else if sound, spokenResponses, phase == .active {
-            readAloud.speak(answer.text)
-        }
+        speakCurrentAnswer()
     }
     var body: some View {
         ScrollView {
@@ -240,7 +270,7 @@ struct LumaAssistantView: View {
                     HStack {
                         Label(source.title,systemImage:"doc.text.magnifyingglass").font(.caption).lineLimit(2)
                         Spacer()
-                        Button { cancelImageScan(); evidenceID = nil } label: { Image(systemName:"xmark.circle.fill").accessibilityLabel("Clear selected record") }
+                        Button { stopAudio(); cancelImageScan(); evidenceID = nil } label: { Image(systemName:"xmark.circle.fill").accessibilityLabel("Clear selected record") }
                     }.padding(10).lumaSurface(radius:12)
                     if source.kind == .image {
                         let asset=String(source.id.dropFirst(6))
@@ -285,6 +315,13 @@ struct LumaAssistantView: View {
                 }
                 Button("Start a new conversation") { clearSession() }.font(.footnote)
                 Toggle("Speak responses", isOn: $spokenResponses)
+                if let voiceSource {
+                    HStack {
+                        Label(voiceSource, systemImage: "speaker.wave.2").font(.caption)
+                        Spacer()
+                        Button("Stop") { stopAudio() }.font(.caption)
+                    }.padding(10).lumaSurface(radius: 12)
+                }
                 Toggle("On-device question interpretation",isOn:$interpretOnDevice)
                 Text("When supported, the device model interprets unfamiliar wording. Answers remain limited to available records. No external AI requests.").font(.caption).foregroundColor(.secondary)
                 Text("Optional iPhone system read-aloud or approved fixed recordings. No microphone listening.").font(.caption).foregroundColor(.secondary)
@@ -301,7 +338,7 @@ struct LumaAssistantView: View {
                             Button {
                                 guard LumaAssistantEvidence.selected(record.id,in:context().world) != nil else { return }
                                 interpretation?.cancel(); interpretation = nil; requestID = UUID()
-                                cancelImageScan(); evidenceID = record.id; showEvidence = false
+                                stopAudio(); cancelImageScan(); evidenceID = record.id; showEvidence = false
                             } label: { Text(record.title) }
                         }
                     }.navigationTitle("Opened records").searchable(text:$evidenceSearch)
@@ -333,8 +370,12 @@ struct LumaAssistantView: View {
             .onReceive(timer) { now in
                 readAloud.tick(now: now)
                 if let player, !player.isPlaying { stopAudio() }
+                else if player == nil, !readAloud.active { voiceSource = nil }
             }
-            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { _ in stopAudio() }
+            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { notification in
+                if let raw = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                   AVAudioSession.InterruptionType(rawValue: raw) == .began { stopAudio() }
+            }
             .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { notification in
                 if let raw = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
                    AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable { stopAudio() }

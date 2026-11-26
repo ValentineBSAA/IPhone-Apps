@@ -1,6 +1,7 @@
 import SwiftUI
 import AVFoundation
 import Combine
+import UIKit
 
 /// Explicit accessibility speech, not a character recording or a microphone.
 @MainActor final class LumaReadAloud: ObservableObject {
@@ -17,7 +18,8 @@ import Combine
     func speak(_ text: String) {
         stop()
         notice = ""
-        guard Self.eligible(text), let voice = AVSpeechSynthesisVoice(language: "en-US") else {
+        guard UIApplication.shared.applicationState == .active,
+              Self.eligible(text), let voice = AVSpeechSynthesisVoice(language: "en-US") else {
             notice = "System read-aloud is unavailable."
             return
         }

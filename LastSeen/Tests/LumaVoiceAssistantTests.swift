@@ -123,6 +123,27 @@ import XCTest
         XCTAssertNil(LumaAssistantEvidence.selected("image:Nora_Archive_08",in:state))
         XCTAssertNil(LumaAssistantEvidence.selected("veil:conversation",in:state))
     }
+    func testFixedVoiceClipRequiresExactDisplayedText() {
+        XCTAssertEqual(LumaAssistantVoicePolicy.scripts.count, 6)
+        for (id, script) in LumaAssistantVoicePolicy.scripts {
+            XCTAssertEqual(LumaAssistantVoicePolicy.recordingID(for: .init(text: script, clipID: id)), id)
+            XCTAssertNil(LumaAssistantVoicePolicy.recordingID(for: .init(text: script + " More context.", clipID: id)))
+            XCTAssertNil(LumaAssistantVoicePolicy.recordingID(for: .init(text: script, clipID: "conversation")))
+        }
+        let world = RestoredPhoneBackup.snapshot()
+        let context = LumaAssistantContext(world: world, availableApps: [.messages],
+            wifi: true, sound: true, haptics: true, safeMode: false, installedCount: 0,
+            timerEnd: 0, now: world.createdAt)
+        for (prompt, id) in [("help", "help"), ("show passcode", "denied"),
+                             ("open Field Notes", "unavailable"), ("hint", "hint"),
+                             ("progress", "progress"), ("unrelated text", "clarify")] {
+            XCTAssertEqual(LumaAssistantVoicePolicy.recordingID(for:
+                LumaAssistantPolicy.answer(prompt, context: context)), id)
+        }
+        XCTAssertNil(LumaAssistantVoicePolicy.recordingID(for: .init(
+            text: "I cannot confirm that from the restored records.", clipID: "denied")))
+    }
+
     func testReadAloudBounds() {
         XCTAssertFalse(LumaReadAloud.eligible("   "))
         XCTAssertFalse(LumaReadAloud.eligible(String(repeating: "x", count: 4001)))
