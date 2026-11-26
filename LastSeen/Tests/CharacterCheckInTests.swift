@@ -23,7 +23,7 @@ import XCTest
         store.advancePendingReplies(now: due)
         XCTAssertTrue(store.messages(.maya).contains { $0.id == "priority-reply" })
         XCTAssertFalse(store.messages(.denise).contains { $0.id == "b32-denise-check-in" })
-        XCTAssertEqual(store.connected.characterCheckIns?.first?.dueAt, due.addingTimeInterval(15))
+        XCTAssertEqual(store.connected.characterCheckIns?.first(where: { $0.id == "b32-denise-check-in" })?.dueAt, due.addingTimeInterval(15))
         state = store.state
         state.threads[Neighbor.maya.id, default: []].append(.init(id: "phone-tutorial-priority-test",
             thread: Neighbor.maya.id, text: "Please read this first.", fromPlayer: false, at: due, read: false))
