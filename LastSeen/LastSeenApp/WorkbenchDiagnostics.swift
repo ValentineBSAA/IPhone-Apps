@@ -125,8 +125,9 @@ struct WorkbenchDiagnosticView: View {
     let challenge: WorkbenchDiagnostic
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var feedback = ""
+    @Environment(\.scenePhase) private var phase
     private var progress: WorkbenchDiagnosticProgress { WorkbenchDiagnosticCatalog.progress(challenge,in: world.state) }
-    private var available: Bool { WorkbenchDiagnosticCatalog.available(world.state).contains(challenge) }
+    private var available:Bool {phase == .active && WorkbenchDiagnosticCatalog.available(world.state).contains(challenge)}
     private func binding(_ index: Int) -> Binding<Int> {
         Binding(get: { progress.values[index] }, set: { value in
             var next = progress.values; next[index] = value
@@ -219,5 +220,6 @@ struct WorkbenchDiagnosticView: View {
                 Label("Reconnect the simulated phone to continue.",systemImage: "cable.connector")
             }
         }.navigationTitle(challenge.title).navigationBarTitleDisplayMode(.inline)
+        .onChange(of:available){if !$0 {feedback=""}}
     }
 }

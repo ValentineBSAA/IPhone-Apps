@@ -1404,14 +1404,18 @@ final class PhoneWorldStore: ObservableObject {
         var c=self.connected;c.workbenchConnected=connected;commitConnected(c)
     }
     func setWorkbenchSelection(_ selection:[String],for challenge:WorkbenchChallenge) {
-        guard connected.workbenchConnected else{return}
+        guard state.everydayArchiveRevision != nil,connected.workbenchConnected,
+              !connected.workbenchVerified.contains(challenge.rawValue) else{return}
         var c=connected
-        c.workbenchSelections[challenge.rawValue]=Array(selection.filter{challenge.options.contains($0)}.prefix(challenge.required))
+        var seen=Set<String>()
+        c.workbenchSelections[challenge.rawValue]=Array(selection.filter{challenge.options.contains($0) && seen.insert($0).inserted}.prefix(challenge.required))
         commitConnected(c)
     }
     @discardableResult
     func verifyWorkbench(_ challenge:WorkbenchChallenge)->Bool {
-        guard connected.workbenchConnected,challenge.valid(connected.workbenchSelections[challenge.rawValue] ?? []) else{return false}
+        guard state.everydayArchiveRevision != nil,connected.workbenchConnected else{return false}
+        if connected.workbenchVerified.contains(challenge.rawValue){return true}
+        guard challenge.valid(connected.workbenchSelections[challenge.rawValue] ?? []) else{return false}
         var c=connected;c.workbenchVerified.insert(challenge.rawValue);commitConnected(c);return true
     }
 

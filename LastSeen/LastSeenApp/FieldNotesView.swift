@@ -13,6 +13,18 @@ struct FieldEntry: Identifiable, Codable, Equatable {
     var created = Date()
     var updated = Date()
 }
+enum FieldNotebookBrowsing {
+    static func visible(_ entries:[FieldEntry],query:String="",status:String="All",pinnedOnly:Bool=false)->[FieldEntry] {
+        let term=query.trimmingCharacters(in:.whitespacesAndNewlines)
+        return entries.filter{entry in
+            (status=="All" || status==entry.status) && (!pinnedOnly || entry.pinned) &&
+            (term.isEmpty || [entry.title,entry.text,entry.category,entry.source,entry.confidence,entry.status].contains{$0.localizedCaseInsensitiveContains(term)})
+        }.sorted{
+            if $0.pinned != $1.pinned {return $0.pinned}
+            return $0.updated == $1.updated ? $0.id.uuidString < $1.id.uuidString:$0.updated > $1.updated
+        }
+    }
+}
 @MainActor final class FieldNotebook: ObservableObject {
     @Published private(set) var entries: [FieldEntry] = []
     @Published private(set) var error = ""
@@ -50,14 +62,16 @@ struct FieldNotesView: View {
     @State private var filter = "All"
     @State private var editing: FieldEntry?
     @State private var deleting: FieldEntry?
-    private var shown: [FieldEntry] {
-        book.entries.filter { e in
-            (filter == "All" || filter == e.status) &&
-            (search.isEmpty || [e.title,e.text,e.category,e.source].contains { $0.localizedCaseInsensitiveContains(search) })
-        }.sorted { a,b in a.pinned != b.pinned ? a.pinned : a.updated > b.updated }
-    }
+    @State private var pinnedOnly=false
+    @AppStorage("lastseen.relay.installed") private var installed=""
+    @AppStorage("lastseen.relay.safeMode") private var safeMode=false
+    @Environment(\.scenePhase) private var phase
+    private var available:Bool {RecoveryCircuit.unlocked(world.state.flags) && RelayCatalog.tweakActive("fieldnotes",installed:installed,safeMode:safeMode,flags:world.state.flags)}
+    private var term:String {search.trimmingCharacters(in:.whitespacesAndNewlines)}
+    private var shown:[FieldEntry] {FieldNotebookBrowsing.visible(book.entries,query:term,status:filter,pinnedOnly:pinnedOnly)}
     var body: some View {
         List {
+            if available && phase == .active {
             Section {
                 HStack(spacing: 12) {
                     Image("Jailbreak_FieldNotes").resizable().scaledToFit().frame(width: 56,height: 56).clipShape(RoundedRectangle(cornerRadius: 13))
@@ -68,12 +82,13 @@ struct FieldNotesView: View {
                 }
                 HStack { Label("\(book.entries.filter { $0.status != "Resolved" }.count) open", systemImage: "questionmark.circle"); Spacer(); Label("\(book.entries.filter { $0.pinned }.count) pinned", systemImage: "pin") }.font(.caption).foregroundColor(.secondary)
                 Picker("Status", selection: $filter) { ForEach(["All","Open","Follow up","Resolved"], id: \.self) { Text($0) } }.pickerStyle(.segmented)
+                Toggle("Pinned notes only",isOn:$pinnedOnly)
             }
             let connections=EvidenceConnection.visible(world.state).filter{entry in
-                search.isEmpty || entry.relation.title.localizedCaseInsensitiveContains(search) ||
-                entry.records(in:world.state).contains{$0.title.localizedCaseInsensitiveContains(search)}
+                term.isEmpty || entry.relation.title.localizedCaseInsensitiveContains(term) ||
+                entry.records(in:world.state).contains{$0.title.localizedCaseInsensitiveContains(term)}
             }
-            if filter == "All" && LumaAssistantEvidence.visible(world.state).count >= 2 {
+            if filter == "All" && !pinnedOnly && LumaAssistantEvidence.visible(world.state).count >= 2 {
                 Section("Record connections · current checkpoint") {
                     NavigationLink { EvidenceComparisonView() } label:{
                         Label("Compare discoveries",systemImage:"arrow.left.arrow.right")
@@ -87,8 +102,8 @@ struct FieldNotesView: View {
                     }
                 }
             }
-            let findings=ImageInterpretation.recorded(world.state).filter{search.isEmpty || $0.note.localizedCaseInsensitiveContains(search)}
-            if filter == "All" && !findings.isEmpty {
+            let findings=ImageInterpretation.recorded(world.state).filter{term.isEmpty || $0.note.localizedCaseInsensitiveContains(term)}
+            if filter == "All" && !pinnedOnly && !findings.isEmpty {
                 Section("Recovered analysis · current checkpoint") {
                     ForEach(findings){finding in
                         VStack(alignment:.leading,spacing:5){
@@ -99,7 +114,8 @@ struct FieldNotesView: View {
                     }
                 }
             }
-            if shown.isEmpty && findings.isEmpty && connections.isEmpty { Text("No entries yet").foregroundColor(.secondary) }
+            Section("Your notebook") {
+            if shown.isEmpty {Text(term.isEmpty ? "No personal entries in this view":"No matching personal entries").foregroundColor(.secondary)}
             ForEach(shown) { entry in
                 Button { editing = entry } label: {
                     VStack(alignment: .leading, spacing: 5) {
@@ -113,20 +129,23 @@ struct FieldNotesView: View {
                         Text(entry.category + " • " + entry.status).font(.caption).foregroundColor(LumaDesign.accent)
                     }.padding(.vertical, 6)
                 }.buttonStyle(.plain)
-                .swipeActions {
-                    Button(role: .destructive) { deleting = entry } label: { Label("Delete", systemImage: "trash") }
-                    Button { var e = entry; e.pinned.toggle(); _ = book.put(e) } label: { Label("Pin", systemImage: "pin") }.tint(.teal)
+                .swipeActions(allowsFullSwipe:false) {
+                    Button(role:.destructive){deleting=entry}label:{Label("Delete",systemImage:"trash")}
+                    Button {var e=entry;e.pinned.toggle();_ = book.put(e)}label:{Label(entry.pinned ? "Unpin":"Pin",systemImage:entry.pinned ? "pin.slash":"pin")}.tint(.teal)
                 }
             }
-            if !book.error.isEmpty { Text(book.error).foregroundColor(.secondary) }
+            }
+            if !book.error.isEmpty {Text(book.error).foregroundColor(.secondary)}
+            } else {Text("Notebook unavailable in the current environment.").foregroundColor(.secondary)}
         }.scrollContentBackground(.hidden).background(LumaDesign.background.ignoresSafeArea())
             .navigationTitle("Field Notes").searchable(text: $search, prompt: "Search your notes")
-            .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button { editing = FieldEntry() } label: { Image(systemName: "square.and.pencil").accessibilityLabel("New entry") } } }
-            .sheet(item: $editing) { entry in
-                NavigationStack { FieldEntryEditor(entry: entry, book: book) }
+            .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button {editing=FieldEntry()}label:{Image(systemName:"square.and.pencil").accessibilityLabel("New entry")}.disabled(!available || phase != .active) } }
+            .onChange(of:available){if !$0 {editing=nil;deleting=nil}}
+            .sheet(item:$editing){entry in
+                NavigationStack {FieldEntryEditor(entry:entry,book:book,canSave:{available && phase == .active})}
             }
             .confirmationDialog("Delete this entry?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
-                Button("Delete", role: .destructive) { if let e = deleting { _ = book.remove(e.id) }; deleting = nil }
+                Button("Delete", role: .destructive) { if available && phase == .active,let e=deleting {_ = book.remove(e.id)}; deleting = nil }
                 Button("Cancel", role: .cancel) { deleting = nil }
             }
     }
@@ -135,13 +154,17 @@ private struct FieldEntryEditor: View {
     @State var entry: FieldEntry
     @ObservedObject var book: FieldNotebook
     @Environment(\.dismiss) private var dismiss
+    let canSave:()->Bool
+    private enum Focus:Hashable {case title,body}
+    @FocusState private var focus:Focus?
     var body: some View {
         Form {
             Section("Entry") {
-                TextField("Optional title", text: $entry.title)
+                TextField("Optional title",text:$entry.title).focused($focus,equals:.title)
                 Picker("Category", selection: $entry.category) { ForEach(["Observation","Person","Place","Timeline","Question","Theory","To-do","Other"], id: \.self) { Text($0) } }
-                Picker("Source", selection: $entry.source) { ForEach(["Unspecified","Messages","Contacts","Phone","Photos","Notes","Files","Mail","Browser","Calendar","Other"], id: \.self) { Text($0) } }
-                TextEditor(text: $entry.text).frame(minHeight: 150).accessibilityLabel("Your notes")
+                Picker("Source", selection: $entry.source) { ForEach(["Unspecified","Messages","Contacts","Phone","Photos","Notes","Files","Mail","Browser","Calendar","VEIL","HavenWatch","Afterframe","Connective","CommonGround","Luma Assistant","Workstation","Relay Support","Other"], id: \.self) { Text($0) } }
+                TextEditor(text:$entry.text).frame(minHeight:150).accessibilityLabel("Your notes").focused($focus,equals:.body)
+                Text("\(entry.text.count) / 10000 characters").font(.caption).foregroundColor(.secondary)
             }
             Section("Organization") {
                 Picker("Confidence", selection: $entry.confidence) { ForEach(["Uncertain","Possible","Confident"], id: \.self) { Text($0) } }
@@ -152,8 +175,9 @@ private struct FieldEntryEditor: View {
             if !book.error.isEmpty { Text(book.error).foregroundColor(.secondary) }
         }.navigationTitle("Investigation entry").toolbar {
             ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            ToolbarItemGroup(placement:.keyboard){Spacer();Button("Done"){focus=nil}}
             ToolbarItem(placement: .confirmationAction) {
-                Button("Save") { if book.put(entry) { dismiss() } }.disabled(entry.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Button("Save"){if canSave(),book.put(entry){dismiss()}}.disabled(!canSave() || entry.text.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty || entry.text.count>10000 || entry.title.count>200)
             }
         }
     }

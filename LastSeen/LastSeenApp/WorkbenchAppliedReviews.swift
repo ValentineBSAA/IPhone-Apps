@@ -79,11 +79,13 @@ enum WorkbenchAppliedReview: String, CaseIterable, Identifiable {
 struct WorkbenchAppliedReviewView: View {
     let review: WorkbenchAppliedReview
     @EnvironmentObject private var world: PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
     @State private var selected: Int?
+    private var available:Bool {phase == .active && review.available(in:world.state)}
     @State private var feedback = ""
     var body: some View {
         List {
-            if review.available(in: world.state), let source = review.source(in: world.state) {
+            if available, let source = review.source(in: world.state) {
                 Section {
                     LumaHeader(title: review.title, detail: "Optional applied diagnostic", symbol: "doc.text.magnifyingglass")
                     Text("Apply a verified practice procedure to a record you have already reviewed. This exercise is not required to finish the investigation.").font(.subheadline)
@@ -117,7 +119,7 @@ struct WorkbenchAppliedReviewView: View {
                             }.buttonStyle(.plain).accessibilityAddTraits(selected == index ? .isSelected : [])
                         }
                         Button("Record observation") {
-                            guard let selected else { return }
+                            guard available,let selected else{return}
                             feedback = world.completeAppliedReview(review, choice: selected) ? "Review recorded." : "Consider the limits of the source and try again."
                         }.disabled(selected == nil)
                         if !feedback.isEmpty { Text(feedback).font(.caption).foregroundColor(.secondary) }
@@ -127,5 +129,6 @@ struct WorkbenchAppliedReviewView: View {
                 Label("This review is not available in the current environment.", systemImage: "lock")
             }
         }.navigationTitle("Applied review").navigationBarTitleDisplayMode(.inline)
+        .onChange(of:available){if !$0 {selected=nil;feedback=""}}
     }
 }

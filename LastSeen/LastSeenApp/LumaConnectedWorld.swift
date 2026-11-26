@@ -646,6 +646,8 @@ struct LumaSocialDiscussion:View{
 
 struct LumaWorkbenchView:View{
     @EnvironmentObject private var world:PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
+    private var available:Bool {world.state.everydayArchiveRevision != nil && phase == .active}
     let openRelay:()->Void
     let openFiles:()->Void
     @AppStorage("lastseen.relay.installed") private var relayInstalled=""
@@ -658,15 +660,15 @@ struct LumaWorkbenchView:View{
                 VStack(alignment:.leading,spacing:12){
                     Label(world.connected.workbenchConnected ? "Device connected":"No device connected",systemImage:world.connected.workbenchConnected ? "checkmark.circle.fill":"cable.connector").font(.headline).foregroundColor(world.connected.workbenchConnected ? LumaDesign.accent:.secondary)
                     Text("Simulated connection to the restored phone. No physical computer or cable is required.").font(.caption).foregroundColor(.secondary)
-                    Button(world.connected.workbenchConnected ? "Disconnect device":"Connect device"){world.setWorkbenchConnection(!world.connected.workbenchConnected)}.buttonStyle(.borderedProminent)
+                    Button(world.connected.workbenchConnected ? "Disconnect device":"Connect device"){guard available else{return};world.setWorkbenchConnection(!world.connected.workbenchConnected)}.buttonStyle(.borderedProminent).disabled(!available)
                 }.frame(maxWidth:.infinity,alignment:.leading).padding(16).lumaSurface()
-                if world.connected.workbenchConnected{
+                if available && world.connected.workbenchConnected{
                     LabeledContent("Restore index",value:"Available")
                     if metrics {
                         LabeledContent("Readable records",value:String(WorldDocumentCatalog.visible(world.state).count+PhonePublicFiles.available(in:world.state).count))
-                        LabeledContent("Installed optional packages",value:String(RelayCatalog.ids(relayInstalled).count))
+                        LabeledContent("Installed optional packages",value:String(RelayCatalog.packages.filter{!$0.essential && RelayCatalog.ids(relayInstalled).contains($0.id)}.count))
                     }
-                    LabeledContent("Completed diagnostics",value:String(world.connected.workbenchVerified.count + WorkbenchDiagnosticCatalog.verifiedCount(world.state)))
+                    LabeledContent("Completed diagnostics",value:String(WorkbenchChallenge.allCases.filter{world.connected.workbenchVerified.contains($0.rawValue)}.count + WorkbenchDiagnosticCatalog.verifiedCount(world.state)))
                     Button(action:openFiles){Label("Inspect restored files",systemImage:"folder")}.buttonStyle(.bordered)
                     ForEach(WorkbenchChallenge.allCases){challenge in
                         NavigationLink{LumaWorkbenchChallengeView(challenge:challenge)}label:{
@@ -712,11 +714,20 @@ struct LumaWorkbenchChallengeView:View{
     let challenge:WorkbenchChallenge
     @EnvironmentObject private var world:PhoneWorldStore
     @State private var feedback=""
+    @Environment(\.scenePhase) private var phase
+    private var available:Bool {world.state.everydayArchiveRevision != nil && world.connected.workbenchConnected && phase == .active}
+    private var verified:Bool {world.connected.workbenchVerified.contains(challenge.rawValue)}
     private var selected:[String]{world.connected.workbenchSelections[challenge.rawValue] ?? []}
     var body:some View{
         List{
-            if world.connected.workbenchConnected{
+            if available{
                 Section{Text(challenge.instructions)}
+                if verified {
+                    Section("Completed diagnostic") {
+                        Label("Verified",systemImage:"checkmark.seal.fill").foregroundColor(LumaDesign.accent)
+                        Text("Completed exercises are retained in this checkpoint.").font(.caption).foregroundColor(.secondary)
+                    }
+                } else {
                 Section("Select two"){
                     ForEach(challenge.options,id:\.self){option in
                         Button{
@@ -730,9 +741,11 @@ struct LumaWorkbenchChallengeView:View{
                     Button("Verify"){feedback=world.verifyWorkbench(challenge) ? "Diagnostic verified.":"The selected records do not match. No changes were applied."}.disabled(selected.count != challenge.required)
                     Button("Clear selection"){world.setWorkbenchSelection([],for:challenge);feedback=""}
                     if !feedback.isEmpty{Text(feedback).foregroundColor(.secondary)}
-                    if world.connected.workbenchVerified.contains(challenge.rawValue){Label("Verified",systemImage:"checkmark.seal.fill").foregroundColor(LumaDesign.accent)}
+                }
                 }
             }else{Text("Reconnect the simulated phone first.")}
         }.navigationTitle(challenge.title)
+        .onChange(of:available){if !$0 {feedback=""}}
+        .onChange(of:verified){if $0 {feedback=""}}
     }
 }
