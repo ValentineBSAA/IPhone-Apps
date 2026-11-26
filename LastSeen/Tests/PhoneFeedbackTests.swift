@@ -61,6 +61,22 @@ final class PhoneFeedbackTests: XCTestCase {
         XCTAssertEqual(queue.next()?.cue, .unlock)
     }
 
+    func testMediaReservationsAreIndependentAndIdempotent() {
+        var reservations = PhoneMediaAudioReservations()
+        let first = UUID(), second = UUID()
+        XCTAssertFalse(reservations.isReserved)
+        reservations.begin(first)
+        reservations.begin(first)
+        reservations.begin(second)
+        XCTAssertTrue(reservations.isReserved)
+        XCTAssertEqual(reservations.owners.count, 2)
+        reservations.end(first)
+        reservations.end(first)
+        XCTAssertTrue(reservations.isReserved)
+        reservations.end(second)
+        XCTAssertFalse(reservations.isReserved)
+    }
+
     func testCorrectiveCueClassification() {
         XCTAssertTrue(PhoneCue.unlock.isAuthentication)
         XCTAssertTrue(PhoneCue.authenticationFailed.isAuthentication)

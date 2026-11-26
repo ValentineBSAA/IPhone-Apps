@@ -1,5 +1,6 @@
 import SwiftUI
 import AVKit
+import AVFoundation
 import Combine
 
 struct MotionwellClip: Identifiable, Equatable {
@@ -124,10 +125,11 @@ struct MotionwellPlayerView: View {
     @State private var feedback = ""
     @State private var lastSaved = 0.0
     @State private var started = false
-    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    private let timer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
     private var state: MotionwellState { world.connected.motionwell ?? MotionwellState() }
+    private var eligible: Bool { MotionwellArchive.visible(world.state).contains(clip) }
     private func savePosition(force: Bool = false) {
-        guard let player else { return }
+        guard eligible, let player else { return }
         let seconds = player.currentTime().seconds
         guard seconds.isFinite, seconds >= 0 else { return }
         if player.rate > 0 && seconds > 0.25 { started = true }
@@ -196,6 +198,15 @@ struct MotionwellPlayerView: View {
                 lastSaved = resume
             }
             .onReceive(timer) { _ in savePosition() }
+            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { notification in
+                if let raw = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                   AVAudioSession.InterruptionType(rawValue: raw) == .began {
+                    savePosition(force: true); player?.pause()
+                }
+            }
+            .onChange(of: eligible) { value in
+                if !value { player?.pause(); player = nil; started = false }
+            }
             .onChange(of: phase) { if $0 != .active { savePosition(force: true); player?.pause() } }
             .onDisappear { savePosition(force: true); player?.pause(); player = nil; started = false }
     }

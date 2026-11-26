@@ -68,18 +68,23 @@ struct LumaMemoDetail: View {
     @State private var duration = 0.0
     @State private var playing = false
     @State private var error = ""
+    @State private var audioOwner = UUID()
     private let timer = Timer.publish(every: 0.2, on: .main, in: .common).autoconnect()
     private var memo: LumaMemo? { LumaMemoCatalog.visible(world.state).first { $0.id == id } }
     private func stop() {
         player?.pause()
         playing = false
         elapsed = player?.currentTime ?? elapsed
+        PhoneSensoryEngine.endMediaAudio(audioOwner)
     }
     private func load() {
         guard let url = memo?.url, player == nil else { return }
         do {
             let audio = try AVAudioPlayer(contentsOf: url)
-            guard audio.duration.isFinite, audio.duration > 0 else { return }
+            guard audio.duration.isFinite, audio.duration > 0 else {
+                error = "Recording duration is unavailable."
+                return
+            }
             audio.prepareToPlay()
             player = audio; duration = audio.duration
         } catch { self.error = "Recording could not be decoded." }
@@ -107,10 +112,17 @@ struct LumaMemoDetail: View {
                                     if playing { stop() }
                                     else {
                                         if player.currentTime >= duration - 0.1 { player.currentTime = 0 }
-                                        PhoneSensoryEngine.stopSound()
-                                        try? AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
-                                        playing = player.play()
-                                        if !playing { error = "Playback unavailable." }
+                                        guard phase == .active, self.memo != nil else { return }
+                                        PhoneSensoryEngine.beginMediaAudio(audioOwner)
+                                        do {
+                                            let session = AVAudioSession.sharedInstance()
+                                            try session.setCategory(.ambient, mode: .default)
+                                            try session.setActive(true)
+                                            playing = player.play()
+                                        } catch { playing = false }
+                                        elapsed = player.currentTime
+                                        error = playing ? "" : "Playback unavailable."
+                                        if !playing { PhoneSensoryEngine.endMediaAudio(audioOwner) }
                                     }
                                 } label: { Image(systemName: playing ? "pause.circle.fill" : "play.circle.fill").font(.system(size: 50)) }
                                     .accessibilityLabel(playing ? "Pause" : "Play")
@@ -131,10 +143,31 @@ struct LumaMemoDetail: View {
             .onAppear { load() }
             .onReceive(timer) { _ in
                 guard let player else { return }
-                if playing && !player.isPlaying { elapsed = duration; playing = false; player.currentTime = 0 }
-                else if playing { elapsed = player.currentTime }
+                if playing && !player.isPlaying {
+                    // AVAudioPlayer may reset its clock when it ends. A halt
+                    // well before the end must not be reported as completion.
+                    if max(elapsed, player.currentTime) >= duration - 0.5 {
+                        elapsed = duration; player.currentTime = 0
+                    } else {
+                        player.currentTime = min(duration, max(elapsed, player.currentTime))
+                        elapsed = player.currentTime
+                    }
+                    playing = false
+                    PhoneSensoryEngine.endMediaAudio(audioOwner)
+                } else if playing { elapsed = player.currentTime }
             }
-            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { _ in stop() }
+            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { notification in
+                if let raw = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                   AVAudioSession.InterruptionType(rawValue: raw) == .began { stop() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { notification in
+                if let raw = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+                   AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable { stop() }
+            }
+            .onChange(of: memo?.id) { value in
+                if value == nil { stop(); player = nil }
+                else { load() }
+            }
             .onChange(of: phase) { if $0 != .active { stop() } }
             .onDisappear { stop(); player = nil }
     }

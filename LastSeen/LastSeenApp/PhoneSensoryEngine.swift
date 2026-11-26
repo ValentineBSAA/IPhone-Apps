@@ -254,6 +254,15 @@ struct PhoneAudioQueue {
     mutating func removeAll() { entries.removeAll() }
 }
 
+/// A tokenized reservation for audible foreground media. A stale view may
+/// release its own token without accidentally unmuting a newer recording.
+struct PhoneMediaAudioReservations {
+    private(set) var owners: Set<UUID> = []
+    var isReserved: Bool { !owners.isEmpty }
+    mutating func begin(_ owner: UUID) { owners.insert(owner) }
+    mutating func end(_ owner: UUID) { owners.remove(owner) }
+}
+
 @MainActor
 enum PhoneSensoryEngine {
     private static var audio: AVAudioPlayer?
@@ -266,6 +275,15 @@ enum PhoneSensoryEngine {
     private static var hapticQueue: [PhoneHapticProfile] = []
     private static var hapticDrain: Task<Void, Never>?
     private static var hapticUntil: TimeInterval = 0
+    private static var mediaReservations = PhoneMediaAudioReservations()
+
+    static func beginMediaAudio(_ owner: UUID) {
+        mediaReservations.begin(owner)
+        stopSound()
+    }
+    static func endMediaAudio(_ owner: UUID) {
+        mediaReservations.end(owner)
+    }
 
     private static func preference(_ key: String) -> Bool {
         let defaults = UserDefaults.standard
@@ -315,7 +333,7 @@ enum PhoneSensoryEngine {
                 guard UIApplication.shared.applicationState == .active else { queued.removeAll(); break }
                 if audio?.isPlaying == true { continue }
                 guard let next = queued.next() else { break }
-                guard preference("lastseen.lab.messageSound"),
+                guard !mediaReservations.isReserved, preference("lastseen.lab.messageSound"),
                       !next.cue.isHorror || (next.horrorEnabled && preference("lastseen.lab.horrorEffects")) else { continue }
                 // Draining bypasses admission; otherwise the first item could
                 // be requeued behind its own successors.
@@ -333,7 +351,9 @@ enum PhoneSensoryEngine {
         if haptics && preference("lastseen.lab.messageHaptics") {
             requestHaptics(hapticProfile ?? .cue(cue))
         }
-        guard sound && preference("lastseen.lab.messageSound") else { return 0 }
+        // Media owns the audible channel; arrivals still reach the journal,
+        // banner and independent haptic path. Never replay missed sound bursts.
+        guard sound && preference("lastseen.lab.messageSound"), !mediaReservations.isReserved else { return 0 }
         let playing = audio?.isPlaying == true ? currentCue : nil
         switch PhoneAudioPriority.decision(for: cue, playing: playing, waiting: !queued.isEmpty) {
         case .drop: return 0
