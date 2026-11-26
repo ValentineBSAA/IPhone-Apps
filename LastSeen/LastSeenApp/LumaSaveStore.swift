@@ -143,6 +143,7 @@ final class LumaSaveStore: ObservableObject {
                     readAt: $0.readAt.addingTimeInterval(delta), dueAt: $0.dueAt.addingTimeInterval(delta), startsTutorial: $0.startsTutorial, typingAt: $0.typingAt?.addingTimeInterval(delta))
             }
             if var connected=value.world.connectedWorld {
+                connected.characterCheckIns=CharacterCheckIns.rebase(connected.characterCheckIns,by:delta)
                 connected.pendingMail=connected.pendingMail.map { pending in
                     let r=pending.record
                     let date=pending.dueAt.addingTimeInterval(delta)

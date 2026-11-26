@@ -303,6 +303,7 @@ final class PhoneWorldStore: ObservableObject {
         advanceDayblink(now: now)
         advanceHavenWatch(now: now)
         advanceMotionwell(now: now)
+        advanceCharacterCheckIns(now:now)
         let pending = state.pendingReplies ?? []
         guard !pending.isEmpty else { return }
         var changed = false
@@ -332,6 +333,31 @@ final class PhoneWorldStore: ObservableObject {
             state.pendingReplies = pending.filter { !ids.contains($0.id) }
         }
         if changed { save() }
+    }
+
+    /// Schedule only finite eligible events, and deliver at most one per tick.
+    /// Never interrupt a reply or an unread tutorial instruction.
+    func advanceCharacterCheckIns(now:Date=Date()) {
+        guard state.everydayArchiveRevision != nil else{return}
+        var c=connected
+        var pending=CharacterCheckIns.scheduled(in:state,now:now)
+        let due=pending.filter{$0.dueAt<=now}.sorted{($0.dueAt,$0.id)<($1.dueAt,$1.id)}
+        if let entry=due.first,
+           let event=CharacterCheckIns.events.first(where:{$0.id==entry.id}),
+           CharacterCheckIns.eligible(event,in:state),
+           !CharacterCheckIns.blocked(event,in:state) {
+            append(NeighborMessage(id:event.id,thread:event.contact.id,text:event.text,fromPlayer:false,at:now,read:false))
+            pending.removeAll{$0.id==entry.id}
+            // Avoid catch-up bursts if several messages matured off-screen.
+            pending=pending.map{.init(id:$0.id,dueAt:max($0.dueAt,now.addingTimeInterval(35)))}
+        } else if let entry=due.first {
+            // A normal conversation takes precedence. Reconsider later without
+            // continually saving the same blocked event each timer tick.
+            pending=pending.map{$0.id==entry.id ? .init(id:$0.id,dueAt:now.addingTimeInterval(15)):$0}
+        }
+        guard (c.characterCheckIns ?? []) != pending else{return}
+        c.characterCheckIns=pending
+        commitConnected(c)
     }
 
     private func currentPendingReplyText(_ item: PhonePendingReply) -> String {
