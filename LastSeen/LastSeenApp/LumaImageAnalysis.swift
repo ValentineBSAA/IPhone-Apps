@@ -10,7 +10,7 @@ struct LumaImageAnalysisReport: Equatable {
     var valid:Bool {
         bins.count == 3 && bins.allSatisfy { (0...1024).contains($0) } &&
         bins.reduce(0,+) == 1024 &&
-        (labels.map(RelaySupportPhotoAnalysis.valid) ?? true)
+        (labels.map(LocalSceneClassifier.valid) ?? true)
     }
     var description:String {
         guard valid else { return "No reliable local image analysis is available." }
@@ -45,13 +45,13 @@ enum LumaImageAnalysis {
         let size=CGSize(width:max(1,original.size.width*ratio),height:max(1,original.size.height*ratio))
         let format=UIGraphicsImageRendererFormat();format.scale=1;format.opaque=true
         let sample=UIGraphicsImageRenderer(size:size,format:format).image { ctx in
-            UIColor.black.setFill();ctx.fill(CGRect(origin:.zero,size:size))
+            UIColor.black.setFill();ctx.cgContext.fill(CGRect(origin:.zero,size:size))
             original.draw(in:CGRect(origin:.zero,size:size))
         }
         guard let bins=RecoveredImageAnalysis.brightnessBins(sample),!Task.isCancelled else{return nil}
         var labels:[String]?=nil
         if let data=sample.jpegData(compressionQuality:0.8) {
-            labels=await RelaySupportPhotoAnalysis.classify(data)
+            labels=await LocalSceneClassifier.classify(data)
         }
         guard !Task.isCancelled else{return nil}
         let result=LumaImageAnalysisReport(asset:asset,bins:bins,labels:labels)

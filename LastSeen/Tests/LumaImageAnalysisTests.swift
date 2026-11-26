@@ -2,6 +2,20 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class LumaImageAnalysisTests:XCTestCase {
+    func testSharedClassifierDoesNotShareCharacterResponses() {
+        let predictions:[(String,Float)]=[("building",0.98),("room",0.88),("person",0.99),("plant",0.2)]
+        let labels=LocalSceneClassifier.categories(predictions)
+        XCTAssertEqual(labels,["building","interior"])
+        XCTAssertEqual(RelaySupportPhotoAnalysis.categories(predictions),labels)
+        XCTAssertTrue(LocalSceneClassifier.valid(labels))
+        XCTAssertFalse(LocalSceneClassifier.valid(["person"]))
+        let alex=RelaySupportPhotoAnalysis.reply(labels)
+        let luma=LumaImageAnalysisReport(asset:"Nora_Archive_08",bins:[600,300,124],labels:labels).description
+        XCTAssertNotEqual(alex,luma)
+        XCTAssertFalse(alex.contains("Nora"))
+        XCTAssertFalse(alex.contains("1,024"))
+        XCTAssertTrue(luma.contains("1,024"))
+    }
     func testReportValidationAndAuthorization() throws {
         var state=RestoredPhoneBackup.snapshot()
         let asset="Nora_Archive_08"
