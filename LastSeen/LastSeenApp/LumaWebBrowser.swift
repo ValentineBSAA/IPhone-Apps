@@ -256,6 +256,16 @@ struct InvestigationProgressView: View {
 struct LumaWebBrowser: View {
     let wifi: Bool
     @EnvironmentObject private var world: PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("lastseen.lab.horrorEffects") private var horrorEffects = true
+    @AppStorage("lastseen.lab.atmosphereIntensity") private var atmosphereIntensity = LumaArchiveAtmosphere.Intensity.standard.rawValue
+    @AppStorage("lastseen.lab.messageSound") private var messageSound = true
+    private func atmosphere(for id: String) -> LumaArchiveAtmosphere.Treatment? {
+        LumaArchiveAtmosphere.treatment(pageID: id, flags: world.state.flags,
+            intensity: LumaArchiveAtmosphere.Intensity(rawValue: atmosphereIntensity) ?? .off,
+            enabled: horrorEffects, reduceMotion: reduceMotion)
+    }
     @AppStorage("lastseen.relay.installed") private var relayInstalled=""
     @AppStorage("lastseen.relay.safeMode") private var safeMode=false
     private var readerFocus:Bool {RelayCatalog.tweakActive("readerfocus",installed:relayInstalled,safeMode:safeMode,flags:world.state.flags)}
@@ -420,6 +430,11 @@ struct LumaWebBrowser: View {
             }.font(.title3).padding(.horizontal,25).padding(.vertical,14)
             Text(wifi ? "Local browser · Offline":"Local browser · Wi-Fi off").font(.caption2).foregroundColor(.secondary).padding(.bottom,4)
         }.navigationTitle("Browser").navigationBarTitleDisplayMode(.inline)
+        .overlay {
+            if phase == .active, !showHistory, let page, let treatment = atmosphere(for: page.id) {
+                LumaArchiveEdgeTreatment(opacity: treatment.edgeOpacity)
+            }
+        }
         .onAppear {
             if !seeded { if history.isEmpty { history="cafe|books" }; if bookmarks.isEmpty{bookmarks="books"}; seeded=true }
             if visitRaw.isEmpty { visitRaw=LumaBrowserHistory.encode(visits) }
@@ -473,7 +488,14 @@ struct LumaWebBrowser: View {
         current=p.id; query=p.address; addressFocused=false; reviewAnswer=""; reviewNotice=""
         visitRaw=LumaBrowserHistory.encode(LumaBrowserHistory.record(p.id,in:visits))
         history=encoded(Array((entries(history).filter{$0 != p.id}+[p.id]).suffix(100)))
+        let previouslyVisited = world.state.flags.contains("web.visited." + p.id)
         world.visitWebRecord(p.id)
+        if let cue = LumaArchiveAtmosphere.entryCue(pageID: p.id, previouslyVisited: previouslyVisited,
+            active: phase == .active && !showHistory, treatment: atmosphere(for: p.id)) {
+            // One optional cue on a deliberate first entry. Never queue a
+            // haptic or generate a notification just for atmosphere.
+            PhoneSensoryEngine.play(cue, sound: messageSound, haptics: false, horrorEnabled: horrorEffects)
+        }
     }
     private func showResults(clear:Bool=false) {
         let old=page?.id

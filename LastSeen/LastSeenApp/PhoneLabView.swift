@@ -60,6 +60,7 @@ struct PhoneLabView: View {
     @AppStorage("lastseen.lab.messageSound") private var messageSound = true
     @AppStorage("lastseen.lab.messageHaptics") private var messageHaptics = true
     @AppStorage("lastseen.lab.horrorEffects") private var horrorEffects = true
+    @AppStorage("lastseen.lab.atmosphereIntensity") private var atmosphereIntensity = LumaArchiveAtmosphere.Intensity.standard.rawValue
     @AppStorage("lastseen.lab.feedbackRevision") private var feedbackRevision = 0
     @State private var didConfigureFeedback = false
     @AppStorage("lastseen.lab.timerEnd") private var feedbackTimerEnd = 0.0
@@ -939,6 +940,12 @@ struct PhoneLabView: View {
                 Toggle(isOn: $messageSound) { Label("Phone sounds", systemImage: "speaker.wave.2") }
                 Toggle(isOn: $messageHaptics) { Label("Phone vibrations", systemImage: "waveform.path") }
                 Toggle("Horror sensory effects", isOn: $horrorEffects)
+                Picker("Archive atmosphere", selection: $atmosphereIntensity) {
+                    ForEach(LumaArchiveAtmosphere.Intensity.allCases) { intensity in
+                        Text(intensity.title).tag(intensity.rawValue)
+                    }
+                }.disabled(!horrorEffects)
+                Text("Atmosphere changes presentation only. Restrained uses a static edge tint; Off removes the additional effects. Neither changes the investigation.").font(.footnote).foregroundColor(.secondary)
                 NavigationLink {
                     PhoneSoundStudio(sound: $messageSound, haptics: $messageHaptics, horrorEnabled: $horrorEffects)
                 } label: { Label("Sound Library · 15 effects", systemImage: "waveform") }
