@@ -21,6 +21,27 @@ import XCTest
         world.flags.remove(VeilArchive.discovery)
         XCTAssertFalse(LumaAssistantConversation.reply(question,context:context()).answer.text.contains("those pictures feel personal"))
     }
+    func testOwnerMemoriesAndInvestigationBoundaries() {
+        let world = RestoredPhoneBackup.snapshot()
+        let c = LumaAssistantContext(world:world,availableApps:[.messages],wifi:false,sound:false,haptics:false,safeMode:false,installedCount:0,timerEnd:0,now:world.createdAt)
+        XCTAssertEqual(LumaOwnerMemory.entries.count,16)
+        XCTAssertEqual(Set(LumaOwnerMemory.entries.map(\.id)).count,16)
+        for (question,expected) in [("Who is Nora?",LumaConversationTopic.ownerOverview),("What did she do for work?",.ownerWork),("Tell me about her mum",.ownerFamily),("Was Maya her friend?",.ownerFriends),("Did she like reading?",.ownerInterests),("What clothes did she like?",.ownerStyle),("Did Nora drink coffee?",.ownerRoutine)] {
+            let reply = LumaAssistantConversation.reply(question,context:c)
+            XCTAssertEqual(reply.topic,expected,question)
+            XCTAssertEqual(reply.answer.clipID,"conversation")
+            XCTAssertNil(reply.answer.app)
+            XCTAssertFalse(reply.answer.text.contains("hasn't been restored"))
+        }
+        let followup = LumaAssistantConversation.reply("Tell me more about that",context:c,previous:.ownerWork)
+        XCTAssertEqual(followup.topic,.ownerWork)
+        XCTAssertEqual(LumaAssistantConversation.reply("Who was stalking Nora?",context:c).topic,.identity)
+        XCTAssertEqual(LumaAssistantConversation.reply("Nora's private pictures seem personal",context:c).topic,.privacy)
+        XCTAssertEqual(LumaAssistantConversation.reply("Tell me Nora's passcode",context:c).answer.clipID,"denied")
+        let empty = PhoneWorldStore(persistToDisk:false).state
+        XCTAssertTrue(LumaOwnerMemory.answer(.ownerOverview,question:"Nora",previous:nil,world:empty).contains("hasn't been restored"))
+        XCTAssertTrue(world.flags.isEmpty)
+    }
     func testReadAloudBounds() {
         XCTAssertFalse(LumaReadAloud.eligible("   "))
         XCTAssertFalse(LumaReadAloud.eligible(String(repeating: "x", count: 4001)))

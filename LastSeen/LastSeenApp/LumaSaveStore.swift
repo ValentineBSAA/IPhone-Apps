@@ -19,7 +19,7 @@ final class LumaSaveStore: ObservableObject {
         "lastseen.lab.calculatorHistory","lastseen.lab.browserPage","lastseen.lab.browserForward","lastseen.lab.browserBackStack","lastseen.lab.browserForwardStack",
         "lastseen.restored.mail.read","lastseen.setup.device","lastseen.relay.installed","lastseen.relay.versions",
         "lastseen.relay.sources","lastseen.relay.history","lastseen.relay.wishlist","lastseen.relay.lastRefresh","lastseen.relay.safeMode","lastseen.relay.compactIcons","lastseen.relay.tealTheme",
-        "lastseen.support.useOnDeviceAI","lastseen.assistant.readAloud",
+        "lastseen.support.useOnDeviceAI","lastseen.assistant.readAloud","lastseen.assistant.interpretOnDevice",
         "lastseen.utility.small","lastseen.utility.five","lastseen.utility.labels","lastseen.utility.glass","lastseen.utility.theme","lastseen.utility.shortcuts"
     ]
     static let manual = (1...3).map { "manual-\($0)" }

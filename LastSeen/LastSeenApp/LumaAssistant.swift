@@ -170,7 +170,7 @@ struct LumaAssistantView: View {
                 }
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Try asking").font(.headline)
-                    ForEach(["Open Messages", "Unread messages", "Next event", "Timer status", "Package status", "Hint"], id: \.self) { item in
+                    ForEach(["What was Nora like?", "What did she do for work?", "Open Messages", "Unread messages", "Next event", "Timer status", "Package status", "Hint"], id: \.self) { item in
                         Button { submit(item) } label: {
                             HStack { Text(item); Spacer(); Image(systemName: "chevron.right").font(.caption) }.padding(12).lumaSurface(radius: 12)
                         }.buttonStyle(.plain)
