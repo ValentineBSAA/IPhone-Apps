@@ -59,6 +59,11 @@ import XCTest
         w.advanceConnectedMail(now: now.addingTimeInterval(42))
         w.recordInvestigationMailRead(InvestigationResolution.mailID)
         w.visitWebRecord(InvestigationResolution.conclusionID, now: now.addingTimeInterval(43))
+        XCTAssertTrue(EntityEcho.active(w.state.flags))
+        XCTAssertFalse(w.finishInvestigation(.minimal,now:now))
+        XCTAssertFalse(w.removeEntityEcho(answers:EntityEcho.solution,repair:[],epoch:w.checkpointEpoch))
+        XCTAssertTrue(w.removeEntityEcho(answers:EntityEcho.solution,repair:EntityEcho.repairOrder,epoch:w.checkpointEpoch))
+        XCTAssertFalse(EntityEcho.active(w.state.flags))
         let saved = try JSONEncoder().encode(w.state)
         for choice in InvestigationResolution.Choice.allCases {
             let restored = PhoneWorldStore(initial: try JSONDecoder().decode(PhoneWorld.self, from: saved), persistToDisk: false)

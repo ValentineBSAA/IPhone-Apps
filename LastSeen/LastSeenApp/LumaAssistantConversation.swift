@@ -83,6 +83,9 @@ enum LumaAssistantConversation {
     /// Main-story guidance uses the same access-checked lead as Settings.
     /// An explicit main/optional request lets players choose their investigation.
     static func mainGuidance(_ c:LumaAssistantContext,detailed:Bool)->LumaAssistantAnswer {
+        if EntityEcho.active(c.world.flags) {
+            return .init(text:EntityEcho.assistance(technical:false),clipID:"conversation",app:c.availableApps.contains(.patchline) ? .patchline:nil)
+        }
         guard c.world.everydayArchiveRevision != nil else {
             return LumaAssistantPolicy.answer("hint",context:c)
         }
@@ -137,6 +140,9 @@ enum LumaAssistantConversation {
         let actionRequested = actionPrefixes.contains { normalized.hasPrefix($0) || normalized.hasPrefix("please "+$0) || normalized.hasPrefix("can you "+$0) || normalized.hasPrefix("could you "+$0) }
         if !forbidden.isDisjoint(with:hardDenied) || actionRequested {
             return .init(topic:.general,answer:.init(text:"I can help with visible records and ordinary phone controls, but I can't do that.",clipID:"denied"))
+        }
+        if EntityEcho.active(c.world.flags),EntityEcho.asksForHelp(raw) {
+            return .init(topic:.nextStep,answer:.init(text:EntityEcho.assistance(technical:false),clipID:"conversation",app:c.availableApps.contains(.patchline) ? .patchline:nil),guidanceTrack:.main)
         }
         let imageOverviewRequests:Set<String> = ["image investigation progress","photo investigation progress","what have we found in the photos","what have we found in the pictures","summarize my image findings","summarize my photo findings"]
         if imageOverviewRequests.contains(normalized) {

@@ -73,6 +73,11 @@ struct InvestigationResolutionPanel: View {
                 Text("LAST SEEN").font(.system(.largeTitle, design: .serif).weight(.light)).tracking(5).frame(maxWidth: .infinity)
                 Text("Some things belong to the person who lived them.").font(.callout).italic().frame(maxWidth: .infinity)
                 Text("You can continue exploring the restored phone. Load an earlier checkpoint to revisit the investigation and its decision.").font(.caption).foregroundColor(.secondary)
+            } else if phase == .active,InvestigationResolution.ready(world.state),!EntityEcho.cleared(world.state.flags) {
+                Label("Local service integrity check required",systemImage:"exclamationmark.shield").foregroundColor(.orange)
+                Text("Patchline must verify the affected services before the review can close. Your records are retained.")
+                NavigationLink("Open containment workspace"){EntityEchoRemovalView()}
+                    .buttonStyle(.borderedProminent)
             } else if phase == .active,InvestigationResolution.ready(world.state) {
                 Text("Close the review").font(.title2.bold())
                 Text("The service record establishes the origin of the repeated archive activity. The new correspondence reports a separate contact with the owner; it is not independently verified location data. You can finish the repair without exposing her private records.").font(.subheadline)
@@ -104,7 +109,8 @@ struct InvestigationResolutionPanel: View {
                 }
                 Button("Cancel", role: .cancel) {}
             } message: { Text("Your decision is retained in this save. An earlier checkpoint can be used to revisit it.") }
-            .onChange(of:world.checkpointEpoch){_ in selected=nil;confirming=false;feedback=""}
+            .onAppear{if phase == .active {world.triggerEntityEcho()}}
+            .onChange(of:world.checkpointEpoch){_ in selected=nil;confirming=false;feedback="";if phase == .active {world.triggerEntityEcho()}}
             .onChange(of:phase){if $0 != .active {selected=nil;confirming=false;feedback=""}}
     }
 }

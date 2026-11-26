@@ -672,7 +672,7 @@ final class PhoneWorldStore: ObservableObject {
     }
     @discardableResult
     func finishInvestigation(_ choice: InvestigationResolution.Choice, now: Date = Date()) -> Bool {
-        guard InvestigationResolution.ready(state) else { return false }
+        guard InvestigationResolution.ready(state),EntityEcho.cleared(state.flags) else { return false }
         if state.flags.contains(InvestigationResolution.completed) {
             return InvestigationResolution.ending(state) == choice
         }
@@ -711,6 +711,7 @@ final class PhoneWorldStore: ObservableObject {
             reconcileInvestigationMail(id: InvestigationReview.mailID, requested: InvestigationReview.requested,
                                        delay: 25, now: now, make: InvestigationReview.mail(at:))
         }
+        triggerEntityEcho()
         if InvestigationResolution.eligible(state),
            state.flags.contains("web.visited." + InvestigationResolution.indexID),
            state.flags.contains("web.visited." + InvestigationResolution.noteID) {
@@ -1732,15 +1733,15 @@ final class PhoneWorldStore: ObservableObject {
         guard VeilArchive.authorized(state) else { return }
         if state.flags.insert("veil.correspondence.opened").inserted { save() }
     }
-    @discardableResult func installEntityEcho(packages:String,safeMode:Bool,epoch:UUID)->Bool {
-        guard epoch==checkpointEpoch, !recoveryRequired, !settingsRecoveryRequired,
-              EntityEcho.canInstall(state), VeilArchive.installed(state,packages:packages,safeMode:safeMode) else{return false}
-        return commitEntityEchoFlag(EntityEcho.installed)
+    /// The encounter is authored game state, not executable content.
+    func triggerEntityEcho() {
+        guard !recoveryRequired,!settingsRecoveryRequired,EntityEcho.canTrigger(state) else{return}
+        _ = commitEntityEchoFlag(EntityEcho.installed)
     }
 
-    @discardableResult func removeEntityEcho(answers:[String],epoch:UUID)->Bool {
+    @discardableResult func removeEntityEcho(answers:[String],repair:[String],epoch:UUID)->Bool {
         guard epoch==checkpointEpoch, !recoveryRequired, !settingsRecoveryRequired,
-              EntityEcho.active(state.flags),EntityEcho.valid(answers) else{return false}
+              EntityEcho.active(state.flags),EntityEcho.valid(answers),EntityEcho.validRepair(repair) else{return false}
         return commitEntityEchoFlag(EntityEcho.removed)
     }
 

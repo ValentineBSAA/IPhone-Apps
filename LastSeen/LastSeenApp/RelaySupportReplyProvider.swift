@@ -47,6 +47,7 @@ struct RelaySupportLocalProvider: RelaySupportReplyProvider {
             return .init(text: "I can explain recovery and authentication, but I can't provide private credentials, hidden records or puzzle answers. What problem are you seeing in the interface?")
         }
         if RelaySupportScope.personalQuestion(question) {return .init(text:RelaySupportScope.personalReply)}
+        if EntityEcho.active(flags),EntityEcho.asksForHelp(question) {return .init(text:EntityEcho.assistance(technical:true))}
         if ["hi","hello","hey"].contains(normalized(question)) {
             return .init(text: "Hey! What are you working on? Tell me the package name or what you're seeing on the phone.")
         }

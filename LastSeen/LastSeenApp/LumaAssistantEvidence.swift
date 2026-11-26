@@ -178,8 +178,8 @@ enum LumaAssistantEvidence {
             return (provenance.isEmpty ? "I don't have a verified capture date for this reference." : provenance.joined(separator:" "))+" A date attached to a recovered copy is not necessarily the date it was taken."
         }
         if !words.isDisjoint(with:["scared","scary","creepy","disturbing","unsettling","afraid","worried"]) {
-            return "I can see why an unfamiliar photograph of Nora's life could be unsettling. "+
-                (reconstruction.isEmpty ? "We don't need to assume what isn't established by the original." : "You've recorded an interpretive detail, not evidence of another person.")+
+            return "I can see why an unfamiliar photograph of Nora's life could be unsettling. " +
+                (reconstruction.isEmpty ? "We don't need to assume what isn't established by the original." : "You've recorded an interpretive detail, not evidence of another person.") +
                 " You can continue with the text records instead."
         }
         let scan=visual.flatMap{$0.valid && record.id=="image:"+$0.asset ? $0.description:nil}

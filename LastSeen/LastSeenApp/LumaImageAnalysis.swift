@@ -22,8 +22,11 @@ struct LumaImageAnalysisReport: Equatable {
             categories=labels.isEmpty ? "No sufficiently confident supported scene or object category was recognized." :
                 "Possible broad categories: "+labels.joined(separator:", ")+". These are estimates."
         } else { categories="The local scene classifier was unavailable." }
-        return "Original preview sample (1,024 pixels): "+zip(names,bins).map{"\($0.0) \(Int((Double($0.1)/1024*100).rounded()))%"}.joined(separator:", ")+
-            ". Dominant range: "+dominant+". "+categories+" No identity, capture date, location or event is established by this scan."
+        let percentages = zip(names,bins).map { name, count in
+            let percent = Int((Double(count) / 1024 * 100).rounded())
+            return "\(name) \(percent)%"
+        }.joined(separator:", ")
+        return "Original preview sample (1,024 pixels): \(percentages). Dominant range: \(dominant). \(categories) No identity, capture date, location or event is established by this scan."
     }
 }
 enum LumaImageAnalysis {

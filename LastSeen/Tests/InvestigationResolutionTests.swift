@@ -30,6 +30,11 @@ import XCTest
         w.recordInvestigationMailRead(InvestigationResolution.mailID)
         XCTAssertFalse(w.finishInvestigation(.minimal,now:now))
         w.visitWebRecord(InvestigationResolution.conclusionID,now:now)
+        XCTAssertTrue(EntityEcho.active(w.state.flags))
+        XCTAssertFalse(w.finishInvestigation(.minimal,now:now))
+        XCTAssertFalse(w.removeEntityEcho(answers:EntityEcho.solution,repair:[],epoch:w.checkpointEpoch))
+        XCTAssertTrue(w.removeEntityEcho(answers:EntityEcho.solution,repair:EntityEcho.repairOrder,epoch:w.checkpointEpoch))
+        XCTAssertFalse(EntityEcho.active(w.state.flags))
         let checkpoint = try JSONEncoder().encode(w.state)
         for choice in InvestigationResolution.Choice.allCases {
             let branch = PhoneWorldStore(initial:try JSONDecoder().decode(PhoneWorld.self,from:checkpoint),persistToDisk:false)
