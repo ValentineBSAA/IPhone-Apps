@@ -13,5 +13,12 @@ final class PhoneYearsArchiveTests:XCTestCase {
         XCTAssertTrue(history.contains{$0.at<world.createdAt.addingTimeInterval(-1000*86400)})
         XCTAssertEqual(world.flags,flags)
         XCTAssertEqual(world.notes.filter{$0.id.hasPrefix("years-")}.count,6)
+        PhoneYearsArchive.addCalendar(to:&world)
+        PhoneYearsArchive.addCalendar(to:&world)
+        let events=world.events.filter{$0.id.hasPrefix("years-event-")}
+        XCTAssertEqual(events.count,13)
+        XCTAssertEqual(Set(events.map(\.id)).count,13)
+        XCTAssertTrue(events.allSatisfy{$0.startsAt<$0.endsAt && $0.endsAt<world.createdAt})
+        XCTAssertEqual(world.flags,flags)
     }
 }

@@ -40,6 +40,31 @@ enum PhoneYearsArchive {
         ]
         for (id,days,title,body) in notes where !world.notes.contains(where:{$0.id=="years-"+id}) {world.notes.append(.init(id:"years-"+id,title:title,body:body,modifiedAt:world.createdAt.addingTimeInterval(-days*86400),pinned:false))}
     }
+    /// Appointments are ordinary historical context, not investigation gates.
+    static func addCalendar(to world:inout PhoneWorld) {
+        let appointments:[(String,Double,String,String,Double)]=[
+            ("lease",1060,"Studio keys","Meet Adrian at the new room. Measure the wall before buying anything.",1),
+            ("sketch",985,"Early identity review","Tessa is bringing the paper sketches. Keep the rough versions.",2),
+            ("winter",840,"Family lunch","Bring Mum the book she wanted. Pick up Lily on the way.",2.5),
+            ("shelf",760,"Bookshelf delivery","Daniel offered to help. Clear a space by the wall first.",1.5),
+            ("playtest",690,"First outside playtest","Watch people use the prototype. Ask which controls they expected to find.",2),
+            ("reading",550,"Reading afternoon","Meet Maya outside the bookshop. Leave the laptop at home.",2),
+            ("workshop",480,"Interface workshop","Bring the older mockups and try removing labels. Keep a record of what becomes confusing.",3),
+            ("plant",410,"Visit Mum","Bring a plant pot and something for tea.",2),
+            ("release",330,"Studio checklist review","Review test coverage and write down what still needs physical testing.",1.5),
+            ("art",275,"Lunch with Tessa","No presentation or production meeting. Just lunch.",1),
+            ("station",195,"Sunday family visit","Meet Daniel near the station if it rains.",3),
+            ("film",120,"Film night with Lily","Bring popcorn. Lily chooses the film.",3),
+            ("visual",65,"Device design review","Compare palette exports on the same display and record the team's decision.",2.5)
+        ]
+        for (id,days,title,detail,hours) in appointments {
+            let key="years-event-"+id
+            guard !world.events.contains(where:{$0.id==key}) else{continue}
+            let start=world.createdAt.addingTimeInterval(-days*86400)
+            let end=start.addingTimeInterval(hours*3600)
+            world.events.append(PhoneEvent(id:key,title:title,detail:detail,startsAt:start,endsAt:end))
+        }
+    }
     static func mail(anchor:Date)->[LumaMailRecord] {
         let subjects:[(String,Neighbor,Double,String,String,String)]=[
             ("lease",.adrian,1060,"Studio room setup","Can we arrange the desks so we can both see the window? Let's avoid buying anything unnecessary until we've worked in the room.","I'll measure first. We can keep the existing chairs for now and replace the uncomfortable one."),
@@ -51,10 +76,17 @@ enum PhoneYearsArchive {
             ("family",.helen,410,"A little plant update","Thank you for looking after the plant. I'll bring a new pot next time I come over.","No hurry. It's doing nicely by the window. Bring yourself, that's all."),
             ("visual",.tessa,65,"Device review afternoon","Let's compare the same screen in different appearances on the actual phone. Keep original exports and decisions separate.","I'll set aside the afternoon. We can test contrast before committing to the final colors.")
         ]
-        return subjects.flatMap { id,peer,days,subject,body,reply in
+        var result:[LumaMailRecord]=[]
+        for row in subjects {
+            let (id,peer,days,subject,body,reply)=row
             let date=anchor.addingTimeInterval(-days*86400)
-            return [.init(id:"years-mail-"+id,peer:peer.id,sender:RestoredPhoneBackup.ownerName,subject:subject,body:body,date:date,kind:"sent"),.init(id:"years-mail-"+id+"-reply",peer:peer.id,sender:peer.name,subject:"Re: "+subject,body:reply,date:date.addingTimeInterval(7200),kind:"inbox")]
+            let key="years-mail-"+id
+            let sent=LumaMailRecord(id:key,peer:peer.id,sender:RestoredPhoneBackup.ownerName,subject:subject,body:body,date:date,kind:"sent")
+            let received=LumaMailRecord(id:key+"-reply",peer:peer.id,sender:peer.name,subject:"Re: "+subject,body:reply,date:date.addingTimeInterval(7200),kind:"inbox")
+            result.append(sent)
+            result.append(received)
         }
+        return result
     }
     static func posts(anchor:Date)->[LumaSocialPost] {
         let rows:[(String,LumaSocialChannel,String,String,String,String?,Double)]=[
@@ -71,6 +103,12 @@ enum PhoneYearsArchive {
             ("art",.afterframe,"Tessa Reed","tessa.r","Drew something just for myself this afternoon. No brief, no deadline, no export requirements.","Contact_B27_07",275),
             ("popcorn",.afterframe,"Lily Bennett","lily.b","Film night and an unreasonable quantity of popcorn. Excellent evening.","Contact_B27_03",120)
         ]
-        return rows.map { id,ch,author,handle,body,portrait,days in .init(id:"years-post-"+id,channel:ch,author:author,handle:handle,body:body,date:anchor.addingTimeInterval(-days*86400),portrait:portrait,photo:nil,gate:nil) }
+        var result:[LumaSocialPost]=[]
+        for (id,ch,author,handle,body,portrait,days) in rows {
+            let date=anchor.addingTimeInterval(-days*86400)
+            let post=LumaSocialPost(id:"years-post-"+id,channel:ch,author:author,handle:handle,body:body,date:date,portrait:portrait,photo:nil,gate:nil)
+            result.append(post)
+        }
+        return result
     }
 }

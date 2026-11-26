@@ -15,10 +15,11 @@ enum NoraEverydayArchive {
         "Weekend list":"Sunday lunch at Mum's. Pick up a small dessert if Lily hasn't already. Bring the book back to Maya."
     ]
     static func expand(_ world: inout PhoneWorld) {
-        if world.everydayDepthRevision != 2 {
+        if world.everydayDepthRevision != 3 {
             addStudioHistory(&world)
             PhoneYearsArchive.expand(&world)
-            world.everydayDepthRevision=2
+            PhoneYearsArchive.addCalendar(to:&world)
+            world.everydayDepthRevision=3
             world.flags.remove("b33.everyday.depth")
         }
         guard (world.everydayArchiveRevision ?? 0) < revision else { return }

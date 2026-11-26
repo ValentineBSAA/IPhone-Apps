@@ -279,14 +279,23 @@ struct LumaAssistantView: View {
                         submit("I understand her privacy matters")
                     }.font(.footnote).buttonStyle(.bordered)
                 }
-                Text(answer.text).font(.title3).multilineTextAlignment(.center).accessibilityIdentifier("luma.assistant.answer")
-                    .frame(maxWidth: .infinity).padding(18).lumaSurface()
-                if conversationTurns.count > 2 {
-                    DisclosureGroup("Recent conversation") {
-                        ForEach(conversationTurns.indices.dropLast(2),id: \.self) { i in
-                            Text(conversationTurns[i]).font(.subheadline).frame(maxWidth:.infinity,alignment:.leading).padding(.vertical,4)
+                VStack(alignment:.leading,spacing:12) {
+                    ForEach(conversationTurns.indices.dropLast(conversationTurns.isEmpty ? 0 : 1),id:\.self) { i in
+                        let turn=conversationTurns[i]
+                        let outgoing=turn.hasPrefix("You: ")
+                        HStack {
+                            if outgoing {Spacer(minLength:32)}
+                            VStack(alignment:.leading,spacing:4) {
+                                Text(outgoing ? "You" : "Luma").font(.caption.weight(.medium)).foregroundColor(.secondary)
+                                Text(String(turn.dropFirst(outgoing ? 5 : 6))).font(.body).textSelection(.enabled)
+                            }.padding(12).background(outgoing ? Color.teal.opacity(0.16) : Color.secondary.opacity(0.10),in:RoundedRectangle(cornerRadius:18))
+                            if !outgoing {Spacer(minLength:32)}
                         }
                     }
+                    VStack(alignment:.leading,spacing:5) {
+                        Label("Luma",systemImage:"waveform").font(.caption.weight(.medium)).foregroundColor(.secondary)
+                        Text(answer.text).font(.body).textSelection(.enabled).accessibilityIdentifier("luma.assistant.answer")
+                    }.frame(maxWidth:.infinity,alignment:.leading).padding(14).lumaSurface(radius:18)
                 }
                 if interpretation != nil {
                     HStack {
@@ -338,20 +347,21 @@ struct LumaAssistantView: View {
                     }.buttonStyle(.bordered)
                 }
                 HStack {
-                    TextField("Ask Luma about what you found", text: $input).textFieldStyle(.roundedBorder).focused($focused)
+                    TextField("Message Luma", text: $input,axis:.vertical).lineLimit(1...5).textFieldStyle(.roundedBorder).focused($focused)
                         .submitLabel(.go).onSubmit { submit(input) }
                     Button { submit(input) } label: { Image(systemName: "arrow.up.circle.fill").font(.title2) }
                         .accessibilityLabel("Ask").disabled(phase != .active || input.count>600 || input.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty)
                 }
                 if !input.isEmpty {Text("\(input.count) / 600").font(.caption2).foregroundColor(.secondary)}
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Try asking").font(.headline)
-                    ForEach(["What was Nora like?", "What did she do for work?", "Open Messages", "Unread messages", "Next event", "Timer status", "Package status", "Hint", "Main investigation hint", "Archive investigation hint"], id: \.self) { item in
-                        Button { submit(item) } label: {
-                            HStack { Text(item); Spacer(); Image(systemName: "chevron.right").font(.caption) }.padding(12).lumaSurface(radius: 12)
-                        }.buttonStyle(.plain)
+                DisclosureGroup("Conversation suggestions") {
+                    VStack(alignment:.leading,spacing:10) {
+                        ForEach(["What was Nora like?", "What did she do for work?", "Open Messages", "Unread messages", "Next event", "Timer status", "Package status", "Hint", "Main investigation hint", "Archive investigation hint"],id:\.self) { item in
+                            Button {submit(item)} label:{
+                                HStack{Text(item);Spacer();Image(systemName:"chevron.right").font(.caption)}.padding(12).lumaSurface(radius:12)
+                            }.buttonStyle(.plain)
+                        }
                     }
-                }
+                }.padding(.vertical,4)
                 Button("Start a new conversation") { clearSession() }.font(.footnote)
                 Toggle("Speak responses", isOn: $spokenResponses)
                 if let voiceSource {
