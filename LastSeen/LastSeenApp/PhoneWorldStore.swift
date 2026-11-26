@@ -596,29 +596,33 @@ final class PhoneWorldStore: ObservableObject {
                 fromPlayer:false,at:now,read:false))
             save()
         }
-        if InvestigationReview.eligible(state), !state.flags.contains(InvestigationReview.requested) {
-            var c = connected
-            if !c.mail.contains(where: { $0.id == InvestigationReview.mailID }) &&
-                !c.pendingMail.contains(where: { $0.record.id == InvestigationReview.mailID }) {
-                let due = now.addingTimeInterval(25)
-                c.pendingMail.append(.init(record: InvestigationReview.mail(at: due), dueAt: due))
-            }
-            state.flags.insert(InvestigationReview.requested)
-            commitConnected(c)
+        if InvestigationReview.eligible(state) {
+            reconcileInvestigationMail(id: InvestigationReview.mailID, requested: InvestigationReview.requested,
+                                       delay: 25, now: now, make: InvestigationReview.mail(at:))
         }
         if InvestigationResolution.eligible(state),
            state.flags.contains("web.visited." + InvestigationResolution.indexID),
-           state.flags.contains("web.visited." + InvestigationResolution.noteID),
-           !state.flags.contains(InvestigationResolution.requested) {
-            var c = connected
-            if !c.mail.contains(where: { $0.id == InvestigationResolution.mailID }) &&
-                !c.pendingMail.contains(where: { $0.record.id == InvestigationResolution.mailID }) {
-                // A story message remains available even if ordinary mail is full.
-                let due = now.addingTimeInterval(12)
-                c.pendingMail.append(.init(record: InvestigationResolution.mail(at: due), dueAt: due))
-            }
-            state.flags.insert(InvestigationResolution.requested)
+           state.flags.contains("web.visited." + InvestigationResolution.noteID) {
+            reconcileInvestigationMail(id: InvestigationResolution.mailID, requested: InvestigationResolution.requested,
+                                       delay: 12, now: now, make: InvestigationResolution.mail(at:))
+        }
+    }
+
+    /// Reconcile only an already eligible authored event. An older or interrupted
+    /// checkpoint can have a request flag but no queued record. Never grant a
+    /// read/completion flag here, reset an existing deadline, or replay delivered mail.
+    private func reconcileInvestigationMail(id: String, requested: String, delay: TimeInterval,
+                                            now: Date, make: (Date) -> LumaMailRecord) {
+        var c = connected
+        let delivered = c.mail.contains { $0.id == id && $0.kind == "inbox" }
+        let queued = c.pendingMail.contains { $0.record.id == id }
+        let inserted = state.flags.insert(requested).inserted
+        if !delivered && !queued {
+            let due = now.addingTimeInterval(delay)
+            c.pendingMail.append(.init(record: make(due), dueAt: due))
             commitConnected(c)
+        } else if inserted {
+            save()
         }
     }
     func storeSnippet(_ snippet: LumaSnippet) {
