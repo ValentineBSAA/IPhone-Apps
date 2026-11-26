@@ -2,6 +2,7 @@ import SwiftUI
 import AVFoundation
 
 @main
+@MainActor
 struct LastSeenApp: App {
     @UIApplicationDelegateAdaptor(LastSeenAppDelegate.self) private var appDelegate
     @State private var relayRecoveryRequired=false
@@ -45,6 +46,7 @@ struct LastSeenApp: App {
     }
 }
 
+@MainActor
 private struct RelayStartupRecoveryView:View {
     let onRecovered:()->Void
     @State private var malformed=RelayTransactionReceipt.malformed()
@@ -76,6 +78,7 @@ private struct RelayStartupRecoveryView:View {
     }
 }
 
+@MainActor
 private struct LegacyStoryRoot: View {
     @StateObject private var game = GameStore()
     @StateObject private var world = PhoneWorldStore()
