@@ -64,7 +64,7 @@ These are existing targeted regression suites, not proof of complete app accepta
 | Files | PhoneLabTests; VeilCommunityTests |
 | Browser | PhoneLabTests; InvestigationProgressTests; InvestigationReachabilityTests |
 | Relay | RelayCatalogTests; LumaCommunicationSmokeTests |
-| Patchline | RecoveryCircuitTests; RelayCatalogTests; RestartArtTests; EntityEchoTests |
+| Patchline | RecoveryCircuitTests; RelayCatalogTests; RestartArtTests; EntityEchoTests; EntityEchoSmokeTests (new, pending) |
 | Game Saves | Build32IntegrationAuditTests; RestoredPhoneBackupTests; LumaCommunicationSmokeTests |
 | Afterframe | SocialAccountTests; ConnectedWorldTests |
 | Connective | SocialAccountTests; CommunityMediaUseTests |

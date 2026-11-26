@@ -33,7 +33,11 @@ struct PhoneLabView: View {
         #if DEBUG && targetEnvironment(simulator)
         if uiFixture {
             let root = FileManager.default.temporaryDirectory.appendingPathComponent("LumaUISmoke-" + UUID().uuidString)
-            _world = StateObject(wrappedValue: PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(), persistToDisk: false))
+            var snapshot=RestoredPhoneBackup.snapshot()
+            if ProcessInfo.processInfo.arguments.contains("--luma-containment-test") {
+                snapshot.flags.insert(EntityEcho.installed)
+            }
+            _world = StateObject(wrappedValue: PhoneWorldStore(initial: snapshot, persistToDisk: false))
             _saves = StateObject(wrappedValue: LumaSaveStore(root: root, defaults: UserDefaults(suiteName: "LumaUISmoke-" + UUID().uuidString) ?? .standard))
             return
         }
@@ -858,7 +862,7 @@ struct PhoneLabView: View {
             if EntityEcho.active(world.state.flags) {
                 Button {open(.patchline)} label:{
                     Image(systemName:"exclamationmark.shield.fill").foregroundColor(.orange).frame(width:44,height:44)
-                }.accessibilityLabel("Foreign extension detected, open Patchline")
+                }.accessibilityLabel("Foreign extension detected, open Patchline").accessibilityIdentifier("echo.containment.open")
             }
             if safeMode {
                 Button { open(.relay) } label:{

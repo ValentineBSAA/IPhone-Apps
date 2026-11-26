@@ -70,7 +70,7 @@ struct EntityEchoRemovalView:View {
                                         guard phase == .active,epoch==world.checkpointEpoch,EntityEcho.active(world.state.flags),answers.count==index else{return}
                                         guard choice==EntityEcho.solution[index] else {feedback="That hook is legitimate. Review the trace and try another.";return}
                                         answers.append(choice);feedback=""
-                                    }.buttonStyle(.bordered).frame(minHeight:44)
+                                    }.buttonStyle(.bordered).frame(minHeight:44).accessibilityIdentifier("echo.trace."+choice)
                                 }
                             }
                         }.padding(12).lumaSurface()
@@ -84,7 +84,7 @@ struct EntityEchoRemovalView:View {
                                 Button(step){
                                     guard phase == .active,epoch==world.checkpointEpoch,EntityEcho.active(world.state.flags),repair.count<3,!repair.contains(step) else{return}
                                     repair.append(step);feedback=""
-                                }.buttonStyle(.bordered).disabled(repair.contains(step)||repair.count==3).frame(minHeight:44)
+                                }.buttonStyle(.bordered).disabled(repair.contains(step)||repair.count==3).frame(minHeight:44).accessibilityIdentifier("echo.repair."+step)
                             }
                             Button("Clear sequence"){repair=[];feedback=""}.buttonStyle(.bordered)
                         }.padding(12).lumaSurface()
@@ -94,11 +94,11 @@ struct EntityEchoRemovalView:View {
                         if !EntityEcho.validRepair(repair){feedback="Service order is not verified. Recheck the dependency hints.";repair=[];return}
                         if world.removeEntityEcho(answers:answers,repair:repair,epoch:epoch){feedback="Foreign hooks isolated. Your original package configuration is intact."}
                         else {feedback="Quarantine could not be committed. Try again."}
-                    }.buttonStyle(.borderedProminent).disabled(!EntityEcho.valid(answers) || repair.count != 3)
+                    }.buttonStyle(.borderedProminent).disabled(!EntityEcho.valid(answers) || repair.count != 3).accessibilityIdentifier("echo.commit")
                     Button("Reset trace"){reset()}.buttonStyle(.bordered)
                 } else {
                     Label(world.state.flags.contains(EntityEcho.removed) ? "Extension quarantined" : "No foreign extension detected",systemImage:"checkmark.shield").font(.headline)
-                    Text("Legitimate packages, records and investigation progress are unchanged.")
+                    Text("Legitimate packages, records and investigation progress are unchanged.").accessibilityIdentifier("echo.containment.result")
                 }
                 if !feedback.isEmpty {Text(feedback).font(.subheadline).accessibilityAddTraits(.updatesFrequently)}
                 Text("Local fictional repair puzzle. No real files or device settings are accessed.").font(.caption).foregroundColor(.secondary)

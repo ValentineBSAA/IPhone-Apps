@@ -699,3 +699,6 @@ Master checklist stays truthful: approved artwork is not integrated, initial sou
 ## B32 tranche 160: acceptance evidence synchronization (docs only)
 - [x] Audited all 27 launcher-app acceptance rows and mapped existing targeted native regression suites. Corrected stale artwork count and voice production status. Kept every Native and Device row open. Clarified verified candidate packaging precedes physical installation acceptance, not vice versa. No runtime edits; no CI interruption.
 - [ ] Run 45770243683 at c79b98ed1892057fe728b325a79b6456a644934f was in progress at last observation; check terminal result and logs. Voice creative/rights gate remains open.
+
+## B32 tranche 161: visible containment acceptance fixture
+- [x] Added debug/simulator-only incident fixture and stable accessibility IDs; UI test exercises navigation, wrong choices, incorrect recovery order and successful recovery. No player-facing mechanic added; existing full-story unit test covers actual trigger. Tests written, not run. Commit skips CI so in-flight native run 45770243683 is not cancelled. Subsequent exact-revision native validation must include the new UI test.
