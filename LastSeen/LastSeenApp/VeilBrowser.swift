@@ -183,6 +183,7 @@ struct VeilBrowser: View {
     @AppStorage("lastseen.lab.horrorEffects") private var horrorEffects = true
     @AppStorage("lastseen.lab.atmosphereIntensity") private var atmosphereIntensity = LumaArchiveAtmosphere.Intensity.standard.rawValue
     @AppStorage("lastseen.veil.security") private var security = "Standard"
+    @AppStorage("lastseen.lab.messageSound") private var messageSound = true
     @State private var address = ""
     @State private var selected = "directory"
     @State private var notice = ""
@@ -190,7 +191,25 @@ struct VeilBrowser: View {
     private var bookmarks:Set<String> { VeilArchive.pageBookmarkIDs(world.state) }
     private var allowed: Bool { VeilArchive.installed(world.state,packages:packages,safeMode:safeMode) }
     private var pages: [VeilArchive.Page] { VeilArchive.pages(world.state) }
+    private var treatment:LumaArchiveAtmosphere.Treatment? {
+        guard !showNewIdentity else { return nil }
+        return LumaArchiveAtmosphere.veilTreatment(pageID:selected,world:world.state,
+            installed:packages,safeMode:safeMode,connected:connected,active:phase == .active,
+            wifi:wifi,security:security,intensity:LumaArchiveAtmosphere.Intensity(rawValue:atmosphereIntensity) ?? .off,
+            enabled:horrorEffects,reduceMotion:reduceMotion)
+    }
+    private func recordIndex() {
+        guard selected == "home-index",allowed,connected,wifi,phase == .active else { return }
+        let previous=world.state.flags.contains("veil.home-index.opened")
+        world.recordVeilHomeIndexOpened()
+        if let cue=LumaArchiveAtmosphere.indexRecordingCue(previouslyRecorded:previous,
+            recorded:world.state.flags.contains("veil.home-index.opened"),treatment:treatment,
+            intensity:LumaArchiveAtmosphere.Intensity(rawValue:atmosphereIntensity) ?? .off,security:security) {
+            PhoneSensoryEngine.playOptionalAtmosphere(cue,sound:messageSound,horrorEnabled:horrorEffects)
+        }
+    }
     private func disconnect() {
+        PhoneSensoryEngine.stopOptionalAtmosphere()
         connecting=false; connected=false; connectionStep=0; address=""; history=[]; notice=""
     }
     private func visit(_ raw: String) {
@@ -199,7 +218,10 @@ struct VeilBrowser: View {
             notice = raw.hasPrefix("veil://") ? "Service unreachable in this recovered directory." : "Invalid local service address. VEIL does not open external sites."
             return
         }
-        if selected != p.id { history.append(selected); history = Array(history.suffix(30)) }
+        if selected != p.id {
+            PhoneSensoryEngine.stopOptionalAtmosphere()
+            history.append(selected); history = Array(history.suffix(30))
+        }
         selected = p.id; address = p.address; notice = ""
     }
     var body: some View {
@@ -264,7 +286,7 @@ struct VeilBrowser: View {
                                 NavigationLink { VeilHistoricalConversation() } label: { Label("Open recovered correspondence",systemImage:"message") }
                             }
                             if page.id == "home-index" {
-                                Button("Record recovered index") { world.recordVeilHomeIndexOpened() }
+                                Button("Record recovered index") { recordIndex() }
                                     .buttonStyle(.borderedProminent)
                                     .disabled(world.state.flags.contains("veil.home-index.opened"))
                                 if world.state.flags.contains("veil.home-index.opened") {
@@ -301,11 +323,7 @@ struct VeilBrowser: View {
             } else { Text("Application unavailable").padding() }
         }.tint(.purple).navigationTitle("VEIL").navigationBarTitleDisplayMode(.inline)
             .overlay {
-                if !showNewIdentity, let treatment = LumaArchiveAtmosphere.veilTreatment(
-                    pageID: selected, world: world.state, installed: packages, safeMode: safeMode,
-                    connected: connected, active: phase == .active, wifi: wifi,
-                    security: security, intensity: LumaArchiveAtmosphere.Intensity(rawValue: atmosphereIntensity) ?? .off,
-                    enabled: horrorEffects, reduceMotion: reduceMotion) {
+                if let treatment {
                     LumaArchiveEdgeTreatment(opacity: treatment.edgeOpacity)
                 }
             }
@@ -344,9 +362,18 @@ struct VeilBrowser: View {
                 }
             }
             .onChange(of:wifi) { if !$0 { disconnect(); notice="Simulated Wi-Fi is off." } }
+            .onChange(of:selected) { _ in PhoneSensoryEngine.stopOptionalAtmosphere() }
+            .onChange(of:showNewIdentity) { if $0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
+            .onChange(of:security) { _ in PhoneSensoryEngine.stopOptionalAtmosphere() }
+            .onChange(of:messageSound) { if !$0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
+            .onChange(of:treatment) { if $0 == nil { PhoneSensoryEngine.stopOptionalAtmosphere() } }
+            .onChange(of:atmosphereIntensity) { if $0 != LumaArchiveAtmosphere.Intensity.standard.rawValue { PhoneSensoryEngine.stopOptionalAtmosphere() } }
             // A push into a board, correspondence or image workspace is
             // still part of this local session. The parent state is discarded
             // when its navigation entry is removed; cancel unfinished connects.
-            .onDisappear { if connecting { disconnect() } }
+            .onDisappear {
+                PhoneSensoryEngine.stopOptionalAtmosphere()
+                if connecting { disconnect() }
+            }
     }
 }

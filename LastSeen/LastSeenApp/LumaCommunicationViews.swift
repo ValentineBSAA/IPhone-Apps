@@ -39,6 +39,10 @@ enum NoraFriendArchive {
 struct NoraFriendArchiveView:View {
     @EnvironmentObject private var world:PhoneWorldStore
     @Environment(\.scenePhase) private var phase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("lastseen.lab.horrorEffects") private var horrorEffects=true
+    @AppStorage("lastseen.lab.atmosphereIntensity") private var atmosphereIntensity=LumaArchiveAtmosphere.Intensity.standard.rawValue
+    @AppStorage("lastseen.veil.security") private var security="Standard"
     var body:some View {
         ScrollView {
             if NoraFriendArchive.ready(world.state),phase == .active {
@@ -61,6 +65,13 @@ struct NoraFriendArchiveView:View {
                 }.padding(16)
             } else { Text("Recovered conversation unavailable.").padding() }
         }.navigationTitle("Recovered messages")
+        .overlay {
+            if let treatment=LumaArchiveAtmosphere.friendTreatment(world:world.state,active:phase == .active,
+                enabled:horrorEffects,intensity:LumaArchiveAtmosphere.Intensity(rawValue:atmosphereIntensity) ?? .off,
+                reduceMotion:reduceMotion,security:security) {
+                LumaArchiveEdgeTreatment(opacity:treatment.edgeOpacity)
+            }
+        }
         .onAppear { if phase == .active { world.recordNoraFriendArchiveOpened() } }
         .onChange(of:phase) { if $0 == .active { world.recordNoraFriendArchiveOpened() } }
     }

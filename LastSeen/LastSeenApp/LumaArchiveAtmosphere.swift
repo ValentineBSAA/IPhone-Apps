@@ -56,11 +56,32 @@ enum LumaArchiveAtmosphere {
         case "records": weight = 0.55
         case "media": weight = 0.8
         case "fragment-04": weight = 1
+        case "home-index": weight = 1
         default: return nil
         }
         let securityWeight = security == "Safer" ? 0.5 : 1.0
         let opacity = weight * securityWeight * (intensity == .standard ? 0.19 : 0.08)
         return .init(edgeOpacity: opacity, cue: nil)
+    }
+
+    /// Deliberate first recording only. The existing optional audio channel
+    /// drops the cue if busy; there is no replay or progression dependency.
+    static func indexRecordingCue(previouslyRecorded:Bool,recorded:Bool,
+                                  treatment:Treatment?,intensity:Intensity,
+                                  security:String)->PhoneCue? {
+        guard !previouslyRecorded,recorded,treatment != nil,
+              intensity == .standard,security == "Standard" else { return nil }
+        return .suspense
+    }
+
+    /// A quiet emotional beat, not a fake message or modified record.
+    static func friendTreatment(world:PhoneWorld,active:Bool,enabled:Bool,
+                                intensity:Intensity,reduceMotion:Bool,security:String)->Treatment? {
+        guard active,enabled,!reduceMotion,intensity != .off,
+              VeilArchive.allowsImages(security),NoraFriendArchive.opened(world),
+              !world.flags.contains(InvestigationResolution.completed) else { return nil }
+        let weight = security == "Safer" ? 0.5 : 1.0
+        return .init(edgeOpacity:weight * (intensity == .standard ? 0.12 : 0.05),cue:nil)
     }
 
     static func entryCue(pageID: String, previouslyVisited: Bool, active: Bool,
