@@ -2,6 +2,33 @@ import XCTest
 @testable import LastSeen
 
 final class PhoneLabTests: XCTestCase {
+    func testNotesAndCalendarBrowsingBoundaries() {
+        var state=RestoredPhoneBackup.snapshot()
+        let date=Date(timeIntervalSince1970:1_800_000_000)
+        state.notes=[
+            .init(id:"b",title:"Coffee",body:"Later",modifiedAt:date,pinned:false),
+            .init(id:"a",title:"Reminder",body:"Coffee",modifiedAt:date,pinned:true),
+            .init(id:"c",title:"Other",body:"",modifiedAt:date,pinned:false)]
+        XCTAssertEqual(PhoneRecordBrowsing.notes(state,query:" COFFEE ").map(\.id),["a","b"])
+        XCTAssertEqual(PhoneRecordBrowsing.notes(state,pinnedOnly:true).map(\.id),["a"])
+        XCTAssertEqual(PhoneRecordBrowsing.notes(state).map(\.id),["a","b","c"])
+        XCTAssertTrue(PhoneRecordBrowsing.notes(state,query:"no-match-83").isEmpty)
+        var calendar=Calendar(identifier:.gregorian)
+        calendar.timeZone=TimeZone(secondsFromGMT:0)!
+        let start=calendar.startOfDay(for:date)
+        let end=calendar.date(byAdding:.day,value:1,to:start)!
+        state.events=[
+            .init(id:"cross",title:"Crossing",detail:"",startsAt:start.addingTimeInterval(-600),endsAt:start.addingTimeInterval(600)),
+            .init(id:"previous",title:"Previous",detail:"",startsAt:start.addingTimeInterval(-1000),endsAt:start),
+            .init(id:"next",title:"Next",detail:"",startsAt:end,endsAt:end.addingTimeInterval(600)),
+            .init(id:"instant",title:"Instant",detail:"",startsAt:start,endsAt:start),
+            .init(id:"invalid",title:"Invalid",detail:"",startsAt:start.addingTimeInterval(60),endsAt:start)]
+        XCTAssertEqual(PhoneRecordBrowsing.events(state,on:start,calendar:calendar).map(\.id),["cross","instant"])
+        XCTAssertEqual(PhoneRecordBrowsing.events(state,on:end,calendar:calendar).map(\.id),["next"])
+        XCTAssertEqual(PhoneRecordBrowsing.upcoming(state,now:start.addingTimeInterval(1)).map(\.id),["cross","next"])
+        XCTAssertTrue(PhoneRecordBrowsing.upcoming(state,now:end.addingTimeInterval(601)).isEmpty)
+    }
+
     func testSettingsEffectivePreviewAndDimming() {
         for preference in [false,true] {
             for biometrics in [false,true] {

@@ -440,3 +440,5 @@ Master checklist stays truthful: approved artwork is not integrated, initial sou
 ## B32 tranche 96: Notes, Calendar and Files
 - [x] SOURCE: trimmed note search, pinned-only view and stable ordering, explicit deletion confirmation and keyboard Done, unavailable note and inactive-scene handling; Calendar now includes overlapping/midnight-spanning events with start/end labels, day navigation and empty upcoming state; Files uses consistent trimmed queries, searches public document text, separates public files, and shows empty search results without indexing protected content. World document reader rechecks active lifecycle. Existing records and progression preserved. Audit register updated for all three apps.
 - [ ] Native testing and device keyboard, calendar layout, document preview and checkpoint behavior remain open. No IPA or native workflow dispatched.
+
+- [x] SOURCE regression follow-up: distinct title/body keyboard focus identifiers; test trimmed note search, pinned ordering, empty matches, cross-midnight event overlap, exact day boundaries, zero-length events, invalid date ranges and upcoming selection. Tests authored, not executed.

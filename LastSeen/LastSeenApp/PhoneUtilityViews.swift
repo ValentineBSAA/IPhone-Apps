@@ -258,7 +258,8 @@ struct PhoneNoteEditorView: View {
     @State private var title = ""
     @State private var bodyText = ""
     @State private var loaded = false
-    @FocusState private var editing:Bool
+    private enum EditingField:Hashable {case title,body}
+    @FocusState private var editing:EditingField?
     @Environment(\.scenePhase) private var phase
     private var existing:PhoneNote? {world.state.notes.first{$0.id==noteID}}
 
@@ -278,13 +279,13 @@ struct PhoneNoteEditorView: View {
             } else {
                 VStack(spacing: 0) {
                     TextField("Title", text: $title)
-                        .focused($editing)
+                        .focused($editing,equals:.title)
                         .font(.system(size: 25, weight: .semibold))
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
                     Divider().padding(.vertical, 14)
                     TextEditor(text: $bodyText)
-                        .focused($editing)
+                        .focused($editing,equals:.body)
                         .scrollContentBackground(.hidden)
                         .font(.system(size: 16))
                         .padding(.horizontal, 13)
@@ -305,10 +306,10 @@ struct PhoneNoteEditorView: View {
         .toolbar {
             ToolbarItemGroup(placement:.keyboard) {
                 Spacer()
-                Button("Done"){editing=false}
+                Button("Done"){editing=nil}
             }
         }
-        .onChange(of: phase){if $0 != .active {editing=false}}
+        .onChange(of: phase){if $0 != .active {editing=nil}}
         .onChange(of: title) { _ in persistChanges() }
         .onChange(of: bodyText) { _ in persistChanges() }
     }
