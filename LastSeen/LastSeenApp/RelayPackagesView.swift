@@ -27,6 +27,7 @@ struct RelayPackagesView: View {
     @State private var notice = ""
     @State private var refresh = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var phase
     let onRestart: () -> Void
     let earnedFlags: Set<String>
     init(earnedFlags: Set<String> = [], onRestart: @escaping () -> Void = {}) { self.earnedFlags = earnedFlags; self.onRestart = onRestart }
@@ -104,6 +105,7 @@ struct RelayPackagesView: View {
         .navigationTitle("Relay").navigationBarTitleDisplayMode(.inline)
         .onAppear { recoverSources() }
         .onChange(of: sources) { _ in recoverSources() }
+        .onChange(of:earnedFlags){_ in recoverSources()}
         .sheet(item: $selected) { p in
             NavigationStack { detail(p).navigationTitle(p.title).navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { selected = nil } } } }
         }
@@ -130,7 +132,10 @@ struct RelayPackagesView: View {
             }
         }
         .sheet(isPresented: $showQueue, onDismiss: {
-            if !confirmed.isEmpty { showTransaction = true }
+            if !confirmed.isEmpty {
+                if phase == .active && confirmedValid {showTransaction=true}
+                else {confirmed=[];notice="Queue changed or the phone is inactive. Review the queue again."}
+            }
         }) {
             NavigationStack {
                 List {
@@ -165,7 +170,7 @@ struct RelayPackagesView: View {
             }
         }
         .fullScreenCover(isPresented: $showTransaction) {
-            RelayTransactionView(changes: confirmed, onCancel: {
+            RelayTransactionView(changes: confirmed, canRestart:{phase == .active && confirmedValid}, onCancel: {
                 confirmed = []; showTransaction = false
             }, onComplete: {
                 let committed = applyConfirmed()
@@ -300,8 +305,9 @@ struct RelayPackagesView: View {
                 TextField("Search packages, sources or categories", text: $query).autocorrectionDisabled()
             }
             Section("Packages") {
+                let term=query.trimmingCharacters(in:.whitespacesAndNewlines)
                 let results = visiblePackages.filter { p in
-                    query.isEmpty || [p.title, p.id, p.category, p.summary, RelayCatalog.source(p.source)?.name ?? ""].contains { $0.localizedCaseInsensitiveContains(query) }
+                    term.isEmpty || [p.title, p.id, p.category, p.summary, RelayCatalog.source(p.source)?.name ?? ""].contains { $0.localizedCaseInsensitiveContains(term) }
                 }
                 if results.isEmpty { Text("No packages found.").foregroundColor(.secondary) }
                 ForEach(results) { packageRow($0) }
@@ -419,8 +425,11 @@ struct RelayPackagesView: View {
         queue = RelayPlan.queue(RelayChange(package: p, action: action), into: queue)
         notice = "\(p.title) queued for \(action.rawValue.lowercased())"
     }
+    private var confirmedValid:Bool {
+        RelayPlan.valid(confirmed,sources:sourceIDs,installed:ids,flags:earnedFlags,versions:versionMap)
+    }
     @discardableResult private func applyConfirmed() -> Bool {
-        guard RelayPlan.valid(confirmed, sources: sourceIDs, installed: ids, flags: earnedFlags, versions: versionMap) else {
+        guard phase == .active,confirmedValid else {
             confirmed = []; notice = "Transaction cancelled: package state changed"; return false
         }
         let previous = ids

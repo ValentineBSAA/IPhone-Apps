@@ -5,15 +5,20 @@ enum PatchlinePackageHealth: String {
     case active = "Active"
     case safeMode = "Paused in Safe Mode"
     case unavailable = "Unavailable in this archive"
+    case notInstalled = "Not installed"
     case conflict = "Conflict"
     case missingRequirement = "Missing requirement"
     static func status(_ p: RelayPackage, installed: Set<String>, flags: Set<String>, safeMode: Bool) -> Self {
         if p.essential { return .essential }
+        guard installed.contains(p.id) else{return .notInstalled}
         if !RelayCatalog.available(p.id, flags: flags) { return .unavailable }
         let effective = installed.union(RelayCatalog.packages.filter(\.essential).map(\.id))
         if !RelayCatalog.requirements(p.id).isSubset(of: effective) { return .missingRequirement }
         if !RelayCatalog.conflicts(p.id).isDisjoint(with: installed) { return .conflict }
-        return safeMode && p.id != "relay-support" ? .safeMode : .active
+        if p.id=="relay-support" {
+            return RelaySupportAccess.available(installed:RelayCatalog.encoded(installed),flags:flags) ? .active:.unavailable
+        }
+        return RelayCatalog.tweakActive(p.id,installed:RelayCatalog.encoded(installed),safeMode:safeMode,flags:flags) ? .active:.safeMode
     }
 }
 

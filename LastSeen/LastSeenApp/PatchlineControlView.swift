@@ -14,6 +14,13 @@ struct PatchlineControlView: View {
     @State private var restart: RelayRestart?
     @State private var confirm: RelayRestart?
     @State private var showGuide = false
+    @Environment(\.scenePhase) private var phase
+    private var optionalPackages:[RelayPackage] {
+        RelayCatalog.packages.filter{!$0.essential && RelayCatalog.ids(installed).contains($0.id)}
+    }
+    private var activePackages:Int {
+        optionalPackages.filter{PatchlinePackageHealth.status($0,installed:RelayCatalog.ids(installed),flags:earnedFlags,safeMode:safeMode) == .active}.count
+    }
     var body: some View {
         List {
             Section {
@@ -27,7 +34,9 @@ struct PatchlineControlView: View {
                     }
                 }.padding(.vertical, 12)
                 LabeledContent("Tweak loader", value: safeMode ? "Disabled" : "Active")
-                LabeledContent("Installed tweaks", value: String(RelayCatalog.ids(installed).count))
+                LabeledContent("Installed optional packages",value:String(optionalPackages.count))
+                LabeledContent("Active optional packages",value:String(activePackages))
+                LabeledContent("Paused or unavailable",value:String(optionalPackages.count-activePackages))
             }
             Section("Environment") {
                 LabeledContent("Bootstrap", value: RelayCatalog.package("bootstrap")?.version ?? "Unavailable")
@@ -70,7 +79,7 @@ struct PatchlineControlView: View {
             }
         }.navigationTitle("Patchline").navigationBarTitleDisplayMode(.inline)
             .confirmationDialog("Restart the phone environment?", isPresented: Binding(get: { confirm != nil }, set: { if !$0 { confirm = nil } }), titleVisibility: .visible, presenting: confirm) { action in
-                Button("Continue") { restart = action; confirm = nil }
+                Button("Continue") {if phase == .active && restart == nil {restart=action};confirm=nil}
                 Button("Cancel", role: .cancel) { confirm = nil }
             } message: { _ in Text("Your records and installed packages will be retained.") }
             .sheet(isPresented: $showGuide) {

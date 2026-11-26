@@ -6,6 +6,7 @@ import Combine
 /// Persistent changes are applied by the parent only after the respring completes.
 struct RelayTransactionView: View {
     let changes: [RelayChange]
+    var canRestart: () -> Bool = {true}
     let onCancel: () -> Void
     let onComplete: () -> Void
     // Common-mode timer survives scrolling and foreground transitions.
@@ -13,6 +14,7 @@ struct RelayTransactionView: View {
     @State private var tick = 0
     @State private var restarting = false
     @State private var completed = false
+    @State private var validationNotice=""
     private var messages: [String] {
         ["Reading package lists…", "Building dependency tree…", "Checking package state…", "Preparing transaction…"] +
         changes.flatMap { change in [
@@ -52,7 +54,13 @@ struct RelayTransactionView: View {
                             .onChange(of: tick) { _ in proxy.scrollTo("tail", anchor: .bottom) }
                     }
                     if tick >= messages.count {
-                        Button { restarting = true } label: {
+                        Button {
+                            guard UIApplication.shared.applicationState == .active,canRestart() else {
+                                validationNotice="Package state changed. Cancel and review the queue."
+                                return
+                            }
+                            validationNotice="";restarting=true
+                        } label: {
                             Label("Restart LumaShell", systemImage: "arrow.clockwise").frame(maxWidth: .infinity).padding(.vertical, 8)
                         }.buttonStyle(.borderedProminent).tint(.teal).accessibilityIdentifier("relay.transaction.restart")
                     } else {
@@ -60,6 +68,7 @@ struct RelayTransactionView: View {
                         Button("Skip processing animation") { tick = messages.count }
                             .font(.caption).frame(maxWidth: .infinity).accessibilityIdentifier("relay.transaction.skip")
                     }
+                    if !validationNotice.isEmpty {Text(validationNotice).font(.caption).foregroundColor(.orange)}
                     Button("Cancel", role: .cancel, action: onCancel).frame(maxWidth: .infinity).accessibilityIdentifier("relay.transaction.cancel")
                     Text("Changes remain pending until the restart finishes.").font(.caption2).foregroundColor(.secondary)
                 }.padding(20)

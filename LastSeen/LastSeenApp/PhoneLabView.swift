@@ -90,7 +90,7 @@ struct PhoneLabView: View {
     }
     private func utilityActive(_ tool: LumaUtility) -> Bool { tweak(tool.rawValue) && RelayCatalog.available(tool.rawValue, flags: world.state.flags) }
     private var fiveColumns: Bool { tweak("fivegrid") || (utilityActive(.lumaplus) && utilityFive) }
-    private var smallIcons: Bool { (!safeMode && compactIcons) || fiveColumns || (utilityActive(.lumaplus) && utilitySmall) }
+    private var smallIcons: Bool { tweak("compact") || fiveColumns || (utilityActive(.lumaplus) && utilitySmall) }
     @AppStorage("lastseen.lab.brightness") private var brightness = 0.9
     @AppStorage("lastseen.lab.wifi") private var wifi = true
     @AppStorage("lastseen.setup.device") private var device = "My phone"
@@ -888,7 +888,7 @@ struct PhoneLabView: View {
         Group {
             if app == .patchline || app == .relay {
                 Image(app == .patchline ? "Jailbreak_Patchline" : "Jailbreak_Relay").resizable().scaledToFit()
-            } else if !safeMode,(tealTheme || (utilityActive(.afterglowstudio) && utilityTheme)),let asset=ApprovedArt.themeName(for:app.rawValue) {
+            } else if (tweak("teal") || (utilityActive(.afterglowstudio) && utilityTheme)),let asset=ApprovedArt.themeName(for:app.rawValue) {
                 Image(asset).resizable().scaledToFit()
             } else if let art=app.foundationIcon, UIImage(named: art) != nil {
                 Image(art).resizable().scaledToFit()
