@@ -184,6 +184,19 @@ final class PhoneFeedbackTests: XCTestCase {
         XCTAssertNil(PhoneMessageArrival.newest(in:state,previous:baseline))
         XCTAssertFalse(PhoneAlertCatalog.alerts(in:state,unreadOnly:true).contains{$0.neighbor == .unknown})
     }
+    func testBannerSnapshotRequiresCurrentUnreadMessage() throws {
+        var state=RestoredPhoneBackup.snapshot()
+        state.threads[Neighbor.unknown.id]=[
+            NeighborMessage(id:"banner-fixture",thread:Neighbor.unknown.id,text:"Fixture",fromPlayer:false,at:Date(),read:false)
+        ]
+        let snapshot=try XCTUnwrap(PhoneAlertCatalog.alerts(in:state,unreadOnly:true).first{$0.neighbor == .unknown})
+        XCTAssertEqual(PhoneAlertCatalog.current(snapshot,in:state)?.id,snapshot.id)
+        state.threads[Neighbor.unknown.id]?[0].read=true
+        XCTAssertNil(PhoneAlertCatalog.current(snapshot,in:state))
+        state.threads.removeValue(forKey:Neighbor.unknown.id)
+        XCTAssertNil(PhoneAlertCatalog.current(snapshot,in:state))
+        XCTAssertNil(PhoneAlertCatalog.current(nil,in:state))
+    }
     func testIncomingDetectionDoesNotDependOnUnreadState() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let store = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(now: now), persistToDisk: false)

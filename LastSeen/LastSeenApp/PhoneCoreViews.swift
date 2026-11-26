@@ -9,6 +9,11 @@ struct PhoneAlert: Identifiable, Equatable {
 }
 
 enum PhoneAlertCatalog {
+    // Resolve against current unread records, not a stale captured preview.
+    static func current(_ snapshot:PhoneAlert?,in world:PhoneWorld)->PhoneAlert? {
+        guard let snapshot else{return nil}
+        return alerts(in:world,unreadOnly:true).first{$0.id==snapshot.id && $0.neighbor==snapshot.neighbor}
+    }
     static func alerts(in world: PhoneWorld, unreadOnly: Bool) -> [PhoneAlert] {
         Neighbor.visible(in:world).compactMap { neighbor in
             let incoming = (world.threads[neighbor.id] ?? []).filter { !$0.fromPlayer }

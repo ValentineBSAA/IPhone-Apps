@@ -54,10 +54,13 @@ struct PhoneLabView: View {
             LabApp(rawValue:title).map(appAvailable) ?? false
         }
     }
+    private var eligibleMessageBanner:PhoneAlert? {
+        PhoneAlertCatalog.current(banner,in:world.state)
+    }
     private var currentMessageBanner:PhoneAlert? {
-        guard let banner,phase == .active,!locked,!checkpointReboot,panel == nil,!showOwnerPasscode,
+        guard let banner=eligibleMessageBanner,phase == .active,!locked,!checkpointReboot,panel == nil,!showOwnerPasscode,
               world.visibleThread != banner.neighbor else{return nil}
-        return alerts.first{$0.id==banner.id}
+        return banner
     }
     private var presentedActivityID: String? {
         guard let activityBanner,availableActivity.contains(where:{$0.id==activityBanner.id}) else{return nil}
@@ -264,13 +267,13 @@ struct PhoneLabView: View {
             }
         }
         .overlay(alignment: .top) {
-            if circuitBanner && banner == nil && activityBanner == nil && !locked && !checkpointReboot && panel == nil && !showOwnerPasscode {
+            if circuitBanner && currentMessageBanner == nil && presentedActivityID == nil && phase == .active && !locked && !checkpointReboot && panel == nil && !showOwnerPasscode {
                 Button { circuitBanner = false; open(.relay) } label: { CircuitNoticeCard() }
                     .buttonStyle(.plain).padding(.horizontal, 14).padding(.top, 4)
             }
         }
         .overlay(alignment: .top) {
-            if let tool = utilityNotice, banner == nil && activityBanner == nil && !circuitBanner && !locked && !checkpointReboot && panel == nil && !showOwnerPasscode {
+            if let tool = utilityNotice, currentMessageBanner == nil && presentedActivityID == nil && !circuitBanner && phase == .active && !locked && !checkpointReboot && panel == nil && !showOwnerPasscode {
                 Button { utilityNotice = nil; open(.relay) } label: { UtilityNoticeCard(tool: tool) }.buttonStyle(.plain).padding(.horizontal, 14).padding(.top, 4)
             }
         }
@@ -317,7 +320,7 @@ struct PhoneLabView: View {
         .task(id: currentMessageBanner?.id) {
             guard let id = currentMessageBanner?.id else { return }
             do { try await Task.sleep(nanoseconds: 5_000_000_000) } catch { return }
-            if currentMessageBanner?.id == id { withAnimation { banner = nil } }
+            if !Task.isCancelled,currentMessageBanner?.id == id { withAnimation { banner = nil } }
         }
         // Count a continuous visible interval, not time spent behind another overlay.
         // SwiftUI cancels this task on preemption; resuming starts a fresh interval.
@@ -353,6 +356,9 @@ struct PhoneLabView: View {
         }
         .onChange(of: world.visibleThread) { visible in
             if banner?.neighbor == visible { banner = nil }
+        }
+        .onChange(of:eligibleMessageBanner?.id) { value in
+            if value == nil {banner=nil}
         }
         .task(id: phase) {
             guard phase == .active else { return }
@@ -604,7 +610,7 @@ struct PhoneLabView: View {
         world.recordTimerActivity(end: end)
         feedbackTimerDelivered = end
         if present {
-            let arrived = LumaActivityCatalog.newEntries(world.state, previous: before)
+            let arrived=Array(availableActivity.filter{!before.contains($0.id)}.reversed())
             playActivityFeedback(arrived)
             if didConfigureFeedback && phase == .active && !checkpointReboot && !locked {
                 activityQueue.enqueue(arrived, showing: activityBanner?.id)
