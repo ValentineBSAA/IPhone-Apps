@@ -53,6 +53,34 @@ import XCTest
         XCTAssertTrue(w.isTyping(.adrian, now: typingAt.addingTimeInterval(60)))
     }
 
+    func testAvailabilityIsBoundedAndDoesNotDelayProgressReplies() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
+        let noon = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 25, hour: 12)))
+        let night = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 25, hour: 2)))
+        let weekend = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 28, hour: 12)))
+        XCTAssertEqual(PhoneReplyTiming.availabilityDelay(neighbor: .denise, now: noon, calendar: calendar), 0)
+        XCTAssertEqual(PhoneReplyTiming.availabilityDelay(neighbor: .denise, now: weekend, calendar: calendar), 10)
+        for neighbor in Neighbor.allCases {
+            let ordinary = PhoneReplyTiming.window(neighbor: neighbor, text: "An ordinary answer.", introductory: false, everyday: true, now: night, calendar: calendar)
+            XCTAssertLessThan(ordinary.read, ordinary.typing)
+            XCTAssertLessThan(ordinary.typing, ordinary.due)
+            XCTAssertLessThanOrEqual(ordinary.due, 22)
+            let progressDay = PhoneReplyTiming.window(neighbor: neighbor, text: "A progress answer.", introductory: false, now: noon, calendar: calendar)
+            let progressNight = PhoneReplyTiming.window(neighbor: neighbor, text: "A progress answer.", introductory: false, now: night, calendar: calendar)
+            XCTAssertEqual(progressDay.due, progressNight.due)
+            let tutorial = PhoneReplyTiming.window(neighbor: neighbor, text: "A tutorial answer.", introductory: true, everyday: true, now: night, calendar: calendar)
+            XCTAssertLessThan(tutorial.due, 6)
+        }
+        let slow = PhoneReplyTiming.window(neighbor: .helen, text: "Hello.", introductory: false, everyday: true, now: night, calendar: calendar)
+        let engaged = PhoneReplyTiming.window(neighbor: .helen, text: "Hello.", introductory: false, everyday: true, now: night, recentExchange: true, calendar: calendar)
+        let queued = PhoneReplyTiming.window(neighbor: .helen, text: "Hello.", introductory: false, everyday: true, now: night, alreadyWaiting: true, calendar: calendar)
+        XCTAssertLessThan(engaged.read, queued.read)
+        XCTAssertLessThan(queued.read, slow.read)
+        XCTAssertTrue(PhoneReplyPolicy.plan(for: .lily, text: "What music do you like?", flags: [], tutorialStarted: false, tutorialFinished: false).everyday)
+        XCTAssertFalse(PhoneReplyPolicy.plan(for: .lily, text: "What is the passcode?", flags: [], tutorialStarted: false, tutorialFinished: false).everyday)
+    }
+
     func testNegatedOrQuotedRepairReportDoesNotAdvanceTutorial() {
         for text in ["I didn't repair the phone", "Is the phone working?", "Someone said \"I repaired the phone\"", "I am not a technician"] {
             XCTAssertFalse(PhoneReplyPolicy.plan(for: .maya, text: text, flags: [], tutorialStarted: true, tutorialFinished: false).startsTutorial)

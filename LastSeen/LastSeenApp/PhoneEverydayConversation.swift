@@ -138,7 +138,25 @@ enum PhoneReplyTiming {
         let typing: TimeInterval
         let due: TimeInterval
     }
-    static func window(neighbor: Neighbor, text: String, introductory: Bool) -> Window {
+    /// Optional everyday conversations have modest, deterministic local-clock
+    /// delays. Investigation and tutorial replies never wait for business hours.
+    static func availabilityDelay(neighbor: Neighbor, now: Date, calendar: Calendar = .current) -> TimeInterval {
+        let hour = calendar.component(.hour, from: now)
+        let night = hour < 6 || hour >= 23
+        switch neighbor {
+        case .maya: return night ? 5 : (9..<17).contains(hour) ? 2 : 0
+        case .lily: return night ? 3 : (9..<15).contains(hour) ? 2 : 0
+        case .helen: return night ? 9 : (11..<14).contains(hour) ? 3 : 0
+        case .daniel: return night ? 8 : (8..<17).contains(hour) ? 5 : 0
+        case .adrian: return night ? 9 : (10..<16).contains(hour) ? 4 : 2
+        case .tessa: return night ? 7 : (10..<16).contains(hour) ? 4 : 0
+        case .denise: return calendar.isDateInWeekend(now) || !(9..<17).contains(hour) ? 10 : 0
+        case .unknown: return 0
+        }
+    }
+    static func window(neighbor: Neighbor, text: String, introductory: Bool,
+                       everyday: Bool = false, now: Date = Date(), recentExchange: Bool = false,
+                       alreadyWaiting: Bool = false, calendar: Calendar = .current) -> Window {
         if introductory {
             return .init(read: 0.8, typing: 0.8, due: 3.2 + min(2, Double(text.count) / 130))
         }
@@ -154,8 +172,14 @@ enum PhoneReplyTiming {
         case .denise: read = 3.6; pause = 2.3
         case .unknown: read = 2.8; pause = 1.4
         }
-        let typing = read + pause
+        let conversationalRead = everyday && recentExchange ? min(read, 1.2) : read
+        // A burst of queued messages must not compound a simulated absence
+        // for every individual reply.
+        let delay = everyday && !recentExchange && !alreadyWaiting
+            ? availabilityDelay(neighbor: neighbor, now: now, calendar: calendar) : 0
+        let readTime = conversationalRead + delay
+        let typing = readTime + pause
         let due = typing + min(6, max(1.8, Double(text.count) / 32))
-        return .init(read: read, typing: typing, due: due)
+        return .init(read: readTime, typing: typing, due: due)
     }
 }

@@ -255,7 +255,13 @@ final class PhoneWorldStore: ObservableObject {
                                          previousMessage: previousMessage, recentReplies: recent)
         let previous = pending.filter { $0.neighbor == neighbor }.map(\.dueAt).max() ?? now
         let base = max(now, previous)
-        let timing = PhoneReplyTiming.window(neighbor: neighbor, text: plan.text, introductory: introductory)
+        let recentExchange = reactiveReplies.last.map {
+            let elapsed = now.timeIntervalSince($0.at)
+            return elapsed >= 0 && elapsed <= 90
+        } ?? false
+        let timing = PhoneReplyTiming.window(neighbor: neighbor, text: plan.text, introductory: introductory,
+                                             everyday: plan.everyday, now: now, recentExchange: recentExchange,
+                                             alreadyWaiting: !waiting.isEmpty)
         let readAt = base.addingTimeInterval(timing.read)
         let typingAt = base.addingTimeInterval(timing.typing)
         let due = base.addingTimeInterval(timing.due)

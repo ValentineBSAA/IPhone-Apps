@@ -14,6 +14,7 @@ struct PhonePendingReply: Codable, Equatable, Identifiable {
 struct PhoneReplyPlan {
     let text: String
     var startsTutorial = false
+    var everyday = false
 }
 
 /// Offline authored reactions. No external model, invented evidence or access grants.
@@ -35,7 +36,7 @@ enum PhoneReplyPolicy {
         }
         if !Neighbor.original.contains(neighbor) {
             if let everyday = PhoneEverydayConversation.reply(neighbor: neighbor, text: text, previousMessage: previousMessage, previousReply: previousReply, recentReplies: recentReplies) {
-                return PhoneReplyPlan(text: everyday == previousReply ? "I don't have much else to add right now." : everyday)
+                return PhoneReplyPlan(text: everyday == previousReply ? "I don't have much else to add right now." : everyday, everyday: true)
             }
             return PhoneReplyPlan(text: NoraEverydayArchive.response(neighbor, words: words))
         }
@@ -66,7 +67,7 @@ enum PhoneReplyPolicy {
             return PhoneReplyPlan(text: "Oh, thank you for telling me. I'm Maya, a friend of Nora's. I was expecting to hear from her. Could you look in Notes for something called Before I forget? She mentioned writing down her plans.", startsTutorial: true)
         }
         if tutorialFinished, let everyday = PhoneEverydayConversation.reply(neighbor: neighbor, text: text, previousMessage: previousMessage, previousReply: previousReply, recentReplies: recentReplies) {
-            return PhoneReplyPlan(text: everyday == previousReply ? "I don't have much else to add right now." : everyday)
+            return PhoneReplyPlan(text: everyday == previousReply ? "I don't have much else to add right now." : everyday, everyday: true)
         }
         if neighbor == .maya {
             if intro {
