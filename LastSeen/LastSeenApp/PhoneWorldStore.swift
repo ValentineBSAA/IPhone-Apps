@@ -671,6 +671,23 @@ final class PhoneWorldStore: ObservableObject {
         ])
         save()
     }
+    @discardableResult
+    func sendRelaySupport(_ raw: String, installed: String, sources: String, now: Date = Date()) -> Bool {
+        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard RelaySupportAccess.available(installed: installed, flags: state.flags), !text.isEmpty, raw.count <= 2000 else { return false }
+        beginRelaySupport(installed: installed, now: now)
+        guard var history = state.relaySupport else { return false }
+        let provider = RelaySupportLocalProvider()
+        let answer = provider.reply(question: text, recent: Array(history.messages.suffix(12)), flags: state.flags, sources: sources, installed: installed)
+        history.messages.append(.init(id: UUID().uuidString, text: text, at: now, outgoing: true))
+        history.messages.append(.init(id: UUID().uuidString, text: answer.text, at: now, outgoing: false,
+                                      guideID: answer.guideID.flatMap { RelaySupportKnowledge.generalGuide($0)?.id },
+                                      packageID: answer.packageID))
+        state.relaySupport = history
+        save()
+        return true
+    }
+
     private func commitConnected(_ value:LumaConnectedState) {
         state.connectedWorld=value; save()
     }
