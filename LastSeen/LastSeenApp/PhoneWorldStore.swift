@@ -280,6 +280,7 @@ final class PhoneWorldStore: ObservableObject {
         advanceConnectedMail(now: now)
         advanceSocialReplies(now: now)
         advanceDayblink(now: now)
+        advanceHavenWatch(now: now)
         let pending = state.pendingReplies ?? []
         guard !pending.isEmpty else { return }
         var changed = false
@@ -825,6 +826,24 @@ final class PhoneWorldStore: ObservableObject {
         var m = c.motionwell ?? MotionwellState()
         m.notificationsEnabled = enabled; m.previewsEnabled = previews
         c.motionwell = m; commitConnected(c)
+    }
+    func advanceHavenWatch(now: Date = Date()) {
+        guard HavenWatchEvents.eligible(state) else { return }
+        var c = connected
+        if c.havenEvent == nil {
+            c.havenEvent = HavenWatchEvent(id: HavenWatchEvents.archiveID, due: now.addingTimeInterval(8))
+            commitConnected(c)
+            return
+        }
+        guard var event = c.havenEvent, event.id == HavenWatchEvents.archiveID, !event.delivered, event.due <= now else { return }
+        event.delivered = true
+        c.havenEvent = event
+        if c.havenWatch?.alertsEnabled ?? true {
+            addActivity(.init(id: event.id, kind: .security, date: event.due,
+                              title: HavenWatchEvents.title(event), detail: HavenWatchEvents.detail(event),
+                              targetID: event.id, channel: nil, author: nil), to: &c)
+        }
+        commitConnected(c)
     }
     func setHavenWatch(_ preferences: HavenWatchPreferences) {
         guard state.everydayArchiveRevision != nil else { return }

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Fictional local activity. No real push messages, network or OS notification access.
 struct LumaActivityNotice: Codable, Equatable, Identifiable {
-    enum Kind: String, Codable { case mail, social, timer, dayblink }
+    enum Kind: String, Codable { case mail, social, timer, dayblink, security }
     let id: String
     let kind: Kind
     let date: Date
@@ -18,6 +18,7 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
         case .social: return channel?.rawValue ?? "Social"
         case .timer: return "Clock"
         case .dayblink: return "Dayblink"
+        case .security: return "HavenWatch"
         }
     }
     var symbol: String {
@@ -26,14 +27,16 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
         case .social: return "bubble.left.and.bubble.right.fill"
         case .timer: return "timer"
         case .dayblink: return "camera.fill"
+        case .security: return "shield.lefthalf.filled"
         }
     }
-    var cue: PhoneCue { kind == .timer ? .timerCompleted : .general }
+    var cue: PhoneCue { kind == .timer ? .timerCompleted : kind == .security ? .corrupted : .general }
     var profile: PhoneHapticProfile {
         switch kind {
         case .mail: return .mail
         case .social, .dayblink: return .social
         case .timer: return .cue(.timerCompleted)
+        case .security: return .security
         }
     }
     func canPresent(in state: PhoneWorld) -> Bool {
@@ -50,6 +53,8 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
             return prefs.notificationsEnabled && !(author.map { prefs.mutedAuthors.contains($0) } ?? false)
                 && LumaSocialCatalog.visible(channel, world: state).contains { $0.id == targetID }
         case .timer: return true
+        case .security:
+            return (state.connectedWorld?.havenWatch?.alertsEnabled ?? true) && HavenWatchEvents.visible(state).map { $0.id == targetID } == true
         case .dayblink:
             guard state.everydayArchiveRevision != nil, let targetID, let d = state.connectedWorld?.dayblink,
                   d.notificationsEnabled,
@@ -59,6 +64,7 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
         }
     }
     func hidePreview(in state: PhoneWorld) -> Bool {
+        if kind == .security { return true }
         if kind == .dayblink { return !(state.connectedWorld?.dayblink?.previewsEnabled ?? false) }
         guard let channel else { return false }
         return !(state.connectedWorld?.socialPreferences?[channel.rawValue]?.showPreviews ?? true)
@@ -137,6 +143,8 @@ struct LumaActivityDetail: View {
                 else { Text("Discussion unavailable") }
             case .timer:
                 Text("Your timer has finished.").padding().navigationTitle("Clock")
+            case .security:
+                HavenWatchEventDetail()
             case .dayblink:
                 if let author = notice.author, let friend = DayblinkFriend(rawValue: author) {
                     DayblinkThread(friend: friend)

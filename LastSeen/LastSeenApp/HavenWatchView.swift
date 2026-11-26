@@ -82,6 +82,14 @@ struct HavenWatchView: View {
                             }.padding(12).lumaSurface()
                         }.buttonStyle(.plain)
                     }
+                    if let event = HavenWatchEvents.visible(world.state) {
+                        NavigationLink { HavenWatchEventDetail() } label: {
+                            VStack(alignment: .leading, spacing: 5) {
+                                Label(HavenWatchEvents.title(event), systemImage: "archivebox").font(.headline)
+                                Text("Index activity · " + event.due.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundColor(.secondary)
+                            }.frame(maxWidth: .infinity, alignment: .leading).padding(12).lumaSurface()
+                        }.buttonStyle(.plain)
+                    }
                     Toggle("Show saved snapshots only", isOn: $favoritesOnly)
                     Text("Activity history").font(.title2.bold())
                     let selected = frames.filter { !favoritesOnly || prefs.favorites.contains($0.id) }
@@ -192,7 +200,7 @@ struct HavenWatchSettings: View {
                 Toggle("Security notifications", isOn: Binding(get: { prefs.alertsEnabled }, set: { value in
                     var next = prefs; next.alertsEnabled = value; world.setHavenWatch(next)
                 }))
-                Text("Preference saved. No new camera events are available in this restored archive.").font(.caption).foregroundColor(.secondary)
+                Text("Controls alerts for local archive updates. No live camera events are received.").font(.caption).foregroundColor(.secondary)
             }
         }.navigationTitle("HavenWatch settings")
     }

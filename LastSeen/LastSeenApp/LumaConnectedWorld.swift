@@ -64,6 +64,7 @@ struct LumaConnectedState:Codable,Equatable {
     var posts:[LumaSocialPost]=[]
     var socialPreferences: [String: LumaSocialPreferences]? = nil
     var havenWatch: HavenWatchPreferences? = nil
+    var havenEvent: HavenWatchEvent? = nil
     var dayblink: DayblinkState? = nil
     var motionwell: MotionwellState? = nil
     var activityJournal: [LumaActivityNotice]? = nil

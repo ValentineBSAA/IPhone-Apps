@@ -41,6 +41,7 @@ struct PhoneLabView: View {
     @State private var homeFolder: LumaHomeFolder?
     @State private var recent: [LabApp] = []
     @State private var pendingThread: Neighbor?
+    @State private var pendingActivityID: String?
     @State private var banner: PhoneAlert?
     @State private var activityBanner: LumaActivityNotice?
     @State private var observedIncoming: Set<String> = []
@@ -273,7 +274,8 @@ struct PhoneLabView: View {
                     }
                     if didConfigureFeedback {
                         for notice in LumaActivityCatalog.newEntries(world.state, previous: before) {
-                            PhoneSensoryEngine.play(notice.cue, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects, hapticProfile: notice.profile)
+                            let cue = notice.cue.isHorror && !horrorEffects ? PhoneCue.general : notice.cue
+                            PhoneSensoryEngine.play(cue, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects, hapticProfile: notice.profile)
                             activityBanner = notice
                         }
                     }
@@ -358,7 +360,7 @@ struct PhoneLabView: View {
             ScrollView {
                 OwnerPasscodeView(onSuccess: {
                     ownerVerified = true; showOwnerPasscode = false; completeUnlock()
-                }, onCancel: { showOwnerPasscode = false; pendingThread = nil })
+                }, onCancel: { showOwnerPasscode = false; pendingThread = nil; pendingActivityID = nil })
             }.preferredColorScheme(.dark).presentationDetents([.large])
         }
         .onAppear {
@@ -403,7 +405,7 @@ struct PhoneLabView: View {
                 }.frame(maxWidth: .infinity)
                     .contentShape(Rectangle())
                     .gesture(DragGesture(minimumDistance: 30).onEnded { value in
-                        if value.translation.height < -40 { pendingThread = nil; requestUnlock() }
+                        if value.translation.height < -40 { pendingThread = nil; pendingActivityID = nil; requestUnlock() }
                     })
             }
             ScrollView {
@@ -416,12 +418,16 @@ struct PhoneLabView: View {
                         }.padding(.horizontal, 4)
                         ForEach(alerts) { alert in
                             PhoneNotificationCard(alert: alert, hidePreview: biometricUnlock || hideLockPreviews || tweak("privatepreview")) {
-                                pendingThread = alert.neighbor
+                                guard authContext == nil else { return }
+                                pendingActivityID = nil; pendingThread = alert.neighbor
                                 requestUnlock()
                             }
                         }
                         ForEach(LumaActivityCatalog.visible(world.state)) { notice in
-                            LumaActivityCard(notice: notice, hidePreview: true) { pendingThread = nil; requestUnlock() }
+                            LumaActivityCard(notice: notice, hidePreview: true) {
+                                guard authContext == nil else { return }
+                                pendingThread = nil; pendingActivityID = notice.id; requestUnlock()
+                            }
                         }
                     } else {
                         Label("No new notifications", systemImage: "bell.slash").font(.caption)
@@ -432,10 +438,10 @@ struct PhoneLabView: View {
             if !authNotice.isEmpty { Text(authNotice).font(.caption).multilineTextAlignment(.center) }
             if biometricUnlock {
                 Button("Use owner passcode") { showOwnerPasscode = true }.font(.subheadline).disabled(authContext != nil)
-                Button("Explore public apps") { pendingThread = nil; authNotice = ""; locked = false }.font(.caption).disabled(authContext != nil)
+                Button("Explore public apps") { pendingThread = nil; pendingActivityID = nil; authNotice = ""; locked = false }.font(.caption).disabled(authContext != nil)
             }
             Button {
-                pendingThread = nil; requestUnlock()
+                pendingThread = nil; pendingActivityID = nil; requestUnlock()
             } label: {
                 VStack(spacing: 7) {
                     Image(systemName: "chevron.up").font(.headline)
@@ -444,7 +450,7 @@ struct PhoneLabView: View {
                 }.frame(maxWidth: .infinity).padding(.vertical, 12).contentShape(Rectangle())
             }.buttonStyle(.plain).disabled(authContext != nil).accessibilityIdentifier("luma.lock.unlock")
                 .gesture(DragGesture(minimumDistance: 16).onEnded { value in
-                    if value.translation.height < -20 { pendingThread = nil; requestUnlock() }
+                    if value.translation.height < -20 { pendingThread = nil; pendingActivityID = nil; requestUnlock() }
                 })
         }.padding(.horizontal, 18).padding(.vertical, 10).foregroundColor(.white)
     }
@@ -454,7 +460,11 @@ struct PhoneLabView: View {
         authNotice = ""
         PhoneSensoryEngine.authentication(.unlock, sound: messageSound, haptics: messageHaptics)
         withAnimation(.easeInOut(duration: 0.25)) { locked = false }
-        if let neighbor = pendingThread { pendingThread = nil; openThread(neighbor) }
+        let activityID = pendingActivityID
+        pendingActivityID = nil
+        if let activityID, let notice = LumaActivityCatalog.visible(world.state).first(where: { $0.id == activityID }) {
+            pendingThread = nil; openActivity(notice)
+        } else if let neighbor = pendingThread { pendingThread = nil; openThread(neighbor) }
     }
 
     private func openActivity(_ notice: LumaActivityNotice) {
@@ -490,7 +500,7 @@ struct PhoneLabView: View {
         context.localizedFallbackTitle = ""
         var error: NSError?
         guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
-            pendingThread = nil
+            pendingThread = nil; pendingActivityID = nil
             authNotice = "Biometrics unavailable. Use the fictional owner passcode or open public apps."
             return
         }
@@ -502,7 +512,7 @@ struct PhoneLabView: View {
                 if success {
                     completeUnlock()
                 } else {
-                    pendingThread = nil
+                    pendingThread = nil; pendingActivityID = nil
                     if (error as? LAError)?.code == .authenticationFailed {
                         authNotice = "Authentication failed. Use the fictional owner passcode or open public apps."
                         PhoneSensoryEngine.authentication(.authenticationFailed, sound: messageSound, haptics: messageHaptics)
@@ -926,7 +936,7 @@ struct PhoneLabView: View {
         if saves.restore(slot, into: world) {
             observedIncoming = Set(incomingIDs)
             observedOutgoing = outgoingIDs
-            banner = nil; activityBanner = nil; pendingThread = nil; circuitBanner = false; utilityNotice = nil; observedUtilityFlags = world.state.flags
+            banner = nil; activityBanner = nil; pendingThread = nil; pendingActivityID = nil; circuitBanner = false; utilityNotice = nil; observedUtilityFlags = world.state.flags
             authContext?.invalidate(); authContext = nil
             showOwnerPasscode = false
             panel = nil
