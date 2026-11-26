@@ -51,6 +51,9 @@ struct EvidenceConnection: Codable, Equatable, Identifiable {
         if ids == Set([SocialArchiveReview.datesID,"veil:home-index"]) {
             return "The public discussion distinguishes original capture from import; the index describes a revision of the collection. These records support comparing dates and order, not assigning an original capture date."
         }
+        if ids == Set([NoraFriendArchive.recordID,"veil:conversation"]) {
+            return "Nora's historical account disputes language used in the anonymous correspondence. The recovered exchange gives her own perspective, but does not authenticate the anonymous sender."
+        }
         if ids == Set([SocialArchiveReview.recordID,"veil:conversation"]) {
             return "The local draft and historical correspondence both describe a wish to set boundaries and retain records. The draft was not published. This is a connection between recovered statements, not confirmation of the sender's identity."
         }
@@ -159,11 +162,14 @@ struct EvidenceComparisonView: View {
                             guard phase == .active else{return}
                             let readyBefore=VeilReferences.homeIndexReady(world.state)
                             let socialBefore=SocialArchiveReview.ready(world.state)
+                            let friendBefore=NoraFriendArchive.ready(world.state)
                             if world.saveEvidenceConnection(first,second,relation:relation) {
                                 if !readyBefore && VeilReferences.homeIndexReady(world.state) {
                                     notice="Connection saved. A new recovered reference is available in Files."
                                 } else if !socialBefore && SocialArchiveReview.ready(world.state) {
                                     notice="Connection saved. Additional restored account material is available in Afterframe."
+                                } else if !friendBefore && NoraFriendArchive.ready(world.state) {
+                                    notice="Connection saved. A recovered conversation is available in Messages."
                                 } else { notice="Connection saved to the current checkpoint." }
                             } else { notice="Connection could not be saved." }
                         }.buttonStyle(.borderedProminent)
