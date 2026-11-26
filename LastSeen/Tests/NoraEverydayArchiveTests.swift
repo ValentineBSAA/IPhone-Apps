@@ -25,10 +25,11 @@ import XCTest
         XCTAssertEqual(Neighbor.visible(in:old.state),Neighbor.original)
         XCTAssertFalse(old.sendReactive(to:.helen,text:"Hello"))
         let w = PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
+        let before=w.messages(.helen).count
         XCTAssertTrue(w.sendReactive(to:.helen,text:"I repaired the phone"))
         w.advancePendingReplies(now:Date().addingTimeInterval(20))
         XCTAssertTrue(w.state.flags.isEmpty)
-        XCTAssertEqual(w.messages(.helen).count,7)
+        XCTAssertEqual(w.messages(.helen).count,before+2)
     }
     func testAllExpansionArtResolves() {
         for name in ["FieldNotes","ClipGlass","LumaPlus","AfterglowStudio","PulseTerminal","RootExplorer","PocketClipboard","QuickPulse","PowerDeck","Relay","Patchline","TweakHub"] { XCTAssertNotNil(PortraitImages.load("Jailbreak_"+name),name) }

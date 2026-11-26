@@ -10,8 +10,9 @@ import XCTest
         state.flags.insert("web.visited.archive-records")
         XCTAssertEqual(InvestigationProgress.current(state.flags)?.id,"review")
         state.flags.remove("investigation.contact.received")
-        // The source is still available if the archive visit itself is retained.
-        XCTAssertEqual(InvestigationProgress.current(state.flags)?.id,"review")
+        // Missing contact prerequisite must not expose later leads.
+        XCTAssertEqual(InvestigationProgress.current(state.flags)?.id,"studio")
+        state.flags.insert("investigation.contact.received")
         state.flags.remove("web.visited.archive-records")
         XCTAssertEqual(InvestigationProgress.current(state.flags)?.id,"records")
     }

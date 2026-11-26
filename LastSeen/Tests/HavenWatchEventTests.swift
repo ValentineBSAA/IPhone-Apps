@@ -4,7 +4,7 @@ import XCTest
 @MainActor final class HavenWatchEventTests: XCTestCase {
     private func prepared(_ now: Date) -> PhoneWorldStore {
         var s = RestoredPhoneBackup.snapshot(now: now)
-        s.flags.formUnion(["phone-tutorial-finished","web.visited.studio","investigation.chapter2.reviewed","web.visited.archive-ledger","web.visited.studio-news"])
+        s.flags.formUnion(["phone-tutorial-finished","web.visited.studio","web.visited.studio-notes","investigation.contact.received","web.visited.archive","investigation.chapter2.reviewed","web.visited.archive-ledger","web.visited.studio-news"])
         let w = PhoneWorldStore(initial: s, persistToDisk: false)
         w.advanceInvestigation(now: now)
         w.advanceConnectedMail(now: now.addingTimeInterval(26))

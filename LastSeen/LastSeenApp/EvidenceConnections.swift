@@ -367,12 +367,15 @@ enum PhotoFeatureMatch {
     ]
     static func available(_ world:PhoneWorld)->[Challenge] {
         let home=VeilArchive.authorized(world) ? Set(VeilArchive.homeMedia(world).filter{world.flags.contains("veil.viewed."+$0)}) : []
-        let browser=Set(RecoveredImageAnalysis.visible(world).filter{$0.source == .browser}.map(\.id))
+        // The former public-reference comparisons now require actual VEIL
+        // observations of relocated originals, plus their earned source pages.
+        let relocated=Set(RecoveredImageAnalysis.visible(world).filter{$0.source == .veil}.map(\.id))
+            .intersection(LumaWebCatalog.restrictedMedia)
         let reflection=Set(VeilArchive.reflectionMedia(world).filter{world.flags.contains("veil.viewed."+$0)})
         return all.filter { c in
             let visible:Set<String>
             switch c.id {
-            case "archive-door-locks","studio-sign-review":visible=browser
+            case "archive-door-locks","studio-sign-review":visible=relocated
             case "veil-reflection-case":visible=reflection
             default:visible=home
             }

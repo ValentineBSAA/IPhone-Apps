@@ -128,6 +128,7 @@ import XCTest
         store.inspectWebAttachment(pair[0])
         XCTAssertNil(RecoveredImageAnalysis.record(pair[0],in:store.state))
         store.recordVeilObservation(pair[0])
+        XCTAssertEqual(RecoveredImageAnalysis.record(pair[0],in:store.state)?.source,.veil)
         XCTAssertFalse(store.recordPhotoFeatureMatch("archive-door-locks",first:4,second:4))
         store.inspectWebAttachment(pair[1])
         store.recordVeilObservation(pair[1])
@@ -205,6 +206,7 @@ import XCTest
             store.visitWebRecord(id)
             for asset in LumaWebCatalog.page(id)?.images ?? [] {store.inspectWebAttachment(asset);store.recordVeilObservation(asset)}
         }
+        XCTAssertTrue(assets.allSatisfy{RecoveredImageAnalysis.record($0,in:store.state)?.source == .veil})
         XCTAssertFalse(store.recordPhotoFeatureMatch("studio-sign-review",first:0,second:2))
         XCTAssertTrue(store.recordPhotoFeatureMatch("studio-sign-review",first:2,second:0))
         XCTAssertEqual(RecoveredImageAnalysis.visible(store.state).filter{assets.contains($0.id)}.count,10)

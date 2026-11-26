@@ -10,7 +10,7 @@ import XCTest
         XCTAssertFalse(w.state.flags.contains(InvestigationReview.read))
         XCTAssertFalse(LumaWebCatalog.visible(w.state.flags).contains { $0.id == InvestigationReview.pageID })
         var state = w.state
-        state.flags.formUnion(["phone-tutorial-finished","web.visited.studio","investigation.chapter2.reviewed","web.visited.archive-ledger","web.visited.studio-news"])
+        state.flags.formUnion(["phone-tutorial-finished","web.visited.studio","web.visited.studio-notes","investigation.contact.received","web.visited.archive","investigation.chapter2.reviewed","web.visited.archive-ledger","web.visited.studio-news"])
         let advanced = PhoneWorldStore(initial: state, persistToDisk: false)
         advanced.advanceInvestigation(now: now)
         advanced.advanceInvestigation(now: now)

@@ -8,7 +8,7 @@ import XCTest
         XCTAssertFalse(base.finishInvestigation(.minimal, now: now))
         XCTAssertFalse(LumaWebCatalog.visible(base.state.flags).contains { $0.id == InvestigationResolution.indexID })
         var s = base.state
-        s.flags.formUnion(["phone-tutorial-finished","web.visited.studio","investigation.chapter2.reviewed","web.visited.archive-ledger","web.visited.studio-news"])
+        s.flags.formUnion(["phone-tutorial-finished","web.visited.studio","web.visited.studio-notes","investigation.contact.received","web.visited.archive","investigation.chapter2.reviewed","web.visited.archive-ledger","web.visited.studio-news"])
         let w = PhoneWorldStore(initial: s, persistToDisk: false)
         w.advanceInvestigation(now: now)
         w.advanceConnectedMail(now: now.addingTimeInterval(26))
