@@ -26,6 +26,8 @@ struct OpeningArt: View {
 @MainActor enum RestartAudio {
     static let assetNames = ["RespringDown", "RespringUp", "UserspaceDown", "UserspaceUp"]
     private static var player: AVAudioPlayer?
+    private static var owner: UUID?
+    private static var completion: Task<Void, Never>?
     static func play(_ name: String, enabled: Bool) {
         PhoneSensoryEngine.stopPreview()
         stop()
@@ -42,14 +44,31 @@ struct OpeningArt: View {
             candidate.volume = 0.82
             candidate.numberOfLoops = 0
             candidate.prepareToPlay()
+            let token = UUID()
+            PhoneSensoryEngine.beginMediaAudio(token)
+            owner = token
             guard candidate.play() else {
+                stop()
                 OpeningQA.record("Restart audio failed to start: " + name); return
             }
             player = candidate
+            completion = Task { @MainActor in
+                while !Task.isCancelled, owner == token, candidate.isPlaying,
+                      UIApplication.shared.applicationState == .active {
+                    do { try await Task.sleep(nanoseconds: 50_000_000) } catch { return }
+                }
+                guard !Task.isCancelled, owner == token else { return }
+                stop()
+            }
             OpeningQA.record("Restart audio started: " + name)
         } catch { OpeningQA.record("Restart audio unavailable: " + name) }
     }
-    static func stop() { player?.stop(); player = nil }
+    static func stop() {
+        completion?.cancel(); completion = nil
+        player?.stop(); player = nil
+        if let owner { PhoneSensoryEngine.endMediaAudio(owner) }
+        owner = nil
+    }
 }
 
 enum RestartPhase: Equatable {

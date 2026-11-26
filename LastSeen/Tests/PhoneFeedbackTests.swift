@@ -30,6 +30,25 @@ final class PhoneFeedbackTests: XCTestCase {
         }
     }
 
+    func testLiveCueAdmissionAndAuthenticationCancellationClassification() {
+        for cue in PhoneCue.allCases {
+            for enabled in [false, true] {
+                for preference in [false, true] {
+                    XCTAssertEqual(PhoneAudioPriority.allowsCue(cue, horrorEnabled: enabled,
+                        horrorPreference: preference), !cue.isHorror || (enabled && preference))
+                }
+            }
+            XCTAssertEqual(PhoneAudioPriority.cancelsForAuthentication(cue), cue.isAuthentication)
+        }
+        XCTAssertFalse(PhoneAudioPriority.cancelsForAuthentication(nil))
+        var queue = PhoneAudioQueue()
+        queue.append(.init(cue: .message, horrorEnabled: false))
+        queue.append(.init(cue: .authenticationFailed, horrorEnabled: false))
+        queue.append(.init(cue: .timerCompleted, horrorEnabled: false))
+        queue.cancelAuthentication()
+        XCTAssertEqual(queue.entries.map(\.cue), [.message, .timerCompleted])
+    }
+
     func testAudioAdmissionPreservesAlertsAndAuthenticationPriority() {
         XCTAssertEqual(PhoneAudioPriority.decision(for: .passcodeKeypress, playing: .message, waiting: false), .drop)
         XCTAssertEqual(PhoneAudioPriority.decision(for: .outgoing, playing: nil, waiting: true), .drop)

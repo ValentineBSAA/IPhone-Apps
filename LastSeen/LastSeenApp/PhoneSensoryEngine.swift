@@ -217,6 +217,10 @@ enum PhoneMailArrival {
 /// sounds are expendable when a real notification needs the player.
 enum PhoneAudioPriority {
     enum Decision: Equatable { case start, enqueue, drop }
+    static func allowsCue(_ cue: PhoneCue, horrorEnabled: Bool, horrorPreference: Bool) -> Bool {
+        !cue.isHorror || (horrorEnabled && horrorPreference)
+    }
+    static func cancelsForAuthentication(_ cue: PhoneCue?) -> Bool { cue?.isAuthentication == true }
     static func interaction(_ cue: PhoneCue) -> Bool {
         cue.isKeypress || cue == .outgoing
     }
@@ -409,6 +413,14 @@ enum PhoneSensoryEngine {
     static func cancelAuthentication() {
         deferredAuthentication?.cancel(); deferredAuthentication = nil
         queued.cancelAuthentication()
+        if PhoneAudioPriority.cancelsForAuthentication(currentCue) {
+            audio?.stop(); audio = nil; currentCue = nil
+            if !queued.isEmpty { scheduleDrain() }
+        }
+        if case .cue(let cue)? = currentHapticProfile, cue.isAuthentication {
+            try? hapticPlayer?.stop(atTime: CHHapticTimeImmediate)
+            hapticPlayer = nil; currentHapticProfile = nil; hapticUntil = 0
+        }
         hapticQueue.removeAll {
             if case .cue(let cue) = $0 { return cue.isAuthentication }
             return false
@@ -453,7 +465,8 @@ enum PhoneSensoryEngine {
     @discardableResult
     static func play(_ cue: PhoneCue, sound: Bool, haptics: Bool, horrorEnabled: Bool, hapticProfile: PhoneHapticProfile? = nil) -> Double {
         guard UIApplication.shared.applicationState == .active,
-              !cue.isHorror || horrorEnabled else { return 0 }
+              PhoneAudioPriority.allowsCue(cue, horrorEnabled: horrorEnabled,
+                  horrorPreference: preference("lastseen.lab.horrorEffects")) else { return 0 }
         // Dispatch tactile feedback on arrival, not after the audio queue.
         if haptics && preference("lastseen.lab.messageHaptics") {
             requestHaptics(hapticProfile ?? .cue(cue))
