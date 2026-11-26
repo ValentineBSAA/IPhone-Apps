@@ -33,7 +33,7 @@ def run(archive, app):
     source = (app / "RelayCatalog.swift").read_text()
     ids = set(re.findall(r'RelayPackage\("([^"]+)"', source))
     approved = {p["id"] for p in packages if p["status"] == "existing_catalog"}
-    if ids - {"relay-support"} != approved or len(approved) != 28:
+    if ids - {"relay-support", "veil"} != approved or len(approved) != 28 or "veil" not in ids:
         raise ValueError("Package help does not match current Relay catalog")
     if {g["filename"] for g in guides} != {p.split("/", 1)[1] for p in data if p.startswith("Docs/")}:
         raise ValueError("Guide filenames do not match DOCX files")

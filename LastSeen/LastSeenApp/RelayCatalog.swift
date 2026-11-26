@@ -60,6 +60,7 @@ enum RelayCatalog {
         return requirements(id).isSubset(of: effective) && conflicts(id).isDisjoint(with: optional)
     }
     static let packages = [
+        RelayPackage("veil","VEIL","1.0.0","utilities","Applications","eye.slash","Local anonymous browser","Browse authorized fictional archived pages. No real network connection."),
         RelayPackage("relay-support", "Relay Support", "1.0.0", "utilities", "Applications", "headset", "Personal technical support", "Install Alex Morgan's standalone support application for local technical guides. Removing the package hides the app but preserves its separate history. Available during simulated Safe Mode."),
         RelayPackage("bootstrap", "Patchline Bootstrap", "2.0.0", "core", "System", "shippingbox.fill", "Essential rootless environment", "Core package catalog and services for this phone.", essential: true),
         RelayPackage("loader", "Patchline Loader", "1.2.0", "core", "System", "cpu", "LumaShell tweak support", "Loads the phone's bundled customization settings.", essential: true),
@@ -113,6 +114,7 @@ enum RelayCatalog {
     }
     static func available(_ id: String, flags: Set<String>) -> Bool {
         guard let p=package(id),sourceAuthorized(p.source,flags:flags) else{return false}
+        if id == "veil" { return ["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery].allSatisfy { flags.contains($0) } }
         if id == "fieldnotes" { return RecoveryCircuit.unlocked(flags) }
         if let tool = LumaUtility(rawValue: id) { return flags.contains(tool.flag) }
         return true

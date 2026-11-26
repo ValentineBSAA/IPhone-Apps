@@ -18,6 +18,10 @@ struct LumaMessagesDirectory: View {
              world.messages(person).contains { $0.text.localizedCaseInsensitiveContains(search) })
         }.sorted { (world.messages($0).last?.at ?? .distantPast) > (world.messages($1).last?.at ?? .distantPast) }
     }
+    private var historicalMatch: Bool {
+        VeilArchive.authorized(world.state) && !unreadOnly &&
+        (search.isEmpty || VeilArchive.contactName.localizedCaseInsensitiveContains(search))
+    }
     var body: some View {
         List {
             Section {
@@ -26,7 +30,12 @@ struct LumaMessagesDirectory: View {
                     Text("Unread").tag(true)
                 }.pickerStyle(.segmented)
             }.listRowBackground(Color.clear).listRowSeparator(.hidden)
-            if people.isEmpty {
+            if historicalMatch {
+                NavigationLink { VeilHistoricalConversation() } label: {
+                    Label("Unknown Number · Recovered conversation",systemImage:"person.crop.circle.badge.questionmark")
+                }
+            }
+            if people.isEmpty && !historicalMatch {
                 Label(unreadOnly ? "No unread conversations" : "No conversations found", systemImage: "bubble.left.and.bubble.right")
                     .foregroundColor(.secondary)
             }
@@ -79,6 +88,11 @@ struct LumaContactsDirectory: View {
                             Text("My Card").font(.subheadline).foregroundColor(.secondary)
                         }
                     }.padding(.vertical, 10)
+                }
+            }
+            if !messagePicker && VeilArchive.authorized(world.state) && (search.isEmpty || VeilArchive.contactName.localizedCaseInsensitiveContains(search)) {
+                NavigationLink { VeilHistoricalConversation() } label: {
+                    Label("Unknown Number · Recovered sender",systemImage:"person.crop.circle.badge.questionmark")
                 }
             }
             if people.isEmpty { Text("No contacts found").foregroundColor(.secondary) }

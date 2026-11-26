@@ -83,8 +83,9 @@ struct PhoneLabView: View {
     private func tweak(_ id: String) -> Bool { RelayCatalog.tweakActive(id, installed: relayInstalled, safeMode: safeMode, flags: world.state.flags) }
     private var fieldNotesAvailable: Bool { RecoveryCircuit.unlocked(world.state.flags) && tweak("fieldnotes") }
     private var supportAvailable: Bool { RelaySupportAccess.available(installed: relayInstalled, flags: world.state.flags) }
+    private var veilAvailable: Bool { VeilArchive.installed(world.state, packages: relayInstalled, safeMode: safeMode) }
     private func appAvailable(_ app: LabApp) -> Bool {
-        (app != .fieldNotes || fieldNotesAvailable) && (app != .relaySupport || supportAvailable)
+        (app != .fieldNotes || fieldNotesAvailable) && (app != .relaySupport || supportAvailable) && (app != .veil || veilAvailable)
     }
     private func utilityActive(_ tool: LumaUtility) -> Bool { tweak(tool.rawValue) && RelayCatalog.available(tool.rawValue, flags: world.state.flags) }
     private var fiveColumns: Bool { tweak("fivegrid") || (utilityActive(.lumaplus) && utilityFive) }
@@ -639,7 +640,7 @@ struct PhoneLabView: View {
         GeometryReader { geometry in
             let layout = LumaHomeLayout(width:geometry.size.width,height:geometry.size.height,
                                         fiveColumns:fiveColumns,smallIcons:smallIcons)
-            let pages = LumaHomeLayout.pages(columns:layout.columns,rows:layout.rows,fieldNotes:fieldNotesAvailable,support:supportAvailable)
+            let pages = LumaHomeLayout.pages(columns:layout.columns,rows:layout.rows,fieldNotes:fieldNotesAvailable,support:supportAvailable,veil:veilAvailable)
             let selected = min(max(0,homePage),pages.count-1)
             ZStack {
                 VStack(spacing:layout.spacing) {
@@ -1173,6 +1174,7 @@ struct PhoneLabView: View {
 
     @ViewBuilder private func destination(_ app: LabApp) -> some View {
         switch app {
+        case .veil: if veilAvailable { VeilBrowser() } else { Text("Package unavailable") }
         case .relaySupport: if supportAvailable { RelaySupportView() } else { Text("Package unavailable") }
         case .fieldNotes: if fieldNotesAvailable { FieldNotesView() } else { Text("Package unavailable") }
         case .saves: LumaSaveView(store: saves, onLoad: loadCheckpoint)
@@ -1210,8 +1212,9 @@ private enum LabPanel: String, Identifiable {
 }
 
 enum LabApp: String, CaseIterable, Identifiable {
-    case relaySupport = "Relay Support", fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves", afterframe = "Afterframe", connective = "Connective", commonGround = "CommonGround", workstation = "Workstation", havenWatch = "HavenWatch", dayblink = "Dayblink", motionwell = "Motionwell", voiceMemos = "Voice Memos", assistant = "Luma Assistant"
+    case veil = "VEIL", relaySupport = "Relay Support", fieldNotes = "Field Notes", phone = "Phone", messages = "Messages", contacts = "Contacts", photos = "Photos", notes = "Notes", calendar = "Calendar", mail = "Mail", clock = "Clock", calculator = "Calculator", settings = "Settings", files = "Files", browser = "Browser", relay = "Relay", patchline = "Patchline", saves = "Game Saves", afterframe = "Afterframe", connective = "Connective", commonGround = "CommonGround", workstation = "Workstation", havenWatch = "HavenWatch", dayblink = "Dayblink", motionwell = "Motionwell", voiceMemos = "Voice Memos", assistant = "Luma Assistant"
     var foundationIcon: String? {
+        if self == .veil { return "Icon_Veil" }
         if self == .relaySupport { return "Icon_RelaySupport" }
         if self == .fieldNotes { return "Jailbreak_FieldNotes" }
         if self == .voiceMemos { return "Icon_VoiceMemos" }
@@ -1223,6 +1226,7 @@ enum LabApp: String, CaseIterable, Identifiable {
     var inDock: Bool { [.phone, .messages, .browser, .settings].contains(self) }
     var symbol: String {
         switch self {
+        case .veil: return "eye.slash"
         case .relaySupport: return "headset"
         case .fieldNotes: return "note.text"
         case .phone: return "phone.fill"
@@ -1253,6 +1257,7 @@ enum LabApp: String, CaseIterable, Identifiable {
     }
     var color: Color {
         switch self {
+        case .veil: return .purple
         case .relaySupport: return .teal
         case .fieldNotes: return .teal
         case .phone: return .green
