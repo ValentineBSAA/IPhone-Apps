@@ -96,7 +96,23 @@ import UIKit
         let now=Date(timeIntervalSince1970:1_800_000_000)
         w.recordHavenFollowupOpened()
         XCTAssertNil(LumaAssistantEvidence.selected(HavenWatchEvents.followupRecordID,in:w.state))
+        // The optional route remains reachable after the main ending,
+        // but no new suspense alert is produced.
+        var endedBefore=w.state
+        endedBefore.flags.insert(InvestigationResolution.completed)
+        let postEnding=PhoneWorldStore(initial:endedBefore,persistToDisk:false)
+        postEnding.advanceHavenFollowup(now:now)
+        XCTAssertNotNil(HavenWatchEvents.followup(postEnding.state))
+        XCTAssertFalse(LumaActivityCatalog.visible(postEnding.state).contains{$0.id == HavenWatchEvents.followupID})
+        postEnding.recordHavenFollowupOpened()
+        XCTAssertNotNil(LumaAssistantEvidence.selected(HavenWatchEvents.followupRecordID,in:postEnding.state))
         w.advanceHavenFollowup(now:now)
+        var endedPending=w.state
+        endedPending.flags.insert(InvestigationResolution.completed)
+        let postPending=PhoneWorldStore(initial:endedPending,persistToDisk:false)
+        postPending.advanceHavenFollowup(now:now.addingTimeInterval(1))
+        XCTAssertNotNil(HavenWatchEvents.followup(postPending.state))
+        XCTAssertFalse(LumaActivityCatalog.visible(postPending.state).contains{$0.id == HavenWatchEvents.followupID})
         w.advanceHavenFollowup(now:now.addingTimeInterval(44))
         XCTAssertNil(HavenWatchEvents.followup(w.state))
         w.advanceHavenFollowup(now:now.addingTimeInterval(46),priorJustDelivered:true)
