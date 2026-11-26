@@ -2,6 +2,12 @@ name: LAST SEEN — native iOS 16 horror game
 
 on:
   workflow_dispatch:
+    inputs:
+      package_ipa:
+        description: 'Explicitly authorize final IPA packaging (after all release gates)'
+        required: true
+        type: boolean
+        default: false
   push:
     branches:
       - feature/last-seen-ios16
@@ -44,7 +50,7 @@ concurrency:
 
 jobs:
   build-test-package:
-    name: Native iPhone build, simulator tests, unsigned IPA
+    name: Native iPhone compile and simulator acceptance (IPA opt-in)
     runs-on: macos-15
     timeout-minutes: 55
     defaults:
@@ -279,26 +285,31 @@ jobs:
         timeout-minutes: 20
         run: |
           set -euo pipefail
-          SIMULATOR_ID="$(xcrun simctl list devices available -j | python3 -c 'import json,sys;d=json.load(sys.stdin);print(next((x["udid"] for devices in d["devices"].values() for x in devices if x.get("isAvailable") and x.get("name","").startswith("iPhone")),""))')"
+          SIMULATOR_ID="$(xcrun simctl list devices available -j | python3 -c 'import json,sys;d=json.load(sys.stdin);phones=[x for devices in d["devices"].values() for x in devices if x.get("isAvailable") and x.get("name","").startswith("iPhone")];phones.sort(key=lambda x: x.get("name")!="iPhone 16e");print(phones[0]["udid"] if phones else "")')"
           if [ -z "$SIMULATOR_ID" ]; then
             echo "::error::iPhone simulator unavailable. Tests must not be silently skipped."
             exit 1
           fi
+          echo "SIMULATOR_ID=$SIMULATOR_ID" >> "$GITHUB_ENV"
+          xcrun simctl list devices available | grep -F "$SIMULATOR_ID"
+          echo "Simulator UDID: $SIMULATOR_ID" >> "$GITHUB_STEP_SUMMARY"
           xcodebuild -project LastSeen.xcodeproj \
             -scheme LastSeen \
             -configuration Debug \
             -sdk iphonesimulator \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath build-simulator \
+            -resultBundlePath build-simulator/Acceptance.xcresult \
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO \
             test
+          test -d build-simulator/Acceptance.xcresult
+          echo "Native tests completed at $GITHUB_SHA; simulator result bundle retained." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Capture actual simulator permission screen
         run: |
           set -euo pipefail
-          SIMULATOR_ID="$(xcrun simctl list devices available -j | python3 -c 'import json,sys;d=json.load(sys.stdin);print(next((x["udid"] for devices in d["devices"].values() for x in devices if x.get("isAvailable") and x.get("name","").startswith("iPhone")),""))')"
-          test -n "$SIMULATOR_ID"
+          test -n "${SIMULATOR_ID:-}"
           xcrun simctl boot "$SIMULATOR_ID" || true
           xcrun simctl bootstatus "$SIMULATOR_ID" -b
           xcrun simctl install "$SIMULATOR_ID" build-simulator/Build/Products/Debug-iphonesimulator/LastSeen.app
@@ -317,6 +328,7 @@ jobs:
           retention-days: 14
 
       - name: Package unsigned iPhone IPA
+        if: github.event_name == 'workflow_dispatch' && inputs.package_ipa == true
         run: |
           set -euo pipefail
           mkdir -p dist/Payload
@@ -329,6 +341,7 @@ jobs:
           python3 Tools/verify_device_assets.py --ipa dist/Last-Seen-v1.9.0-iOS16-unsigned.ipa --app build/Build/Products/Release-iphoneos/LastSeen.app
 
       - name: Publish unsigned IPA for user-side installation
+        if: github.event_name == 'workflow_dispatch' && inputs.package_ipa == true
         uses: actions/upload-artifact@v4
         with:
           name: LAST-SEEN-v1.9.0-iOS16-unsigned
@@ -336,11 +349,15 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Record validation-only mode
+        if: github.event_name != 'workflow_dispatch' || inputs.package_ipa != true
+        run: echo "Native acceptance only. IPA packaging and publication were not authorized." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Keep simulator test results for debugging
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: LAST-SEEN-simulator-results
-          path: LastSeen/build-simulator/Logs/Test/*.xcresult
+          path: LastSeen/build-simulator/Acceptance.xcresult
           if-no-files-found: ignore
           retention-days: 7
