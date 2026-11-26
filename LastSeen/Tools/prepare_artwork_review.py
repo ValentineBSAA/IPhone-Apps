@@ -17,7 +17,7 @@ PACKS = (
      "0d7b45bc6bc2ec65d77c2fb47c41ed9879fb79da0e610bfd5a07fa9d30ab0e10",
      46400998, "WorldPhoto_E01_", 18),
 )
-ASSIGNED = {f"Recovered_B27_{i:02}" for i in (2, 3, 13, 18, 26, 27, 29)}
+ASSIGNED = {f"Recovered_B27_{i:02}" for i in (1, 2, 3, 13, 14, 18, 23, 25, 26, 27, 29)}
 
 
 def require(condition, message):
@@ -74,7 +74,7 @@ def prepare(root, output):
     require(not output.exists(), "Choose a new output directory; existing reviews are never overwritten.")
     # Validate both complete archives before creating any review output.
     entries = [entry for pack in PACKS for entry in inspect_pack(root, pack)]
-    require(len(entries) == 40, "Expected 40 outstanding originals")
+    require(len(entries) == 36, "Expected 36 outstanding originals")
     output.mkdir(parents=True)
     originals = output / "originals"
     originals.mkdir()
@@ -95,7 +95,7 @@ def prepare(root, output):
         json.dumps({"review_complete": False, "runtime_import": False,
                     "assets": [record for _, _, record in entries]},
                    indent=2) + "\n", encoding="utf-8")
-    print("Prepared 40 pending originals, 5 contact sheets and a private ledger.")
+    print(f"Prepared {len(entries)} pending originals, {(len(entries)+7)//8} contact sheets and a private ledger.")
     print("No gameplay assignment or runtime import has been performed.")
 
 

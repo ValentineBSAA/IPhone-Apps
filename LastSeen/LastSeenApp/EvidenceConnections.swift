@@ -351,12 +351,19 @@ enum PhotoFeatureMatch {
         .init(id:"home-seating",title:"A familiar seat",
               assets:["VEIL_Home_02","VEIL_Home_06"],target:"Find the beige sofa cushions on the left side of each photograph.",
               regions:[[0,3],[3,6]],textClues:["The beige back and seat cushions fill the left side around the upper and middle rows.","The beige cushions occupy the middle and lower left side of the view."],
-              note:"Both copies show beige seating beside a coffee table; similar furnishings are not unique identifiers.")
+              note:"Both copies show beige seating beside a coffee table; similar furnishings are not unique identifiers."),
+        .init(id:"archive-door-locks",title:"Recurring hardware",assets:["Recovered_B27_23","Recovered_B27_25"],
+              target:"Locate the two round dark door locks on both originals.",
+              regions:[[4],[4]],textClues:["The locks sit one above the other on the door frame, in the central cell.","The corresponding pair of round locks is again in the central cell."],
+              note:"Both frames show the same arrangement of two round locks. The dark outline differs, but this does not establish capture order or identity.")
     ]
     static func available(_ world:PhoneWorld)->[Challenge] {
-        guard VeilArchive.authorized(world) else{return []}
-        let visible=Set(VeilArchive.homeMedia(world).filter{world.flags.contains("veil.viewed."+$0)})
-        return all.filter { c in c.assets.allSatisfy{visible.contains($0)} }
+        let home=VeilArchive.authorized(world) ? Set(VeilArchive.homeMedia(world).filter{world.flags.contains("veil.viewed."+$0)}) : []
+        let browser=Set(RecoveredImageAnalysis.visible(world).filter{$0.source == .browser}.map(\.id))
+        return all.filter { c in
+            let visible=c.id=="archive-door-locks" ? browser:home
+            return c.assets.allSatisfy{visible.contains($0)}
+        }
     }
     static func challenge(_ a:String,_ b:String,in world:PhoneWorld)->Challenge? {
         available(world).first{Set($0.assets.map{"image:"+$0}) == Set([a,b])}
@@ -405,7 +412,7 @@ struct PhotoFeatureMatchView:View {
                     }
                 }
                 ForEach(0..<2,id:\.self) { i in
-                    Section(VeilArchive.mediaTitle(c.assets[i],in:world.state) ?? "Recovered photograph") {
+                    Section(VeilArchive.mediaTitle(c.assets[i],in:world.state) ?? RecoveredImageAnalysis.record(c.assets[i],in:world.state)?.title ?? "Recovered photograph") {
                         let selected=i==0 ? first:second
                         if reveal && !textOnly && VeilArchive.allowsImages(security),
                            let image=PortraitImages.load(c.assets[i]) {

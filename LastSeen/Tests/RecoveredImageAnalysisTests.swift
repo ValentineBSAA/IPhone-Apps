@@ -113,6 +113,32 @@ import XCTest
         XCTAssertFalse(PhotoFeatureMatch.selectionCurrent("home-counter",epoch:epoch,currentEpoch:epoch,active:false,in:world))
         XCTAssertFalse(PhotoFeatureMatch.selectionCurrent("missing-challenge",epoch:epoch,currentEpoch:epoch,active:true,in:world))
     }
+    func testAdditionalOriginalsRequireEarnedPagesAndBothInspections() throws {
+        var world=RestoredPhoneBackup.snapshot()
+        let pair=["Recovered_B27_23","Recovered_B27_25"]
+        let gate:Set<String>=["phone-tutorial-finished","web.visited.studio","investigation.contact.received","web.visited.archive","web.visited.archive-collection","investigation.chapter2.reviewed","web.visited.archive-ledger"]
+        XCTAssertFalse(LumaWebCatalog.page("archive-copy-pair")?.available(world.flags) ?? true)
+        world.flags.formUnion(gate)
+        XCTAssertTrue(LumaWebCatalog.page("archive-copy-pair")?.available(world.flags) ?? false)
+        let store=PhoneWorldStore(initial:world,persistToDisk:false)
+        store.inspectWebAttachment(pair[0])
+        XCTAssertNil(RecoveredImageAnalysis.record(pair[0],in:store.state))
+        store.visitWebRecord("archive-copy-pair")
+        store.inspectWebAttachment(pair[0])
+        XCTAssertFalse(store.recordPhotoFeatureMatch("archive-door-locks",first:4,second:4))
+        store.inspectWebAttachment(pair[1])
+        XCTAssertFalse(store.recordPhotoFeatureMatch("archive-door-locks",first:0,second:4))
+        XCTAssertTrue(store.recordPhotoFeatureMatch("archive-door-locks",first:4,second:4))
+        XCTAssertTrue(LumaAssistantEvidence.selected("image:"+pair[0],in:store.state)?.excerpts.contains{$0.contains("Recorded visible-detail comparison")} ?? false)
+        XCTAssertTrue(store.completeRecoveredImageAnalysis(pair[1],source:1,limit:0))
+        XCTAssertNotNil(ImageInterpretation.available(pair[1],mode:.scanlines,in:store.state))
+        var restored=try JSONDecoder().decode(PhoneWorld.self,from:JSONEncoder().encode(store.state))
+        restored.flags.remove("web.visited.archive-ledger")
+        XCTAssertNil(RecoveredImageAnalysis.record(pair[0],in:restored))
+        XCTAssertFalse(PhotoFeatureMatch.available(restored).contains{$0.id=="archive-door-locks"})
+        XCTAssertNil(LumaAssistantEvidence.selected("image:"+pair[0],in:restored))
+        XCTAssertTrue(pair.allSatisfy{PortraitImages.load($0) != nil})
+    }
     func testRegionalLightPairValidation() {
         let sample=[10,80,220,10,110,220,40,90,160]
         XCTAssertTrue(RecoveredImageAnalysis.validLightPair(sample,dark:0,bright:2))

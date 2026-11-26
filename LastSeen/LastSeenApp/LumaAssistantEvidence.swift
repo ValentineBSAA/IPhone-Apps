@@ -127,7 +127,9 @@ enum LumaAssistantEvidence {
             var facts=["This is a recovered local reference in the "+item.source.title+". Original capture and photographer are not independently established."]
             if let summary=RecoveredImageAnalysis.summary(item.id,in:world){facts.append(summary)}
             if let light=RecoveredImageAnalysis.lightNote(item.id,in:world){facts.append(light)}
+            if item.source == .browser,let description=LumaWebCatalog.referenceDescriptions[item.id] {facts.append("Visible scene: "+description)}
             facts += ImageInterpretation.notes(item.id,in:world)
+            facts += PhotoFeatureMatch.notes(item.id,in:world)
             result.append(.init(id:"image:"+item.id,title:item.title,kind:.image,excerpts:facts))
         }
         return result

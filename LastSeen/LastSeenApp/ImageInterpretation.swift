@@ -53,7 +53,9 @@ enum ImageInterpretation {
         .init(id:"interpretation-09",asset:"VEIL_Home_06",mode:.echo,region:3,note:"The interpretation adds a broken outline. Keep it separate from the visible furnishings and original pixels.",pattern:.outline),
         .init(id:"interpretation-10",asset:"VEIL_Home_01",mode:.echo,region:2,note:"The authored echo introduces a vague upright shadow. The original does not establish an additional person.",pattern:.shadowFigure),
         .init(id:"interpretation-11",asset:"VEIL_Home_03",mode:.scanlines,region:3,note:"A fractured reflective contour is introduced by the reconstruction. It is not an authenticated reflection in the photograph.",pattern:.reflectionFragment),
-        .init(id:"interpretation-12",asset:"VEIL_Home_05",mode:.echo,region:1,note:"An incomplete frame-like shape is added by the interpretive layer. It cannot establish a hidden opening or object.",pattern:.brokenFrame)
+        .init(id:"interpretation-12",asset:"VEIL_Home_05",mode:.echo,region:1,note:"An incomplete frame-like shape is added by the interpretive layer. It cannot establish a hidden opening or object.",pattern:.brokenFrame),
+        .init(id:"interpretation-13",asset:"Recovered_B27_01",mode:.echo,region:6,note:"A displaced contour is added by the echo layer. It is not another object authenticated in the original.",pattern:.displacedCorners),
+        .init(id:"interpretation-14",asset:"Recovered_B27_25",mode:.scanlines,region:8,note:"An incomplete rectangular mark appears only in the reconstruction. It cannot establish a hidden opening or camera.",pattern:.brokenFrame)
     ]
     static let regions=["Upper left","Upper middle","Upper right","Middle left","Center","Middle right","Lower left","Lower middle","Lower right"]
     static func modes(_ asset:String,in world:PhoneWorld)->[Mode] {
