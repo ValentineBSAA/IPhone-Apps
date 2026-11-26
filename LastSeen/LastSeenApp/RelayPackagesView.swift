@@ -103,7 +103,10 @@ struct RelayPackagesView: View {
             }.padding(.horizontal, 5).background(.ultraThinMaterial)
         }
         .navigationTitle("Relay").navigationBarTitleDisplayMode(.inline)
-        .onAppear { recoverSources() }
+        .onAppear {
+            if RelayTransactionReceipt.recover() {recoverSources()}
+            else {notice="Package recovery is pending. No new transaction can start."}
+        }
         .onChange(of: sources) { _ in recoverSources() }
         .onChange(of:earnedFlags){_ in recoverSources()}
         .sheet(item: $selected) { p in
@@ -426,22 +429,19 @@ struct RelayPackagesView: View {
         notice = "\(p.title) queued for \(action.rawValue.lowercased())"
     }
     private var confirmedValid:Bool {
-        RelayPlan.valid(confirmed,sources:sourceIDs,installed:ids,flags:earnedFlags,versions:versionMap)
+        UserDefaults.standard.object(forKey:RelayTransactionReceipt.key)==nil && RelayPlan.valid(confirmed,sources:sourceIDs,installed:ids,flags:earnedFlags,versions:versionMap)
     }
     @discardableResult private func applyConfirmed() -> Bool {
         guard phase == .active,confirmedValid else {
             confirmed = []; notice = "Transaction cancelled: package state changed"; return false
         }
-        let previous = ids
-        let (next, nextVersions) = RelayPlan.applying(confirmed, to: ids, versions: versionMap)
-        installed = RelayCatalog.encoded(next)
-        versions = RelayCatalog.encodedVersions(nextVersions)
-        if !previous.contains("midnight") && next.contains("midnight") { wallpaper = 2 }
-        if !next.contains("midnight") && wallpaper == 2 { wallpaper = 0 }
-        compactIcons = next.contains("compact")
-        tealTheme = next.contains("teal")
-        let entries = confirmed.map { $0.action.rawValue + " " + $0.package.title + " " + $0.package.version }
-        history = (entries + history.split(separator: "\n").map(String.init)).prefix(40).joined(separator: "\n")
+        let target=RelayTransactionReceipt.Snapshot.planned(changes:confirmed,installed:ids,
+            versions:versionMap,wallpaper:wallpaper,history:history)
+        guard RelayTransactionReceipt.commit(target) else {
+            confirmed=[];queue=[]
+            notice="Package commit could not finish. Reopen Relay to check recovery before making more changes."
+            return false
+        }
         OpeningQA.record("Relay transaction committed: \(confirmed.count) changes")
         notice = "\(confirmed.count) changes completed"
         queue.removeAll(); confirmed = []

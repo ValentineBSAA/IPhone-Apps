@@ -203,3 +203,66 @@ enum RelayPlan {
         return (ids, v)
     }
 }
+
+
+/// Idempotent roll-forward for the final simulated package commit only.
+/// The processing animation and unconfirmed queue never create a receipt.
+/// UserDefaults synchronization is best effort, not a filesystem transaction.
+@MainActor
+enum RelayTransactionReceipt {
+    static let key="lastseen.relay.pendingCommit"
+    struct Snapshot:Codable,Equatable {
+        let installed:String
+        let versions:String
+        let wallpaper:Int
+        let compactIcons:Bool
+        let tealTheme:Bool
+        let history:String
+        static func planned(changes:[RelayChange],installed:Set<String>,versions:[String:String],
+                            wallpaper:Int,history:String)->Self {
+            let (next,nextVersions)=RelayPlan.applying(changes,to:installed,versions:versions)
+            var nextWallpaper=wallpaper
+            if !installed.contains("midnight") && next.contains("midnight") {nextWallpaper=2}
+            if !next.contains("midnight") && nextWallpaper==2 {nextWallpaper=0}
+            let entries=changes.map{$0.action.rawValue+" "+$0.package.title+" "+$0.package.version}
+            return .init(installed:RelayCatalog.encoded(next),versions:RelayCatalog.encodedVersions(nextVersions),
+                         wallpaper:nextWallpaper,compactIcons:next.contains("compact"),tealTheme:next.contains("teal"),
+                         history:(entries+history.split(separator:"\n").map(String.init)).prefix(40).joined(separator:"\n"))
+        }
+    }
+    private struct Envelope:Codable {
+        let version:Int
+        let target:Snapshot
+    }
+    static func stage(_ target:Snapshot,defaults:UserDefaults)throws {
+        guard defaults.object(forKey:key)==nil else{throw CocoaError(.fileWriteUnknown)}
+        defaults.set(try JSONEncoder().encode(Envelope(version:1,target:target)),forKey:key)
+    }
+    @discardableResult
+    static func recover(defaults:UserDefaults = .standard)->Bool {
+        guard defaults.object(forKey:key) != nil else{return true}
+        guard let bytes=defaults.data(forKey:key),
+              let envelope=try? JSONDecoder().decode(Envelope.self,from:bytes),
+              envelope.version==1 else{return false}
+        let target=envelope.target
+        // Flush the intent before any individual field changes.
+        guard defaults.synchronize() else{return false}
+        defaults.set(target.installed,forKey:"lastseen.relay.installed")
+        defaults.set(target.versions,forKey:"lastseen.relay.versions")
+        defaults.set(target.wallpaper,forKey:"lastseen.lab.wallpaper")
+        defaults.set(target.compactIcons,forKey:"lastseen.relay.compactIcons")
+        defaults.set(target.tealTheme,forKey:"lastseen.relay.tealTheme")
+        defaults.set(target.history,forKey:"lastseen.relay.history")
+        guard defaults.synchronize() else{return false}
+        defaults.removeObject(forKey:key)
+        // A receipt that reappears after interruption is safe to replay.
+        _ = defaults.synchronize()
+        return true
+    }
+    static func commit(_ target:Snapshot,defaults:UserDefaults = .standard)->Bool {
+        guard defaults.object(forKey:key)==nil else{return false}
+        do {try stage(target,defaults:defaults)}
+        catch{return false}
+        return recover(defaults:defaults)
+    }
+}

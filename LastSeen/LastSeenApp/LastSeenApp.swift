@@ -5,6 +5,7 @@ import AVFoundation
 struct LastSeenApp: App {
     @UIApplicationDelegateAdaptor(LastSeenAppDelegate.self) private var appDelegate
     init() {
+        _ = RelayTransactionReceipt.recover()
         #if DEBUG && targetEnvironment(simulator)
         if ProcessInfo.processInfo.arguments.contains("--luma-relay-clean-test") {
             for key in ["installed","versions","history","safeMode","sources","compactIcons","tealTheme"] {

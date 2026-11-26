@@ -161,6 +161,7 @@ final class LumaSaveStore: ObservableObject {
     func write(_ slot: String, world: PhoneWorld, now: Date = Date(), quiet: Bool = false) -> Bool {
         guard validSlot(slot) else { return false }
         do {
+            guard RelayTransactionReceipt.recover(defaults:defaults) else{throw CocoaError(.fileWriteUnknown)}
             let prefs = Dictionary(uniqueKeysWithValues: Self.keys.compactMap { key in defaults.object(forKey: key).map { (key, $0) } })
             let bytes = try PropertyListSerialization.data(fromPropertyList: prefs, format: .binary, options: 0)
             guard world.version==1,playSeconds>=0,now.timeIntervalSinceReferenceDate.isFinite else{throw CocoaError(.fileWriteUnknown)}
@@ -206,6 +207,7 @@ final class LumaSaveStore: ObservableObject {
     }
     func restore(_ slot: String, into world: PhoneWorldStore, now: Date = Date()) -> Bool {
         do {
+            guard RelayTransactionReceipt.recover(defaults:defaults) else{throw CocoaError(.fileReadCorruptFile)}
             var value = try read(slot)
             var prefs = try preferences(value)
             // Preserve time remaining in fictional timers and pending conversations.

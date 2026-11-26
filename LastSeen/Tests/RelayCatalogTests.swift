@@ -2,6 +2,34 @@ import XCTest
 @testable import LastSeen
 
 final class RelayCatalogTests: XCTestCase {
+    @MainActor
+    func testPackageCommitReceiptRecoversPartialFieldsWithoutDuplicateHistory() throws {
+        let suite="relay-receipt-"+UUID().uuidString
+        let defaults=try XCTUnwrap(UserDefaults(suiteName:suite))
+        defer{defaults.removePersistentDomain(forName:suite)}
+        let package=try XCTUnwrap(RelayCatalog.package("compact"))
+        let changes=[RelayChange(package:package,action:.install)]
+        let target=RelayTransactionReceipt.Snapshot.planned(changes:changes,installed:[],versions:[:],
+            wallpaper:1,history:"Previous transaction")
+        try RelayTransactionReceipt.stage(target,defaults:defaults)
+        // Simulate interruption after the installed ID was written.
+        defaults.set(target.installed,forKey:"lastseen.relay.installed")
+        defaults.set(true,forKey:"lastseen.relay.safeMode")
+        XCTAssertTrue(RelayTransactionReceipt.recover(defaults:defaults))
+        XCTAssertEqual(defaults.string(forKey:"lastseen.relay.versions"),target.versions)
+        XCTAssertTrue(defaults.bool(forKey:"lastseen.relay.compactIcons"))
+        XCTAssertEqual(defaults.integer(forKey:"lastseen.lab.wallpaper"),1)
+        XCTAssertTrue(defaults.bool(forKey:"lastseen.relay.safeMode"))
+        XCTAssertEqual(defaults.string(forKey:"lastseen.relay.history"),target.history)
+        XCTAssertNil(defaults.object(forKey:RelayTransactionReceipt.key))
+        XCTAssertTrue(RelayTransactionReceipt.recover(defaults:defaults))
+        XCTAssertEqual(defaults.string(forKey:"lastseen.relay.history"),target.history)
+        defaults.set(Data("bad receipt".utf8),forKey:RelayTransactionReceipt.key)
+        XCTAssertFalse(RelayTransactionReceipt.recover(defaults:defaults))
+        XCTAssertFalse(RelayTransactionReceipt.commit(target,defaults:defaults))
+        XCTAssertEqual(defaults.string(forKey:"lastseen.relay.history"),target.history)
+    }
+
     func testCatalogAndSources() {
         XCTAssertEqual(Set(RelayCatalog.packages.map(\.id)).count, RelayCatalog.packages.count)
         XCTAssertEqual(Set(RelayCatalog.sources.map(\.id)).count, RelayCatalog.sources.count)
