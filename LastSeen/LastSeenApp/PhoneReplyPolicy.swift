@@ -58,7 +58,7 @@ enum PhoneReplyPolicy {
                 : "I'm not familiar with that. Are you trying to reach someone in the building?")
         }
         let reportedUnlock = ["figured out how to unlock","managed to unlock","already unlocked","unlocked it","got it unlocked"].contains { normalized.contains($0) }
-        let asksForAccess = ["how do i","how can i","can you","what is","what's","don't know how","couldn't","could not","haven't","have not","didn't","not unlocked"].contains { normalized.contains($0) }
+        let asksForAccess = ["how do i unlock","how can i unlock","can you unlock","what is her passcode","what’s her passcode","what's her passcode","don't know how to unlock","couldn't unlock","could not unlock","haven't unlocked","have not unlocked","didn't unlock","not unlocked"].contains { normalized.contains($0) }
         if neighbor == .maya && reportedUnlock && !asksForAccess {
             if intro && PhoneEverydayConversation.confirmsRepair(text) {
                 return PhoneReplyPlan(text: "Thanks for getting her phone working. I’m Maya, a friend of Nora’s. Could you check her Notes for the plans she mentioned?", startsTutorial: true)

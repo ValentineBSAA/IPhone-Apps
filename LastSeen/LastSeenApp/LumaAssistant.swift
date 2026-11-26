@@ -47,7 +47,7 @@ enum LumaAssistantPolicy {
         }
         if text.hasPrefix("open ") || text.hasPrefix("show ") {
             let name = String(text.dropFirst(5))
-            let aliases: [String: LabApp] = ["texts": .messages, "email": .mail, "emails": .mail, "pictures": .photos, "memos": .voiceMemos, "recordings": .voiceMemos, "videos": .motionwell, "security cameras": .havenWatch, "dark web": .veil, "anonymous browser": .veil, "tor browser": .veil]
+            let aliases: [String: LabApp] = ["texts": .messages, "email": .mail, "emails": .mail, "pictures": .photos, "memos": .voiceMemos, "recordings": .voiceMemos, "photo essays": .afterframe, "security cameras": .havenWatch, "dark web": .veil, "anonymous browser": .veil, "tor browser": .veil]
             if let app = aliases[name] ?? LabApp.allCases.first(where: { normalize($0.rawValue) == name }) {
                 guard c.availableApps.contains(app), app != .assistant else {
                     return .init(text: "That application isn't available in the current phone environment.", clipID: "unavailable")
@@ -236,14 +236,14 @@ struct LumaAssistantView: View {
         let previous = conversationTopic
         let previousTrack=guidanceTrack
         let known = LumaAssistantConversation.topic(text,previous:previous)
-        let initial = LumaAssistantConversation.reply(text,context:current,previous:previous,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount,evidenceID:evidenceID,visualReport:imageReport,imageSecurity:imageSecurity,previousGuidance:previousTrack)
+        let initial = LumaAssistantConversation.reply(text,context:current,previous:previous,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount,evidenceID:evidenceID,visualReport:imageReport,imageSecurity:imageSecurity,previousGuidance:previousTrack,recentTurns:conversationTurns)
         input = ""; focused = false
         if known == nil, initial.topic == .general, initial.answer.clipID == "conversation", interpretOnDevice, LumaIntentInterpreter.available {
             interpretation = Task { @MainActor in
-                let inferred = await LumaIntentInterpreter.interpret(text,previous:previous)
+                let inferred = await LumaIntentInterpreter.interpret(text,previous:previous,recentTurns:conversationTurns)
                 guard !Task.isCancelled,requestID==id,phase == .active else{return}
                 guard checkpointEpoch()==epoch,!accessSnapshot.revokes(access) else{clearTransientContext();lastAccess=accessSnapshot;return}
-                accept(text,LumaAssistantConversation.reply(text,context:context(),previous:previous,interpreted:inferred,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount,evidenceID:evidenceID,visualReport:imageReport,imageSecurity:imageSecurity,previousGuidance:previousTrack))
+                accept(text,LumaAssistantConversation.reply(text,context:context(),previous:previous,interpreted:inferred,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount,evidenceID:evidenceID,visualReport:imageReport,imageSecurity:imageSecurity,previousGuidance:previousTrack,recentTurns:conversationTurns))
                 interpretation = nil
             }
         } else { accept(text,initial) }
@@ -362,7 +362,7 @@ struct LumaAssistantView: View {
                     }.padding(10).lumaSurface(radius: 12)
                 }
                 Toggle("On-device question interpretation",isOn:$interpretOnDevice)
-                Text("When supported, the device model interprets unfamiliar wording. Answers remain limited to available records. No external AI requests.").font(.caption).foregroundColor(.secondary)
+                Text("When supported, the device model uses recent conversation context to interpret unfamiliar wording. Luma also searches the records you have actually opened. No external AI requests.").font(.caption).foregroundColor(.secondary)
                 Text("Optional iPhone system read-aloud or approved fixed recordings. No microphone listening.").font(.caption).foregroundColor(.secondary)
                 if !readAloud.notice.isEmpty { Text(readAloud.notice).font(.caption).foregroundColor(.secondary) }
                 Text("Local text commands · No microphone listening or real-device actions.").font(.caption).foregroundColor(.secondary).multilineTextAlignment(.center)

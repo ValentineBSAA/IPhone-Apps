@@ -109,7 +109,7 @@ struct PhoneLabView: View {
     private var supportAvailable: Bool { RelaySupportAccess.available(installed: relayInstalled, flags: world.state.flags) }
     private var veilAvailable: Bool { VeilArchive.installed(world.state, packages: relayInstalled, safeMode: safeMode) }
     private func appAvailable(_ app: LabApp) -> Bool {
-        (app != .fieldNotes || fieldNotesAvailable) && (app != .relaySupport || supportAvailable) && (app != .veil || veilAvailable)
+        app != .motionwell && (app != .fieldNotes || fieldNotesAvailable) && (app != .relaySupport || supportAvailable) && (app != .veil || veilAvailable)
     }
     private func utilityActive(_ tool: LumaUtility) -> Bool { tweak(tool.rawValue) && RelayCatalog.available(tool.rawValue, flags: world.state.flags) }
     private var fiveColumns: Bool { tweak("fivegrid") || (utilityActive(.lumaplus) && utilityFive) }
@@ -1414,7 +1414,7 @@ struct PhoneLabView: View {
         case .commonGround: LumaSocialView(channel:.commonGround)
         case .havenWatch: HavenWatchView()
         case .dayblink: DayblinkView()
-        case .motionwell: MotionwellView()
+        case .motionwell: LumaSocialView(channel:.afterframe)
         case .voiceMemos: LumaVoiceMemos()
         case .assistant: LumaAssistantView(context: { LumaAssistantContext(world: world.state, availableApps: Set(LabApp.allCases.filter { appAvailable($0) }), wifi: wifi, sound: messageSound, haptics: messageHaptics, safeMode: safeMode, installedCount: RelayCatalog.ids(relayInstalled).count, timerEnd: feedbackTimerEnd, now: Date()) }, openApp: { open($0) }, acknowledgeBoundaries: { world.acknowledgeLumaBoundaries() }, rememberSession: { world.rememberLumaSession($0) }, takeImageHandoff: {
             let handoff=pendingLumaImage;pendingLumaImage=nil

@@ -360,7 +360,6 @@ final class PhoneWorldStore: ObservableObject {
         let priorHavenDelivered=connected.havenEvent?.delivered == true
         advanceHavenWatch(now: now)
         advanceHavenFollowup(now: now,priorJustDelivered:!priorHavenDelivered && connected.havenEvent?.delivered == true)
-        advanceMotionwell(now: now)
         advanceCharacterCheckIns(now:now)
         let pending = state.pendingReplies ?? []
         guard !pending.isEmpty else { return }

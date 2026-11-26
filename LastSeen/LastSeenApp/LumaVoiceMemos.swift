@@ -154,6 +154,8 @@ struct LumaMemoDetail: View {
                     if !error.isEmpty { Text(error).font(.caption).foregroundColor(.secondary) }
                     Text("Transcript").font(.headline)
                     Text(memo.transcript).textSelection(.enabled)
+                    Text("Recording context").font(.headline)
+                    Text(memo.id=="palette" ? "Tessa’s design-review reminder. Related context is in her Messages and studio Mail." : memo.id=="qa" ? "A short preparation note for the team review. Related checklist and production discussion are in Notes and Mail." : memo.id=="lunch" ? "A personal reminder about family plans. Check the ordinary calendar and family conversations if you want more context." : "A personal reminder about plans away from the studio. Other ordinary records provide context.").font(.subheadline).foregroundColor(.secondary)
                     Button {
                         if readAloud.active { readAloud.stop() }
                         else if phase == .active, loadedEpoch == world.checkpointEpoch,

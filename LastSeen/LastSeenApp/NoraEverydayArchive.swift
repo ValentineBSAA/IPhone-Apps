@@ -68,7 +68,7 @@ enum NoraEverydayArchive {
             world.threads[person.id]=thread.sorted{($0.at,$0.id)<($1.at,$1.id)}
         }
         let notes:[PhoneNote] = [
-            .init(id:"b33-note-art",title:"Palette review",body:"Tessa has the originals in the review folder. Voice memo is my quick reminder for our meeting, not the final art decision. Compare small labels, selected and disabled controls, and the same screen at the same brightness.",modifiedAt:world.createdAt.addingTimeInterval(-145000),pinned:false),
+            .init(id:"b33-note-art",title:"Palette review",body:"Tessa has the originals in the review folder. Tessa’s voice memo is a quick reminder for our meeting, not the final art decision. Compare small labels, selected and disabled controls, and the same screen at the same brightness.",modifiedAt:world.createdAt.addingTimeInterval(-145000),pinned:false),
             .init(id:"b33-note-qa",title:"Release review questions",body:"Can someone resume after a phone interruption? Is a saved game still usable after an update? Can new players find their way without reading a manual? Ask Adrian for the actual reproduction steps, not just a green check mark. No rush.",modifiedAt:world.createdAt.addingTimeInterval(-98000),pinned:false),
             .init(id:"b33-note-weekend",title:"A day without work",body:"Return the book. Find a notebook with good paper. Coffee with Maya. Leave the laptop at home for lunch. Maybe take a picture of something lovely just because.",modifiedAt:world.createdAt.addingTimeInterval(-185000),pinned:false)
         ]

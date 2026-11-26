@@ -198,6 +198,10 @@ enum LumaSocialCatalog {
         ]
         var records = base
         records.append(contentsOf: LivingPhoneHistory.posts(anchor: d))
+        // Retain the retired video app’s ordinary visual essays as static social posts.
+        records.append(contentsOf: MotionwellArchive.clips.enumerated().map { index,clip in
+            post("b33-essay-"+clip.id,.afterframe,clip.creator,clip.handle,clip.title+" · A quiet photo essay from the community.",Double(400000+index*3600),nil,clip.poster)
+        })
         records.append(contentsOf: LumaSocialCommunity.posts(anchor: d))
         records.append(contentsOf: world.connectedWorld?.communityActivity?.posts ?? [])
         records.append(contentsOf: world.connectedWorld?.posts ?? [])
