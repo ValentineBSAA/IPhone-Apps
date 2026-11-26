@@ -5,10 +5,14 @@ import XCTest
     func testIndependentCommunityAndPersistentPreferences() throws {
         let w = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(), persistToDisk: false)
         let posts = LumaSocialCommunity.posts(anchor: w.state.createdAt)
-        XCTAssertEqual(Set(posts.map(\.author)).count, 36)
-        XCTAssertEqual(Set(posts.map(\.handle)).count, 36)
-        XCTAssertEqual(posts.count, 72)
-        XCTAssertEqual(Set(posts.map(\.id)).count, 72)
+        XCTAssertEqual(Set(posts.map(\.author)).count, 60)
+        XCTAssertEqual(Set(posts.map(\.handle)).count, 60)
+        XCTAssertEqual(posts.count, 120)
+        XCTAssertEqual(Set(posts.map(\.id)).count, 120)
+        XCTAssertEqual(posts.filter { LumaSocialCommunity.identityMark(for: $0) != nil }.count, 48)
+        for channel in LumaSocialChannel.allCases {
+            XCTAssertEqual(Set(posts.filter { $0.channel == channel && LumaSocialCommunity.identityMark(for: $0) != nil }.map(\.handle)).count, 8)
+        }
         let author = try XCTUnwrap(posts.first?.author)
         w.toggleSocialMute(author, channel: .afterframe)
         XCTAssertTrue(w.socialPreferences(.afterframe).mutedAuthors.contains(author))

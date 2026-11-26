@@ -54,6 +54,31 @@ enum LumaSocialCommunity {
         .init(name: "Good Dog Notes", handle: "gooddog.notes", bio: "Dog walks • pet care reminders", channel: .commonGround, first: "A slow sniff-filled walk is still a good walk.", second: "Remember the water bowl when heading out on a longer afternoon walk."),
         .init(name: "Quiet Summit", handle: "quiet.summit", bio: "Illustrated outdoor inspiration", channel: .afterframe, first: "Collecting mountain pictures for the days when a walk isn't on the cards.", second: "The best outdoor plan is the one you can enjoy safely at your own pace."),
         .init(name: "Little Sprout Club", handle: "little.sprout", bio: "Houseplants • gardening ideas", channel: .commonGround, first: "A small plant swap sounds lovely. Cuttings welcome, fancy pots optional.", second: "Checking the soil before watering has saved more plants than any fancy gadget.")
+,
+        .init(name: "Copper Kettle Kitchen", handle: "copperkettle.kitchen", bio: "Recipe notes · small-batch baking", channel: .afterframe, first: "Testing an orange loaf today. The whole kitchen smells of citrus.", second: "Tomorrow's bake is a batch of oat biscuits. Keeping the recipe simple this time."),
+        .init(name: "Paper Fern Press", handle: "paperfern.press", bio: "Illustrated stationery · printmaking", channel: .afterframe, first: "The fern-pattern cards are finally dry enough to pack.", second: "A few misprinted cards have become bookmarks for the studio."),
+        .init(name: "Windowlight Journal", handle: "windowlight.journal", bio: "Everyday photography · quiet interiors", channel: .afterframe, first: "The afternoon light landed on the bookshelf at exactly the right moment.", second: "Looking at shadows rather than colors for today's little composition exercise."),
+        .init(name: "Soft Kiln Studio", handle: "softkiln.studio", bio: "Handmade ceramics · studio notes", channel: .afterframe, first: "The first small bowls came out of the kiln this morning.", second: "A second glaze test is cooling. Trying to get a soft, matte finish."),
+        .init(name: "Thread & Thimble", handle: "thread.thimble", bio: "Visible mending · sewing ideas", channel: .afterframe, first: "A patched elbow can look intentional with a little contrast stitching.", second: "Sorted the leftover cotton by color. It is much easier to find a small patch now."),
+        .init(name: "Pavement Sketches", handle: "pavement.sketches", bio: "Urban sketchbook collective", channel: .afterframe, first: "Today's prompt is a doorway. No need to draw the whole building.", second: "A five-minute sketch is enough when the weather is chilly."),
+        .init(name: "Rainroom Records", handle: "rainroom.records", bio: "Record sleeves · music collecting", channel: .afterframe, first: "Reorganized the shelf by mood instead of genre for a change.", second: "Cleaning a few old sleeves this afternoon. Paper takes a little patience."),
+        .init(name: "Clover Table", handle: "clover.table", bio: "Seasonal meals · table settings", channel: .afterframe, first: "A simple soup and some crusty bread are plenty for a good lunch.", second: "Tried folding the napkins differently for a quiet dinner at home."),
+        .init(name: "Lattice Interface", handle: "lattice.interface", bio: "Independent interface design studio", channel: .connective, first: "Today's review was mostly about spacing and focus order. The mockup looks calmer now.", second: "Leaving written notes beside the prototype helps the next person understand the decisions."),
+        .init(name: "Fieldnote Editing", handle: "fieldnote.editing", bio: "Editorial services · documentation", channel: .connective, first: "Removed three redundant sections from a guide. The instructions are easier to follow now.", second: "A glossary is most useful when it explains unfamiliar words without adding more of them."),
+        .init(name: "Northpin Audio", handle: "northpin.audio", bio: "Independent audio production", channel: .connective, first: "Finished a small mix review using both headphones and a little speaker.", second: "Saved the original recordings before starting another edit. Always worth doing."),
+        .init(name: "Margin Works", handle: "margin.works", bio: "Small print and layout studio", channel: .connective, first: "The latest print proof needed a slightly wider inner margin.", second: "Keeping a sample book of paper weights makes choosing materials much quicker."),
+        .init(name: "Juniper Systems", handle: "juniper.systems", bio: "Small software tools · maintenance", channel: .connective, first: "A maintenance update is easier to understand with a short list of what changed.", second: "Wrote a repeatable setup checklist before handing a tiny project over."),
+        .init(name: "Clearpath Learning", handle: "clearpath.learning", bio: "Workshop materials · adult learning", channel: .connective, first: "Added a practice example before the first exercise. Beginners should have somewhere to start.", second: "The next worksheet will have more room for handwritten notes."),
+        .init(name: "Foldline Fabrication", handle: "foldline.fabrication", bio: "Model making · prototyping", channel: .connective, first: "The cardboard model helped us spot a clearance issue before making the final piece.", second: "Keeping the first rough prototypes is useful for explaining how a design evolved."),
+        .init(name: "Quiet Ledger", handle: "quiet.ledger", bio: "Independent bookkeeping and organization", channel: .connective, first: "Reconciled the small expense list before it turned into a large one.", second: "A consistent file name is a surprisingly good time-saving tool."),
+        .init(name: "Cedar Swap Circle", handle: "cedar.swap", bio: "Neighborhood plant and seed exchange", channel: .commonGround, first: "A few spare basil seedlings are ready for the next exchange.", second: "Bring a small container if you are taking home a cutting."),
+        .init(name: "Sunday Puzzle Table", handle: "sunday.puzzles", bio: "Casual jigsaws · board games", channel: .commonGround, first: "We found all the edge pieces before lunch. Not bad for a slow Sunday.", second: "The next meetup will have a smaller puzzle for anyone who prefers a shorter session."),
+        .init(name: "Lantern Reading Room", handle: "lantern.reading", bio: "Community reading group", channel: .commonGround, first: "This month's reading choice is a collection of essays. Read whichever pieces interest you.", second: "No pressure to finish the whole book before the next discussion."),
+        .init(name: "Bluebird Repair Circle", handle: "bluebird.repairs", bio: "Mending meetups · sharing skills", channel: .commonGround, first: "A reminder to bring the broken item and any loose pieces to the next session.", second: "We have spare thread and a few basic hand tools for small repairs."),
+        .init(name: "Moss & Map Walks", handle: "moss.map", bio: "Gentle walking club · outdoor appreciation", channel: .commonGround, first: "Choosing a shorter route for the next group walk so everyone can take their time.", second: "A warm layer and a water bottle are good things to bring along."),
+        .init(name: "Corner Pantry Exchange", handle: "corner.pantry", bio: "Recipe exchange · reducing food waste", channel: .commonGround, first: "A leftover vegetable soup is the recipe suggestion for this week.", second: "We're collecting ideas for using the last few ingredients in a cupboard."),
+        .init(name: "Spare Page Society", handle: "spare.page", bio: "Notebook swaps · letter writing", channel: .commonGround, first: "A few unused notebooks are available at the next stationery swap.", second: "Bring an envelope if you want to try the little letter-writing exercise."),
+        .init(name: "Little Bench Collective", handle: "littlebench.collective", bio: "Community crafts · beginner projects", channel: .commonGround, first: "The next craft session is a simple wooden coaster. Beginners welcome.", second: "We'll have some spare sanding blocks and offcuts for practice.")
     ]
     static let portraits: [String: String] = [
         "iris.vale": "CommunityPortrait_11",
@@ -93,6 +118,59 @@ enum LumaSocialCommunity {
         "quiet.summit": "CommunityAvatar_Mountain",
         "little.sprout": "CommunityAvatar_Gardening"
     ]
+    // Original in-game marks for fictional groups, shops and studios.
+    // No external brand marks or unreviewed image files are used.
+    struct IdentityMark {
+        let initials: String
+        let symbol: String
+        let palette: MarkPalette
+    }
+    enum MarkPalette {
+        case terracotta, forest, gold, clay, plum, slate, indigo, olive, blue
+        var colors: [Color] {
+            switch self {
+            case .terracotta: return [Color(red: 0.64, green: 0.27, blue: 0.19), Color(red: 0.29, green: 0.12, blue: 0.10)]
+            case .forest: return [Color(red: 0.20, green: 0.42, blue: 0.31), Color(red: 0.08, green: 0.23, blue: 0.18)]
+            case .gold: return [Color(red: 0.57, green: 0.40, blue: 0.15), Color(red: 0.28, green: 0.19, blue: 0.08)]
+            case .clay: return [Color(red: 0.61, green: 0.40, blue: 0.32), Color(red: 0.31, green: 0.17, blue: 0.16)]
+            case .plum: return [Color(red: 0.49, green: 0.29, blue: 0.48), Color(red: 0.22, green: 0.12, blue: 0.25)]
+            case .slate: return [Color(red: 0.34, green: 0.43, blue: 0.50), Color(red: 0.15, green: 0.20, blue: 0.26)]
+            case .indigo: return [Color(red: 0.35, green: 0.34, blue: 0.63), Color(red: 0.17, green: 0.14, blue: 0.35)]
+            case .olive: return [Color(red: 0.38, green: 0.45, blue: 0.20), Color(red: 0.17, green: 0.24, blue: 0.12)]
+            case .blue: return [Color(red: 0.20, green: 0.40, blue: 0.60), Color(red: 0.10, green: 0.19, blue: 0.33)]
+            }
+        }
+    }
+    static let identityMarks: [String: IdentityMark] = [
+        "copperkettle.kitchen": .init(initials: "CK", symbol: "cup.and.saucer.fill", palette: .terracotta),
+        "paperfern.press": .init(initials: "PF", symbol: "leaf.fill", palette: .forest),
+        "windowlight.journal": .init(initials: "WJ", symbol: "sun.max.fill", palette: .gold),
+        "softkiln.studio": .init(initials: "SK", symbol: "circle.hexagongrid.fill", palette: .clay),
+        "thread.thimble": .init(initials: "TT", symbol: "scissors", palette: .plum),
+        "pavement.sketches": .init(initials: "PS", symbol: "pencil.tip", palette: .slate),
+        "rainroom.records": .init(initials: "RR", symbol: "record.circle", palette: .indigo),
+        "clover.table": .init(initials: "CT", symbol: "fork.knife", palette: .olive),
+        "lattice.interface": .init(initials: "LI", symbol: "square.grid.2x2", palette: .indigo),
+        "fieldnote.editing": .init(initials: "FE", symbol: "doc.text", palette: .forest),
+        "northpin.audio": .init(initials: "NA", symbol: "waveform", palette: .slate),
+        "margin.works": .init(initials: "MW", symbol: "text.alignleft", palette: .clay),
+        "juniper.systems": .init(initials: "JS", symbol: "terminal", palette: .forest),
+        "clearpath.learning": .init(initials: "CL", symbol: "book.closed", palette: .blue),
+        "foldline.fabrication": .init(initials: "FF", symbol: "cube", palette: .gold),
+        "quiet.ledger": .init(initials: "QL", symbol: "list.bullet.rectangle", palette: .plum),
+        "cedar.swap": .init(initials: "CS", symbol: "leaf", palette: .olive),
+        "sunday.puzzles": .init(initials: "SP", symbol: "puzzlepiece.extension", palette: .blue),
+        "lantern.reading": .init(initials: "LR", symbol: "book.fill", palette: .gold),
+        "bluebird.repairs": .init(initials: "BR", symbol: "wrench.and.screwdriver", palette: .blue),
+        "moss.map": .init(initials: "MM", symbol: "map.fill", palette: .forest),
+        "corner.pantry": .init(initials: "CP", symbol: "basket.fill", palette: .terracotta),
+        "spare.page": .init(initials: "SS", symbol: "envelope.fill", palette: .plum),
+        "littlebench.collective": .init(initials: "LB", symbol: "hammer.fill", palette: .slate)
+    ]
+    static func identityMark(for post: LumaSocialPost) -> IdentityMark? {
+        guard people.contains(where: { $0.name == post.author && $0.handle == post.handle && $0.channel == post.channel }) else { return nil }
+        return identityMarks[post.handle]
+    }
     // Exact authored record-to-media map. Never resolve arbitrary photo names
     // through the community catalog, or treat these as Nora's photographs.
     static let photoAssignments: [String: String] = [
@@ -233,6 +311,15 @@ struct LumaSocialAvatar: View {
         Group {
             if let portrait = post.portrait {
                 Image(portrait).resizable().scaledToFill()
+            } else if let identity = LumaSocialCommunity.identityMark(for: post) {
+                ZStack {
+                    LinearGradient(colors: identity.palette.colors, startPoint: .topLeading, endPoint: .bottomTrailing)
+                    Circle().strokeBorder(.white.opacity(0.25), lineWidth: max(1, size * 0.025)).padding(size * 0.08)
+                    VStack(spacing: size * 0.035) {
+                        Image(systemName: identity.symbol).font(.system(size: size * 0.29, weight: .semibold))
+                        Text(identity.initials).font(.system(size: size * 0.21, weight: .bold, design: .rounded))
+                    }.foregroundColor(.white)
+                }
             } else if let mark {
                 ZStack {
                     LinearGradient(colors: [post.channel.accent.opacity(0.85), .black.opacity(0.65)], startPoint: .topLeading, endPoint: .bottomTrailing)
