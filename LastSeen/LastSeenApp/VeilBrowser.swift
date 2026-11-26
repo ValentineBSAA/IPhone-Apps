@@ -103,6 +103,10 @@ enum VeilArchive {
         }
         return advanced ? homeAssets : first
     }
+    static func mediaTitle(_ asset:String,in world:PhoneWorld)->String? {
+        guard let index=media(world).firstIndex(of:asset) else{return nil}
+        return "Recovered photograph "+String(index+1)
+    }
     static func media(_ world: PhoneWorld) -> [String] {
         guard authorized(world) else { return [] }
         return (1...11).map { String(format:"Nora_Archive_%02d",$0) } + homeMedia(world)
@@ -117,6 +121,7 @@ struct VeilRecoveredImage: View {
     var body: some View {
         if VeilArchive.media(world.state).contains(asset) {
             VStack(alignment:.leading,spacing:8) {
+                Text(VeilArchive.mediaTitle(asset,in:world.state) ?? "Recovered photograph").font(.headline)
                 if revealed && phase == .active && VeilArchive.allowsImages(security) {
                     if let image = UIImage(named:asset) {
                         Image(uiImage:image).resizable().scaledToFit().accessibilityLabel("Recovered fictional photograph, origin unverified")
@@ -131,12 +136,21 @@ struct VeilRecoveredImage: View {
                 } else { Label("Image hidden by security preference",systemImage:"shield").font(.caption) }
                 Text("Unverified reference image").font(.caption2).foregroundColor(.secondary)
                 if RecoveredImageAnalysis.record(asset,in:world.state) != nil {
+                    if let description=VeilArchive.homeDescriptions[asset] {
+                        Text(description).font(.caption).foregroundColor(.secondary)
+                    }
+                    if RecoveredImageAnalysis.completed(asset,in:world.state) {
+                        Label("Source review recorded",systemImage:"checkmark.circle").font(.caption)
+                    }
                     NavigationLink { RecoveredImageAnalysisView(asset:asset) } label:{
                         Label("Analyze image",systemImage:"viewfinder")
                     }.buttonStyle(.bordered)
                     SendImageToLumaButton(asset:asset)
                 } else {
-                    Button("Inspect text only"){world.recordVeilObservation(asset)}.font(.caption)
+                    Button("Inspect text only"){
+                        guard phase == .active else{return}
+                        world.recordVeilObservation(asset)
+                    }.font(.caption)
                 }
             }.onChange(of:phase) { if $0 != .active { revealed = false } }.onChange(of:security) { _ in revealed = false }.onDisappear { revealed = false }
         }
@@ -303,7 +317,26 @@ struct VeilBrowser: View {
                                     NavigationLink { EvidenceComparisonView() } label: {
                                         Label("Compare opened archive records",systemImage:"rectangle.split.2x1")
                                     }
-                                    Text(VeilReferences.homeIndexReady(world.state) ? "A secondary reference is available in Files." : "Review the home copies and compare their descriptions with the archived discussions.").font(.caption)
+                                    if VeilReferences.homeIndexReady(world.state) {
+                                        NavigationLink { VeilReferenceReader(id:VeilReferences.homeIndexID) } label:{
+                                            Label("Open recovered Files reference",systemImage:"doc.badge.ellipsis")
+                                        }
+                                    } else if VeilArchive.homeMedia(world.state).count < 6 {
+                                        let initial=VeilArchive.homeAssets.prefix(2)
+                                        let completed=initial.filter{RecoveredImageAnalysis.completed($0,in:world.state)}.count
+                                        Text("Initial home-copy reviews: "+String(completed)+" of "+String(initial.count)+". Review the first two home copies to recover more material.").font(.caption)
+                                    } else {
+                                        Text("Compare a reviewed home copy's description with the opened discussion about ordinary moments.").font(.caption)
+                                        if VeilCommunity.thread("ordinary-hours",in:world.state) != nil {
+                                            NavigationLink { VeilThreadView(id:"ordinary-hours") } label:{
+                                                Label("Open related archived discussion",systemImage:"text.bubble")
+                                            }
+                                        } else if VeilReferences.visible(world.state).contains(where:{$0.id=="board-reference"}) {
+                                            NavigationLink { VeilReferenceReader(id:"board-reference") } label:{
+                                                Label("Inspect discussion bookmark",systemImage:"doc.badge.ellipsis")
+                                            }
+                                        }
+                                    }
                                 }
                                 if security == "Safest" {
                                     Label("Images hidden at this security level",systemImage:"shield").font(.caption)

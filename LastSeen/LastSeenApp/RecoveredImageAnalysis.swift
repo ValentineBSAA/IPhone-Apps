@@ -110,6 +110,9 @@ struct RecoveredImageAnalysisView:View {
                 }
                 Section("Source record") {
                     Text(item.source.title)
+                    if item.source == .veil,let description=VeilArchive.homeDescriptions[asset] {
+                        Text(description).font(.subheadline)
+                    }
                     Text("Original capture time and photographer are not independently established by this local copy.").font(.caption).foregroundColor(.secondary)
                 }
                 if !textOnly && (item.source != .veil || VeilArchive.allowsImages(security)) {

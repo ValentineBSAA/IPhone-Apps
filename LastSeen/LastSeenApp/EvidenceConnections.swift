@@ -214,9 +214,10 @@ struct EvidenceComparisonView: View {
             .onChange(of:phase){if $0 != .active{notice="";revealOriginals=false}}
             .onChange(of:records.map(\.id)){_ in
                 revealOriginals=false
-                if !records.contains(where:{$0.id==first}){first=""}
-                if !records.contains(where:{$0.id==second}){second=""}
-                notice=""
+                // A newly unlocked record must not erase the discovery notice.
+                // Clear it only when the selected source actually disappears.
+                if !first.isEmpty && !records.contains(where:{$0.id==first}){first="";notice=""}
+                if !second.isEmpty && !records.contains(where:{$0.id==second}){second="";notice=""}
             }
     }
 }

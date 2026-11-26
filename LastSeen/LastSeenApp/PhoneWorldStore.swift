@@ -1206,8 +1206,18 @@ final class PhoneWorldStore: ObservableObject {
         commitConnected(c)
     }
     func advanceHavenFollowup(now:Date=Date(),priorJustDelivered:Bool=false) {
-        guard HavenWatchEvents.followupEligible(state),!state.flags.contains(InvestigationResolution.completed) else { return }
+        guard HavenWatchEvents.followupEligible(state) else { return }
         var c=connected
+        // After the main ending, optional historical exploration remains
+        // possible. Resolve pending/new archive material silently, without
+        // scheduling another scare or emitting a notification.
+        if state.flags.contains(InvestigationResolution.completed) {
+            guard c.havenFollowupEvent == nil ||
+                (c.havenFollowupEvent?.id == HavenWatchEvents.followupID && c.havenFollowupEvent?.delivered == false) else{return}
+            c.havenFollowupEvent=HavenWatchEvent(id:HavenWatchEvents.followupID,due:now,delivered:true)
+            commitConnected(c)
+            return
+        }
         if c.havenFollowupEvent == nil {
             c.havenFollowupEvent=HavenWatchEvent(id:HavenWatchEvents.followupID,due:now.addingTimeInterval(45))
             commitConnected(c)

@@ -96,7 +96,7 @@ enum LumaAssistantEvidence {
             }
             let read = world.flags.contains("veil.correspondence.opened")
             let messages = VeilArchive.messages(world)
-            for (i,asset) in VeilArchive.media(world).enumerated() where world.flags.contains("veil.viewed."+asset) {
+            for asset in VeilArchive.media(world) where world.flags.contains("veil.viewed."+asset) {
                 var facts = ["The displayed image is a recovered reference copy. Its capture date and origin have not been authenticated."]
                 if read, let message = messages.first(where:{$0.attachment == asset}) {
                     let date = VeilArchive.date(message,in:world).formatted(date:.abbreviated,time:.omitted)
@@ -105,7 +105,7 @@ enum LumaAssistantEvidence {
                 if let description=VeilArchive.homeDescriptions[asset] { facts.append("Visible scene: "+description+" Similar furnishings do not authenticate a camera source.") }
                 if let summary=RecoveredImageAnalysis.summary(asset,in:world){facts.append(summary)}
                 facts += ImageInterpretation.notes(asset,in:world)
-                result.append(.init(id:"image:"+asset,title:"Recovered photograph "+String(i+1),kind:.image,excerpts:facts))
+                result.append(.init(id:"image:"+asset,title:VeilArchive.mediaTitle(asset,in:world) ?? "Recovered photograph",kind:.image,excerpts:facts))
             }
             if read {
                 // The player's open action exposed this correspondence already.
