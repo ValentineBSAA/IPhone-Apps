@@ -69,6 +69,7 @@ struct LumaConnectedState:Codable,Equatable {
     var activityJournal: [LumaActivityNotice]? = nil
     var pendingSocialReplies: [LumaPendingSocialReply]? = nil
     var investigationReviewSelection: [String: Int]? = nil
+    var investigationDisposition: InvestigationResolution.Choice? = nil
     var diagnostics: [String: WorkbenchDiagnosticProgress]? = nil
     var workbenchConnected=false
     var workbenchSelections:[String:[String]]=[:]
@@ -102,7 +103,11 @@ enum LumaMailCatalog {
             LumaMailRecord(id:"cw-mail-team",peer:"tessa",sender:"Tessa Reed",subject:"Team working agreement",body:"Thanks for putting the availability rules in writing. I'll keep the palette exports together and send a short summary after Friday. Please don't answer this tonight.",date:date.addingTimeInterval(-210000),kind:"inbox",attachments:["WorldDoc_01_07"]),
             LumaMailRecord(id:"cw-mail-spending",peer:"adrian",sender:"Adrian Cole",subject:"Equipment approval",body:"The existing test cable can get us through the morning, but I've set aside the replacement request. I won't order extra storage until the review is complete.",date:date.addingTimeInterval(-65000),kind:"inbox",attachments:["WorldDoc_01_06"])
         ]
-        let delivered = (world.connectedWorld?.mail ?? []).filter { $0.id != InvestigationReview.mailID || InvestigationReview.availableMail(world) }
+        let delivered = (world.connectedWorld?.mail ?? []).filter {
+            if $0.id == InvestigationReview.mailID { return InvestigationReview.availableMail(world) }
+            if $0.id == InvestigationResolution.mailID { return InvestigationResolution.availableMail(world) }
+            return true
+        }
         return (originals+old+work+LivingPhoneHistory.mail(anchor: date)+delivered).sorted{$0.date>$1.date}
     }
     static func response(to peer:Neighbor,subject:String,body:String)->String {

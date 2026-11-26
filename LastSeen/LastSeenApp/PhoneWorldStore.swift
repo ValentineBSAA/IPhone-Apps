@@ -498,9 +498,12 @@ final class PhoneWorldStore: ObservableObject {
         return true
     }
     func recordInvestigationMailRead(_ id: String) {
-        guard id == InvestigationReview.mailID, InvestigationReview.availableMail(state),
-              LumaMailCatalog.visible(state).contains(where: { $0.id == id && $0.kind == "inbox" }) else { return }
-        if state.flags.insert(InvestigationReview.read).inserted { save() }
+        guard LumaMailCatalog.visible(state).contains(where: { $0.id == id && $0.kind == "inbox" }) else { return }
+        if id == InvestigationReview.mailID, InvestigationReview.availableMail(state) {
+            if state.flags.insert(InvestigationReview.read).inserted { save() }
+        } else if id == InvestigationResolution.mailID, InvestigationResolution.availableMail(state) {
+            if state.flags.insert(InvestigationResolution.read).inserted { save() }
+        }
     }
     func setInvestigationReviewChoice(_ id: String, value: Int) {
         guard InvestigationReview.ready(state), !state.flags.contains(InvestigationReview.finished),
@@ -521,6 +524,23 @@ final class PhoneWorldStore: ObservableObject {
                 fromPlayer: false, at: now, read: false))
             save()
         }
+        return true
+    }
+    @discardableResult
+    func finishInvestigation(_ choice: InvestigationResolution.Choice, now: Date = Date()) -> Bool {
+        guard InvestigationResolution.ready(state) else { return false }
+        if state.flags.contains(InvestigationResolution.completed) {
+            return InvestigationResolution.ending(state) == choice
+        }
+        var c = connected
+        c.investigationDisposition = choice
+        let outgoing = choice == .minimal
+            ? "The repeated activity belongs to the local rehearsal. The original image capture and present location are not established. No private records are included."
+            : "The repair review is complete. I'm keeping the private records local."
+        append(NeighborMessage(id: "local-resolution-out", thread: Neighbor.maya.id, text: outgoing, fromPlayer: true, at: now, read: true))
+        append(NeighborMessage(id: "local-resolution-in", thread: Neighbor.maya.id, text: InvestigationResolution.message(choice), fromPlayer: false, at: now.addingTimeInterval(1), read: false))
+        state.flags.insert(InvestigationResolution.completed)
+        commitConnected(c)
         return true
     }
     func advanceInvestigation(now: Date = Date()) {
@@ -549,6 +569,20 @@ final class PhoneWorldStore: ObservableObject {
                 c.pendingMail.append(.init(record: InvestigationReview.mail(at: due), dueAt: due))
             }
             state.flags.insert(InvestigationReview.requested)
+            commitConnected(c)
+        }
+        if InvestigationResolution.eligible(state),
+           state.flags.contains("web.visited." + InvestigationResolution.indexID),
+           state.flags.contains("web.visited." + InvestigationResolution.noteID),
+           !state.flags.contains(InvestigationResolution.requested) {
+            var c = connected
+            if !c.mail.contains(where: { $0.id == InvestigationResolution.mailID }) &&
+                !c.pendingMail.contains(where: { $0.record.id == InvestigationResolution.mailID }) {
+                // A story message remains available even if ordinary mail is full.
+                let due = now.addingTimeInterval(12)
+                c.pendingMail.append(.init(record: InvestigationResolution.mail(at: due), dueAt: due))
+            }
+            state.flags.insert(InvestigationResolution.requested)
             commitConnected(c)
         }
     }
@@ -636,6 +670,7 @@ final class PhoneWorldStore: ObservableObject {
         guard !due.isEmpty else{return}
         for entry in due where !c.mail.contains(where:{$0.id==entry.record.id}) {
             if entry.record.id == InvestigationReview.mailID && !InvestigationReview.availableMail(state) { continue }
+            if entry.record.id == InvestigationResolution.mailID && !InvestigationResolution.availableMail(state) { continue }
             c.mail.append(entry.record)
             addActivity(.init(id: "mail-" + entry.record.id, kind: .mail, date: entry.dueAt, title: entry.record.sender, detail: entry.record.subject, targetID: entry.record.id, channel: nil, author: nil), to: &c)
         }

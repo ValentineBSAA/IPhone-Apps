@@ -23,7 +23,16 @@ enum PhoneReplyPolicy {
         let normalized = text.lowercased()
         let words = Set(normalized.split { !$0.isLetter && !$0.isNumber }.map(String.init))
         func mentions(_ terms: String...) -> Bool { terms.contains { words.contains($0) } }
-        if neighbor == .unknown { return PhoneReplyPlan(text: InvestigationProgress.unknownReply(words: words, flags: flags)) }
+        if neighbor == .unknown {
+            if flags.contains("web.visited." + InvestigationResolution.indexID) {
+                return PhoneReplyPlan(text: "Local rehearsal response. No remote participant is connected.")
+            }
+            return PhoneReplyPlan(text: InvestigationProgress.unknownReply(words: words, flags: flags))
+        }
+        if neighbor == .maya && flags.contains(InvestigationResolution.read) &&
+            mentions("nora","missing","where","safe","disappeared","location","address") {
+            return PhoneReplyPlan(text: "I've spoken to her. She asked for some time and I want to respect that. I can't tell you her location.")
+        }
         if !Neighbor.original.contains(neighbor) {
             if let everyday = PhoneEverydayConversation.reply(neighbor: neighbor, text: text, previousMessage: previousMessage, previousReply: previousReply, recentReplies: recentReplies) {
                 return PhoneReplyPlan(text: everyday == previousReply ? "I don't have much else to add right now." : everyday)
