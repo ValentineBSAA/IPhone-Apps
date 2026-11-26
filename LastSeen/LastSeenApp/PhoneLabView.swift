@@ -318,7 +318,7 @@ struct PhoneLabView: View {
         .onChange(of: phase) { value in
             observedIncoming = Set(incomingIDs)
             observedOutgoing = outgoingIDs
-            if value != .active { saves.persistPlayTime() }
+            if value != .active { pendingLumaImage=nil;saves.persistPlayTime() }
             if value != .active {
                 arrivalTask?.cancel(); arrivalTask = nil
                 if value == .background {
@@ -1309,6 +1309,8 @@ private struct LabPhoto: Identifiable {
 
 private struct LabPhotosView: View {
     @EnvironmentObject private var world: PhoneWorldStore
+    @Environment(\.sendImageToLuma) private var sendImageToLuma
+    @State private var pendingModalHandoff:String?
     @State private var selection: LabPhoto?
     @AppStorage("lastseen.lab.favoritePhotos") private var favorites = ""
     @State private var onlyFavorites = false
@@ -1377,7 +1379,11 @@ private struct LabPhotosView: View {
             }.padding()
         }.navigationTitle("Photos")
         .onAppear { world.recoverPhotoDiscovery() }
-        .sheet(item: $selection) { photo in
+        .sheet(item: $selection,onDismiss:{
+            let asset=pendingModalHandoff
+            pendingModalHandoff=nil
+            if let asset,RecoveredImageAnalysis.record(asset,in:world.state) != nil {sendImageToLuma?(asset)}
+        }) { photo in
             NavigationStack {
                 VStack(spacing: 16) {
                     Spacer()
@@ -1404,7 +1410,11 @@ private struct LabPhotosView: View {
                     }
                 }.padding().navigationTitle(available(photo) ? photo.title : "Locked photograph").navigationBarTitleDisplayMode(.inline)
                     .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { selection = nil } } }
-            }.preferredColorScheme(.dark)
+            }.environment(\.sendImageToLuma,{ asset in
+                guard RecoveredImageAnalysis.record(asset,in:world.state) != nil else{return}
+                pendingModalHandoff=asset
+                selection=nil
+            }).preferredColorScheme(.dark)
         }
     }
     private func isFavorite(_ id: String) -> Bool { favorites.split(separator: "|").contains(Substring(id)) }

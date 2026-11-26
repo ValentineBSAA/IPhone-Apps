@@ -92,12 +92,13 @@ struct RecoveredImageAnalysisView:View {
     @State private var limit:Int?
     @State private var feedback=""
     @State private var mode=ImageInterpretation.Mode.original
+    @State private var compareOriginal=false
     @State private var strength=0.7
     @State private var region:Int?
     @State private var interpretationFeedback=""
     @AppStorage("lastseen.lab.horrorEffects") private var horrorEffects=true
     private let bandNames=["Dark","Midtones","Light"]
-    private func resetPreview(){reveal=false;brightness=0;contrast=1;zoom=1;bins=nil;binChoice=nil;binFeedback="";mode = .original;region=nil;interpretationFeedback=""}
+    private func resetPreview(){reveal=false;brightness=0;contrast=1;zoom=1;bins=nil;binChoice=nil;binFeedback="";mode = .original;compareOriginal=false;region=nil;interpretationFeedback=""}
     var body:some View {
         List {
             if let item=RecoveredImageAnalysis.record(asset,in:world.state) {
@@ -122,11 +123,17 @@ struct RecoveredImageAnalysisView:View {
                         if reveal && phase == .active {
                             if let image=UIImage(named:asset) {
                                 ScrollView([.horizontal,.vertical]) {
-                                    ImageInterpretationPreview(image:image,mode:horrorEffects && ImageInterpretation.modes(asset,in:world.state).contains(mode) ? mode : (mode.synthetic ? .original : mode),finding:ImageInterpretation.available(asset,mode:mode,in:world.state),strength:strength)
-                                        .frame(width:CGFloat(240*zoom)).brightness(brightness).contrast(contrast)
+                                    let effective=ImageInterpretation.displayMode(mode,asset:asset,in:world.state,horrorEnabled:horrorEffects,compareOriginal:compareOriginal)
+                                    let width=CGFloat(240*zoom)
+                                    let aspect=max(0.1,image.size.width/max(1,image.size.height))
+                                    ImageInterpretationPreview(image:image,mode:effective,finding:ImageInterpretation.available(asset,mode:effective,in:world.state),strength:strength)
+                                        .frame(width:width,height:width/aspect)
+                                        .brightness(compareOriginal ? 0:brightness).contrast(compareOriginal ? 1:contrast)
                                 }.frame(height:240)
-                                Text("Brightness");Slider(value:$brightness,in:-0.25...0.35,step:0.05)
-                                Text("Contrast");Slider(value:$contrast,in:0.7...1.4,step:0.05)
+                                Toggle("Compare with untouched original",isOn:$compareOriginal)
+                                Text(compareOriginal ? "Original pixels · display adjustments bypassed" : "Adjusted preview · original unchanged").font(.caption).foregroundColor(.secondary)
+                                Text("Brightness");Slider(value:$brightness,in:-0.25...0.35,step:0.05).disabled(compareOriginal)
+                                Text("Contrast");Slider(value:$contrast,in:0.7...1.4,step:0.05).disabled(compareOriginal)
                                 Text("Magnification");Slider(value:$zoom,in:1...2.5,step:0.1)
                                 Button("Reset adjustments"){brightness=0;contrast=1;zoom=1}
                             } else {Text("Preview unavailable; use text-only inspection.")}
@@ -180,13 +187,13 @@ struct RecoveredImageAnalysisView:View {
                                 }
                             }
                             Button("Record interpretation") {
-                                guard let region else{return}
+                                guard let region,phase == .active else{return}
                                 interpretationFeedback=world.recordImageInterpretation(asset,mode:mode,region:region) ? "Interpretive observation saved.":"Compare the layer and try again."
-                            }.buttonStyle(.borderedProminent).disabled(region==nil || (!reveal && !textOnly && horrorEffects && (item.source != .veil || VeilArchive.allowsImages(security))))
+                            }.buttonStyle(.borderedProminent).disabled(region==nil || phase != .active || ((!reveal || compareOriginal) && !textOnly && horrorEffects && (item.source != .veil || VeilArchive.allowsImages(security))))
                             if !interpretationFeedback.isEmpty{Text(interpretationFeedback).font(.caption)}
                         }
                         ForEach(ImageInterpretation.notes(asset,in:world.state),id:\.self){note in Text(note).font(.subheadline)}
-                        Button("Return to original"){mode = .original;brightness=0;contrast=1;zoom=1;region=nil}
+                        Button("Return to original"){mode = .original;compareOriginal=false;brightness=0;contrast=1;zoom=1;region=nil}
                     }
                 }
                 if let summary=RecoveredImageAnalysis.summary(asset,in:world.state) {
@@ -218,7 +225,7 @@ struct RecoveredImageAnalysisView:View {
             .onChange(of:security){_ in resetPreview()}
             .onChange(of:textOnly){_ in resetPreview()}
             .onChange(of:horrorEffects){_ in resetPreview()}
-            .onChange(of:mode){_ in region=nil;interpretationFeedback=""}
+            .onChange(of:mode){_ in compareOriginal=false;region=nil;interpretationFeedback=""}
             .onDisappear{resetPreview()}
     }
 }

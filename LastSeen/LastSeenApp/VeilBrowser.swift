@@ -108,6 +108,7 @@ struct VeilRecoveredImage: View {
                     NavigationLink { RecoveredImageAnalysisView(asset:asset) } label:{
                         Label("Analyze image",systemImage:"viewfinder")
                     }.buttonStyle(.bordered)
+                    SendImageToLumaButton(asset:asset)
                 } else {
                     Button("Inspect text only"){world.recordVeilObservation(asset)}.font(.caption)
                 }

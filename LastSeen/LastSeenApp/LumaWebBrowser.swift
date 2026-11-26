@@ -398,6 +398,7 @@ struct LumaWebBrowser: View {
                                     NavigationLink { RecoveredImageAnalysisView(asset:asset) } label:{
                                         Label("Analyze image",systemImage:"viewfinder")
                                     }.buttonStyle(.bordered)
+                                    SendImageToLumaButton(asset:asset)
                                 }
                             }.frame(maxWidth:.infinity,alignment:.leading).padding(14).lumaSurface()
                         }
