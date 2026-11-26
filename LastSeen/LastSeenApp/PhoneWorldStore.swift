@@ -834,6 +834,50 @@ final class PhoneWorldStore: ObservableObject {
         var c=connected;c.workbenchVerified.insert(challenge.rawValue);commitConnected(c);return true
     }
 
+    func updateDiagnostic(_ challenge: WorkbenchDiagnostic, values: [Int]) {
+        guard WorkbenchDiagnosticCatalog.available(state).contains(challenge), challenge.accepts(values) else { return }
+        var c = connected
+        var records = c.diagnostics ?? [:]
+        var progress = WorkbenchDiagnosticCatalog.progress(challenge, in: state)
+        guard !progress.verified else { return }
+        progress.values = values
+        records[challenge.key] = progress; c.diagnostics = records
+        commitConnected(c)
+    }
+    func revealDiagnosticHint(_ challenge: WorkbenchDiagnostic) {
+        guard WorkbenchDiagnosticCatalog.available(state).contains(challenge) else { return }
+        var c = connected
+        var records = c.diagnostics ?? [:]
+        var progress = WorkbenchDiagnosticCatalog.progress(challenge, in: state)
+        guard !progress.verified, progress.hintLevel < challenge.hints.count else { return }
+        progress.hintLevel += 1
+        records[challenge.key] = progress; c.diagnostics = records
+        commitConnected(c)
+    }
+    func resetDiagnostic(_ challenge: WorkbenchDiagnostic) {
+        guard WorkbenchDiagnosticCatalog.available(state).contains(challenge) else { return }
+        var c = connected
+        var records = c.diagnostics ?? [:]
+        var progress = WorkbenchDiagnosticCatalog.progress(challenge, in: state)
+        guard !progress.verified else { return }
+        progress.values = challenge.initial
+        records[challenge.key] = progress; c.diagnostics = records
+        commitConnected(c)
+    }
+    @discardableResult
+    func verifyDiagnostic(_ challenge: WorkbenchDiagnostic) -> Bool {
+        guard WorkbenchDiagnosticCatalog.available(state).contains(challenge) else { return false }
+        var progress = WorkbenchDiagnosticCatalog.progress(challenge, in: state)
+        guard challenge.valid(progress.values) else { return false }
+        if progress.verified { return true }
+        var c = connected
+        var records = c.diagnostics ?? [:]
+        progress.verified = true
+        records[challenge.key] = progress; c.diagnostics = records
+        commitConnected(c)
+        return true
+    }
+
     private func save() {
         guard persistToDisk else { return }
         do {

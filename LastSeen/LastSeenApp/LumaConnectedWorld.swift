@@ -68,6 +68,7 @@ struct LumaConnectedState:Codable,Equatable {
     var motionwell: MotionwellState? = nil
     var activityJournal: [LumaActivityNotice]? = nil
     var pendingSocialReplies: [LumaPendingSocialReply]? = nil
+    var diagnostics: [String: WorkbenchDiagnosticProgress]? = nil
     var workbenchConnected=false
     var workbenchSelections:[String:[String]]=[:]
     var workbenchVerified:Set<String>=[]
@@ -465,11 +466,16 @@ struct LumaWorkbenchView:View{
                         LabeledContent("Readable records",value:String(WorldDocumentCatalog.visible(world.state).count+PhonePublicFiles.available(in:world.state).count))
                         LabeledContent("Installed optional packages",value:String(RelayCatalog.ids(relayInstalled).count))
                     }
-                    LabeledContent("Completed diagnostics",value:String(world.connected.workbenchVerified.count))
+                    LabeledContent("Completed diagnostics",value:String(world.connected.workbenchVerified.count + WorkbenchDiagnosticCatalog.verifiedCount(world.state)))
                     Button(action:openFiles){Label("Inspect restored files",systemImage:"folder")}.buttonStyle(.bordered)
                     ForEach(WorkbenchChallenge.allCases){challenge in
                         NavigationLink{LumaWorkbenchChallengeView(challenge:challenge)}label:{
                             LumaHeader(title:challenge.title,detail:world.connected.workbenchVerified.contains(challenge.rawValue) ? "Verified":"Ready for inspection",symbol:challenge == .routing ? "point.3.connected.trianglepath.dotted":"doc.on.doc")
+                        }.buttonStyle(.plain)
+                    }
+                    ForEach(WorkbenchDiagnosticCatalog.available(world.state)) { challenge in
+                        NavigationLink { WorkbenchDiagnosticView(challenge: challenge) } label: {
+                            LumaHeader(title: challenge.title, detail: WorkbenchDiagnosticCatalog.progress(challenge, in: world.state).verified ? "Verified" : "Ready for inspection", symbol: challenge.symbol)
                         }.buttonStyle(.plain)
                     }
                     NavigationLink{RecoveryCircuitView()}label:{LumaHeader(title:"Recovery Circuit",detail:"Existing Patchline service verification",symbol:"cpu")}.buttonStyle(.plain)
