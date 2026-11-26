@@ -634,3 +634,7 @@ Master checklist stays truthful: approved artwork is not integrated, initial sou
 ## B32 tranche 144: executable local Swift geometry checks
 - [x] Extracted current LumaHomeLayout stored properties/initializer and LumaImageViewportGeometry implementation into a Foundation-only Linux Swift harness. `swiftc -swift-version 5` compiled and executable assertions passed 256 home layout combinations and 144 fitted-image/pan cases. Added corresponding XCTest matrices. This tests extracted logic, not SwiftUI rendering or complete app compilation.
 - [ ] Source workflow execution remains unconfirmed; only voice archives available locally and GitHub DNS lookup still fails. Forty artwork assignments and ten creative voice decisions remain pending. No native build/workflow dispatched in this tranche, no IPA.
+
+## B32 tranche 145: tutorial chronology and recovery delivery gate
+- [x] SOURCE: scheduled world deliveries now stop while live-world or settings recovery is required. Introductory tutorial reply timestamp cannot precede its outgoing parent or read receipt after deadline rebase; successive tutorial instructions also respect existing tutorial message chronology. Added rollback regression fixture. No authored dialogue or puzzle solution changed.
+- [ ] Native test execution remains pending; local environment still lacks both artwork archives. Isolated preflight workflow run/artifacts remain invisible to current PR-only workflow listing. Need actual run ID or direct archive upload, and creative voice approval. No native build or IPA dispatched.

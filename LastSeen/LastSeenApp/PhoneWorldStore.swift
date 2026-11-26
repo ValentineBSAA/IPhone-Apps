@@ -350,6 +350,7 @@ final class PhoneWorldStore: ObservableObject {
     }
 
     func advancePendingReplies(now: Date = Date()) {
+        guard !recoveryRequired,!settingsRecoveryRequired else{return}
         advanceInvestigation(now: now)
         advanceConnectedMail(now: now)
         advanceSocialReplies(now: now)
@@ -382,8 +383,9 @@ final class PhoneWorldStore: ObservableObject {
             guard processed.insert(item.id).inserted,let parent=pendingParent(item) else{continue}
             if item.startsTutorial && tutorialStarted && !state.flags.contains("phone-tutorial-replied") {
                 state.flags.insert("phone-tutorial-replied")
-                tutorialMessage("notes", item.text, now: now)
-                advanceTutorial(now: now.addingTimeInterval(0.1))
+                let deliveredAt=max(now,parent.at,parent.recipientReadAt ?? parent.at)
+                tutorialMessage("notes", item.text, now: deliveredAt)
+                advanceTutorial(now: deliveredAt.addingTimeInterval(0.1))
                 state.flags = NoraPhotoCatalog.discoveryFlags(from: state.flags)
             } else {
                 let text = currentPendingReplyText(item)
@@ -449,8 +451,11 @@ final class PhoneWorldStore: ObservableObject {
     }
 
     private func tutorialMessage(_ id: String, _ text: String, now: Date) {
+        // Tutorial instructions must not precede the conversation they follow,
+        // even when checkpoint deadlines are rebased after a clock rollback.
+        let preceding=(state.threads[Neighbor.maya.id] ?? []).filter{$0.id.hasPrefix("phone-tutorial-")}.map(\.at).max() ?? now
         append(NeighborMessage(id: "phone-tutorial-" + id, thread: "maya", text: text,
-                               fromPlayer: false, at: now, read: false))
+                               fromPlayer: false, at: max(now,preceding), read: false))
     }
 
     private func advanceTutorial(now: Date) {

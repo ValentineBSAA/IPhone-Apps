@@ -217,6 +217,25 @@ import XCTest
         XCTAssertEqual(restored.messages(.adrian).filter{$0.id==queued.id}.count,1)
     }
 
+    func testTutorialDeliveryDoesNotPrecedeParentAfterClockRollback() throws {
+        let now=Date(timeIntervalSince1970:1800000000)
+        let original=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(now:now),persistToDisk:false)
+        original.startPhoneTutorial(now:now)
+        XCTAssertTrue(original.sendReactive(to:.maya,text:"I repaired the phone",now:now.addingTimeInterval(20)))
+        let queued=try XCTUnwrap(original.state.pendingReplies?.first)
+        XCTAssertTrue(queued.startsTutorial)
+        let parent=try XCTUnwrap(original.messages(.maya).first{$0.id==queued.outgoingID})
+        var snapshot=original.state
+        let earlier=now.addingTimeInterval(-3600)
+        snapshot.pendingReplies=[PhonePendingReply(id:queued.id,outgoingID:queued.outgoingID,neighbor:.maya,text:queued.text,
+            readAt:earlier,dueAt:earlier.addingTimeInterval(5),startsTutorial:true,typingAt:earlier.addingTimeInterval(2))]
+        let restored=PhoneWorldStore(initial:snapshot,persistToDisk:false)
+        restored.advancePendingReplies(now:earlier.addingTimeInterval(10))
+        let delivered=try XCTUnwrap(restored.messages(.maya).first{$0.id=="phone-tutorial-notes"})
+        XCTAssertGreaterThanOrEqual(delivered.at,parent.at)
+        XCTAssertTrue(restored.state.flags.contains("phone-tutorial-replied"))
+        XCTAssertFalse(restored.hasPendingReply(.maya))
+    }
     func testLegacyPendingReplyDecodesWithoutTypingTime() throws {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let original = PhonePendingReply(id: "old", outgoingID: "old-out", neighbor: .adrian, text: "Hi", readAt: now, dueAt: now.addingTimeInterval(5), startsTutorial: false)
