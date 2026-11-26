@@ -94,5 +94,6 @@ struct WorldDocumentReader: View {
                 }.padding(30)
             }
         }.navigationTitle("Document").navigationBarTitleDisplayMode(.inline)
+            .onAppear { world.recordLumaDocumentOpened(id) }
     }
 }

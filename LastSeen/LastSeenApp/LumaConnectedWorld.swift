@@ -465,6 +465,7 @@ struct LumaSocialDiscussion:View{
                 }
             }else{Text("Post unavailable")}
         }.navigationTitle("Discussion")
+            .onAppear { world.recordLumaSocialOpened(channel,postID:postID) }
     }
 }
 

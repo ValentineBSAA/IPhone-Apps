@@ -81,6 +81,9 @@ struct LumaAssistantView: View {
     @Environment(\.scenePhase) private var phase
     @AppStorage("lastseen.lab.messageSound") private var sound = true
     @State private var input = ""
+    @State private var evidenceID: String?
+    @State private var showEvidence = false
+    @State private var evidenceSearch = ""
     @State private var conversationTopic: LumaConversationTopic?
     @State private var conversationTurns: [String] = []
     @State private var interpretation: Task<Void,Never>?
@@ -107,7 +110,7 @@ struct LumaAssistantView: View {
     }
     private func clearSession() {
         stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID()
-        rememberSession(nil); conversationTurns = []; conversationTopic = nil
+        rememberSession(nil); evidenceID = nil; conversationTurns = []; conversationTopic = nil
         previousMemoryID = nil; recollectionCount = 0
         answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation")
     }
@@ -122,13 +125,13 @@ struct LumaAssistantView: View {
         let current = context()
         let previous = conversationTopic
         let known = LumaAssistantConversation.topic(text,previous:previous)
-        let initial = LumaAssistantConversation.reply(text,context:current,previous:previous,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount)
+        let initial = LumaAssistantConversation.reply(text,context:current,previous:previous,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount,evidenceID:evidenceID)
         input = ""; focused = false
         if known == nil, initial.topic == .general, initial.answer.clipID == "conversation", interpretOnDevice, LumaIntentInterpreter.available {
             interpretation = Task { @MainActor in
                 let inferred = await LumaIntentInterpreter.interpret(text,previous:previous)
                 guard !Task.isCancelled, requestID == id, phase == .active else { return }
-                accept(text,LumaAssistantConversation.reply(text,context:context(),previous:previous,interpreted:inferred,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount))
+                accept(text,LumaAssistantConversation.reply(text,context:context(),previous:previous,interpreted:inferred,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount,evidenceID:evidenceID))
                 interpretation = nil
             }
         } else { accept(text,initial) }
@@ -191,6 +194,16 @@ struct LumaAssistantView: View {
                         stopAudio(); openApp(app)
                     }.buttonStyle(.borderedProminent).tint(.teal)
                 }
+                if let source = LumaAssistantEvidence.selected(evidenceID,in:context().world) {
+                    HStack {
+                        Label(source.title,systemImage:"doc.text.magnifyingglass").font(.caption).lineLimit(2)
+                        Spacer()
+                        Button { evidenceID = nil } label: { Image(systemName:"xmark.circle.fill").accessibilityLabel("Clear selected record") }
+                    }.padding(10).lumaSurface(radius:12)
+                }
+                Button { evidenceSearch = ""; showEvidence = true } label: {
+                    Label("Discuss an opened record",systemImage:"doc.text.magnifyingglass")
+                }.buttonStyle(.bordered)
                 HStack {
                     TextField("Ask Luma about what you found", text: $input).textFieldStyle(.roundedBorder).focused($focused)
                         .submitLabel(.go).onSubmit { submit(input) }
@@ -214,6 +227,22 @@ struct LumaAssistantView: View {
                 Text("Local text commands · No microphone listening or real-device actions.").font(.caption).foregroundColor(.secondary).multilineTextAlignment(.center)
             }.padding(20)
         }.navigationTitle("Assistant").navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented:$showEvidence) {
+                NavigationStack {
+                    List {
+                        let records = LumaAssistantEvidence.visible(context().world).filter { evidenceSearch.isEmpty || $0.title.localizedCaseInsensitiveContains(evidenceSearch) }
+                        if records.isEmpty { Text("No matching opened records. Explore the phone first.").foregroundColor(.secondary) }
+                        ForEach(records) { record in
+                            Button {
+                                guard LumaAssistantEvidence.selected(record.id,in:context().world) != nil else { return }
+                                interpretation?.cancel(); interpretation = nil; requestID = UUID()
+                                evidenceID = record.id; showEvidence = false
+                            } label: { Text(record.title) }
+                        }
+                    }.navigationTitle("Opened records").searchable(text:$evidenceSearch)
+                        .toolbar { ToolbarItem(placement:.cancellationAction) { Button("Cancel") { showEvidence = false } } }
+                }
+            }
             .onAppear { resumeSession(); if !reduceMotion { withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { glow = true } } }
             .onChange(of: phase) { if $0 != .active { stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID(); conversationTurns = []; conversationTopic = nil; previousMemoryID = nil; recollectionCount = 0; answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation") } else { resumeSession() } }
             .onChange(of: sound) { if !$0 { stopAudio() } }

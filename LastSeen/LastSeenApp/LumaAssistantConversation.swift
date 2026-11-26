@@ -39,7 +39,7 @@ enum LumaAssistantConversation {
     }
     static func reply(_ raw: String, context c: LumaAssistantContext, previous: LumaConversationTopic? = nil,
                       interpreted: LumaConversationTopic? = nil, previousMemoryID:String? = nil,
-                      recollectionCount:Int = 0) -> LumaConversationReply {
+                      recollectionCount:Int = 0, evidenceID:String? = nil) -> LumaConversationReply {
         if LumaAssistantTrust.claimsOwner(raw) {
             return .init(topic:.general,answer:.init(text:"I can't verify that from a message. I won't assume you're Nora or share protected information.",clipID:"conversation"))
         }
@@ -64,6 +64,13 @@ enum LumaAssistantConversation {
         }
         let selected = topic(raw,previous:previous) ?? interpreted ?? .general
         let world = c.world
+        let reference = LumaAssistantEvidence.selected(evidenceID,in:world) ?? LumaAssistantEvidence.mentions(raw,in:world)
+        // Never let a selected record override credential/action denials,
+        // explicit controls, or ordinary questions about Nora's life.
+        if let reference, !LumaOwnerMemory.topics.contains(selected), selected != .nextStep,
+           (evidenceID != nil || LumaAssistantEvidence.mentions(raw,in:world) != nil) {
+            return .init(topic:reference.topic,answer:.init(text:LumaAssistantEvidence.response(raw,record:reference),clipID:"conversation"))
+        }
         let allowed = VeilArchive.authorized(world)
         let viewed = allowed && VeilArchive.media(world).contains { world.flags.contains("veil.viewed."+$0) }
         let read = allowed && world.flags.contains("veil.correspondence.opened")

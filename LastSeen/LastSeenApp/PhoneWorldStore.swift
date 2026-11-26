@@ -1316,6 +1316,14 @@ final class PhoneWorldStore: ObservableObject {
         return true
     }
 
+    func recordLumaDocumentOpened(_ id:String) {
+        guard WorldDocumentCatalog.document(id,world:state) != nil else { return }
+        if state.flags.insert(LumaAssistantEvidence.documentMarker(id)).inserted { save() }
+    }
+    func recordLumaSocialOpened(_ channel:LumaSocialChannel,postID:String) {
+        guard LumaSocialCatalog.visible(channel,world:state).contains(where:{$0.id == postID}) else { return }
+        if state.flags.insert(LumaAssistantEvidence.socialMarker(channel,postID)).inserted { save() }
+    }
     func rememberLumaSession(_ session:LumaAssistantSession?) {
         var c = connected
         let validated = LumaAssistantSession.validated(session,in:state)

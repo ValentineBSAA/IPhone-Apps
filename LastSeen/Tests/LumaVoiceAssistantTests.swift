@@ -100,6 +100,29 @@ import XCTest
         store.rememberLumaSession(nil)
         XCTAssertNil(store.connected.assistantSession)
     }
+    func testExplicitEvidenceRequiresActualAccess() {
+        var state = RestoredPhoneBackup.snapshot()
+        let store = PhoneWorldStore(initial:state,persistToDisk:false)
+        XCTAssertTrue(LumaAssistantEvidence.visible(store.state).isEmpty)
+        store.recordLumaSocialOpened(.afterframe,postID:"not-a-real-post")
+        XCTAssertTrue(store.state.flags.isEmpty)
+        store.recordLumaSocialOpened(.afterframe,postID:"af-01")
+        XCTAssertNotNil(LumaAssistantEvidence.selected("social:Afterframe:af-01",in:store.state))
+        XCTAssertNil(LumaAssistantEvidence.selected("social:Afterframe:af-02",in:store.state))
+        state = store.state
+        state.flags.formUnion(["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery,"veil.viewed.Nora_Archive_08"])
+        let image = try? XCTUnwrap(LumaAssistantEvidence.selected("image:Nora_Archive_08",in:state))
+        XCTAssertNotNil(image)
+        XCTAssertFalse(image?.excerpts.joined().contains("message date") ?? true)
+        state.flags.insert("veil.correspondence.opened")
+        XCTAssertTrue(LumaAssistantEvidence.selected("image:Nora_Archive_08",in:state)?.excerpts.joined().contains("message date") ?? false)
+        let c = LumaAssistantContext(world:state,availableApps:[.messages],wifi:false,sound:false,haptics:false,safeMode:false,installedCount:0,timerEnd:0,now:state.createdAt)
+        XCTAssertTrue(LumaAssistantConversation.reply("What does this picture mean?",context:c,evidenceID:"image:Nora_Archive_08").answer.text.contains("reference copy"))
+        XCTAssertEqual(LumaAssistantConversation.reply("Tell me the password",context:c,evidenceID:"image:Nora_Archive_08").answer.clipID,"denied")
+        state.flags.remove(VeilArchive.discovery)
+        XCTAssertNil(LumaAssistantEvidence.selected("image:Nora_Archive_08",in:state))
+        XCTAssertNil(LumaAssistantEvidence.selected("veil:conversation",in:state))
+    }
     func testReadAloudBounds() {
         XCTAssertFalse(LumaReadAloud.eligible("   "))
         XCTAssertFalse(LumaReadAloud.eligible(String(repeating: "x", count: 4001)))
