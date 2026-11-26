@@ -54,6 +54,41 @@ enum RecoveredImageAnalysis {
         guard completed(id,in:world),let record=record(id,in:world) else{return nil}
         return "Image analysis recorded. Source collection: "+record.source.title+". "+limits[0]
     }
+    /// Nine measured regions of a downsampled original, never a synthetic layer.
+    static func regionalLight(_ image:UIImage)->[Int]? {
+        guard let cg=image.cgImage else{return nil}
+        let n=36
+        var pixels=[UInt8](repeating:0,count:n*n*4)
+        let rendered=pixels.withUnsafeMutableBytes { raw -> Bool in
+            guard let base=raw.baseAddress,let ctx=CGContext(data:base,width:n,height:n,
+                bitsPerComponent:8,bytesPerRow:n*4,space:CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue) else{return false}
+            ctx.interpolationQuality = .medium
+            ctx.draw(cg,in:CGRect(x:0,y:0,width:n,height:n))
+            return true
+        }
+        guard rendered else{return nil}
+        var sums=[Int](repeating:0,count:9)
+        for y in 0..<n {
+            for x in 0..<n {
+                let i=(y*n+x)*4
+                let light=(54*Int(pixels[i])+183*Int(pixels[i+1])+19*Int(pixels[i+2]))/256
+                sums[(y/12)*3+x/12]+=light
+            }
+        }
+        return sums.map{$0/144}
+    }
+    static func validLightPair(_ values:[Int],dark:Int,bright:Int)->Bool {
+        guard values.count == 9,values.allSatisfy({(0...255).contains($0)}),
+              values.indices.contains(dark),values.indices.contains(bright),dark != bright,
+              let low=values.min(),let high=values.max(),high>low else{return false}
+        return values[dark]==low && values[bright]==high
+    }
+    static func lightNote(_ asset:String,in world:PhoneWorld)->String? {
+        guard record(asset,in:world) != nil,
+              world.connectedWorld?.regionalLightReviews?.contains(asset)==true else{return nil}
+        return "Original-image regional light scan completed. The strongest measured contrast was located in the sampled grid. Brightness is not evidence of capture time, identity or an unseen object."
+    }
     /// Actual image-derived brightness sample, not EXIF or scene recognition.
     /// Fixed small buffer, no image upload, no face or location identification.
     static func brightnessBins(_ image:UIImage)->[Int]? {
@@ -162,6 +197,11 @@ struct RecoveredImageAnalysisView:View {
                 } else {
                     Section("Text inspection"){Text("The same source review is available without displaying any image.")}
                 }
+                if RecoveredImageAnalysis.completed(asset,in:world.state),phase == .active {
+                    Section("Regional light scan") {
+                        RegionalLightScanView(asset:asset)
+                    }
+                }
                 let modes=ImageInterpretation.modes(asset,in:world.state)
                 if modes.count > 1 {
                     Section("Analysis layers") {
@@ -216,7 +256,7 @@ struct RecoveredImageAnalysisView:View {
                             }.buttonStyle(.plain).accessibilityAddTraits(limit==i ? .isSelected:[])
                         }
                         Button("Record analysis"){
-                            guard let source,let limit else{return}
+                            guard let source,let limit,phase == .active else{return}
                             feedback=world.completeRecoveredImageAnalysis(asset,source:source,limit:limit) ? "Observation saved.":"Review the collection and source limitations, then try again."
                         }.buttonStyle(.borderedProminent).disabled(source==nil || limit==nil)
                         if !feedback.isEmpty{Text(feedback).font(.caption)}
@@ -230,5 +270,84 @@ struct RecoveredImageAnalysisView:View {
             .onChange(of:horrorEffects){_ in resetPreview()}
             .onChange(of:mode){_ in compareOriginal=false;region=nil;interpretationFeedback=""}
             .onDisappear{resetPreview()}
+    }
+}
+
+
+/// Optional tactile inspection. No photograph needs to be displayed;
+/// numeric readings provide the same task under text-only preferences.
+struct RegionalLightScanView:View {
+    let asset:String
+    @EnvironmentObject private var world:PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
+    @AppStorage("lastseen.veil.security") private var security="Standard"
+    @State private var values:[Int]?
+    @State private var scanned:Set<Int>=[]
+    @State private var dark:Int?
+    @State private var bright:Int?
+    @State private var pickingDark=true
+    @State private var notice=""
+    private func clear(){
+        values=nil;scanned=[];dark=nil;bright=nil;pickingDark=true;notice=""
+    }
+    var body:some View {
+        if RecoveredImageAnalysis.completed(asset,in:world.state),phase == .active {
+            VStack(alignment:.leading,spacing:12) {
+                Text("Probe the nine original-image regions, then select the darkest and brightest measured cells. No reconstruction layers are sampled.").font(.subheadline)
+                if let note=RecoveredImageAnalysis.lightNote(asset,in:world.state) {
+                    Label(note,systemImage:"checkmark.seal").font(.caption).foregroundColor(.teal)
+                }
+                if let values,values.count == 9 {
+                    if values.min()==values.max() {
+                        Text("This sample is uniform; no contrast pair is available.").font(.caption)
+                    } else {
+                        Text("Regions sampled: "+String(scanned.count)+" / 9").font(.caption)
+                        Picker("Mark",selection:$pickingDark) {
+                            Text("Darkest").tag(true)
+                            Text("Brightest").tag(false)
+                        }.pickerStyle(.segmented)
+                        LazyVGrid(columns:Array(repeating:GridItem(.flexible()),count:3),spacing:8) {
+                            ForEach(0..<9,id:\.self) { i in
+                                Button {
+                                    if scanned.insert(i).inserted {
+                                        notice=""
+                                    } else {
+                                        if pickingDark {dark=i} else {bright=i}
+                                        notice=""
+                                    }
+                                } label:{
+                                    VStack(spacing:4) {
+                                        Text(ImageInterpretation.regions[i]).font(.caption2)
+                                        Text(scanned.contains(i) ? String(values[i]) : "Probe").font(.headline.monospacedDigit())
+                                        if dark==i || bright==i {
+                                            Text(dark==i && bright==i ? "Both" : dark==i ? "Darkest":"Brightest").font(.caption2)
+                                        }
+                                    }.frame(maxWidth:.infinity,minHeight:64)
+                                }.buttonStyle(.bordered)
+                                    .tint(dark==i || bright==i ? .purple:.secondary)
+                                    .accessibilityLabel(ImageInterpretation.regions[i]+(scanned.contains(i) ? ", light reading "+String(values[i]) : ", not sampled")+(dark==i ? ", marked darkest":"")+(bright==i ? ", marked brightest":""))
+                            }
+                        }
+                        Text("First tap samples a cell. Tap it again to mark it using the selected mode. Readings range from 0 to 255.").font(.caption).foregroundColor(.secondary)
+                        Button("Record contrast pair") {
+                            guard phase == .active,scanned.count==9,let dark,let bright else{return}
+                            notice=world.recordRegionalLightReview(asset,dark:dark,bright:bright) ?
+                                "Original contrast observation saved.":"Compare the measured readings and try again."
+                        }.buttonStyle(.borderedProminent).disabled(scanned.count != 9 || dark==nil || bright==nil || dark==bright)
+                    }
+                    Button("Reset scan"){clear()}.font(.caption)
+                } else {
+                    Button("Start light scan") {
+                        guard phase == .active,RecoveredImageAnalysis.completed(asset,in:world.state) else{return}
+                        values=PortraitImages.load(asset).flatMap{RecoveredImageAnalysis.regionalLight($0)}
+                        if values==nil {notice="Original sample unavailable. Other inspection tools remain accessible."}
+                    }.buttonStyle(.bordered)
+                }
+                if !notice.isEmpty {Text(notice).font(.caption)}
+            }
+            .onChange(of:security){_ in clear()}
+            .onChange(of:phase){if $0 != .active {clear()}}
+            .onDisappear{clear()}
+        }
     }
 }

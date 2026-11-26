@@ -104,6 +104,7 @@ enum LumaAssistantEvidence {
                 }
                 if let description=VeilArchive.homeDescriptions[asset] { facts.append("Visible scene: "+description+" Similar furnishings do not authenticate a camera source.") }
                 if let summary=RecoveredImageAnalysis.summary(asset,in:world){facts.append(summary)}
+                if let light=RecoveredImageAnalysis.lightNote(asset,in:world){facts.append(light)}
                 facts += ImageInterpretation.notes(asset,in:world)
                 result.append(.init(id:"image:"+asset,title:VeilArchive.mediaTitle(asset,in:world) ?? "Recovered photograph",kind:.image,excerpts:facts))
             }
@@ -117,6 +118,7 @@ enum LumaAssistantEvidence {
         for item in RecoveredImageAnalysis.visible(world) where item.source != .veil {
             var facts=["This is a recovered local reference in the "+item.source.title+". Original capture and photographer are not independently established."]
             if let summary=RecoveredImageAnalysis.summary(item.id,in:world){facts.append(summary)}
+            if let light=RecoveredImageAnalysis.lightNote(item.id,in:world){facts.append(light)}
             facts += ImageInterpretation.notes(item.id,in:world)
             result.append(.init(id:"image:"+item.id,title:item.title,kind:.image,excerpts:facts))
         }
