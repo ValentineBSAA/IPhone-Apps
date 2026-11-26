@@ -27,7 +27,7 @@ enum HavenWatchEvents {
         default:return nil
         }
     }
-    static let retainedNote = "A retained archive entry contains a user-assigned label that is absent from the original camera directory. The restored index preserves both fields separately. The label is not a camera name, capture timestamp or authenticated identity."
+    static let retainedNote = "A retained archive entry contains a user-assigned annotation: “personal collection”. The original camera directory does not contain this label. The restored index preserves the annotation and camera field separately; the annotation author is unavailable."
     static func openedFollowup(_ world:PhoneWorld)->Bool {
         followup(world) != nil && world.flags.contains(followupOpened)
     }

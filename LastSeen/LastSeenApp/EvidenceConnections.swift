@@ -51,6 +51,9 @@ struct EvidenceConnection: Codable, Equatable, Identifiable {
         if ids == Set([SocialArchiveReview.datesID,"veil:home-index"]) {
             return "The public discussion distinguishes original capture from import; the index describes a revision of the collection. These records support comparing dates and order, not assigning an original capture date."
         }
+        if ids == Set([HavenWatchEvents.followupRecordID,"veil:thread:last-annotation"]) {
+            return "Both records preserve the same annotation wording separately from the camera field. Compare the descriptions, keeping the missing author unresolved."
+        }
         if ids == Set([NoraFriendArchive.recordID,"veil:conversation"]) {
             return "Nora's historical account disputes language used in the anonymous correspondence. The recovered exchange gives her own perspective, but does not authenticate the anonymous sender."
         }
@@ -163,6 +166,7 @@ struct EvidenceComparisonView: View {
                             let readyBefore=VeilReferences.homeIndexReady(world.state)
                             let socialBefore=SocialArchiveReview.ready(world.state)
                             let friendBefore=NoraFriendArchive.ready(world.state)
+                            let annotationBefore=VeilCommunity.reconstructionReady(world.state)
                             if world.saveEvidenceConnection(first,second,relation:relation) {
                                 if !readyBefore && VeilReferences.homeIndexReady(world.state) {
                                     notice="Connection saved. A new recovered reference is available in Files."
@@ -170,6 +174,8 @@ struct EvidenceComparisonView: View {
                                     notice="Connection saved. Additional restored account material is available in Afterframe."
                                 } else if !friendBefore && NoraFriendArchive.ready(world.state) {
                                     notice="Connection saved. A recovered conversation is available in Messages."
+                                } else if !annotationBefore && VeilCommunity.reconstructionReady(world.state) {
+                                    notice="Connection saved. The annotation review is available in VEIL."
                                 } else { notice="Connection saved to the current checkpoint." }
                             } else { notice="Connection could not be saved." }
                         }.buttonStyle(.borderedProminent)
