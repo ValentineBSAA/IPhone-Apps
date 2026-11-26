@@ -1316,6 +1316,10 @@ final class PhoneWorldStore: ObservableObject {
         return true
     }
 
+    func acknowledgeLumaBoundaries() {
+        guard state.everydayArchiveRevision != nil else { return }
+        if state.flags.insert(LumaAssistantTrust.acknowledgement).inserted { save() }
+    }
     func recordVeilObservation(_ asset:String) {
         guard VeilArchive.media(state).contains(asset) else { return }
         if state.flags.insert("veil.viewed."+asset).inserted { save() }

@@ -73,6 +73,9 @@ enum LumaAssistantPolicy {
 struct LumaAssistantView: View {
     let context: () -> LumaAssistantContext
     let openApp: (LabApp) -> Void
+    let acknowledgeBoundaries: () -> Void
+    @State private var previousMemoryID: String?
+    @State private var recollectionCount = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var phase
     @AppStorage("lastseen.lab.messageSound") private var sound = true
@@ -98,24 +101,27 @@ struct LumaAssistantView: View {
     private func submit(_ text: String) {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, text.count <= 600 else { return }
         stopAudio()
-        interpretation?.cancel()
+        interpretation?.cancel(); interpretation = nil
+        if LumaAssistantTrust.acknowledgesBoundaries(text) { acknowledgeBoundaries() }
         let id = UUID(); requestID = id
         let current = context()
         let previous = conversationTopic
         let known = LumaAssistantConversation.topic(text,previous:previous)
-        let initial = LumaAssistantConversation.reply(text,context:current,previous:previous)
+        let initial = LumaAssistantConversation.reply(text,context:current,previous:previous,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount)
         input = ""; focused = false
         if known == nil, initial.topic == .general, initial.answer.clipID == "conversation", interpretOnDevice, LumaIntentInterpreter.available {
             interpretation = Task { @MainActor in
                 let inferred = await LumaIntentInterpreter.interpret(text,previous:previous)
                 guard !Task.isCancelled, requestID == id, phase == .active else { return }
-                accept(text,LumaAssistantConversation.reply(text,context:context(),previous:previous,interpreted:inferred))
+                accept(text,LumaAssistantConversation.reply(text,context:context(),previous:previous,interpreted:inferred,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount))
                 interpretation = nil
             }
         } else { accept(text,initial) }
     }
     private func accept(_ question:String,_ reply:LumaConversationReply) {
         conversationTopic = reply.topic
+        previousMemoryID = reply.memoryID
+        recollectionCount = reply.recollectionCount
         conversationTurns.append("You: " + question)
         conversationTurns.append("Luma: " + reply.answer.text)
         conversationTurns = Array(conversationTurns.suffix(12))
@@ -146,6 +152,11 @@ struct LumaAssistantView: View {
                     Image(systemName: "waveform").font(.system(size: 35, weight: .light)).foregroundColor(.white)
                 }.accessibilityHidden(true)
                 Text("Luma Assistant").font(.title.bold())
+                if !context().world.flags.contains(LumaAssistantTrust.acknowledgement) {
+                    Button("I understand Nora's privacy matters") {
+                        submit("I understand her privacy matters")
+                    }.font(.footnote).buttonStyle(.bordered)
+                }
                 Text(answer.text).font(.title3).multilineTextAlignment(.center).accessibilityIdentifier("luma.assistant.answer")
                     .frame(maxWidth: .infinity).padding(18).lumaSurface()
                 if conversationTurns.count > 2 {
@@ -184,8 +195,8 @@ struct LumaAssistantView: View {
                 Text("Local text commands · No microphone listening or real-device actions.").font(.caption).foregroundColor(.secondary).multilineTextAlignment(.center)
             }.padding(20)
         }.navigationTitle("Assistant").navigationBarTitleDisplayMode(.inline)
-            .onAppear { if !reduceMotion { withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { glow = true } } }
-            .onChange(of: phase) { if $0 != .active { stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID(); conversationTurns = []; conversationTopic = nil; answer = .init(text:"What can I help you with?",clipID:"greeting") } }
+            .onAppear { answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation"); if !reduceMotion { withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { glow = true } } }
+            .onChange(of: phase) { if $0 != .active { stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID(); conversationTurns = []; conversationTopic = nil; previousMemoryID = nil; recollectionCount = 0; answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation") } }
             .onChange(of: sound) { if !$0 { stopAudio() } }
             .onChange(of: spokenResponses) { if !$0 { stopAudio() } }
             .onReceive(timer) { now in
@@ -197,6 +208,6 @@ struct LumaAssistantView: View {
                 if let raw = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
                    AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable { stopAudio() }
             }
-            .onDisappear { stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID(); focused = false; conversationTurns = []; conversationTopic = nil }
+            .onDisappear { stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID(); focused = false; conversationTurns = []; conversationTopic = nil; previousMemoryID = nil; recollectionCount = 0 }
     }
 }

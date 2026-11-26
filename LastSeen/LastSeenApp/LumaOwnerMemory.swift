@@ -71,21 +71,33 @@ enum LumaOwnerMemory {
         let ownerReference = !words.isDisjoint(with:["nora","bennett","owner","she","her"])
         let matches = entries.map { ($0, $0.terms.intersection(words).count) }.filter { $0.1 > 0 && $0.0.topic != .ownerOverview }
         if let best = matches.max(by: { $0.1 < $1.1 }) { return best.0.topic }
-        if let previous, topics.contains(previous), !words.isDisjoint(with:["she","her","more","that","them","think","like"]) { return previous }
+        if let previous, topics.contains(previous), !words.isDisjoint(with:["she","her","more","that","them","think","like","another","remember","recall","asked","said","conversation","conversations","example"]) { return previous }
         if ownerReference { return .ownerOverview }
         return nil
     }
-    static func answer(_ topic:LumaConversationTopic, question:String, previous:LumaConversationTopic?, world:PhoneWorld) -> String {
+    static func selectedMemory(_ topic:LumaConversationTopic, question:String, previousMemoryID:String? = nil) -> Memory? {
+        let words = LumaAssistantConversation.words(question)
+        let candidates = entries.filter { $0.topic == topic }
+        let ranked = candidates.enumerated().sorted { a,b in
+            let x = a.element.terms.intersection(words).count
+            let y = b.element.terms.intersection(words).count
+            return x == y ? a.offset < b.offset : x > y
+        }
+        if let best = ranked.first?.element, !best.terms.isDisjoint(with:words) { return best }
+        if let previousMemoryID, let prior = candidates.first(where:{$0.id == previousMemoryID}) { return prior }
+        return ranked.first?.element
+    }
+    static func answer(_ topic:LumaConversationTopic, question:String, previous:LumaConversationTopic?, world:PhoneWorld, previousMemoryID:String? = nil, recollectionIndex:Int = 0) -> String {
         guard world.everydayArchiveRevision != nil else {
             return "My previous owner's everyday memory hasn't been restored yet. I don't want to guess."
         }
         let words = LumaAssistantConversation.words(question)
-        let candidates = entries.filter { $0.topic == topic }
-        guard let entry = candidates.enumerated().max(by: { a,b in
-            let x = a.element.terms.intersection(words).count
-            let y = b.element.terms.intersection(words).count
-            return x == y ? a.offset > b.offset : x < y
-        })?.element else { return "I don't have a reliable memory of that. What would you like to know about Nora?" }
+        guard LumaAssistantTrust.permits(topic,world:world) else { return "I don't know you well enough to discuss Nora's personal life yet. I can help with the phone's ordinary functions while you continue the recovery." }
+        guard let entry = selectedMemory(topic,question:question,previousMemoryID:previousMemoryID) else { return "I don't have a reliable memory of that. What would you like to know about Nora?" }
+        if LumaOwnerHistory.requestsRecollection(words) {
+            guard LumaAssistantTrust.level(world) == .established else { return "I'm not ready to repeat our past conversations. We can discuss ordinary information already available to you." }
+            return LumaOwnerHistory.recollection(entry.id,world:world,index:recollectionIndex) ?? "That's all I remember about that particular subject."
+        }
         let hasDetail = !entry.terms.isDisjoint(with:words)
         if previous == topic && !hasDetail { return entry.followup }
         return entry.text

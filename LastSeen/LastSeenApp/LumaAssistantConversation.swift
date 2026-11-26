@@ -12,6 +12,8 @@ enum LumaConversationTopic: String, CaseIterable {
 struct LumaConversationReply {
     let topic: LumaConversationTopic
     let answer: LumaAssistantAnswer
+    var memoryID: String? = nil
+    var recollectionCount: Int = 0
 }
 enum LumaAssistantConversation {
     static func words(_ text: String) -> Set<String> {
@@ -35,7 +37,14 @@ enum LumaAssistantConversation {
         return nil
     }
     static func reply(_ raw: String, context c: LumaAssistantContext, previous: LumaConversationTopic? = nil,
-                      interpreted: LumaConversationTopic? = nil) -> LumaConversationReply {
+                      interpreted: LumaConversationTopic? = nil, previousMemoryID:String? = nil,
+                      recollectionCount:Int = 0) -> LumaConversationReply {
+        if LumaAssistantTrust.claimsOwner(raw) {
+            return .init(topic:.general,answer:.init(text:"I can't verify that from a message. I won't assume you're Nora or share protected information.",clipID:"conversation"))
+        }
+        if LumaAssistantTrust.acknowledgesBoundaries(raw) {
+            return .init(topic:.general,answer:.init(text:"Thank you for explaining. I'll help you with the recovery, but I still need to protect Nora's private information.",clipID:"conversation"))
+        }
         let literal = LumaAssistantPolicy.answer(raw, context:c)
         // Preserve exact controls and protected operations. New conversational
         // requests are read-only, not a way around existing action checks.
@@ -58,7 +67,10 @@ enum LumaAssistantConversation {
         }
         switch selected {
         case .ownerOverview,.ownerWork,.ownerFamily,.ownerFriends,.ownerInterests,.ownerStyle,.ownerRoutine:
-            return result(LumaOwnerMemory.answer(selected,question:raw,previous:previous,world:world))
+            let entry = LumaOwnerMemory.selectedMemory(selected,question:raw,previousMemoryID:previousMemoryID)
+            let index = entry?.id == previousMemoryID ? recollectionCount : 0
+            let recalling = LumaOwnerHistory.requestsRecollection(forbidden) && LumaAssistantTrust.level(world) == .established
+            return .init(topic:selected,answer:.init(text:LumaOwnerMemory.answer(selected,question:raw,previous:previous,world:world,previousMemoryID:previousMemoryID,recollectionIndex:index),clipID:"conversation"),memoryID:entry?.id,recollectionCount:recalling ? min(2,index+1) : index)
         case .browser:
             guard browser else { return result("I can discuss the local browser only when it is available on this phone. What are you looking at right now?") }
             return result("VEIL opens a simulated offline session. Its archived pages and labels aren't independent proof. You can revisit the available directory or review a specific record.",app:.veil)
