@@ -672,17 +672,43 @@ final class PhoneWorldStore: ObservableObject {
         save()
     }
     @discardableResult
-    func sendRelaySupport(_ raw: String, installed: String, sources: String, now: Date = Date()) -> Bool {
+    func sendRelaySupport(_ raw: String, installed: String, sources: String, now: Date = Date(), attachments: [LumaMessageAttachment] = []) -> Bool {
         let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard RelaySupportAccess.available(installed: installed, flags: state.flags), !text.isEmpty, raw.count <= 2000 else { return false }
+        guard RelaySupportAccess.available(installed: installed, flags: state.flags),
+              (!text.isEmpty || !attachments.isEmpty), raw.count <= 2000,
+              RelaySupportAttachmentPolicy.canSend(attachments, world: state) else { return false }
         beginRelaySupport(installed: installed, now: now)
         guard var history = state.relaySupport else { return false }
         let provider = RelaySupportLocalProvider()
-        let answer = provider.reply(question: text, recent: Array(history.messages.suffix(12)), flags: state.flags, sources: sources, installed: installed)
-        history.messages.append(.init(id: UUID().uuidString, text: text, at: now, outgoing: true))
+        let answer: RelaySupportAnswer
+        if !attachments.isEmpty {
+            answer = .init(text: "I've received your selected attachments. I can see their file labels, but I can't inspect the image or document contents in this mode. Tell me which technical problem you'd like help with.",
+                           guideID: RelaySupportKnowledge.generalGuide("attachments")?.id)
+        } else {
+            answer = provider.reply(question: text, recent: Array(history.messages.suffix(12)), flags: state.flags, sources: sources, installed: installed)
+        }
+        let displayText = text.isEmpty ? "Shared attachment" : text
+        history.messages.append(.init(id: UUID().uuidString, text: displayText, at: now, outgoing: true,
+                                      attachments: attachments.isEmpty ? nil : attachments))
         history.messages.append(.init(id: UUID().uuidString, text: answer.text, at: now, outgoing: false,
                                       guideID: answer.guideID.flatMap { RelaySupportKnowledge.generalGuide($0)?.id },
                                       packageID: answer.packageID))
+        state.relaySupport = history
+        save()
+        return true
+    }
+
+    @discardableResult
+    func shareRelaySupportDiagnostic(_ report: RelaySupportDiagnostic, installed: String, versions: String, sources: String, safeMode: Bool, now: Date = Date()) -> Bool {
+        guard RelaySupportAccess.available(installed: installed, flags: state.flags),
+              let current = RelaySupportDiagnostic.capture(packageID: report.packageID, installed: installed, versions: versions,
+                                                            sources: sources, safeMode: safeMode, flags: state.flags),
+              current == report else { return false }
+        beginRelaySupport(installed: installed, now: now)
+        guard var history = state.relaySupport else { return false }
+        history.messages.append(.init(id: UUID().uuidString, text: "Shared package diagnostics", at: now, outgoing: true, diagnostic: report))
+        history.messages.append(.init(id: UUID().uuidString, text: report.advice, at: now, outgoing: false,
+                                      guideID: RelaySupportKnowledge.generalGuide("patchline-recovery")?.id, packageID: report.packageID))
         state.relaySupport = history
         save()
         return true
