@@ -301,8 +301,9 @@ final class PhoneWorldStore: ObservableObject {
         advanceSocialReplies(now: now)
         advanceCommunityActivity(now: now)
         advanceDayblink(now: now)
+        let priorHavenDelivered=connected.havenEvent?.delivered == true
         advanceHavenWatch(now: now)
-        advanceHavenFollowup(now: now)
+        advanceHavenFollowup(now: now,priorJustDelivered:!priorHavenDelivered && connected.havenEvent?.delivered == true)
         advanceMotionwell(now: now)
         advanceCharacterCheckIns(now:now)
         let pending = state.pendingReplies ?? []
@@ -1204,7 +1205,7 @@ final class PhoneWorldStore: ObservableObject {
         }
         commitConnected(c)
     }
-    func advanceHavenFollowup(now:Date=Date()) {
+    func advanceHavenFollowup(now:Date=Date(),priorJustDelivered:Bool=false) {
         guard HavenWatchEvents.followupEligible(state),!state.flags.contains(InvestigationResolution.completed) else { return }
         var c=connected
         if c.havenFollowupEvent == nil {
@@ -1214,9 +1215,14 @@ final class PhoneWorldStore: ObservableObject {
         }
         guard var event=c.havenFollowupEvent,event.id == HavenWatchEvents.followupID,
               !event.delivered,event.due <= now else{return}
-        // Avoid a second security arrival immediately after the first.
+        // Avoid simultaneous overdue arrivals when returning to the phone.
+        if priorJustDelivered {
+            c.havenFollowupEvent=HavenWatchEvent(id:event.id,due:now.addingTimeInterval(15))
+            commitConnected(c)
+            return
+        }
         if let prior=c.havenEvent,prior.delivered,now.timeIntervalSince(prior.due)<15 { return }
-        event.delivered=true
+        event=HavenWatchEvent(id:event.id,due:now,delivered:true)
         c.havenFollowupEvent=event
         if c.havenWatch?.alertsEnabled ?? true {
             addActivity(.init(id:event.id,kind:.security,date:now,title:HavenWatchEvents.title(event),
