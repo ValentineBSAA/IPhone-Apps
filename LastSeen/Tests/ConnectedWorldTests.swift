@@ -2,6 +2,33 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class ConnectedWorldTests:XCTestCase {
+    func testMailSearchUnreadAndDraftFolderCleanup() throws {
+        let w=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
+        let initial=LumaMailCatalog.mailbox(w.state,folder:"inbox",query:"  ELEVATOR  ")
+        XCTAssertTrue(initial.contains{$0.id=="building-update"})
+        XCTAssertTrue(LumaMailCatalog.mailbox(w.state,folder:"inbox",query:"no-match-879").isEmpty)
+        let unread=LumaMailCatalog.mailbox(w.state,folder:"inbox",read:["building-update"],unreadOnly:true)
+        XCTAssertFalse(unread.contains{$0.id=="building-update" || $0.id.hasPrefix("b32-mail-")})
+        XCTAssertTrue(LumaMailCatalog.mailbox(w.state,folder:"attachments",attachmentsAvailable:false).isEmpty)
+        XCTAssertNil(w.saveMailDraft(id:"missing-draft",peer:.adrian,subject:"Review",body:"Update"))
+        XCTAssertNil(w.saveMailDraft(id:"building-update",peer:.adrian,subject:"Review",body:"Update"))
+        let now=Date(timeIntervalSince1970:1800000000)
+        let draft=try XCTUnwrap(w.saveMailDraft(id:nil,peer:.adrian,subject:"Review",body:"Update",now:now))
+        w.moveConnectedMail(draft,folder:"archive")
+        XCTAssertEqual(w.connected.mailFolders[draft],"archive")
+        XCTAssertEqual(w.saveMailDraft(id:draft,peer:.adrian,subject:"Review",body:"Updated",now:now),draft)
+        XCTAssertNil(w.connected.mailFolders[draft])
+        XCTAssertTrue(LumaMailCatalog.mailbox(w.state,folder:"draft",query:" Adrian ").contains{$0.id==draft})
+        w.moveConnectedMail(draft,folder:"trash")
+        XCTAssertTrue(w.sendConnectedMail(draftID:draft,peer:.adrian,subject:"Review",body:"Updated",now:now))
+        XCTAssertNil(w.connected.mailFolders[draft])
+        XCTAssertFalse(LumaMailCatalog.visible(w.state).contains{$0.id==draft})
+        w.advanceConnectedMail(now:now.addingTimeInterval(31))
+        let arrival=try XCTUnwrap(LumaActivityCatalog.visible(w.state).first{$0.kind == .mail})
+        w.dismissActivity(arrival.id)
+        XCTAssertFalse(LumaActivityCatalog.visible(w.state).contains{$0.id==arrival.id})
+    }
+
     func testMailDraftSendDeliveryAndRestore() throws {
         let w=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
         let now=Date(timeIntervalSince1970:1800000000)
