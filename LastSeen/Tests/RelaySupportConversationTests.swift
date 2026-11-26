@@ -15,6 +15,19 @@ import XCTest
         XCTAssertEqual(store.state.threads, original)
         XCTAssertEqual(try JSONDecoder().decode(PhoneWorld.self, from: JSONEncoder().encode(store.state)).relaySupport, store.state.relaySupport)
     }
+    func testAlexRedirectsPersonalQuestionsWithoutGeneratingPrivateContext() throws {
+        let store=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
+        let installed="relay-support",sources=RelayCatalog.defaultSources
+        for question in ["Who is Nora?", "What music did Nora like?", "Where is Nora now?"] {
+            XCTAssertTrue(store.sendRelaySupport(question,installed:installed,sources:sources))
+            let response=try XCTUnwrap(store.state.relaySupport?.messages.last)
+            XCTAssertEqual(response.text,RelaySupportScope.personalReply)
+            XCTAssertNil(response.packageID)
+            XCTAssertNil(store.relaySupportGenerationRequest(installed:installed,sources:sources))
+        }
+        XCTAssertTrue(store.sendRelaySupport("How do I use Compact Grid?",installed:installed,sources:sources))
+        XCTAssertEqual(store.state.relaySupport?.messages.last?.packageID,"compact")
+    }
     func testExplicitDiagnosticConsentAndStaleReport() throws {
         let store = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(), persistToDisk: false)
         let installed = "relay-support|compact"

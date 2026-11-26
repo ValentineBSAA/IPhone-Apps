@@ -6,6 +6,7 @@ struct LumaAssistantSession: Codable, Equatable {
     let topicID: String
     let memoryID: String?
     let recollectionCount: Int
+    var guidanceTrack:LumaGuidanceTrack? = nil
     var topic: LumaConversationTopic? { LumaConversationTopic(rawValue:topicID) }
 
     static func validated(_ session:Self?,in world:PhoneWorld) -> Self? {
@@ -21,12 +22,14 @@ struct LumaAssistantSession: Codable, Equatable {
         // the sensitive conversation to resume, even on a restored checkpoint.
         if [.browser,.pictures,.privacy,.correspondence].contains(topic),
            !VeilArchive.authorized(world) { return nil }
-        return .init(topicID:topic.rawValue,memoryID:nil,recollectionCount:0)
+        let track=topic == .nextStep ? session.guidanceTrack:nil
+        guard track != .archive || VeilArchive.authorized(world) else{return nil}
+        return .init(topicID:topic.rawValue,memoryID:nil,recollectionCount:0,guidanceTrack:track)
     }
 
     static func from(_ reply:LumaConversationReply,in world:PhoneWorld) -> Self? {
         guard reply.answer.clipID == "conversation", reply.topic != .general else { return nil }
-        return validated(.init(topicID:reply.topic.rawValue,memoryID:reply.memoryID,recollectionCount:reply.recollectionCount),in:world)
+        return validated(.init(topicID:reply.topic.rawValue,memoryID:reply.memoryID,recollectionCount:reply.recollectionCount,guidanceTrack:reply.guidanceTrack),in:world)
     }
 
     static func resumePrompt(_ session:Self?,world:PhoneWorld) -> String {

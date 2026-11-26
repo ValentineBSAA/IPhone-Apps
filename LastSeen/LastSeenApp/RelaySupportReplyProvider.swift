@@ -12,6 +12,14 @@ protocol RelaySupportReplyProvider {
 
 /// Deterministic, offline retrieval. Never executes an action, and never
 /// exposes undiscovered package metadata or the owner's message archive.
+enum RelaySupportScope {
+    static func personalQuestion(_ text:String)->Bool {
+        let words=Set(text.lowercased().split{!$0.isLetter && !$0.isNumber}.map(String.init))
+        let personal:Set<String>=["whereabouts","missing","disappeared","stalking","stalker","family","friends","childhood","hobbies","relationship","boyfriend","girlfriend","favorite","favourite","identity","personal","where","who","like","likes","liked","know","life","music"]
+        return words.contains("nora") && !words.isDisjoint(with:personal)
+    }
+    static let personalReply="I handle technical support for the simulated phone. Luma is the better assistant for questions about Nora and the records you've recovered. I don't have access to her private history."
+}
 struct RelaySupportLocalProvider: RelaySupportReplyProvider {
     private static let stop: Set<String> = ["a","an","the","to","of","and","or","is","it","i","my","me","you","can","could","would","how","what","where","why","do","does","did","with","for","this","that","please","about","tell","help","use","using"]
     private static let expansions: [String: Set<String>] = [
@@ -34,6 +42,7 @@ struct RelaySupportLocalProvider: RelaySupportReplyProvider {
         if !raw.isDisjoint(with: ["password","passcode","pin","spoiler","ending","exploit","bypass","credentials","secret","secrets","solution"]) {
             return .init(text: "I can explain recovery and authentication, but I can't provide private credentials, hidden records or puzzle answers. What problem are you seeing in the interface?")
         }
+        if RelaySupportScope.personalQuestion(question) {return .init(text:RelaySupportScope.personalReply)}
         if ["hi","hello","hey"].contains(normalized(question)) {
             return .init(text: "Hey! What are you working on? Tell me the package name or what you're seeing on the phone.")
         }
@@ -77,7 +86,11 @@ struct RelaySupportLocalProvider: RelaySupportReplyProvider {
                 ranked.append((titleScore * 3 + headingScore * 4 + contentScore + context, guide, section))
             }
         }
-        ranked.sort { $0.score > $1.score }
+        ranked.sort {
+            if $0.score != $1.score {return $0.score > $1.score}
+            if $0.guide.id != $1.guide.id {return $0.guide.id < $1.guide.id}
+            return $0.section.heading < $1.section.heading
+        }
         guard let best = ranked.first, best.score >= 3, !tokens.isEmpty else {
             return .init(text: "I'm not certain what you're referring to. Which app or package are you using, and what did you expect to happen?")
         }

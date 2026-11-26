@@ -9,11 +9,13 @@ enum LumaConversationTopic: String, CaseIterable {
     case pictures, privacy, correspondence, identity, chronology, provenance, browser, unease, nextStep, general
     case ownerOverview, ownerWork, ownerFamily, ownerFriends, ownerInterests, ownerStyle, ownerRoutine
 }
+enum LumaGuidanceTrack:String,Codable {case main,archive}
 struct LumaConversationReply {
     let topic: LumaConversationTopic
     let answer: LumaAssistantAnswer
     var memoryID: String? = nil
     var recollectionCount: Int = 0
+    var guidanceTrack:LumaGuidanceTrack? = nil
 }
 /// Optional guidance follows current access, not a secret answer key.
 enum LumaArchiveGuidance {
@@ -116,7 +118,7 @@ enum LumaAssistantConversation {
     static func reply(_ raw: String, context c: LumaAssistantContext, previous: LumaConversationTopic? = nil,
                       interpreted: LumaConversationTopic? = nil, previousMemoryID:String? = nil,
                       recollectionCount:Int = 0, evidenceID:String? = nil, visualReport:LumaImageAnalysisReport? = nil,
-                      imageSecurity:String = "Standard") -> LumaConversationReply {
+                      imageSecurity:String = "Standard",previousGuidance:LumaGuidanceTrack? = nil) -> LumaConversationReply {
         if LumaAssistantTrust.claimsOwner(raw) {
             return .init(topic:.general,answer:.init(text:"I can't verify that from a message. I won't assume you're Nora or share protected information.",clipID:"conversation"))
         }
@@ -146,21 +148,26 @@ enum LumaAssistantConversation {
         let explicitHint = ["hint","help me investigate","what should i do","what do i do now","what should i do next","where do i go next","i m stuck","im stuck","give me a hint"].contains(normalized)
         let followupHint = previous == .nextStep && ["tell me more","more","another hint","can you be more specific","what do you mean","give me a hint"].contains(normalized)
         if mainRequest {
-            return .init(topic:.nextStep,answer:mainGuidance(c,detailed:normalized.hasPrefix("more specific")))
+            return .init(topic:.nextStep,answer:mainGuidance(c,detailed:normalized.hasPrefix("more specific")),guidanceTrack:.main)
         }
-        if archiveRequest {
-            let guidance=LumaArchiveGuidance.answer(c,detailed:normalized.hasPrefix("more specific"))
+        if archiveRequest || (followupHint && previousGuidance == .archive) {
+            let guidance=LumaArchiveGuidance.answer(c,detailed:followupHint || normalized.hasPrefix("more specific"))
                 ?? .init(text:"There is no separate archive lead available to review yet. Continue with the records you already have.",clipID:"conversation")
-            return .init(topic:.nextStep,answer:guidance)
+            return .init(topic:.nextStep,answer:guidance,guidanceTrack:.archive)
+        }
+        if followupHint && previousGuidance == .main {
+            return .init(topic:.nextStep,answer:mainGuidance(c,detailed:true),guidanceTrack:.main)
         }
         if explicitHint || followupHint {
-            let guidance=LumaArchiveGuidance.answer(c,detailed:followupHint) ?? mainGuidance(c,detailed:followupHint)
-            return .init(topic:.nextStep,answer:guidance)
+            if let guidance=LumaArchiveGuidance.answer(c,detailed:followupHint) {
+                return .init(topic:.nextStep,answer:guidance,guidanceTrack:.archive)
+            }
+            return .init(topic:.nextStep,answer:mainGuidance(c,detailed:followupHint),guidanceTrack:.main)
         }
         if normalized.hasPrefix("open ") || normalized.hasPrefix("show ") ||
             ["help","hello","hi","hey","hint","progress","investigation progress"].contains(normalized) ||
             (literal.clipID != "clarify" && literal.clipID != "denied") {
-            return .init(topic:previous ?? .general,answer:literal,memoryID:previousMemoryID,recollectionCount:recollectionCount)
+            return .init(topic:previous ?? .general,answer:literal,memoryID:previousMemoryID,recollectionCount:recollectionCount,guidanceTrack:previous == .nextStep ? previousGuidance:nil)
         }
         let selected = topic(raw,previous:previous) ?? interpreted ?? .general
         let world = c.world
@@ -210,10 +217,13 @@ enum LumaAssistantConversation {
         case .unease:
             return result("I understand why that feels unsettling. You can stop viewing an image and keep exploring the text records. What part of the discovery bothered you most?")
         case .nextStep:
-            if let guidance=LumaArchiveGuidance.answer(c,detailed:previous == .nextStep) {
-                return .init(topic:.nextStep,answer:guidance)
+            if previous == .nextStep && previousGuidance == .main {
+                return .init(topic:.nextStep,answer:mainGuidance(c,detailed:true),guidanceTrack:.main)
             }
-            return .init(topic:.nextStep,answer:mainGuidance(c,detailed:previous == .nextStep))
+            if let guidance=LumaArchiveGuidance.answer(c,detailed:previous == .nextStep) {
+                return .init(topic:.nextStep,answer:guidance,guidanceTrack:.archive)
+            }
+            return .init(topic:.nextStep,answer:mainGuidance(c,detailed:previous == .nextStep),guidanceTrack:.main)
         case .general:
             return result("Tell me a little more about what you found. Was it a message, picture, document, or something you noticed while using an app?")
         }

@@ -29,7 +29,8 @@ struct RelaySupportGenerationRequest {
                         sources: String, epoch: UUID, sharedDocuments: [RelaySupportDocumentExcerpt] = []) -> Self? {
         guard question.outgoing, !fallback.outgoing, fallback.generatedOnDevice != true,
               question.diagnostic == nil,
-              question.text.count <= 2000, words(question.text).isDisjoint(with: denied) else { return nil }
+              question.text.count <= 2000, words(question.text).isDisjoint(with: denied),
+              !RelaySupportScope.personalQuestion(question.text) else { return nil }
         let q = normalized(question.text)
         let unavailable = RelayCatalog.packages.filter { !accessible($0, flags: flags, sources: sources, installed: installed) }
         guard !unavailable.contains(where: { q.contains(normalized($0.title)) || q.contains(normalized($0.id)) }) else { return nil }

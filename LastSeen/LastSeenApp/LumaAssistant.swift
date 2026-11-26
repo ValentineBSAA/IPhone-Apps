@@ -110,6 +110,7 @@ struct LumaAssistantView: View {
     @State private var showEvidence = false
     @State private var evidenceSearch = ""
     @State private var conversationTopic: LumaConversationTopic?
+    @State private var guidanceTrack:LumaGuidanceTrack?
     @State private var conversationTurns: [String] = []
     @State private var interpretation: Task<Void,Never>?
     @State private var requestID = UUID()
@@ -158,6 +159,7 @@ struct LumaAssistantView: View {
         let world = context().world
         let session = LumaAssistantSession.validated(world.connectedWorld?.assistantSession,in:world)
         conversationTopic = session?.topic
+        guidanceTrack=session?.guidanceTrack
         previousMemoryID = session?.memoryID
         recollectionCount = session?.recollectionCount ?? 0
         answer = .init(text:LumaAssistantSession.resumePrompt(session,world:world),clipID:"conversation")
@@ -204,7 +206,7 @@ struct LumaAssistantView: View {
         stopAudio()
         cancelImageScan()
         interpretation?.cancel(); interpretation = nil; requestID = UUID()
-        evidenceID = nil; conversationTurns = []; conversationTopic = nil
+        evidenceID = nil; conversationTurns = []; conversationTopic = nil; guidanceTrack=nil
         previousMemoryID = nil; recollectionCount = 0
         input = ""; focused = false; showEvidence = false
         answer = .init(text: LumaAssistantTrust.greeting(context().world), clipID: "conversation")
@@ -212,7 +214,7 @@ struct LumaAssistantView: View {
     private func clearSession() {
         stopAudio(); interpretation?.cancel(); interpretation = nil; requestID = UUID()
         cancelImageScan()
-        rememberSession(nil); evidenceID = nil; conversationTurns = []; conversationTopic = nil
+        rememberSession(nil); evidenceID = nil; conversationTurns = []; conversationTopic = nil; guidanceTrack=nil
         input="";focused=false;showEvidence=false;evidenceSearch=""
         previousMemoryID = nil; recollectionCount = 0
         answer = .init(text:LumaAssistantTrust.greeting(context().world),clipID:"conversation")
@@ -232,15 +234,16 @@ struct LumaAssistantView: View {
         if imageScan != nil {cancelImageScan()}
         let current = context()
         let previous = conversationTopic
+        let previousTrack=guidanceTrack
         let known = LumaAssistantConversation.topic(text,previous:previous)
-        let initial = LumaAssistantConversation.reply(text,context:current,previous:previous,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount,evidenceID:evidenceID,visualReport:imageReport,imageSecurity:imageSecurity)
+        let initial = LumaAssistantConversation.reply(text,context:current,previous:previous,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount,evidenceID:evidenceID,visualReport:imageReport,imageSecurity:imageSecurity,previousGuidance:previousTrack)
         input = ""; focused = false
         if known == nil, initial.topic == .general, initial.answer.clipID == "conversation", interpretOnDevice, LumaIntentInterpreter.available {
             interpretation = Task { @MainActor in
                 let inferred = await LumaIntentInterpreter.interpret(text,previous:previous)
                 guard !Task.isCancelled,requestID==id,phase == .active else{return}
                 guard checkpointEpoch()==epoch,!accessSnapshot.revokes(access) else{clearTransientContext();lastAccess=accessSnapshot;return}
-                accept(text,LumaAssistantConversation.reply(text,context:context(),previous:previous,interpreted:inferred,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount,evidenceID:evidenceID,visualReport:imageReport,imageSecurity:imageSecurity))
+                accept(text,LumaAssistantConversation.reply(text,context:context(),previous:previous,interpreted:inferred,previousMemoryID:previousMemoryID,recollectionCount:recollectionCount,evidenceID:evidenceID,visualReport:imageReport,imageSecurity:imageSecurity,previousGuidance:previousTrack))
                 interpretation = nil
             }
         } else { accept(text,initial) }
@@ -248,10 +251,13 @@ struct LumaAssistantView: View {
     private func accept(_ question:String,_ reply:LumaConversationReply) {
         guard phase == .active else{return}
         conversationTopic = reply.topic
+        guidanceTrack=reply.guidanceTrack
         previousMemoryID = reply.memoryID
         recollectionCount = reply.recollectionCount
         if reply.answer.clipID == "conversation" && reply.topic != .general {
             rememberSession(LumaAssistantSession.from(reply,in:context().world))
+        } else if reply.topic == .general && (reply.answer.clipID == "conversation" || reply.answer.clipID == "denied") {
+            rememberSession(nil)
         }
         conversationTurns.append("You: " + question)
         conversationTurns.append("Luma: " + reply.answer.text)

@@ -59,6 +59,29 @@ import XCTest
         XCTAssertFalse(LumaAssistantConversation.reply("hint",context:context()).answer.text.contains("home copies"))
     }
 
+    func testExplicitGuidanceTrackSurvivesFollowupAndCheckpointEncoding() throws {
+        var world=RestoredPhoneBackup.snapshot()
+        world.flags.formUnion(["phone-tutorial-replied","phone-tutorial-file-guidance","phone-tutorial-finished","web.visited.studio","web.visited.archive",VeilArchive.discovery])
+        func context()->LumaAssistantContext {
+            .init(world:world,availableApps:[.messages,.veil,.browser,.files,.relay],wifi:true,sound:false,haptics:false,safeMode:false,installedCount:1,timerEnd:0,now:world.createdAt)
+        }
+        let main=LumaAssistantConversation.reply("main investigation hint",context:context())
+        XCTAssertEqual(main.guidanceTrack,.main)
+        let session=try XCTUnwrap(LumaAssistantSession.from(main,in:world))
+        let decoded=try JSONDecoder().decode(LumaAssistantSession.self,from:JSONEncoder().encode(session))
+        XCTAssertEqual(decoded.guidanceTrack,.main)
+        let next=LumaAssistantConversation.reply("tell me more",context:context(),previous:decoded.topic,previousGuidance:decoded.guidanceTrack)
+        XCTAssertEqual(next.guidanceTrack,.main)
+        XCTAssertEqual(next.answer.app,.browser)
+        let archive=LumaAssistantConversation.reply("archive investigation hint",context:context())
+        XCTAssertEqual(archive.guidanceTrack,.archive)
+        let archived=try XCTUnwrap(LumaAssistantSession.from(archive,in:world))
+        world.flags.remove(VeilArchive.discovery)
+        XCTAssertNil(LumaAssistantSession.validated(archived,in:world))
+        XCTAssertNotNil(LumaAssistantSession.validated(decoded,in:world))
+        let old=Data(#"{"topicID":"nextStep","recollectionCount":0}"#.utf8)
+        XCTAssertNil(try JSONDecoder().decode(LumaAssistantSession.self,from:old).guidanceTrack)
+    }
     func testNaturalQuestionsAndObservedRecordGates() {
         var world = RestoredPhoneBackup.snapshot()
         func context() -> LumaAssistantContext {
