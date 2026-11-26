@@ -44,12 +44,29 @@ for name in ("RespringDown", "RespringUp", "UserspaceDown", "UserspaceUp"):
 scripts=json.loads(pathlib.Path("VoiceAssets/initial_scripts.json").read_text())
 voice_names={r["file"] for r in scripts["memos"]+scripts["assistant"]}
 assert len(voice_names)==10
-# No approved voice pack is pinned/imported in this release configuration.
-# An approved future intake must explicitly update this contract.
+# Private physical QA only: verify exact original voice bytes and the
+# derived approval manifest; preserve the unresolved rights flags.
+voice_archive=pathlib.Path("VoiceAssets/LastSeen_B32_VoiceCandidates_v1.zip")
+voice_data=voice_archive.read_bytes()
+assert hashlib.sha1(b"blob "+str(len(voice_data)).encode()+b"\x00"+voice_data).hexdigest()=="b10305b42e39cb54f445b313fc7e273fd1e158ca"
+with zipfile.ZipFile(voice_archive) as z:
+    assert z.testzip() is None
+    voice_manifest=json.loads(z.read("manifest.json"))
+    assert {r["file"] for r in voice_manifest["assets"]}==voice_names
+    voice_manifest["creator_approved"]=True
+    voice_manifest["approval_scope"]="private_physical_qa"
+    for row in voice_manifest["assets"]:
+        name=row["file"]
+        assert digest(z.read(name))==row["sha256"]
+        assert digest((pathlib.Path("LastSeenApp/VoiceResources")/name).read_bytes())==row["sha256"]
+        expected[name]=row["sha256"]
+voice_manifest_path=pathlib.Path("LastSeenApp/VoiceResources/LumaVoiceManifest.json")
+assert json.loads(voice_manifest_path.read_text())==voice_manifest
+expected[voice_manifest_path.name]=digest(voice_manifest_path.read_bytes())
 def reject_unapproved_voice(names):
     for path in names:
         name=pathlib.PurePosixPath(str(path)).name
-        assert name not in voice_names and name!="LumaVoiceManifest.json" and not name.startswith("LastSeen_B32_VoiceCandidates"), "Unapproved voice resource: "+str(path)
+        assert not name.startswith("LastSeen_B32_VoiceCandidates"), "Candidate archive must not ship"
 reject_unapproved_voice(pathlib.Path("LastSeenApp").rglob("*"))
 expected["ConnectedWorldDocuments.json"]=digest(pathlib.Path("LastSeenApp/ConnectedWorldDocuments.json").read_bytes())
 support_root=pathlib.Path("LastSeenApp/RelaySupportResources")
