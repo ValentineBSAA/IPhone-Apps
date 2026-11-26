@@ -99,6 +99,20 @@ struct LumaActivityBannerQueue {
     mutating func clear() { ids.removeAll() }
 }
 
+/// One completion per timer deadline, independent of whether the alert
+/// was presented while the app was active.
+enum LumaTimerCompletion {
+    static func due(end: Double, delivered: Double, now: Double) -> Bool {
+        end.isFinite && now.isFinite && end > 0 && end != delivered && end <= now
+    }
+    static func restoredDeadline(_ end: Double, savedAt: Double, now: Double) -> Double {
+        guard end.isFinite, savedAt.isFinite, now.isFinite, end > 0 else { return 0 }
+        // Completed timers retain their original journal identity; only running
+        // timers have their remaining duration rebased.
+        return end <= savedAt ? end : now + (end - savedAt)
+    }
+}
+
 struct LumaActivityRoute: Hashable {
     let id: String
 }

@@ -15,7 +15,7 @@ final class LumaSaveStore: ObservableObject {
         "lastseen.lab.messageSound","lastseen.lab.messageHaptics","lastseen.lab.horrorEffects",
         "lastseen.lab.hideLockPreviews","lastseen.lab.brightness","lastseen.lab.wifi","lastseen.lab.deferSystemEdges",
         "lastseen.lab.favoritePhotos","lastseen.lab.stopwatchStart","lastseen.lab.stopwatchElapsed","lastseen.lab.timerEnd",
-        "lastseen.lab.timerMinutes","lastseen.lab.history","lastseen.lab.browserVisitLog","lastseen.lab.bookmarks","lastseen.lab.browserSeeded",
+        "lastseen.lab.timerMinutes","lastseen.lab.timerFeedbackDelivered","lastseen.lab.history","lastseen.lab.browserVisitLog","lastseen.lab.bookmarks","lastseen.lab.browserSeeded",
         "lastseen.lab.calculatorHistory","lastseen.lab.browserPage","lastseen.lab.browserForward","lastseen.lab.browserBackStack","lastseen.lab.browserForwardStack",
         "lastseen.restored.mail.read","lastseen.setup.device","lastseen.relay.installed","lastseen.relay.versions",
         "lastseen.relay.sources","lastseen.relay.history","lastseen.relay.wishlist","lastseen.relay.lastRefresh","lastseen.relay.safeMode","lastseen.relay.compactIcons","lastseen.relay.tealTheme",
@@ -149,8 +149,23 @@ final class LumaSaveStore: ObservableObject {
                 }
                 value.world.connectedWorld=connected
             }
-            for key in ["lastseen.lab.timerEnd","lastseen.lab.stopwatchStart"] {
-                if let old = prefs[key] as? NSNumber, old.doubleValue > 0 { prefs[key] = old.doubleValue + delta }
+            let timerKey = "lastseen.lab.timerEnd"
+            let deliveredKey = "lastseen.lab.timerFeedbackDelivered"
+            if let old = prefs[timerKey] as? NSNumber {
+                let end = old.doubleValue
+                prefs[timerKey] = LumaTimerCompletion.restoredDeadline(end, savedAt: value.date.timeIntervalSince1970, now: now.timeIntervalSince1970)
+                if end > value.date.timeIntervalSince1970 {
+                    // This timer was running in the snapshot, regardless of later live state.
+                    prefs.removeValue(forKey: deliveredKey)
+                } else if end > 0, (value.world.connectedWorld?.activityJournal ?? []).contains(where: { $0.id == "timer-" + String(end) }) {
+                    // Includes dismissed history and checkpoints predating the marker.
+                    prefs[deliveredKey] = end
+                }
+            } else {
+                prefs.removeValue(forKey: deliveredKey)
+            }
+            if let old = prefs["lastseen.lab.stopwatchStart"] as? NSNumber, old.doubleValue > 0 {
+                prefs["lastseen.lab.stopwatchStart"] = old.doubleValue + delta
             }
             // Validate before touching the active world. Security enrollment is not restored.
             try world.restoreCheckpoint(value.world)

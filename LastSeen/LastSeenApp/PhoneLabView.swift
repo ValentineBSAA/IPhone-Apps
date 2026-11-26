@@ -205,7 +205,7 @@ struct PhoneLabView: View {
             observedUtilityFlags = world.state.flags
             if !timerBaselineReady {
                 timerBaselineReady = true
-                if feedbackTimerEnd > 0 && feedbackTimerEnd <= Date().timeIntervalSince1970 { feedbackTimerDelivered = feedbackTimerEnd }
+                settleTimer(now: Date().timeIntervalSince1970, present: false)
             }
         }
         .task(id: utilityNotice) {
@@ -277,16 +277,10 @@ struct PhoneLabView: View {
                 if !checkpointReboot {
                     let before = LumaActivityCatalog.allIDs(world.state)
                     world.advancePendingReplies()
-                    if timerBaselineReady && feedbackTimerEnd > 0 && feedbackTimerEnd != feedbackTimerDelivered && feedbackTimerEnd <= Date().timeIntervalSince1970 {
-                        feedbackTimerDelivered = feedbackTimerEnd
-                        world.recordTimerActivity(end: feedbackTimerEnd)
-                    }
+                    if timerBaselineReady { settleTimer(now: Date().timeIntervalSince1970, present: false) }
                     if didConfigureFeedback {
                         let arrived = LumaActivityCatalog.newEntries(world.state, previous: before)
-                        for notice in arrived {
-                            let cue = notice.cue.isHorror && !horrorEffects ? PhoneCue.general : notice.cue
-                            PhoneSensoryEngine.play(cue, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects, hapticProfile: notice.profile)
-                        }
+                        playActivityFeedback(arrived)
                         if !locked {
                             activityQueue.enqueue(arrived, showing: activityBanner?.id)
                             if let current = activityBanner, !LumaActivityCatalog.visible(world.state).contains(where: { $0.id == current.id }) { activityBanner = nil }
@@ -478,6 +472,29 @@ struct PhoneLabView: View {
                     }
                 })
         }.padding(.horizontal, 18).padding(.vertical, 10).foregroundColor(.white)
+    }
+
+    private func playActivityFeedback(_ notices: [LumaActivityNotice]) {
+        guard didConfigureFeedback, phase == .active, !checkpointReboot else { return }
+        for notice in notices {
+            let cue = notice.cue.isHorror && !horrorEffects ? PhoneCue.general : notice.cue
+            PhoneSensoryEngine.play(cue, sound: messageSound, haptics: messageHaptics, horrorEnabled: horrorEffects, hapticProfile: notice.profile)
+        }
+    }
+
+    private func settleTimer(now: Double, present: Bool) {
+        let end = feedbackTimerEnd
+        guard LumaTimerCompletion.due(end: end, delivered: feedbackTimerDelivered, now: now) else { return }
+        let before = LumaActivityCatalog.allIDs(world.state)
+        world.recordTimerActivity(end: end)
+        feedbackTimerDelivered = end
+        if present {
+            let arrived = LumaActivityCatalog.newEntries(world.state, previous: before)
+            playActivityFeedback(arrived)
+            if didConfigureFeedback && phase == .active && !checkpointReboot && !locked {
+                activityQueue.enqueue(arrived, showing: activityBanner?.id)
+            }
+        }
     }
 
     private func completeUnlock() {
@@ -1150,7 +1167,7 @@ struct PhoneLabView: View {
         case .assistant: LumaAssistantView(context: { LumaAssistantContext(world: world.state, availableApps: Set(LabApp.allCases.filter { $0 != .fieldNotes || fieldNotesAvailable }), wifi: wifi, sound: messageSound, haptics: messageHaptics, safeMode: safeMode, installedCount: RelayCatalog.ids(relayInstalled).count, timerEnd: feedbackTimerEnd, now: Date()) }, openApp: { open($0) })
         case .workstation: LumaWorkbenchView(openRelay:{open(.relay)},openFiles:{open(.files)})
         case .photos: LabPhotosView()
-        case .clock: LabClockView()
+        case .clock: LabClockView(onFinish: { settleTimer(now: $0, present: true) })
         case .calculator: LabCalculatorView()
         case .settings:
             controls.navigationTitle("Settings")
@@ -1348,6 +1365,7 @@ private struct LabPhotosView: View {
 }
 
 private struct LabClockView: View {
+    let onFinish: (Double) -> Void
     @State private var tab = 0
     @AppStorage("lastseen.lab.stopwatchStart") private var started = 0.0
     @AppStorage("lastseen.lab.stopwatchElapsed") private var elapsed = 0.0
@@ -1395,7 +1413,11 @@ private struct LabClockView: View {
                             Button("Start timer") { timerEnd = Date().timeIntervalSince1970 + Double(minutes * 60) }.buttonStyle(.borderedProminent)
                         } else {
                             if remaining == 0 { Text("Timer finished").font(.headline).foregroundColor(.teal) }
-                            Button(remaining == 0 ? "Done" : "Cancel timer") { timerEnd = 0 }.buttonStyle(.bordered)
+                            Button(remaining == 0 ? "Done" : "Cancel timer") {
+                                let now = Date().timeIntervalSince1970
+                                if timerEnd <= now { onFinish(now) }
+                                timerEnd = 0
+                            }.buttonStyle(.bordered)
                         }
                         Text("In-phone timer • No real alarm is scheduled").font(.caption2).foregroundColor(.secondary)
                     }

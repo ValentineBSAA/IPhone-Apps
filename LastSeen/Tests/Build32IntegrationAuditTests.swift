@@ -32,6 +32,42 @@ import XCTest
         XCTAssertNil(LumaActivityCatalog.presentedID(notice, in: w.state, unobstructed: true))
         XCTAssertNil(LumaActivityCatalog.presentedID(nil, in: w.state, unobstructed: true))
     }
+    func testTimerCompletionAndCheckpointDeadlinePolicy() {
+        XCTAssertFalse(LumaTimerCompletion.due(end: 100, delivered: 0, now: 99))
+        XCTAssertTrue(LumaTimerCompletion.due(end: 100, delivered: 0, now: 100))
+        XCTAssertFalse(LumaTimerCompletion.due(end: 100, delivered: 100, now: 101))
+        XCTAssertFalse(LumaTimerCompletion.due(end: 0, delivered: 0, now: 101))
+        XCTAssertFalse(LumaTimerCompletion.due(end: .infinity, delivered: 0, now: 101))
+        XCTAssertEqual(LumaTimerCompletion.restoredDeadline(100, savedAt: 110, now: 500), 100)
+        XCTAssertEqual(LumaTimerCompletion.restoredDeadline(130, savedAt: 110, now: 500), 520)
+    }
+
+    func testCheckpointPreservesCompletedTimerIdentityAndRunningRemainingTime() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite = "timer-checkpoint-" + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: root) }
+        let w = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(), persistToDisk: false)
+        let saves = LumaSaveStore(root: root, defaults: defaults)
+        let saved = Date(timeIntervalSince1970: 1000)
+        let later = Date(timeIntervalSince1970: 2000)
+        let endKey = "lastseen.lab.timerEnd", deliveredKey = "lastseen.lab.timerFeedbackDelivered"
+        defaults.set(990.0, forKey: endKey)
+        w.recordTimerActivity(end: 990)
+        w.dismissActivity("timer-" + String(990.0))
+        XCTAssertTrue(saves.write("manual-1", world: w.state, now: saved))
+        defaults.set(1040.0, forKey: endKey)
+        XCTAssertTrue(saves.write("manual-2", world: w.state, now: saved))
+        defaults.set(1040.0, forKey: deliveredKey)
+        XCTAssertTrue(saves.restore("manual-1", into: w, now: later))
+        XCTAssertEqual(defaults.double(forKey: endKey), 990)
+        XCTAssertEqual(defaults.double(forKey: deliveredKey), 990)
+        XCTAssertTrue(LumaActivityCatalog.visible(w.state).isEmpty)
+        XCTAssertTrue(saves.restore("manual-2", into: w, now: later))
+        XCTAssertEqual(defaults.double(forKey: endKey), 2040)
+        XCTAssertEqual(defaults.double(forKey: deliveredKey), 0)
+    }
+
     func testLatePageRejectsMissingPrerequisite() {
         var flags: Set<String> = ["phone-tutorial-finished","web.visited.studio","investigation.chapter2.reviewed","web.visited.archive-ledger","investigation.chapter2.ledgerAcknowledged",InvestigationReview.requested,InvestigationReview.read,InvestigationReview.finished,"web.visited."+InvestigationReview.pageID,"web.visited."+InvestigationResolution.indexID,"web.visited."+InvestigationResolution.noteID,InvestigationResolution.requested,InvestigationResolution.read]
         XCTAssertTrue(LumaWebCatalog.visible(flags).contains { $0.id == InvestigationResolution.conclusionID })
