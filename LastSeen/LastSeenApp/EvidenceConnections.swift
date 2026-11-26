@@ -22,17 +22,22 @@ struct EvidenceConnection: Codable, Equatable, Identifiable {
     let relation: Relation
     var id: String { first + "|" + second }
     static func make(_ a: String,_ b: String,relation: Relation,in world: PhoneWorld) -> Self? {
+        canonical(a,b,relation:relation,visible:Set(LumaAssistantEvidence.visible(world).map(\.id)))
+    }
+    private static func canonical(_ a:String,_ b:String,relation:Relation,visible:Set<String>)->Self? {
         guard a != b, !a.contains("|"), !b.contains("|"),
-              a.count <= 200,b.count <= 200 else { return nil }
+              a.count <= 200,b.count <= 200 else{return nil}
         let ids=[a,b].sorted()
-        let visible=Set(LumaAssistantEvidence.visible(world).map(\.id))
-        guard ids.allSatisfy({visible.contains($0)}) else { return nil }
+        guard ids.allSatisfy({visible.contains($0)}) else{return nil}
         return .init(first:ids[0],second:ids[1],relation:relation)
     }
     static func visible(_ world:PhoneWorld)->[Self] {
+        let entries=(world.connectedWorld?.evidenceConnections ?? []).prefix(40)
+        guard !entries.isEmpty else{return []}
+        let available=Set(LumaAssistantEvidence.visible(world).map(\.id))
         var seen=Set<String>()
-        return (world.connectedWorld?.evidenceConnections ?? []).prefix(40).compactMap { entry in
-            guard let valid=make(entry.first,entry.second,relation:entry.relation,in:world),
+        return entries.compactMap { entry in
+            guard let valid=canonical(entry.first,entry.second,relation:entry.relation,visible:available),
                   seen.insert(valid.id).inserted else {return nil}
             return valid
         }

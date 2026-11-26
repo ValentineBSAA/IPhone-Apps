@@ -15,6 +15,63 @@ struct LumaConversationReply {
     var memoryID: String? = nil
     var recollectionCount: Int = 0
 }
+/// Optional guidance follows current access, not a secret answer key.
+enum LumaArchiveGuidance {
+    static func answer(_ c:LumaAssistantContext,detailed:Bool=false)->LumaAssistantAnswer? {
+        let w=c.world
+        guard VeilArchive.authorized(w) else{return nil}
+        func hint(_ text:String,_ app:LabApp)->LumaAssistantAnswer {
+            .init(text:text,clipID:"conversation",app:c.availableApps.contains(app) ? app:nil)
+        }
+        guard c.availableApps.contains(.veil),!c.safeMode else {
+            return hint("The local anonymous browser is not available in this session. You can continue exploring ordinary records, or check your local package environment.",.relay)
+        }
+        if VeilCommunity.reconstructionOpened(w) {
+            return hint("You've read the recovered annotation review. You can revisit Nora's own account or keep your remaining questions open; you don't need to force an identity or a theory.",.messages)
+        }
+        if HavenWatchEvents.openedFollowup(w) {
+            return hint(detailed ? "Revisit the related archived discussions and compare their wording with the retained HavenWatch record. Keep the misleading recollection separate from the original record." :
+                "That retained archive record may give earlier discussions a different meaning. Have you revisited the boards?",.veil)
+        }
+        if NoraFriendArchive.opened(w) {
+            if HavenWatchEvents.followup(w) != nil {
+                return hint("There is an available archive activity entry in HavenWatch. Read its details before drawing a conclusion.",.havenWatch)
+            }
+            return hint("You've opened the recovered personal conversation. You can explore other records while the local archive review settles.",.havenWatch)
+        }
+        if SocialArchiveReview.opened(w) {
+            return hint(detailed ? "Compare the unsent draft's descriptions with the opened anonymous correspondence. A draft is not a public post." :
+                "Nora's draft gives you her own perspective. Is there an earlier conversation that uses similar language?",.messages)
+        }
+        if HavenCrossArchiveReview.reviewed(w) {
+            return hint("Return to the restored account review in Afterframe. Compare what was publicly shared with what the other records actually describe.",.afterframe)
+        }
+        if VeilCommunity.disputeReviewed(w) {
+            return hint("The home security archive has a related review. Compare an opened original still with a reviewed copy of a comparable room.",.havenWatch)
+        }
+        if VeilCommunity.revisionAvailable(w) {
+            return hint("Read the related accounts in the recovered index. Notice what the writers disagree about rather than choosing a person to blame.",.veil)
+        }
+        if VeilReferences.homeIndexReady(w) {
+            return hint("A recovered reference is now available in Files. Inspect it before opening the related local page.",.files)
+        }
+        if !w.flags.contains("veil.correspondence.opened") {
+            return hint("Start with the recovered correspondence. It is historical; you don't need to contact the sender.",.messages)
+        }
+        if w.flags.contains("veil.viewed.Nora_Archive_08") {
+            if VeilArchive.homeMedia(w).count < 6 {
+                return hint("Review the first two recovered home copies. You can inspect their source descriptions without displaying the images.",.veil)
+            }
+            if VeilReferences.inspected("board-reference",in:w) == nil {
+                return hint("There is a discussion bookmark in Files. Inspect it to revisit the local discussion directory.",.files)
+            }
+            return hint(detailed ? "Compare descriptions from an opened discussion about ordinary moments and a home photograph whose source review you've recorded." :
+                "You've reviewed recovered images. See whether the archived discussions offer a relevant description, and compare what is already open.",.veil)
+        }
+        return hint("Inspect the available attachments in the recovered correspondence. You can choose text-only inspection.",.messages)
+    }
+}
+
 enum LumaAssistantConversation {
     static func words(_ text: String) -> Set<String> {
         Set(LumaAssistantPolicy.normalize(text).split(separator:" ").map(String.init))
@@ -57,6 +114,13 @@ enum LumaAssistantConversation {
         let actionRequested = actionPrefixes.contains { normalized.hasPrefix($0) || normalized.hasPrefix("please "+$0) || normalized.hasPrefix("can you "+$0) || normalized.hasPrefix("could you "+$0) }
         if !forbidden.isDisjoint(with:hardDenied) || actionRequested {
             return .init(topic:.general,answer:.init(text:"I can help with visible records and ordinary phone controls, but I can't do that.",clipID:"denied"))
+        }
+        let explicitHint = ["hint","help me investigate","what should i do","what do i do now","what should i do next","where do i go next","i m stuck","im stuck"].contains(normalized)
+        let followupHint = previous == .nextStep && ["tell me more","more","another hint","can you be more specific","what do you mean","give me a hint"].contains(normalized)
+        if explicitHint || followupHint {
+            if let guidance=LumaArchiveGuidance.answer(c,detailed:followupHint) {
+                return .init(topic:.nextStep,answer:guidance)
+            }
         }
         if normalized.hasPrefix("open ") || normalized.hasPrefix("show ") ||
             ["help","hello","hi","hey","hint","progress","investigation progress"].contains(normalized) ||
@@ -111,6 +175,9 @@ enum LumaAssistantConversation {
         case .unease:
             return result("I understand why that feels unsettling. You can stop viewing an image and keep exploring the text records. What part of the discovery bothered you most?")
         case .nextStep:
+            if let guidance=LumaArchiveGuidance.answer(c,detailed:previous == .nextStep) {
+                return .init(topic:.nextStep,answer:guidance)
+            }
             if let g = InvestigationProgress.guidance(world,detailed:false) { return result(g.text) }
             return result("You can continue exploring the records you've already uncovered. There is no need to force a conclusion.")
         case .general:
