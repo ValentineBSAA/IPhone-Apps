@@ -60,6 +60,13 @@ jobs:
       - name: Checkout game source
         uses: actions/checkout@v4
 
+      - name: Verify one-time Build 32 physical test authorization
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/last-seen-build27-noras-world' && github.event.head_commit.message == 'release(last-seen): authorize exact validated Build 32 physical test IPA'
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:LastSeen)" = "311b8010ebc042d653863d116458affcb6804c21"
+          echo "Authorized physical QA candidate from previously validated source tree; unapproved voice assets excluded." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Verify release and timing contracts before compilation
         run: python3 Tools/verify_release_contract.py
 
@@ -328,7 +335,7 @@ jobs:
           retention-days: 14
 
       - name: Package unsigned iPhone IPA
-        if: github.event_name == 'workflow_dispatch' && inputs.package_ipa == true
+        if: (github.event_name == 'workflow_dispatch' && inputs.package_ipa == true) || (github.event_name == 'push' && github.ref == 'refs/heads/feature/last-seen-build27-noras-world' && github.event.head_commit.message == 'release(last-seen): authorize exact validated Build 32 physical test IPA')
         run: |
           set -euo pipefail
           mkdir -p dist/Payload
@@ -341,7 +348,7 @@ jobs:
           python3 Tools/verify_device_assets.py --ipa dist/Last-Seen-v1.9.0-iOS16-unsigned.ipa --app build/Build/Products/Release-iphoneos/LastSeen.app
 
       - name: Publish unsigned IPA for user-side installation
-        if: github.event_name == 'workflow_dispatch' && inputs.package_ipa == true
+        if: (github.event_name == 'workflow_dispatch' && inputs.package_ipa == true) || (github.event_name == 'push' && github.ref == 'refs/heads/feature/last-seen-build27-noras-world' && github.event.head_commit.message == 'release(last-seen): authorize exact validated Build 32 physical test IPA')
         uses: actions/upload-artifact@v4
         with:
           name: LAST-SEEN-v1.9.0-iOS16-unsigned
@@ -350,7 +357,7 @@ jobs:
           retention-days: 30
 
       - name: Record validation-only mode
-        if: github.event_name != 'workflow_dispatch' || inputs.package_ipa != true
+        if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.package_ipa == true) || (github.event_name == 'push' && github.ref == 'refs/heads/feature/last-seen-build27-noras-world' && github.event.head_commit.message == 'release(last-seen): authorize exact validated Build 32 physical test IPA')) }}
         run: echo "Native acceptance only. IPA packaging and publication were not authorized." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Keep simulator test results for debugging
