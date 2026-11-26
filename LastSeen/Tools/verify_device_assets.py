@@ -60,6 +60,8 @@ if a.catalog:
     required.update(r["asset"] for r in json.loads(pathlib.Path("CommunityPortraits/runtime-reserves.json").read_text())["assets"])
     required.update(["Icon_HavenWatch","Icon_Dayblink","Icon_Motionwell","Icon_RelaySupport","Support_AlexMorgan"])
     required.update(f"HavenWatch_CAM{i:02d}_{suffix}" for i in range(1,6) for suffix in ("empty","occupied"))
+    required.add("Icon_Veil")
+    required.update(f"Nora_Archive_{i:02d}" for i in range(1,12))
     missing=required-names
     assert not missing, f"Device catalog missing required renditions: {sorted(missing)}"
     print("Required device catalog renditions verified")
