@@ -37,6 +37,17 @@ final class RelaySupportKnowledgeTests: XCTestCase {
         XCTAssertFalse(noSource.contains { $0.id == "packages-12" })
     }
 
+    func testOriginalWordPreviewRequiresCompleteGuide() {
+        let installed = "relay-support"
+        let sources = RelayCatalog.defaultSources
+        XCTAssertNotNil(RelaySupportKnowledge.originalURL("relay-basics", flags: [], sources: sources, installed: installed))
+        XCTAssertNil(RelaySupportKnowledge.originalURL("relay-basics", flags: [], sources: sources, installed: ""))
+        XCTAssertNil(RelaySupportKnowledge.originalURL("packages-12", flags: ["web.visited.repo-folio"], sources: sources + "|folio", installed: installed))
+        XCTAssertNil(RelaySupportKnowledge.originalURL("../private", flags: [], sources: sources, installed: installed))
+        XCTAssertNotNil(RelaySupportKnowledge.currentNote("attachments"))
+        XCTAssertNotNil(RelaySupportKnowledge.currentNote("relay-support"))
+    }
+
     func testApprovedContentAndVisibility() throws {
         XCTAssertNotNil(UIImage(named: "Support_AlexMorgan"))
         XCTAssertNotNil(UIImage(named: "Icon_RelaySupport"))

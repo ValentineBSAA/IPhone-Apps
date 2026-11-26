@@ -15,6 +15,20 @@ for name in packs:
             expected[record["filename"]]=record["sha256"]
 assert len(expected)==53
 expected["ConnectedWorldDocuments.json"]=digest(pathlib.Path("LastSeenApp/ConnectedWorldDocuments.json").read_bytes())
+support_root=pathlib.Path("LastSeenApp/RelaySupportResources")
+with zipfile.ZipFile("LastSeen_Build32_RelaySupport_ContentPack_v1.zip") as support:
+    approved = json.loads(support.read("RelaySupport/Knowledge/guides.json"))
+    assert len(approved) == 13
+    for guide in approved:
+        name = guide["filename"]
+        sha = digest(support.read("RelaySupport/Docs/" + name))
+        assert digest((support_root/name).read_bytes()) == sha, name
+        expected[name] = sha
+    for name in ("guides", "packages"):
+        filename = "RelaySupport_" + name + ".json"
+        sha = digest(support.read("RelaySupport/Knowledge/" + name + ".json"))
+        assert digest((support_root/filename).read_bytes()) == sha, filename
+        expected[filename] = sha
 motion_root=pathlib.Path("LastSeenApp/MotionwellMedia")
 motion_manifest=motion_root/"MotionwellMediaManifest.json"
 motion_records=json.loads(motion_manifest.read_text())["assets"]
@@ -39,7 +53,7 @@ if a.catalog:
     required.update(["Contact_Maya","Contact_Denise","Nora_Profile","Icon_Messages","Icon_Save","Photo_Locked_Texture"])
     required.update(["Icon_Afterframe","Icon_Connective","Icon_CommonGround","Icon_VoiceMemos"])
     required.update(f"CommunityPortrait_{i:02d}" for i in range(1,19))
-    required.update(["Icon_HavenWatch","Icon_Dayblink","Icon_Motionwell"])
+    required.update(["Icon_HavenWatch","Icon_Dayblink","Icon_Motionwell","Icon_RelaySupport","Support_AlexMorgan"])
     required.update(f"HavenWatch_CAM{i:02d}_{suffix}" for i in range(1,6) for suffix in ("empty","occupied"))
     missing=required-names
     assert not missing, f"Device catalog missing required renditions: {sorted(missing)}"

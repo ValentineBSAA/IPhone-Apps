@@ -1,4 +1,5 @@
 import SwiftUI
+import QuickLook
 
 enum RelaySupportAccess {
     static func available(installed: String, flags: Set<String>) -> Bool {
@@ -263,12 +264,32 @@ struct RelaySupportGuideReader: View {
     @EnvironmentObject private var world: PhoneWorldStore
     @AppStorage("lastseen.relay.installed") private var installed = ""
     @AppStorage("lastseen.relay.sources") private var sources = RelayCatalog.defaultSources
+    @State private var previewURL: URL?
+    @Environment(\.scenePhase) private var phase
+    private var original: URL? {
+        RelaySupportKnowledge.originalURL(id, flags: world.state.flags, sources: sources, installed: installed)
+    }
     var body: some View {
         ScrollView {
             if RelaySupportAccess.available(installed: installed, flags: world.state.flags),
                let entry = RelaySupportKnowledge.libraryEntry(id, flags: world.state.flags, sources: sources, installed: installed) {
                 VStack(alignment: .leading, spacing: 16) {
                     Text(entry.title).font(.largeTitle.bold())
+                    if let note = RelaySupportKnowledge.currentNote(id) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label("Current instructions", systemImage: "info.circle").font(.headline)
+                            Text(note).font(.subheadline)
+                            Text("The original reference below retains its approved edition wording.").font(.caption).foregroundColor(.secondary)
+                        }.padding(12).lumaSurface(radius: 14)
+                    }
+                    if let original {
+                        Button {
+                            previewURL = RelaySupportKnowledge.originalURL(id, flags: world.state.flags, sources: sources, installed: installed)
+                        } label: { Label("Open original Word document", systemImage: "doc.richtext") }.buttonStyle(.borderedProminent)
+                        ShareLink(item: original) { Label("Share approved guide outside game", systemImage: "square.and.arrow.up") }
+                            .buttonStyle(.bordered)
+                        Text("Sharing opens the real iPhone share sheet. Only this authorized technical guide is shared.").font(.caption).foregroundColor(.secondary)
+                    }
                     ForEach(Array(entry.sections.enumerated()), id: \.offset) { _, section in
                         Text(section.heading).font(.headline)
                         Text(section.text).textSelection(.enabled)
@@ -278,5 +299,9 @@ struct RelaySupportGuideReader: View {
                 }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
             } else { Text("Guide unavailable").padding() }
         }.navigationTitle("Support guide").navigationBarTitleDisplayMode(.inline)
+            .quickLookPreview($previewURL)
+            .onChange(of: original) { if $0 != previewURL { previewURL = nil } }
+            .onChange(of: phase) { if $0 == .background { previewURL = nil } }
+            .onDisappear { previewURL = nil }
     }
 }

@@ -77,4 +77,23 @@ enum RelaySupportKnowledge {
     static func libraryEntry(_ id: String, flags: Set<String>, sources: String, installed: String) -> LibraryEntry? {
         library(flags: flags, sources: sources, installed: installed).first { $0.id == id }
     }
+
+    // Do not derive a path from player input. The original bundled Word file
+    // is exposed only when the complete approved guide is authorized.
+    static func originalURL(_ id: String, flags: Set<String>, sources: String, installed: String) -> URL? {
+        guard let entry = libraryEntry(id, flags: flags, sources: sources, installed: installed),
+              entry.complete, entry.guide.filename.hasSuffix(".docx") else { return nil }
+        let name = (entry.guide.filename as NSString).deletingPathExtension
+        return Bundle.main.url(forResource: name, withExtension: "docx")
+    }
+
+    static func currentNote(_ id: String) -> String? {
+        switch id {
+        case "attachments":
+            return "Current app instructions: use the plus button in Alex's chat to share eligible fictional files. For package status, open Diagnostics, select a package, review the report and confirm Send report to Alex. Photo classification is optional; it identifies only broad categories."
+        case "relay-support":
+            return "Current app instructions: the support chat, guides and diagnostic sharing are available in this implementation. Optional on-device AI depends on the device's model availability. Settings controls AI, notification and preview preferences."
+        default: return nil
+        }
+    }
 }
