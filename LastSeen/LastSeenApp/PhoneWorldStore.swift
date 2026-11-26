@@ -331,12 +331,22 @@ final class PhoneWorldStore: ObservableObject {
         return true
     }
 
+    private func pendingParent(_ item:PhonePendingReply)->NeighborMessage? {
+        state.threads[item.neighbor.id]?.first{$0.id==item.outgoingID && $0.fromPlayer}
+    }
+
+    private func pendingVisible(_ item:PhonePendingReply)->Bool {
+        Neighbor.visible(in:state).contains(item.neighbor) && pendingParent(item) != nil &&
+        !(state.threads[item.neighbor.id]?.contains{$0.id==item.id} ?? false)
+    }
+
     func hasPendingReply(_ neighbor: Neighbor) -> Bool {
-        (state.pendingReplies ?? []).contains { $0.neighbor == neighbor }
+        (state.pendingReplies ?? []).contains { $0.neighbor == neighbor && pendingVisible($0) }
     }
 
     func isTyping(_ neighbor: Neighbor, now: Date = Date()) -> Bool {
-        (state.pendingReplies ?? []).contains { $0.neighbor == neighbor && ($0.typingAt ?? $0.readAt) <= now && now < $0.dueAt }
+        (state.pendingReplies ?? []).contains { $0.neighbor == neighbor && pendingVisible($0) &&
+            max($0.typingAt ?? $0.readAt,$0.readAt) <= now && now < $0.dueAt }
     }
 
     func advancePendingReplies(now: Date = Date()) {
@@ -352,16 +362,24 @@ final class PhoneWorldStore: ObservableObject {
         advanceCharacterCheckIns(now:now)
         let pending = state.pendingReplies ?? []
         guard !pending.isEmpty else { return }
-        var changed = false
-        for item in pending where item.readAt <= now {
-            if let index = state.threads[item.neighbor.id]?.firstIndex(where: { $0.id == item.outgoingID }),
+        // Discard orphaned and already-delivered receipts; preserve valid
+        // temporarily hidden contacts without exposing read/typing activity.
+        let discarded=Set(pending.filter{pendingParent($0)==nil ||
+            (state.threads[$0.neighbor.id]?.contains{m in m.id==$0.id} ?? false)}.map(\.id))
+        var changed = !discarded.isEmpty
+        let available=pending.filter{!discarded.contains($0.id) && pendingVisible($0)}
+        for item in available where item.readAt <= now || item.dueAt <= now {
+            if let index = state.threads[item.neighbor.id]?.firstIndex(where: { $0.id == item.outgoingID && $0.fromPlayer }),
+               let parent=pendingParent(item),
                state.threads[item.neighbor.id]?[index].recipientReadAt == nil {
-                state.threads[item.neighbor.id]?[index].recipientReadAt = item.readAt
+                state.threads[item.neighbor.id]?[index].recipientReadAt = max(parent.at,min(item.readAt,item.dueAt))
                 changed = true
             }
         }
-        let due = pending.filter { $0.dueAt <= now }.sorted { ($0.dueAt, $0.id) < ($1.dueAt, $1.id) }
+        var processed=discarded
+        let due = available.filter { $0.dueAt <= now }.sorted { ($0.dueAt, $0.id) < ($1.dueAt, $1.id) }
         for item in due {
+            guard processed.insert(item.id).inserted,let parent=pendingParent(item) else{continue}
             if item.startsTutorial && tutorialStarted && !state.flags.contains("phone-tutorial-replied") {
                 state.flags.insert("phone-tutorial-replied")
                 tutorialMessage("notes", item.text, now: now)
@@ -370,13 +388,12 @@ final class PhoneWorldStore: ObservableObject {
             } else {
                 let text = currentPendingReplyText(item)
                 append(NeighborMessage(id: item.id, thread: item.neighbor.id, text: text,
-                                       fromPlayer: false, at: text == item.text ? item.dueAt : now, read: false))
+                                       fromPlayer: false, at: max(parent.at,parent.recipientReadAt ?? parent.at,text == item.text ? item.dueAt : now), read: false))
             }
             changed = true
         }
-        if !due.isEmpty {
-            let ids = Set(due.map(\.id))
-            state.pendingReplies = pending.filter { !ids.contains($0.id) }
+        if !processed.isEmpty {
+            state.pendingReplies = pending.filter { !processed.contains($0.id) }
         }
         if changed { save() }
     }

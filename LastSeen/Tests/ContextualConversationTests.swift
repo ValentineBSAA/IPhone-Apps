@@ -192,6 +192,31 @@ import XCTest
         XCTAssertEqual(restored.messages(.adrian).count, count)
         XCTAssertTrue(restored.state.flags.isEmpty)
     }
+    func testPendingReplyRequiresParentAndRetainsChronologyAfterClockRollback() throws {
+        let now=Date(timeIntervalSince1970:1800000000)
+        let original=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(now:now),persistToDisk:false)
+        XCTAssertTrue(original.sendReactive(to:.adrian,text:"Hello",now:now))
+        let queued=try XCTUnwrap(original.state.pendingReplies?.first)
+        var snapshot=original.state
+        let earlier=now.addingTimeInterval(-60)
+        snapshot.pendingReplies=[
+            .init(id:queued.id,outgoingID:queued.outgoingID,neighbor:.adrian,text:queued.text,
+                  readAt:earlier,dueAt:earlier.addingTimeInterval(5),startsTutorial:false,typingAt:earlier.addingTimeInterval(2)),
+            .init(id:"orphan",outgoingID:"missing-parent",neighbor:.adrian,text:"Orphan reply",
+                  readAt:earlier,dueAt:earlier.addingTimeInterval(5),startsTutorial:false)
+        ]
+        let restored=PhoneWorldStore(initial:snapshot,persistToDisk:false)
+        restored.advancePendingReplies(now:earlier.addingTimeInterval(10))
+        let outgoing=try XCTUnwrap(restored.messages(.adrian).first{$0.id==queued.outgoingID})
+        let incoming=try XCTUnwrap(restored.messages(.adrian).first{$0.id==queued.id})
+        XCTAssertEqual(outgoing.recipientReadAt,now)
+        XCTAssertEqual(incoming.at,now)
+        XCTAssertFalse(restored.messages(.adrian).contains{$0.id=="orphan"})
+        XCTAssertFalse(restored.hasPendingReply(.adrian))
+        restored.advancePendingReplies(now:now.addingTimeInterval(10))
+        XCTAssertEqual(restored.messages(.adrian).filter{$0.id==queued.id}.count,1)
+    }
+
     func testLegacyPendingReplyDecodesWithoutTypingTime() throws {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let original = PhonePendingReply(id: "old", outgoingID: "old-out", neighbor: .adrian, text: "Hi", readAt: now, dueAt: now.addingTimeInterval(5), startsTutorial: false)
