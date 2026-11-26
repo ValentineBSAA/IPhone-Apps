@@ -21,7 +21,7 @@ Mandatory release gate for 1.9.0 (32), iPhone 16e. Every LabApp is listed exactl
 | Browser | History, navigation, bookmarks, offline URLs, attachments, review gates | Targeted pass | Pending | Pending |
 | Relay | Repository refresh, package install/remove, dependencies, conflicts, restart | Targeted pass | Pending | Pending |
 | Patchline | Safe mode, tweak status, diagnostics, respring, reboot | Targeted pass | Pending | Pending |
-| Game Saves | Manual/automatic slots, restore, timers, preferences, stale routes | Pending | Pending | Pending |
+| Game Saves | Manual/automatic slots, restore, timers, preferences, stale routes | Targeted pass | Pending | Pending |
 | Afterframe | Photo feed, profiles, drafts, privacy, social actions | Targeted pass | Pending | Pending |
 | Connective | Studio feed, profiles, social actions, account settings | Targeted pass | Pending | Pending |
 | CommonGround | Discussions, replies, profiles, community alerts | Targeted pass | Pending | Pending |
@@ -30,7 +30,7 @@ Mandatory release gate for 1.9.0 (32), iPhone 16e. Every LabApp is listed exactl
 | Dayblink | Stories, local media, expiry, interactions, notifications | Targeted pass | Pending | Pending |
 | Motionwell | Catalog, media availability, playback, saved state, notifications | Targeted pass | Pending | Pending |
 | Voice Memos | Record catalog, transcript, playback, read-aloud, missing audio | Targeted pass | Pending | Pending |
-| Luma Assistant | Nora memory, trust, context, permissions, voice, image evidence | Pending | Pending | Pending |
+| Luma Assistant | Nora memory, trust, context, permissions, voice, image evidence | Targeted pass | Pending | Pending |
 
 ## Mandatory cross-app audit (all open)
 - Opening, fictional setup, recovery workstation, lock screen, owner authentication and protected area sessions.

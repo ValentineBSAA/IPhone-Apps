@@ -42,6 +42,30 @@ import XCTest
         XCTAssertEqual(LumaTimerCompletion.restoredDeadline(130, savedAt: 110, now: 500), 520)
     }
 
+    func testCheckpointRebasesPendingHavenEventsWithoutChangingDeliveredHistory() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite="haven-checkpoint-"+UUID().uuidString
+        let defaults=try XCTUnwrap(UserDefaults(suiteName:suite))
+        defer {defaults.removePersistentDomain(forName:suite);try? FileManager.default.removeItem(at:root)}
+        let saved=Date(timeIntervalSince1970:1800000000)
+        let later=saved.addingTimeInterval(1000)
+        let pending=HavenWatchEvent(id:HavenWatchEvents.followupID,due:saved.addingTimeInterval(25))
+        let delivered=HavenWatchEvent(id:HavenWatchEvents.archiveID,due:saved.addingTimeInterval(-10),delivered:true)
+        var state=RestoredPhoneBackup.snapshot(now:saved)
+        var connected=state.connectedWorld ?? LumaConnectedState()
+        connected.havenEvent=delivered;connected.havenFollowupEvent=pending
+        state.connectedWorld=connected
+        let w=PhoneWorldStore(initial:state,persistToDisk:false)
+        let saves=LumaSaveStore(root:root,defaults:defaults)
+        XCTAssertTrue(saves.write("manual-1",world:w.state,now:saved))
+        XCTAssertTrue(saves.restore("manual-1",into:w,now:later))
+        XCTAssertEqual(w.connected.havenEvent,delivered)
+        XCTAssertEqual(w.connected.havenFollowupEvent?.due,later.addingTimeInterval(25))
+        XCTAssertEqual(w.connected.havenFollowupEvent?.delivered,false)
+        XCTAssertNil(LumaSaveStore.rebasedEvent(nil,by:1000))
+        XCTAssertEqual(LumaSaveStore.rebasedEvent(pending,by:-10)?.due,saved.addingTimeInterval(15))
+    }
+
     func testCheckpointPreservesCompletedTimerIdentityAndRunningRemainingTime() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let suite = "timer-checkpoint-" + UUID().uuidString

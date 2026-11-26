@@ -2,6 +2,21 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class LumaVoiceAssistantTests: XCTestCase {
+    func testEvidenceSearchOnlyReturnsOpenedRecords() {
+        var state=RestoredPhoneBackup.snapshot()
+        XCTAssertTrue(LumaAssistantEvidence.search("   ",in:state).isEmpty)
+        let w=PhoneWorldStore(initial:state,persistToDisk:false)
+        w.visitWebRecord("studio-news")
+        let records=LumaAssistantEvidence.visible(w.state)
+        XCTAssertEqual(LumaAssistantEvidence.search("   ",in:w.state).map(\.id),records.map(\.id))
+        if let record=records.first(where:{$0.id=="web:studio-news"}) {
+            XCTAssertTrue(LumaAssistantEvidence.search("  "+record.title.uppercased()+"  ",in:w.state).contains{$0.id==record.id})
+        } else {XCTFail("Opened public web record missing")}
+        XCTAssertTrue(LumaAssistantEvidence.search("unmatchable-77e3",in:w.state).isEmpty)
+        state=w.state;state.everydayArchiveRevision=nil
+        XCTAssertTrue(LumaAssistantEvidence.search("",in:state).isEmpty)
+    }
+
     func testOptionalGuidanceFollowsAccessAndExplicitRequests() {
         var world=RestoredPhoneBackup.snapshot()
         func context(_ apps:Set<LabApp>=[.messages,.veil,.files,.relay],safe:Bool=false)->LumaAssistantContext {
