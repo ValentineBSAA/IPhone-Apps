@@ -4,6 +4,7 @@ struct LumaSocialPreferences: Codable, Equatable {
     var mutedAuthors: Set<String> = []
     var notificationsEnabled = true
     var showPreviews = true
+    var followedPostAlerts: Bool? = nil
 }
 
 enum LumaSocialCommunity {
@@ -156,7 +157,8 @@ struct LumaSocialAccountView: View {
             Section("Local viewing preferences") {
                 Toggle("App notifications", isOn: Binding(get: { prefs.notificationsEnabled }, set: { value in var next = prefs; next.notificationsEnabled = value; world.setSocialPreferences(next, channel: channel) }))
                 Toggle("Notification previews", isOn: Binding(get: { prefs.showPreviews }, set: { value in var next = prefs; next.showPreviews = value; world.setSocialPreferences(next, channel: channel) }))
-                Text("These preferences apply to new local community replies. Restored posts remain available.").font(.caption).foregroundColor(.secondary)
+                Toggle("New posts from followed profiles", isOn: Binding(get: { prefs.followedPostAlerts ?? true }, set: { value in var next = prefs; next.followedPostAlerts = value; world.setSocialPreferences(next, channel: channel) }))
+                Text("These preferences apply to new local community replies and authored posts. Restored posts remain available.").font(.caption).foregroundColor(.secondary)
             }
             Section("Muted profiles") {
                 if prefs.mutedAuthors.isEmpty { Text("No muted profiles").foregroundColor(.secondary) }

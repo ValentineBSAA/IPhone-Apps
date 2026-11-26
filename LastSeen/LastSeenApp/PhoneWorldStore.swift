@@ -292,6 +292,7 @@ final class PhoneWorldStore: ObservableObject {
         advanceInvestigation(now: now)
         advanceConnectedMail(now: now)
         advanceSocialReplies(now: now)
+        advanceCommunityActivity(now: now)
         advanceDayblink(now: now)
         advanceHavenWatch(now: now)
         advanceMotionwell(now: now)
@@ -895,6 +896,36 @@ final class PhoneWorldStore: ObservableObject {
         addActivity(.init(id: "timer-" + String(end), kind: .timer, date: Date(timeIntervalSince1970: end), title: "Timer finished", detail: "Your timer has ended.", targetID: nil, channel: nil, author: nil), to: &value)
         commitConnected(value)
     }
+    func advanceCommunityActivity(now: Date = Date()) {
+        guard state.everydayArchiveRevision != nil else { return }
+        var value = connected
+        var activity = value.communityActivity ?? LumaCommunityActivityState(start: now)
+        for release in LumaCommunityActivity.releases {
+            guard now.timeIntervalSince(activity.start) >= release.delay,
+                  let authored = LumaCommunityActivity.post(release, start: activity.start) else { continue }
+            if !activity.posts.contains(where: { $0.id == authored.id }) {
+                activity.posts.append(authored)
+                let prefs = value.socialPreferences?[authored.channel.rawValue] ?? LumaSocialPreferences()
+                if prefs.notificationsEnabled, prefs.followedPostAlerts ?? true,
+                   value.follows.contains(authored.channel.rawValue + "|" + authored.author),
+                   !prefs.mutedAuthors.contains(authored.author) {
+                    addActivity(.init(id: "community-post-" + authored.id, kind: .social, date: now,
+                        title: authored.author + " posted", detail: authored.body, targetID: authored.id,
+                        channel: authored.channel, author: authored.author), to: &value)
+                }
+            }
+            if now.timeIntervalSince(activity.start) >= release.delay + release.replyDelay,
+               let stored = activity.posts.first(where: { $0.id == authored.id }),
+               let reply = LumaCommunityActivity.reply(release, post: stored, start: activity.start),
+               !activity.comments.contains(where: { $0.id == reply.id }) {
+                activity.comments.append(reply)
+            }
+        }
+        guard value.communityActivity != activity else { return }
+        value.communityActivity = activity
+        commitConnected(value)
+    }
+
     func advanceSocialReplies(now: Date = Date()) {
         var value = connected
         let pending = value.pendingSocialReplies ?? []
@@ -1136,6 +1167,13 @@ final class PhoneWorldStore: ObservableObject {
         var values = c.socialPreferences ?? [:]
         values[channel.rawValue] = value
         c.socialPreferences = values
+        for i in (c.activityJournal ?? []).indices {
+            guard let notice = c.activityJournal?[i], notice.kind == .social, notice.channel == channel else { continue }
+            if !value.notificationsEnabled || (notice.author.map { value.mutedAuthors.contains($0) } ?? false) ||
+                (notice.id.hasPrefix("community-post-") && value.followedPostAlerts == false) {
+                c.activityJournal?[i].dismissed = true
+            }
+        }
         commitConnected(c)
     }
     func toggleSocialMute(_ author: String, channel: LumaSocialChannel) {
@@ -1153,7 +1191,14 @@ final class PhoneWorldStore: ObservableObject {
         case .save: if !c.savedPosts.insert(postID).inserted {c.savedPosts.remove(postID)}
         case .follow:
             let key=channel.rawValue+"|"+post.author
-            if !c.follows.insert(key).inserted {c.follows.remove(key)}
+            if !c.follows.insert(key).inserted {
+                c.follows.remove(key)
+                for i in (c.activityJournal ?? []).indices {
+                    guard let notice = c.activityJournal?[i], notice.id.hasPrefix("community-post-"),
+                          notice.channel == channel, notice.author == post.author else { continue }
+                    c.activityJournal?[i].dismissed = true
+                }
+            }
         }
         commitConnected(c)
     }

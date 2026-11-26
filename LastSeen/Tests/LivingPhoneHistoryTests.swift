@@ -10,7 +10,7 @@ import XCTest
         XCTAssertEqual(Set(posts.map(\.id)).count, posts.count)
         XCTAssertTrue(posts.allSatisfy { $0.date < now })
         let comments = posts.flatMap { LumaSocialCatalog.comments($0.id, channel: $0.channel, world: world) }
-        XCTAssertEqual(comments.count, 36)
+        XCTAssertEqual(comments.count, 60)
         XCTAssertEqual(Set(comments.map(\.id)).count, comments.count)
         XCTAssertTrue(comments.allSatisfy { $0.date < now })
         let mail = LumaMailCatalog.visible(world)

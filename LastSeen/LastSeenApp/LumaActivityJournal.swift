@@ -54,8 +54,14 @@ struct LumaActivityNotice: Codable, Equatable, Identifiable {
         case .social:
             guard let channel, let targetID else { return false }
             let prefs = state.connectedWorld?.socialPreferences?[channel.rawValue] ?? LumaSocialPreferences()
-            return prefs.notificationsEnabled && !(author.map { prefs.mutedAuthors.contains($0) } ?? false)
-                && LumaSocialCatalog.visible(channel, world: state).contains { $0.id == targetID }
+            guard prefs.notificationsEnabled, !(author.map { prefs.mutedAuthors.contains($0) } ?? false),
+                  LumaSocialCatalog.visible(channel, world: state).contains(where: { $0.id == targetID }) else { return false }
+            if id.hasPrefix("community-post-") {
+                guard prefs.followedPostAlerts ?? true, let author,
+                      state.connectedWorld?.follows.contains(channel.rawValue + "|" + author) == true,
+                      state.connectedWorld?.communityActivity?.posts.contains(where: { $0.id == targetID && $0.author == author && $0.channel == channel }) == true else { return false }
+            }
+            return true
         case .timer: return true
         case .motionwell:
             guard let targetID else { return false }

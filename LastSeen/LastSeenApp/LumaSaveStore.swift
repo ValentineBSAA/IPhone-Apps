@@ -161,6 +161,15 @@ final class LumaSaveStore: ObservableObject {
                     }
                     connected.dayblink = d
                 }
+                if var community = connected.communityActivity {
+                    community.start = community.start.addingTimeInterval(delta)
+                    connected.communityActivity = community
+                }
+                connected.pendingSocialReplies = connected.pendingSocialReplies?.map { pending in
+                    let r = pending.reply
+                    let due = pending.dueAt.addingTimeInterval(delta)
+                    return .init(channel: pending.channel, reply: .init(id: r.id, postID: r.postID, author: r.author, body: r.body, date: due), dueAt: due)
+                }
                 if let start = connected.motionwell?.publicationStart {
                     connected.motionwell?.publicationStart = start.addingTimeInterval(delta)
                 }
