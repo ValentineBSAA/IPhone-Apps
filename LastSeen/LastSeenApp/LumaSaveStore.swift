@@ -139,7 +139,7 @@ final class LumaSaveStore: ObservableObject {
             let delta = now.timeIntervalSince(value.date)
             value.world.pendingReplies = value.world.pendingReplies?.map {
                 PhonePendingReply(id: $0.id, outgoingID: $0.outgoingID, neighbor: $0.neighbor, text: $0.text,
-                    readAt: $0.readAt.addingTimeInterval(delta), dueAt: $0.dueAt.addingTimeInterval(delta), startsTutorial: $0.startsTutorial)
+                    readAt: $0.readAt.addingTimeInterval(delta), dueAt: $0.dueAt.addingTimeInterval(delta), startsTutorial: $0.startsTutorial, typingAt: $0.typingAt?.addingTimeInterval(delta))
             }
             if var connected=value.world.connectedWorld {
                 connected.pendingMail=connected.pendingMail.map { pending in

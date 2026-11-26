@@ -26,7 +26,14 @@ enum PhoneEverydayConversation {
         .init(neighbor: .adrian, id: "testing", terms: ["build", "builds", "test", "testing", "qa", "bugs", "review", "release", "saves", "accessibility"], first: "We keep the review focused on interruptions, large text and save reliability. A repeatable result matters more than a long list of promises.", detail: "I start with a reproducible issue, then check whether the fix affects other parts of the app.", further: "Testing an upgrade with an existing save is just as important as testing a fresh install."),
         .init(neighbor: .tessa, id: "art", terms: ["art", "palette", "design", "color", "colour", "contrast", "illustration"], first: "I prefer checking palettes on the actual display. Screenshots at different brightness levels can be misleading.", detail: "I compare readable labels and contrast before deciding which color looks best. Pretty isn't much use if you can't read it.", further: "And I try not to choose every color at once. That way lies a very long afternoon."),
         .init(neighbor: .tessa, id: "promotion", terms: ["marketing", "promote", "promotion", "social", "posts", "connective", "followers", "business", "studio"], first: "I can talk about the art process. The studio keeps public updates separate from private references and unfinished work.", detail: "A little explanation of why we changed something can be more interesting than a polished picture.", further: "I'd rather share something genuinely useful than force a new announcement every week."),
-        .init(neighbor: .tessa, id: "leisure", terms: ["coffee", "lunch", "weekend", "books", "reading"], first: "Coffee is a perfectly valid production meeting, as long as somebody remembers the decisions.", detail: "I prefer a proper break rather than sitting at the desk pretending to take one.", further: "The laptop can survive without us for a little while.")
+        .init(neighbor: .tessa, id: "leisure", terms: ["coffee", "lunch", "weekend", "books", "reading"], first: "Coffee is a perfectly valid production meeting, as long as somebody remembers the decisions.", detail: "I prefer a proper break rather than sitting at the desk pretending to take one.", further: "The laptop can survive without us for a little while."),
+        .init(neighbor: .maya, id: "weather", terms: ["weather","rain","rainy","sunshine"], first: "Rain is lovely when I'm indoors. Less lovely when I've left my umbrella at home.", detail: "I tend to carry a little umbrella even when the forecast looks fine.", further: "At least a rainy afternoon is a good excuse for another coffee."),
+        .init(neighbor: .denise, id: "recycling", terms: ["recycling","bins","rubbish","trash","cardboard"], first: "We ask residents to flatten cardboard and keep the shared bin area clear.", detail: "Anything too large for the bins should be arranged separately with the office.", further: "For specific collection dates, check the current building notice rather than an old message."),
+        .init(neighbor: .helen, id: "baking", terms: ["baking","bake","cake","cakes","biscuits"], first: "I like baking something uncomplicated. A cake doesn't need to look like it came out of a magazine.", detail: "I try to let it cool properly before cutting it, although patience isn't always my strong point.", further: "A few biscuits with tea are quite enough sometimes."),
+        .init(neighbor: .lily, id: "films", terms: ["film","films","movie","movies","cinema","series"], first: "I'm terrible at picking a film. I'll spend longer choosing one than actually watching it.", detail: "Something funny is usually a good bet when I've had a long day.", further: "And I absolutely refuse to spend half the evening watching trailers."),
+        .init(neighbor: .daniel, id: "cooking", terms: ["cooking","cook","recipe","recipes","dinner"], first: "I keep dinner fairly simple. A few things in one pan and not much washing up.", detail: "I'd rather get a couple of recipes right than buy ingredients I'll never use again.", further: "Leftovers are useful when the next day is busy."),
+        .init(neighbor: .adrian, id: "documentation", terms: ["documentation","checklist","checklists","instructions","manual"], first: "A short checklist is worth more than a long explanation nobody reads.", detail: "I prefer to write down the expected result as well as the steps, so someone else can reproduce it.", further: "If a step needs special knowledge, the document should say so."),
+        .init(neighbor: .tessa, id: "typography", terms: ["typography","fonts","font","lettering","typeface"], first: "I like type that has a little personality without making the reader work for it.", detail: "Spacing and line height matter as much as the font itself, especially on a small display.", further: "I always check longer labels before calling a design finished.")
     ]
     private static let sensitive: Set<String> = ["password","passcode","pin","unlock","code","repair","repaired","phone","found","missing","nora","where","safe","fixed","access","account","identity","jailbreak","jailbroken","patchline","relay","rootless","archive","evidence","journal","files","notes","photos","photo","pictures","disappeared","address","private","hate","stupid","idiot","fuck","bitch"]
     static func words(_ text: String) -> Set<String> {
@@ -44,6 +51,18 @@ enum PhoneEverydayConversation {
         let matching = topics.filter { $0.neighbor == neighbor && !$0.terms.isDisjoint(with: tokens) }
         return matching.max { $0.terms.intersection(tokens).count < $1.terms.intersection(tokens).count }
     }
+    private static func multiTopic(for neighbor: Neighbor, text: String) -> [Topic] {
+        let clauses = normalized(text).components(separatedBy: " and ")
+        guard clauses.count == 2,
+              let first = topic(for: neighbor, text: clauses[0]),
+              let second = topic(for: neighbor, text: clauses[1]),
+              first.id != second.id else { return [] }
+        return [first, second]
+    }
+    private static func nextLine(_ topic: Topic, used: Set<String>) -> String? {
+        [topic.first, topic.detail, topic.further].first { !used.contains($0) }
+    }
+
     static func reply(neighbor: Neighbor, text: String, previousMessage: String?, previousReply: String?, recentReplies: [String] = []) -> String? {
         guard neighbor != .unknown, words(text).isDisjoint(with: sensitive) else { return nil }
         let clean = normalized(text)
@@ -71,8 +90,21 @@ enum PhoneEverydayConversation {
             case .unknown: return nil
             }
         }
+        let used = Set((recentReplies + [previousReply ?? ""]).flatMap { $0.components(separatedBy: "\n\n") })
+        let pair = multiTopic(for: neighbor, text: text)
+        if pair.count == 2 {
+            let answers = pair.compactMap { nextLine($0, used: used) }
+            return answers.isEmpty ? "I think we've covered those for now. Was there something else you wanted to ask?" : answers.joined(separator: "\n\n")
+        }
         let direct = topic(for: neighbor, text: text)
         let followup = followups.contains(clean)
+        if followup, let previousReply, previousReply.contains("\n\n") {
+            let lines = previousReply.components(separatedBy: "\n\n")
+            let candidates = topics.filter { topic in
+                topic.neighbor == neighbor && lines.contains(where: { [topic.first, topic.detail, topic.further].contains($0) })
+            }
+            if candidates.count > 1 { return "Which part did you want to talk about a little more?" }
+        }
         let prior = topics.first { $0.neighbor == neighbor && [ $0.first, $0.detail, $0.further ].contains(previousReply ?? "") }
         // A follow-up can only inherit a topic from an immediately preceding
         // authored response by this contact, never from another thread or a guess.
@@ -85,7 +117,7 @@ enum PhoneEverydayConversation {
                 return "I think that's about all I can add on that. Did you have a different question?"
             }
         }
-        return selected.first
+        return nextLine(selected, used: used) ?? "I think that's about all I can add on that. Did you have a different question?"
     }
 
     /// Keep introductory progress behind a positive, unquoted repair report.
