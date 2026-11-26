@@ -83,3 +83,6 @@ These are existing targeted regression suites, not proof of complete app accepta
 3. All 27 app rows, including communication, utilities, settings, media and jailbreak ecosystem; verify persistence and accessibility.
 4. Confidential integrated story and encounter acceptance, including retry, recovery, assistant hints, safe-mode behavior and both completion paths. Keep answer keys out of creator-facing checklists.
 5. Close remaining failures, revalidate exact revision, and record iPhone 16e outcome. A green native run is not device certification.
+
+## Build 33 verified baseline and outstanding device gate
+Version 1.9.1 (33), runtime revision 210f38623baf33c52e09f6b9f2739ef55cbadf89, run 45905804847: native release compilation succeeded, 256 unit and 4 simulator UI tests passed. The targeted suites listed above ran as part of this validation; this is not a complete app-by-app certification. Motionwell is retired; verify only migration and absence of live entry points/alerts. 26 active app rows plus retired legacy state. Pass 12 changes to playthrough isolation are not covered by this baseline. Physical acceptance, deeper dialogue quality and outstanding source review remain open. Do not infer hardware verification or complete audit from CI success.

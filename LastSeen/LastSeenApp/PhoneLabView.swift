@@ -751,7 +751,9 @@ struct PhoneLabView: View {
         cancelTestAlert();cancelLockAuthentication()
         arrivalTask?.cancel();arrivalTask=nil
         banner=nil;activityBanner=nil;activityQueue.clear()
-        pendingLumaImage=nil;panel=nil;recent.removeAll();searchQuery=""
+        pendingLumaImage=nil;pendingThread=nil;pendingActivityID=nil
+        panel=nil;recent.removeAll();searchQuery=""
+        showOwnerPasscode=false;authNotice="";restartLockTransition=false
         homePage=0;returnHome()
         observedIncoming=Set(incomingIDs);observedOutgoing=outgoingIDs
         restartLockTransition = !locked
@@ -1146,7 +1148,7 @@ struct PhoneLabView: View {
                 LabeledContent("Software", value: "1.9.1 (33)")
                 Button("Developer Diagnostics") { showOpeningQA = true }
                 Button("Replay message tutorial") { confirmTutorialReplay = true }
-                Button("Customize phone setup") { confirmSetupReplay = true }
+                Button("Replay customization or introduction") { confirmSetupReplay = true }
                 Button("Start New Game", role: .destructive) { confirmNewGame = true }.accessibilityIdentifier("luma.settings.newGame")
                 if !newGameNotice.isEmpty { Text(newGameNotice).font(.caption).foregroundColor(.secondary) }
             }
@@ -1184,9 +1186,9 @@ struct PhoneLabView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: { Text("Start from the computer connection and jailbreak opening. Existing fictional progress and checkpoint access will be cleared. Your real iPhone and native permissions are unchanged.") }
-        .confirmationDialog("Customize phone setup?", isPresented: $confirmSetupReplay) {
-            Button("Replay setup") { OpeningQA.record("Phone setup replay requested"); panel = nil; setupProgress = 0; setupStage = 0 }
-            Button("Replay entire introduction") { OpeningQA.record("Introduction replay requested"); panel = nil; setupProgress = 0; setupStage = 0; recoveryProgress = 0; recoverySimulated = false; recoveryStage = 0 }
+        .confirmationDialog("Replay without deleting progress?", isPresented: $confirmSetupReplay) {
+            Button("Customize phone only") { OpeningQA.record("Phone setup replay requested"); resetRecoveredNavigation(); setupProgress = 0; setupStage = 0 }
+            Button("Replay entire introduction") { OpeningQA.record("Introduction replay requested"); resetRecoveredNavigation(); setupProgress = 0; setupStage = 0; recoveryProgress = 0; recoverySimulated = false; recoveryStage = 0 }
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Your restored phone records, Field Notes and story saves will not be erased.")

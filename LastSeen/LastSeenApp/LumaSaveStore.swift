@@ -17,6 +17,7 @@ enum LumaRestoreJournal {
         let preferences:Data
         let playSeconds:Int
         var newGameStartedAt: Date? = nil
+        var newGameID: UUID? = nil
     }
     private struct Receipt:Codable {
         let version:Int
@@ -76,6 +77,9 @@ enum LumaRestoreJournal {
                 defaults.removeObject(forKey:key)
             }
             defaults.set(start,forKey:"lastseen.saves.newGameStartedAt")
+            if let id=settings.newGameID {
+                defaults.set(id.uuidString,forKey:"lastseen.saves.playthroughID")
+            }
             defaults.set(0,forKey:"lastseen.setup.stage")
             defaults.set(0,forKey:"lastseen.recovery.stage")
             defaults.set(0,forKey:"lastseen.setup.progress")
@@ -186,10 +190,13 @@ final class LumaSaveStore: ObservableObject {
     func startNewGame(into world: PhoneWorldStore, now: Date = Date()) -> Bool {
         do {
             let empty = try PropertyListSerialization.data(fromPropertyList: [String:Any](), format: .binary, options: 0)
-            let settings = LumaRestoreJournal.Settings(preferences: empty, playSeconds: 0, newGameStartedAt: now)
-            try world.restoreCheckpoint(RestoredPhoneBackup.snapshot(now: now), settings: settings, defaults: defaults)
+            let id=UUID()
+            var fresh=RestoredPhoneBackup.snapshot(now:now)
+            fresh.playthroughID=id
+            let settings=LumaRestoreJournal.Settings(preferences:empty,playSeconds:0,newGameStartedAt:now,newGameID:id)
+            try world.restoreCheckpoint(fresh,settings:settings,defaults:defaults)
             guard !world.settingsRecoveryRequired else { notice = "New game settings need recovery."; return false }
-            playSeconds=0; lifetimeSeconds=0; sessionSeconds=0; sinceAutomatic=0
+            playSeconds=0; lifetimeSeconds=0; sessionSeconds=0; sinceAutomatic=0; previousInterval=nil
             lastAutomatic=now; lastAutoAttempt=now; lastSuccessfulAutomatic=nil; automaticFailed=false
             refresh()
             notice="New game started."
@@ -198,11 +205,18 @@ final class LumaSaveStore: ObservableObject {
     }
     private func url(_ slot: String) -> URL { root.appendingPathComponent(slot + ".json") }
     private func validSlot(_ slot: String) -> Bool { (Self.manual + Self.automatic).contains(slot) }
+    private func belongsToCurrentPlaythrough(_ value:LumaCheckpoint)->Bool {
+        if let id=defaults.string(forKey:"lastseen.saves.playthroughID") {
+            return value.world.playthroughID?.uuidString == id
+        }
+        // Compatibility for older reset receipts and saves.
+        return value.date >= (defaults.object(forKey:"lastseen.saves.newGameStartedAt") as? Date ?? .distantPast)
+    }
     func read(_ slot: String) throws -> LumaCheckpoint {
         guard validSlot(slot) else { throw CocoaError(.fileReadCorruptFile) }
         let value = try JSONDecoder().decode(LumaCheckpoint.self, from: Data(contentsOf: url(slot)))
         guard value.version == 1, value.world.version == 1, value.playSeconds >= 0,
-              value.date >= (defaults.object(forKey:"lastseen.saves.newGameStartedAt") as? Date ?? .distantPast) else { throw CocoaError(.fileReadCorruptFile) }
+              belongsToCurrentPlaythrough(value) else { throw CocoaError(.fileReadCorruptFile) }
         _ = try preferences(value)
         return value
     }
@@ -221,9 +235,8 @@ final class LumaSaveStore: ObservableObject {
     func refresh() {
         var found: [String: LumaCheckpoint] = [:]; var damaged: Set<String> = []
         for slot in Self.manual + Self.automatic where FileManager.default.fileExists(atPath: url(slot).path) {
-            if let cutoff = defaults.object(forKey:"lastseen.saves.newGameStartedAt") as? Date,
-               let value = try? JSONDecoder().decode(LumaCheckpoint.self,from:Data(contentsOf:url(slot))),
-               value.date < cutoff { continue }
+            if let value=try? JSONDecoder().decode(LumaCheckpoint.self,from:Data(contentsOf:url(slot))),
+               !belongsToCurrentPlaythrough(value) {continue}
             do { found[slot] = try read(slot) } catch { damaged.insert(slot) }
         }
         slots = found; invalid = damaged
@@ -238,6 +251,7 @@ final class LumaSaveStore: ObservableObject {
             guard world.version==1,playSeconds>=0,now.timeIntervalSinceReferenceDate.isFinite else{throw CocoaError(.fileWriteUnknown)}
             _ = try Self.validatedPreferences(bytes)
             let value = LumaCheckpoint(version: 1, date: now, playSeconds: playSeconds, world: world, preferences: bytes)
+            guard belongsToCurrentPlaythrough(value) else{throw CocoaError(.fileWriteUnknown)}
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
             try JSONEncoder().encode(value).write(to: url(slot), options: .atomic)
             refresh()

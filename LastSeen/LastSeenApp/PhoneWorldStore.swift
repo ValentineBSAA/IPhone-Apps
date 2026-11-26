@@ -116,6 +116,8 @@ enum LumaPhoneDirectoryPolicy {
 struct PhoneWorld: Codable {
     var version: Int = 1
     var createdAt: Date
+    // Optional for compatibility with pre-1.9.1 restored worlds.
+    var playthroughID: UUID? = nil
     var threads: [String: [NeighborMessage]]
     var progress: [String: Int] = [:]
     var flags: Set<String> = []
