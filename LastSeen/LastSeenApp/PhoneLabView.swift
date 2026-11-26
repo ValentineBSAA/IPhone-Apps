@@ -345,6 +345,7 @@ struct PhoneLabView: View {
                AVAudioSession.InterruptionType(rawValue: raw) == .began {
                 PhoneSensoryEngine.stopSound()
                 PhoneSensoryEngine.stopHaptics()
+                RestartAudio.stop()
             }
         }
         .onChange(of: messageSound) { if !$0 { PhoneSensoryEngine.stopSound() } }

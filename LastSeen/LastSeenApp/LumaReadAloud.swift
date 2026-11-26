@@ -9,7 +9,8 @@ import UIKit
     @Published private(set) var notice = ""
     private let synthesizer = AVSpeechSynthesizer()
     private let owner = UUID()
-    private var started = Date.distantPast
+    private var started: TimeInterval = 0
+    private var observedSpeaking = false
 
     static func eligible(_ text: String) -> Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && text.count <= 4000
@@ -35,19 +36,32 @@ import UIKit
         utterance.voice = voice
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
         PhoneSensoryEngine.beginMediaAudio(owner)
-        started = Date()
+        started = ProcessInfo.processInfo.systemUptime
+        observedSpeaking = false
         active = true
         synthesizer.speak(utterance)
     }
 
-    func tick(now: Date = Date()) {
-        guard active, now.timeIntervalSince(started) >= 1, !synthesizer.isSpeaking else { return }
-        stop()
+    /// Monotonic startup grace avoids wall-clock changes and a premature stop
+    /// while the system is preparing its voice. No automatic replay.
+    static func shouldStop(speaking: Bool, observedSpeaking: Bool, elapsed: TimeInterval) -> Bool {
+        guard !speaking else { return false }
+        return observedSpeaking || (elapsed.isFinite && elapsed >= 3)
+    }
+
+    func tick() {
+        guard active else { return }
+        guard UIApplication.shared.applicationState == .active else { stop(); return }
+        let speaking = synthesizer.isSpeaking
+        if speaking { observedSpeaking = true }
+        if Self.shouldStop(speaking: speaking, observedSpeaking: observedSpeaking,
+                           elapsed: ProcessInfo.processInfo.systemUptime - started) { stop() }
     }
 
     func stop() {
         synthesizer.stopSpeaking(at: .immediate)
         if active { PhoneSensoryEngine.endMediaAudio(owner) }
         active = false
+        observedSpeaking = false
     }
 }

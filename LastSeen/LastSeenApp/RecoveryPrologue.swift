@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import AudioToolbox
+import AVFoundation
 
 enum RecoveryPower {
     static func connected(_ state: UIDevice.BatteryState) -> Bool {
@@ -99,8 +100,19 @@ struct RecoveryPrologue: View {
         }
         .onChange(of: phase) { value in
             guard stage < 6, initialized else { return }
-            if value == .background { RestartAudio.stop(); OpeningQA.record("Opening backgrounded at stage \(stage), \(elapsed)s") }
+            if value != .active { RestartAudio.stop() }
+            if value == .background { OpeningQA.record("Opening backgrounded at stage \(stage), \(elapsed)s") }
             if value == .active { readPower(); OpeningQA.record("Opening resumed at stage \(stage), \(elapsed)s") }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { notice in
+            guard stage < 6, let raw = notice.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  AVAudioSession.InterruptionType(rawValue: raw) == .began else { return }
+            RestartAudio.stop()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { notice in
+            guard stage < 6, let raw = notice.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+                  AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable else { return }
+            RestartAudio.stop()
         }
         .sheet(isPresented: $showQA) { OpeningDiagnosticsView() }
     }

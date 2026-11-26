@@ -189,6 +189,15 @@ import XCTest
             text: "I cannot confirm that from the restored records.", clipID: "denied")))
     }
 
+    func testSpeechStartupGraceAndCompletionPolicy() {
+        XCTAssertFalse(LumaReadAloud.shouldStop(speaking: false, observedSpeaking: false, elapsed: 0))
+        XCTAssertFalse(LumaReadAloud.shouldStop(speaking: false, observedSpeaking: false, elapsed: 2.99))
+        XCTAssertTrue(LumaReadAloud.shouldStop(speaking: false, observedSpeaking: false, elapsed: 3))
+        XCTAssertTrue(LumaReadAloud.shouldStop(speaking: false, observedSpeaking: true, elapsed: 0.25))
+        XCTAssertFalse(LumaReadAloud.shouldStop(speaking: true, observedSpeaking: true, elapsed: 200))
+        XCTAssertFalse(LumaReadAloud.shouldStop(speaking: false, observedSpeaking: false, elapsed: .nan))
+    }
+
     func testReadAloudBounds() {
         XCTAssertFalse(LumaReadAloud.eligible("   "))
         XCTAssertFalse(LumaReadAloud.eligible(String(repeating: "x", count: 4001)))

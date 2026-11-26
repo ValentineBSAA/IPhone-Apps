@@ -71,25 +71,30 @@ struct LumaMemoDetail: View {
     @State private var playing = false
     @State private var error = ""
     @State private var audioOwner = UUID()
+    @State private var loadedEpoch: UUID?
     @StateObject private var readAloud = LumaReadAloud()
     private let timer = Timer.publish(every: 0.2, on: .main, in: .common).autoconnect()
     private var memo: LumaMemo? { LumaMemoCatalog.visible(world.state).first { $0.id == id } }
     private func stop() {
+        if playing, let player {
+            elapsed = LumaMemoPlayback.position(player.currentTime, duration: duration)
+        }
         player?.pause()
         playing = false
-        elapsed = player?.currentTime ?? elapsed
         PhoneSensoryEngine.endMediaAudio(audioOwner)
     }
     private func resetPlayback() {
-        stop();readAloud.stop();player=nil;elapsed=0;duration=0;error=""
+        stop();readAloud.stop();player=nil;elapsed=0;duration=0;error="";loadedEpoch=nil
     }
     private func seek(_ seconds:Double) {
-        guard phase == .active,memo != nil,let player else{return}
+        guard phase == .active,memo != nil,loadedEpoch == world.checkpointEpoch,let player else{return}
         let position=LumaMemoPlayback.position(seconds,duration:duration)
         player.currentTime=position;elapsed=position
     }
     private func load() {
-        guard phase == .active,let url = memo?.url, player == nil else { return }
+        guard phase == .active, let memo else { return }
+        if loadedEpoch != world.checkpointEpoch { resetPlayback(); loadedEpoch = world.checkpointEpoch }
+        guard let url = memo.url, player == nil else { return }
         do {
             let audio = try AVAudioPlayer(contentsOf: url)
             guard audio.duration.isFinite, audio.duration > 0 else {
@@ -123,7 +128,8 @@ struct LumaMemoDetail: View {
                                     if playing { stop() }
                                     else {
                                         if elapsed >= duration - 0.1 { seek(0) }
-                                        guard phase == .active, self.memo != nil else { return }
+                                        guard phase == .active, self.memo != nil,
+                                              loadedEpoch == world.checkpointEpoch else { return }
                                         readAloud.stop()
                                         PhoneSensoryEngine.beginMediaAudio(audioOwner)
                                         do {
@@ -150,7 +156,8 @@ struct LumaMemoDetail: View {
                     Text(memo.transcript).textSelection(.enabled)
                     Button {
                         if readAloud.active { readAloud.stop() }
-                        else if phase == .active { stop(); readAloud.speak(memo.transcript) }
+                        else if phase == .active, loadedEpoch == world.checkpointEpoch,
+                                self.memo != nil { stop(); readAloud.speak(memo.transcript) }
                     } label: {
                         Label(readAloud.active ? "Stop read-aloud" : "Read transcript aloud", systemImage: readAloud.active ? "stop.circle" : "speaker.wave.2")
                     }.buttonStyle(.bordered)
@@ -161,8 +168,9 @@ struct LumaMemoDetail: View {
             } else { Text("Recording unavailable").padding() }
         }.navigationTitle("Recording").navigationBarTitleDisplayMode(.inline)
             .onAppear { load() }
-            .onReceive(timer) { now in
-                readAloud.tick(now: now)
+            .onReceive(timer) { _ in
+                guard loadedEpoch == world.checkpointEpoch, memo != nil else { resetPlayback(); load(); return }
+                readAloud.tick()
                 guard let player else { return }
                 if playing && !player.isPlaying {
                     // AVAudioPlayer may reset its clock when it ends. A halt
@@ -189,6 +197,7 @@ struct LumaMemoDetail: View {
                 if value == nil { resetPlayback() }
                 else { load() }
             }
+            .onChange(of: world.checkpointEpoch) { _ in resetPlayback(); load() }
             .onChange(of: phase) { if $0 != .active { stop(); readAloud.stop() } else {load()} }
             .onDisappear { resetPlayback() }
     }

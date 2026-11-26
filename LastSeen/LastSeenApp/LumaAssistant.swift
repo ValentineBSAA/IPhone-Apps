@@ -398,8 +398,9 @@ struct LumaAssistantView: View {
             }
             .onChange(of: sound) { if !$0 { stopAudio() } }
             .onChange(of: spokenResponses) { if !$0 { stopAudio() } }
-            .onReceive(timer) { now in
-                readAloud.tick(now: now)
+            .onReceive(timer) { _ in
+                guard phase == .active else { stopAudio(); return }
+                readAloud.tick()
                 if let player, !player.isPlaying { stopAudio() }
                 else if player == nil, !readAloud.active { voiceSource = nil }
             }
