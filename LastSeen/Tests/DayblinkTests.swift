@@ -27,6 +27,33 @@ import XCTest
         other.advanceDayblink(now: now.addingTimeInterval(60))
         XCTAssertEqual(other.connected.dayblink?.messages.count, 2)
     }
+    func testStoriesAndPictureMessages() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let w = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(now: now), persistToDisk: false)
+        w.advanceDayblink(now: now)
+        w.advanceDayblink(now: now.addingTimeInterval(119))
+        XCTAssertTrue(DayblinkArchive.activeStories(w.state).isEmpty)
+        w.advanceDayblink(now: now.addingTimeInterval(120))
+        let story = try XCTUnwrap(DayblinkArchive.activeStories(w.state).first)
+        XCTAssertEqual(story.friend, .maya)
+        w.markDayblinkStoryViewed(story.id)
+        XCTAssertTrue(w.connected.dayblink?.viewedStories?.contains(story.id) == true)
+        XCTAssertFalse(w.sendDayblink(friend: .maya, text: "", now: now, image: "Nora_Photo_12"))
+        XCTAssertTrue(w.sendDayblink(friend: .maya, text: "", now: now.addingTimeInterval(121), image: "CommunityMedia_Udon"))
+        XCTAssertEqual(w.connected.dayblink?.messages.last?.image, "CommunityMedia_Udon")
+        w.advanceDayblink(now: now.addingTimeInterval(136))
+        XCTAssertEqual(w.connected.dayblink?.messages.count, 2)
+        XCTAssertTrue(w.sendDayblink(friend: .maya, text: "Nice picture", now: now.addingTimeInterval(200)))
+        w.advanceDayblink(now: now.addingTimeInterval(215))
+        XCTAssertEqual(w.connected.dayblink?.messages.count, 4)
+        XCTAssertEqual(w.connected.dayblink?.messages.last?.image, "CommunityMedia_Udon")
+        w.advanceDayblink(now: now.addingTimeInterval(87000))
+        XCTAssertTrue(DayblinkArchive.activeStories(w.state).isEmpty)
+        XCTAssertEqual(w.connected.dayblink?.stories?.count, 3)
+        let copy = try JSONDecoder().decode(PhoneWorld.self, from: JSONEncoder().encode(w.state))
+        XCTAssertEqual(copy.connectedWorld?.dayblink, w.connected.dayblink)
+    }
+
     func testMuteDoesNotPreventDelivery() throws {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let w = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(now: now), persistToDisk: false)

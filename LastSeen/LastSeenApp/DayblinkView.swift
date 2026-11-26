@@ -54,11 +54,46 @@ struct DayblinkState: Codable, Equatable {
     var muted: Set<DayblinkFriend> = []
     var notificationsEnabled = true
     var previewsEnabled = false
+    var storyStart: Date? = nil
+    var stories: [DayblinkStory]? = nil
+    var viewedStories: Set<String>? = nil
+}
+
+struct DayblinkStory: Codable, Equatable, Identifiable {
+    let id: String
+    let friend: DayblinkFriend
+    let caption: String
+    let image: String
+    let published: Date
+    let expires: Date
+    var expired: Bool = false
 }
 enum DayblinkArchive {
     // Public, licensed illustrations only. These are shared pictures, not
     // evidence, personal captures, camera access or claims of local geography.
-    static let publicImages: Set<String> = ["CommunityMedia_Coffee", "CommunityMedia_Tabby", "CommunityMedia_Forest"]
+    static let publicImages: Set<String> = ["CommunityMedia_Coffee", "CommunityMedia_Tabby", "CommunityMedia_Forest", "CommunityMedia_Udon", "CommunityMedia_Fox", "CommunityMedia_Mountains"]
+    static let pictureChoices: [(asset: String, title: String)] = [
+        ("CommunityMedia_Coffee", "Coffee"), ("CommunityMedia_Tabby", "Cat"),
+        ("CommunityMedia_Forest", "Woodland"), ("CommunityMedia_Udon", "Noodles"),
+        ("CommunityMedia_Fox", "Wildlife"), ("CommunityMedia_Mountains", "Mountains")
+    ]
+    static func stories(start: Date) -> [DayblinkStory] {
+        let entries: [(DayblinkFriend, String, String, TimeInterval)] = [
+            (.maya, "A little lunch inspiration.", "CommunityMedia_Udon", 120),
+            (.lily, "Saving this for a little animal appreciation.", "CommunityMedia_Fox", 210),
+            (.tessa, "A softer palette for today.", "CommunityMedia_Mountains", 330)
+        ]
+        return entries.map { friend, caption, image, delay in
+            let date = start.addingTimeInterval(delay)
+            return .init(id: "dayblink-story-" + friend.id + "-01", friend: friend, caption: caption,
+                         image: image, published: date, expires: date.addingTimeInterval(86400))
+        }
+    }
+    static func activeStories(_ world: PhoneWorld) -> [DayblinkStory] {
+        guard world.everydayArchiveRevision != nil else { return [] }
+        return (world.connectedWorld?.dayblink?.stories ?? []).filter { !$0.expired && publicImages.contains($0.image) }
+            .sorted { ($0.published, $0.id) > ($1.published, $1.id) }
+    }
     static func records(_ world: PhoneWorld, friend: DayblinkFriend) -> [DayblinkRecord] {
         guard world.everydayArchiveRevision != nil else { return [] }
         let d = world.createdAt
@@ -84,16 +119,19 @@ enum DayblinkArchive {
               let image = record.image, publicImages.contains(image) else { return nil }
         return image
     }
-    static func pendingReply(friend: DayblinkFriend, text: String, id: String, now: Date) -> DayblinkPending? {
+    static func pendingReply(friend: DayblinkFriend, text: String, id: String, now: Date, previousCount: Int = 0, sharedImage: String? = nil) -> DayblinkPending? {
         let clean = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
-        guard ["thanks", "thank you", "nice picture", "love this", "hello", "hi"].contains(clean) else { return nil }
-        let caption: String
-        let asset: String
+        let words = Set(clean.split { !$0.isLetter }.map(String.init))
+        guard (0..<3).contains(previousCount),
+              sharedImage != nil || ["thanks", "thank you", "nice picture", "love this", "hello", "hi"].contains(clean) ||
+              !words.isDisjoint(with: ["photo","picture","coffee","cat","art","color","nature","hello","thanks"]) else { return nil }
+        let choices: [(String, String)]
         switch friend {
-        case .maya: caption = "A little coffee break for your day."; asset = "CommunityMedia_Coffee"
-        case .lily: caption = "A cat picture is always a good idea."; asset = "CommunityMedia_Tabby"
-        case .tessa: caption = "Something green to brighten the screen."; asset = "CommunityMedia_Forest"
+        case .maya: choices = [("A little coffee break for your day.", "CommunityMedia_Coffee"), ("This looks like a nice lunch idea.", "CommunityMedia_Udon"), ("A little scenery to end the day.", "CommunityMedia_Mountains")]
+        case .lily: choices = [("A cat picture is always a good idea.", "CommunityMedia_Tabby"), ("One more animal picture for the collection.", "CommunityMedia_Fox"), ("Something cozy to look at.", "CommunityMedia_Coffee")]
+        case .tessa: choices = [("Something green to brighten the screen.", "CommunityMedia_Forest"), ("I like the colors in this landscape.", "CommunityMedia_Mountains"), ("Here's another palette idea.", "CommunityMedia_Udon")]
         }
+        let (caption, asset) = choices[previousCount]
         let due = now.addingTimeInterval(friend == .maya ? 14 : friend == .lily ? 21 : 34)
         return .init(record: .init(id: "dayblink-reply-" + id, friend: friend, sender: friend.name, text: caption, date: due, image: asset, temporary: true), due: due)
     }
@@ -138,7 +176,23 @@ struct DayblinkView: View {
                     }
                 }
                 Section("Stories") {
-                    Text("No active stories recovered. Older temporary items are not restored as new activity.").font(.subheadline).foregroundColor(.secondary)
+                    let stories = DayblinkArchive.activeStories(world.state)
+                    if stories.isEmpty { Text("No active stories.").font(.subheadline).foregroundColor(.secondary) }
+                    ForEach(stories) { story in
+                        NavigationLink { DayblinkStoryView(id: story.id) } label: {
+                            HStack(spacing: 12) {
+                                DayblinkAvatar(friend: story.friend, size: 44)
+                                    .overlay(Circle().stroke((state.viewedStories ?? []).contains(story.id) ? Color.gray : Color.yellow, lineWidth: 2).padding(-3))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(story.friend.name).font(.headline)
+                                    Text((state.viewedStories ?? []).contains(story.id) ? "Viewed" : "New story").font(.caption).foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                Text(story.published, style: .relative).font(.caption2).foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    Text("Stories expire after 24 hours in the local simulation.").font(.caption).foregroundColor(.secondary)
                 }
             }
         }.navigationTitle("Dayblink").navigationBarTitleDisplayMode(.inline)
@@ -158,6 +212,9 @@ struct DayblinkThread: View {
     @State private var feedback = ""
     @State private var openedImage: String?
     @State private var showingImage = false
+    @State private var selectedPicture: String? = nil
+    @State private var showPictures = false
+    @Environment(\.scenePhase) private var phase
     private var state: DayblinkState { world.connected.dayblink ?? DayblinkState() }
     var body: some View {
         List {
@@ -197,15 +254,45 @@ struct DayblinkThread: View {
                 }
                 Section("Send as Repair desk") {
                     TextField("Write a local message", text: $text, axis: .vertical)
+                    if let selectedPicture {
+                        HStack {
+                            Image(selectedPicture).resizable().scaledToFill().frame(width: 56, height: 56).clipped().clipShape(RoundedRectangle(cornerRadius: 8))
+                            Text("Selected picture").font(.caption)
+                            Spacer()
+                            Button("Remove") { self.selectedPicture = nil }.font(.caption)
+                        }
+                    }
+                    Button { showPictures = true } label: { Label("Add a picture", systemImage: "photo.on.rectangle") }
                     Button("Send") {
-                        if world.sendDayblink(friend: friend, text: text) { text = ""; feedback = "" }
-                        else { feedback = "Enter a shorter message, or wait for pending activity." }
-                    }.disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        if world.sendDayblink(friend: friend, text: text, image: selectedPicture) {
+                            text = ""; feedback = ""; selectedPicture = nil
+                        } else { feedback = "Enter a shorter message or choose an available picture." }
+                    }.disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedPicture == nil)
                     if !feedback.isEmpty { Text(feedback).font(.caption).foregroundColor(.secondary) }
                     Text("The restored owner account is read-only. Responses are authored and local, not live messages.").font(.caption).foregroundColor(.secondary)
                 }
             } else { Text("Conversation unavailable") }
         }.navigationTitle(friend.name)
+            .onChange(of: phase) { if $0 != .active { showingImage = false; openedImage = nil; showPictures = false } }
+            .onDisappear { showingImage = false; openedImage = nil }
+            .sheet(isPresented: $showPictures) {
+                NavigationStack {
+                    List {
+                        ForEach(DayblinkArchive.pictureChoices, id: \.asset) { choice in
+                            Button {
+                                selectedPicture = choice.asset; showPictures = false
+                            } label: {
+                                HStack {
+                                    Image(choice.asset).resizable().scaledToFill().frame(width: 64, height: 52).clipped().clipShape(RoundedRectangle(cornerRadius: 8))
+                                    Text(choice.title)
+                                }
+                            }
+                        }
+                        Text("Shared illustrations from the fictional phone only. No real photo library or camera.").font(.caption).foregroundColor(.secondary)
+                    }.navigationTitle("Choose a picture")
+                        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showPictures = false } } }
+                }
+            }
             .sheet(isPresented: $showingImage, onDismiss: { openedImage = nil }) {
                 NavigationStack {
                     VStack(spacing: 16) {
@@ -217,6 +304,26 @@ struct DayblinkThread: View {
                         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showingImage = false; openedImage = nil } } }
                 }
             }
+    }
+}
+struct DayblinkStoryView: View {
+    let id: String
+    @EnvironmentObject private var world: PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
+    private var story: DayblinkStory? { DayblinkArchive.activeStories(world.state).first { $0.id == id } }
+    var body: some View {
+        ScrollView {
+            if let story, phase == .active {
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack { DayblinkAvatar(friend: story.friend, size: 42); Text(story.friend.name).font(.headline); Spacer() }
+                    Image(story.image).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius: 16))
+                    Text(story.caption).font(.title3)
+                    Text("Shared illustration · Temporary story").font(.caption).foregroundColor(.secondary)
+                    Text("Expires " + story.expires.formatted(date: .abbreviated, time: .shortened)).font(.caption2).foregroundColor(.secondary)
+                }.padding(16)
+            } else { Text("Story unavailable").padding() }
+        }.navigationTitle("Story").navigationBarTitleDisplayMode(.inline)
+            .onAppear { world.markDayblinkStoryViewed(id) }
     }
 }
 struct DayblinkFriendProfile: View {

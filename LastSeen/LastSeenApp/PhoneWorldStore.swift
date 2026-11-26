@@ -941,24 +941,48 @@ final class PhoneWorldStore: ObservableObject {
         return true
     }
     @discardableResult
-    func sendDayblink(friend: DayblinkFriend, text: String, now: Date = Date()) -> Bool {
+    func sendDayblink(friend: DayblinkFriend, text: String, now: Date = Date(), image: String? = nil) -> Bool {
         let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard state.everydayArchiveRevision != nil, !clean.isEmpty, clean.count <= 500 else { return false }
+        guard state.everydayArchiveRevision != nil, (!clean.isEmpty || image != nil), clean.count <= 500,
+              image.map({ DayblinkArchive.publicImages.contains($0) }) ?? true else { return false }
         var c = connected
         var d = c.dayblink ?? DayblinkState()
-        guard d.messages.count + d.pending.count < 200 else { return false }
+        guard d.messages.count + d.pending.count < 198 else { return false }
         let id = UUID().uuidString
-        let responded = d.messages.contains { $0.friend == friend && $0.id.hasPrefix("dayblink-reply-") } || d.pending.contains { $0.record.friend == friend }
-        d.messages.append(.init(id: id, friend: friend, sender: "Repair desk", text: clean, date: now))
-        if !responded, let pending = DayblinkArchive.pendingReply(friend: friend, text: clean, id: id, now: now) { d.pending.append(pending) }
+        let prior = d.messages.filter { $0.friend == friend && $0.id.hasPrefix("dayblink-reply-") }
+        let waiting = d.pending.contains { $0.record.friend == friend }
+        let recent = prior.contains { now.timeIntervalSince($0.date) < 45 }
+        d.messages.append(.init(id: id, friend: friend, sender: "Repair desk", text: clean.isEmpty ? "Shared picture" : clean, date: now, image: image))
+        if !waiting, !recent, let pending = DayblinkArchive.pendingReply(friend: friend, text: clean, id: id, now: now, previousCount: prior.count, sharedImage: image) {
+            d.pending.append(pending)
+        }
         c.dayblink = d; commitConnected(c)
         return true
     }
-    func advanceDayblink(now: Date = Date()) {
-        guard state.everydayArchiveRevision != nil, var d = connected.dayblink else { return }
-        let due = d.pending.filter { $0.due <= now }.sorted { ($0.due, $0.record.id) < ($1.due, $1.record.id) }
-        guard !due.isEmpty else { return }
+    func markDayblinkStoryViewed(_ id: String) {
+        guard DayblinkArchive.activeStories(state).contains(where: { $0.id == id }),
+              var d = connected.dayblink, !(d.viewedStories ?? []).contains(id) else { return }
         var c = connected
+        d.viewedStories = (d.viewedStories ?? []).union([id])
+        c.dayblink = d; commitConnected(c)
+    }
+
+    func advanceDayblink(now: Date = Date()) {
+        guard state.everydayArchiveRevision != nil else { return }
+        var c = connected
+        var d = c.dayblink ?? DayblinkState()
+        let original = d
+        if d.storyStart == nil { d.storyStart = now }
+        if let start = d.storyStart {
+            var stories = d.stories ?? []
+            for var story in DayblinkArchive.stories(start: start) where story.published <= now && !stories.contains(where: { $0.id == story.id }) {
+                story.expired = story.expires <= now
+                stories.append(story)
+            }
+            for i in stories.indices where stories[i].expires <= now { stories[i].expired = true }
+            d.stories = stories
+        }
+        let due = d.pending.filter { $0.due <= now }.sorted { ($0.due, $0.record.id) < ($1.due, $1.record.id) }
         for event in due where !d.messages.contains(where: { $0.id == event.record.id }) {
             d.messages.append(event.record)
             if d.notificationsEnabled && !d.muted.contains(event.record.friend) {
@@ -967,6 +991,7 @@ final class PhoneWorldStore: ObservableObject {
         }
         let delivered = Set(due.map { $0.record.id })
         d.pending.removeAll { delivered.contains($0.record.id) }
+        guard d != original else { return }
         c.dayblink = d; commitConnected(c)
     }
     func advanceMotionwell(now: Date = Date()) {

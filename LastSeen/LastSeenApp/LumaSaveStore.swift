@@ -148,6 +148,19 @@ final class LumaSaveStore: ObservableObject {
                     let date=pending.dueAt.addingTimeInterval(delta)
                     return LumaPendingMail(record:LumaMailRecord(id:r.id,peer:r.peer,sender:r.sender,subject:r.subject,body:r.body,date:date,kind:r.kind,attachments:r.attachments),dueAt:date)
                 }
+                if var d = connected.dayblink {
+                    d.pending = d.pending.map { event in
+                        let r = event.record
+                        let date = event.due.addingTimeInterval(delta)
+                        return DayblinkPending(record: .init(id: r.id, friend: r.friend, sender: r.sender, text: r.text, date: date, image: r.image, temporary: r.temporary, alreadyExpired: r.alreadyExpired), due: date)
+                    }
+                    if let start = d.storyStart { d.storyStart = start.addingTimeInterval(delta) }
+                    d.stories = d.stories?.map { story in
+                        .init(id: story.id, friend: story.friend, caption: story.caption, image: story.image,
+                              published: story.published.addingTimeInterval(delta), expires: story.expires.addingTimeInterval(delta), expired: story.expired || story.expires <= value.date)
+                    }
+                    connected.dayblink = d
+                }
                 if let start = connected.motionwell?.publicationStart {
                     connected.motionwell?.publicationStart = start.addingTimeInterval(delta)
                 }
