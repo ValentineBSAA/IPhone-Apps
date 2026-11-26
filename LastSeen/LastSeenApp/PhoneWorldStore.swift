@@ -63,6 +63,7 @@ struct NeighborMessage: Codable, Identifiable, Equatable {
     var read: Bool = false
     var recipientReadAt: Date? = nil
     var receiptTracked: Bool? = nil
+    var attachments: [LumaMessageAttachment]? = nil
 }
 
 struct PhoneNote: Codable, Identifiable, Equatable {
@@ -237,9 +238,10 @@ final class PhoneWorldStore: ObservableObject {
     /// Free text is saved verbatim. Only the local authored reply plan can
     /// advance the introductory conversation; evidence gates remain independent.
     @discardableResult
-    func sendReactive(to neighbor: Neighbor, text: String, now: Date = Date()) -> Bool {
-        guard Neighbor.visible(in: state).contains(neighbor), !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              text.count <= 2000 else { return false }
+    func sendReactive(to neighbor: Neighbor, text: String, now: Date = Date(), attachments: [LumaMessageAttachment] = []) -> Bool {
+        let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard Neighbor.visible(in: state).contains(neighbor), (!clean.isEmpty || !attachments.isEmpty),
+              text.count <= 2000, LumaMessageAttachmentCatalog.canSend(attachments, to: neighbor, world: state) else { return false }
         let pending = state.pendingReplies ?? []
         guard pending.filter({ $0.neighbor == neighbor }).count < 8 else { return false }
         let introductory = neighbor == .maya && tutorialStarted && !tutorialFinished
@@ -250,7 +252,9 @@ final class PhoneWorldStore: ObservableObject {
         let lastReply = waiting.last?.text ?? reactiveReplies.last?.text
         let previousMessage = thread.last(where: { $0.fromPlayer && $0.receiptTracked == true })?.text
         let recent = Array((reactiveReplies.map(\.text) + waiting.map(\.text)).suffix(6))
-        let plan = PhoneReplyPolicy.plan(for: neighbor, text: text, flags: state.flags,
+        let plan = clean.isEmpty
+            ? PhoneReplyPlan(text: "I've received the attachment. What would you like me to know about it?")
+            : PhoneReplyPolicy.plan(for: neighbor, text: text, flags: state.flags,
                                          tutorialStarted: tutorialStarted, tutorialFinished: tutorialFinished, previousReply: lastReply,
                                          previousMessage: previousMessage, recentReplies: recent)
         let previous = pending.filter { $0.neighbor == neighbor }.map(\.dueAt).max() ?? now
@@ -265,8 +269,9 @@ final class PhoneWorldStore: ObservableObject {
         let readAt = base.addingTimeInterval(timing.read)
         let typingAt = base.addingTimeInterval(timing.typing)
         let due = base.addingTimeInterval(timing.due)
-        append(NeighborMessage(id: key, thread: neighbor.id, text: text, fromPlayer: true,
-                               at: now, read: true, receiptTracked: true))
+        let displayText = clean.isEmpty ? (attachments.count == 1 ? "Attachment" : "\(attachments.count) attachments") : text
+        append(NeighborMessage(id: key, thread: neighbor.id, text: displayText, fromPlayer: true,
+                               at: now, read: true, receiptTracked: true, attachments: attachments.isEmpty ? nil : attachments))
         state.pendingReplies = pending + [PhonePendingReply(id: key + "-response", outgoingID: key,
             neighbor: neighbor, text: plan.text, readAt: readAt, dueAt: due, startsTutorial: plan.startsTutorial, typingAt: typingAt)]
         save()

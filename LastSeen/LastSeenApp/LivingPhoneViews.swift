@@ -375,6 +375,8 @@ struct NeighborConversationView: View {
     @State private var draft = ""
     @State private var showHelp = false
     @State private var showSuggestions = false
+    @State private var showAttachments = false
+    @State private var attachments: [LumaMessageAttachment] = []
 
     var body: some View {
         VStack(spacing: 0) {
@@ -395,6 +397,9 @@ struct NeighborConversationView: View {
                                         .background(message.fromPlayer ? Night.outgoing : Night.incoming,
                                                     in: BubbleShape(outgoing: message.fromPlayer))
                                         .foregroundColor(.white)
+                                    ForEach(message.attachments ?? []) { attachment in
+                                        LumaMessageAttachmentTile(attachment: attachment, thread: neighbor)
+                                    }
                                     Text(message.at, style: .time)
                                         .font(.system(size: 10))
                                         .foregroundColor(Night.muted)
@@ -478,7 +483,26 @@ struct NeighborConversationView: View {
                         }
                         .buttonStyle(.plain)
                     }
+                    if reactive && !attachments.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack {
+                                ForEach(attachments) { attachment in
+                                    Button {
+                                        attachments.removeAll { $0 == attachment }
+                                    } label: {
+                                        Label(LumaMessageAttachmentCatalog.title(attachment, world: world.state) ?? "Unavailable", systemImage: "xmark.circle.fill")
+                                            .font(.caption).padding(8).lumaSurface(radius: 12)
+                                    }.buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
                     HStack {
+                        if reactive && neighbor != .unknown {
+                            Button { showAttachments = true } label: {
+                                Image(systemName: "plus.circle.fill").font(.title2).frame(width: 44, height: 44)
+                            }.accessibilityLabel("Add attachment")
+                        }
                         TextField("Message", text: $draft, axis: .vertical)
                             .font(.system(size: 14))
                             .lineLimit(1...3)
@@ -488,7 +512,7 @@ struct NeighborConversationView: View {
                             Image(systemName: "arrow.up.circle.fill")
                                 .font(.system(size: 30)).frame(width: 44, height: 44)
                         }
-                        .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && attachments.isEmpty)
                     }
                     .padding(10)
                     .lumaSurface(radius: 24)
@@ -519,6 +543,12 @@ struct NeighborConversationView: View {
                 }
             }
         }
+        .sheet(isPresented: $showAttachments) {
+            NavigationStack {
+                LumaMessageAttachmentPicker(thread: neighbor, selection: $attachments)
+                    .environmentObject(world)
+            }.preferredColorScheme(.dark)
+        }
         .alert(reactive ? "Message not sent" : "Choose an available response", isPresented: $showHelp) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -527,9 +557,10 @@ struct NeighborConversationView: View {
     }
 
     private func send() {
-        guard !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        if (reactive ? world.sendReactive(to: neighbor, text: draft) : world.reply(to: neighbor, text: draft)) { draft = "" }
-        else { showHelp = true }
+        guard !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || (reactive && !attachments.isEmpty) else { return }
+        if (reactive ? world.sendReactive(to: neighbor, text: draft, attachments: attachments) : world.reply(to: neighbor, text: draft)) {
+            draft = ""; attachments = []
+        } else { showHelp = true }
     }
 }
 
