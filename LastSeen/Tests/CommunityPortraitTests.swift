@@ -18,8 +18,8 @@ import UIKit
             XCTAssertGreaterThanOrEqual(art.size.height, 128)
         }
         XCTAssertTrue(posts.allSatisfy { $0.portrait != nil || LumaSocialCommunity.identityMark(for: $0) != nil })
-        XCTAssertEqual(LumaSocialCommunity.identityMarks.count, 24)
-        XCTAssertEqual(Set(LumaSocialCommunity.identityMarks.values.map(\.initials)).count, 24)
+        XCTAssertEqual(LumaSocialCommunity.identityMarks.count, 64)
+        XCTAssertEqual(Set(LumaSocialCommunity.identityMarks.values.map(\.initials)).count, 64)
         XCTAssertTrue(Set(LumaSocialCommunity.identityMarks.keys).isDisjoint(with: Set(LumaSocialCommunity.portraits.keys)))
         XCTAssertEqual(LumaSocialCommunity.portraits.count, 36)
     }

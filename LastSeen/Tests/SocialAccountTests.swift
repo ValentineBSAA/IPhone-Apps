@@ -5,13 +5,14 @@ import XCTest
     func testIndependentCommunityAndPersistentPreferences() throws {
         let w = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(), persistToDisk: false)
         let posts = LumaSocialCommunity.posts(anchor: w.state.createdAt)
-        XCTAssertEqual(Set(posts.map(\.author)).count, 60)
-        XCTAssertEqual(Set(posts.map(\.handle)).count, 60)
-        XCTAssertEqual(posts.count, 120)
-        XCTAssertEqual(Set(posts.map(\.id)).count, 120)
-        XCTAssertEqual(posts.filter { LumaSocialCommunity.identityMark(for: $0) != nil }.count, 48)
+        XCTAssertEqual(Set(posts.map(\.author)).count, 100)
+        XCTAssertEqual(Set(posts.map(\.handle)).count, 100)
+        XCTAssertEqual(posts.count, 200)
+        XCTAssertEqual(Set(posts.map(\.id)).count, 200)
+        XCTAssertEqual(posts.filter { LumaSocialCommunity.identityMark(for: $0) != nil }.count, 128)
+        let expected: [LumaSocialChannel: Int] = [.afterframe: 21, .connective: 21, .commonGround: 22]
         for channel in LumaSocialChannel.allCases {
-            XCTAssertEqual(Set(posts.filter { $0.channel == channel && LumaSocialCommunity.identityMark(for: $0) != nil }.map(\.handle)).count, 8)
+            XCTAssertEqual(Set(posts.filter { $0.channel == channel && LumaSocialCommunity.identityMark(for: $0) != nil }.map(\.handle)).count, expected[channel])
         }
         let author = try XCTUnwrap(posts.first?.author)
         w.toggleSocialMute(author, channel: .afterframe)
