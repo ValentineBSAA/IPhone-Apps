@@ -264,6 +264,11 @@ struct LumaAssistantView: View {
                 Button { evidenceSearch = ""; showEvidence = true } label: {
                     Label("Discuss an opened record",systemImage:"doc.text.magnifyingglass")
                 }.buttonStyle(.bordered)
+                if LumaAssistantEvidence.visible(context().world).count >= 2 {
+                    NavigationLink { EvidenceComparisonView(initialRecordID:evidenceID) } label:{
+                        Label("Compare two discoveries",systemImage:"arrow.left.arrow.right")
+                    }.buttonStyle(.bordered)
+                }
                 HStack {
                     TextField("Ask Luma about what you found", text: $input).textFieldStyle(.roundedBorder).focused($focused)
                         .submitLabel(.go).onSubmit { submit(input) }

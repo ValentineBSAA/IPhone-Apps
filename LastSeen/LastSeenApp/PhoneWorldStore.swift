@@ -1331,6 +1331,24 @@ final class PhoneWorldStore: ObservableObject {
         guard LumaSocialCatalog.visible(channel,world:state).contains(where:{$0.id == postID}) else { return }
         if state.flags.insert(LumaAssistantEvidence.socialMarker(channel,postID)).inserted { save() }
     }
+    @discardableResult
+    func saveEvidenceConnection(_ first:String,_ second:String,relation:EvidenceConnection.Relation)->Bool {
+        guard let entry=EvidenceConnection.make(first,second,relation:relation,in:state) else{return false}
+        var c=connected
+        var values=EvidenceConnection.visible(state)
+        values.removeAll{$0.id==entry.id}
+        values.insert(entry,at:0)
+        c.evidenceConnections=Array(values.prefix(40))
+        if c != connected {commitConnected(c)}
+        return true
+    }
+    func removeEvidenceConnection(_ id:String) {
+        var c=connected
+        guard let entries=c.evidenceConnections else{return}
+        let next=entries.filter{$0.id != id}
+        guard next != entries else{return}
+        c.evidenceConnections=next;commitConnected(c)
+    }
     func rememberLumaSession(_ session:LumaAssistantSession?) {
         var c = connected
         let validated = LumaAssistantSession.validated(session,in:state)

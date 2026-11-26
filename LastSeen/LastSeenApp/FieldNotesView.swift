@@ -69,6 +69,24 @@ struct FieldNotesView: View {
                 HStack { Label("\(book.entries.filter { $0.status != "Resolved" }.count) open", systemImage: "questionmark.circle"); Spacer(); Label("\(book.entries.filter { $0.pinned }.count) pinned", systemImage: "pin") }.font(.caption).foregroundColor(.secondary)
                 Picker("Status", selection: $filter) { ForEach(["All","Open","Follow up","Resolved"], id: \.self) { Text($0) } }.pickerStyle(.segmented)
             }
+            let connections=EvidenceConnection.visible(world.state).filter{entry in
+                search.isEmpty || entry.relation.title.localizedCaseInsensitiveContains(search) ||
+                entry.records(in:world.state).contains{$0.title.localizedCaseInsensitiveContains(search)}
+            }
+            if filter == "All" && LumaAssistantEvidence.visible(world.state).count >= 2 {
+                Section("Record connections · current checkpoint") {
+                    NavigationLink { EvidenceComparisonView() } label:{
+                        Label("Compare discoveries",systemImage:"arrow.left.arrow.right")
+                    }
+                    ForEach(connections){entry in
+                        VStack(alignment:.leading,spacing:5){
+                            Text(entry.records(in:world.state).map(\.title).joined(separator:" + ")).font(.headline)
+                            Text(entry.relation.title).font(.caption)
+                            Text("Working observation · not verified").font(.caption2).foregroundColor(.secondary)
+                        }
+                    }
+                }
+            }
             let findings=ImageInterpretation.recorded(world.state).filter{search.isEmpty || $0.note.localizedCaseInsensitiveContains(search)}
             if filter == "All" && !findings.isEmpty {
                 Section("Recovered analysis · current checkpoint") {
@@ -81,7 +99,7 @@ struct FieldNotesView: View {
                     }
                 }
             }
-            if shown.isEmpty && findings.isEmpty { Text("No entries yet").foregroundColor(.secondary) }
+            if shown.isEmpty && findings.isEmpty && connections.isEmpty { Text("No entries yet").foregroundColor(.secondary) }
             ForEach(shown) { entry in
                 Button { editing = entry } label: {
                     VStack(alignment: .leading, spacing: 5) {
