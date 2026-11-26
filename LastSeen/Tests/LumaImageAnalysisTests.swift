@@ -6,8 +6,8 @@ import XCTest
         let originals=(1...29).map{String(format:"Recovered_B27_%02d",$0)}
         let archive=(1...11).map{String(format:"Nora_Archive_%02d",$0)}
         let camera=NoraPhotoCatalog.photos.map(\.id)
-        let all=originals+archive+camera
-        XCTAssertEqual(Set(all).count,54)
+        let all=originals+archive+camera+VeilArchive.homeAssets
+        XCTAssertEqual(Set(all).count,60)
         for asset in all {
             let image=try XCTUnwrap(PortraitImages.load(asset),asset)
             XCTAssertGreaterThan(image.size.width,200,asset)

@@ -2,6 +2,38 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class RecoveredImageAnalysisTests:XCTestCase {
+    func testStagedHomeArchiveRequiresOpenedAndReviewedRecords() throws {
+        var state = RestoredPhoneBackup.snapshot()
+        state.flags.formUnion(["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery])
+        let w = PhoneWorldStore(initial:state,persistToDisk:false)
+        XCTAssertEqual(VeilArchive.media(w.state).count,11)
+        w.recordVeilObservation("VEIL_Home_01")
+        XCTAssertNil(RecoveredImageAnalysis.record("VEIL_Home_01",in:w.state))
+        w.recordVeilCorrespondenceOpened()
+        w.recordVeilObservation("Nora_Archive_08")
+        XCTAssertEqual(VeilArchive.media(w.state).count,14)
+        for asset in VeilArchive.homeAssets.prefix(2) {
+            XCTAssertFalse(w.completeRecoveredImageAnalysis(asset,source:2,limit:0))
+            w.recordVeilObservation(asset)
+            XCTAssertTrue(w.completeRecoveredImageAnalysis(asset,source:2,limit:0))
+        }
+        XCTAssertEqual(VeilArchive.media(w.state).count,17)
+        w.recordVeilObservation("VEIL_Home_03")
+        XCTAssertTrue(w.saveEvidenceConnection("image:VEIL_Home_01","image:VEIL_Home_03",relation:.source))
+        XCTAssertTrue(EvidenceConnection.visible(w.state).first?.discussion(in:w.state)?.contains("white kitchen island") ?? false)
+        w.recordVeilObservation("VEIL_Home_04")
+        XCTAssertTrue(w.completeRecoveredImageAnalysis("VEIL_Home_04",source:2,limit:0))
+        XCTAssertTrue(w.recordImageInterpretation("VEIL_Home_04",mode:.scanlines,region:1))
+        var restored = try JSONDecoder().decode(PhoneWorld.self,from:JSONEncoder().encode(w.state))
+        XCTAssertEqual(VeilArchive.homeMedia(restored).count,6)
+        restored.flags.remove("veil.viewed.VEIL_Home_01")
+        XCTAssertEqual(VeilArchive.homeMedia(restored).count,3)
+        XCTAssertNil(RecoveredImageAnalysis.record("VEIL_Home_04",in:restored))
+        restored.flags.remove(VeilArchive.discovery)
+        XCTAssertTrue(VeilArchive.homeMedia(restored).isEmpty)
+        XCTAssertNil(LumaAssistantEvidence.selected("image:VEIL_Home_03",in:restored))
+    }
+
     func testMultiCollectionAndUnlockRoute() throws {
         let store=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
         XCTAssertTrue(RecoveredImageAnalysis.visible(store.state).isEmpty)
