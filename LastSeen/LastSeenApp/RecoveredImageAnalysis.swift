@@ -84,6 +84,15 @@ enum RecoveredImageAnalysis {
               let low=values.min(),let high=values.max(),high>low else{return false}
         return values[dark]==low && values[bright]==high
     }
+    /// Recompute from current access; never persist a second copy of findings.
+    static func reviewOverview(_ world:PhoneWorld)->(opened:Int,reviewed:Int,light:Int,matched:Int,interpretive:Int) {
+        let records=visible(world)
+        let ids=Set(records.map(\.id))
+        let reviewed=ids.intersection(world.connectedWorld?.recoveredImageReviews ?? [])
+        let light=reviewed.intersection(world.connectedWorld?.regionalLightReviews ?? [])
+        let matched=PhotoFeatureMatch.available(world).filter{PhotoFeatureMatch.completed($0,in:world)}.count
+        return (ids.count,reviewed.count,light.count,matched,ImageInterpretation.recorded(world).count)
+    }
     static func lightNote(_ asset:String,in world:PhoneWorld)->String? {
         guard completed(asset,in:world),
               world.connectedWorld?.regionalLightReviews?.contains(asset)==true else{return nil}
@@ -142,6 +151,9 @@ struct RecoveredImageAnalysisView:View {
                     Text("Inspect an already recovered reference. Adjustments affect only the preview, never the original.").font(.subheadline)
                     Toggle("Text-only inspection",isOn:$textOnly)
                     SendImageToLumaButton(asset:asset)
+                    NavigationLink { ImageReviewOverviewView() } label:{
+                        Label("My image investigation",systemImage:"checklist")
+                    }
                 }
                 Section("Source record") {
                     Text(item.source.title)
@@ -345,5 +357,45 @@ struct RegionalLightScanView:View {
             .onChange(of:phase){if $0 != .active {clear()}}
             .onDisappear{clear()}
         }
+    }
+}
+
+
+struct ImageReviewOverviewView:View {
+    @EnvironmentObject private var world:PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
+    var body:some View {
+        List {
+            if phase == .active {
+                let overview=RecoveredImageAnalysis.reviewOverview(world.state)
+                Section("Your recorded work") {
+                    LabeledContent("Opened images",value:String(overview.opened))
+                    LabeledContent("Source reviews",value:String(overview.reviewed))
+                    LabeledContent("Regional light scans",value:String(overview.light))
+                    LabeledContent("Recurring-detail matches",value:String(overview.matched))
+                    LabeledContent("Interpretive observations",value:String(overview.interpretive))
+                    Text("Only currently accessible records are counted. Synthetic findings are listed separately from original-image observations.").font(.caption).foregroundColor(.secondary)
+                }
+                Section("Opened images") {
+                    ForEach(RecoveredImageAnalysis.visible(world.state)) { item in
+                        NavigationLink { RecoveredImageAnalysisView(asset:item.id) } label:{
+                            VStack(alignment:.leading,spacing:5) {
+                                Text(item.source == .veil ? (VeilArchive.mediaTitle(item.id,in:world.state) ?? item.title):item.title)
+                                Text(RecoveredImageAnalysis.completed(item.id,in:world.state) ? "Source reviewed":"Source review available").font(.caption)
+                                if RecoveredImageAnalysis.lightNote(item.id,in:world.state) != nil {
+                                    Label("Light scan recorded",systemImage:"checkmark.circle").font(.caption)
+                                }
+                                if !ImageInterpretation.notes(item.id,in:world.state).isEmpty {
+                                    Label("Interpretation recorded",systemImage:"checkmark.circle").font(.caption)
+                                }
+                                if !PhotoFeatureMatch.notes(item.id,in:world.state).isEmpty {
+                                    Label("Detail match recorded",systemImage:"checkmark.circle").font(.caption)
+                                }
+                            }
+                        }
+                    }
+                }
+            } else { Text("Investigation unavailable.") }
+        }.navigationTitle("Image investigation")
     }
 }

@@ -138,15 +138,56 @@ enum LumaAssistantEvidence {
         }
         return matches.count == 1 ? matches[0] : nil
     }
+    /// These categories describe saved observations, not new visual inference.
+    static func imageResponse(_ words:Set<String>,record:Record,visual:LumaImageAnalysisReport?)->String {
+        let reconstruction=record.excerpts.filter{$0.hasPrefix("Interpretive observation (uncertain):")}
+        let matching=record.excerpts.filter{$0.hasPrefix("Recorded visible-detail comparison:")}
+        let light=record.excerpts.filter{$0.hasPrefix("Original-image regional light scan completed.")}
+        let source=record.excerpts.filter{$0.hasPrefix("Image analysis recorded.")}
+        let scene=record.excerpts.filter{$0.hasPrefix("Visible scene:")}
+        let provenance=record.excerpts.filter{$0.contains("message date")}
+        if !words.isDisjoint(with:["shadow","shadows","figure","reflection","reflections","distortion","distortions","reconstruction","reconstructed","echo","scanline","scanlines","marker","synthetic","silhouette"]) {
+            guard !reconstruction.isEmpty else {
+                return "I haven't received a recorded reconstruction observation for this photograph. If something seems different in an adjusted view, compare it with the untouched original before deciding what it means."
+            }
+            return "I can understand why that detail caught your attention. "+reconstruction.joined(separator:" ")+" I would keep the reconstruction separate from what actually appears in the original."
+        }
+        if !words.isDisjoint(with:["match","matches","matching","matched","similar","similarity","recurring","furniture","furnishings","countertop","table","sofa"]) {
+            guard !matching.isEmpty else {
+                return "I don't have a recorded visible-detail match for this photograph yet. Similar-looking rooms or objects aren't enough to establish a shared source. Compare opened originals if you have another reference."
+            }
+            return matching.joined(separator:" ")+" That is an observation worth keeping, even if we can't establish who made the copies."
+        }
+        if !words.isDisjoint(with:["brightness","brightest","darkest","contrast","luminance","light"]) {
+            let scan=visual.flatMap{$0.valid && record.id=="image:"+$0.asset ? $0.description:nil}
+            let facts=light+(scan.map{[$0]} ?? [])
+            return facts.isEmpty ? "I don't have a recorded light-scan result for this photograph. You can inspect the original's measured brightness without relying on the reconstruction." :
+                facts.joined(separator:" ")+" A light reading doesn't establish what caused the lighting or what lies outside the frame."
+        }
+        if !words.isDisjoint(with:["date","dates","when","chronology","capture","captured","timestamp"]) {
+            return (provenance.isEmpty ? "I don't have a verified capture date for this reference." : provenance.joined(separator:" "))+" A date attached to a recovered copy is not necessarily the date it was taken."
+        }
+        if !words.isDisjoint(with:["scared","scary","creepy","disturbing","unsettling","afraid","worried"]) {
+            return "I can see why an unfamiliar photograph of Nora's life could be unsettling. "+
+                (reconstruction.isEmpty ? "We don't need to assume what isn't established by the original." : "You've recorded an interpretive detail, not evidence of another person.")+
+                " You can continue with the text records instead."
+        }
+        let scan=visual.flatMap{$0.valid && record.id=="image:"+$0.asset ? $0.description:nil}
+        let wantsVisual = !words.isDisjoint(with:["analyze","analysis","see","showing","shows","scan","object","objects","scene","visible","picture","image","photo","photograph","detail","details","what"])
+        var facts=Array(record.excerpts.prefix(1))+scene+provenance+source
+        if wantsVisual,let scan {facts.insert(scan,at:0)}
+        let completed=light.count+matching.count+reconstruction.count
+        if completed>0 {
+            facts.append("There are "+String(completed)+" additional recorded observations for this image. Ask me about the light scan, recurring details or reconstruction.")
+        }
+        return facts.joined(separator:" ")+" What detail would you like to examine?"
+    }
     static func response(_ raw:String,record:Record,visual:LumaImageAnalysisReport? = nil) -> String {
         let words = LumaAssistantConversation.words(raw)
         let identity = !words.isDisjoint(with:["identity","sender","who","behind","whereabouts","location"])
         if record.kind == .image {
-            if identity { return "I cannot identify the photographer or establish Nora's whereabouts from this reference. "+record.excerpts.joined(separator:" ") }
-            let scan=visual.flatMap { $0.valid && record.id=="image:"+$0.asset ? $0.description:nil }
-            let wantsVisual = !words.isDisjoint(with:["analyze","analysis","see","showing","shows","brightness","dark","light","scan","object","objects","scene","visible","picture","image","photo","photograph","detail","details","what"])
-            if wantsVisual,let scan {return scan+" "+record.excerpts.joined(separator:" ")+" What would you like to compare?"}
-            return record.excerpts.joined(separator:" ")+" What detail in the image would you like to compare?"
+            if identity { return "I cannot identify the photographer or establish Nora's whereabouts from this reference. "+(record.excerpts.first ?? "") }
+            return imageResponse(words,record:record,visual:visual)
         }
         if identity {
             return "The selected record is “"+record.title+"”. Its existence does not establish a person's identity or current whereabouts. I can compare its wording, but I cannot confirm who is responsible."
