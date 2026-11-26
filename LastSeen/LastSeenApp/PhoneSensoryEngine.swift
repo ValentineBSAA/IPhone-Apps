@@ -216,6 +216,10 @@ enum PhoneAudioPriority {
     static func interaction(_ cue: PhoneCue) -> Bool {
         cue.isKeypress || cue == .outgoing
     }
+    /// Optional atmosphere is never queued behind meaningful phone feedback.
+    static func allowsAtmosphere(playing: Bool, waiting: Bool, mediaReserved: Bool) -> Bool {
+        !playing && !waiting && !mediaReserved
+    }
     static func decision(for cue: PhoneCue, playing: PhoneCue?, waiting: Bool) -> Decision {
         if interaction(cue) {
             if waiting { return .drop }
@@ -269,6 +273,7 @@ enum PhoneSensoryEngine {
     private static var engine: CHHapticEngine?
     private static var hapticPlayer: CHHapticPatternPlayer?
     private static var currentCue: PhoneCue?
+    private static var optionalAtmospherePlaying = false
     private static var deferredAuthentication: Task<Void, Never>?
     private static var queued = PhoneAudioQueue()
     private static var drainTask: Task<Void, Never>?
@@ -343,6 +348,23 @@ enum PhoneSensoryEngine {
         }
     }
 
+    /// A quiet, disposable first-entry effect. Never enqueue it or emit haptics.
+    static func playOptionalAtmosphere(_ cue: PhoneCue, sound: Bool, horrorEnabled: Bool) {
+        guard cue == .suspense, UIApplication.shared.applicationState == .active,
+              sound, horrorEnabled, preference("lastseen.lab.messageSound"),
+              preference("lastseen.lab.horrorEffects"),
+              PhoneAudioPriority.allowsAtmosphere(playing: audio?.isPlaying == true,
+                  waiting: !queued.isEmpty, mediaReserved: mediaReservations.isReserved) else { return }
+        optionalAtmospherePlaying = startAudio(cue) > 0
+    }
+
+    /// Stop only the disposable cue; never clear a genuine alert or its queue.
+    static func stopOptionalAtmosphere() {
+        guard optionalAtmospherePlaying else { return }
+        audio?.stop(); audio = nil; currentCue = nil
+        optionalAtmospherePlaying = false
+    }
+
     @discardableResult
     static func play(_ cue: PhoneCue, sound: Bool, haptics: Bool, horrorEnabled: Bool, hapticProfile: PhoneHapticProfile? = nil) -> Double {
         guard UIApplication.shared.applicationState == .active,
@@ -354,6 +376,7 @@ enum PhoneSensoryEngine {
         // Media owns the audible channel; arrivals still reach the journal,
         // banner and independent haptic path. Never replay missed sound bursts.
         guard sound && preference("lastseen.lab.messageSound"), !mediaReservations.isReserved else { return 0 }
+        stopOptionalAtmosphere()
         let playing = audio?.isPlaying == true ? currentCue : nil
         switch PhoneAudioPriority.decision(for: cue, playing: playing, waiting: !queued.isEmpty) {
         case .drop: return 0
@@ -371,6 +394,7 @@ enum PhoneSensoryEngine {
 
     @discardableResult
     private static func startAudio(_ cue: PhoneCue) -> Double {
+        optionalAtmospherePlaying = false
         audio?.stop(); audio = nil; currentCue = nil
         do {
             let session = AVAudioSession.sharedInstance()
@@ -497,6 +521,7 @@ enum PhoneSensoryEngine {
     }
 
     static func stopSound() {
+        optionalAtmospherePlaying = false
         audio?.stop(); audio = nil; currentCue = nil
         drainTask?.cancel(); drainTask = nil; queued.removeAll()
     }

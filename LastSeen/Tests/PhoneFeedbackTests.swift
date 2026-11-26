@@ -40,6 +40,21 @@ final class PhoneFeedbackTests: XCTestCase {
         XCTAssertEqual(PhoneAudioPriority.decision(for: .unlock, playing: nil, waiting: true), .start)
     }
 
+    func testOptionalAtmosphereRequiresAnIdleUnreservedAudioChannel() {
+        for playing in [false, true] {
+            for waiting in [false, true] {
+                for media in [false, true] {
+                    XCTAssertEqual(PhoneAudioPriority.allowsAtmosphere(playing: playing,
+                        waiting: waiting, mediaReserved: media), !playing && !waiting && !media)
+                }
+            }
+        }
+        // The normal admission policy still prioritizes authentication and
+        // preserves meaningful alerts; the optional path never enters this queue.
+        XCTAssertEqual(PhoneAudioPriority.decision(for: .unlock, playing: nil, waiting: true), .start)
+        XCTAssertEqual(PhoneAudioPriority.decision(for: .message, playing: nil, waiting: false), .start)
+    }
+
     func testAudioQueueBoundsOrderingAndCancellation() {
         var queue = PhoneAudioQueue()
         for cue in [PhoneCue.message, .general, .timerCompleted] {

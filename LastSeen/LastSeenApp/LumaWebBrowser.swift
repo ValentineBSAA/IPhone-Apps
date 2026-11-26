@@ -454,7 +454,19 @@ struct LumaWebBrowser: View {
             if visitRaw.isEmpty { visitRaw=LumaBrowserHistory.encode(visits) }
             if let p=page { current=p.id; query=p.address } else { current="" }
         }
-        .onChange(of:world.state.flags) { _ in if page==nil { current=""; revealed=[] } }
+        .onChange(of:world.state.flags) { _ in
+            if page==nil { current=""; revealed=[] }
+            if page.map({ atmosphere(for: $0.id)?.cue == nil }) ?? true {
+                PhoneSensoryEngine.stopOptionalAtmosphere()
+            }
+        }
+        .onChange(of:phase) { if $0 != .active { PhoneSensoryEngine.stopOptionalAtmosphere() } }
+        .onChange(of:horrorEffects) { if !$0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
+        .onChange(of:messageSound) { if !$0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
+        .onChange(of:reduceMotion) { if $0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
+        .onChange(of:atmosphereIntensity) { if $0 != LumaArchiveAtmosphere.Intensity.standard.rawValue { PhoneSensoryEngine.stopOptionalAtmosphere() } }
+        .onChange(of:showHistory) { if $0 { PhoneSensoryEngine.stopOptionalAtmosphere() } }
+        .onDisappear { PhoneSensoryEngine.stopOptionalAtmosphere() }
         .sheet(isPresented:$showHistory) {
             NavigationStack {
                 List {
@@ -496,6 +508,7 @@ struct LumaWebBrowser: View {
         apply(p.id)
     }
     private func apply(_ id:String) {
+        PhoneSensoryEngine.stopOptionalAtmosphere()
         revealed=[]
         if id==home { current=""; query=""; return }
         guard let p=LumaWebCatalog.page(id),p.available(world.state.flags) else{return}
@@ -508,10 +521,11 @@ struct LumaWebBrowser: View {
             active: phase == .active && !showHistory, treatment: atmosphere(for: p.id)) {
             // One optional cue on a deliberate first entry. Never queue a
             // haptic or generate a notification just for atmosphere.
-            PhoneSensoryEngine.play(cue, sound: messageSound, haptics: false, horrorEnabled: horrorEffects)
+            PhoneSensoryEngine.playOptionalAtmosphere(cue, sound: messageSound, horrorEnabled: horrorEffects)
         }
     }
     private func showResults(clear:Bool=false) {
+        PhoneSensoryEngine.stopOptionalAtmosphere()
         let old=page?.id
         if let old { backRaw=encoded(Array((entries(backRaw)+[old]).suffix(50))); forwardRaw="" }
         current=""; revealed=[]; if clear{query=""}
