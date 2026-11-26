@@ -119,18 +119,22 @@ import XCTest
         let gate:Set<String>=["phone-tutorial-finished","web.visited.studio","investigation.contact.received","web.visited.archive","web.visited.archive-collection","investigation.chapter2.reviewed","web.visited.archive-ledger"]
         XCTAssertFalse(LumaWebCatalog.page("archive-copy-pair")?.available(world.flags) ?? true)
         world.flags.formUnion(gate)
+        world.flags.insert(VeilArchive.discovery)
         XCTAssertTrue(LumaWebCatalog.page("archive-copy-pair")?.available(world.flags) ?? false)
         let store=PhoneWorldStore(initial:world,persistToDisk:false)
         store.inspectWebAttachment(pair[0])
         XCTAssertNil(RecoveredImageAnalysis.record(pair[0],in:store.state))
         store.visitWebRecord("archive-copy-pair")
         store.inspectWebAttachment(pair[0])
+        XCTAssertNil(RecoveredImageAnalysis.record(pair[0],in:store.state))
+        store.recordVeilObservation(pair[0])
         XCTAssertFalse(store.recordPhotoFeatureMatch("archive-door-locks",first:4,second:4))
         store.inspectWebAttachment(pair[1])
+        store.recordVeilObservation(pair[1])
         XCTAssertFalse(store.recordPhotoFeatureMatch("archive-door-locks",first:0,second:4))
         XCTAssertTrue(store.recordPhotoFeatureMatch("archive-door-locks",first:4,second:4))
         XCTAssertTrue(LumaAssistantEvidence.selected("image:"+pair[0],in:store.state)?.excerpts.contains{$0.contains("Recorded visible-detail comparison")} ?? false)
-        XCTAssertTrue(store.completeRecoveredImageAnalysis(pair[1],source:1,limit:0))
+        XCTAssertTrue(store.completeRecoveredImageAnalysis(pair[1],source:2,limit:0))
         XCTAssertNotNil(ImageInterpretation.available(pair[1],mode:.scanlines,in:store.state))
         var restored=try JSONDecoder().decode(PhoneWorld.self,from:JSONEncoder().encode(store.state))
         restored.flags.remove("web.visited.archive-ledger")
@@ -155,7 +159,9 @@ import XCTest
         XCTAssertEqual(NoraPhotoCatalog.library(store.state.flags,filter:.favorites,favorites:Set(ids)).map(\.id),ids)
     }
     func testSceneStudiesRemainOptionalAndHeldArtIsUnlisted() throws {
-        let store=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
+        var initial=RestoredPhoneBackup.snapshot()
+        initial.flags.formUnion(["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery])
+        let store=PhoneWorldStore(initial:initial,persistToDisk:false)
         let page=try XCTUnwrap(LumaWebCatalog.page("studio-scene-studies"))
         XCTAssertFalse(page.available(store.state.flags))
         store.visitWebRecord("studio-projects")
@@ -167,6 +173,8 @@ import XCTest
         for id in page.images {
             XCTAssertNotNil(PortraitImages.load(id))
             store.inspectWebAttachment(id)
+            XCTAssertNil(RecoveredImageAnalysis.record(id,in:store.state))
+            store.recordVeilObservation(id)
             XCTAssertNotNil(RecoveredImageAnalysis.record(id,in:store.state))
             XCTAssertTrue(LumaAssistantEvidence.selected("image:"+id,in:store.state)?.excerpts.contains{$0.hasPrefix("Visible scene:")} ?? false)
         }
@@ -178,7 +186,9 @@ import XCTest
         XCTAssertNil(RecoveredImageAnalysis.record("Recovered_B27_04",in:revoked))
     }
     func testStudioReferenceGalleriesAndBrandComparison() throws {
-        let store=PhoneWorldStore(initial:RestoredPhoneBackup.snapshot(),persistToDisk:false)
+        var initial=RestoredPhoneBackup.snapshot()
+        initial.flags.formUnion(["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery])
+        let store=PhoneWorldStore(initial:initial,persistToDisk:false)
         let ids=["studio-workbench-gallery","studio-environment-gallery","studio-environment-variants"]
         XCTAssertTrue(ids.allSatisfy{LumaWebCatalog.page($0)?.available(store.state.flags)==false})
         store.visitWebRecord("studio-projects")
@@ -193,7 +203,7 @@ import XCTest
         XCTAssertNil(RecoveredImageAnalysis.record("Recovered_B27_07",in:store.state))
         for id in ids {
             store.visitWebRecord(id)
-            for asset in LumaWebCatalog.page(id)?.images ?? [] {store.inspectWebAttachment(asset)}
+            for asset in LumaWebCatalog.page(id)?.images ?? [] {store.inspectWebAttachment(asset);store.recordVeilObservation(asset)}
         }
         XCTAssertFalse(store.recordPhotoFeatureMatch("studio-sign-review",first:0,second:2))
         XCTAssertTrue(store.recordPhotoFeatureMatch("studio-sign-review",first:2,second:0))
@@ -308,6 +318,7 @@ import XCTest
         let install=RelayChange(package:package,action:.install)
         XCTAssertFalse(RelayPlan.valid([install],sources:RelayCatalog.requiredSourceIDs,installed:[],flags:w.state.flags))
         w.visitWebRecord("studio")
+        w.visitWebRecord("studio-notes")
         w.visitWebRecord("archive")
         w.visitWebRecord("veil-guide")
         XCTAssertTrue(VeilArchive.authorized(w.state))
@@ -326,8 +337,10 @@ import XCTest
         w.visitWebRecord("archive-records")
         let image=try XCTUnwrap(LumaWebCatalog.page("archive-records")?.images.first)
         w.inspectWebAttachment(image)
+        XCTAssertNil(RecoveredImageAnalysis.record(image,in:w.state))
+        w.recordVeilObservation(image)
         XCTAssertNotNil(RecoveredImageAnalysis.record(image,in:w.state))
-        XCTAssertTrue(w.completeRecoveredImageAnalysis(image,source:1,limit:0))
+        XCTAssertTrue(w.completeRecoveredImageAnalysis(image,source:2,limit:0))
         let saved=try JSONDecoder().decode(PhoneWorld.self,from:JSONEncoder().encode(w.state))
         XCTAssertEqual(saved.connectedWorld?.recoveredImageReviews?.count,3)
         var revoked=saved

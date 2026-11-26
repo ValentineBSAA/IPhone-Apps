@@ -322,6 +322,23 @@ struct InvestigationProgressView: View {
             .onChange(of:world.checkpointEpoch){_ in hintLevel=0}
     }
 }
+/// A bounded local tab snapshot, never a network destination.
+struct LumaBrowserTab: Codable, Identifiable, Equatable {
+    var id = UUID()
+    var page = ""
+    var back = ""
+    var forward = ""
+    static func decode(_ raw: String) -> [LumaBrowserTab] {
+        guard let data = raw.data(using:.utf8),
+              let values = try? JSONDecoder().decode([LumaBrowserTab].self,from:data) else { return [] }
+        var seen=Set<UUID>()
+        return Array(values.filter { seen.insert($0.id).inserted }.prefix(12))
+    }
+    static func encode(_ values:[LumaBrowserTab]) -> String {
+        guard let data=try? JSONEncoder().encode(Array(values.prefix(12))) else{return ""}
+        return String(data:data,encoding:.utf8) ?? ""
+    }
+}
 struct LumaWebBrowser: View {
     let wifi: Bool
     @EnvironmentObject private var world: PhoneWorldStore
@@ -346,6 +363,8 @@ struct LumaWebBrowser: View {
     @AppStorage("lastseen.lab.bookmarks") private var bookmarks = ""
     @AppStorage("lastseen.lab.browserVisitLog") private var visitRaw = ""
     @State private var showHistory = false
+    @AppStorage("lastseen.lab.browserTabs") private var tabsRaw = ""
+    @State private var showTabs = false
     @State private var confirmClear = false
     @State private var reviewAnswer = ""
     @State private var reviewNotice = ""
@@ -356,6 +375,17 @@ struct LumaWebBrowser: View {
     @State private var showHint = false
     @State private var revealed: Set<String> = []
     private let home = "@home"
+    private var parkedTabs:[LumaBrowserTab] {LumaBrowserTab.decode(tabsRaw)}
+    private func currentTab() -> LumaBrowserTab { .init(page:page?.id ?? "",back:encoded(entries(backRaw)),forward:encoded(entries(forwardRaw))) }
+    private func openTab(_ tab:LumaBrowserTab) {
+        guard phase == .active else{return}
+        PhoneSensoryEngine.stopOptionalAtmosphere(owner:atmosphereOwner)
+        resetTransient(); addressNotice=""; addressFocused=false
+        backRaw=encoded(entries(tab.back));forwardRaw=encoded(entries(tab.forward))
+        if let record=LumaWebCatalog.page(tab.page),record.available(world.state.flags) {current=record.id;query=record.address}
+        else {current="";query=""}
+        showTabs=false
+    }
     private var page: LumaWebPage? { LumaWebCatalog.page(current).flatMap { $0.available(world.state.flags) ? $0 : nil } }
     private func entries(_ raw:String) -> [String] {LumaBrowserHistory.navigationEntries(raw,flags:world.state.flags)}
     private var bookmarkIDs:[String] {LumaBrowserHistory.navigationEntries(bookmarks,flags:world.state.flags,allowHome:false)}
@@ -521,7 +551,9 @@ struct LumaWebBrowser: View {
                     if values.contains(p.id){values.removeAll{$0==p.id}} else{values.append(p.id)}
                     bookmarks=encoded(Array(values.suffix(50)))
                 } label:{ Image(systemName:page.map{bookmarkIDs.contains($0.id)} == true ? "bookmark.fill":"bookmark").accessibilityLabel("Bookmark") }.disabled(page==nil)
-            }.font(.title3).padding(.horizontal,25).padding(.vertical,14)
+                Spacer()
+                Button { showTabs=true } label:{Image(systemName:"square.on.square").accessibilityLabel("Tabs")}
+            }.font(.title3).padding(.horizontal,20).padding(.vertical,14).background(.thinMaterial,in:Capsule()).padding(.horizontal,12).padding(.bottom,6)
             Text(wifi ? "Local browser · Offline":"Local browser · Wi-Fi off").font(.caption2).foregroundColor(.secondary).padding(.bottom,4)
         }.navigationTitle("Browser").navigationBarTitleDisplayMode(.inline)
         .overlay {
@@ -546,7 +578,7 @@ struct LumaWebBrowser: View {
         }
         .onChange(of:world.checkpointEpoch) { _ in
             PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner)
-            atmosphereOwner=UUID(); resetTransient(); showHistory=false; confirmClear=false; addressFocused=false
+            atmosphereOwner=UUID(); resetTransient(); showHistory=false; showTabs=false; confirmClear=false; addressFocused=false
             if let p=page { query=p.address } else { current="";query="" }
         }
         .onChange(of:phase) { if $0 != .active { resetTransient();addressFocused=false;PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
@@ -556,6 +588,41 @@ struct LumaWebBrowser: View {
         .onChange(of:atmosphereIntensity) { if $0 != LumaArchiveAtmosphere.Intensity.standard.rawValue { PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
         .onChange(of:showHistory) { if $0 { PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) } }
         .onDisappear { resetTransient();PhoneSensoryEngine.stopOptionalAtmosphere(owner: atmosphereOwner) }
+        .sheet(isPresented:$showTabs) {
+            NavigationStack {
+                List {
+                    Section("Current tab") {
+                        Label(page?.title ?? "Start page",systemImage:"globe")
+                    }
+                    Section("Other tabs") {
+                        ForEach(parkedTabs) { tab in
+                            HStack {
+                                Button {
+                                    let old=currentTab()
+                                    tabsRaw=LumaBrowserTab.encode(parkedTabs.filter{$0.id != tab.id}+[old])
+                                    openTab(tab)
+                                } label: {
+                                    let record=LumaWebCatalog.page(tab.page)
+                                    VStack(alignment:.leading) {
+                                        Text(record?.available(world.state.flags)==true ? (record?.title ?? "Start page") : "Start page")
+                                        if let record,record.available(world.state.flags) {Text(record.address).font(.caption).foregroundColor(.secondary)}
+                                    }
+                                }.buttonStyle(.plain)
+                                Spacer()
+                                Button {tabsRaw=LumaBrowserTab.encode(parkedTabs.filter{$0.id != tab.id})} label:{Image(systemName:"xmark.circle.fill").accessibilityLabel("Close tab")}.buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    Button {
+                        guard parkedTabs.count<11 else{return}
+                        tabsRaw=LumaBrowserTab.encode(parkedTabs+[currentTab()])
+                        openTab(.init())
+                    } label:{Label("New tab",systemImage:"plus")}.disabled(parkedTabs.count>=11)
+                }.navigationTitle("Tabs").toolbar {
+                    ToolbarItem(placement:.cancellationAction){Button("Done"){showTabs=false}}
+                }
+            }
+        }
         .sheet(isPresented:$showHistory) {
             NavigationStack {
                 List {

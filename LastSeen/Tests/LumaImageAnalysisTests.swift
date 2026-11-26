@@ -4,7 +4,7 @@ import XCTest
 @MainActor final class LumaImageAnalysisTests:XCTestCase {
     func testImageHandoffRequiresCurrentCheckpointEvenWhenRecordSurvives() throws {
         var state=RestoredPhoneBackup.snapshot()
-        state.flags.formUnion(["phone-tutorial-finished","investigation.contact.received","web.visited.archive","web.visited.archive-records","web.inspected.Recovered_B27_02"])
+        state.flags.formUnion(["phone-tutorial-finished","investigation.contact.received","web.visited.archive","web.visited.archive-records","web.inspected.Recovered_B27_02",VeilArchive.discovery,"veil.viewed.Recovered_B27_02"])
         let w=PhoneWorldStore(initial:state,persistToDisk:false)
         let asset="Recovered_B27_02"
         let oldEpoch=w.checkpointEpoch
@@ -58,6 +58,9 @@ import XCTest
             XCTAssertNil(LumaAssistantEvidence.selected("image:"+id,in:state))
         }
         state.flags.insert("web.inspected.Recovered_B27_02")
+        XCTAssertNil(RecoveredImageAnalysis.record("Recovered_B27_02",in:state))
+        state.flags.insert(VeilArchive.discovery)
+        state.flags.insert("veil.viewed.Recovered_B27_02")
         XCTAssertNotNil(RecoveredImageAnalysis.record("Recovered_B27_02",in:state))
         state.flags.remove("web.visited.archive-records")
         XCTAssertNil(RecoveredImageAnalysis.record("Recovered_B27_02",in:state))

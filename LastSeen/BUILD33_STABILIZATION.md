@@ -13,3 +13,8 @@ User authorized comprehensive audit then build. The version identity is staged; 
 - Unknown contact no longer triggered by homepage alone; requires journal visit or previously earned contact. Progress guidance revised. Existing narrative retained. Native regression suite pending.
 - Luma recognizes broader help requests and offers specific next-step fallback. Full conversational redesign remains open.
 - No packaging.
+
+## Pass 3: regression alignment and functional browser tabs
+- Added saved, bounded tab snapshots with separate back/forward stacks, switching without re-triggering visit events, close/new controls, and access revalidation. Floating material toolbar works on iOS16; native modern layout polish remains open. Tab state participates in checkpoint settings and full reset.
+- Old checkpoint files no longer appear as damaged after intentional new-game cutoff. Preserve unreadable unrelated checkpoints for recovery.
+- Existing image regression tests now require actual authorized VEIL observation before analysis, maintain original gate revocation, match and provenance checks; social expectation changed to Nora. No tests executed yet; additional fixtures may require correction.
