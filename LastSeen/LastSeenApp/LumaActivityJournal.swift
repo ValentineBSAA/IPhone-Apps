@@ -108,6 +108,13 @@ enum LumaActivityCatalog {
         (state.connectedWorld?.activityJournal ?? []).filter { !$0.dismissed && $0.canPresent(in: state) }
             .sorted { ($0.date, $0.id) > ($1.date, $1.id) }
     }
+    /// The visible timer must use current persisted eligibility rather than
+    /// the original banner snapshot, including dismissal and privacy changes.
+    static func presentedID(_ notice: LumaActivityNotice?, in state: PhoneWorld, unobstructed: Bool) -> String? {
+        guard unobstructed, let id = notice?.id,
+              visible(state).contains(where: { $0.id == id }) else { return nil }
+        return id
+    }
     static func newEntries(_ state: PhoneWorld, previous: Set<String>) -> [LumaActivityNotice] {
         Array(visible(state).filter { !previous.contains($0.id) }.reversed())
     }

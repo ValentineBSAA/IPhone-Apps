@@ -21,6 +21,17 @@ import XCTest
         queue.clear()
         XCTAssertTrue(queue.ids.isEmpty)
     }
+    func testActivityPresentationRevalidatesAfterPreemptionAndDismissal() throws {
+        let w = PhoneWorldStore(initial: RestoredPhoneBackup.snapshot(), persistToDisk: false)
+        w.recordTimerActivity(end: 100)
+        let notice = try XCTUnwrap(LumaActivityCatalog.visible(w.state).first { $0.kind == .timer })
+        XCTAssertEqual(LumaActivityCatalog.presentedID(notice, in: w.state, unobstructed: true), notice.id)
+        XCTAssertNil(LumaActivityCatalog.presentedID(notice, in: w.state, unobstructed: false))
+        XCTAssertEqual(LumaActivityCatalog.presentedID(notice, in: w.state, unobstructed: true), notice.id)
+        w.dismissActivity(notice.id)
+        XCTAssertNil(LumaActivityCatalog.presentedID(notice, in: w.state, unobstructed: true))
+        XCTAssertNil(LumaActivityCatalog.presentedID(nil, in: w.state, unobstructed: true))
+    }
     func testLatePageRejectsMissingPrerequisite() {
         var flags: Set<String> = ["phone-tutorial-finished","web.visited.studio","investigation.chapter2.reviewed","web.visited.archive-ledger","investigation.chapter2.ledgerAcknowledged",InvestigationReview.requested,InvestigationReview.read,InvestigationReview.finished,"web.visited."+InvestigationReview.pageID,"web.visited."+InvestigationResolution.indexID,"web.visited."+InvestigationResolution.noteID,InvestigationResolution.requested,InvestigationResolution.read]
         XCTAssertTrue(LumaWebCatalog.visible(flags).contains { $0.id == InvestigationResolution.conclusionID })

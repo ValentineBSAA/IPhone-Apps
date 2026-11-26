@@ -45,6 +45,10 @@ struct PhoneLabView: View {
     @State private var banner: PhoneAlert?
     @State private var activityBanner: LumaActivityNotice?
     @State private var activityQueue = LumaActivityBannerQueue()
+    private var presentedActivityID: String? {
+        LumaActivityCatalog.presentedID(activityBanner, in: world.state,
+            unobstructed: phase == .active && banner == nil && !locked && !checkpointReboot && panel == nil && !showOwnerPasscode)
+    }
     @State private var observedIncoming: Set<String> = []
     @State private var observedOutgoing: Set<String> = []
     @State private var arrivalTask: Task<Void, Never>?
@@ -162,7 +166,7 @@ struct PhoneLabView: View {
             }
         }
         .overlay(alignment: .top) {
-            if let notice = activityBanner, banner == nil, !locked, !checkpointReboot, panel == nil, !showOwnerPasscode, notice.canPresent(in: world.state) {
+            if let notice = activityBanner, presentedActivityID == notice.id {
                 LumaActivityCard(notice: notice, hidePreview: notice.hidePreview(in: world.state)) { openActivity(notice) }
                     .padding(.horizontal, 14).padding(.top, 4)
             }
@@ -223,10 +227,13 @@ struct PhoneLabView: View {
             do { try await Task.sleep(nanoseconds: 5_000_000_000) } catch { return }
             if banner?.id == id { withAnimation { banner = nil } }
         }
-        .task(id: activityBanner?.id) {
-            guard let id = activityBanner?.id else { return }
+        // Count a continuous visible interval, not time spent behind another overlay.
+        // SwiftUI cancels this task on preemption; resuming starts a fresh interval.
+        .task(id: presentedActivityID) {
+            guard let id = presentedActivityID else { return }
             do { try await Task.sleep(nanoseconds: 5_000_000_000) } catch { return }
-            if activityBanner?.id == id { activityBanner = nil }
+            guard !Task.isCancelled, presentedActivityID == id else { return }
+            activityBanner = nil
         }
         .onChange(of: messageIDs) { _ in
             let previous = observedIncoming
