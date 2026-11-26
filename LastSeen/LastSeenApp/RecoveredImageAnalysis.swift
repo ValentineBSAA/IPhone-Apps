@@ -85,7 +85,7 @@ enum RecoveredImageAnalysis {
         return values[dark]==low && values[bright]==high
     }
     static func lightNote(_ asset:String,in world:PhoneWorld)->String? {
-        guard record(asset,in:world) != nil,
+        guard completed(asset,in:world),
               world.connectedWorld?.regionalLightReviews?.contains(asset)==true else{return nil}
         return "Original-image regional light scan completed. The strongest measured contrast was located in the sampled grid. Brightness is not evidence of capture time, identity or an unseen object."
     }

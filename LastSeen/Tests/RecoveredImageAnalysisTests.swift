@@ -2,6 +2,51 @@ import XCTest
 @testable import LastSeen
 
 @MainActor final class RecoveredImageAnalysisTests:XCTestCase {
+    func testRegionalLightPairValidation() {
+        let sample=[10,80,220,10,110,220,40,90,160]
+        XCTAssertTrue(RecoveredImageAnalysis.validLightPair(sample,dark:0,bright:2))
+        XCTAssertTrue(RecoveredImageAnalysis.validLightPair(sample,dark:3,bright:5))
+        XCTAssertFalse(RecoveredImageAnalysis.validLightPair(sample,dark:2,bright:0))
+        XCTAssertFalse(RecoveredImageAnalysis.validLightPair(sample,dark:0,bright:0))
+        XCTAssertFalse(RecoveredImageAnalysis.validLightPair(sample,dark:-1,bright:9))
+        XCTAssertFalse(RecoveredImageAnalysis.validLightPair(Array(repeating:10,count:9),dark:0,bright:1))
+        XCTAssertFalse(RecoveredImageAnalysis.validLightPair([0,255],dark:0,bright:1))
+        XCTAssertFalse(RecoveredImageAnalysis.validLightPair([-1,80,220,10,110,220,40,90,160],dark:0,bright:2))
+    }
+
+    func testRegionalLightScanUsesAuthorizedOriginalAndPersistsOnlyCompletion() throws {
+        var state=RestoredPhoneBackup.snapshot()
+        state.flags.formUnion(["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery])
+        let w=PhoneWorldStore(initial:state,persistToDisk:false)
+        let asset="Nora_Archive_08"
+        XCTAssertFalse(w.recordRegionalLightReview(asset,dark:0,bright:1))
+        XCTAssertFalse(w.recordRegionalLightReview("missing-asset",dark:0,bright:1))
+        w.recordVeilObservation(asset)
+        XCTAssertFalse(w.recordRegionalLightReview(asset,dark:0,bright:1))
+        XCTAssertTrue(w.completeRecoveredImageAnalysis(asset,source:2,limit:0))
+        let image=try XCTUnwrap(PortraitImages.load(asset))
+        let values=try XCTUnwrap(RecoveredImageAnalysis.regionalLight(image))
+        XCTAssertEqual(values.count,9)
+        XCTAssertTrue(values.allSatisfy{(0...255).contains($0)})
+        XCTAssertEqual(RecoveredImageAnalysis.regionalLight(image),values)
+        let low=try XCTUnwrap(values.min()),high=try XCTUnwrap(values.max())
+        XCTAssertGreaterThan(high,low)
+        let dark=try XCTUnwrap(values.firstIndex(of:low)),bright=try XCTUnwrap(values.firstIndex(of:high))
+        XCTAssertFalse(w.recordRegionalLightReview(asset,dark:bright,bright:dark))
+        XCTAssertNil(RecoveredImageAnalysis.lightNote(asset,in:w.state))
+        XCTAssertTrue(w.recordRegionalLightReview(asset,dark:dark,bright:bright))
+        XCTAssertTrue(w.recordRegionalLightReview(asset,dark:dark,bright:bright))
+        XCTAssertEqual(w.connected.regionalLightReviews,Set([asset]))
+        XCTAssertTrue(LumaAssistantEvidence.selected("image:"+asset,in:w.state)?.excerpts.contains(where:{$0.contains("regional light scan completed")}) ?? false)
+        var restored=try JSONDecoder().decode(PhoneWorld.self,from:JSONEncoder().encode(w.state))
+        XCTAssertNotNil(RecoveredImageAnalysis.lightNote(asset,in:restored))
+        restored.connectedWorld?.recoveredImageReviews=[]
+        XCTAssertNil(RecoveredImageAnalysis.lightNote(asset,in:restored))
+        restored=w.state
+        restored.flags.remove(VeilArchive.discovery)
+        XCTAssertNil(RecoveredImageAnalysis.lightNote(asset,in:restored))
+    }
+
     func testStagedHomeArchiveRequiresOpenedAndReviewedRecords() throws {
         var state = RestoredPhoneBackup.snapshot()
         state.flags.formUnion(["phone-tutorial-finished","web.visited.archive",VeilArchive.discovery])
