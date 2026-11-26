@@ -25,6 +25,19 @@ struct RelaySupportView: View {
     @AppStorage("lastseen.relay.safeMode") private var safeMode = false
     @AppStorage("lastseen.relay.sources") private var sources = RelayCatalog.defaultSources
     @State private var tab = "Chat"
+    @State private var guideSearch = ""
+    @State private var receivedOnly = false
+    private var receivedGuideIDs: Set<String> {
+        Set(messages.filter { !$0.outgoing }.compactMap(\.guideID))
+    }
+    private var library: [RelaySupportKnowledge.LibraryEntry] {
+        let q = guideSearch.trimmingCharacters(in: .whitespacesAndNewlines)
+        return RelaySupportKnowledge.library(flags: world.state.flags, sources: sources, installed: installed).filter { entry in
+            (!receivedOnly || receivedGuideIDs.contains(entry.id)) &&
+            (q.isEmpty || entry.title.localizedCaseInsensitiveContains(q) ||
+             entry.sections.contains { $0.heading.localizedCaseInsensitiveContains(q) || $0.text.localizedCaseInsensitiveContains(q) })
+        }
+    }
     @State private var draft = ""
     @AppStorage("lastseen.relay.versions") private var versions = ""
     @State private var failure = false
@@ -65,8 +78,27 @@ struct RelaySupportView: View {
                 }.pickerStyle(.segmented).padding(.horizontal, 12)
                 switch tab {
                 case "Guides":
-                    List(RelaySupportKnowledge.generalGuides()) { guide in
-                        NavigationLink { RelaySupportGuideReader(id: guide.id) } label: { Label(guide.title, systemImage: "doc.richtext") }
+                    List {
+                        Section {
+                            TextField("Search available guides", text: $guideSearch)
+                            Toggle("Received in chat", isOn: $receivedOnly)
+                        }
+                        Section("Technical library") {
+                            if library.isEmpty { Text("No matching guides").foregroundColor(.secondary) }
+                            ForEach(library) { entry in
+                                NavigationLink { RelaySupportGuideReader(id: entry.id) } label: {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Label(entry.title, systemImage: "doc.richtext").font(.subheadline.weight(.semibold))
+                                        Text(entry.complete ? entry.guide.filename : "Available sections only")
+                                            .font(.caption).foregroundColor(.secondary)
+                                        if receivedGuideIDs.contains(entry.id) {
+                                            Label("Received from Alex", systemImage: "checkmark.circle").font(.caption2).foregroundColor(.teal)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Text("The library shows only currently available technical content. Shared guides remain in the conversation.").font(.caption).foregroundColor(.secondary)
                     }
                 case "Diagnostics":
                     List {
@@ -206,17 +238,19 @@ struct RelaySupportGuideReader: View {
     let id: String
     @EnvironmentObject private var world: PhoneWorldStore
     @AppStorage("lastseen.relay.installed") private var installed = ""
+    @AppStorage("lastseen.relay.sources") private var sources = RelayCatalog.defaultSources
     var body: some View {
         ScrollView {
             if RelaySupportAccess.available(installed: installed, flags: world.state.flags),
-               let guide = RelaySupportKnowledge.generalGuide(id) {
+               let entry = RelaySupportKnowledge.libraryEntry(id, flags: world.state.flags, sources: sources, installed: installed) {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text(guide.title).font(.largeTitle.bold())
-                    ForEach(Array(guide.sections.enumerated()), id: \.offset) { _, section in
+                    Text(entry.title).font(.largeTitle.bold())
+                    ForEach(Array(entry.sections.enumerated()), id: \.offset) { _, section in
                         Text(section.heading).font(.headline)
                         Text(section.text).textSelection(.enabled)
                     }
-                    Text(guide.filename).font(.caption).foregroundColor(.secondary)
+                    Text(entry.complete ? entry.guide.filename : "Filtered reading copy · Only available sections")
+                        .font(.caption).foregroundColor(.secondary)
                 }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
             } else { Text("Guide unavailable").padding() }
         }.navigationTitle("Support guide").navigationBarTitleDisplayMode(.inline)

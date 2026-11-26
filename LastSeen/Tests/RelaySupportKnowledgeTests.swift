@@ -21,6 +21,22 @@ final class RelaySupportKnowledgeTests: XCTestCase {
         XCTAssertFalse(LumaHomeLayout.pages(columns: 4, rows: 2, fieldNotes: false).flatMap { $0 }.flatMap { $0.apps }.contains(.relaySupport))
     }
 
+    func testLibraryFiltersPackageSectionsAndRequiresInstall() throws {
+        XCTAssertTrue(RelaySupportKnowledge.library(flags: [], sources: RelayCatalog.defaultSources, installed: "").isEmpty)
+        let installed = "relay-support"
+        let initial = RelaySupportKnowledge.library(flags: [], sources: RelayCatalog.defaultSources, installed: installed)
+        XCTAssertTrue(initial.contains { $0.id == "relay-support" })
+        XCTAssertTrue(initial.contains { $0.id == "packages-08" && $0.complete })
+        XCTAssertFalse(initial.contains { $0.id == "packages-10" })
+        XCTAssertFalse(initial.contains { $0.id == "packages-12" })
+        let unlocked = RelaySupportKnowledge.library(flags: ["web.visited.repo-folio"], sources: RelayCatalog.defaultSources + "|folio", installed: installed)
+        let partial = try XCTUnwrap(unlocked.first { $0.id == "packages-12" })
+        XCTAssertEqual(partial.sections.map(\.heading), ["Reader Focus"])
+        XCTAssertFalse(partial.complete)
+        let noSource = RelaySupportKnowledge.library(flags: ["web.visited.repo-folio"], sources: RelayCatalog.defaultSources, installed: installed)
+        XCTAssertFalse(noSource.contains { $0.id == "packages-12" })
+    }
+
     func testApprovedContentAndVisibility() throws {
         XCTAssertNotNil(UIImage(named: "Support_AlexMorgan"))
         XCTAssertNotNil(UIImage(named: "Icon_RelaySupport"))
