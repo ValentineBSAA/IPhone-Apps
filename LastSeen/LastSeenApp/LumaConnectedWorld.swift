@@ -391,6 +391,11 @@ struct SocialArchiveDraftView:View {
                     Text(SocialArchiveReview.text).textSelection(.enabled)
                     if SocialArchiveReview.opened(world.state) {
                         NavigationLink { EvidenceComparisonView(initialRecordID:SocialArchiveReview.recordID) } label:{ Label("Compare draft with opened records",systemImage:"rectangle.split.2x1") }
+                        if NoraFriendArchive.ready(world.state) {
+                            NavigationLink { NoraFriendArchiveView() } label:{ Label("Open recovered conversation",systemImage:"message") }
+                        } else {
+                            Text("Compare the draft's wording with the original recovered correspondence.").font(.caption).foregroundColor(.secondary)
+                        }
                     }
                 }
             } else { Text("Draft unavailable.") }

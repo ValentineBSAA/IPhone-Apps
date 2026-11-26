@@ -58,6 +58,10 @@ enum LumaAssistantEvidence {
                 result.append(.init(id:"social:"+channel.rawValue+":"+post.id,title:post.author+" · "+String(post.body.prefix(48)),kind:.social,excerpts:[post.body]))
             }
         }
+        if NoraFriendArchive.opened(world) {
+            result.append(.init(id:NoraFriendArchive.recordID,title:NoraFriendArchive.title,kind:.correspondence,
+                excerpts:NoraFriendArchive.lines.map{$0.speaker+": "+$0.text}))
+        }
         if SocialArchiveReview.opened(world) {
             result.append(.init(id:SocialArchiveReview.recordID,title:SocialArchiveReview.title,kind:.document,
                 excerpts:["Restored local draft attributed to Nora; not a published post.",SocialArchiveReview.text]))

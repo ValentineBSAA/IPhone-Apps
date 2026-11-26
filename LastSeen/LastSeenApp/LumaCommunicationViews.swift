@@ -5,6 +5,67 @@ struct LumaCallRoute: Hashable {
     let neighbor: Neighbor
 }
 
+/// An explicitly recovered historical exchange, separate from live messages.
+enum NoraFriendArchive {
+    static let marker = "messages.friend-fragment.opened"
+    static let recordID = "messages:maya-restored-fragment"
+    static let title = "Maya · recovered conversation fragment"
+    struct Line: Identifiable {
+        let id:Int
+        let fromNora:Bool
+        let text:String
+        var speaker:String { fromNora ? "Nora" : "Maya" }
+    }
+    static let lines:[Line] = [
+        .init(id:0,fromNora:true,text:"I deleted a caption this morning and then put it back. It's ridiculous that I have to think this hard about a picture of my own breakfast."),
+        .init(id:1,fromNora:false,text:"You don't have to explain yourself to strangers. Or to me. Want me to come round?"),
+        .init(id:2,fromNora:true,text:"Maybe tomorrow. I want one evening where I don't have to talk about it. I still have half a book to finish."),
+        .init(id:3,fromNora:true,text:"That phrase about a collection isn't mine. Someone keeps describing the pictures like I made them for an audience. I didn't."),
+        .init(id:4,fromNora:false,text:"Then keep the actual messages. Don't send me any pictures you don't want me to see. We'll work out what you want to do, not what they want."),
+        .init(id:5,fromNora:true,text:"Thanks. Coffee when I can look at my phone without thinking about this. The proper kind, not five minutes between meetings.")
+    ]
+    static func ready(_ world:PhoneWorld)->Bool {
+        guard SocialArchiveReview.opened(world),
+              world.flags.contains("veil.correspondence.opened"),
+              Neighbor.visible(in:world).contains(.maya) else { return false }
+        return (world.connectedWorld?.evidenceConnections ?? []).prefix(40).contains {
+            Set([$0.first,$0.second]) == Set([SocialArchiveReview.recordID,"veil:conversation"]) &&
+                $0.relation == .wording
+        }
+    }
+    static func opened(_ world:PhoneWorld)->Bool { ready(world) && world.flags.contains(marker) }
+}
+
+struct NoraFriendArchiveView:View {
+    @EnvironmentObject private var world:PhoneWorldStore
+    @Environment(\.scenePhase) private var phase
+    var body:some View {
+        ScrollView {
+            if NoraFriendArchive.ready(world.state),phase == .active {
+                VStack(alignment:.leading,spacing:15) {
+                    Text(NoraFriendArchive.title).font(.title2.bold())
+                    Text("Restored fragment · Historical sender labels · Original timestamps unavailable").font(.caption).foregroundColor(.secondary)
+                    ForEach(NoraFriendArchive.lines) { line in
+                        VStack(alignment:line.fromNora ? .trailing : .leading,spacing:4) {
+                            Text(line.speaker).font(.caption).foregroundColor(.secondary)
+                            Text(line.text).textSelection(.enabled).padding(12)
+                                .background(line.fromNora ? Color.teal.opacity(0.23) : Color.secondary.opacity(0.13),in:RoundedRectangle(cornerRadius:14))
+                        }.frame(maxWidth:.infinity,alignment:line.fromNora ? .trailing : .leading)
+                    }
+                    if NoraFriendArchive.opened(world.state) {
+                        NavigationLink { EvidenceComparisonView(initialRecordID:NoraFriendArchive.recordID) } label: {
+                            Label("Compare with earlier discoveries",systemImage:"rectangle.split.2x1")
+                        }
+                    }
+                    Text("End of restored fragment. This is not a new message or a current statement from Maya.").font(.caption).foregroundColor(.secondary)
+                }.padding(16)
+            } else { Text("Recovered conversation unavailable.").padding() }
+        }.navigationTitle("Recovered messages")
+        .onAppear { if phase == .active { world.recordNoraFriendArchiveOpened() } }
+        .onChange(of:phase) { if $0 == .active { world.recordNoraFriendArchiveOpened() } }
+    }
+}
+
 struct LumaMessagesDirectory: View {
     @EnvironmentObject private var world: PhoneWorldStore
     @State private var search = ""
@@ -22,6 +83,11 @@ struct LumaMessagesDirectory: View {
         VeilArchive.authorized(world.state) && !unreadOnly &&
         (search.isEmpty || VeilArchive.contactName.localizedCaseInsensitiveContains(search))
     }
+    private var friendMatch:Bool {
+        NoraFriendArchive.ready(world.state) && !unreadOnly &&
+        (search.isEmpty || NoraFriendArchive.title.localizedCaseInsensitiveContains(search) ||
+         NoraFriendArchive.lines.contains{$0.text.localizedCaseInsensitiveContains(search)})
+    }
     var body: some View {
         List {
             Section {
@@ -35,7 +101,12 @@ struct LumaMessagesDirectory: View {
                     Label("Unknown Number · Recovered conversation",systemImage:"person.crop.circle.badge.questionmark")
                 }
             }
-            if people.isEmpty && !historicalMatch {
+            if friendMatch {
+                NavigationLink { NoraFriendArchiveView() } label: {
+                    Label(NoraFriendArchive.title,systemImage:"archivebox")
+                }
+            }
+            if people.isEmpty && !historicalMatch && !friendMatch {
                 Label(unreadOnly ? "No unread conversations" : "No conversations found", systemImage: "bubble.left.and.bubble.right")
                     .foregroundColor(.secondary)
             }

@@ -1367,6 +1367,10 @@ final class PhoneWorldStore: ObservableObject {
         guard WorldDocumentCatalog.document(id,world:state) != nil else { return }
         if state.flags.insert(LumaAssistantEvidence.documentMarker(id)).inserted { save() }
     }
+    func recordNoraFriendArchiveOpened() {
+        guard NoraFriendArchive.ready(state) else { return }
+        if state.flags.insert(NoraFriendArchive.marker).inserted { save() }
+    }
     func recordSocialArchiveDraftOpened() {
         guard SocialArchiveReview.ready(state) else { return }
         if state.flags.insert(SocialArchiveReview.marker).inserted { save() }
