@@ -62,7 +62,7 @@ enum VeilCommunity {
         guard HavenWatchEvents.openedFollowup(world),
               world.flags.contains(openedMarker("last-annotation")),
               world.flags.contains(openedMarker("borrowed-caption")) else { return false }
-        return (world.connectedWorld?.evidenceConnections ?? []).prefix(40).contains {
+        return EvidenceConnection.stored(world).contains {
             Set([$0.first,$0.second]) == Set([HavenWatchEvents.followupRecordID,"veil:thread:last-annotation"]) &&
                 $0.relation == .wording
         }

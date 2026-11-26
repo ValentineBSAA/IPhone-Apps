@@ -413,7 +413,7 @@ enum SocialArchiveReview {
               LumaSocialCatalog.visible(.commonGround,world:world).contains(where:{$0.id=="cg-04"}),
               VeilArchive.homeMedia(world).contains("VEIL_Home_03"),
               world.flags.contains("veil.viewed.VEIL_Home_03") else { return false }
-        let links=(world.connectedWorld?.evidenceConnections ?? []).prefix(40)
+        let links=EvidenceConnection.stored(world)
         func has(_ a:String,_ b:String,_ relation:EvidenceConnection.Relation)->Bool {
             links.contains { Set([$0.first,$0.second]) == Set([a,b]) && $0.relation == relation }
         }

@@ -61,6 +61,18 @@ import XCTest
         XCTAssertFalse(VeilReferences.homeIndexReady(w.state))
         XCTAssertTrue(w.saveEvidenceConnection(thread,image,relation:.wording))
         XCTAssertTrue(VeilReferences.homeIndexReady(w.state))
+        // Legacy duplicate pairs cannot grant a discovery the notebook does
+        // not recognize. The first canonical pair is authoritative.
+        var inconsistent=w.state
+        let entries=EvidenceConnection.stored(inconsistent)
+        let original=try XCTUnwrap(entries.first(where:{Set([$0.first,$0.second])==Set([image,thread])}))
+        inconsistent.connectedWorld?.evidenceConnections=[
+            .init(first:original.second,second:original.first,relation:.source),original
+        ]
+        XCTAssertEqual(EvidenceConnection.stored(inconsistent).count,1)
+        XCTAssertEqual(EvidenceConnection.stored(inconsistent).first?.relation,.source)
+        XCTAssertFalse(VeilReferences.homeIndexReady(inconsistent))
+        XCTAssertFalse(VeilReferences.visible(inconsistent).contains{$0.id==VeilReferences.homeIndexID})
         XCTAssertNil(VeilReferences.target(VeilReferences.homeIndexID,in:w.state))
         w.recordVeilHomeIndexOpened()
         XCTAssertNil(LumaAssistantEvidence.selected("veil:home-index",in:w.state))

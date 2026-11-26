@@ -34,7 +34,9 @@ struct EvidenceConnection: Codable, Equatable, Identifiable {
     /// Retain temporarily hidden comparisons without exposing their contents.
     /// Access is still enforced by visible() and make().
     static let capacity=40
-    private static func stored(_ world:PhoneWorld)->[Self] {
+    /// Canonical storage only; no visibility checks or recursive gate calls.
+    /// Every dependency predicate must use the same first occurrence policy.
+    static func stored(_ world:PhoneWorld)->[Self] {
         var seen=Set<String>()
         return (world.connectedWorld?.evidenceConnections ?? []).prefix(capacity).compactMap { entry in
             let ids=[entry.first,entry.second].sorted()

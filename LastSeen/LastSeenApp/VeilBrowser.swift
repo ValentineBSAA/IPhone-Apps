@@ -123,20 +123,24 @@ struct VeilRecoveredImage: View {
     @EnvironmentObject private var world: PhoneWorldStore
     @Environment(\.scenePhase) private var phase
     @State private var revealed = false
+    @State private var revealEpoch:UUID?
     @AppStorage("lastseen.veil.security") private var security = "Standard"
+    private var currentReveal:Bool {revealed && revealEpoch==world.checkpointEpoch}
     var body: some View {
         if VeilArchive.media(world.state).contains(asset) {
             VStack(alignment:.leading,spacing:8) {
                 Text(VeilArchive.mediaTitle(asset,in:world.state) ?? "Recovered photograph").font(.headline)
-                if revealed && phase == .active && VeilArchive.allowsImages(security) {
+                if currentReveal && phase == .active && VeilArchive.allowsImages(security) {
                     if let image = UIImage(named:asset) {
                         Image(uiImage:image).resizable().scaledToFit().accessibilityLabel("Recovered fictional photograph, origin unverified")
                     } else { Text("Image unavailable. Text remains accessible.").font(.caption) }
                 }
                 if VeilArchive.allowsImages(security) {
-                    Button(revealed ? "Hide image" : "Reveal recovered image") {
-                        guard phase == .active,VeilArchive.allowsImages(security) else { return }
-                        revealed.toggle()
+                    Button(currentReveal ? "Hide image" : "Reveal recovered image") {
+                        guard phase == .active,VeilArchive.allowsImages(security),
+                              VeilArchive.media(world.state).contains(asset) else { return }
+                        revealed = !currentReveal
+                        revealEpoch = revealed ? world.checkpointEpoch : nil
                         if revealed, UIImage(named:asset) != nil { world.recordVeilObservation(asset) }
                     }.buttonStyle(.bordered)
                 } else { Label("Image hidden by security preference",systemImage:"shield").font(.caption) }
@@ -158,7 +162,10 @@ struct VeilRecoveredImage: View {
                         world.recordVeilObservation(asset)
                     }.font(.caption)
                 }
-            }.onChange(of:phase) { if $0 != .active { revealed = false } }.onChange(of:security) { _ in revealed = false }.onDisappear { revealed = false }
+            }.onChange(of:phase) { if $0 != .active { revealed = false;revealEpoch=nil } }
+                .onChange(of:security) { _ in revealed = false;revealEpoch=nil }
+                .onChange(of:world.checkpointEpoch) { _ in revealed=false;revealEpoch=nil }
+                .onDisappear { revealed = false;revealEpoch=nil }
         }
     }
 }

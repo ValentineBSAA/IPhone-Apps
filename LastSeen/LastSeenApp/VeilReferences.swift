@@ -22,7 +22,7 @@ enum VeilReferences {
         let images = Set(VeilArchive.homeMedia(world).filter {
             world.flags.contains("veil.viewed."+$0) && reviewed.contains($0)
         }.map { "image:"+$0 })
-        return (world.connectedWorld?.evidenceConnections ?? []).prefix(40).contains { pair in
+        return EvidenceConnection.stored(world).contains { pair in
             let ids = Set([pair.first,pair.second])
             return ids.contains("veil:thread:ordinary-hours") && ids.count == 2 &&
                 !ids.isDisjoint(with:images) && pair.relation == .wording

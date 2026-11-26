@@ -298,7 +298,7 @@ enum HavenCrossArchiveReview {
     }
     static func ready(_ world:PhoneWorld)->Bool {
         VeilCommunity.disputeReviewed(world) &&
-        (world.connectedWorld?.evidenceConnections ?? []).prefix(40).contains { matchingPair($0,in:world) }
+        EvidenceConnection.stored(world).contains { matchingPair($0,in:world) }
     }
     static func reviewed(_ world:PhoneWorld)->Bool {
         ready(world) && world.flags.contains(marker)

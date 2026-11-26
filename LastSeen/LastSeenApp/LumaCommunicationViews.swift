@@ -28,7 +28,7 @@ enum NoraFriendArchive {
         guard SocialArchiveReview.opened(world),
               world.flags.contains("veil.correspondence.opened"),
               Neighbor.visible(in:world).contains(.maya) else { return false }
-        return (world.connectedWorld?.evidenceConnections ?? []).prefix(40).contains {
+        return EvidenceConnection.stored(world).contains {
             Set([$0.first,$0.second]) == Set([SocialArchiveReview.recordID,"veil:conversation"]) &&
                 $0.relation == .wording
         }
