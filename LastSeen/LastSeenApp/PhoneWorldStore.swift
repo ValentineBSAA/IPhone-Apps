@@ -1499,10 +1499,8 @@ final class PhoneWorldStore: ObservableObject {
     func saveEvidenceConnection(_ first:String,_ second:String,relation:EvidenceConnection.Relation)->Bool {
         guard let entry=EvidenceConnection.make(first,second,relation:relation,in:state) else{return false}
         var c=connected
-        var values=EvidenceConnection.visible(state)
-        values.removeAll{$0.id==entry.id}
-        values.insert(entry,at:0)
-        c.evidenceConnections=Array(values.prefix(40))
+        guard let values=EvidenceConnection.saving(entry,in:state) else{return false}
+        c.evidenceConnections=values
         if c != connected {commitConnected(c)}
         return true
     }

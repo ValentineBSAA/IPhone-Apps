@@ -31,8 +31,57 @@ struct EvidenceConnection: Codable, Equatable, Identifiable {
         guard ids.allSatisfy({visible.contains($0)}) else{return nil}
         return .init(first:ids[0],second:ids[1],relation:relation)
     }
+    /// Retain temporarily hidden comparisons without exposing their contents.
+    /// Access is still enforced by visible() and make().
+    static let capacity=40
+    private static func stored(_ world:PhoneWorld)->[Self] {
+        var seen=Set<String>()
+        return (world.connectedWorld?.evidenceConnections ?? []).prefix(capacity).compactMap { entry in
+            let ids=[entry.first,entry.second].sorted()
+            guard ids[0] != ids[1],ids.allSatisfy({!$0.isEmpty && !$0.contains("|") && $0.count<=200}) else{return nil}
+            let valid=Self(first:ids[0],second:ids[1],relation:entry.relation)
+            return seen.insert(valid.id).inserted ? valid:nil
+        }
+    }
+    private static func replacing(_ entries:[Self],in world:PhoneWorld)->PhoneWorld {
+        var next=world
+        var connected=next.connectedWorld ?? LumaConnectedState()
+        connected.evidenceConnections=entries
+        next.connectedWorld=connected
+        return next
+    }
+    /// These predicates use raw saved pairs and earned prerequisites, not
+    /// visible(), so evaluating an eviction cannot recurse through evidence.
+    private static func milestones(_ world:PhoneWorld)->[Bool] {
+        [VeilReferences.homeIndexReady(world),HavenCrossArchiveReview.ready(world),
+         SocialArchiveReview.ready(world),NoraFriendArchive.ready(world),
+         VeilCommunity.reconstructionReady(world)]
+    }
+    static func revokesMilestone(_ id:String,in world:PhoneWorld)->Bool {
+        let before=milestones(world)
+        let after=milestones(replacing(stored(world).filter{$0.id != id},in:world))
+        return zip(before,after).contains{$0.0 && !$0.1}
+    }
+    static func saving(_ entry:Self,in world:PhoneWorld)->[Self]? {
+        guard make(entry.first,entry.second,relation:entry.relation,in:world)==entry else{return nil}
+        var values=stored(world).filter{$0.id != entry.id}
+        values.insert(entry,at:0)
+        if values.count<=capacity {return values}
+        // Evaluate the intended edit first; only automatic eviction must
+        // preserve currently earned dependencies. The new entry stays first.
+        // Predicates consume a bounded prefix, so put each candidate's
+        // removal into a separate full-size world before comparing.
+        let baseline=milestones(world)
+        for index in values.indices.reversed() where index != 0 {
+            var candidate=values
+            candidate.remove(at:index)
+            let after=milestones(replacing(candidate,in:world))
+            if !zip(baseline,after).contains(where:{$0.0 && !$0.1}) {return candidate}
+        }
+        return nil
+    }
     static func visible(_ world:PhoneWorld)->[Self] {
-        let entries=(world.connectedWorld?.evidenceConnections ?? []).prefix(40)
+        let entries=stored(world)
         guard !entries.isEmpty else{return []}
         let available=Set(LumaAssistantEvidence.visible(world).map(\.id))
         var seen=Set<String>()
@@ -114,6 +163,8 @@ struct EvidenceComparisonView: View {
     @State private var relation=EvidenceConnection.Relation.uncertainty
     @State private var notice=""
     @State private var revealOriginals=false
+    @State private var removing:EvidenceConnection?
+    @State private var confirmRemoval=false
     @AppStorage("lastseen.veil.security") private var security="Standard"
     private var records:[LumaAssistantEvidence.Record] { LumaAssistantEvidence.visible(world.state) }
     private var selection:EvidenceConnection? { EvidenceConnection.make(first,second,relation:relation,in:world.state) }
@@ -192,7 +243,7 @@ struct EvidenceComparisonView: View {
                                 } else if !annotationBefore && VeilCommunity.reconstructionReady(world.state) {
                                     notice="Connection saved. The annotation review is available in VEIL."
                                 } else { notice="Connection saved to the current checkpoint." }
-                            } else { notice="Connection could not be saved." }
+                            } else { notice="Connection could not be saved without losing an available discovery. Review existing comparisons." }
                         }.buttonStyle(.borderedProminent)
                         if !notice.isEmpty {Text(notice).font(.caption)}
                     }
@@ -207,17 +258,32 @@ struct EvidenceComparisonView: View {
                         VStack(alignment:.leading,spacing:5){
                             Text(entry.records(in:world.state).map(\.title).joined(separator:" + ")).font(.headline)
                             Text(entry.relation.title).font(.caption).foregroundColor(.secondary)
+                            if EvidenceConnection.revokesMilestone(entry.id,in:world.state) {
+                                Label("Supports a current discovery",systemImage:"link").font(.caption).foregroundColor(.secondary)
+                            }
                             Button("Review connection"){
                                 first=entry.first;second=entry.second;relation=entry.relation;notice=""
                             }.font(.caption)
                         }
-                        .swipeActions {
-                            Button(role:.destructive){world.removeEvidenceConnection(entry.id)}label:{Label("Remove",systemImage:"trash")}
+                        .swipeActions(allowsFullSwipe:false) {
+                            Button(role:.destructive){removing=entry;confirmRemoval=true}label:{Label("Remove",systemImage:"trash")}
                         }
                     }
                 }
             }
         }.navigationTitle("Compare records")
+            .confirmationDialog("Remove saved connection?",isPresented:$confirmRemoval,titleVisibility:.visible){
+                Button("Remove",role:.destructive){
+                    guard phase == .active,let entry=removing,EvidenceConnection.visible(world.state).contains(entry) else{return}
+                    world.removeEvidenceConnection(entry.id);removing=nil
+                }
+                Button("Cancel",role:.cancel){removing=nil}
+            } message:{
+                Text(removing.map{EvidenceConnection.revokesMilestone($0.id,in:world.state)} == true
+                     ? "Related discoveries may become unavailable. Restoring this comparison can recover access."
+                     : "This removes your saved observation from the current checkpoint.")
+            }
+            .onChange(of:world.checkpointEpoch){_ in first="";second="";notice="";revealOriginals=false;removing=nil;confirmRemoval=false}
             .onAppear{
                 if let initialRecordID,records.contains(where:{$0.id==initialRecordID}),first.isEmpty{first=initialRecordID}
             }
@@ -226,7 +292,7 @@ struct EvidenceComparisonView: View {
             .onChange(of:security){_ in revealOriginals=false}
             .onDisappear{revealOriginals=false}
             .onChange(of:relation){_ in notice=""}
-            .onChange(of:phase){if $0 != .active{notice="";revealOriginals=false}}
+            .onChange(of:phase){if $0 != .active{notice="";revealOriginals=false;removing=nil;confirmRemoval=false}}
             .onChange(of:records.map(\.id)){_ in
                 revealOriginals=false
                 // A newly unlocked record must not erase the discovery notice.
